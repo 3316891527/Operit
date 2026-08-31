@@ -1534,6 +1534,16 @@ open class OpenAIProvider(
             receivedContent.append(tag)
         }
 
+        /**
+         * Provider protocol metadata must occupy its own line so the XML splitter does not
+         * interpret it as ordinary response text when it follows content or tool arguments.
+         */
+        suspend fun emitMetadataTag(tag: String) {
+            emitTag("\n")
+            emitTag(tag)
+            emitTag("\n")
+        }
+
         suspend fun emitSavepoint(id: String) {
             savepointLengths[id] = receivedContent.length
             eventChannel.emit(TextStreamEvent(TextStreamEventType.SAVEPOINT, id))
@@ -2354,7 +2364,7 @@ open class OpenAIProvider(
             return
         }
         closeReasoningModeIfOpen(state, emitter)
-        emitter.emitTag(metadataTag)
+        emitter.emitMetadataTag(metadataTag)
     }
 
     private suspend fun emitResponsesOutputItemMetadataFromResponse(
@@ -2642,7 +2652,7 @@ open class OpenAIProvider(
                         )
                         closeReasoningModeIfOpen(state, emitter)
                         OpenAIResponsesPayloadAdapter.createReasoningMetadataTag(item)?.let { metadataTag ->
-                            emitter.emitTag(metadataTag)
+                            emitter.emitMetadataTag(metadataTag)
                         }
                     }
                     return
@@ -3269,10 +3279,10 @@ open class OpenAIProvider(
                                         }
                                     }
                                     parsed.reasoningMetadataTags.forEach { metadataTag ->
-                                        emitter.emitTag(metadataTag)
+                                        emitter.emitMetadataTag(metadataTag)
                                     }
                                     parsed.outputItemMetadataTags.forEach { metadataTag ->
-                                        emitter.emitTag(metadataTag)
+                                        emitter.emitMetadataTag(metadataTag)
                                     }
                                     emitResponsesWebSearchDisplayFromResponse(
                                         context,
