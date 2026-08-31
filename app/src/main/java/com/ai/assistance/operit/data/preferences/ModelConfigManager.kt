@@ -283,9 +283,10 @@ class ModelConfigManager(
         }
 
         private fun isLegacyOpenAiChatReasoningRule(rule: JSONObject): Boolean {
-            val ruleId = rule.optString("id", "").trim()
-            return ruleId == OPENAI_CHAT_REASONING_EFFORT_RULE_ID &&
-                    OPENAI_CHAT_MATCHER_FIELDS.none(rule::has)
+            // The built-in id has been superseded by model-specific rules (gpt5/o-series and
+            // the generic reasoning family). Any rule carrying this id is stale, regardless of
+            // whether it already carries a matcher, and must be replaced by the current set.
+            return rule.optString("id", "").trim() == OPENAI_CHAT_REASONING_EFFORT_RULE_ID
         }
 
         private fun thinkingRulesJsonArray(thinkingConfigurations: String): JSONArray {

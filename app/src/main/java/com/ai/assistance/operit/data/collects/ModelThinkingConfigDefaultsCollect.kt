@@ -139,6 +139,7 @@ object ModelThinkingConfigDefaults {
                     "parameterLabel": "reasoning_effort",
                     "options": [
                       {"id": "low", "label": "low", "path": "reasoning_effort", "value": "low"},
+                      {"id": "minimal", "label": "minimal", "path": "reasoning_effort", "value": "minimal"},
                       {"id": "medium", "label": "medium", "path": "reasoning_effort", "value": "medium"},
                       {"id": "high", "label": "high", "path": "reasoning_effort", "value": "high"},
                       {"id": "xhigh", "label": "xhigh", "path": "reasoning_effort", "value": "xhigh"},
