@@ -24,6 +24,7 @@ import com.ai.assistance.operit.ui.features.chat.components.rememberRevisableTex
 import com.ai.assistance.operit.ui.features.chat.components.part.CustomXmlRenderer
 import com.ai.assistance.operit.ui.features.chat.components.part.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.chat.components.LinkPreviewDialog
+import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.markdown.toCharStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
@@ -58,6 +59,12 @@ fun AiMessageComposable(
     val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
     val themeSnapshot = LocalThemePreferenceSnapshot.current
     val renderAiMarkdownAndLatex = themeSnapshot.aiMessageMarkdownLatexEnabled
+    val displayContent =
+        if (message.contentStream == null) {
+            ChatMarkupRegex.removeOpenAiResponsesProtocolMeta(message.content)
+        } else {
+            message.content
+        }
     val showThinkingProcess = themeSnapshot.showThinkingProcess
     val showStatusTags = themeSnapshot.showStatusTags
     val effectiveShowThinkingProcess = if (forceShowThinkingProcess) true else showThinkingProcess
@@ -196,7 +203,7 @@ fun AiMessageComposable(
                     )
                 } else {
                     StreamMarkdownRenderer(
-                        content = message.content,
+                        content = displayContent,
                         textColor = textColor,
                         backgroundColor = backgroundColor,
                         onLinkClick = rememberedOnLinkClick,
@@ -209,7 +216,7 @@ fun AiMessageComposable(
                 }
             } else {
                 PlainTextStreamingMessageContent(
-                    content = message.content,
+                    content = displayContent,
                     contentStream = overrideStream ?: message.contentStream,
                     textColor = textColor,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),

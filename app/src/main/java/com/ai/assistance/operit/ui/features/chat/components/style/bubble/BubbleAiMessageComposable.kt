@@ -63,6 +63,7 @@ import com.ai.assistance.operit.ui.theme.resolveConfiguredFontFamily
 import com.ai.assistance.operit.ui.theme.waterGlass
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import com.ai.assistance.operit.util.ChatMarkupRegex
 
 private val ExpandedBubbleLayoutNodeTypes =
     setOf(
@@ -102,6 +103,12 @@ fun BubbleAiMessageComposable(
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
     val themeSnapshot = LocalThemePreferenceSnapshot.current
     val renderAiMarkdownAndLatex = themeSnapshot.aiMessageMarkdownLatexEnabled
+    val displayContent =
+        if (message.contentStream == null) {
+            ChatMarkupRegex.removeOpenAiResponsesProtocolMeta(message.content)
+        } else {
+            message.content
+        }
     val bubbleShowAvatar = themeSnapshot.bubbleShowAvatar
     val bubbleWideLayoutEnabled = themeSnapshot.bubbleWideLayoutEnabled
     val showThinkingProcess = themeSnapshot.showThinkingProcess
@@ -215,10 +222,10 @@ fun BubbleAiMessageComposable(
         animationSpec = tween(durationMillis = 300)
     )
 
-    val imageUrl = remember(message.content, message.contentStream, renderAiMarkdownAndLatex) {
+    val imageUrl = remember(displayContent, message.contentStream, renderAiMarkdownAndLatex) {
         if (renderAiMarkdownAndLatex && message.contentStream == null) {
             val regex = """^\s*!\[[^\]]*\]\(([^)]+)\)\s*$""".toRegex()
-            regex.find(message.content)?.groups?.get(1)?.value
+            regex.find(displayContent)?.groups?.get(1)?.value
         } else {
             null
         }
@@ -397,7 +404,7 @@ fun BubbleAiMessageComposable(
                                     )
                                 } else {
                                     StreamMarkdownRenderer(
-                                        content = message.content,
+                                        content = displayContent,
                                         textColor = textColor,
                                         backgroundColor = backgroundColor,
                                         onLinkClick = rememberedOnLinkClick,
@@ -417,7 +424,7 @@ fun BubbleAiMessageComposable(
                                 }
                             } else {
                                 PlainTextStreamingMessageContent(
-                                    content = message.content,
+                                    content = displayContent,
                                     contentStream = message.contentStream,
                                     textColor = textColor,
                                     modifier =
@@ -617,7 +624,7 @@ fun BubbleAiMessageComposable(
                                     )
                                 } else {
                                     StreamMarkdownRenderer(
-                                        content = message.content,
+                                        content = displayContent,
                                         textColor = textColor,
                                         backgroundColor = backgroundColor,
                                         onLinkClick = rememberedOnLinkClick,
@@ -637,7 +644,7 @@ fun BubbleAiMessageComposable(
                                 }
                             } else {
                                 PlainTextStreamingMessageContent(
-                                    content = message.content,
+                                    content = displayContent,
                                     contentStream = message.contentStream,
                                     textColor = textColor,
                                     modifier =
