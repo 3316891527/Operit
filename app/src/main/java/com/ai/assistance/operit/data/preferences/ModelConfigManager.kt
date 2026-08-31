@@ -254,7 +254,10 @@ class ModelConfigManager(
                     for (currentIndex in 0 until currentRules.length()) {
                         val currentRule = currentRules.optJSONObject(currentIndex) ?: continue
                         val currentRuleId = currentRule.optString("id", "").trim()
-                        if (currentRuleId !in existingCurrentRuleIds) {
+                        if (
+                                currentRuleId !in existingCurrentRuleIds &&
+                                        !isLegacyOpenAiChatReasoningRule(currentRule)
+                        ) {
                             targetRules.put(JSONObject(currentRule.toString()))
                         }
                     }

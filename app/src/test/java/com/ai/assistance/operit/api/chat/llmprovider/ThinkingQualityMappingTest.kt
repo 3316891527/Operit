@@ -56,7 +56,7 @@ class ThinkingQualityMappingTest {
         val mapping = mapping(ApiProviderType.OPENAI, "gpt-5.6-luna")
 
         assertEquals(
-            listOf("none", "minimal", "low", "medium", "high", "xhigh", "max"),
+            listOf("minimal", "low", "medium", "high", "xhigh", "max"),
             mapping.options.map { it.displayLabel }
         )
         assertEquals("high", mapping.textValueFor("high"))
@@ -309,7 +309,7 @@ class ThinkingQualityMappingTest {
         val kimiK27 = mapping(ApiProviderType.MOONSHOT, "kimi-k2.7-code")
         val kimiK26 = mapping(ApiProviderType.MOONSHOT, "kimi-k2.6")
 
-        assertEquals(listOf("none", "minimal", "low", "medium", "high", "xhigh", "max"), gpt5.options.map { it.id })
+        assertEquals(listOf("minimal", "low", "medium", "high", "xhigh", "max"), gpt5.options.map { it.id })
         assertEquals(ThinkingQualityControl.UNSUPPORTED, gemini2.control)
         assertEquals("thinking.budget_tokens", claude45.parameterLabel)
         assertEquals("output_config.effort", claude46.parameterLabel)

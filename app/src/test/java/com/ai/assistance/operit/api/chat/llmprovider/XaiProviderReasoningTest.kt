@@ -51,7 +51,7 @@ class XaiProviderReasoningTest {
         assertEquals(ThinkingQualityControl.LEVELS, mapping.control)
         assertEquals("reasoning_effort", mapping.parameterLabel)
         assertEquals(
-            listOf("high", "low", "medium", "xhigh"),
+            listOf("low", "medium", "high", "xhigh"),
             mapping.options.map { it.id }
         )
     }
@@ -79,8 +79,8 @@ class XaiProviderReasoningTest {
         val grok45 = xaiMapping("grok-4.5-latest")
         val legacyGrok = xaiMapping("grok-3-mini")
 
-        assertEquals(listOf("high", "low", "medium", "xhigh"), grok46.options.map { it.id })
-        assertEquals(listOf("high", "low", "medium"), grok45.options.map { it.id })
+        assertEquals(listOf("low", "medium", "high", "xhigh"), grok46.options.map { it.id })
+        assertEquals(listOf("low", "medium", "high"), grok45.options.map { it.id })
         assertEquals(ThinkingQualityControl.UNSUPPORTED, legacyGrok.control)
     }
 
