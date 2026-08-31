@@ -1534,6 +1534,18 @@ open class OpenAIProvider(
             receivedContent.append(tag)
         }
 
+        /**
+         * Provider protocol metadata must sit on its own line: the native XML block
+         * splitter only starts a new XML region at line start, after a closing tag, or after
+         * punctuation. Without this separator the meta tag degrades into plain text when it
+         * directly follows regular content or mid-JSON tool arguments.
+         */
+        suspend fun emitMetadataTag(tag: String) {
+            emitTag("\n")
+            emitTag(tag)
+            emitTag("\n")
+        }
+
         suspend fun emitSavepoint(id: String) {
             savepointLengths[id] = receivedContent.length
             eventChannel.emit(TextStreamEvent(TextStreamEventType.SAVEPOINT, id))
@@ -2354,7 +2366,7 @@ open class OpenAIProvider(
             return
         }
         closeReasoningModeIfOpen(state, emitter)
-        emitter.emitTag(metadataTag)
+        emitter.emitMetadataTag(metadataTag)
     }
 
     private suspend fun emitResponsesOutputItemMetadataFromResponse(
@@ -2642,7 +2654,7 @@ open class OpenAIProvider(
                         )
                         closeReasoningModeIfOpen(state, emitter)
                         OpenAIResponsesPayloadAdapter.createReasoningMetadataTag(item)?.let { metadataTag ->
-                            emitter.emitTag(metadataTag)
+                            emitter.emitMetadataTag(metadataTag)
                         }
                     }
                     return
@@ -3269,10 +3281,10 @@ open class OpenAIProvider(
                                         }
                                     }
                                     parsed.reasoningMetadataTags.forEach { metadataTag ->
-                                        emitter.emitTag(metadataTag)
+                                        emitter.emitMetadataTag(metadataTag)
                                     }
                                     parsed.outputItemMetadataTags.forEach { metadataTag ->
-                                        emitter.emitTag(metadataTag)
+                                        emitter.emitMetadataTag(metadataTag)
                                     }
                                     emitResponsesWebSearchDisplayFromResponse(
                                         context,
