@@ -7703,7 +7703,7 @@
     <string name="data_recovery_import_snapshot">스냅샷 가져오기</string>
     <string name="data_recovery_start_main_app">기본 앱 시작</string>
     <string name="data_recovery_file_management">파일 관리</string>
-    <string name="data_recovery_file_management_description">이 페이지는 파일 관리자를 직접 열지 않습니다. 내부 파일을 수동으로 확인하거나 내보내려면 MT Manager를 열고 "로컬 저장소 저장소"를 추가한 다음 Operit 데이터 저장소를 선택하여 관리하세요. provider: %1$s</string>
+    <string name="data_recovery_file_management_description">이 페이지는 파일 관리자를 직접 열지 않습니다. 내부 파일을 수동으로 확인하거나 내보내려면 MT Manager를 열고 로컬 저장소 저장소를 추가한 다음 Operit 데이터 저장소를 선택하여 관리하세요. provider: %1$s</string>
     <string name="data_recovery_sql_executor">SQL 실행기</string>
     <string name="data_recovery_messages_size">messages 크기</string>
     <string name="data_recovery_variants_size">variants 크기</string>

@@ -7923,7 +7923,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="data_recovery_import_snapshot">Importar instantánea</string>
     <string name="data_recovery_start_main_app">Iniciar aplicación principal</string>
     <string name="data_recovery_file_management">Gestión de archivos</string>
-    <string name="data_recovery_file_management_description">Esta página no abre directamente un gestor de archivos. Para revisar o exportar archivos internos manualmente, abre MT Manager, añade el "repositorio de almacenamiento local", selecciona el repositorio de datos de Operit y adminístralo allí. provider: %1$s</string>
+    <string name="data_recovery_file_management_description">Esta página no abre directamente un gestor de archivos. Para revisar o exportar archivos internos manualmente, abre MT Manager, añade el repositorio de almacenamiento local, selecciona el repositorio de datos de Operit y adminístralo allí. provider: %1$s</string>
     <string name="data_recovery_sql_executor">Ejecutor SQL</string>
     <string name="data_recovery_messages_size">Tamaño de messages</string>
     <string name="data_recovery_variants_size">Tamaño de variants</string>

@@ -7853,7 +7853,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="data_recovery_import_snapshot">Import syot kilat</string>
     <string name="data_recovery_start_main_app">Lancarkan aplikasi utama</string>
     <string name="data_recovery_file_management">Pengurusan fail</string>
-    <string name="data_recovery_file_management_description">Halaman ini tidak membuka pengurus fail secara langsung. Untuk melihat atau mengeksport fail dalaman secara manual, buka MT Manager, tambah "repositori storan tempatan", pilih repositori data Operit dan uruskannya di sana. provider: %1$s</string>
+    <string name="data_recovery_file_management_description">Halaman ini tidak membuka pengurus fail secara langsung. Untuk melihat atau mengeksport fail dalaman secara manual, buka MT Manager, tambah repositori storan tempatan, pilih repositori data Operit dan uruskannya di sana. provider: %1$s</string>
     <string name="data_recovery_sql_executor">Pelaksana SQL</string>
     <string name="data_recovery_messages_size">Saiz messages</string>
     <string name="data_recovery_variants_size">Saiz variants</string>

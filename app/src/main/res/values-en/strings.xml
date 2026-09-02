@@ -8468,7 +8468,7 @@
     <string name="data_recovery_import_snapshot">Import snapshot</string>
     <string name="data_recovery_start_main_app">Launch main app</string>
     <string name="data_recovery_file_management">File management</string>
-    <string name="data_recovery_file_management_description">This page does not open a file manager directly. To inspect or export internal files manually, open MT Manager, add the "Local storage repository", select Operit's data repository, and manage it there. provider: %1$s</string>
+    <string name="data_recovery_file_management_description">This page does not open a file manager directly. To inspect or export internal files manually, open MT Manager, add the local storage repository, select the Operit data repository, and manage it there. provider: %1$s</string>
     <string name="data_recovery_sql_executor">SQL executor</string>
     <string name="data_recovery_messages_size">messages size</string>
     <string name="data_recovery_variants_size">variants size</string>

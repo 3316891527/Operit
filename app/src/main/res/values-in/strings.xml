@@ -7855,7 +7855,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="data_recovery_import_snapshot">Impor snapshot</string>
     <string name="data_recovery_start_main_app">Jalankan aplikasi utama</string>
     <string name="data_recovery_file_management">Manajemen file</string>
-    <string name="data_recovery_file_management_description">Halaman ini tidak langsung membuka pengelola file. Untuk melihat atau mengekspor file internal secara manual, buka MT Manager, tambahkan "Repositori penyimpanan lokal", pilih repositori data Operit, lalu kelola di sana. provider: %1$s</string>
+    <string name="data_recovery_file_management_description">Halaman ini tidak langsung membuka pengelola file. Untuk melihat atau mengekspor file internal secara manual, buka MT Manager, tambahkan repositori penyimpanan lokal, pilih repositori data Operit, lalu kelola di sana. provider: %1$s</string>
     <string name="data_recovery_sql_executor">Eksekutor SQL</string>
     <string name="data_recovery_messages_size">Ukuran messages</string>
     <string name="data_recovery_variants_size">Ukuran variants</string>
