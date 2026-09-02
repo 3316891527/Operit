@@ -5963,7 +5963,7 @@
     <string name="backup_format_markdown_desc">轻量级标记格式，便于阅读和编辑</string>
     <string name="backup_format_html">HTML</string>
     <string name="backup_format_html_desc">网页格式，适合在浏览器中查看</string>
-    <string name="backup_format_txt">纯文本</string>
+    <string name="backup_format_txt">TXT</string>
     <string name="backup_format_txt_desc">简单的文本格式，便于分享</string>
     <string name="backup_format_csv">CSV</string>
     <string name="backup_format_csv_desc">结构化表格格式，完整保留聊天元数据、消息和回答变体，可再次导入</string>

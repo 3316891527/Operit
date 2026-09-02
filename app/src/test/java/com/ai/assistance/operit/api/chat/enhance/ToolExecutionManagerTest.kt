@@ -196,7 +196,7 @@ class ToolExecutionManagerTest {
     @Test
     fun sharedDisplayBudgetCompactsResultsAfterTheConversationLimit() = runTest {
         val live = mutableListOf<String>()
-        val sharedBudget = ToolExecutionManager.ToolResultDisplayBudget(initialChars = 32 * 1024)
+        val sharedBudget = ToolExecutionManager.ToolResultDisplayBudget(initialChars = 40 * 1024)
         repeat(3) { index ->
             val buffer = ToolExecutionManager.ToolResultMarkupBuffer()
             buffer.record(
