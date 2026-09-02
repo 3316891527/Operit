@@ -4606,10 +4606,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="backup_import_format_hint">Selecione o formato do histórico de bate-papo para importar:</string>
     <string name="backup_format_operit">Operar JSON (recomendado)</string>
     <string name="backup_format_operit_desc">O formato nativo deste aplicativo mantém todos os dados intactos</string>
-    <string name="backup_format_chatgpt">Bate-papoGPT</string>
-    <string name="backup_format_chatgpt_desc">Formato de exportação OpenAI ChatGPT conversas.json</string>
-    <string name="backup_format_chatbox">Caixa de bate-papo</string>
-    <string name="backup_format_chatbox_desc">Formato de exportação do aplicativo de desktop ChatBox</string>
     <string name="backup_format_generic_json">JSON genérico</string>
     <string name="backup_format_generic_json_desc">JSON com estrutura de conteúdo de função padrão (suporta Claude, LibreChat, etc.)</string>
     <string name="backup_import_result_success">Importado com sucesso %1$s Formato:\n- Novos registros: %2$d\n- Registros atualizados: %3$d%4$s</string>
@@ -5369,8 +5365,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="version_update">Atualização de versão</string>
     <string name="mcp_no_zip_selected">Nenhum arquivo ZIP selecionado</string>
     <string name="mcp_uninstall_failed">Falha na desinstalação</string>
-    <string name="chatgpt_parse_error">Falha ao analisar o formato ChatGPT: %1$s</string>
-    <string name="chatgpt_import_from">Importar do ChatGPT</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">implementar</string>
     <string name="uiautomation_complete">Terminar</string>
     <string name="message_list_empty">A lista de mensagens não pode ficar vazia</string>
@@ -6076,17 +6071,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="export_user">usuário</string>
     <string name="export_assistant">assistente</string>
     <string name="export_model">(Modelo: %1$s)</string>
-    <string name="chatbox_unsupported_format">Formato ChatBox não suportado</string>
-    <string name="chatbox_unsupported_format_detail">Importe o JSON exportado pelo ChatBox (Configurações &gt; Configurações Gerais &gt; Backup de Dados &gt; Exportar Dados de Verificação)</string>
-    <string name="chatbox_parse_error">Falha ao analisar o formato ChatBox: %1$s</string>
-    <string name="chatbox_invalid_export_file">Não é um arquivo de exportação válido do ChatBox</string>
-    <string name="chatbox_invalid_export_hint">Use "Exportar dados de verificação" em Configurações do ChatBox &gt; Configurações gerais &gt; Backup de dados para exportar JSON</string>
-    <string name="chatbox_import_group">Importar do ChatBox</string>
-    <string name="chatbox_message_generation_failed">Falha na geração da mensagem: %1$s</string>
-    <string name="chatbox_image_not_saved">A mensagem continha originalmente uma imagem, mas não foi salva</string>
-    <string name="chatbox_role_user">usuário</string>
-    <string name="chatbox_role_assistant">assistente</string>
-    <string name="chatbox_role_system">sistema</string>
     <string name="role_assistant">assistente</string>
     <string name="role_system">sistema</string>
     <string name="role_model">Modelo</string>

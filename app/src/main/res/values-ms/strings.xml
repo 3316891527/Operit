@@ -4906,10 +4906,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="backup_import_format_hint">Sila pilih format rekod sembang yang ingin diimport:</string>
     <string name="backup_format_operit">Operit JSON (disyorkan)</string>
     <string name="backup_format_operit_desc">Format asli aplikasi ini, mengekalkan semua data dengan lengkap</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">Format eksport conversations.json OpenAI ChatGPT</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">Format eksport aplikasi desktop ChatBox</string>
     <string name="backup_format_generic_json">JSON generik</string>
     <string name="backup_format_generic_json_desc">JSON dengan struktur role-content standard (menyokong Claude, LibreChat, dll.)</string>
     <string name="backup_import_result_success">Berjaya mengimport format %1$s:\n- Rekod baharu: %2$d item\n- Rekod dikemas kini: %3$d item%4$s</string>
@@ -5645,8 +5641,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="version_update">Kemas kini versi</string>
     <string name="mcp_no_zip_selected">Fail ZIP tidak dipilih</string>
     <string name="mcp_uninstall_failed">Nyahpasang gagal</string>
-    <string name="chatgpt_parse_error">Gagal menghuraikan format ChatGPT: %1$s</string>
-    <string name="chatgpt_import_from">Import dari ChatGPT</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">Laksanakan</string>
     <string name="uiautomation_complete">Selesai</string>
     <string name="message_list_empty">Senarai mesej tidak boleh kosong</string>
@@ -6161,16 +6156,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="profile_gender_value">Jantina: %1$s</string>
     <string name="profile_birth_date">Tarikh lahir: %1$s</string>
 
-    <string name="chatbox_unsupported_format_detail">Sila import JSON yang dieksport oleh ChatBox (Tetapan &gt; Tetapan Umum &gt; Sandaran Data &gt; Eksport Data Terpilih)</string>
-    <string name="chatbox_parse_error">Gagal menghuraikan format ChatBox: %1$s</string>
-    <string name="chatbox_invalid_export_file">Bukan fail eksport ChatBox yang sah</string>
-    <string name="chatbox_invalid_export_hint">Sila gunakan "Eksport Data Terpilih" dalam ChatBox di Tetapan &gt; Tetapan Umum &gt; Sandaran Data untuk mengeksport JSON</string>
-    <string name="chatbox_import_group">Import dari ChatBox</string>
-    <string name="chatbox_message_generation_failed">Penjanaan mesej gagal: %1$s</string>
-    <string name="chatbox_image_not_saved">Mesej ini asalnya mengandungi gambar, tetapi tidak disimpan</string>
-    <string name="chatbox_role_user">Pengguna</string>
-    <string name="chatbox_role_assistant">Pembantu</string>
-    <string name="chatbox_role_system">Sistem</string>
     <string name="role_assistant">Pembantu</string>
     <string name="role_system">Sistem</string>
     <string name="role_model">Model</string>
@@ -6324,7 +6309,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="export_user">Pengguna</string>
     <string name="export_assistant">Pembantu</string>
     <string name="export_model">(Model: %1$s)</string>
-    <string name="chatbox_unsupported_format">Format ChatBox tidak disokong</string>
 
     <string name="root_execution_mode_auto">Pilih Automatik</string>
     <string name="root_execution_mode_force_libsu">Magisk SU Manual</string>

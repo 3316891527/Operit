@@ -4994,10 +4994,6 @@
     <string name="backup_import_format_hint">가져올 채팅 기록 형식을 선택하세요.</string>
     <string name="backup_format_operit">Operit JSON(권장)</string>
     <string name="backup_format_operit_desc">이 앱의 기본 형식으로 변형 및 기타 모든 데이터가 보존됩니다.</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">OpenAI ChatGPT conversations.json 내보내기 형식</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">ChatBox 데스크톱 애플리케이션 내보내기 형식</string>
     <string name="backup_format_generic_json">일반 JSON</string>
     <string name="backup_format_generic_json_desc">표준 role-content JSON 구조(Claude, LibreChat 등 지원)</string>
     <string name="backup_import_result_success">%1$s 형식을 성공적으로 가져왔습니다:\n- 새 레코드: %2$d\n- 업데이트된 레코드: %3$d%4$s</string>
@@ -5776,8 +5772,7 @@
     <string name="version_update">버전 업데이트</string>
     <string name="mcp_no_zip_selected">ZIP 파일을 선택하지 않았습니다.</string>
     <string name="mcp_uninstall_failed">제거 실패</string>
-    <string name="chatgpt_parse_error">ChatGPT 형식 구문 분석 실패: %1$s</string>
-    <string name="chatgpt_import_from">ChatGPT에서 가져오기</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">실행</string>
     <string name="uiautomation_complete">완료</string>
     <string name="message_list_empty">메시지 목록은 비워둘 수 없습니다.</string>
@@ -6490,17 +6485,6 @@
     <string name="export_user">사용자</string>
     <string name="export_assistant">어시스턴트</string>
     <string name="export_model">(모델: %1$s)</string>
-    <string name="chatbox_unsupported_format">지원되지 않는 ChatBox 형식</string>
-    <string name="chatbox_unsupported_format_detail">ChatBox에서 내보낸 JSON을 가져오세요(설정 &gt; 일반 설정 &gt; 데이터 백업 &gt; 선택한 데이터 내보내기)</string>
-    <string name="chatbox_parse_error">ChatBox 형식을 구문 분석하지 못했습니다: %1$s</string>
-    <string name="chatbox_invalid_export_file">잘못된 ChatBox 내보내기 파일</string>
-    <string name="chatbox_invalid_export_hint">JSON을 내보내려면 ChatBox 설정 &gt; 일반 설정 &gt; 데이터 백업에서 "선택한 데이터 내보내기"를 사용하세요.</string>
-    <string name="chatbox_import_group">ChatBox에서 가져옴</string>
-    <string name="chatbox_message_generation_failed">메시지 생성 실패: %1$s</string>
-    <string name="chatbox_image_not_saved">이 메시지에는 원래 이미지가 포함되어 있었지만 저장되지 않았습니다.</string>
-    <string name="chatbox_role_user">사용자</string>
-    <string name="chatbox_role_assistant">도우미</string>
-    <string name="chatbox_role_system">시스템</string>
     <string name="role_assistant">도우미</string>
     <string name="role_system">시스템</string>
     <string name="role_model">모델</string>

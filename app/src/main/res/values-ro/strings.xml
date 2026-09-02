@@ -5713,10 +5713,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="backup_import_format_hint">Vă rugăm să selectați formatul în care doriți să importați istoricul conversațiilor:</string>
     <string name="backup_format_operit">Operit JSON(Recomandat)</string>
     <string name="backup_format_operit_desc">Formatul nativ al acestei aplicații, care păstrează integral toate datele, inclusiv comutarea mesajelor</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">OpenAI ChatGPT conversations.json Formate de export</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">ChatBox Formate de export pentru aplicațiile desktop</string>
     <string name="backup_format_generic_json">Generalități JSON</string>
     <string name="backup_format_generic_json_desc">Standard role-content structural JSON(Suport Claude,LibreChat etc.)</string>
 
@@ -6589,8 +6585,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="version_update">Actualizare de versiune</string>
     <string name="mcp_no_zip_selected">Nu s-a selectat nimicZIPDocument</string>
     <string name="mcp_uninstall_failed">Eșecul dezinstalării</string>
-    <string name="chatgpt_parse_error">Analiză ChatGPT Eroare de formatare: %1$s</string>
-    <string name="chatgpt_import_from">De la ChatGPT Import</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">Executare</string>
     <string name="uiautomation_complete">Finalizat</string>
     <string name="message_list_empty">Lista de mesaje nu poate fi goală</string>
@@ -7388,18 +7383,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="export_assistant">asistent</string>
     <string name="export_model">(Model: %1$s)</string>
 
-    <!-- ChatBoxConverter (新增) -->
-    <string name="chatbox_unsupported_format">Nu este acceptat ChatBox Format</string>
-    <string name="chatbox_unsupported_format_detail">Vă rugăm să importați ChatBox Exportat JSON(Setări &gt; Setări generale &gt; Backupul datelor &gt; (Exportați datele selectate)</string>
-    <string name="chatbox_parse_error">Analiză ChatBox Eroare de formatare: %1$s</string>
-    <string name="chatbox_invalid_export_file">Nu este valabil ChatBox Exportare fișiere</string>
-    <string name="chatbox_invalid_export_hint">Vă rugăm să ChatBox Setări &gt; Setări generale &gt; Exportarea datelor prin opțiunea „Exportare date selectate” JSON</string>
-    <string name="chatbox_import_group">De la ChatBox Import</string>
-    <string name="chatbox_message_generation_failed">Eroare la generarea mesajului: %1$s</string>
-    <string name="chatbox_image_not_saved">Mesajul conținea inițial o imagine, dar aceasta nu a fost salvată</string>
-    <string name="chatbox_role_user">Utilizator</string>
-    <string name="chatbox_role_assistant">asistent</string>
-    <string name="chatbox_role_system">Sistem</string>
     <string name="role_assistant">asistent</string>
     <string name="role_system">Sistem</string>
     <string name="role_model">Model</string>

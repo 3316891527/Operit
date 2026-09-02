@@ -4948,10 +4948,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="backup_import_format_hint">Silakan pilih format riwayat percakapan yang akan diimpor:</string>
     <string name="backup_format_operit">Operit JSON (Direkomendasikan)</string>
     <string name="backup_format_operit_desc">Format asli aplikasi ini, mempertahankan semua data secara lengkap</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">Format ekspor conversations.json OpenAI ChatGPT</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">Format ekspor aplikasi desktop ChatBox</string>
     <string name="backup_format_generic_json">JSON Umum</string>
     <string name="backup_format_generic_json_desc">JSON dengan struktur role-content standar (mendukung Claude, LibreChat, dll.)</string>
     <string name="backup_import_result_success">Berhasil mengimpor format %1$s:\n- Catatan baru: %2$d\n- Catatan diperbarui: %3$d%4$s</string>
@@ -5689,8 +5685,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="version_update">Pembaruan versi</string>
     <string name="mcp_no_zip_selected">File ZIP belum dipilih</string>
     <string name="mcp_uninstall_failed">Gagal mencopot pemasangan</string>
-    <string name="chatgpt_parse_error">Gagal memparsing format ChatGPT: %1$s</string>
-    <string name="chatgpt_import_from">Impor dari ChatGPT</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">Eksekusi</string>
     <string name="uiautomation_complete">Selesai</string>
     <string name="message_list_empty">Daftar pesan tidak boleh kosong</string>
@@ -6413,17 +6408,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="export_user">Pengguna</string>
     <string name="export_assistant">Asisten</string>
     <string name="export_model">(Model: %1$s)</string>
-    <string name="chatbox_unsupported_format">Format ChatBox tidak didukung</string>
-    <string name="chatbox_unsupported_format_detail">Harap impor JSON yang diekspor dari ChatBox (Pengaturan &gt; Pengaturan Umum &gt; Cadangan Data &gt; Ekspor data yang dicentang)</string>
-    <string name="chatbox_parse_error">Gagal mengurai format ChatBox: %1$s</string>
-    <string name="chatbox_invalid_export_file">Bukan file ekspor ChatBox yang valid</string>
-    <string name="chatbox_invalid_export_hint">Gunakan "Ekspor data yang dicentang" di ChatBox di Pengaturan &gt; Pengaturan Umum &gt; Cadangan Data untuk mengekspor JSON</string>
-    <string name="chatbox_import_group">Impor dari ChatBox</string>
-    <string name="chatbox_message_generation_failed">Pembuatan pesan gagal: %1$s</string>
-    <string name="chatbox_image_not_saved">Pesan ini awalnya berisi gambar, tetapi tidak disimpan</string>
-    <string name="chatbox_role_user">Pengguna</string>
-    <string name="chatbox_role_assistant">Asisten</string>
-    <string name="chatbox_role_system">Sistem</string>
 
     <string name="role_assistant">Asisten</string>
     <string name="role_system">Sistem</string>

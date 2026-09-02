@@ -3211,8 +3211,7 @@
     <string name="version_update">Version Update</string>
     <string name="mcp_no_zip_selected">No ZIP file selected</string>
     <string name="mcp_uninstall_failed">Uninstall failed</string>
-    <string name="chatgpt_parse_error">Failed to parse ChatGPT format: %1$s</string>
-    <string name="chatgpt_import_from">Import from ChatGPT</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">Execute</string>
     <string name="uiautomation_complete">Complete</string>
     <string name="message_list_empty">Message list cannot be empty</string>
@@ -5421,10 +5420,6 @@
     <string name="backup_import_format_hint">Please select the chat history format to import:</string>
     <string name="backup_format_operit">Operit JSON (Recommended)</string>
     <string name="backup_format_operit_desc">Native format of this app, preserves variants and all other data</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">OpenAI ChatGPT conversations.json export format</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">ChatBox desktop application export format</string>
     <string name="backup_format_generic_json">Generic JSON</string>
     <string name="backup_format_generic_json_desc">Standard role-content JSON structure (supports Claude, LibreChat, etc.)</string>
     
@@ -7058,18 +7053,6 @@
     <string name="export_assistant">Assistant</string>
     <string name="export_model">(Model: %1$s)</string>
 
-    <!-- ChatBoxConverter -->
-    <string name="chatbox_unsupported_format">Unsupported ChatBox format</string>
-    <string name="chatbox_unsupported_format_detail">Please import JSON exported by ChatBox (Settings > General Settings > Data Backup > Export Selected Data)</string>
-    <string name="chatbox_parse_error">Failed to parse ChatBox format: %1$s</string>
-    <string name="chatbox_invalid_export_file">Invalid ChatBox export file</string>
-    <string name="chatbox_invalid_export_hint">Please use "Export Selected Data" in ChatBox Settings > General Settings > Data Backup to export JSON</string>
-    <string name="chatbox_import_group">Imported from ChatBox</string>
-    <string name="chatbox_message_generation_failed">Message generation failed: %1$s</string>
-    <string name="chatbox_image_not_saved">This message originally contained images but was not saved</string>
-    <string name="chatbox_role_user">User</string>
-    <string name="chatbox_role_assistant">Assistant</string>
-    <string name="chatbox_role_system">System</string>
     <string name="role_assistant">Assistant</string>
     <string name="role_system">System</string>
     <string name="role_model">Model</string>
