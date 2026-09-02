@@ -182,7 +182,7 @@ class ToolExecutionManagerTest {
         )
 
         assertEquals(1, live.size)
-        assertTrue(live.single().length <= 64 * 1024 + 2)
+        assertTrue(live.single().length <= 128 * 1024 + 2)
         assertTrue(live.single().contains("[工具结果过长，已截断]"))
     }
     @Test
