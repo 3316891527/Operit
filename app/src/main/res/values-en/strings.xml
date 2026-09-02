@@ -727,8 +727,10 @@
     <!-- Context Menu -->
     <string name="copy_message">Copy Message</string>
     <string name="markdown_source">Markdown source</string>
+    <string name="xml_source">XML source</string>
     <string name="copy_plain_text">Copy plain text</string>
     <string name="copy_markdown_source">Copy Markdown source</string>
+    <string name="copy_xml_source">Copy XML source</string>
     <string name="chat_hidden_user_message_placeholder">Auto-triggered user message (content hidden)</string>
     <string name="chat_hidden_user_message_badge">AUTO</string>
     <string name="info">Info</string>
@@ -5043,6 +5045,7 @@
     <string name="camera_permission_denied_toast">Camera permission denied</string>
     <string name="microphone_permission_denied_toast">Microphone permission denied</string>
     <string name="executing_tool">Executing tool: %1$s</string>
+    <string name="waiting_tool_result">Waiting for tool result: %1$s</string>
     <string name="processing_tool_result">Processing tool result: %1$s</string>
     <string name="input_question_hint">Enter your question...</string>
     <string name="input_question_with_workspace">Enter question, use @ to reference files</string>
@@ -5284,6 +5287,8 @@
     <string name="html_content_block">HTML Content</string>
     <string name="mood_tag_block">Mood Tag</string>
     <string name="thinking_tools_group_title_with_count">Thinking &amp; Tool Calls (%1$d)</string>
+    <string name="thinking_tools_group_title_with_counts">Thinking &amp; Tool Calls (%1$d + %2$d)</string>
+
     <string name="tools_group_title_with_count">Tool Calls (%1$d)</string>
     <string name="search_group_title">Search</string>
     <string name="thinking_search_group_title">Thinking and searching</string>
@@ -6079,10 +6084,22 @@
     <!-- Package Manager Module -->
     <string name="pkg_manage_env_vars">Manage Environment Variables</string>
     <string name="pkg_config_env_vars">Configure Environment Variables</string>
+    <string name="pkg_env_vars_subtitle">Manage the configuration required by packages and scripts</string>
     <string name="pkg_no_env_vars">The currently imported tool packages have not declared any required environment variables.</string>
     <string name="pkg_default">Default: %1$s</string>
     <string name="pkg_input_required">Input value (required)</string>
     <string name="pkg_input_optional">Input value (optional)</string>
+    <string name="pkg_env_vars_status">Configuration status</string>
+    <string name="pkg_env_vars_configured_count">%1$d / %2$d configured</string>
+    <string name="pkg_env_vars_complete">Configured</string>
+    <string name="pkg_env_vars_required_complete">Required items configured</string>
+    <string name="pkg_env_vars_missing_required">%1$d required remaining</string>
+    <string name="pkg_env_vars_required">Required</string>
+    <string name="pkg_env_vars_optional">Optional</string>
+    <string name="pkg_env_vars_configured">Configured</string>
+    <string name="pkg_env_vars_missing_description">This variable has no usage description.</string>
+    <string name="pkg_env_vars_show_value">Show value</string>
+    <string name="pkg_env_vars_hide_value">Hide value</string>
     <string name="pkg_save">Save</string>
     <string name="pkg_cancel">Cancel</string>
 
@@ -6647,7 +6664,7 @@
 
     <string name="provider_error_response_empty">API response is empty</string>
     <string name="provider_error_parsing_failed">Failed to parse response</string>
-    <string name="provider_error_retry_message">%1$s, retrying (%2$d)...</string>
+    <string name="provider_error_retry_message">%1, retrying (%2), waiting %3 sec...</string>
     <string name="provider_error_timeout">Connection timeout</string>
     <string name="provider_error_network_interrupted">Network interrupted</string>
     <string name="operit_network_error_format">Failed: Network request failed, status code: %1$d, error: %2$s</string>
@@ -8421,10 +8438,27 @@
     <string name="thinking_config_preset_add_selected">Add %1$d presets</string>
     <string name="thinking_config_preset_added_count">Added %1$d built-in presets</string>
     <string name="chat_message_rendering_title">Message rendering</string>
-    <string name="chat_message_rendering_ai_markdown_latex">Render Markdown and LaTeX in AI messages</string>
-    <string name="chat_message_rendering_ai_markdown_latex_desc">Display Markdown and LaTeX expressions in AI messages as rich content.</string>
+    <string name="chat_message_rendering_ai_markdown_latex">Render Markdown, LaTeX, and XML in AI messages</string>
+    <string name="chat_message_rendering_ai_markdown_latex_desc">Display Markdown, LaTeX expressions, and structured XML content such as thinking, tool calls, and results in AI messages as rich content.</string>
     <string name="chat_message_rendering_user_markdown_latex">Render Markdown and LaTeX in user messages</string>
     <string name="chat_message_rendering_user_markdown_latex_desc">Display Markdown and LaTeX expressions in user messages as rich content.</string>
+
     <string name="chat_style_bubble_user_opacity">User bubble opacity: %1$d%%</string>
     <string name="chat_style_bubble_ai_opacity">AI bubble opacity: %1$d%%</string>
+    <string name="llm_retry_settings_title">Request retries</string>
+    <string name="llm_retry_settings_description">Configure automatic retries and wait timing after a model request fails.</string>
+    <string name="llm_retry_mode_fast">Fast</string>
+    <string name="llm_retry_mode_standard">Standard</string>
+    <string name="llm_retry_mode_stable">Stable</string>
+    <string name="llm_retry_mode_custom">Custom</string>
+    <string name="llm_retry_max_attempts">Maximum retry attempts</string>
+    <string name="llm_retry_max_attempts_description">Set to 0 to disable automatic retries. Maximum: 10.</string>
+    <string name="llm_retry_attempts_unit">times</string>
+    <string name="llm_retry_initial_delay">Initial wait</string>
+    <string name="llm_retry_initial_delay_description">Seconds before the first retry; later waits double.</string>
+    <string name="llm_retry_max_delay">Maximum single wait</string>
+    <string name="llm_retry_max_delay_description">A retry wait will never exceed this value.</string>
+    <string name="llm_retry_seconds_unit">sec</string>
+    <string name="llm_retry_schedule_value">Wait sequence: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Automatic retries disabled</string>
 </resources>
