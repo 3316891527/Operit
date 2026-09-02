@@ -69,6 +69,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.OperitUtilityTheme
 import com.ai.assistance.operit.util.LocaleUtils
 
