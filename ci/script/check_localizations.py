@@ -92,10 +92,17 @@ def locale_path_details(path: str) -> tuple[str, bool] | None:
         return bcp47.group("parts").replace("+", "-"), len(parts) == 1
     legacy = LEGACY_LOCALE_RE.fullmatch("-".join(parts[:2]))
     if legacy and legacy.group("region") is not None:
-        return f"{legacy.group('language')}-{legacy.group('region')}", len(parts) == 2
+        language = legacy.group("language")
+        if language == "in":
+            language = "id"
+        return f"{language}-{legacy.group('region')}", len(parts) == 2
     legacy = LEGACY_LOCALE_RE.fullmatch(parts[0])
     if legacy:
-        return legacy.group("language"), len(parts) == 1
+        language = legacy.group("language")
+        if language == "in":
+            language = "id"
+        return language, len(parts) == 1
+
     return None
 
 

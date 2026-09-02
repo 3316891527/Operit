@@ -27,6 +27,8 @@ def entry(name: str, text: str) -> ResourceEntry:
 def strings_path(locale: str) -> str:
     if locale == "zh":
         return "app/src/main/res/values/strings.xml"
+    if locale == "id":
+        return "app/src/main/res/values-in/strings.xml"
     parts = locale.split("-")
     if len(parts) == 1:
         qualifier = locale
@@ -206,6 +208,14 @@ class LocalizationAttributionTest(unittest.TestCase):
         self.assertEqual(
             locale_from_path("app/src/main/res/values-b+sr+Latn-night/strings.xml"),
             "sr-Latn",
+        )
+        self.assertEqual(
+            locale_from_path("app/src/main/res/values-in/strings.xml"),
+            "id",
+        )
+        self.assertEqual(
+            locale_from_path("app/src/main/res/values-in-rID/strings.xml"),
+            "id-ID",
         )
 
 
