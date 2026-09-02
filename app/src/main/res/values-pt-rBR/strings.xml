@@ -3607,7 +3607,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="waifu_mode_toggle_desc">As respostas da IA ​​serão enviadas divididas por pontuação</string>
     <string name="typing_speed_settings">Configurações de velocidade de digitação</string>
     <string name="typing_speed_desc">Controle o tempo de atraso de cada personagem para simular o ritmo de digitação de pessoas reais</string>
-    <string name="current_speed_format">Velocidade atual: %,1f caracteres por segundo</string>
+    <string name="current_speed_format">Velocidade atual: %.1f caracteres por segundo</string>
     <string name="speed_fast">rápido</string>
     <string name="speed_slow">lento</string>
     <string name="current_delay_format">Atual: %dms/caracteres</string>
@@ -5723,7 +5723,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="gemini_connection_test_failed">Falha no teste de conexão: %1$s</string>
     <string name="provider_error_response_empty">A resposta da API está vazia</string>
     <string name="provider_error_parsing_failed">Falha ao analisar a resposta</string>
-    <string name="provider_error_retry_message">%1, tentando novamente %2; aguardando %3 s...</string>
+    <string name="provider_error_retry_message">%1$s, tentando novamente %2$d; aguardando %3$d s...</string>
     <string name="provider_error_timeout">Tempo limite de conexão</string>
     <string name="provider_error_network_interrupted">Interrupção de rede</string>
     <string name="operit_network_error_format">Falha: A solicitação de rede falhou, código de status: %1$d, informações do erro: %2$s</string>

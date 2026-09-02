@@ -6451,7 +6451,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="gemini_connection_test_failed">Prueba de conexión fallida: %1$s</string>
     <string name="provider_error_response_empty">La respuesta de la API está vacía.</string>
     <string name="provider_error_parsing_failed">Error al analizar la respuesta.</string>
-    <string name="provider_error_retry_message">%1, reintento %2 en curso; esperando %3 s...</string>
+    <string name="provider_error_retry_message">%1$s, reintento %2$d en curso; esperando %3$d s...</string>
     <string name="provider_error_timeout">Tiempo de espera agotado.</string>
     <string name="provider_error_network_interrupted">Conexión de red interrumpida.</string>
     <string name="operit_network_error_format">Error: La solicitud de red falló, código de estado: %1$d, información del error: %2$s</string>

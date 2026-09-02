@@ -6133,7 +6133,7 @@
     <string name="gemini_connection_test_failed">연결 테스트 실패: %1$s</string>
     <string name="provider_error_response_empty">API 응답이 비어 있습니다.</string>
     <string name="provider_error_parsing_failed">응답을 구문 분석하지 못했습니다.</string>
-    <string name="provider_error_retry_message">%1, 재시도 중(%2), %3초 대기...</string>
+    <string name="provider_error_retry_message">%1$s, 재시도 중(%2$d), %3$d초 대기...</string>
     <string name="provider_error_timeout">연결 시간 초과</string>
     <string name="provider_error_network_interrupted">네트워크 중단됨</string>
     <string name="operit_network_error_format">실패: 네트워크 요청 실패, 상태 코드: %1$d, 오류 정보: %2$s</string>

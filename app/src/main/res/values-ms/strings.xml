@@ -6052,7 +6052,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="gemini_connection_test_failed">Ujian sambungan gagal: %1$s</string>
     <string name="provider_error_response_empty">Respons API kosong</string>
     <string name="provider_error_parsing_failed">Gagal menghuraikan respons</string>
-    <string name="provider_error_retry_message">%1, sedang mencuba semula kali ke-%2; menunggu %3 saat...</string>
+    <string name="provider_error_retry_message">%1$s, sedang mencuba semula kali ke-%2$d; menunggu %3$d saat...</string>
     <string name="provider_error_timeout">Sambungan tamat masa</string>
     <string name="provider_error_network_interrupted">Rangkaian terputus</string>
     <string name="operit_network_error_format">Gagal: Permintaan rangkaian gagal, kod status: %1$d, maklumat ralat: %2$s</string>

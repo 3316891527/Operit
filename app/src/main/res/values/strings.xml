@@ -7249,7 +7249,7 @@
 
     <string name="provider_error_response_empty">API响应为空</string>
     <string name="provider_error_parsing_failed">解析响应失败</string>
-    <string name="provider_error_retry_message">%1，正在进行第 %2 次重试，等待 %3 秒...</string>
+    <string name="provider_error_retry_message">%1$s，正在进行第 %2$d 次重试，等待 %3$d 秒...</string>
     <string name="provider_error_timeout">连接超时</string>
     <string name="provider_error_network_interrupted">网络中断</string>
     <string name="operit_network_error_format">失败：网络请求失败，状态码：%1$d，错误信息：%2$s</string>

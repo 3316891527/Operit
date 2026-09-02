@@ -142,13 +142,20 @@ class MessageCoordinationDelegate(
                         ?: context.getString(R.string.provider_error_network_interrupted)
                     val waitSeconds =
                         ((retry.retryAfterMs + 999L) / 1_000L).coerceAtLeast(1L)
+                    val retryToastMessage =
+                        try {
+                            context.getString(
+                                R.string.provider_error_retry_message,
+                                errorMessage,
+                                retry.retryAttempt,
+                                waitSeconds
+                            )
+                        } catch (error: IllegalArgumentException) {
+                            AppLogger.e(TAG, "Failed to format retry message", error)
+                            "$errorMessage (retry ${retry.retryAttempt}, waiting ${waitSeconds}s)"
+                        }
                     uiStateDelegate.showRetryToast(
-                        context.getString(
-                            R.string.provider_error_retry_message,
-                            errorMessage,
-                            retry.retryAttempt,
-                            waitSeconds
-                        ),
+                        retryToastMessage,
                         retry.retryAfterMs
                     )
                 }

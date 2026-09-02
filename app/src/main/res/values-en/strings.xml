@@ -6659,7 +6659,7 @@
 
     <string name="provider_error_response_empty">API response is empty</string>
     <string name="provider_error_parsing_failed">Failed to parse response</string>
-    <string name="provider_error_retry_message">%1, retrying (%2), waiting %3 sec...</string>
+    <string name="provider_error_retry_message">%1$s, retrying (%2$d), waiting %3$d sec...</string>
     <string name="provider_error_timeout">Connection timeout</string>
     <string name="provider_error_network_interrupted">Network interrupted</string>
     <string name="operit_network_error_format">Failed: Network request failed, status code: %1$d, error: %2$s</string>
