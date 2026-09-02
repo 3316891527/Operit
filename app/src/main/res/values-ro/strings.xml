@@ -1605,8 +1605,10 @@
     <!-- Context Menu -->
     <string name="copy_message">Copiere mesaj</string>
     <string name="markdown_source">Markdown Codul sursă</string>
+    <string name="xml_source">XML Codul sursă</string>
     <string name="copy_plain_text">Copiere text simplu</string>
     <string name="copy_markdown_source">Copiere Markdown Codul sursă</string>
+    <string name="copy_xml_source">Copiere XML Codul sursă</string>
     <string name="chat_hidden_user_message_placeholder">Mesaj automat către utilizator (conținutul a fost ascuns)</string>
     <string name="chat_hidden_user_message_badge">Declanșare automată</string>
     <string name="info">Informații</string>
@@ -5315,6 +5317,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="camera_permission_denied_toast">Accesul la cameră a fost refuzat</string>
     <string name="microphone_permission_denied_toast">Accesul la microfon a fost refuzat</string>
     <string name="executing_tool">Instrumentul este în curs de execuție: %1$s</string>
+    <string name="waiting_tool_result">Se așteaptă rezultatul instrumentului: %1$s</string>
     <string name="processing_tool_result">Se procesează rezultatele instrumentului: %1$s</string>
     <string name="input_question_hint">Vă rugăm să introduceți întrebarea dumneavoastră...</string>
     <string name="input_question_with_workspace">Introduceți problema, folosind@Fișier de referință</string>
@@ -5582,6 +5585,8 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="html_content_block">HTMLConținut</string>
     <string name="mood_tag_block">Etichete emoționale</string>
     <string name="thinking_tools_group_title_with_count">Reflecție și utilizarea instrumentelor (%1$d)</string>
+    <string name="thinking_tools_group_title_with_counts">Reflecție și utilizarea instrumentelor (%1$d + %2$d)</string>
+
     <string name="tools_group_title_with_count">Apelarea instrumentelor (%1$d)</string>
 
     <!-- 备份设置界面 -->
@@ -6246,10 +6251,22 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <!-- Package Manager Module -->
     <string name="pkg_manage_env_vars">Gestionarea variabilelor de mediu</string>
     <string name="pkg_config_env_vars">Configurarea variabilelor de mediu</string>
+    <string name="pkg_env_vars_subtitle">Gestionează configurația necesară pachetelor și scripturilor</string>
     <string name="pkg_no_env_vars">Pachetul importat în prezent nu conține declarațiile privind variabilele de mediu necesare.</string>
     <string name="pkg_default">Implicit: %1$s</string>
     <string name="pkg_input_required">Valoare introdusă (obligatorie)</string>
     <string name="pkg_input_optional">Valoare introdusă (opțional)</string>
+    <string name="pkg_env_vars_status">Stare configurare</string>
+    <string name="pkg_env_vars_configured_count">%1$d / %2$d configurate</string>
+    <string name="pkg_env_vars_complete">Configurat</string>
+    <string name="pkg_env_vars_required_complete">Elementele obligatorii sunt configurate</string>
+    <string name="pkg_env_vars_missing_required">Mai lipsesc %1$d obligatorii</string>
+    <string name="pkg_env_vars_required">Obligatoriu</string>
+    <string name="pkg_env_vars_optional">Opțional</string>
+    <string name="pkg_env_vars_configured">Configurat</string>
+    <string name="pkg_env_vars_missing_description">Această variabilă nu are o descriere de utilizare.</string>
+    <string name="pkg_env_vars_show_value">Arată valoarea</string>
+    <string name="pkg_env_vars_hide_value">Ascunde valoarea</string>
     <string name="pkg_save">Salvare</string>
     <string name="pkg_cancel">Anulare</string>
 
@@ -6969,7 +6986,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
 
     <string name="provider_error_response_empty">APIRăspunsul este gol</string>
     <string name="provider_error_parsing_failed">Eșecul analizării răspunsului</string>
-    <string name="provider_error_retry_message">%1$s, se află la a %2$d A doua încercare...</string>
+    <string name="provider_error_retry_message">%1, reîncercarea %2; se așteaptă %3 s...</string>
     <string name="provider_error_timeout">Timpul de așteptare pentru conectare a expirat</string>
     <string name="provider_error_network_interrupted">Întrerupere a conexiunii la internet</string>
     <string name="operit_network_error_format">Eșec: Solicitarea de rețea a eșuat, cod de stare: %1$d, informații despre eroare: %2$s</string>
@@ -8154,10 +8171,27 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="thinking_config_preset_add_selected">Adaugă %1$d presetări</string>
     <string name="thinking_config_preset_added_count">Au fost adăugate %1$d presetări integrate</string>
     <string name="chat_message_rendering_title">Redarea mesajelor</string>
-    <string name="chat_message_rendering_ai_markdown_latex">Redă Markdown și LaTeX în mesajele AI</string>
-    <string name="chat_message_rendering_ai_markdown_latex_desc">Afișează Markdown și expresiile LaTeX din mesajele AI ca conținut formatat.</string>
+    <string name="chat_message_rendering_ai_markdown_latex">Redă Markdown, LaTeX și XML în mesajele AI</string>
+    <string name="chat_message_rendering_ai_markdown_latex_desc">Afișează Markdown, expresiile LaTeX și conținut XML structurat, precum raționamente, apeluri de instrumente și rezultate, în mesajele AI ca conținut formatat.</string>
     <string name="chat_message_rendering_user_markdown_latex">Redă Markdown și LaTeX în mesajele utilizatorului</string>
-    <string name="chat_message_rendering_user_markdown_latex_desc">Afișează Markdown și expresiile LaTeX din mesajele utilizatorului ca conținut formatat.</string>
+    <string name="chat_message_rendering_user_markdown_latex_desc">Afișează Markdown și expresiile LaTeX în mesajele utilizatorului ca conținut formatat.</string>
+
     <string name="chat_style_bubble_user_opacity">Opacitatea balonului utilizatorului: %1$d%%</string>
     <string name="chat_style_bubble_ai_opacity">Opacitatea balonului AI: %1$d%%</string>
+    <string name="llm_retry_settings_title">Reîncercări solicitare</string>
+    <string name="llm_retry_settings_description">Configurează reîncercările automate și timpul de așteptare după eșecul modelului.</string>
+    <string name="llm_retry_mode_fast">Rapid</string>
+    <string name="llm_retry_mode_standard">Standard</string>
+    <string name="llm_retry_mode_stable">Stabil</string>
+    <string name="llm_retry_mode_custom">Personalizat</string>
+    <string name="llm_retry_max_attempts">Număr maxim de reîncercări</string>
+    <string name="llm_retry_max_attempts_description">Setează 0 pentru dezactivare. Maxim: 10.</string>
+    <string name="llm_retry_attempts_unit">ori</string>
+    <string name="llm_retry_initial_delay">Așteptare inițială</string>
+    <string name="llm_retry_initial_delay_description">Secunde înainte de prima reîncercare; apoi timpul se dublează.</string>
+    <string name="llm_retry_max_delay">Așteptare maximă</string>
+    <string name="llm_retry_max_delay_description">Așteptarea nu va depăși această valoare.</string>
+    <string name="llm_retry_seconds_unit">s</string>
+    <string name="llm_retry_schedule_value">Secvență de așteptare: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Reîncercările automate sunt dezactivate</string>
 </resources>

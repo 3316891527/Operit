@@ -1288,8 +1288,10 @@
     <!-- Context Menu -->
     <string name="copy_message">Copiar Mensaje</string>
     <string name="markdown_source">Código fuente Markdown</string>
+    <string name="xml_source">Código fuente XML</string>
     <string name="copy_plain_text">Copiar texto sin formato</string>
     <string name="copy_markdown_source">Copiar código fuente Markdown</string>
+    <string name="copy_xml_source">Copiar código fuente XML</string>
     <string name="read_message">Leer Mensaje</string>
     <string name="pause_reading">Pausar Lectura</string>
     <string name="resume_reading">Continuar Lectura</string>
@@ -4329,6 +4331,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="camera_permission_denied_toast">Permiso de cámara denegado</string>
     <string name="microphone_permission_denied_toast">Permiso de micrófono denegado</string>
     <string name="executing_tool">Ejecutando herramienta: %1$s</string>
+    <string name="waiting_tool_result">Esperando el resultado de la herramienta: %1$s</string>
     <string name="processing_tool_result">Procesando resultado de herramienta: %1$s</string>
     <string name="input_question_hint">Ingrese su pregunta...</string>
     <string name="input_question_with_workspace">Ingrese una pregunta, use @ para referenciar archivos</string>
@@ -4943,6 +4946,8 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="audio_block">Audio</string>
     <string name="video_block">Video</string>
     <string name="thinking_tools_group_title_with_count">Pensamiento y llamadas a herramientas (%1$d)</string>
+    <string name="thinking_tools_group_title_with_counts">Pensamiento y llamadas a herramientas (%1$d + %2$d)</string>
+
     <string name="tools_group_title_with_count">Llamadas a herramientas (%1$d)</string>
 
     <string name="backup_data_overview">Resumen de datos</string>
@@ -5379,10 +5384,22 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="mcp_server_not_installed_cannot_configure">Este plugin no está instalado, no se puede configurar</string>
     <string name="pkg_manage_env_vars">Gestionar variables de entorno</string>
     <string name="pkg_config_env_vars">Configurar variables de entorno</string>
+    <string name="pkg_env_vars_subtitle">Gestiona la configuración necesaria para paquetes y scripts</string>
     <string name="pkg_no_env_vars">El paquete de herramientas importado actualmente no declara variables de entorno necesarias.</string>
     <string name="pkg_default">Predeterminado: %1$s</string>
     <string name="pkg_input_required">Introduce un valor (obligatorio)</string>
     <string name="pkg_input_optional">Introduce un valor (opcional)</string>
+    <string name="pkg_env_vars_status">Estado de configuración</string>
+    <string name="pkg_env_vars_configured_count">%1$d / %2$d configuradas</string>
+    <string name="pkg_env_vars_complete">Configurado</string>
+    <string name="pkg_env_vars_required_complete">Obligatorias configuradas</string>
+    <string name="pkg_env_vars_missing_required">Falta %1$d obligatoria</string>
+    <string name="pkg_env_vars_required">Obligatoria</string>
+    <string name="pkg_env_vars_optional">Opcional</string>
+    <string name="pkg_env_vars_configured">Configurada</string>
+    <string name="pkg_env_vars_missing_description">Esta variable no tiene descripción de uso.</string>
+    <string name="pkg_env_vars_show_value">Mostrar valor</string>
+    <string name="pkg_env_vars_hide_value">Ocultar valor</string>
     <string name="pkg_save">Guardar</string>
     <string name="pkg_cancel">Cancelar</string>
     <string name="pkg_confirm_delete">Confirmar eliminación</string>
@@ -6450,7 +6467,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="gemini_connection_test_failed">Prueba de conexión fallida: %1$s</string>
     <string name="provider_error_response_empty">La respuesta de la API está vacía.</string>
     <string name="provider_error_parsing_failed">Error al analizar la respuesta.</string>
-    <string name="provider_error_retry_message">%1$s, reintento %2$d en curso...</string>
+    <string name="provider_error_retry_message">%1, reintento %2 en curso; esperando %3 s...</string>
     <string name="provider_error_timeout">Tiempo de espera agotado.</string>
     <string name="provider_error_network_interrupted">Conexión de red interrumpida.</string>
     <string name="operit_network_error_format">Error: La solicitud de red falló, código de estado: %1$d, información del error: %2$s</string>
@@ -7626,10 +7643,27 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="thinking_config_preset_add_selected">Añadir %1$d preajustes</string>
     <string name="thinking_config_preset_added_count">Se añadieron %1$d preajustes integrados</string>
     <string name="chat_message_rendering_title">Renderizado de mensajes</string>
-    <string name="chat_message_rendering_ai_markdown_latex">Renderizar Markdown y LaTeX en los mensajes de IA</string>
-    <string name="chat_message_rendering_ai_markdown_latex_desc">Muestra Markdown y expresiones LaTeX de los mensajes de IA como contenido enriquecido.</string>
+    <string name="chat_message_rendering_ai_markdown_latex">Renderizar Markdown, LaTeX y XML en los mensajes de IA</string>
+    <string name="chat_message_rendering_ai_markdown_latex_desc">Muestra Markdown, expresiones LaTeX y contenido XML estructurado, como razonamientos, llamadas a herramientas y resultados, en los mensajes de IA como contenido enriquecido.</string>
     <string name="chat_message_rendering_user_markdown_latex">Renderizar Markdown y LaTeX en los mensajes del usuario</string>
-    <string name="chat_message_rendering_user_markdown_latex_desc">Muestra Markdown y expresiones LaTeX de los mensajes del usuario como contenido enriquecido.</string>
+    <string name="chat_message_rendering_user_markdown_latex_desc">Muestra Markdown y expresiones LaTeX en los mensajes del usuario como contenido enriquecido.</string>
+
     <string name="chat_style_bubble_user_opacity">Opacidad de la burbuja del usuario: %1$d%%</string>
     <string name="chat_style_bubble_ai_opacity">Opacidad de la burbuja de IA: %1$d%%</string>
+    <string name="llm_retry_settings_title">Reintentos de solicitud</string>
+    <string name="llm_retry_settings_description">Configura los reintentos automáticos y la espera tras un fallo del modelo.</string>
+    <string name="llm_retry_mode_fast">Rápido</string>
+    <string name="llm_retry_mode_standard">Estándar</string>
+    <string name="llm_retry_mode_stable">Estable</string>
+    <string name="llm_retry_mode_custom">Personalizado</string>
+    <string name="llm_retry_max_attempts">Máximo de reintentos</string>
+    <string name="llm_retry_max_attempts_description">Usa 0 para desactivar los reintentos. Máximo: 10.</string>
+    <string name="llm_retry_attempts_unit">veces</string>
+    <string name="llm_retry_initial_delay">Espera inicial</string>
+    <string name="llm_retry_initial_delay_description">Segundos antes del primer reintento; después se duplica.</string>
+    <string name="llm_retry_max_delay">Espera máxima</string>
+    <string name="llm_retry_max_delay_description">Ninguna espera superará este valor.</string>
+    <string name="llm_retry_seconds_unit">s</string>
+    <string name="llm_retry_schedule_value">Secuencia de espera: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Reintentos automáticos desactivados</string>
 </resources>
