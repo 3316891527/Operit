@@ -215,7 +215,25 @@ def load_snapshot(commit: str) -> Snapshot:
 
 
 def placeholder_tokens(text: str) -> Counter[str]:
-    return Counter(PRINTF_RE.findall(text) + BRACE_RE.findall(text))
+    tokens: list[str] = []
+    index = 0
+    while index < len(text):
+        if text[index] != "%":
+            index += 1
+            continue
+        if text.startswith("%%", index):
+            index += 2
+            continue
+        match = PRINTF_RE.match(text, index)
+        if match:
+            tokens.append(match.group(0))
+            index = match.end()
+        else:
+            # Keep malformed markers visible to the comparison instead of silently dropping them.
+            tokens.append(text[index : index + 1])
+            index += 1
+    tokens.extend(BRACE_RE.findall(text))
+    return Counter(tokens)
 
 
 def placeholder_mismatch(source: ResourceEntry, target: ResourceEntry) -> bool:
