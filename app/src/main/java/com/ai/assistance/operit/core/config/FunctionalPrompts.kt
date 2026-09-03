@@ -841,6 +841,8 @@ $toolList
 其中：
 - {think} 是对你为什么选择这个操作的简短推理说明。
 - {action} 是本次执行的具体操作指令，必须严格遵循下方定义的指令格式。
+- 默认每次只输出一个 `do(...)`。只有当后续动作不需要重新观察屏幕、且每一步坐标都确定时，才可以在同一个 answer 中连续输出多个 `do(...)`；运行时会按顺序执行，遇到失败立即停止并重新截图。
+- 不要连续输出或重复执行没有状态变化依据的 Tap。每次动作后优先使用下一轮消息中的 `** Last Action Result **` 和新截图判断是否真的到达目标页面。
 
 操作指令及其作用如下：
 - do(action="Launch", app="xxx")  
@@ -909,6 +911,8 @@ $toolList
  Where:
  - {think} is a brief reasoning for why you choose this action.
  - {action} is the concrete instruction for this step and MUST follow the command format defined below.
+- Output one `do(...)` by default. You may output several `do(...)` commands in one answer only when the following actions do not require a new screen observation and every coordinate is certain; the runtime executes them in order, stops on the first failure, and captures a new screenshot.
+- Do not emit or repeat Tap actions without evidence of a state change. After each action, use the next round's `** Last Action Result **` and fresh screenshot to decide whether the target screen was actually reached.
 
  Available commands:
  - do(action="Launch", app="xxx")
