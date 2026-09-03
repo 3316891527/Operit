@@ -8344,4 +8344,20 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="thinking_config_subtitle">Potrivește parametrii de raționament în ordinea regulilor; se aplică prima regulă potrivită</string>
     <string name="thinking_config_title">Configurarea raționamentului</string>
     <string name="translation_retry_error_status">Solicitarea de traducere a eșuat (reîncercare %1$d/%2$d): %3$s</string>
+    <string name="llm_retry_settings_title">Reîncercări solicitare</string>
+    <string name="llm_retry_settings_description">Configurează reîncercările automate și timpul de așteptare după eșecul modelului.</string>
+    <string name="llm_retry_mode_fast">Rapid</string>
+    <string name="llm_retry_mode_standard">Standard</string>
+    <string name="llm_retry_mode_stable">Stabil</string>
+    <string name="llm_retry_mode_custom">Personalizat</string>
+    <string name="llm_retry_max_attempts">Număr maxim de reîncercări</string>
+    <string name="llm_retry_max_attempts_description">Setează 0 pentru dezactivare. Maxim: 10.</string>
+    <string name="llm_retry_attempts_unit">ori</string>
+    <string name="llm_retry_initial_delay">Așteptare inițială</string>
+    <string name="llm_retry_initial_delay_description">Secunde înainte de prima reîncercare; apoi timpul se dublează.</string>
+    <string name="llm_retry_max_delay">Așteptare maximă</string>
+    <string name="llm_retry_max_delay_description">Așteptarea nu va depăși această valoare.</string>
+    <string name="llm_retry_seconds_unit">s</string>
+    <string name="llm_retry_schedule_value">Secvență de așteptare: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Reîncercările automate sunt dezactivate</string>
 </resources>

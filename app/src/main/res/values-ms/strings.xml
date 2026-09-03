@@ -7746,4 +7746,20 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="thinking_config_rule_order_hint">Peraturan disemak dari atas ke bawah. Peraturan aktif pertama yang sepadan dengan model akan digunakan. Gunakan anak panah pada setiap peraturan untuk mengubah susunannya.</string>
     <string name="thinking_config_subtitle">Padankan parameter pemikiran mengikut susunan peraturan; peraturan pertama yang sepadan akan digunakan</string>
     <string name="thinking_config_title">Konfigurasi pemikiran</string>
+    <string name="llm_retry_settings_title">Cuba semula permintaan</string>
+    <string name="llm_retry_settings_description">Tetapkan percubaan semula automatik dan masa menunggu selepas permintaan model gagal.</string>
+    <string name="llm_retry_mode_fast">Pantas</string>
+    <string name="llm_retry_mode_standard">Standard</string>
+    <string name="llm_retry_mode_stable">Stabil</string>
+    <string name="llm_retry_mode_custom">Tersuai</string>
+    <string name="llm_retry_max_attempts">Maksimum percubaan semula</string>
+    <string name="llm_retry_max_attempts_description">Tetapkan 0 untuk mematikan. Maksimum: 10.</string>
+    <string name="llm_retry_attempts_unit">kali</string>
+    <string name="llm_retry_initial_delay">Tunggu awal</string>
+    <string name="llm_retry_initial_delay_description">Saat sebelum percubaan pertama; selepas itu masa digandakan.</string>
+    <string name="llm_retry_max_delay">Tunggu maksimum</string>
+    <string name="llm_retry_max_delay_description">Masa menunggu tidak akan melebihi nilai ini.</string>
+    <string name="llm_retry_seconds_unit">saat</string>
+    <string name="llm_retry_schedule_value">Urutan menunggu: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Percubaan semula automatik dimatikan</string>
 </resources>

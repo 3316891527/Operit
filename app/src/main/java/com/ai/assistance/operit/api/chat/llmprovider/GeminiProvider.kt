@@ -1065,12 +1065,13 @@ open class GeminiProvider(
         context: Context,
         exception: Exception,
         retryCount: Int,
-        maxRetries: Int,
+        retryPolicy: LlmRetryPolicySnapshot,
         enableRetry: Boolean,
         onNonFatalError: suspend (String) -> Unit,
         onRetryAccepted: suspend () -> Unit,
-        buildRetryMessage: (String, Int) -> String
+        buildRetryMessage: (String, Int, Long) -> String
     ): Int {
+        val maxRetries = retryPolicy.maxRetryAttempts
         if (exception is UserCancellationException || exception is kotlinx.coroutines.CancellationException) {
             throw exception
         }
@@ -1090,6 +1091,10 @@ open class GeminiProvider(
 
         val newRetryCount = retryCount + 1
         if (newRetryCount > maxRetries) {
+            if (maxRetries == 0) {
+                onNonFatalError(errorText)
+                throw IOException(errorText, exception)
+            }
             logError("$errorText 且达到最大重试次数($maxRetries)", exception)
             throw IOException(
                 context.getString(R.string.gemini_error_connection_timeout, maxRetries, errorText),
@@ -1099,10 +1104,11 @@ open class GeminiProvider(
 
         // A terminal failure must retain its streamed text; only a replacement request discards it.
         onRetryAccepted()
-        val retryDelayMs = LlmRetryPolicy.nextDelayMs(newRetryCount)
+        val retryDelayMs = retryPolicy.nextDelayMs(newRetryCount)
         AppLogger.w(TAG, "$errorText，将在 ${retryDelayMs}ms 后进行第 $newRetryCount 次重试...", exception)
         if (!shouldSuppressKeyPoolRateLimitNotice(apiKeyProvider, exception, TAG)) {
-            onNonFatalError(buildRetryMessage(errorText, newRetryCount))
+            val retryDelaySeconds = ((retryDelayMs + 999L) / 1_000L).coerceAtLeast(1L)
+            onNonFatalError(buildRetryMessage(errorText, newRetryCount, retryDelaySeconds))
         }
         delay(retryDelayMs)
         return newRetryCount
@@ -1140,7 +1146,8 @@ open class GeminiProvider(
 
         AppLogger.d(TAG, "发送消息到Gemini API, 模型: $modelName")
 
-        val maxRetries = LlmRetryPolicy.MAX_RETRY_ATTEMPTS
+        val retryPolicy = LlmRetryPolicy.snapshot(context)
+        val maxRetries = retryPolicy.maxRetryAttempts
         var retryCount = 0
         var lastException: Exception? = null
 
@@ -1252,12 +1259,17 @@ open class GeminiProvider(
                     context = context,
                     exception = e,
                     retryCount = retryCount,
-                    maxRetries = maxRetries,
+                    retryPolicy = retryPolicy,
                     enableRetry = enableRetry,
                     onNonFatalError = onNonFatalError,
                     onRetryAccepted = { emitRollback(requestSavepointId) },
-                    buildRetryMessage = { errorText, retryNumber ->
-                        context.getString(R.string.provider_error_retry_message, errorText, retryNumber)
+                    buildRetryMessage = { errorText, retryNumber, retryDelaySeconds ->
+                        context.getString(
+                            R.string.provider_error_retry_message,
+                            errorText,
+                            retryNumber,
+                            retryDelaySeconds
+                        )
                     },
                 )
             }

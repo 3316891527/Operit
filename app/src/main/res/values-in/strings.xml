@@ -7749,4 +7749,20 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="thinking_config_subtitle">Cocokkan parameter penalaran sesuai urutan aturan; aturan pertama yang cocok akan diterapkan</string>
     <string name="thinking_config_title">Konfigurasi penalaran</string>
 <string name="translation_retry_error_status">Permintaan terjemahan gagal (percobaan %1$d/%2$d): %3$s</string>
+    <string name="llm_retry_settings_title">Percobaan ulang permintaan</string>
+    <string name="llm_retry_settings_description">Atur percobaan ulang otomatis dan waktu tunggu setelah permintaan model gagal.</string>
+    <string name="llm_retry_mode_fast">Cepat</string>
+    <string name="llm_retry_mode_standard">Standar</string>
+    <string name="llm_retry_mode_stable">Stabil</string>
+    <string name="llm_retry_mode_custom">Kustom</string>
+    <string name="llm_retry_max_attempts">Maksimum percobaan ulang</string>
+    <string name="llm_retry_max_attempts_description">Atur 0 untuk menonaktifkan. Maksimum: 10.</string>
+    <string name="llm_retry_attempts_unit">kali</string>
+    <string name="llm_retry_initial_delay">Tunggu awal</string>
+    <string name="llm_retry_initial_delay_description">Detik sebelum percobaan pertama; waktu berikutnya berlipat dua.</string>
+    <string name="llm_retry_max_delay">Tunggu maksimum</string>
+    <string name="llm_retry_max_delay_description">Waktu tunggu tidak akan melebihi nilai ini.</string>
+    <string name="llm_retry_seconds_unit">dtk</string>
+    <string name="llm_retry_schedule_value">Urutan tunggu: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Percobaan ulang otomatis dinonaktifkan</string>
 </resources>

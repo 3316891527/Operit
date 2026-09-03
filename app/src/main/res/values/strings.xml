@@ -8344,4 +8344,20 @@
     <string name="theme_toolbar_opacity">工具栏不透明度: %1$d%%</string>
     <string name="toolreg_global_chat_runtime_state_desc">查询全局聊天运行状态</string>
     <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
+    <string name="llm_retry_settings_title">请求重试</string>
+    <string name="llm_retry_settings_description">配置模型请求失败后的自动重试次数和等待节奏。</string>
+    <string name="llm_retry_mode_fast">快速</string>
+    <string name="llm_retry_mode_standard">标准</string>
+    <string name="llm_retry_mode_stable">稳健</string>
+    <string name="llm_retry_mode_custom">自定义</string>
+    <string name="llm_retry_max_attempts">最大重试次数</string>
+    <string name="llm_retry_max_attempts_description">设为 0 可关闭自动重试，最多 10 次。</string>
+    <string name="llm_retry_attempts_unit">次</string>
+    <string name="llm_retry_initial_delay">首次等待</string>
+    <string name="llm_retry_initial_delay_description">第一次重试前等待的秒数，后续按 2 倍增长。</string>
+    <string name="llm_retry_max_delay">最长单次等待</string>
+    <string name="llm_retry_max_delay_description">每次重试等待时间不会超过此值。</string>
+    <string name="llm_retry_seconds_unit">秒</string>
+    <string name="llm_retry_schedule_value">等待序列：%1$s</string>
+    <string name="llm_retry_schedule_disabled">自动重试已关闭</string>
 </resources>

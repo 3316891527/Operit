@@ -8363,4 +8363,20 @@
     <string name="thinking_config_subtitle">Match thinking parameters in rule order; the first matching rule applies</string>
     <string name="thinking_config_title">Thinking configuration</string>
     <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
+    <string name="llm_retry_settings_title">Request retries</string>
+    <string name="llm_retry_settings_description">Configure automatic retries and wait timing after a model request fails.</string>
+    <string name="llm_retry_mode_fast">Fast</string>
+    <string name="llm_retry_mode_standard">Standard</string>
+    <string name="llm_retry_mode_stable">Stable</string>
+    <string name="llm_retry_mode_custom">Custom</string>
+    <string name="llm_retry_max_attempts">Maximum retry attempts</string>
+    <string name="llm_retry_max_attempts_description">Set to 0 to disable automatic retries. Maximum: 10.</string>
+    <string name="llm_retry_attempts_unit">times</string>
+    <string name="llm_retry_initial_delay">Initial wait</string>
+    <string name="llm_retry_initial_delay_description">Seconds before the first retry; later waits double.</string>
+    <string name="llm_retry_max_delay">Maximum single wait</string>
+    <string name="llm_retry_max_delay_description">A retry wait will never exceed this value.</string>
+    <string name="llm_retry_seconds_unit">sec</string>
+    <string name="llm_retry_schedule_value">Wait sequence: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Automatic retries disabled</string>
 </resources>

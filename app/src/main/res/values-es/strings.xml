@@ -7817,4 +7817,20 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="thinking_config_rule_order_hint">Las reglas se comprueban de arriba abajo. Se aplica la primera regla activada que coincide con el modelo. Usa las flechas de cada regla para cambiar su orden.</string>
     <string name="thinking_config_subtitle">Aplica los parámetros de razonamiento según el orden de las reglas; se usa la primera coincidencia</string>
     <string name="thinking_config_title">Configuración del razonamiento</string>
+    <string name="llm_retry_settings_title">Reintentos de solicitud</string>
+    <string name="llm_retry_settings_description">Configura los reintentos automáticos y la espera tras un fallo del modelo.</string>
+    <string name="llm_retry_mode_fast">Rápido</string>
+    <string name="llm_retry_mode_standard">Estándar</string>
+    <string name="llm_retry_mode_stable">Estable</string>
+    <string name="llm_retry_mode_custom">Personalizado</string>
+    <string name="llm_retry_max_attempts">Máximo de reintentos</string>
+    <string name="llm_retry_max_attempts_description">Usa 0 para desactivar los reintentos. Máximo: 10.</string>
+    <string name="llm_retry_attempts_unit">veces</string>
+    <string name="llm_retry_initial_delay">Espera inicial</string>
+    <string name="llm_retry_initial_delay_description">Segundos antes del primer reintento; después se duplica.</string>
+    <string name="llm_retry_max_delay">Espera máxima</string>
+    <string name="llm_retry_max_delay_description">Ninguna espera superará este valor.</string>
+    <string name="llm_retry_seconds_unit">s</string>
+    <string name="llm_retry_schedule_value">Secuencia de espera: %1$s</string>
+    <string name="llm_retry_schedule_disabled">Reintentos automáticos desactivados</string>
 </resources>
