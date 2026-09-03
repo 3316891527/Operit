@@ -7746,6 +7746,9 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="thinking_config_rule_order_hint">Peraturan disemak dari atas ke bawah. Peraturan aktif pertama yang sepadan dengan model akan digunakan. Gunakan anak panah pada setiap peraturan untuk mengubah susunannya.</string>
     <string name="thinking_config_subtitle">Padankan parameter pemikiran mengikut susunan peraturan; peraturan pertama yang sepadan akan digunakan</string>
     <string name="thinking_config_title">Konfigurasi pemikiran</string>
+    <string name="tool_permission_execution_denied">Kebenaran pelaksanaan alat ditolak.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">Kebenaran papar di atas aplikasi lain diperlukan untuk mengesahkan pelaksanaan alat.</string>
+    <string name="tool_permission_confirmation_timeout">Pengesahan pelaksanaan alat telah tamat masa.</string>
     <string name="llm_retry_settings_title">Cuba semula permintaan</string>
     <string name="llm_retry_settings_description">Tetapkan percubaan semula automatik dan masa menunggu selepas permintaan model gagal.</string>
     <string name="llm_retry_mode_fast">Pantas</string>

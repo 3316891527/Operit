@@ -8344,6 +8344,9 @@
     <string name="theme_toolbar_opacity">工具栏不透明度: %1$d%%</string>
     <string name="toolreg_global_chat_runtime_state_desc">查询全局聊天运行状态</string>
     <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
+    <string name="tool_permission_execution_denied">工具执行权限被拒绝。</string>
+    <string name="tool_permission_overlay_required_for_confirmation">需要悬浮窗权限才能确认工具执行。</string>
+    <string name="tool_permission_confirmation_timeout">工具执行确认超时。</string>
     <string name="llm_retry_settings_title">请求重试</string>
     <string name="llm_retry_settings_description">配置模型请求失败后的自动重试次数和等待节奏。</string>
     <string name="llm_retry_mode_fast">快速</string>

@@ -7817,6 +7817,9 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="thinking_config_rule_order_hint">Las reglas se comprueban de arriba abajo. Se aplica la primera regla activada que coincide con el modelo. Usa las flechas de cada regla para cambiar su orden.</string>
     <string name="thinking_config_subtitle">Aplica los parámetros de razonamiento según el orden de las reglas; se usa la primera coincidencia</string>
     <string name="thinking_config_title">Configuración del razonamiento</string>
+    <string name="tool_permission_execution_denied">Se denegó el permiso para ejecutar la herramienta.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">Se requiere permiso para mostrarse sobre otras apps para confirmar la ejecución de la herramienta.</string>
+    <string name="tool_permission_confirmation_timeout">Se agotó el tiempo de confirmación de ejecución de la herramienta.</string>
     <string name="llm_retry_settings_title">Reintentos de solicitud</string>
     <string name="llm_retry_settings_description">Configura los reintentos automáticos y la espera tras un fallo del modelo.</string>
     <string name="llm_retry_mode_fast">Rápido</string>

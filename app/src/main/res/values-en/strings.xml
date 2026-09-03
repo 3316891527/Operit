@@ -8363,6 +8363,9 @@
     <string name="thinking_config_subtitle">Match thinking parameters in rule order; the first matching rule applies</string>
     <string name="thinking_config_title">Thinking configuration</string>
     <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
+    <string name="tool_permission_execution_denied">Tool execution permission was denied.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">Display over other apps permission is required to confirm tool execution.</string>
+    <string name="tool_permission_confirmation_timeout">Timed out waiting for tool execution confirmation.</string>
     <string name="llm_retry_settings_title">Request retries</string>
     <string name="llm_retry_settings_description">Configure automatic retries and wait timing after a model request fails.</string>
     <string name="llm_retry_mode_fast">Fast</string>

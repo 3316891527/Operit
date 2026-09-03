@@ -7587,6 +7587,9 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="thinking_config_rule_order_hint">As regras são verificadas de cima para baixo. A primeira regra ativada que corresponder ao modelo será aplicada. Use as setas de cada regra para alterar a ordem.</string>
     <string name="thinking_config_subtitle">Aplica os parâmetros de raciocínio na ordem das regras; a primeira regra correspondente será aplicada</string>
     <string name="thinking_config_title">Configuração de raciocínio</string>
+    <string name="tool_permission_execution_denied">A permissão para executar a ferramenta foi negada.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">É necessária permissão para aparecer sobre outros apps para confirmar a execução da ferramenta.</string>
+    <string name="tool_permission_confirmation_timeout">Tempo esgotado ao aguardar a confirmação de execução da ferramenta.</string>
     <string name="llm_retry_settings_title">Repetir solicitações</string>
     <string name="llm_retry_settings_description">Configure novas tentativas automáticas e o tempo de espera após uma falha do modelo.</string>
     <string name="llm_retry_mode_fast">Rápido</string>

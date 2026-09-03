@@ -8344,6 +8344,9 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="thinking_config_subtitle">Potrivește parametrii de raționament în ordinea regulilor; se aplică prima regulă potrivită</string>
     <string name="thinking_config_title">Configurarea raționamentului</string>
     <string name="translation_retry_error_status">Solicitarea de traducere a eșuat (reîncercare %1$d/%2$d): %3$s</string>
+    <string name="tool_permission_execution_denied">Permisiunea de executare a instrumentului a fost refuzată.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">Este necesară permisiunea de afișare peste alte aplicații pentru confirmarea executării instrumentului.</string>
+    <string name="tool_permission_confirmation_timeout">Timpul de confirmare a executării instrumentului a expirat.</string>
     <string name="llm_retry_settings_title">Reîncercări solicitare</string>
     <string name="llm_retry_settings_description">Configurează reîncercările automate și timpul de așteptare după eșecul modelului.</string>
     <string name="llm_retry_mode_fast">Rapid</string>
