@@ -62,11 +62,23 @@ class AutoGlmViewModel(private val context: Context) : ViewModel() {
                     val okServer = try {
                         ShowerServerManager.ensureServerStarted(context)
                     } catch (e: Exception) {
+                        AppLogger.e("AutoGlmViewModel", "Failed to start Shower server", e)
+                        appendWithTimestamp(
+                            logBuilder,
+                            "[VirtualScreen] Shower start exception: ${e.message ?: e.javaClass.simpleName}"
+                        )
                         false
                     }
 
                     if (!okServer) {
+                        val detail = ShowerServerManager.getLastStartError()
+                            ?.trim()
+                            ?.takeIf { it.isNotEmpty() }
+                            ?: "No diagnostic details were returned. Check the selected shell permission."
                         appendWithTimestamp(logBuilder, "[VirtualScreen] Failed to start Shower server.")
+                        detail.lines().takeLast(12).forEach { line ->
+                            if (line.isNotBlank()) appendWithTimestamp(logBuilder, "[VirtualScreen] $line")
+                        }
                         _uiState.value = AutoGlmUiState(
                             isLoading = false,
                             log = logBuilder.toString().trimEnd()
@@ -109,7 +121,7 @@ class AutoGlmViewModel(private val context: Context) : ViewModel() {
 
                 val displayPrefs = DisplayPreferencesManager.getInstance(context)
                 val agentConfig = AgentConfig(
-                    maxSteps = 25,
+                    maxSteps = displayPrefs.getAgentMaxSteps(),
                     postLaunchDelayMs = displayPrefs.getAgentPostLaunchDelayMs().toLong(),
                     postActionDelayMs = displayPrefs.getAgentPostActionDelayMs().toLong()
                 )

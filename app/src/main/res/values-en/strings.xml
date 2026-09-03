@@ -6795,6 +6795,9 @@
     <string name="global_display_agent_post_launch_delay_desc">Fixed wait after a successful app launch, letting the window settle. Lower is faster but may capture transition animations.</string>
     <string name="global_display_agent_post_action_delay">UI automation: delay after action</string>
     <string name="global_display_agent_post_action_delay_desc">Fixed wait after a successful tap, type, swipe or key action, letting the UI react. 0 is fastest.</string>
+    <string name="global_display_agent_max_steps">AutoGLM maximum steps</string>
+    <string name="global_display_agent_max_steps_desc">Limits how many model rounds one automation task may execute. The default is 25 steps.</string>
+    <string name="global_display_agent_max_steps_unit">steps</string>
     <string name="global_display_status_indicator_style">Status Indicator Style</string>
     <string name="global_display_screenshot_settings">Screenshot Settings</string>
     <string name="global_display_image_format">Image Format</string>

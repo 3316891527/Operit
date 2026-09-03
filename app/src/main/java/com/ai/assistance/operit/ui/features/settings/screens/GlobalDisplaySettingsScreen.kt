@@ -83,6 +83,9 @@ fun GlobalDisplaySettingsScreen(
     val agentPostActionDelayMs by displayPreferencesManager.agentPostActionDelayMs.collectAsState(
         initial = DisplayPreferencesManager.DEFAULT_AGENT_POST_ACTION_DELAY_MS
     )
+    val agentMaxSteps by displayPreferencesManager.agentMaxSteps.collectAsState(
+        initial = DisplayPreferencesManager.DEFAULT_AGENT_MAX_STEPS
+    )
     val keepScreenOn by apiPreferences.keepScreenOnFlow.collectAsState(initial = true)
     val convertLongPastedTextToFile by userPreferences.convertLongPastedTextToFile.collectAsState(initial = true)
     val longPastedTextFileThreshold by userPreferences.longPastedTextFileThreshold.collectAsState(
@@ -837,6 +840,23 @@ fun GlobalDisplaySettingsScreen(
                     }
                 }
             }
+
+            EditableNumberSetting(
+                title = stringResource(R.string.global_display_agent_max_steps),
+                subtitle = stringResource(R.string.global_display_agent_max_steps_desc),
+                value = agentMaxSteps.toFloat(),
+                onValueChange = { value ->
+                    scope.launch {
+                        displayPreferencesManager.saveDisplaySettings(
+                            agentMaxSteps = value.roundToInt()
+                        )
+                    }
+                },
+                valueRange = DisplayPreferencesManager.MIN_AGENT_MAX_STEPS.toFloat()..
+                    DisplayPreferencesManager.MAX_AGENT_MAX_STEPS.toFloat(),
+                unitText = stringResource(R.string.global_display_agent_max_steps_unit),
+                backgroundColor = componentBackgroundColor
+            )
 
             Column(
                 modifier = Modifier
