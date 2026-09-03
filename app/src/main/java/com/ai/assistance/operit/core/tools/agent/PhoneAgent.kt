@@ -26,6 +26,7 @@ import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.services.FloatingChatService
 import com.ai.assistance.operit.ui.common.displays.UIAutomationProgressOverlay
+import com.ai.assistance.operit.ui.common.displays.UIOperationOverlay
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.ImageOutputFormat
@@ -57,6 +58,9 @@ object AgentTimings {
     const val DEFAULT_UI_HIDE_SETTLE_DELAY_MS = 200L
 }
 
+private const val MAX_IDENTICAL_TAP_STREAK = 3
+private const val MAX_CONSECUTIVE_TAP_STREAK = 8
+
 /** Result of a single agent step. */
 data class StepResult(
     val success: Boolean,
@@ -64,7 +68,7 @@ data class StepResult(
     val action: ParsedAgentAction?,
     val thinking: String?,
     val message: String? = null,
-    /** True when this step was a pure Wait and did not consume the step budget. */
+    /** True when this step contains a pure Wait action. */
     val isPureWait: Boolean = false
 )
 
@@ -91,8 +95,8 @@ private fun resolvePrivilegedExecutionState(
 
     var isAdbOrHigher = when (preferredLevel) {
         AndroidPermissionLevel.DEBUGGER,
-        AndroidPermissionLevel.ADMIN,
         AndroidPermissionLevel.ROOT -> true
+        // Device-admin and accessibility APIs cannot execute the app_process shell command.
         else -> false
     }
 
@@ -149,6 +153,9 @@ class PhoneAgent(
 
     /** Deterministic action results waiting to be handed to the model on the next step. */
     private val _pendingActionFeedback = mutableListOf<String>()
+    private var consecutiveTapCount = 0
+    private var identicalTapCount = 0
+    private var lastTapSignature: String? = null
 
     private var pauseFlow: StateFlow<Boolean>? = null
 
@@ -461,8 +468,10 @@ class PhoneAgent(
             val firstStatusText = when {
                 result.finished -> result.message ?: context.getString(R.string.phone_agent_completed)
                 firstAction != null && firstAction.metadata == "do" -> {
-                    val actionName = firstAction.actionName ?: ""
-                    if (actionName.isNotEmpty()) context.getString(R.string.phone_agent_executing_action, actionName) else context.getString(R.string.phone_agent_executing)
+                    result.message?.takeIf { it.isNotBlank() } ?: run {
+                        val actionName = firstAction.actionName ?: ""
+                        if (actionName.isNotEmpty()) context.getString(R.string.phone_agent_executing_action, actionName) else context.getString(R.string.phone_agent_executing)
+                    }
                 }
                 else -> context.getString(R.string.phone_agent_thinking)
             }
@@ -530,8 +539,10 @@ class PhoneAgent(
                 val statusText = when {
                     result.finished -> result.message ?: context.getString(R.string.phone_agent_completed)
                     action != null && action.metadata == "do" -> {
-                        val actionName = action.actionName ?: ""
-                        if (actionName.isNotEmpty()) context.getString(R.string.phone_agent_executing_action, actionName) else context.getString(R.string.phone_agent_executing)
+                        result.message?.takeIf { it.isNotBlank() } ?: run {
+                            val actionName = action.actionName ?: ""
+                            if (actionName.isNotEmpty()) context.getString(R.string.phone_agent_executing_action, actionName) else context.getString(R.string.phone_agent_executing)
+                        }
                     }
                     else -> context.getString(R.string.phone_agent_thinking)
                 }
@@ -585,6 +596,7 @@ class PhoneAgent(
             return "Max steps reached"
         } finally {
             AppLogger.d("PhoneAgent", "[$agentId] run: finishing, restoring UI")
+            UIOperationOverlay.getInstance(context).hideImmediately()
             pauseFlow = null
             floatingService?.setFloatingWindowVisible(true)
             if (isMainScreenAgent) {
@@ -615,7 +627,33 @@ class PhoneAgent(
     fun reset() {
         _contextHistory.clear()
         _pendingActionFeedback.clear()
+        consecutiveTapCount = 0
+        identicalTapCount = 0
+        lastTapSignature = null
         _stepCount = 0
+    }
+
+    /** Stop blind retry loops before they can send an unbounded series of taps. */
+    private fun checkTapStreak(action: ParsedAgentAction): String? {
+        if (action.actionName != "Tap") {
+            consecutiveTapCount = 0
+            identicalTapCount = 0
+            lastTapSignature = null
+            return null
+        }
+
+        val signature = action.fields["element"].orEmpty()
+        consecutiveTapCount++
+        identicalTapCount = if (signature == lastTapSignature) identicalTapCount + 1 else 1
+        lastTapSignature = signature
+
+        return when {
+            identicalTapCount > MAX_IDENTICAL_TAP_STREAK ->
+                "Stopped after repeating Tap at $signature $identicalTapCount times without a state-changing action."
+            consecutiveTapCount > MAX_CONSECUTIVE_TAP_STREAK ->
+                "Stopped after $consecutiveTapCount consecutive Tap actions without a state-changing action."
+            else -> null
+        }
     }
 
     /** Execute a single step of the agent loop. */
@@ -679,16 +717,40 @@ class PhoneAgent(
 
         var lastResult: ActionHandler.ActionExecResult? = null
         var lastExecuted: ParsedAgentAction? = null
+        val executedMessages = mutableListOf<String>()
+        fun combinedMessage(fallback: String?): String? {
+            val messages = executedMessages.toMutableList()
+            fallback?.takeIf { it.isNotBlank() }?.let { if (messages.lastOrNull() != it) messages.add(it) }
+            return messages.joinToString("\n").takeIf { it.isNotBlank() }
+        }
 
         for (action in parsedActions) {
             if (action.metadata == "finish") {
                 val message = action.fields["message"] ?: "Task finished."
-                return StepResult(success = true, finished = true, action = action, thinking = thinking, message = message)
+                return StepResult(
+                    success = true,
+                    finished = true,
+                    action = action,
+                    thinking = thinking,
+                    message = combinedMessage(message)
+                )
             }
 
             if (action.metadata != "do") {
                 val errorMessage = "Unknown action format: ${action.metadata}"
                 return StepResult(success = false, finished = true, action = action, thinking = thinking, message = errorMessage)
+            }
+
+            val tapGuardMessage = checkTapStreak(action)
+            if (tapGuardMessage != null) {
+                _pendingActionFeedback.add("${ActionHandler.ACTION_RESULT_PREFIX} Tap blocked: $tapGuardMessage")
+                return StepResult(
+                    success = false,
+                    finished = true,
+                    action = action,
+                    thinking = thinking,
+                    message = combinedMessage(tapGuardMessage)
+                )
             }
 
             awaitIfPaused()
@@ -699,15 +761,19 @@ class PhoneAgent(
             val actionLabel = action.actionName ?: "Unknown"
             val outcome = if (execResult.success) "succeeded" else "failed"
             val detail = execResult.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""
+            execResult.message?.takeIf { it.isNotBlank() }?.let { executedMessages.add(it) }
             _pendingActionFeedback.add("${ActionHandler.ACTION_RESULT_PREFIX} $actionLabel $outcome$detail")
 
             if (execResult.shouldFinish) {
-                return StepResult(success = execResult.success, finished = true, action = action, thinking = thinking, message = execResult.message)
+                return StepResult(
+                    success = execResult.success,
+                    finished = true,
+                    action = action,
+                    thinking = thinking,
+                    message = combinedMessage(execResult.message)
+                )
             }
-            if (execResult.isPureWait && _stepCount > 0) {
-                // A pure delay is not a real automation step; do not spend the step budget on it.
-                _stepCount--
-            }
+            // A standalone Wait still consumes this model round; batching it with a following action avoids another inference.
             // Stop the chain on the first failure so the model can re-observe the screen.
             if (!execResult.success) break
         }
@@ -718,7 +784,7 @@ class PhoneAgent(
                 finished = false,
                 action = lastExecuted,
                 thinking = thinking,
-                message = lastResult.message,
+                message = combinedMessage(lastResult.message),
                 isPureWait = lastResult.isPureWait
             )
         }
@@ -885,7 +951,7 @@ class ActionHandler(
         val success: Boolean,
         val shouldFinish: Boolean,
         val message: String?,
-        /** True when the action is a pure delay and should not consume the step budget. */
+        /** True when the action is a pure delay and does not add a post-action delay. */
         val isPureWait: Boolean = false
     )
 
@@ -903,6 +969,31 @@ class ActionHandler(
     }
 
     private fun isMainScreenAgent(): Boolean = agentId.isBlank() || agentId == "default"
+
+    private fun showTapFeedback(x: Int, y: Int) {
+        try {
+            if (isMainScreenAgent()) {
+                UIOperationOverlay.getInstance(context).showTap(x, y)
+            } else {
+                VirtualDisplayOverlay.getInstance(context, agentId).showTapFeedback(x, y)
+            }
+        } catch (e: Exception) {
+            AppLogger.e("ActionHandler", "[$agentId] Failed to show tap feedback", e)
+        }
+    }
+
+    private fun showSwipeFeedback(startX: Int, startY: Int, endX: Int, endY: Int) {
+        try {
+            if (isMainScreenAgent()) {
+                UIOperationOverlay.getInstance(context).showSwipe(startX, startY, endX, endY)
+            } else {
+                VirtualDisplayOverlay.getInstance(context, agentId)
+                    .showSwipeFeedback(startX, startY, endX, endY)
+            }
+        } catch (e: Exception) {
+            AppLogger.e("ActionHandler", "[$agentId] Failed to show swipe feedback", e)
+        }
+    }
 
     private fun resolveShowerUsageContext(): ShowerUsageContext {
         if (isMainScreenAgent()) {
@@ -939,8 +1030,9 @@ class ActionHandler(
         try {
             // Keep screenshot captures clean: hide overlays first, then restore after capture.
             floatingService?.setStatusIndicatorVisible(false)
+            UIOperationOverlay.getInstance(context).hideImmediately()
             progressOverlay.setOverlayVisible(false)
-            delay(200)
+            delay(uiHideSettleDelayMs)
 
             if (showerCtx.canUseShowerForInput) {
                 val (link, dims) = captureScreenshotViaShower()
@@ -1102,7 +1194,7 @@ class ActionHandler(
                             } catch (_: Exception) {}
                             useShowerIndicatorForAgent(context, agentId)
                             delay(postLaunchDelayMs)
-                            ok()
+                            ok(message = "Launch succeeded: $packageName")
                         } else {
                             val desktopPackage = "com.ai.assistance.operit.desktop"
                             val desktopLaunched = ShowerController.launchApp(agentId, desktopPackage)
@@ -1112,7 +1204,7 @@ class ActionHandler(
                                 } catch (_: Exception) {}
                                 useShowerIndicatorForAgent(context, agentId)
                                 delay(postLaunchDelayMs)
-                                ok()
+                                ok(message = "Launch fallback succeeded: $desktopPackage")
                             } else {
                                 fail(message = "Failed to launch on Shower virtual display")
                             }
@@ -1123,7 +1215,7 @@ class ActionHandler(
                         )
                         if (result.success) {
                             delay(postLaunchDelayMs)
-                            ok()
+                            ok(message = "Launch succeeded: $packageName")
                         } else {
                             fail(message = result.error ?: "Failed to launch app: $packageName")
                         }
@@ -1136,14 +1228,15 @@ class ActionHandler(
             "Tap" -> {
                 val element = fields["element"] ?: return fail(message = "No element for Tap")
                 val (x, y) = parseRelativePoint(element) ?: return fail(message = "Invalid coordinates for Tap: $element")
+                showTapFeedback(x, y)
                 val exec = withAgentUiHiddenForAction(showerCtx) {
                     if (showerCtx.canUseShowerForInput) {
                         val okTap = ShowerController.tap(agentId, x, y)
-                        if (okTap) ok() else fail(message = "Shower TAP failed at ($x,$y)")
+                        if (okTap) ok(message = "Tap sent at ($x, $y)") else fail(message = "Shower TAP failed at ($x,$y)")
                     } else {
                         val params = withDisplayParam(listOf(ToolParameter("x", x.toString()), ToolParameter("y", y.toString())))
                         val result = toolImplementations.tap(AITool("tap", params))
-                        if (result.success) ok() else fail(message = result.error ?: "Tap failed")
+                        if (result.success) ok(message = "Tap sent at ($x, $y)") else fail(message = result.error ?: "Tap failed")
                     }
                 }
                 if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
@@ -1170,13 +1263,13 @@ class ActionHandler(
                                 }
                             }
                             delay(300)
-                            if (text.isEmpty()) return@withAgentUiHiddenForAction ok()
+                            if (text.isEmpty()) return@withAgentUiHiddenForAction ok(message = "Type completed (empty text)")
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                                 ?: return@withAgentUiHiddenForAction fail(message = "Clipboard unavailable")
                             clipboard.setPrimaryClip(ClipData.newPlainText("operit_input", text))
                             delay(100)
                             val pasted = ShowerController.key(agentId, KeyEvent.KEYCODE_PASTE)
-                            if (pasted) ok() else fail(message = "Shower PASTE failed")
+                            if (pasted) ok(message = "Type sent (${text.length} chars)") else fail(message = "Shower PASTE failed")
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e
                             fail(message = "Error typing via Shower: ${e.message}")
@@ -1184,7 +1277,7 @@ class ActionHandler(
                     } else {
                         val params = withDisplayParam(listOf(ToolParameter("text", text)))
                         val result = toolImplementations.setInputText(AITool("set_input_text", params))
-                        if (result.success) ok() else fail(message = result.error ?: "Type failed")
+                        if (result.success) ok(message = "Type sent (${text.length} chars)") else fail(message = result.error ?: "Type failed")
                     }
                 }
                 if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
@@ -1195,17 +1288,18 @@ class ActionHandler(
                 val end = fields["end"] ?: return fail(message = "Missing swipe end")
                 val (sx, sy) = parseRelativePoint(start) ?: return fail(message = "Invalid swipe start")
                 val (ex, ey) = parseRelativePoint(end) ?: return fail(message = "Invalid swipe end")
+                showSwipeFeedback(sx, sy, ex, ey)
                 val exec = withAgentUiHiddenForAction(showerCtx) {
                     if (showerCtx.canUseShowerForInput) {
                         val okSwipe = ShowerController.swipe(agentId, sx, sy, ex, ey)
-                        if (okSwipe) ok() else fail(message = "Shower SWIPE failed")
+                        if (okSwipe) ok(message = "Swipe sent from ($sx, $sy) to ($ex, $ey)") else fail(message = "Shower SWIPE failed")
                     } else {
                         val params = withDisplayParam(listOf(
                             ToolParameter("start_x", sx.toString()), ToolParameter("start_y", sy.toString()),
                             ToolParameter("end_x", ex.toString()), ToolParameter("end_y", ey.toString())
                         ))
                         val result = toolImplementations.swipe(AITool("swipe", params))
-                        if (result.success) ok() else fail(message = result.error ?: "Swipe failed")
+                        if (result.success) ok(message = "Swipe sent from ($sx, $sy) to ($ex, $ey)") else fail(message = result.error ?: "Swipe failed")
                     }
                 }
                 if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
@@ -1215,11 +1309,11 @@ class ActionHandler(
                 val exec = withAgentUiHiddenForAction(showerCtx) {
                     if (showerCtx.canUseShowerForInput) {
                         val okKey = ShowerController.key(agentId, KeyEvent.KEYCODE_BACK)
-                        if (okKey) ok() else fail(message = "Shower BACK failed")
+                        if (okKey) ok(message = "Back key sent") else fail(message = "Shower BACK failed")
                     } else {
                         val params = withDisplayParam(listOf(ToolParameter("key_code", "KEYCODE_BACK")))
                         val result = toolImplementations.pressKey(AITool("press_key", params))
-                        if (result.success) ok() else fail(message = result.error ?: "Back failed")
+                        if (result.success) ok(message = "Back key sent") else fail(message = result.error ?: "Back failed")
                     }
                 }
                 if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
@@ -1229,11 +1323,11 @@ class ActionHandler(
                 val exec = withAgentUiHiddenForAction(showerCtx) {
                     if (showerCtx.canUseShowerForInput) {
                         val okKey = ShowerController.key(agentId, KeyEvent.KEYCODE_HOME)
-                        if (okKey) ok() else fail(message = "Shower HOME failed")
+                        if (okKey) ok(message = "Home key sent") else fail(message = "Shower HOME failed")
                     } else {
                         val params = withDisplayParam(listOf(ToolParameter("key_code", "KEYCODE_HOME")))
                         val result = toolImplementations.pressKey(AITool("press_key", params))
-                        if (result.success) ok() else fail(message = result.error ?: "Home failed")
+                        if (result.success) ok(message = "Home key sent") else fail(message = result.error ?: "Home failed")
                     }
                 }
                 if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
