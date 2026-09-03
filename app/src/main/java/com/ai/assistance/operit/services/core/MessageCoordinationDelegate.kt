@@ -2072,7 +2072,7 @@ class MessageCoordinationDelegate(
                 val config = modelConfigManager.getModelConfigFlow(chatMapping.configId).first()
                 ConversationSummaryConfig(
                     globalRules = config.summaryCustomRules.takeIf { it.isNotBlank() },
-                    sections = config.summarySections
+                    sectionOverrides = config.summarySectionOverrides
                 )
             } else {
                 ConversationSummaryConfig()
