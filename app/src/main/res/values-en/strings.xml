@@ -6750,6 +6750,10 @@
     <string name="root_custom_su_command">Custom su command (KernelSU mode)</string>
     <string name="root_custom_su_command_description">Applies only in KernelSU mode. You can enter commands like su or su --mount-master.</string>
     <string name="global_display_virtual_screen_bitrate">Virtual Screen Bitrate</string>
+    <string name="global_display_agent_post_launch_delay">UI automation: delay after app launch</string>
+    <string name="global_display_agent_post_launch_delay_desc">Fixed wait after a successful app launch, letting the window settle. Lower is faster but may capture transition animations.</string>
+    <string name="global_display_agent_post_action_delay">UI automation: delay after action</string>
+    <string name="global_display_agent_post_action_delay_desc">Fixed wait after a successful tap, type, swipe or key action, letting the UI react. 0 is fastest.</string>
     <string name="global_display_status_indicator_style">Status Indicator Style</string>
     <string name="global_display_screenshot_settings">Screenshot Settings</string>
     <string name="global_display_image_format">Image Format</string>
