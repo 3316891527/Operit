@@ -1537,8 +1537,10 @@ open class OpenAIProvider(
         }
 
         /**
-         * Provider protocol metadata must occupy its own line so the XML splitter does not
-         * interpret it as ordinary response text when it follows content or tool arguments.
+         * Provider protocol metadata must sit on its own line: the native XML block
+         * splitter only starts a new XML region at line start, after a closing tag, or after
+         * punctuation. Without this separator the meta tag degrades into plain text when it
+         * directly follows regular content or mid-JSON tool arguments.
          */
         suspend fun emitMetadataTag(tag: String) {
             emitTag("\n")

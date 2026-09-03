@@ -62,6 +62,7 @@ import com.ai.assistance.operit.ui.theme.resolveConfiguredFontFamily
 import com.ai.assistance.operit.ui.theme.waterGlass
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import com.ai.assistance.operit.util.ChatMarkupRegex
 
 private val ExpandedBubbleLayoutNodeTypes =
     setOf(
@@ -100,6 +101,12 @@ fun BubbleAiMessageComposable(
     val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
     val themeSnapshot = LocalThemePreferenceSnapshot.current
+    val displayContent =
+        if (message.contentStream == null) {
+            ChatMarkupRegex.removeOpenAiResponsesProtocolMeta(message.content)
+        } else {
+            message.content
+        }
     val bubbleShowAvatar = themeSnapshot.bubbleShowAvatar
     val bubbleWideLayoutEnabled = themeSnapshot.bubbleWideLayoutEnabled
     val showThinkingProcess = themeSnapshot.showThinkingProcess
@@ -213,10 +220,10 @@ fun BubbleAiMessageComposable(
         animationSpec = tween(durationMillis = 300)
     )
 
-    val imageUrl = remember(message.content, message.contentStream) {
+    val imageUrl = remember(displayContent, message.contentStream) {
         if (message.contentStream == null) {
             val regex = """^\s*!\[[^\]]*\]\(([^)]+)\)\s*$""".toRegex()
-            regex.find(message.content)?.groups?.get(1)?.value
+            regex.find(displayContent)?.groups?.get(1)?.value
         } else {
             null
         }
@@ -393,7 +400,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = displayContent,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -599,10 +606,8 @@ fun BubbleAiMessageComposable(
                                     fillMaxWidth = shouldUseExpandedBubbleLayout,
                                 )
                             } else {
-                                // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
-                                // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    content = displayContent,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,

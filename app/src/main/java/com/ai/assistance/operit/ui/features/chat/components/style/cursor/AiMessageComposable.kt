@@ -23,6 +23,7 @@ import com.ai.assistance.operit.ui.features.chat.components.rememberRevisableTex
 import com.ai.assistance.operit.ui.features.chat.components.part.CustomXmlRenderer
 import com.ai.assistance.operit.ui.features.chat.components.part.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.chat.components.LinkPreviewDialog
+import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.markdown.toCharStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
@@ -56,6 +57,12 @@ fun AiMessageComposable(
     val context = LocalContext.current
     val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
     val themeSnapshot = LocalThemePreferenceSnapshot.current
+    val displayContent =
+        if (message.contentStream == null) {
+            ChatMarkupRegex.removeOpenAiResponsesProtocolMeta(message.content)
+        } else {
+            message.content
+        }
     val showThinkingProcess = themeSnapshot.showThinkingProcess
     val showStatusTags = themeSnapshot.showStatusTags
     val effectiveShowThinkingProcess = if (forceShowThinkingProcess) true else showThinkingProcess
@@ -197,7 +204,7 @@ fun AiMessageComposable(
                 // 对于已完成的静态消息，使用新的字符串渲染器以提高性能
                 // 共享相同的state，避免重新计算nodes等状态
                 StreamMarkdownRenderer(
-                    content = message.content,
+                    content = displayContent,
                     textColor = textColor,
                     backgroundColor = backgroundColor,
                     onLinkClick = rememberedOnLinkClick,
