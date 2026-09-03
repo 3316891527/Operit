@@ -41,8 +41,21 @@ import kotlinx.coroutines.flow.StateFlow
 
 /** Configuration for the PhoneAgent. */
 data class AgentConfig(
-    val maxSteps: Int = 20
+    val maxSteps: Int = 20,
+    /** Hard delay after a successful Launch, waiting for the app window to settle. */
+    val postLaunchDelayMs: Long = AgentTimings.DEFAULT_POST_LAUNCH_DELAY_MS,
+    /** Hard delay after a successful non-Wait action, waiting for the UI to react. */
+    val postActionDelayMs: Long = AgentTimings.DEFAULT_POST_ACTION_DELAY_MS,
+    /** Hard delay after hiding the agent overlay, before injecting the event. */
+    val uiHideSettleDelayMs: Long = AgentTimings.DEFAULT_UI_HIDE_SETTLE_DELAY_MS
 )
+
+/** Default hard-wait values for the agent loop, kept in one place so they stay configurable. */
+object AgentTimings {
+    const val DEFAULT_POST_LAUNCH_DELAY_MS = 1000L
+    const val DEFAULT_POST_ACTION_DELAY_MS = 500L
+    const val DEFAULT_UI_HIDE_SETTLE_DELAY_MS = 200L
+}
 
 /** Result of a single agent step. */
 data class StepResult(
@@ -50,7 +63,9 @@ data class StepResult(
     val finished: Boolean,
     val action: ParsedAgentAction?,
     val thinking: String?,
-    val message: String? = null
+    val message: String? = null,
+    /** True when this step was a pure Wait and did not consume the step budget. */
+    val isPureWait: Boolean = false
 )
 
 /** Parsed action from the model's response. */
@@ -132,6 +147,9 @@ class PhoneAgent(
     val contextHistory: List<Pair<String, String>>
         get() = _contextHistory.toList()
 
+    /** Deterministic action results waiting to be handed to the model on the next step. */
+    private val _pendingActionFeedback = mutableListOf<String>()
+
     private var pauseFlow: StateFlow<Boolean>? = null
 
     private val requiresVirtualScreen: Boolean = agentId.isNotBlank() && agentId != "default"
@@ -139,6 +157,7 @@ class PhoneAgent(
 
     init {
         actionHandler.setAgentId(agentId)
+        actionHandler.applyTimings(config)
     }
 
     private suspend fun awaitIfPaused() {
@@ -595,6 +614,7 @@ class PhoneAgent(
     /** Reset the agent state for a new task. */
     fun reset() {
         _contextHistory.clear()
+        _pendingActionFeedback.clear()
         _stepCount = 0
     }
 
@@ -613,10 +633,20 @@ class PhoneAgent(
             }
         }.trim()
 
+        val feedback = _pendingActionFeedback.takeIf { it.isNotEmpty() }?.joinToString("\n")
+        _pendingActionFeedback.clear()
+
         val userMessage = if (isFirst) {
             "$userPrompt\n\n$screenInfo"
         } else {
-            "** Screen Info **\n\n$screenInfo"
+            buildString {
+                if (feedback != null) {
+                    appendLine("** Last Action Result **")
+                    appendLine(feedback)
+                    appendLine()
+                }
+                append("** Screen Info **\n\n$screenInfo")
+            }
         }
 
         _contextHistory.add("user" to userMessage)
@@ -638,21 +668,59 @@ class PhoneAgent(
         val historyEntry = "<think>$thinking</think><answer>$answer</answer>"
         _contextHistory.add("assistant" to historyEntry)
 
-        val parsedAction = parseAgentAction(answer)
+        val parsedActions = parseAgentActions(answer)
+        val parsedAction = parsedActions.lastOrNull()
+            ?: ParsedAgentAction(metadata = "unknown", actionName = null, fields = emptyMap())
         actionHandler.removeImagesFromLastUserMessage(_contextHistory)
 
-        if (parsedAction.metadata == "finish") {
-            val message = parsedAction.fields["message"] ?: "Task finished."
-            return StepResult(success = true, finished = true, action = parsedAction, thinking = thinking, message = message)
+        if (parsedActions.size > 1) {
+            AppLogger.d("PhoneAgent", "[$agentId] _executeStep: model returned ${parsedActions.size} chained actions")
         }
 
-        if (parsedAction.metadata == "do") {
-            awaitIfPaused()
-            val execResult = actionHandler.executeAgentAction(parsedAction)
-            if (execResult.shouldFinish) {
-                 return StepResult(success = execResult.success, finished = true, action = parsedAction, thinking = thinking, message = execResult.message)
+        var lastResult: ActionHandler.ActionExecResult? = null
+        var lastExecuted: ParsedAgentAction? = null
+
+        for (action in parsedActions) {
+            if (action.metadata == "finish") {
+                val message = action.fields["message"] ?: "Task finished."
+                return StepResult(success = true, finished = true, action = action, thinking = thinking, message = message)
             }
-            return StepResult(success = execResult.success, finished = false, action = parsedAction, thinking = thinking, message = execResult.message)
+
+            if (action.metadata != "do") {
+                val errorMessage = "Unknown action format: ${action.metadata}"
+                return StepResult(success = false, finished = true, action = action, thinking = thinking, message = errorMessage)
+            }
+
+            awaitIfPaused()
+            val execResult = actionHandler.executeAgentAction(action)
+            lastResult = execResult
+            lastExecuted = action
+
+            val actionLabel = action.actionName ?: "Unknown"
+            val outcome = if (execResult.success) "succeeded" else "failed"
+            val detail = execResult.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""
+            _pendingActionFeedback.add("${ActionHandler.ACTION_RESULT_PREFIX} $actionLabel $outcome$detail")
+
+            if (execResult.shouldFinish) {
+                return StepResult(success = execResult.success, finished = true, action = action, thinking = thinking, message = execResult.message)
+            }
+            if (execResult.isPureWait && _stepCount > 0) {
+                // A pure delay is not a real automation step; do not spend the step budget on it.
+                _stepCount--
+            }
+            // Stop the chain on the first failure so the model can re-observe the screen.
+            if (!execResult.success) break
+        }
+
+        if (lastResult != null && lastExecuted != null) {
+            return StepResult(
+                success = lastResult.success,
+                finished = false,
+                action = lastExecuted,
+                thinking = thinking,
+                message = lastResult.message,
+                isPureWait = lastResult.isPureWait
+            )
         }
 
         val errorMessage = "Unknown action format: ${parsedAction.metadata}"
@@ -688,7 +756,32 @@ class PhoneAgent(
         return null to full
     }
 
-    private fun parseAgentAction(raw: String): ParsedAgentAction {
+    /**
+     * Parse every action in the model answer, in output order.
+     *
+     * AutoGLM normally emits a single `do(...)`, but it is allowed to chain several of them so a
+     * whole sub-sequence can run without paying for one screenshot plus one inference per action.
+     * A `finish(...)` always terminates the list.
+     */
+    internal fun parseAgentActions(raw: String): List<ParsedAgentAction> {
+        val original = raw.trim()
+        val markers = Regex("""\b(do|finish)\s*\(""").findAll(original).map { it.range.first }.toList()
+        if (markers.isEmpty()) {
+            return listOf(parseSingleAgentAction(original))
+        }
+
+        val actions = mutableListOf<ParsedAgentAction>()
+        markers.forEachIndexed { index, start ->
+            val end = markers.getOrNull(index + 1) ?: original.length
+            val segment = original.substring(start, end).trim()
+            val parsed = parseSingleAgentAction(segment)
+            actions.add(parsed)
+            if (parsed.metadata == "finish") return actions
+        }
+        return actions
+    }
+
+    private fun parseSingleAgentAction(raw: String): ParsedAgentAction {
         val original = raw.trim()
         val finishIndex = original.lastIndexOf("finish(")
         val doIndex = original.lastIndexOf("do(")
@@ -768,7 +861,17 @@ class ActionHandler(
     private var agentId: String = "default"
     private var mainScreenShowerPrepared: Boolean = false
     private var appPackagesSyncedFromTool = false
+    private var postLaunchDelayMs: Long = AgentTimings.DEFAULT_POST_LAUNCH_DELAY_MS
+    private var postActionDelayMs: Long = AgentTimings.DEFAULT_POST_ACTION_DELAY_MS
+    private var uiHideSettleDelayMs: Long = AgentTimings.DEFAULT_UI_HIDE_SETTLE_DELAY_MS
     private val aiToolManager: AIToolHandler by lazy { AIToolHandler.getInstance(context) }
+
+    /** Apply the configurable hard-wait values from [AgentConfig]. */
+    fun applyTimings(config: AgentConfig) {
+        postLaunchDelayMs = config.postLaunchDelayMs.coerceAtLeast(0L)
+        postActionDelayMs = config.postActionDelayMs.coerceAtLeast(0L)
+        uiHideSettleDelayMs = config.uiHideSettleDelayMs.coerceAtLeast(0L)
+    }
 
     fun setAgentId(id: String) {
         agentId = id
@@ -781,12 +884,14 @@ class ActionHandler(
     data class ActionExecResult(
         val success: Boolean,
         val shouldFinish: Boolean,
-        val message: String?
+        val message: String?,
+        /** True when the action is a pure delay and should not consume the step budget. */
+        val isPureWait: Boolean = false
     )
 
     companion object {
-        private const val POST_LAUNCH_DELAY_MS = 1000L
-        private const val POST_NON_WAIT_ACTION_DELAY_MS = 500L
+        /** Marker prefix used to feed deterministic action results back to the model. */
+        const val ACTION_RESULT_PREFIX = "[ACTION RESULT]"
     }
 
     private data class ShowerUsageContext(
@@ -996,7 +1101,7 @@ class ActionHandler(
                                 VirtualDisplayOverlay.getInstance(context, agentId).updateCurrentAppPackageName(packageName)
                             } catch (_: Exception) {}
                             useShowerIndicatorForAgent(context, agentId)
-                            delay(POST_LAUNCH_DELAY_MS)
+                            delay(postLaunchDelayMs)
                             ok()
                         } else {
                             val desktopPackage = "com.ai.assistance.operit.desktop"
@@ -1006,7 +1111,7 @@ class ActionHandler(
                                     VirtualDisplayOverlay.getInstance(context, agentId).updateCurrentAppPackageName(desktopPackage)
                                 } catch (_: Exception) {}
                                 useShowerIndicatorForAgent(context, agentId)
-                                delay(POST_LAUNCH_DELAY_MS)
+                                delay(postLaunchDelayMs)
                                 ok()
                             } else {
                                 fail(message = "Failed to launch on Shower virtual display")
@@ -1017,7 +1122,7 @@ class ActionHandler(
                             AITool("start_app", listOf(ToolParameter("package_name", packageName)))
                         )
                         if (result.success) {
-                            delay(POST_LAUNCH_DELAY_MS)
+                            delay(postLaunchDelayMs)
                             ok()
                         } else {
                             fail(message = result.error ?: "Failed to launch app: $packageName")
@@ -1041,7 +1146,7 @@ class ActionHandler(
                         if (result.success) ok() else fail(message = result.error ?: "Tap failed")
                     }
                 }
-                if (exec.success && !exec.shouldFinish) delay(POST_NON_WAIT_ACTION_DELAY_MS)
+                if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
                 exec
             }
             "Type" -> {
@@ -1082,7 +1187,7 @@ class ActionHandler(
                         if (result.success) ok() else fail(message = result.error ?: "Type failed")
                     }
                 }
-                if (exec.success && !exec.shouldFinish) delay(POST_NON_WAIT_ACTION_DELAY_MS)
+                if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
                 exec
             }
             "Swipe" -> {
@@ -1103,7 +1208,7 @@ class ActionHandler(
                         if (result.success) ok() else fail(message = result.error ?: "Swipe failed")
                     }
                 }
-                if (exec.success && !exec.shouldFinish) delay(POST_NON_WAIT_ACTION_DELAY_MS)
+                if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
                 exec
             }
             "Back" -> {
@@ -1117,7 +1222,7 @@ class ActionHandler(
                         if (result.success) ok() else fail(message = result.error ?: "Back failed")
                     }
                 }
-                if (exec.success && !exec.shouldFinish) delay(POST_NON_WAIT_ACTION_DELAY_MS)
+                if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
                 exec
             }
             "Home" -> {
@@ -1131,13 +1236,13 @@ class ActionHandler(
                         if (result.success) ok() else fail(message = result.error ?: "Home failed")
                     }
                 }
-                if (exec.success && !exec.shouldFinish) delay(POST_NON_WAIT_ACTION_DELAY_MS)
+                if (exec.success && !exec.shouldFinish) delay(postActionDelayMs)
                 exec
             }
             "Wait" -> {
                 val seconds = fields["duration"]?.replace("seconds", "")?.trim()?.toDoubleOrNull() ?: 1.0
                 delay((seconds * 1000).toLong().coerceAtLeast(0L))
-                ok()
+                ActionExecResult(true, false, "Waited ${seconds}s", isPureWait = true)
             }
             "Take_over" -> ok(shouldFinish = true, message = fields["message"] ?: "User takeover required")
             else -> fail(message = "Unknown action: $actionName")
@@ -1158,7 +1263,7 @@ class ActionHandler(
                 floatingService?.setStatusIndicatorVisible(false)
             }
             progressOverlay.setOverlayVisible(false)
-            delay(200)
+            delay(uiHideSettleDelayMs)
             return block()
         } finally {
             if (isMainScreenAgent()) {
