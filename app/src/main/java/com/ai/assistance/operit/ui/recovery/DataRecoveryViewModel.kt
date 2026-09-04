@@ -36,11 +36,13 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         val affectedRows: Int? = null,
         val lastSnapshotPath: String? = null,
         val restoreCompleted: Boolean = false,
+<<<<<<< HEAD
         val configurationHealthReport: PreferencesHealthManager.Report? = null,
         val databaseHealthReport: RoomDatabaseHealthManager.Report? = null,
         val lastConfigurationRepairArchivePath: String? = null,
         val lastDatabaseRepairArchivePath: String? = null,
-        val healthRepairCompleted: Boolean = false
+        val healthRepairCompleted: Boolean = false,
+        val includeLogsInSnapshot: Boolean = true,
     )
 
     private val _state = MutableStateFlow(State())
@@ -48,6 +50,10 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
 
     fun setSqlText(sql: String) {
         _state.value = _state.value.copy(sqlText = sql)
+    }
+
+    fun setIncludeLogsInSnapshot(enabled: Boolean) {
+        _state.value = _state.value.copy(includeLogsInSnapshot = enabled)
     }
 
     fun runSql() {
@@ -110,7 +116,12 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 val outFile =
-                    RawSnapshotBackupManager.exportToBackupDir(context) { progress ->
+                    RawSnapshotBackupManager.exportToBackupDir(
+                        context = context,
+                        options = RawSnapshotBackupManager.SnapshotOptions(
+                            includeLogs = _state.value.includeLogsInSnapshot,
+                        ),
+                    ) { progress ->
                         _state.value =
                             _state.value.copy(
                                 status = exportProgressText(progress)
