@@ -245,7 +245,7 @@ object RawSnapshotBackupManager {
                 val excludedNames = buildSet {
                     addAll(alwaysExcluded)
                     if (!options.includeTerminalData) addAll(terminalTopLevelDirNames)
-                    if (!options.includeLogs) addAll(logTopLevelDirNames)
+                    if (!options.includeLogs) addAll(logFilesTopLevelDirNames)
                 }
                 withContext(Dispatchers.Main) {
                     onProgress?.invoke(ExportProgressInfo(stage = ExportProgress.SCANNING_FILES, scannedFiles = 0))
@@ -403,7 +403,7 @@ object RawSnapshotBackupManager {
                 val preservedAlwaysExcludedNames = alwaysExcluded.filterNot { dirName ->
                     File(payloadDir, "files/$dirName").exists()
                 }.toSet()
-                val preservedLogNames = if (!manifest.includeLogs) logTopLevelDirNames else emptySet()
+                val preservedLogNames = if (!manifest.includeLogs) logFilesTopLevelDirNames else emptySet()
                 val preservedNames = preservedTerminalNames + preservedAlwaysExcludedNames + preservedLogNames
 
                 AppLogger.i(
