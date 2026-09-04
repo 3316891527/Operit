@@ -63,28 +63,24 @@ class DefaultRawSnapshotResourceReferenceProvider(
             uri = displayPreferences.globalUserAvatarUri.first(),
         )
 
-        characterCards.getAllCharacterCards().forEach { card ->
-            val owner = RawSnapshotResourceOwner(
-                type = RawSnapshotResourceOwnerType.CHARACTER_CARD,
-                id = card.id,
-                name = card.name,
-            )
-            addReference(
+        val storedCards = characterCards.getAllCharacterCards()
+        val storedCardIds = storedCards.map { it.id }.toSet()
+        storedCards.forEach { card ->
+            collectCharacterCardReferences(
                 references,
-                owner,
-                RawSnapshotResourceKind.USER_AVATAR,
-                userPreferences.resolveThemePreferenceSnapshot(characterCardId = card.id).customUserAvatarUri,
+                card.id,
+                card.name,
             )
-            addReference(
+        }
+        // The built-in "default_character" is the app's always-present chat persona and is NOT
+        // returned by getAllCharacterCards(). Its theme/background/avatar lives under the
+        // character_card_theme_default_character_* keys, so it must be collected explicitly or
+        // those current resources would be treated as unreferenced history and pruned.
+        if (!storedCardIds.contains(CharacterCardManager.DEFAULT_CHARACTER_CARD_ID)) {
+            collectCharacterCardReferences(
                 references,
-                owner,
-                RawSnapshotResourceKind.AI_AVATAR,
-                userPreferences.getAiAvatarForCharacterCardFlow(card.id).first(),
-            )
-            addThemeReferences(
-                references,
-                userPreferences.resolveThemePreferenceSnapshot(characterCardId = card.id),
-                owner,
+                CharacterCardManager.DEFAULT_CHARACTER_CARD_ID,
+                CharacterCardManager.DEFAULT_CHARACTER_NAME,
             )
         }
 
@@ -108,6 +104,35 @@ class DefaultRawSnapshotResourceReferenceProvider(
         }
 
         return references
+    }
+
+    private suspend fun collectCharacterCardReferences(
+        references: MutableSet<RawSnapshotResourceReference>,
+        cardId: String,
+        cardName: String,
+    ) {
+        val owner = RawSnapshotResourceOwner(
+            type = RawSnapshotResourceOwnerType.CHARACTER_CARD,
+            id = cardId,
+            name = cardName,
+        )
+        addReference(
+            references,
+            owner,
+            RawSnapshotResourceKind.USER_AVATAR,
+            userPreferences.resolveThemePreferenceSnapshot(characterCardId = cardId).customUserAvatarUri,
+        )
+        addReference(
+            references,
+            owner,
+            RawSnapshotResourceKind.AI_AVATAR,
+            userPreferences.getAiAvatarForCharacterCardFlow(cardId).first(),
+        )
+        addThemeReferences(
+            references,
+            userPreferences.resolveThemePreferenceSnapshot(characterCardId = cardId),
+            owner,
+        )
     }
 
     private fun addThemeReferences(
