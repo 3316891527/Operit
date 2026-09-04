@@ -54,12 +54,30 @@ object RawSnapshotBackupManager {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     @Serializable
+    data class ResourceMapping(
+        val ownerType: String,
+        val kind: String,
+        val ownerId: String? = null,
+        val ownerName: String? = null,
+        val originalUri: String,
+        val snapshotPath: String,
+        val restoreRoot: String? = null,
+        val restoreRelativePath: String? = null,
+    )
+
+    @Serializable
     data class Manifest(
         val formatVersion: Int,
         val packageName: String,
         val createdAt: Long,
         val includes: List<String>,
-        val includeTerminalData: Boolean = true
+        val includeTerminalData: Boolean = true,
+        val resources: List<ResourceMapping> = emptyList(),
+    )
+
+    data class PreparedImageResource(
+        val source: File,
+        val mapping: ResourceMapping,
     )
 
     data class SnapshotOptions(
@@ -126,6 +144,13 @@ object RawSnapshotBackupManager {
             val sharedPrefsDir = File(dataDir, "shared_prefs")
             val datastoreDir = File(dataDir, "datastore")
             val databasesDir = File(dataDir, "databases")
+            val resourceReferences = DefaultRawSnapshotResourceReferenceProvider(context).collectReferences()
+            val preparedResources = prepareImageResources(
+                references = resourceReferences,
+            )
+            val referencedImagePaths = preparedResources
+                .mapNotNull { it.source.canonicalFile.path }
+                .toSet()
 
             try {
                 val sqliteDb = AppDatabase.getDatabase(context).openHelper.writableDatabase
@@ -139,20 +164,45 @@ object RawSnapshotBackupManager {
                 ENTRY_EXTERNAL_FILES,
                 ENTRY_SHARED_PREFS,
                 ENTRY_DATASTORE,
-                ENTRY_DATABASES
+                ENTRY_DATABASES,
+                RawSnapshotResourceLayout.ROOT,
             )
             val manifest = Manifest(
                 formatVersion = FORMAT_VERSION,
                 packageName = context.packageName,
                 createdAt = System.currentTimeMillis(),
                 includes = includes,
-                includeTerminalData = options.includeTerminalData
+                includeTerminalData = options.includeTerminalData,
+                resources = preparedResources.map { it.mapping },
             )
 
             ZipOutputStream(BufferedOutputStream(FileOutputStream(tmpFile))).use { zos ->
                 zos.putNextEntry(ZipEntry(ENTRY_MANIFEST))
                 zos.write(json.encodeToString(manifest).toByteArray(Charsets.UTF_8))
                 zos.closeEntry()
+
+                if (preparedResources.isNotEmpty()) {
+                    val writtenResources = HashSet<String>()
+                    val resourcesMs = measureTimeMillis {
+                        preparedResources.forEach { prepared ->
+                            val source = prepared.source
+                            if (!source.isFile) return@forEach
+                            val snapshotPath = prepared.mapping.snapshotPath
+                            if (!writtenResources.add(snapshotPath)) return@forEach
+                            zos.putNextEntry(ZipEntry(snapshotPath))
+                            BufferedInputStream(FileInputStream(source)).use { input ->
+                                val buffer = ByteArray(64 * 1024)
+                                while (true) {
+                                    val read = input.read(buffer)
+                                    if (read <= 0) break
+                                    zos.write(buffer, 0, read)
+                                }
+                            }
+                            zos.closeEntry()
+                        }
+                    }
+                    AppLogger.i(TAG, "export add resources done in ${resourcesMs}ms (count=${writtenResources.size})")
+                }
 
                 val alwaysExcluded = OperitPaths.rawSnapshotExcludedFilesTopLevelDirNames()
                 val excludedNames = if (options.includeTerminalData) {
@@ -167,6 +217,7 @@ object RawSnapshotBackupManager {
                     dir = context.filesDir,
                     entryPrefix = ENTRY_FILES,
                     excludedTopLevelDirNames = excludedNames,
+                    referencedResourcePaths = referencedImagePaths,
                     onScannedCountChanged = { scanned ->
                         if (onProgress != null) {
                             mainHandler.post {
@@ -189,6 +240,7 @@ object RawSnapshotBackupManager {
                         dir = context.filesDir,
                         entryPrefix = ENTRY_FILES,
                         excludedTopLevelDirNames = excludedNames,
+                        referencedResourcePaths = referencedImagePaths,
                         totalFiles = filesTotalCount,
                         onPercentChanged = { percent ->
                             if (onProgress != null) {
@@ -205,7 +257,8 @@ object RawSnapshotBackupManager {
                 val externalFilesTotalCount = totalFilesForZip(
                     dir = externalFilesDir,
                     entryPrefix = ENTRY_EXTERNAL_FILES,
-                    excludedTopLevelDirNames = emptySet()
+                    excludedTopLevelDirNames = emptySet(),
+                    referencedResourcePaths = referencedImagePaths
                 )
                 withContext(Dispatchers.Main) {
                     onProgress?.invoke(ExportProgressInfo(ExportProgress.ZIPPING_EXTERNAL_FILES, 0))
@@ -215,6 +268,7 @@ object RawSnapshotBackupManager {
                         zos = zos,
                         dir = externalFilesDir,
                         entryPrefix = ENTRY_EXTERNAL_FILES,
+                        referencedResourcePaths = referencedImagePaths,
                         totalFiles = externalFilesTotalCount,
                         onPercentChanged = { percent ->
                             if (onProgress != null) {
@@ -327,6 +381,8 @@ object RawSnapshotBackupManager {
                 withContext(Dispatchers.Main) { onProgress?.invoke(RestoreProgress.REPLACING_DATABASES) }
                 replaceDirContents(File(payloadDir, "databases"), File(context.dataDir, "databases"))
 
+                restoreSnapshotResources(context = context, manifest = manifest, workDir = workDir)
+
                 withContext(Dispatchers.Main) { onProgress?.invoke(RestoreProgress.FINALIZING) }
                 AppLogger.i(TAG, "restore done: ${manifest.packageName}")
             } catch (e: Exception) {
@@ -421,6 +477,7 @@ object RawSnapshotBackupManager {
         dir: File,
         entryPrefix: String,
         excludedTopLevelDirNames: Set<String> = emptySet(),
+        referencedResourcePaths: Set<String> = emptySet(),
         totalFiles: Int = 0,
         onPercentChanged: ((Int) -> Unit)? = null
     ) {
@@ -439,6 +496,12 @@ object RawSnapshotBackupManager {
             if (!f.isFile) return@forEach
 
             val canonical = f.canonicalFile
+            val referencedSkip =
+                referencedResourcePaths.isNotEmpty() && referencedResourcePaths.contains(canonical.path)
+            if (referencedSkip) {
+                AppLogger.i(TAG, "export skip referenced resource in raw copy: ${canonical.absolutePath}")
+                return@forEach
+            }
             if (shouldSkipForZip(canonical, baseCanonical, entryPrefix, excludedTopLevelDirNames)) {
                 if (canonical.name == "lock.mdb" && canonical.parentFile?.name?.startsWith("objectbox") == true) {
                     AppLogger.w(TAG, "export skip objectbox lock file: ${canonical.absolutePath}")
@@ -473,6 +536,100 @@ object RawSnapshotBackupManager {
                 }
             }
         }
+    }
+
+    private fun prepareImageResources(
+        references: Set<RawSnapshotResourceReference>,
+    ): List<PreparedImageResource> {
+        val seenSourcePaths = HashSet<String>()
+        val result = ArrayList<PreparedImageResource>()
+        references.forEach { reference ->
+            val localPath = reference.localPath ?: return@forEach
+            val source = File(localPath)
+            if (!source.isFile) return@forEach
+            val canonical = source.canonicalFile
+            if (!seenSourcePaths.add(canonical.path)) return@forEach
+            val extension = canonical.extension
+            val snapshotPath = RawSnapshotResourceLayout.directoryFor(reference) +
+                RawSnapshotResourceLayout.fileName(reference, extension)
+            result += PreparedImageResource(
+                source = canonical,
+                mapping = ResourceMapping(
+                    ownerType = reference.ownerType.name,
+                    kind = reference.kind.name,
+                    ownerId = reference.ownerId,
+                    ownerName = reference.ownerName,
+                    originalUri = reference.uri,
+                    snapshotPath = snapshotPath,
+                ),
+            )
+        }
+        AppLogger.i(TAG, "prepare resources done (references=${references.size} files=${result.size})")
+        return result
+    }
+
+    private fun restoreSnapshotResources(
+        context: Context,
+        manifest: Manifest,
+        workDir: File,
+    ) {
+        if (manifest.resources.isEmpty()) return
+        val payloadRoot = File(workDir, "payload").canonicalFile
+        val allowedRoots = listOfNotNull(
+            context.dataDir.canonicalFile,
+            context.getExternalFilesDir(null)?.canonicalFile,
+        )
+        var restored = 0
+        var skipped = 0
+        manifest.resources.forEach { mapping ->
+            val snapshotFile = File(payloadRoot, mapping.snapshotPath).canonicalFile
+            if (!snapshotFile.path.startsWith(payloadRoot.path + File.separator)) {
+                skipped++
+                return@forEach
+            }
+            if (!snapshotFile.isFile) {
+                skipped++
+                return@forEach
+            }
+            val destination = restoreDestinationFor(mapping.originalUri, allowedRoots)
+            if (destination == null) {
+                AppLogger.w(TAG, "restore resource skip (unsupported originalUri): ${mapping.originalUri}")
+                skipped++
+                return@forEach
+            }
+            try {
+                destination.parentFile?.mkdirs()
+                snapshotFile.copyTo(destination, overwrite = true)
+                restored++
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "restore resource failed: ${mapping.snapshotPath}", e)
+                skipped++
+            }
+        }
+        AppLogger.i(
+            TAG,
+            "restore resources done (restored=$restored skipped=$skipped total=${manifest.resources.size})"
+        )
+    }
+
+    private fun restoreDestinationFor(
+        originalUri: String,
+        allowedRoots: List<File>,
+    ): File? {
+        val uri = Uri.parse(originalUri)
+        val path = when (uri.scheme?.lowercase()) {
+            null, "" -> originalUri
+            "file" -> uri.path
+            else -> return null
+        } ?: return null
+        val file = runCatching { File(path).canonicalFile }.getOrNull() ?: return null
+        if (allowedRoots.none { root ->
+                file.path == root.path || file.path.startsWith(root.path + File.separator)
+            }
+        ) {
+            return null
+        }
+        return file
     }
 
     private fun shouldPruneDirForZip(
@@ -544,6 +701,7 @@ object RawSnapshotBackupManager {
         dir: File,
         entryPrefix: String,
         excludedTopLevelDirNames: Set<String>,
+        referencedResourcePaths: Set<String> = emptySet(),
         onScannedCountChanged: ((Int) -> Unit)? = null
     ): Int {
         if (!dir.exists() || !dir.isDirectory) return 0
@@ -557,6 +715,9 @@ object RawSnapshotBackupManager {
         }.forEach { f ->
             if (!f.isFile) return@forEach
             val canonical = f.canonicalFile
+            if (referencedResourcePaths.isNotEmpty() && referencedResourcePaths.contains(canonical.path)) {
+                return@forEach
+            }
             if (shouldSkipForZip(canonical, baseCanonical, entryPrefix, excludedTopLevelDirNames)) return@forEach
             total++
 
