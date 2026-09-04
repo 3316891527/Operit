@@ -51,6 +51,22 @@ object RawSnapshotBackupManager {
 
     private val terminalTopLevelDirNames = setOf("usr", "tmp", "bin")
 
+// Theme assets (avatars / background / bubble image / fonts) picked by the user are persisted
+// by FileUtils.copyFileToInternalStorage() as flat files in filesDir root, named
+// "<kind>_<UUID>.<ext>" (or "avatar_<id>_<UUID>", "group_avatar_<id>_<UUID>"). Only these
+// prefixes are candidates when pruning unreferenced historical media from a raw snapshot.
+private val themeMediaFlatNamePrefixes = listOf(
+    "background",
+    "bubble_ai",
+    "bubble_user",
+    "custom_font",
+    "user_avatar",
+    "ai_avatar",
+    "global_user_avatar",
+    "avatar_",
+    "group_avatar_",
+)
+
     private val mainHandler = Handler(Looper.getMainLooper())
 
     @Serializable
@@ -502,6 +518,10 @@ object RawSnapshotBackupManager {
                 AppLogger.i(TAG, "export skip referenced resource in raw copy: ${canonical.absolutePath}")
                 return@forEach
             }
+            if (entryPrefix == ENTRY_FILES && isUnreferencedThemeMediaFlatFile(canonical, baseCanonical)) {
+                AppLogger.i(TAG, "export skip unreferenced theme media: ${canonical.name}")
+                return@forEach
+            }
             if (shouldSkipForZip(canonical, baseCanonical, entryPrefix, excludedTopLevelDirNames)) {
                 if (canonical.name == "lock.mdb" && canonical.parentFile?.name?.startsWith("objectbox") == true) {
                     AppLogger.w(TAG, "export skip objectbox lock file: ${canonical.absolutePath}")
@@ -632,6 +652,16 @@ object RawSnapshotBackupManager {
         return file
     }
 
+    private fun isUnreferencedThemeMediaFlatFile(canonical: File, baseCanonical: File): Boolean {
+        if (canonical == baseCanonical || !canonical.path.startsWith(baseCanonical.path + File.separator)) {
+            return false
+        }
+        val rel = canonical.path.substring(baseCanonical.path.length + 1)
+        if (rel.contains('/')) return false
+        val name = canonical.name
+        return themeMediaFlatNamePrefixes.any { name.startsWith(it) }
+    }
+
     private fun shouldPruneDirForZip(
         currentDir: File,
         baseDir: File,
@@ -716,6 +746,9 @@ object RawSnapshotBackupManager {
             if (!f.isFile) return@forEach
             val canonical = f.canonicalFile
             if (referencedResourcePaths.isNotEmpty() && referencedResourcePaths.contains(canonical.path)) {
+                return@forEach
+            }
+            if (entryPrefix == ENTRY_FILES && isUnreferencedThemeMediaFlatFile(canonical, baseCanonical)) {
                 return@forEach
             }
             if (shouldSkipForZip(canonical, baseCanonical, entryPrefix, excludedTopLevelDirNames)) return@forEach
