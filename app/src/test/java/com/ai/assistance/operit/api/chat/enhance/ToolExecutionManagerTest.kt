@@ -196,11 +196,7 @@ class ToolExecutionManagerTest {
     @Test
     fun sharedDisplayBudgetCompactsResultsAfterTheConversationLimit() = runTest {
         val live = mutableListOf<String>()
-        // The budget applies to the complete display markup, which includes
-        // XML/tool-result framing in addition to the 16 KiB payload. Leave
-        // enough room for two complete emissions and assert compaction on the
-        // third one without relying on the exact framing overhead.
-        val sharedBudget = ToolExecutionManager.ToolResultDisplayBudget(initialChars = 48 * 1024)
+        val sharedBudget = ToolExecutionManager.ToolResultDisplayBudget(initialChars = 32 * 1024)
         repeat(3) { index ->
             val buffer = ToolExecutionManager.ToolResultMarkupBuffer()
             buffer.record(
