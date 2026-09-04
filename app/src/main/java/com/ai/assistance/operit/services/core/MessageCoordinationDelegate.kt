@@ -10,6 +10,7 @@ import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.config.FunctionalPrompts
 import com.ai.assistance.operit.api.chat.enhance.MultiServiceManager
 import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.data.model.ConversationSummaryConfig
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.FunctionType
@@ -142,13 +143,20 @@ class MessageCoordinationDelegate(
                         ?: context.getString(R.string.provider_error_network_interrupted)
                     val waitSeconds =
                         ((retry.retryAfterMs + 999L) / 1_000L).coerceAtLeast(1L)
+                    val retryToastMessage =
+                        try {
+                            context.getString(
+                                R.string.provider_error_retry_message,
+                                errorMessage,
+                                retry.retryAttempt,
+                                waitSeconds
+                            )
+                        } catch (error: IllegalArgumentException) {
+                            AppLogger.e(TAG, "Failed to format retry message", error)
+                            "$errorMessage (retry ${retry.retryAttempt}, waiting ${waitSeconds}s)"
+                        }
                     uiStateDelegate.showRetryToast(
-                        context.getString(
-                            R.string.provider_error_retry_message,
-                            errorMessage,
-                            retry.retryAttempt,
-                            waitSeconds
-                        ),
+                        retryToastMessage,
                         retry.retryAfterMs
                     )
                 }
@@ -1810,13 +1818,13 @@ class MessageCoordinationDelegate(
                 val currentChat = chatHistoryDelegate.chatHistories.value.firstOrNull { it.id == originalChatId }
                 val isGroupChat = currentChat?.characterGroupId != null
 
-                val summaryCustomRules = readSummaryCustomRules()
+                val summaryConfig = readSummaryConfig()
                 val summaryMessage = AIMessageManager.summarizeMemory(
                     enhancedAiService = service,
                     messages = snapshotMessages,
                     autoContinue = false,
                     isGroupChat = isGroupChat,
-                    summaryCustomRules = summaryCustomRules
+                    summaryConfig = summaryConfig
                 ) ?: return@launch
 
                 val currentChatId = chatHistoryDelegate.currentChatId.value
@@ -1936,9 +1944,15 @@ class MessageCoordinationDelegate(
                 summaryInsertReferenceMessages.getOrNull(insertPosition - 1)?.timestamp
             val afterTimestamp =
                 summaryInsertReferenceMessages.getOrNull(insertPosition)?.timestamp
-            val summaryCustomRules = readSummaryCustomRules()
+            val summaryConfig = readSummaryConfig()
             val summaryMessage =
-                AIMessageManager.summarizeMemory(service, currentMessages, autoContinue, effectiveIsGroupChat, summaryCustomRules)
+                AIMessageManager.summarizeMemory(
+                    enhancedAiService = service,
+                    messages = currentMessages,
+                    autoContinue = autoContinue,
+                    isGroupChat = effectiveIsGroupChat,
+                    summaryConfig = summaryConfig
+                )
 
             if (summaryMessage != null) {
                 chatHistoryDelegate.addSummaryMessage(
@@ -2047,8 +2061,8 @@ class MessageCoordinationDelegate(
         this.uiBridge = uiBridge
     }
 
-    /** 从当前聊天绑定的模型配置中读取自定义总结规则 */
-    suspend fun readSummaryCustomRules(): String? {
+    /** 从当前聊天绑定的模型配置中读取全局规则和总结板块。 */
+    suspend fun readSummaryConfig(): ConversationSummaryConfig {
         return try {
             val functionalConfigManager = FunctionalConfigManager(context)
             val modelConfigManager = ModelConfigManager(context)
@@ -2056,13 +2070,16 @@ class MessageCoordinationDelegate(
             val chatMapping = functionMappings[FunctionType.CHAT] ?: FunctionConfigMapping()
             if (chatMapping.configId.isNotBlank()) {
                 val config = modelConfigManager.getModelConfigFlow(chatMapping.configId).first()
-                config.summaryCustomRules.takeIf { it.isNotBlank() }
+                ConversationSummaryConfig(
+                    globalRules = config.summaryCustomRules.takeIf { it.isNotBlank() },
+                    sectionOverrides = config.summarySectionOverrides
+                )
             } else {
-                null
+                ConversationSummaryConfig()
             }
         } catch (e: Exception) {
-            AppLogger.w(TAG, "读取自定义总结规则失败", e)
-            null
+            AppLogger.w(TAG, "读取全局总结规则失败", e)
+            ConversationSummaryConfig()
         }
     }
 }

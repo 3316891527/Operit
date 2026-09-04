@@ -182,7 +182,7 @@ class ToolExecutionManagerTest {
         )
 
         assertEquals(1, live.size)
-        assertTrue(live.single().length <= 64 * 1024 + 2)
+        assertTrue(live.single().length <= 128 * 1024 + 2)
         assertTrue(live.single().contains("[工具结果过长，已截断]"))
     }
     @Test
@@ -196,7 +196,7 @@ class ToolExecutionManagerTest {
     @Test
     fun sharedDisplayBudgetCompactsResultsAfterTheConversationLimit() = runTest {
         val live = mutableListOf<String>()
-        val sharedBudget = ToolExecutionManager.ToolResultDisplayBudget(initialChars = 32 * 1024)
+        val sharedBudget = ToolExecutionManager.ToolResultDisplayBudget(initialChars = 40 * 1024)
         repeat(3) { index ->
             val buffer = ToolExecutionManager.ToolResultMarkupBuffer()
             buffer.record(

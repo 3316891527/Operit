@@ -47,8 +47,8 @@ object ToolExecutionManager {
     private const val PACKAGE_CALLER_NAME_PARAM = "__operit_package_caller_name"
     private const val PACKAGE_CHAT_ID_PARAM = "__operit_package_chat_id"
     private const val PACKAGE_CALLER_CARD_ID_PARAM = "__operit_package_caller_card_id"
-    internal const val MAX_TOOL_RESULT_DISPLAY_CHARS_PER_TURN = 16 * 1024 * 1024
-    internal const val MAX_TOOL_RESULT_DISPLAY_CHARS_PER_INVOCATION = 64 * 1024
+    internal const val MAX_TOOL_RESULT_DISPLAY_CHARS_PER_TURN = 32 * 1024 * 1024
+    internal const val MAX_TOOL_RESULT_DISPLAY_CHARS_PER_INVOCATION = 128 * 1024
     private const val MIN_TOOL_RESULT_DISPLAY_CHARS = 1_024
     private const val COMPACT_RESULT_MESSAGE =
         "[工具结果已从聊天显示中省略，以避免长任务占用过多内存。]"

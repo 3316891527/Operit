@@ -975,8 +975,14 @@
     <string name="settings_enable_summary_by_message_count_desc">Trigger summary when new message count reaches threshold</string>
     <string name="settings_summary_message_count_threshold">Message Count Threshold</string>
     <string name="settings_summary_message_count_threshold_subtitle">Number of new messages to trigger summary (1-20)</string>
-    <string name="settings_summary_custom_rules">Custom Summary Rules</string>
-    <string name="settings_summary_custom_rules_desc">Extra rules sent when summarizing the conversation. Leave blank for none</string>
+    <string name="settings_summary_custom_rules">Global Summary Rules</string>
+    <string name="settings_summary_custom_rules_desc">Shared rules for all enabled summary sections. They take priority over default section instructions; leave blank to use section instructions only</string>
+    <string name="settings_summary_structure">Summary Structure</string>
+    <string name="settings_summary_section_enabled_desc">Turn this off to omit this section from generated summaries</string>
+    <string name="settings_summary_section_title">Section Title</string>
+    <string name="settings_summary_section_title_desc">The heading shown in the summary</string>
+    <string name="settings_summary_section_instruction">Section Instructions</string>
+    <string name="settings_summary_section_instruction_desc">Describe what this section should record</string>
     
     <string name="settings_section_display">Display and Behavior</string>
 
@@ -3211,8 +3217,7 @@
     <string name="version_update">Version Update</string>
     <string name="mcp_no_zip_selected">No ZIP file selected</string>
     <string name="mcp_uninstall_failed">Uninstall failed</string>
-    <string name="chatgpt_parse_error">Failed to parse ChatGPT format: %1$s</string>
-    <string name="chatgpt_import_from">Import from ChatGPT</string>
+    <!-- Legacy ChatGPT import resources removed. -->
     <string name="uiautomation_execute">Execute</string>
     <string name="uiautomation_complete">Complete</string>
     <string name="message_list_empty">Message list cannot be empty</string>
@@ -5421,10 +5426,6 @@
     <string name="backup_import_format_hint">Please select the chat history format to import:</string>
     <string name="backup_format_operit">Operit JSON (Recommended)</string>
     <string name="backup_format_operit_desc">Native format of this app, preserves variants and all other data</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">OpenAI ChatGPT conversations.json export format</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">ChatBox desktop application export format</string>
     <string name="backup_format_generic_json">Generic JSON</string>
     <string name="backup_format_generic_json_desc">Standard role-content JSON structure (supports Claude, LibreChat, etc.)</string>
     
@@ -5748,7 +5749,7 @@
     <string name="autoglm_api_key_placeholder">Paste your Zhipu API Key here</string>
     <string name="autoglm_one_click_button">One-Click AutoGLM Config</string>
     <string name="autoglm_status_running">Running one-click configuration, please wait...</string>
-    <string name="autoglm_status_success">AutoGLM one-click configuration completed:\nModel: %1$s\nAPI Key: %2$s\nToolkit: AutoGLM\n\nYou can now use AutoGLM mode in the chat interface.</string>
+    <string name="autoglm_status_success">AutoGLM one-click configuration completed:\n- AutoGLM UI controller model configuration was created or updated (autoglm-phone, Zhipu)\n- The "UI Controller" feature was switched to this configuration\n- Automatic_ui_base was disabled and Automatic_ui_subagent was enabled\n\nYou can now use AutoGLM mode in the chat interface.</string>
     <string name="autoglm_status_error">One-click configuration failed: %1$s</string>
     <string name="autoglm_error_empty_api_key">Please fill in the Zhipu API Key first.</string>
 
@@ -6664,7 +6665,7 @@
 
     <string name="provider_error_response_empty">API response is empty</string>
     <string name="provider_error_parsing_failed">Failed to parse response</string>
-    <string name="provider_error_retry_message">%1, retrying (%2), waiting %3 sec...</string>
+    <string name="provider_error_retry_message">%1$s, retrying (%2$d), waiting %3$d sec...</string>
     <string name="provider_error_timeout">Connection timeout</string>
     <string name="provider_error_network_interrupted">Network interrupted</string>
     <string name="operit_network_error_format">Failed: Network request failed, status code: %1$d, error: %2$s</string>
@@ -6790,6 +6791,13 @@
     <string name="root_custom_su_command">Custom su command (KernelSU mode)</string>
     <string name="root_custom_su_command_description">Applies only in KernelSU mode. You can enter commands like su or su --mount-master.</string>
     <string name="global_display_virtual_screen_bitrate">Virtual Screen Bitrate</string>
+    <string name="global_display_agent_post_launch_delay">UI automation: delay after app launch</string>
+    <string name="global_display_agent_post_launch_delay_desc">Fixed wait after a successful app launch, letting the window settle. Lower is faster but may capture transition animations.</string>
+    <string name="global_display_agent_post_action_delay">UI automation: delay after action</string>
+    <string name="global_display_agent_post_action_delay_desc">Fixed wait after a successful tap, type, swipe or key action, letting the UI react. 0 is fastest.</string>
+    <string name="global_display_agent_max_steps">AutoGLM maximum steps</string>
+    <string name="global_display_agent_max_steps_desc">Limits how many model rounds one automation task may execute. The default is 25 steps.</string>
+    <string name="global_display_agent_max_steps_unit">steps</string>
     <string name="global_display_status_indicator_style">Status Indicator Style</string>
     <string name="global_display_screenshot_settings">Screenshot Settings</string>
     <string name="global_display_image_format">Image Format</string>
@@ -7058,18 +7066,6 @@
     <string name="export_assistant">Assistant</string>
     <string name="export_model">(Model: %1$s)</string>
 
-    <!-- ChatBoxConverter -->
-    <string name="chatbox_unsupported_format">Unsupported ChatBox format</string>
-    <string name="chatbox_unsupported_format_detail">Please import JSON exported by ChatBox (Settings > General Settings > Data Backup > Export Selected Data)</string>
-    <string name="chatbox_parse_error">Failed to parse ChatBox format: %1$s</string>
-    <string name="chatbox_invalid_export_file">Invalid ChatBox export file</string>
-    <string name="chatbox_invalid_export_hint">Please use "Export Selected Data" in ChatBox Settings > General Settings > Data Backup to export JSON</string>
-    <string name="chatbox_import_group">Imported from ChatBox</string>
-    <string name="chatbox_message_generation_failed">Message generation failed: %1$s</string>
-    <string name="chatbox_image_not_saved">This message originally contained images but was not saved</string>
-    <string name="chatbox_role_user">User</string>
-    <string name="chatbox_role_assistant">Assistant</string>
-    <string name="chatbox_role_system">System</string>
     <string name="role_assistant">Assistant</string>
     <string name="role_system">System</string>
     <string name="role_model">Model</string>
@@ -8461,4 +8457,54 @@
     <string name="llm_retry_seconds_unit">sec</string>
     <string name="llm_retry_schedule_value">Wait sequence: %1$s</string>
     <string name="llm_retry_schedule_disabled">Automatic retries disabled</string>
+    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
+    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
+    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
+    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
+    <string name="package_market_origin_title">External package source notice</string>
+    <string name="package_market_origin_message">This package comes from the Operit Market.\nPackage: %1$s\nVersion: %2$s\nAuthor: %3$s\nPlease support the original author and beware of resale.</string>
+    <string name="token_stats_unit_millions">M</string>
+    <string name="token_stats_unit_billions">B</string>
+    <string name="token_stats_unit_toggle_description">Current token unit is %1$s; click to switch to %2$s</string>
+    <string name="market_manage_submit_revision">Submit new version after editing</string>
+    <string name="market_manage_loading_request_title">Loading request</string>
+    <string name="market_manage_loading_request_message">The request is being processed. Please wait...</string>
+    <string name="market_version_incompatible_title">Cannot download: client version is not supported</string>
+    <string name="market_version_too_low_message">Your client version %1$s is lower than the minimum version %2$s required by this resource. Update the client before downloading.</string>
+    <string name="market_version_too_high_message">Your client version %1$s is higher than the maximum supported version %2$s for this resource. Use a supported client version.</string>
+    <string name="backup_format_csv">CSV</string>
+    <string name="backup_format_csv_desc">Structured table format that preserves chat metadata, messages, and response variants and can be imported again</string>
+    <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
+    <string name="data_recovery_raw_snapshot_section">Raw snapshot</string>
+    <string name="data_recovery_raw_snapshot_description">Export packages the internal files, shared_prefs, datastore, databases, and Android/data package directory; importing overwrites current data.</string>
+    <string name="data_recovery_export_snapshot">Export snapshot</string>
+    <string name="data_recovery_import_snapshot">Import snapshot</string>
+    <string name="data_recovery_start_main_app">Launch main app</string>
+    <string name="data_recovery_file_management">File management</string>
+    <string name="data_recovery_file_management_description">This page does not open a file manager directly. To inspect or export internal files manually, open MT Manager, add the local storage repository, select the Operit data repository, and manage it there. provider: %1$s</string>
+    <string name="data_recovery_sql_executor">SQL executor</string>
+    <string name="data_recovery_messages_size">messages size</string>
+    <string name="data_recovery_variants_size">variants size</string>
+    <string name="data_recovery_chats_fields">chats fields</string>
+    <string name="data_recovery_sql_label">SQL</string>
+    <string name="data_recovery_execute">Execute</string>
+    <string name="data_recovery_import_snapshot_title">Import raw snapshot</string>
+    <string name="data_recovery_import_snapshot_message">Importing will overwrite current app data. Import this snapshot?</string>
+    <string name="data_recovery_import_action">Import</string>
+    <string name="data_recovery_cancel_action">Cancel</string>
+    <string name="data_recovery_started">Recovery process started</string>
+    <string name="data_recovery_affected_rows">Affected rows: %1$d</string>
+    <string name="data_recovery_query_result">Query result: %1$d rows</string>
+    <string name="data_recovery_sql_empty">SQL is empty</string>
+    <string name="data_recovery_sql_running">Executing SQL</string>
+    <string name="data_recovery_query_completed">Query completed: %1$d rows</string>
+    <string name="data_recovery_sql_completed">SQL execution completed</string>
+    <string name="data_recovery_export_running">Exporting raw snapshot</string>
+    <string name="data_recovery_export_completed">Raw snapshot export completed</string>
+    <string name="data_recovery_restore_running">Importing raw snapshot</string>
+    <string name="data_recovery_restore_completed">Raw snapshot import completed. Restart the app to apply it.</string>
+    <string name="data_recovery_export_progress">Export: %1$s</string>
+    <string name="data_recovery_restore_progress">Import: %1$s</string>
+    <string name="data_recovery_progress_percent"> %1$d%%</string>
+    <string name="data_recovery_launch_failed">Unable to launch main app</string>
 </resources>

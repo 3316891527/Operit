@@ -903,8 +903,14 @@
     <string name="settings_enable_summary_by_message_count_desc">当新消息数量达到阈值时触发总结</string>
     <string name="settings_summary_message_count_threshold">消息条数阈值</string>
     <string name="settings_summary_message_count_threshold_subtitle">触发总结的新消息数量(1-20条)</string>
-    <string name="settings_summary_custom_rules">自定义总结规则</string>
-    <string name="settings_summary_custom_rules_desc">总结对话时发送的额外规则，留空为不添加</string>
+    <string name="settings_summary_custom_rules">全局总结规则</string>
+    <string name="settings_summary_custom_rules_desc">适用于所有启用总结板块的共同规则，优先于默认板块说明；留空则只使用板块说明</string>
+    <string name="settings_summary_structure">总结结构</string>
+    <string name="settings_summary_section_enabled_desc">关闭后生成摘要时不输出该板块</string>
+    <string name="settings_summary_section_title">板块标题</string>
+    <string name="settings_summary_section_title_desc">摘要中显示的标题</string>
+    <string name="settings_summary_section_instruction">板块说明</string>
+    <string name="settings_summary_section_instruction_desc">说明此板块应记录什么内容</string>
 
     <string name="settings_section_display">显示与行为</string>
 
@@ -5963,18 +5969,16 @@
     <string name="backup_format_markdown_desc">轻量级标记格式，便于阅读和编辑</string>
     <string name="backup_format_html">HTML</string>
     <string name="backup_format_html_desc">网页格式，适合在浏览器中查看</string>
-    <string name="backup_format_txt">纯文本</string>
+    <string name="backup_format_txt">TXT</string>
     <string name="backup_format_txt_desc">简单的文本格式，便于分享</string>
+    <string name="backup_format_csv">CSV</string>
+    <string name="backup_format_csv_desc">结构化表格格式，完整保留聊天元数据、消息和回答变体，可再次导入</string>
     
     <!-- 导入格式选择 -->
     <string name="backup_select_import_format">选择导入格式</string>
     <string name="backup_import_format_hint">请选择要导入的聊天记录格式：</string>
     <string name="backup_format_operit">Operit JSON（推荐）</string>
     <string name="backup_format_operit_desc">本应用的原生格式，完整保留消息切换等所有数据</string>
-    <string name="backup_format_chatgpt">ChatGPT</string>
-    <string name="backup_format_chatgpt_desc">OpenAI ChatGPT conversations.json 导出格式</string>
-    <string name="backup_format_chatbox">ChatBox</string>
-    <string name="backup_format_chatbox_desc">ChatBox 桌面应用导出格式</string>
     <string name="backup_format_generic_json">通用 JSON</string>
     <string name="backup_format_generic_json_desc">标准 role-content 结构的 JSON（支持 Claude、LibreChat 等）</string>
     
@@ -6849,8 +6853,6 @@
     <string name="version_update">版本更新</string>
     <string name="mcp_no_zip_selected">未选择ZIP文件</string>
     <string name="mcp_uninstall_failed">卸载失败</string>
-    <string name="chatgpt_parse_error">解析 ChatGPT 格式失败: %1$s</string>
-    <string name="chatgpt_import_from">从 ChatGPT 导入</string>
     <string name="uiautomation_execute">执行</string>
     <string name="uiautomation_complete">完成</string>
     <string name="message_list_empty">消息列表不能为空</string>
@@ -7253,7 +7255,7 @@
 
     <string name="provider_error_response_empty">API响应为空</string>
     <string name="provider_error_parsing_failed">解析响应失败</string>
-    <string name="provider_error_retry_message">%1，正在进行第 %2 次重试，等待 %3 秒...</string>
+    <string name="provider_error_retry_message">%1$s，正在进行第 %2$d 次重试，等待 %3$d 秒...</string>
     <string name="provider_error_timeout">连接超时</string>
     <string name="provider_error_network_interrupted">网络中断</string>
     <string name="operit_network_error_format">失败：网络请求失败，状态码：%1$d，错误信息：%2$s</string>
@@ -7379,6 +7381,13 @@
     <string name="root_custom_su_command">自定义 su 命令（KernelSU 模式）</string>
     <string name="root_custom_su_command_description">仅在 KernelSU 模式生效，可填写 su 或 su --mount-master 等命令。</string>
     <string name="global_display_virtual_screen_bitrate">虚拟屏幕码率</string>
+    <string name="global_display_agent_post_launch_delay">UI 自动化：启动应用后等待</string>
+    <string name="global_display_agent_post_launch_delay_desc">启动 App 成功后固定等待的时间，等待窗口稳定。设小可以更快，但可能截到过渡动画。</string>
+    <string name="global_display_agent_post_action_delay">UI 自动化：动作后等待</string>
+    <string name="global_display_agent_post_action_delay_desc">点击、输入、滑动、返回等动作成功后固定等待的时间，等待界面响应。设为 0 最快。</string>
+    <string name="global_display_agent_max_steps">AutoGLM 最大执行步数</string>
+    <string name="global_display_agent_max_steps_desc">限制一次自动化任务最多请求模型并执行多少轮，默认 25 步。</string>
+    <string name="global_display_agent_max_steps_unit">步</string>
     <string name="global_display_status_indicator_style">自动化状态指示样式</string>
     <string name="global_display_screenshot_settings">自动化截图设置</string>
     <string name="global_display_image_format">图片格式</string>
@@ -7655,19 +7664,6 @@
     <string name="export_user">用户</string>
     <string name="export_assistant">助手</string>
     <string name="export_model">（模型: %1$s）</string>
-
-    <!-- ChatBoxConverter (新增) -->
-    <string name="chatbox_unsupported_format">不支持的 ChatBox 格式</string>
-    <string name="chatbox_unsupported_format_detail">请导入 ChatBox 导出的 JSON（设置 > 常规设置 > 数据备份 > 导出勾选数据）</string>
-    <string name="chatbox_parse_error">解析 ChatBox 格式失败: %1$s</string>
-    <string name="chatbox_invalid_export_file">不是有效的 ChatBox 导出文件</string>
-    <string name="chatbox_invalid_export_hint">请在 ChatBox 的 设置 > 常规设置 > 数据备份 中使用"导出勾选数据"导出 JSON</string>
-    <string name="chatbox_import_group">从 ChatBox 导入</string>
-    <string name="chatbox_message_generation_failed">消息生成失败: %1$s</string>
-    <string name="chatbox_image_not_saved">该消息原本包含图片，但未被保存</string>
-    <string name="chatbox_role_user">用户</string>
-    <string name="chatbox_role_assistant">助手</string>
-    <string name="chatbox_role_system">系统</string>
     <string name="role_assistant">助手</string>
     <string name="role_system">系统</string>
     <string name="role_model">模型</string>
@@ -8456,4 +8452,36 @@
     <string name="llm_retry_seconds_unit">秒</string>
     <string name="llm_retry_schedule_value">等待序列：%1$s</string>
     <string name="llm_retry_schedule_disabled">自动重试已关闭</string>
+    <string name="data_recovery_raw_snapshot_section">原始快照</string>
+    <string name="data_recovery_raw_snapshot_description">导出会打包内部 files、shared_prefs、datastore、databases 和 Android/data 包目录；导入会覆盖当前数据。</string>
+    <string name="data_recovery_export_snapshot">导出快照</string>
+    <string name="data_recovery_import_snapshot">导入快照</string>
+    <string name="data_recovery_start_main_app">启动主应用</string>
+    <string name="data_recovery_file_management">文件管理</string>
+    <string name="data_recovery_file_management_description">此页不直接打开文件管理器。需要手动查看或导出内部文件时，可以打开 MT 管理器，添加「本地存储仓库」，选择 Operit 的数据仓库后再管理。provider: %1$s</string>
+    <string name="data_recovery_sql_executor">SQL 执行器</string>
+    <string name="data_recovery_messages_size">messages 大小</string>
+    <string name="data_recovery_variants_size">variants 大小</string>
+    <string name="data_recovery_chats_fields">chats 字段</string>
+    <string name="data_recovery_sql_label">SQL</string>
+    <string name="data_recovery_execute">执行</string>
+    <string name="data_recovery_import_snapshot_title">导入原始快照</string>
+    <string name="data_recovery_import_snapshot_message">导入会覆盖当前应用数据。确认导入这个快照？</string>
+    <string name="data_recovery_import_action">导入</string>
+    <string name="data_recovery_cancel_action">取消</string>
+    <string name="data_recovery_started">救援进程已启动</string>
+    <string name="data_recovery_affected_rows">受影响行数：%1$d</string>
+    <string name="data_recovery_query_result">查询结果 %1$d 行</string>
+    <string name="data_recovery_sql_empty">SQL 为空</string>
+    <string name="data_recovery_sql_running">正在执行 SQL</string>
+    <string name="data_recovery_query_completed">查询完成：%1$d 行</string>
+    <string name="data_recovery_sql_completed">SQL 执行完成</string>
+    <string name="data_recovery_export_running">正在导出原始快照</string>
+    <string name="data_recovery_export_completed">原始快照导出完成</string>
+    <string name="data_recovery_restore_running">正在导入原始快照</string>
+    <string name="data_recovery_restore_completed">原始快照导入完成，请重启应用</string>
+    <string name="data_recovery_export_progress">导出：%1$s</string>
+    <string name="data_recovery_restore_progress">导入：%1$s</string>
+    <string name="data_recovery_progress_percent"> %1$d%%</string>
+    <string name="data_recovery_launch_failed">无法启动主应用</string>
 </resources>
