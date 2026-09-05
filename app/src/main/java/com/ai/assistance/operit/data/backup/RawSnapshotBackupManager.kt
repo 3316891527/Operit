@@ -1055,8 +1055,8 @@ object RawSnapshotBackupManager {
         // snapshot leaves newer migration markers behind and changes how restored data is read.
         toDir.listFiles()?.forEach { existing ->
             if (!preservedTopLevelDirNames.contains(existing.name)) {
-                check(existing.deleteRecursively()) {
-                    "Failed to remove stale snapshot entry: ${existing.absolutePath}"
+                if (!existing.deleteRecursively()) {
+                    AppLogger.w(TAG, "restore could not remove stale entry, will overwrite: ${existing.absolutePath}")
                 }
             }
         }
