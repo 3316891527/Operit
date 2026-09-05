@@ -914,6 +914,7 @@ fun PackageManagerScreen(
                             skillRepository = skillRepository,
                             snackbarHostState = snackbarHostState,
                             onNavigateToSkillMarket = onNavigateToSkillMarket,
+                            onOpenSkillMarketDetail = onOpenMarketDetail,
                             searchQuery = skillSearchQuery,
                             skillOrder = skillOrder,
                             onSaveSkillOrder = { newOrder ->
@@ -928,6 +929,7 @@ fun PackageManagerScreen(
                     PackageTab.MCP -> {
                         MCPConfigScreen(
                             onNavigateToMCPMarket = onNavigateToMCPMarket,
+                            onOpenMcpMarketDetail = onOpenMarketDetail,
                             searchQuery = mcpSearchQuery
                         )
                     }
