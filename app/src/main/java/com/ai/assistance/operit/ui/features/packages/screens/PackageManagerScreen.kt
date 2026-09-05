@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
 import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.data.api.MarketV2Entry
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -130,6 +131,7 @@ fun PackageManagerScreen(
     onNavigateToArtifactMarket: () -> Unit = {},
     onStartPluginCreation: (PluginCreationIntent) -> Unit = {},
     onOpenToolPkgPluginConfig: (String, String, String, Boolean) -> Unit = { _, _, _, _ -> },
+    onOpenMarketDetail: (MarketV2Entry) -> Unit = {},
 ) {
     val context = LocalContext.current
     val toolHandler = remember { AIToolHandler.getInstance(context) }
@@ -947,6 +949,10 @@ fun PackageManagerScreen(
                     onOpenToolPkgPluginConfig = { containerPackageName, uiModuleId, title, keepAlive ->
                         showDetails = false
                         onOpenToolPkgPluginConfig(containerPackageName, uiModuleId, title, keepAlive)
+                    },
+                    onOpenMarketDetail = { entry ->
+                        showDetails = false
+                        onOpenMarketDetail(entry)
                     },
                     onDismiss = {
                         showDetails = false
