@@ -66,6 +66,18 @@ fun findInstalledMarketMarkerRoot(
     return findInstalledMarketMarkerRoots(context, packageManager, entryId).firstOrNull()
 }
 
+fun readMarketInstallMarkerForPackage(
+    packageManager: PackageManager,
+    packageName: String
+): MarketInstallMarker? {
+    return try {
+        readMarketInstallMarker(artifactMarketMarkerRoot(packageManager, packageName))
+    } catch (error: Exception) {
+        AppLogger.w(TAG, "Failed to read market install marker for package: $packageName", error)
+        null
+    }
+}
+
 fun findInstalledMarketMarkerRoots(
     context: Context,
     packageManager: PackageManager,
