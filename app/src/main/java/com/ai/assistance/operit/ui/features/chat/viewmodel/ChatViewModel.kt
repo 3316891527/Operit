@@ -1730,7 +1730,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 与发消息保持一致：无活跃对话时给出明确提示，而不是静默失败
+                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    return@launch
+                }
                 
                 // 显示附件处理进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1922,6 +1926,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     /** Handles a photo taken by the camera */
     fun handleTakenPhoto(uri: Uri) {
         viewModelScope.launch {
+            val currentChatId = chatHistoryDelegate.currentChatId.value
+            if (currentChatId == null) {
+                // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
+                uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                return@launch
+            }
             attachmentDelegate.handleTakenPhoto(uri)
         }
     }
