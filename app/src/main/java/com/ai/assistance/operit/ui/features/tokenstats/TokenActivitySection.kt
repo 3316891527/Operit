@@ -69,11 +69,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * 活跃记录卡（信息架构重构版，设计规范 §6.5）：
- * - 标题行右侧展示当前连续 / 最长连续胶囊（数据来自 activity.stats）；
- * - 热力图左侧固定星期标签（一~日），与网格同步滚动方向无关；
- * - 热力色阶 = 未激活灰格 + 主色 5 档透明度阶；
- * - 视图模式（每日/每周/累计）由页面顶部三段式选择器驱动，本卡只负责呈现。
+ * 活跃记录区（信息架构重构版，设计规范 §6.5）：
+ * - 主卡按模式展示柱状图/折线图：每日=24 小时柱、每周=7 天柱、每月=周柱、
+ *   每年=月柱、累计=折线；
+ * - 独立的“活跃日历”热力图卡固定在下方，展示最近一年的日历网格，与模式解耦。
  */
 @Composable
 internal fun TokenActivitySection(
@@ -83,34 +82,65 @@ internal fun TokenActivitySection(
     val locale = LocalConfiguration.current.locales[0]
     val stats = state.rangeData?.stats
 
+    Column(verticalArrangement = Arrangement.spacedBy(TokenStatsSpacing.section)) {
+        TokenStatsCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(TokenStatsSpacing.card),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                TokenStatsCardTitle(stringResource(R.string.token_activity_title)) {
+                    stats?.let {
+                        TokenStatsPill(
+                            stringResource(R.string.token_activity_current_streak_badge, it.currentStreak)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        TokenStatsPill(
+                            stringResource(R.string.token_activity_longest_streak_badge, it.longestStreak)
+                        )
+                    }
+                }
+                Crossfade(
+                    targetState = state.viewMode,
+                    animationSpec = tween(150),
+                    label = "token_activity_chart",
+                ) { mode ->
+                    TokenActivityVisualization(
+                        state = state.copy(viewMode = mode),
+                        locale = locale,
+                        tokenDisplayUnit = tokenDisplayUnit,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+        state.heatmap?.let { heatmap ->
+            TokenActivityHeatmapCard(
+                data = heatmap,
+                locale = locale,
+                tokenDisplayUnit = tokenDisplayUnit,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TokenActivityHeatmapCard(
+    data: com.ai.assistance.operit.data.stats.TokenActivityRangeData,
+    locale: Locale,
+    tokenDisplayUnit: TokenStatsDisplayUnit,
+) {
     TokenStatsCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(TokenStatsSpacing.card),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            TokenStatsCardTitle(stringResource(R.string.token_activity_title)) {
-                stats?.let {
-                    TokenStatsPill(
-                        stringResource(R.string.token_activity_current_streak_badge, it.currentStreak)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    TokenStatsPill(
-                        stringResource(R.string.token_activity_longest_streak_badge, it.longestStreak)
-                    )
-                }
-            }
-            Crossfade(
-                targetState = state.viewMode,
-                animationSpec = tween(150),
-                label = "token_activity_heatmap",
-            ) { mode ->
-                TokenActivityVisualization(
-                    state = state.copy(viewMode = mode),
-                    locale = locale,
-                    tokenDisplayUnit = tokenDisplayUnit,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            TokenStatsCardTitle(stringResource(R.string.token_activity_calendar))
+            TokenActivityDailyHeatmap(
+                data = data,
+                locale = locale,
+                tokenDisplayUnit = tokenDisplayUnit,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -129,24 +159,21 @@ private fun TokenActivityVisualization(
         return
     }
     when (state.viewMode) {
-        TokenActivityViewMode.DAILY -> TokenActivityDailyHeatmap(state, locale, tokenDisplayUnit, modifier)
-        TokenActivityViewMode.WEEKLY -> TokenActivityWeeklyChart(state, locale, tokenDisplayUnit, modifier)
-        TokenActivityViewMode.MONTHLY -> TokenActivityMonthlyChart(state, locale, tokenDisplayUnit, modifier)
-        TokenActivityViewMode.YEARLY -> TokenActivityYearlyChart(state, locale, tokenDisplayUnit, modifier)
+        TokenActivityViewMode.DAILY -> TokenActivityHourlyChart(state, locale, tokenDisplayUnit, modifier)
+        TokenActivityViewMode.WEEKLY -> TokenActivityDailyBarChart(state, locale, tokenDisplayUnit, modifier)
+        TokenActivityViewMode.MONTHLY -> TokenActivityWeeklyChart(state, locale, tokenDisplayUnit, modifier)
+        TokenActivityViewMode.YEARLY -> TokenActivityMonthlyChart(state, locale, tokenDisplayUnit, modifier)
         TokenActivityViewMode.CUMULATIVE -> TokenActivityCumulativeChart(state, locale, tokenDisplayUnit, modifier)
     }
 }
 
 @Composable
 private fun TokenActivityDailyHeatmap(
-    state: TokenActivityUiState,
+    data: com.ai.assistance.operit.data.stats.TokenActivityRangeData,
     locale: Locale,
     tokenDisplayUnit: TokenStatsDisplayUnit,
     modifier: Modifier = Modifier,
 ) {
-    val data = state.rangeData
-    checkNotNull(data)
-
     val days = data.daily
     val firstDate = days.firstOrNull()?.date
     // 网格和左侧标签都按周一到周日排列；此前沿用周日首列偏移，导致标签与日期错行。
@@ -193,16 +220,16 @@ private fun TokenActivityDailyHeatmap(
             }
         }
         val width = (block + gap) * columns - gap
-        var selectedDay by remember(days, state.viewMode) {
+        var selectedDay by remember(days, data) {
             mutableStateOf<TokenActivityDay?>(null)
         }
-        var indicatorDay by remember(grid, state.viewMode) {
+        var indicatorDay by remember(grid, data) {
             mutableStateOf<TokenActivityDay?>(null)
         }
-        var indicatorColumn by remember(grid, state.viewMode) {
+        var indicatorColumn by remember(grid, data) {
             mutableIntStateOf(-1)
         }
-        var indicatorRow by remember(grid, state.viewMode) {
+        var indicatorRow by remember(grid, data) {
             mutableIntStateOf(-1)
         }
         val monthLabels = remember(grid, locale) {
@@ -233,7 +260,7 @@ private fun TokenActivityDailyHeatmap(
             }
         }
 
-        LaunchedEffect(columns, days, state.viewMode) {
+        LaunchedEffect(columns, days, data) {
             snapshotFlow { scroll.maxValue }.first { it > 0 }
             scroll.scrollTo(scroll.maxValue)
         }
@@ -477,6 +504,64 @@ private fun TokenActivityDailyHeatmap(
         }
     }
 }
+}
+
+@Composable
+private fun TokenActivityHourlyChart(
+    state: TokenActivityUiState,
+    locale: Locale,
+    tokenDisplayUnit: TokenStatsDisplayUnit,
+    modifier: Modifier = Modifier,
+) {
+    val data = checkNotNull(state.rangeData)
+    val points = data.hourly.map { entry ->
+        TokenActivitySeriesPoint(
+            startDate = entry.startDate,
+            endDate = entry.startDate,
+            tokens = entry.tokens,
+            hour = entry.hour,
+        )
+    }
+    TokenActivityTimeSeriesChart(
+        points = points,
+        style = TokenActivitySeriesStyle.BAR,
+        locale = locale,
+        modifier = modifier,
+        tapHint = stringResource(R.string.token_activity_chart_tap_hint),
+    ) { point ->
+        stringResource(
+            R.string.token_activity_hour_detail,
+            point.startDate.format(localizedDateFormatter(locale)),
+            point.hour ?: 0,
+            formatTokenCount(point.tokens, tokenDisplayUnit),
+        )
+    }
+}
+
+@Composable
+private fun TokenActivityDailyBarChart(
+    state: TokenActivityUiState,
+    locale: Locale,
+    tokenDisplayUnit: TokenStatsDisplayUnit,
+    modifier: Modifier = Modifier,
+) {
+    val data = checkNotNull(state.rangeData)
+    val points = data.daily.map { day ->
+        TokenActivitySeriesPoint(day.date, day.date, day.tokens)
+    }
+    TokenActivityTimeSeriesChart(
+        points = points,
+        style = TokenActivitySeriesStyle.BAR,
+        locale = locale,
+        modifier = modifier,
+        tapHint = stringResource(R.string.token_activity_chart_tap_hint),
+    ) { point ->
+        stringResource(
+            R.string.token_activity_day_detail,
+            point.startDate.format(localizedDateFormatter(locale)),
+            formatTokenCount(point.tokens, tokenDisplayUnit),
+        )
+    }
 }
 
 @Composable
@@ -742,6 +827,7 @@ private data class TokenActivitySeriesPoint(
     val startDate: java.time.LocalDate,
     val endDate: java.time.LocalDate,
     val tokens: Long,
+    val hour: Int? = null,
 )
 
 private enum class TokenActivitySeriesStyle { BAR, LINE }

@@ -7450,6 +7450,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="token_activity_longest_streak">Lari terpanjang</string>
     <string name="token_activity_days">%1$d hari</string>
     <string name="token_activity_day_detail">%1$s menggunakan %2$s Token</string>
+    <string name="token_activity_hour_detail">%1$s %2$d:00 menggunakan %3$s Token</string>
     <string name="token_activity_week_detail">%1$s - %2$s menggunakan %3$s Token</string>
     <string name="token_activity_month_detail">%1$s - %2$s menggunakan %3$s Token</string>
     <string name="token_activity_year_detail">%1$s - %2$s menggunakan %3$s Token</string>
@@ -7631,6 +7632,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="token_activity_monthly">Bulanan</string>
     <string name="token_activity_yearly">Tahunan</string>
     <string name="token_activity_cumulative">Kumulatif</string>
+    <string name="token_activity_calendar">Kalender aktivitas</string>
     <string name="token_activity_title">Catatan aktivitas</string>
     <string name="token_activity_current_streak_badge">Streak saat ini %1$d hari</string>
     <string name="token_activity_longest_streak_badge">Streak terpanjang %1$d hari</string>

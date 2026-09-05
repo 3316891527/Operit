@@ -8260,6 +8260,7 @@
     <string name="token_activity_monthly">Monthly</string>
     <string name="token_activity_yearly">Yearly</string>
     <string name="token_activity_cumulative">Cumulative</string>
+    <string name="token_activity_calendar">Activity calendar</string>
     <string name="token_activity_title">Activity</string>
     <string name="token_activity_current_streak_badge">%1$d-day streak</string>
     <string name="token_activity_longest_streak_badge">Longest %1$d days</string>
@@ -8270,6 +8271,7 @@
     <string name="token_activity_longest_streak">Longest streak</string>
     <string name="token_activity_days">%1$d days</string>
     <string name="token_activity_day_detail">%1$s used %2$s tokens</string>
+    <string name="token_activity_hour_detail">%1$s %2$d:00 used %3$s tokens</string>
     <string name="token_activity_week_detail">%1$s - %2$s used %3$s tokens</string>
     <string name="token_activity_month_detail">%1$s - %2$s used %3$s tokens</string>
     <string name="token_activity_year_detail">%1$s - %2$s used %3$s tokens</string>

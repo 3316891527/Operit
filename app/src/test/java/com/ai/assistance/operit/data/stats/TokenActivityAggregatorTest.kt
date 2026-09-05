@@ -86,6 +86,26 @@ class TokenActivityAggregatorTest {
     }
 
     @Test
+    fun `range data builds hourly buckets for a single day range`() {
+        val range = dateRange("2026-08-02", "2026-08-02")
+        val snapshot = TokenActivitySnapshot(
+            zone = zone,
+            dayTotals = mapOf(LocalDate.of(2026, 8, 2) to 70L),
+            hourTotals = mapOf(
+                LocalDate.of(2026, 8, 2).atTime(9, 0) to 10L,
+                LocalDate.of(2026, 8, 2).atTime(21, 0) to 60L,
+            ),
+        )
+
+        val result = TokenActivityAggregator.rangeData(snapshot, range)
+
+        assertEquals(24, result.hourly.size)
+        assertEquals(10L, result.hourly.first { it.hour == 9 }.tokens)
+        assertEquals(60L, result.hourly.first { it.hour == 21 }.tokens)
+        assertEquals(0L, result.hourly.first { it.hour == 3 }.tokens)
+    }
+
+    @Test
     fun `range data calculates streaks and cumulative totals inside the selected range`() {
         val range = dateRange("2026-08-01", "2026-08-05")
         val snapshot = TokenActivitySnapshot(

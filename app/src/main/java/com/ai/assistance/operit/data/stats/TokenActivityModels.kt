@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.stats
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -10,6 +11,7 @@ enum class TokenActivityViewMode { DAILY, WEEKLY, MONTHLY, YEARLY, CUMULATIVE }
 internal data class TokenActivitySnapshot(
     val zone: ZoneId,
     val dayTotals: Map<LocalDate, Long>,
+    val hourTotals: Map<LocalDateTime, Long> = emptyMap(),
 )
 
 data class TokenActivityDay(val date: LocalDate, val tokens: Long, val level: Int)
@@ -35,6 +37,14 @@ data class TokenActivityYear(
     val barHeight: Int,
 )
 
+data class TokenActivityHour(
+    val startDate: LocalDate,
+    val hour: Int,
+    val tokens: Long,
+    val level: Int,
+    val barHeight: Int,
+)
+
 data class TokenActivityStats(
     val totalTokens: Long = 0L,
     val peakTokens: Long = 0L,
@@ -47,6 +57,7 @@ data class TokenActivityRangeData(
     val weekly: List<TokenActivityWeek>,
     val monthly: List<TokenActivityMonth>,
     val yearly: List<TokenActivityYear>,
+    val hourly: List<TokenActivityHour>,
     val cumulative: List<TokenActivityDay>,
     val stats: TokenActivityStats,
 )
@@ -59,11 +70,12 @@ object TokenActivityAggregator {
     ): TokenActivityRangeData {
         val start = java.time.Instant.ofEpochMilli(range.startMs).atZone(snapshot.zone).toLocalDate()
         val end = java.time.Instant.ofEpochMilli(range.endMs - 1L).atZone(snapshot.zone).toLocalDate()
-        return rangeData(snapshot.dayTotals, start, end)
+        return rangeData(snapshot.dayTotals, snapshot.hourTotals, start, end)
     }
 
     private fun rangeData(
         dayTotals: Map<LocalDate, Long>,
+        hourTotals: Map<LocalDateTime, Long>,
         start: LocalDate,
         end: LocalDate,
     ): TokenActivityRangeData {
@@ -137,7 +149,38 @@ object TokenActivityAggregator {
             )
         }
 
-        return TokenActivityRangeData(daily, weekly, monthly, yearly, cumulative, stats(raw))
+        // Hourly buckets are only meaningful for single-day views (24 bars). Keep the
+        // range short to avoid wasteful computation for weekly/monthly/yearly ranges.
+        val hourly = if (dayCount <= 2 && hourTotals.isNotEmpty()) {
+            val hourEntries = buildList {
+                var current = start.atStartOfDay()
+                val endExclusive = end.plusDays(1L).atStartOfDay()
+                while (current < endExclusive) {
+                    add(
+                        TokenActivityHour(
+                            startDate = current.toLocalDate(),
+                            hour = current.hour,
+                            tokens = hourTotals[current] ?: 0L,
+                            level = 0,
+                            barHeight = 0,
+                        )
+                    )
+                    current = current.plusHours(1L)
+                }
+            }
+            val hourLevels = QuantileLevels.from(hourEntries.map(TokenActivityHour::tokens))
+            val hourHeights = barHeights(hourEntries.map(TokenActivityHour::tokens))
+            hourEntries.mapIndexed { index, entry ->
+                entry.copy(
+                    level = hourLevels.level(entry.tokens),
+                    barHeight = hourHeights[index],
+                )
+            }
+        } else {
+            emptyList()
+        }
+
+        return TokenActivityRangeData(daily, weekly, monthly, yearly, hourly, cumulative, stats(raw))
     }
 
     private fun stats(days: List<TokenActivityDay>): TokenActivityStats {

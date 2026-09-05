@@ -42,6 +42,7 @@ data class TokenActivityUiState(
     val loading: Boolean = true,
     val viewMode: TokenActivityViewMode = TokenActivityViewMode.DAILY,
     val rangeData: TokenActivityRangeData? = null,
+    val heatmap: TokenActivityRangeData? = null,
 )
 
 data class TokenStatsUiState(
@@ -214,6 +215,18 @@ class TokenUsageStatisticsViewModel(
                     val activityDeferred = async(Dispatchers.IO) {
                         TokenStatsQueryService.activitySnapshot(appContext, range, rangeParams, zone)
                     }
+                    val heatmapDeferred = async(Dispatchers.IO) {
+                        runCatching {
+                            val today = java.time.Instant.ofEpochMilli(nowMs()).atZone(zone).toLocalDate()
+                            val heatmapRange = TokenStatsTimeRanges.customRange(
+                                today.minusDays(364L).atStartOfDay(zone).toInstant().toEpochMilli(),
+                                today.plusDays(1L).atStartOfDay(zone).toInstant().toEpochMilli(),
+                            )
+                            val snapshot =
+                                TokenStatsQueryService.activitySnapshot(appContext, heatmapRange, rangeParams, zone)
+                            TokenActivityAggregator.rangeData(snapshot, heatmapRange)
+                        }.getOrNull()
+                    }
                     val rangeData = rangeDeferred.await()
                     val configurationIds =
                         rangeData
@@ -238,6 +251,7 @@ class TokenUsageStatisticsViewModel(
                         prices = pricesDeferred.await(),
                         configurationNames = configurationNamesDeferred.await(),
                         activity = TokenActivityAggregator.rangeData(activityDeferred.await(), range),
+                        heatmap = heatmapDeferred.await(),
                     )
                 }
 
@@ -260,7 +274,11 @@ class TokenUsageStatisticsViewModel(
                         knownModelNames = knownModelNames.toMap(),
                         configurationNames = result.configurationNames,
                         priceSettings = result.prices,
-                        activity = it.activity.copy(loading = false, rangeData = result.activity),
+                        activity = it.activity.copy(
+                            loading = false,
+                            rangeData = result.activity,
+                            heatmap = result.heatmap,
+                        ),
                         refreshVersion = it.refreshVersion + 1L,
                     )
                 }
@@ -426,6 +444,7 @@ private data class QueryLoadResult(
     val prices: List<TokenStatsPriceSetting>,
     val configurationNames: Map<String, String>,
     val activity: TokenActivityRangeData,
+    val heatmap: TokenActivityRangeData?,
 )
 
 private fun defaultDateRange(nowMs: Long, zone: ZoneId): TokenStatsTimeRange {
