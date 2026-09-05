@@ -104,8 +104,10 @@ class TokenUsageStatisticsViewModel(
 
     fun setActivityViewMode(mode: TokenActivityViewMode) {
         val snapshot = _state.value
-        val currentRange = snapshot.currentRange ?: defaultDateRange(nowMs(), zone)
-        val anchorDate = activityRangeAnchorDate(currentRange, zone)
+        // Tapping a mode re-anchors the window to today: daily spans today, weekly
+        // rolls back seven days, monthly/yearly roll back one calendar unit, and
+        // cumulative ends today while keeping the first recorded date.
+        val anchorDate = java.time.Instant.ofEpochMilli(nowMs()).atZone(zone).toLocalDate()
         val providerModels = providerModelsFor(snapshot)
         modeRangeJob?.cancel()
         modeRangeJob = viewModelScope.launch(dispatcher) {

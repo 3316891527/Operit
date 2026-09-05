@@ -131,6 +131,8 @@ private fun TokenActivityVisualization(
     when (state.viewMode) {
         TokenActivityViewMode.DAILY -> TokenActivityDailyHeatmap(state, locale, tokenDisplayUnit, modifier)
         TokenActivityViewMode.WEEKLY -> TokenActivityWeeklyChart(state, locale, tokenDisplayUnit, modifier)
+        TokenActivityViewMode.MONTHLY -> TokenActivityMonthlyChart(state, locale, tokenDisplayUnit, modifier)
+        TokenActivityViewMode.YEARLY -> TokenActivityYearlyChart(state, locale, tokenDisplayUnit, modifier)
         TokenActivityViewMode.CUMULATIVE -> TokenActivityCumulativeChart(state, locale, tokenDisplayUnit, modifier)
     }
 }
@@ -485,10 +487,13 @@ private fun TokenActivityWeeklyChart(
     modifier: Modifier = Modifier,
 ) {
     val data = checkNotNull(state.rangeData)
+    val rangeEnd = data.daily.lastOrNull()?.date
     val points = data.weekly.map { week ->
         TokenActivitySeriesPoint(
             startDate = week.startDate,
-            endDate = week.startDate.plusDays(6),
+            endDate = rangeEnd
+                ?.let { minOf(week.startDate.plusDays(6), it) }
+                ?: week.startDate.plusDays(6),
             tokens = week.tokens,
         )
     }
@@ -501,6 +506,74 @@ private fun TokenActivityWeeklyChart(
     ) { point ->
         stringResource(
             R.string.token_activity_week_detail,
+            point.startDate.format(localizedDateFormatter(locale)),
+            point.endDate.format(localizedDateFormatter(locale)),
+            formatTokenCount(point.tokens, tokenDisplayUnit),
+        )
+    }
+}
+
+@Composable
+private fun TokenActivityMonthlyChart(
+    state: TokenActivityUiState,
+    locale: Locale,
+    tokenDisplayUnit: TokenStatsDisplayUnit,
+    modifier: Modifier = Modifier,
+) {
+    val data = checkNotNull(state.rangeData)
+    val rangeEnd = data.daily.lastOrNull()?.date
+    val points = data.monthly.map { month ->
+        TokenActivitySeriesPoint(
+            startDate = month.startDate,
+            endDate = rangeEnd
+                ?.let { minOf(month.startDate.withDayOfMonth(month.startDate.lengthOfMonth()), it) }
+                ?: month.startDate.withDayOfMonth(month.startDate.lengthOfMonth()),
+            tokens = month.tokens,
+        )
+    }
+    TokenActivityTimeSeriesChart(
+        points = points,
+        style = TokenActivitySeriesStyle.BAR,
+        locale = locale,
+        modifier = modifier,
+        tapHint = stringResource(R.string.token_activity_chart_tap_hint),
+    ) { point ->
+        stringResource(
+            R.string.token_activity_month_detail,
+            point.startDate.format(localizedDateFormatter(locale)),
+            point.endDate.format(localizedDateFormatter(locale)),
+            formatTokenCount(point.tokens, tokenDisplayUnit),
+        )
+    }
+}
+
+@Composable
+private fun TokenActivityYearlyChart(
+    state: TokenActivityUiState,
+    locale: Locale,
+    tokenDisplayUnit: TokenStatsDisplayUnit,
+    modifier: Modifier = Modifier,
+) {
+    val data = checkNotNull(state.rangeData)
+    val rangeEnd = data.daily.lastOrNull()?.date
+    val points = data.yearly.map { year ->
+        TokenActivitySeriesPoint(
+            startDate = year.startDate,
+            endDate = rangeEnd
+                ?.let { minOf(year.startDate.withDayOfYear(year.startDate.lengthOfYear()), it) }
+                ?: year.startDate.withDayOfYear(year.startDate.lengthOfYear()),
+            tokens = year.tokens,
+        )
+    }
+    TokenActivityTimeSeriesChart(
+        points = points,
+        style = TokenActivitySeriesStyle.BAR,
+        locale = locale,
+        modifier = modifier,
+        tapHint = stringResource(R.string.token_activity_chart_tap_hint),
+    ) { point ->
+        stringResource(
+            R.string.token_activity_year_detail,
             point.startDate.format(localizedDateFormatter(locale)),
             point.endDate.format(localizedDateFormatter(locale)),
             formatTokenCount(point.tokens, tokenDisplayUnit),

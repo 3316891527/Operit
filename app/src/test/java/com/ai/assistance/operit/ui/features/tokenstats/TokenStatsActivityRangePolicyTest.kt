@@ -31,7 +31,7 @@ class TokenStatsActivityRangePolicyTest {
     }
 
     @Test
-    fun `weekly mode selects the existing Sunday-first calendar week`() {
+    fun `weekly mode selects the rolling seven day window ending at the anchor`() {
         val range = activityRangeForMode(
             mode = TokenActivityViewMode.WEEKLY,
             anchorDate = LocalDate.of(2026, 8, 22),
@@ -41,8 +41,84 @@ class TokenStatsActivityRangePolicyTest {
 
         assertEquals(
             customRangeInclusiveEnd(
-                LocalDate.of(2026, 8, 16),
+                LocalDate.of(2026, 8, 15),
                 LocalDate.of(2026, 8, 22),
+                zone,
+            ),
+            range,
+        )
+    }
+
+    @Test
+    fun `monthly mode rolls back one calendar month with month-end clamping`() {
+        val range = activityRangeForMode(
+            mode = TokenActivityViewMode.MONTHLY,
+            anchorDate = LocalDate.of(2026, 3, 31),
+            historyStartDate = null,
+            zone = zone,
+        )
+
+        assertEquals(
+            customRangeInclusiveEnd(
+                LocalDate.of(2026, 2, 28),
+                LocalDate.of(2026, 3, 31),
+                zone,
+            ),
+            range,
+        )
+    }
+
+    @Test
+    fun `monthly mode keeps february 29 when the previous year is a leap year`() {
+        val range = activityRangeForMode(
+            mode = TokenActivityViewMode.MONTHLY,
+            anchorDate = LocalDate.of(2024, 3, 31),
+            historyStartDate = null,
+            zone = zone,
+        )
+
+        assertEquals(
+            customRangeInclusiveEnd(
+                LocalDate.of(2024, 2, 29),
+                LocalDate.of(2024, 3,31),
+                zone,
+            ),
+            range,
+        )
+    }
+
+    @Test
+    fun `yearly mode rolls back one calendar year`() {
+        val range = activityRangeForMode(
+            mode = TokenActivityViewMode.YEARLY,
+            anchorDate = LocalDate.of(2026, 9, 5),
+            historyStartDate = null,
+            zone = zone,
+        )
+
+        assertEquals(
+            customRangeInclusiveEnd(
+                LocalDate.of(2025, 9, 5),
+                LocalDate.of(2026, 9, 5),
+                zone,
+            ),
+            range,
+        )
+    }
+
+    @Test
+    fun `yearly mode clamps leap day to february 28 in a non-leap year`() {
+        val range = activityRangeForMode(
+            mode = TokenActivityViewMode.YEARLY,
+            anchorDate = LocalDate.of(2024, 2, 29),
+            historyStartDate = null,
+            zone = zone,
+        )
+
+        assertEquals(
+            customRangeInclusiveEnd(
+                LocalDate.of(2023, 2, 28),
+                LocalDate.of(2024, 2, 29),
                 zone,
             ),
             range,
