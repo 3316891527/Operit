@@ -899,6 +899,12 @@ fun ModelApiSettingsSection(
                     checked = enableDeepSeekWebSearchInput,
                     onCheckedChange = { enableDeepSeekWebSearchInput = it }
                 )
+                Text(
+                    text = stringResource(R.string.deepseek_files_api_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
             }
 
             // Claude 1小时提示缓存开关 (仅Claude支持)
