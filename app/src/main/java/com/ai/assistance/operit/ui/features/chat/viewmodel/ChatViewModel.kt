@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.chat.viewmodel
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import android.provider.Settings
 import com.ai.assistance.operit.util.AppLogger
 import androidx.activity.result.ActivityResultLauncher
@@ -856,7 +857,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 if (message.sender != "user" && message.sender != "ai") {
@@ -974,7 +975,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             AppLogger.d(TAG, "准备批量删除消息，索引: $indices")
             val chatIdSnapshot = chatHistoryDelegate.currentChatId.value
             if (chatIdSnapshot == null) {
-                uiStateDelegate.showToast(context.getString(R.string.chat_no_active_conversation))
+                Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
@@ -1732,7 +1733,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 与发消息保持一致：无活跃对话时给出明确提示，而不是静默失败
-                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -1807,7 +1808,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -1842,7 +1843,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -1877,7 +1878,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -1913,7 +1914,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 // 显示记忆文件夹附着进度
@@ -1945,7 +1946,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             val currentChatId = chatHistoryDelegate.currentChatId.value
             if (currentChatId == null) {
                 // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
-                uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                 return@launch
             }
             attachmentDelegate.handleTakenPhoto(uri)
@@ -1959,7 +1960,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
-                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 attachmentDelegate.attachPackage(packageName)
