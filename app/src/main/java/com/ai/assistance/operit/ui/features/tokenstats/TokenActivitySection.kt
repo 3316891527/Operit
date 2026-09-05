@@ -640,10 +640,13 @@ private fun TokenActivityYearlyChart(
     modifier: Modifier = Modifier,
 ) {
     val data = checkNotNull(state.rangeData)
+    val rangeStart = data.daily.firstOrNull()?.date
     val rangeEnd = data.daily.lastOrNull()?.date
     val points = data.yearly.map { year ->
         TokenActivitySeriesPoint(
-            startDate = year.startDate,
+            startDate = rangeStart
+                ?.let { maxOf(year.startDate, it) }
+                ?: year.startDate,
             endDate = rangeEnd
                 ?.let { minOf(year.startDate.withDayOfYear(year.startDate.lengthOfYear()), it) }
                 ?: year.startDate.withDayOfYear(year.startDate.lengthOfYear()),

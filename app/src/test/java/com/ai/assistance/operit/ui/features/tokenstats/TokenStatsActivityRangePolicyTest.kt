@@ -107,7 +107,7 @@ class TokenStatsActivityRangePolicyTest {
     }
 
     @Test
-    fun `yearly mode covers the trailing twelve natural months`() {
+    fun `yearly mode mirrors weekly with the same day last year through yesterday`() {
         val range = activityRangeForMode(
             mode = TokenActivityViewMode.YEARLY,
             anchorDate = LocalDate.of(2026, 9, 5),
@@ -117,8 +117,8 @@ class TokenStatsActivityRangePolicyTest {
 
         assertEquals(
             customRangeInclusiveEnd(
-                LocalDate.of(2025, 9, 1),
-                LocalDate.of(2026, 8, 31),
+                LocalDate.of(2025, 9, 5),
+                LocalDate.of(2026, 9, 4),
                 zone,
             ),
             range,
@@ -126,7 +126,7 @@ class TokenStatsActivityRangePolicyTest {
     }
 
     @Test
-    fun `yearly mode ends at the previous month end regardless of the anchor day`() {
+    fun `yearly mode clamps leap day to february 28 in a non-leap year`() {
         val range = activityRangeForMode(
             mode = TokenActivityViewMode.YEARLY,
             anchorDate = LocalDate.of(2024, 2, 29),
@@ -136,8 +136,8 @@ class TokenStatsActivityRangePolicyTest {
 
         assertEquals(
             customRangeInclusiveEnd(
-                LocalDate.of(2023, 2, 1),
-                LocalDate.of(2024, 1, 31),
+                LocalDate.of(2023, 2, 28),
+                LocalDate.of(2024, 2, 28),
                 zone,
             ),
             range,

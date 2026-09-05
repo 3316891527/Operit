@@ -4,7 +4,6 @@ import com.ai.assistance.operit.data.stats.TokenActivityViewMode
 import com.ai.assistance.operit.data.stats.TokenStatsTimeRange
 import com.ai.assistance.operit.data.stats.TokenStatsTimeRanges
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.ZoneId
 
 internal fun activityRangeForMode(
@@ -14,13 +13,12 @@ internal fun activityRangeForMode(
     zone: ZoneId,
 ): TokenStatsTimeRange? {
     // Each periodic mode covers the most recent complete period, because future
-    // time has not happened yet and cannot be counted. Weekly and monthly mirror
-    // each other: weekly runs from the same weekday last week through yesterday
-    // (exactly seven days); monthly runs from the same day last month through
-    // yesterday, so its length equals the previous month's day count (a 28-day
-    // February yields four week bars, any longer month yields five). Yearly
-    // covers the trailing twelve natural months (this month last year through
-    // last month).
+    // time has not happened yet and cannot be counted. Weekly, monthly and yearly
+    // mirror each other: weekly runs from the same weekday last week through
+    // yesterday (exactly seven days); monthly runs from the same day last month
+    // through yesterday, so its length equals the previous month's day count (a
+    // 28-day February yields four week bars, any longer month yields five);
+    // yearly runs from the same day last year through yesterday.
     val (startDate, inclusiveEndDate) = when (mode) {
         TokenActivityViewMode.DAILY -> anchorDate to anchorDate
         TokenActivityViewMode.WEEKLY -> {
@@ -33,10 +31,10 @@ internal fun activityRangeForMode(
             start to anchorDate.minusDays(1L)
         }
         TokenActivityViewMode.YEARLY -> {
-            val currentMonth = YearMonth.from(anchorDate)
-            val startMonth = currentMonth.minusMonths(12L)
-            val endMonth = currentMonth.minusMonths(1L)
-            startMonth.atDay(1) to endMonth.atEndOfMonth()
+            // Rolling year mirroring weekly/monthly: same day last year through
+            // yesterday. minusYears clamps leap days (e.g. Feb 29 -> Feb 28).
+            val start = anchorDate.minusYears(1L)
+            start to anchorDate.minusDays(1L)
         }
         TokenActivityViewMode.CUMULATIVE -> {
             val start = historyStartDate ?: return null
