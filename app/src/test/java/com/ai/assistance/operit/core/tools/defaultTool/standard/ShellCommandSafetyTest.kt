@@ -123,4 +123,43 @@ class ShellCommandSafetyTest {
         assertDangerous("FORMAT /dev/block/mmcblk0")
         assertDangerous("RM -RF /tmp")
     }
+
+    // --- Absolute paths for executable commands ---
+    @Test
+    fun `executable with absolute path is checked correctly`() {
+        assertDangerous("/system/bin/rm -rf /sdcard/example")
+        assertDangerous("/system/bin/toybox rm -rf /sdcard/example")
+        assertDangerous("/bin/busybox format /dev/block/mmcblk0")
+        assertSafe("/system/bin/rm /sdcard/tmp.txt")
+    }
+
+    // --- Wrapper arguments and options consumption ---
+    @Test
+    fun `wrapper command flags and parameters do not bypass safety checks`() {
+        assertDangerous("timeout 5 rm -rf /sdcard/example")
+        assertDangerous("timeout -s 9 10s rm -rf /sdcard/example")
+        assertDangerous("env X=1 Y=2 rm -rf /sdcard/example")
+        assertDangerous("nice -n 5 rm -rf /sdcard/example")
+        assertDangerous("exec rm -rf /sdcard/example")
+        assertSafe("timeout 5 ls -la")
+        assertSafe("nice -n 5 echo ok")
+    }
+
+    // --- Compound commands, subshells, and command substitution ---
+    @Test
+    fun `compound statements and subshells are inspected for dangerous commands`() {
+        assertDangerous("if true; then rm -rf /sdcard/example; fi")
+        assertDangerous("(rm -rf /sdcard/example)")
+        assertDangerous("echo \"\$(rm -rf /sdcard/example)\"")
+        assertDangerous("echo `rm -rf /sdcard/example`")
+        assertSafe("if true; then echo safe; fi")
+        assertSafe("(echo safe)")
+    }
+
+    // --- POSIX double-dash option termination ---
+    @Test
+    fun `rm respects double-dash end of options marker`() {
+        assertSafe("rm -- -fr")
+        assertSafe("rm -- -rf")
+    }
 }
