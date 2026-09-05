@@ -217,7 +217,7 @@ internal class DeepseekFileUploader(
     }
 
     /** 给请求附加认证头与自定义头（排除会破坏 multipart 边界的 Content-Type 覆写） */
-    private fun applyAuthAndCustomHeaders(builder: Request.Builder) {
+    private suspend fun applyAuthAndCustomHeaders(builder: Request.Builder) {
         val apiKey = apiKeyProvider.getApiKey().trim()
         if (apiKey.isNotEmpty()) {
             builder.addHeader("Authorization", "Bearer $apiKey")
