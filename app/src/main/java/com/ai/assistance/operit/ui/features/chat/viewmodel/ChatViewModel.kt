@@ -1805,7 +1805,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    return@launch
+                }
                 
                 // 显示屏幕内容获取进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1836,7 +1840,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    return@launch
+                }
                 
                 // 显示通知获取进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1867,7 +1875,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    return@launch
+                }
                 
                 // 显示位置获取进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1899,7 +1911,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    return@launch
+                }
                 // 显示记忆文件夹附着进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
                     currentChatId,
@@ -1940,6 +1956,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     fun attachPackage(packageName: String) {
         viewModelScope.launch {
             try {
+                val currentChatId = chatHistoryDelegate.currentChatId.value
+                if (currentChatId == null) {
+                    // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
+                    uiStateDelegate.showErrorMessage(context.getString(R.string.chat_no_active_conversation))
+                    return@launch
+                }
                 attachmentDelegate.attachPackage(packageName)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "添加包附件失败", e)
