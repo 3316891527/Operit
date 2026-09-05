@@ -723,16 +723,19 @@ private fun TokenActivityTimeSeriesChart(
     }
     // When month labels are dense (the twelve-month yearly chart is the densest
     // case), widen the bar spacing so every label stays readable without any
-    // label being skipped or overlapping. Sparse-label charts keep the base width.
+    // label being skipped or overlapping. Sparse bars (weekly 7 / monthly 4-5)
+    // get a fixed wider spacing so the bars read as thick blocks instead of thin
+    // needles. Dense bars (daily 24) keep the base width.
     val pointWidth = if (style == TokenActivitySeriesStyle.BAR) {
-        val base = 18.dp
-        if (monthLabelTexts.size >= 4) {
-            with(density) {
-                val widestPx = monthLabelTexts.maxOf { labelPaint.measureText(it) }
-                maxOf(base, ((widestPx / density.density) + 12f).dp)
+        when {
+            monthLabelTexts.size >= 4 -> {
+                with(density) {
+                    val widestPx = monthLabelTexts.maxOf { labelPaint.measureText(it) }
+                    maxOf(18.dp, ((widestPx / density.density) + 12f).dp)
+                }
             }
-        } else {
-            base
+            points.size <= 7 -> 30.dp
+            else -> 18.dp
         }
     } else {
         14.dp
