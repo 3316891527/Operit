@@ -200,8 +200,9 @@ object ShellCommandSafety {
                 arg == "--force" -> hasForce = true
                 arg.startsWith("-") && !arg.startsWith("--") -> {
                     arg.drop(1).forEach { flag ->
-                        if (flag == 'r' || flag == 'R') hasRecursive = true
-                        if (flag == 'f') hasForce = true
+                        val lowerFlag = flag.lowercaseChar()
+                        if (lowerFlag == 'r') hasRecursive = true
+                        if (lowerFlag == 'f') hasForce = true
                     }
                 }
             }
