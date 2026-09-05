@@ -14,9 +14,11 @@ internal fun activityRangeForMode(
     zone: ZoneId,
 ): TokenStatsTimeRange? {
     // Each periodic mode covers the most recent complete period, because future
-    // time has not happened yet and cannot be counted. Weekly aligns to the same
-    // weekday as today (e.g. today Saturday -> last Saturday through yesterday,
-    // exactly seven days); monthly covers the previous natural month; yearly
+    // time has not happened yet and cannot be counted. Weekly and monthly mirror
+    // each other: weekly runs from the same weekday last week through yesterday
+    // (exactly seven days); monthly runs from the same day last month through
+    // yesterday, so its length equals the previous month's day count (a 28-day
+    // February yields four week bars, any longer month yields five). Yearly
     // covers the trailing twelve natural months (this month last year through
     // last month).
     val (startDate, inclusiveEndDate) = when (mode) {
@@ -26,8 +28,9 @@ internal fun activityRangeForMode(
             start to anchorDate.minusDays(1L)
         }
         TokenActivityViewMode.MONTHLY -> {
-            val previousMonth = YearMonth.from(anchorDate).minusMonths(1L)
-            previousMonth.atDay(1) to previousMonth.atEndOfMonth()
+            // minusMonths clamps month-end dates (e.g. Mar 31 -> Feb 28/29).
+            val start = anchorDate.minusMonths(1L)
+            start to anchorDate.minusDays(1L)
         }
         TokenActivityViewMode.YEARLY -> {
             val currentMonth = YearMonth.from(anchorDate)

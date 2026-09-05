@@ -703,14 +703,6 @@ private fun TokenActivityTimeSeriesChart(
 ) {
     val density = LocalDensity.current
     val scroll = rememberScrollState()
-    val pointWidth = if (style == TokenActivitySeriesStyle.BAR) 18.dp else 14.dp
-    val chartWidth = (pointWidth * points.size).coerceAtLeast(280.dp)
-    val plotHeight = 124.dp
-    val labelHeight = 24.dp
-    val canvasHeight = plotHeight + labelHeight
-    val stepPx = with(density) { pointWidth.toPx() }
-    val plotHeightPx = with(density) { plotHeight.toPx() }
-    val maxTokens = points.maxOfOrNull(TokenActivitySeriesPoint::tokens)?.coerceAtLeast(1L) ?: 1L
     val palette = LocalTokenStatsColors.current
     val primary = palette.chartAccent
     val grid = palette.chartGrid
@@ -722,13 +714,39 @@ private fun TokenActivityTimeSeriesChart(
             isAntiAlias = true
         }
     }
-    val monthLabels = remember(points, locale) {
-        val formatter = DateTimeFormatter.ofPattern("MMM", locale)
+    val monthFormatter = remember(locale) { DateTimeFormatter.ofPattern("MMM", locale) }
+    val monthLabelTexts = remember(points, locale) {
+        points.map { monthFormatter.format(it.startDate) }.distinct()
+    }
+    // When month labels are dense (the twelve-month yearly chart is the densest
+    // case), widen the bar spacing so every label stays readable without any
+    // label being skipped or overlapping. Sparse-label charts keep the base width.
+    val pointWidth = if (style == TokenActivitySeriesStyle.BAR) {
+        val base = 18.dp
+        if (monthLabelTexts.size >= 4) {
+            with(density) {
+                val widestPx = monthLabelTexts.maxOf { labelPaint.measureText(it) }
+                maxOf(base, ((widestPx / density.density) + 12f).dp)
+            }
+        } else {
+            base
+        }
+    } else {
+        14.dp
+    }
+    val chartWidth = (pointWidth * points.size).coerceAtLeast(280.dp)
+    val plotHeight = 124.dp
+    val labelHeight = 24.dp
+    val canvasHeight = plotHeight + labelHeight
+    val stepPx = with(density) { pointWidth.toPx() }
+    val plotHeightPx = with(density) { plotHeight.toPx() }
+    val maxTokens = points.maxOfOrNull(TokenActivitySeriesPoint::tokens)?.coerceAtLeast(1L) ?: 1L
+    val monthLabels = remember(points, monthFormatter) {
         buildList {
             var previousMonth = -1
             points.forEachIndexed { index, point ->
                 if (index == 0 || point.startDate.monthValue != previousMonth) {
-                    add(TokenActivityMonthLabel(index, formatter.format(point.startDate)))
+                    add(TokenActivityMonthLabel(index, monthFormatter.format(point.startDate)))
                     previousMonth = point.startDate.monthValue
                 }
             }
