@@ -298,7 +298,9 @@ object ModelListFetcher {
                     val request = requestBuilder.get().build()
 
                     AppLogger.d(TAG, "发送HTTP请求: ${sanitizeUrlForLog(request.url.toString(), apiKey)}")
-                    val response = client.newCall(request).execute()
+                    val call = client.newCall(request)
+                    coroutineContext.job.invokeOnCompletion { cause -> if (cause != null) call.cancel() }
+                    val response = call.execute()
 
                     if (!response.isSuccessful) {
                         val errorBody = response.body?.string() ?: context.getString(R.string.model_fetch_no_error_details)
@@ -309,7 +311,9 @@ object ModelListFetcher {
                             val fallbackUrl = modelsUrl.removeSuffix("/v1/models") + "/models"
                             AppLogger.w(TAG, "API请求失败，尝试兼容路径: $fallbackUrl")
                             val fallbackRequest = request.newBuilder().url(fallbackUrl).get().build()
-                            val fallbackResponse = client.newCall(fallbackRequest).execute()
+                            val fallbackCall = client.newCall(fallbackRequest)
+                            coroutineContext.job.invokeOnCompletion { cause -> if (cause != null) fallbackCall.cancel() }
+                            val fallbackResponse = fallbackCall.execute()
                             if (fallbackResponse.isSuccessful) {
                                 val fallbackBody = fallbackResponse.body?.string()
                                 if (fallbackBody.isNullOrEmpty()) {
@@ -394,7 +398,9 @@ object ModelListFetcher {
                                     // 其他提供商可能需要单独的解析方法
                                     else -> parseOpenAIModelResponse(context, responseBody) // 默认尝试OpenAI格式
                                 }
-                            } catch (e: Exception) {
+                            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
                                 AppLogger.e(TAG, "解析响应失败: ${e.message}")
                                 return@withContext Result.failure(e)
                             }
