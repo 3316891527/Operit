@@ -2712,6 +2712,15 @@
     <string name="test_item_image">Imej</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Model ini boleh memahami imej</string>
+    <string name="test_media_audio_understood">Model ini boleh memahami audio</string>
+    <string name="test_media_video_understood">Model ini boleh memahami video</string>
+    <string name="test_media_image_unverified">Permintaan imej berjaya disambungkan, tetapi pemahaman tidak dapat disahkan</string>
+    <string name="test_media_audio_unverified">Permintaan audio berjaya disambungkan, tetapi pemahaman tidak dapat disahkan</string>
+    <string name="test_media_video_unverified">Permintaan video berjaya disambungkan, tetapi pemahaman tidak dapat disahkan</string>
+    <string name="test_media_unverified">Disambungkan, tetapi tidak disahkan</string>
+    <string name="test_result_expand">Kembangkan</string>
+    <string name="test_result_collapse">Runtuhkan</string>
     <string name="test">Uji</string>
     <string name="expand_desc">Kembangkan</string>
     <string name="selected_desc">Telah dipilih</string>

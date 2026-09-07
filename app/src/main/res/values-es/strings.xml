@@ -3280,6 +3280,15 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="test_item_image">Imagen</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Este modelo puede entender imágenes</string>
+    <string name="test_media_audio_understood">Este modelo puede entender audio</string>
+    <string name="test_media_video_understood">Este modelo puede entender video</string>
+    <string name="test_media_image_unverified">La solicitud de imagen se conectó, pero no se pudo verificar la comprensión</string>
+    <string name="test_media_audio_unverified">La solicitud de audio se conectó, pero no se pudo verificar la comprensión</string>
+    <string name="test_media_video_unverified">La solicitud de video se conectó, pero no se pudo verificar la comprensión</string>
+    <string name="test_media_unverified">Conectado, pero no verificado</string>
+    <string name="test_result_expand">Expandir</string>
+    <string name="test_result_collapse">Contraer</string>
     <string name="functional_config_warning_image_unsupported">Advertencia: el modelo seleccionado actualmente no tiene habilitada la opción "Soporte de reconocimiento de imágenes". Es posible que el reconocimiento de imágenes no esté disponible. Cambie a un modelo que admita visión y active "El modelo admite reconocimiento de imágenes".</string>
     <string name="functional_config_warning_audio_unsupported">Advertencia: el modelo seleccionado actualmente no tiene habilitada la opción "Soporte de análisis de audio". Es posible que el reconocimiento/transcripción de audio no esté disponible. Cambie a un modelo que admita entrada/transcripción de audio y active "El modelo admite análisis de audio".</string>
     <string name="functional_config_warning_video_unsupported">Advertencia: el modelo seleccionado actualmente no tiene habilitada la opción "Soporte de análisis de video". Es posible que la comprensión de video no esté disponible. Cambie a un modelo que admita entrada de video/imagen y active "El modelo admite análisis de video".</string>

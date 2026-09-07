@@ -2621,6 +2621,15 @@
     <string name="test_item_image">이미지</string>
     <string name="test_item_audio">오디오</string>
     <string name="test_item_video">동영상</string>
+    <string name="test_media_image_understood">이 모델은 이미지를 이해할 수 있습니다</string>
+    <string name="test_media_audio_understood">이 모델은 오디오를 이해할 수 있습니다</string>
+    <string name="test_media_video_understood">이 모델은 동영상을 이해할 수 있습니다</string>
+    <string name="test_media_image_unverified">이미지 요청은 연결되었지만 이해 여부를 확인할 수 없습니다</string>
+    <string name="test_media_audio_unverified">오디오 요청은 연결되었지만 이해 여부를 확인할 수 없습니다</string>
+    <string name="test_media_video_unverified">동영상 요청은 연결되었지만 이해 여부를 확인할 수 없습니다</string>
+    <string name="test_media_unverified">연결되었지만 확인되지 않음</string>
+    <string name="test_result_expand">펼치기</string>
+    <string name="test_result_collapse">접기</string>
     <string name="test">테스트</string>
     <string name="expand_desc">확장</string>
     <string name="selected_desc">선택됨</string>

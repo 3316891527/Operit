@@ -2925,6 +2925,15 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="test_item_image">Imagine</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Acest model poate înțelege imagini</string>
+    <string name="test_media_audio_understood">Acest model poate înțelege audio</string>
+    <string name="test_media_video_understood">Acest model poate înțelege video</string>
+    <string name="test_media_image_unverified">Cererea de imagine s-a conectat, dar înțelegerea nu a putut fi verificată</string>
+    <string name="test_media_audio_unverified">Cererea audio s-a conectat, dar înțelegerea nu a putut fi verificată</string>
+    <string name="test_media_video_unverified">Cererea video s-a conectat, dar înțelegerea nu a putut fi verificată</string>
+    <string name="test_media_unverified">Conectat, dar neverificat</string>
+    <string name="test_result_expand">Extindeți</string>
+    <string name="test_result_collapse">Restrângeți</string>
     <string name="test">Testare</string>
     <string name="expand_desc">Extindeți</string>
     <string name="selected_desc">A fost selectat</string>
