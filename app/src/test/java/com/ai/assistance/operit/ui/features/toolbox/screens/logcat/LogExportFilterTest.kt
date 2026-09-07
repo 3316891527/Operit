@@ -54,8 +54,7 @@ class LogExportFilterTest {
             "2026-09-07 16:51:00.0${index.toString().padStart(2, '0')} $level/Tag$index: line $index"
         }
         val result = LogExportFilter.filterText(
-            lines.joinToString("
-"),
+            lines.joinToString(separator = "\n"),
             LogExportOptions(errorContextOnly = true)
         )
         assertEquals(2, result.exportedRecordCount)
@@ -65,9 +64,12 @@ class LogExportFilterTest {
 
     @Test
     fun errorContextWithoutErrorsExportsNothing() {
+        val noErrorLog = listOf(
+            "2026-09-07 16:51:00.001 I/ToolPkg: ok",
+            "2026-09-07 16:51:00.002 D/AIService: dbg"
+        ).joinToString(separator = "\n")
         val result = LogExportFilter.filterText(
-            "2026-09-07 16:51:00.001 I/ToolPkg: ok
-2026-09-07 16:51:00.002 D/AIService: dbg",
+            noErrorLog,
             LogExportOptions(errorContextOnly = true)
         )
         assertEquals(0, result.exportedRecordCount)
@@ -86,8 +88,7 @@ class LogExportFilterTest {
             raw,
             LogExportOptions(hideSensitive = true)
         )
-        val joined = result.lines.joinToString("
-")
+        val joined = result.lines.joinToString(separator = "\n")
         assertFalse(joined.contains("secret prompt"))
         assertFalse(joined.contains("hidden"))
         assertTrue(joined.contains("[redacted,"))
@@ -103,3 +104,4 @@ class LogExportFilterTest {
         assertEquals(listOf("I/ToolPkg: package loaded"), result.lines)
     }
 }
+
