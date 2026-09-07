@@ -58,8 +58,8 @@
         {
             "name": "read_messages_range",
             "description": {
-                "zh": "按消息序号区间读取指定对话的消息；用于超过 read_messages 单次条数限制的大范围读取。",
-                "en": "Read messages from a chat by message index range; useful for reading beyond read_messages single-call limits."
+                "zh": "按存储消息行号区间读取指定对话；行号含库内 summary 等隐藏行，返回列表会省掉这些行。",
+                "en": "Read stored message rows by index range. Indexes include hidden summary rows that are omitted from the returned list."
             },
             "parameters": [
                 { "name": "chat_id", "description": { "zh": "目标对话 ID（可选）", "en": "Target chat id (optional)" }, "type": "string", "required": false },
@@ -440,28 +440,19 @@ const HistoryChat = (function () {
             throw new Error('Missing parameter: character_card_name');
         }
 
-        let characterCardName = characterCardNameInput;
-        let characterCardId = '';
-        try {
-            const cardResult = await Tools.Chat.listCharacterCards();
-            const cards = cardResult.cards;
-            const targetCard = cards.find((card) => card.name === characterCardNameInput);
-            if (!targetCard) {
-                throw new Error(`Character card not found: ${characterCardNameInput}`);
-            }
-            characterCardName = targetCard.name;
-            characterCardId = targetCard.id;
-        } catch {
-            if (!characterCardId) {
-                throw new Error(`Character card not found: ${characterCardNameInput}`);
-            }
+        const cardResult = await Tools.Chat.listCharacterCards();
+        const cards = cardResult.cards ?? [];
+        const needle = characterCardNameInput.toLowerCase();
+        const targetCard =
+            cards.find((card) => card.name === characterCardNameInput) ??
+            cards.find((card) => String(card.name ?? '').toLowerCase() === needle);
+        if (!targetCard?.id) {
+            throw new Error(`Character card not found: ${characterCardNameInput}`);
         }
+        const characterCardName = targetCard.name;
+        const characterCardId = targetCard.id;
 
-        try {
-            await Tools.Chat.startService();
-        } catch {
-            // ignore service start errors to avoid blocking agent message
-        }
+        await Tools.Chat.startService();
 
         let chatId = (params?.chat_id ?? '').toString().trim();
         if (!chatId) {
@@ -482,9 +473,19 @@ const HistoryChat = (function () {
                 match: 'exact',
                 index: 0,
             });
-            const boundName = findResult?.chat?.characterCardName ?? null;
-            if (boundName && boundName !== characterCardName) {
-                throw new Error(`Chat ${chatId} 已绑定角色 ${boundName}，不能与 ${characterCardName} 共用会话`);
+            const existing = findResult?.chat;
+            if (!existing?.id) {
+                throw new Error(`Chat not found: ${chatId}`);
+            }
+            const boundName = (existing.characterCardName ?? '').toString().trim();
+            const boundId = (existing.characterCardId ?? '').toString().trim();
+            if (!boundName && !boundId) {
+                throw new Error(`Chat ${chatId} has no character card; one role per chat is required`);
+            }
+            const sameId = boundId && boundId === characterCardId;
+            const sameName = boundName && boundName === characterCardName;
+            if (!sameId && !sameName) {
+                throw new Error(`Chat ${chatId} 已绑定角色 ${boundName || boundId}，不能与 ${characterCardName} 共用会话`);
             }
         }
 
@@ -506,30 +507,13 @@ const HistoryChat = (function () {
             sendMessageOptions.disable_warning = params.disable_warning;
         }
         sendMessageOptions.timeout_ms = timeoutMs;
-        const sendPromise = Tools.Chat.sendMessage(
+        const sendResult = await Tools.Chat.sendMessage(
             message,
             chatId,
             characterCardId,
             getCallerName() || characterCardName,
             sendMessageOptions,
         );
-
-        const timeoutPromise = new Promise<null>((resolve) => {
-            setTimeout(() => resolve(null), timeoutMs);
-        });
-
-        const sendResult = await Promise.race([sendPromise, timeoutPromise]);
-        if (sendResult === null) {
-            return {
-                success: true,
-                message: `已发送给 ${characterCardName}，等待响应超时（${timeoutSec}s）`,
-                data: {
-                    chat_id: chatId,
-                    timeout: true,
-                    hint: '可以通过 agent_status 查看该 agent 是否已处理你的问题。',
-                },
-            };
-        }
 
         return {
             success: true,
@@ -550,7 +534,7 @@ const HistoryChat = (function () {
             console.error(`Tool ${func.name} failed unexpectedly`, error);
             complete({
                 success: false,
-                message: `读取对话消息失败: ${message}`,
+                message,
             });
         }
     }
@@ -564,7 +548,7 @@ const HistoryChat = (function () {
             console.error(`Tool ${func.name} failed unexpectedly`, error);
             complete({
                 success: false,
-                message: `读取对话消息失败: ${message}`,
+                message,
             });
         }
     }
