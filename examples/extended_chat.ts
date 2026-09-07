@@ -30,11 +30,11 @@
         {
             "name": "find_chat",
             "description": {
-                "zh": "按标题查找一个对话并返回 chat_id。",
-                "en": "Find a single chat by title and return chat_id."
+                "zh": "按标题、对话 ID 或 current 查找一个对话并返回 chat_id。",
+                "en": "Find a single chat by title, chat_id, or current, and return chat_id."
             },
             "parameters": [
-                { "name": "query", "description": { "zh": "标题关键字/正则", "en": "Title keyword/regex" }, "type": "string", "required": true },
+                { "name": "query", "description": { "zh": "标题关键字/正则、对话 ID，或 current 表示当前窗口", "en": "Title keyword/regex, chat_id, or current for the active chat" }, "type": "string", "required": true },
                 { "name": "match", "description": { "zh": "可选：contains/exact/regex（默认 contains）", "en": "Optional: contains/exact/regex (default contains)" }, "type": "string", "required": false },
                 { "name": "index", "description": { "zh": "可选：当匹配多个时选择第 N 个（默认 0）", "en": "Optional: pick Nth when multiple matches (default 0)" }, "type": "number", "required": false }
             ]
@@ -206,6 +206,81 @@ const HistoryChat = (function () {
         if (m === 'exact' || m === 'regex' || m === 'contains') return m;
         return 'contains';
     }
+    const CHAT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const CURRENT_CHAT_ALIASES = new Set(['current', 'current_chat', 'currentchat', '.', '当前', '当前对话', '当前窗口']);
+    function looksLikeChatId(value: string): boolean {
+        return CHAT_ID_RE.test(value.trim());
+    }
+    function isCurrentChatAlias(value: string): boolean {
+        return CURRENT_CHAT_ALIASES.has(value.trim().toLowerCase());
+    }
+    function isMissingChatQueryError(message: string): boolean {
+        return message.includes('Chat not found by query') || message.includes('Chat index out of range');
+    }
+    async function getCurrentChatId(): Promise<string | null> {
+        const listResult = await Tools.Chat.listChats({ limit: 1 });
+        const id = (listResult?.currentChatId ?? '').toString().trim();
+        return id || null;
+    }
+    async function chatExistsById(chatId: string): Promise<boolean> {
+        try {
+            await Tools.Chat.agentStatus(chatId);
+            return true;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (message.includes('Chat does not exist')) {
+                return false;
+            }
+            if (message.includes('Chat service not connected')) {
+                return true;
+            }
+            throw error;
+        }
+    }
+    async function findListedChatById(chatId: string): Promise<any | null> {
+        const listResult = await Tools.Chat.listChats({ limit: 200 });
+        const chats = listResult?.chats ?? [];
+        return chats.find((chat: any) => (chat?.id ?? '').toString() === chatId) ?? null;
+    }
+    async function findChatRobust(
+        query: string,
+        matchMode: 'contains' | 'exact' | 'regex',
+        index: number,
+    ): Promise<{ chat: any; matchedCount: number }> {
+        if (isCurrentChatAlias(query)) {
+            const currentId = await getCurrentChatId();
+            if (!currentId) {
+                throw new Error('Current chat is not available');
+            }
+            return findChatRobust(currentId, 'exact', 0);
+        }
+        try {
+            const findParams: Parameters<typeof Tools.Chat.findChat>[0] = { query, match: matchMode, index };
+            const findResult = await Tools.Chat.findChat(findParams);
+            const picked = findResult?.chat ?? null;
+            if (picked) {
+                return { chat: picked, matchedCount: findResult?.matchedCount ?? 1 };
+            }
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!isMissingChatQueryError(message) || !looksLikeChatId(query)) {
+                throw error;
+            }
+        }
+        if (looksLikeChatId(query)) {
+            const listed = await findListedChatById(query);
+            if (listed) {
+                return { chat: listed, matchedCount: 1 };
+            }
+            if (await chatExistsById(query)) {
+                return {
+                    chat: { id: query, title: '', recoveredByIdOnly: true },
+                    matchedCount: 1,
+                };
+            }
+        }
+        throw new Error(`Chat not found by query: ${query}`);
+    }
 
     async function list_chats_impl(params: ListChatsParams): Promise<ToolResponse> {
         const query = (params?.query ?? '').toString().trim();
@@ -245,21 +320,14 @@ const HistoryChat = (function () {
         const matchMode = normalizeMatchMode(params?.match);
         const indexRaw = params && params.index !== undefined ? Number(params.index) : 0;
         const index = isNaN(indexRaw) ? 0 : indexRaw;
-        const findParams: Parameters<typeof Tools.Chat.findChat>[0] = { query };
-        if (matchMode) findParams.match = matchMode;
-        if (index !== undefined) findParams.index = index;
-        const findResult = await Tools.Chat.findChat(findParams);
-        const picked = findResult?.chat ?? null;
-        if (!picked) {
-            throw new Error(`Chat not found by query: ${query}`);
-        }
+        const found = await findChatRobust(query, matchMode, index);
 
         return {
             success: true,
             message: '对话查找完成',
             data: {
-                chat: picked,
-                matchedCount: findResult?.matchedCount ?? 1,
+                chat: found.chat,
+                matchedCount: found.matchedCount,
             }
         };
     }
@@ -280,15 +348,12 @@ const HistoryChat = (function () {
         }
 
         const needle = title || query;
-        const findParams: Parameters<typeof Tools.Chat.findChat>[0] = { query: needle };
-        findParams.match = title ? 'exact' : matchMode;
-        if (index !== undefined) findParams.index = index;
-        const findResult = await Tools.Chat.findChat(findParams);
-        const picked = findResult?.chat ?? null;
-        if (!picked?.id) {
+        const found = await findChatRobust(needle, title ? 'exact' : matchMode, index);
+        const pickedId = (found.chat?.id ?? '').toString().trim();
+        if (!pickedId) {
             throw new Error(`Chat not found by query: ${needle}`);
         }
-        return picked.id;
+        return pickedId;
     }
 
     async function read_messages_impl(params: ReadMessagesParams): Promise<ToolResponse> {
@@ -468,24 +533,22 @@ const HistoryChat = (function () {
                 throw new Error('Failed to create new chat');
             }
         } else {
-            const findResult = await Tools.Chat.findChat({
-                query: chatId,
-                match: 'exact',
-                index: 0,
-            });
-            const existing = findResult?.chat;
+            const found = await findChatRobust(chatId, 'exact', 0);
+            const existing = found.chat;
             if (!existing?.id) {
                 throw new Error(`Chat not found: ${chatId}`);
             }
-            const boundName = (existing.characterCardName ?? '').toString().trim();
-            const boundId = (existing.characterCardId ?? '').toString().trim();
-            if (!boundName && !boundId) {
-                throw new Error(`Chat ${chatId} has no character card; one role per chat is required`);
-            }
-            const sameId = boundId && boundId === characterCardId;
-            const sameName = boundName && boundName === characterCardName;
-            if (!sameId && !sameName) {
-                throw new Error(`Chat ${chatId} 已绑定角色 ${boundName || boundId}，不能与 ${characterCardName} 共用会话`);
+            if (!existing.recoveredByIdOnly) {
+                const boundName = (existing.characterCardName ?? '').toString().trim();
+                const boundId = (existing.characterCardId ?? '').toString().trim();
+                if (!boundName && !boundId) {
+                    throw new Error(`Chat ${chatId} has no character card; one role per chat is required`);
+                }
+                const sameId = boundId && boundId === characterCardId;
+                const sameName = boundName && boundName === characterCardName;
+                if (!sameId && !sameName) {
+                    throw new Error(`Chat ${chatId} 已绑定角色 ${boundName || boundId}，不能与 ${characterCardName} 共用会话`);
+                }
             }
         }
 
