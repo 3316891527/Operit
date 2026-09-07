@@ -84,7 +84,70 @@ class StructuredToolCallBridgeHistoryTest {
 
         assertEquals(listOf(1), matched.map { it.resultIndex })
         assertEquals(listOf("first-id"), matched.map { it.call.id })
-        assertEquals(listOf("second"), openToolCalls.map { it.name })
+        assertEquals(listOf("second"), openToolCalls.map { it.matchingName })
+    }
+
+    @Test
+    fun `Gemini package proxy result matches concrete tool and retains proxy identity`() {
+        val geminiFunctionCall =
+            JSONObject().apply {
+                put("name", "package_proxy")
+                put(
+                    "args",
+                    JSONObject().apply {
+                        put("tool_name", "extended_http_tools:http_request")
+                    }
+                )
+            }
+        val openToolCalls =
+            mutableListOf(
+                StructuredToolCallBridge.OpenToolCall(
+                    id = geminiFunctionCall.getString("name"),
+                    matchingName = StructuredToolCallBridge.toolCallName(geminiFunctionCall),
+                )
+            )
+
+        val matched =
+            StructuredToolCallBridge.consumeMatchingToolCalls(
+                openToolCalls,
+                listOf("extended_http_tools:http_request")
+            )
+
+        assertEquals(1, matched.size)
+        assertEquals("package_proxy", matched.single().call.id)
+        assertTrue(openToolCalls.isEmpty())
+    }
+
+    @Test
+    fun `Claude package proxy result matches concrete tool from input`() {
+        val claudeToolUse =
+            JSONObject().apply {
+                put("type", "tool_use")
+                put("name", "package_proxy")
+                put(
+                    "input",
+                    JSONObject().apply {
+                        put("tool_name", "extended_http_tools:http_request")
+                    }
+                )
+            }
+
+        val openToolCalls =
+            mutableListOf(
+                StructuredToolCallBridge.OpenToolCall(
+                    id = "claude-tool-use-id",
+                    matchingName = StructuredToolCallBridge.toolCallName(claudeToolUse),
+                )
+            )
+        val matched =
+            StructuredToolCallBridge.consumeMatchingToolCalls(
+                openToolCalls,
+                listOf("extended_http_tools:http_request")
+            )
+
+        assertEquals(1, matched.size)
+        assertEquals("claude-tool-use-id", matched.single().call.id)
+        assertTrue(openToolCalls.isEmpty())
     }
 
     @Test

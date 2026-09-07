@@ -23,24 +23,40 @@ internal object StructuredToolCallBridge {
         val content: String
     )
 
-    /** A tool call that has been sent to the model but has no `tool` message answering it yet. */
-    data class OpenToolCall(val id: String, val name: String)
+    /** A tool call that has been sent to the model but has no result answering it yet. */
+    data class OpenToolCall(
+        val id: String,
+        val matchingName: String,
+    )
 
     data class MatchedToolCall(val resultIndex: Int, val call: OpenToolCall)
 
     /**
-     * The callable tool name behind a queued tool call, unwrapping the `package_proxy` envelope so
-     * that a `pkg:tool` result can still be matched back to the call that produced it.
+     * The executable tool name behind a queued tool call, unwrapping the `package_proxy` envelope
+     * so that a `pkg:tool` result can still be matched back to the call that produced it. Gemini
+     * passes a bare `functionCall` with an object-valued `args`; Claude passes `input`; OpenAI-style
+     * providers wrap the function and serialize its `arguments`.
      */
     fun toolCallName(toolCall: JSONObject): String {
-        val function = toolCall.optJSONObject("function") ?: return ""
+        val function = toolCall.optJSONObject("function") ?: toolCall
         val name = function.optString("name", "").trim()
         if (name != "package_proxy") {
             return name
         }
 
         return try {
-            JSONObject(function.optString("arguments", "{}"))
+            val rawArguments = when {
+                function.has("arguments") -> function.opt("arguments")
+                function.has("args") -> function.opt("args")
+                else -> function.opt("input")
+            }
+            val arguments =
+                when (rawArguments) {
+                    is JSONObject -> rawArguments
+                    is String -> JSONObject(rawArguments)
+                    else -> null
+                } ?: return ""
+            arguments
                 .optString("tool_name", "")
                 .trim()
         } catch (e: Exception) {
@@ -65,7 +81,7 @@ internal object StructuredToolCallBridge {
             val normalizedResultName = resultName?.trim().orEmpty()
             if (normalizedResultName.isEmpty()) return@forEachIndexed
 
-            val callIndex = openToolCalls.indexOfFirst { it.name == normalizedResultName }
+            val callIndex = openToolCalls.indexOfFirst { it.matchingName == normalizedResultName }
             if (callIndex >= 0) {
                 matched.add(MatchedToolCall(resultIndex, openToolCalls.removeAt(callIndex)))
             }

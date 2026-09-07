@@ -213,6 +213,25 @@ open class OpenAIProvider(
     ) {
     }
 
+    protected open fun convertChatRequestToResponsesRequest(requestObject: JSONObject): JSONObject {
+        return OpenAIResponsesPayloadAdapter.toResponsesRequest(requestObject)
+    }
+
+    protected open fun createResponsesReasoningMetadataTag(item: JSONObject): String? {
+        return OpenAIResponsesPayloadAdapter.createReasoningMetadataTag(item)
+    }
+
+    protected open fun createResponsesMessageMetadataTag(
+        item: JSONObject,
+        bufferedText: String
+    ): String? = null
+
+    protected open fun parseResponsesNonStreamingResponse(
+        jsonResponse: JSONObject
+    ): OpenAIResponsesPayloadAdapter.ParsedResponseOutput {
+        return OpenAIResponsesPayloadAdapter.parseNonStreamingResponse(jsonResponse)
+    }
+
     protected open fun applyAuthenticationHeaders(
         builder: Request.Builder,
         currentApiKey: String
@@ -676,7 +695,7 @@ open class OpenAIProvider(
 
         val finalRequestObject =
             if (useResponsesApi) {
-                OpenAIResponsesPayloadAdapter.toResponsesRequest(jsonObject)
+                convertChatRequestToResponsesRequest(jsonObject)
             } else {
                 jsonObject
             }
@@ -1847,7 +1866,9 @@ open class OpenAIProvider(
         val responsesWebSearchItems: MutableMap<Int, JSONObject> = linkedMapOf(),
         val emittedResponsesWebSearchKeys: MutableSet<String> = mutableSetOf(),
         val emittedResponsesOutputItemMetadataKeys: MutableSet<String> = mutableSetOf(),
-        val responsesOutputTextBuffers: MutableMap<Int, StringBuilder> = linkedMapOf()
+        val responsesOutputTextBuffers: MutableMap<Int, StringBuilder> = linkedMapOf(),
+        val responsesMessageItems: MutableMap<Int, JSONObject> = linkedMapOf(),
+        val responsesLiveEmittedOutputIndexes: MutableSet<Int> = mutableSetOf()
     )
 
     /**
@@ -2577,8 +2598,11 @@ open class OpenAIProvider(
                 if (delta.isNotEmpty()) {
                     val outputIndex = jsonResponse.optInt("output_index", -1)
                     if (bufferResponsesOutputTextUntilItemDone && outputIndex >= 0) {
+                        // Keep a buffer for commentary metadata. Visible final text is emitted
+                        // live once output_item.added has shown this item is not commentary.
                         state.responsesOutputTextBuffers.getOrPut(outputIndex) { StringBuilder() }
                             .append(delta)
+                        emitLiveResponsesOutputText(outputIndex, delta, state, emitter)
                     } else {
                         processResponsesRegularContentDelta(delta, state, emitter)
                     }
@@ -2633,8 +2657,45 @@ open class OpenAIProvider(
                         // Responses output item 的顺序是 reasoning -> web search -> message。
                         // 消息边界只负责把已完成的搜索来源放到正文之前。
                         emitResponsesWebSearchDisplayFromResponse(context, null, state, emitter)
-                    } else if (eventType == "response.output_item.done" && bufferResponsesOutputTextUntilItemDone) {
-                        emitBufferedResponsesMessageItemContent(item, outputIndex, state, emitter)
+                        if (bufferResponsesOutputTextUntilItemDone && outputIndex >= 0) {
+                            state.responsesMessageItems[outputIndex] = JSONObject(item.toString())
+                            val pendingText =
+                                state.responsesOutputTextBuffers[outputIndex]?.toString().orEmpty()
+                            if (pendingText.isNotEmpty() &&
+                                outputIndex !in state.responsesLiveEmittedOutputIndexes
+                            ) {
+                                emitLiveResponsesOutputText(
+                                    outputIndex,
+                                    pendingText,
+                                    state,
+                                    emitter
+                                )
+                            }
+                        }
+                    } else if (eventType == "response.output_item.done") {
+                        val bufferedText =
+                            if (outputIndex >= 0) {
+                                state.responsesOutputTextBuffers[outputIndex]?.toString().orEmpty()
+                            } else {
+                                ""
+                            }
+                        if (bufferResponsesOutputTextUntilItemDone) {
+                            if (outputIndex in state.responsesLiveEmittedOutputIndexes) {
+                                state.responsesOutputTextBuffers.remove(outputIndex)
+                            } else {
+                                emitBufferedResponsesMessageItemContent(
+                                    item,
+                                    outputIndex,
+                                    state,
+                                    emitter
+                                )
+                            }
+                        }
+                        // Some Responses providers attach opaque continuation state to a completed
+                        // message item. The provider-specific hook owns both the encoding and replay.
+                        createResponsesMessageMetadataTag(item, bufferedText)?.let { metadataTag ->
+                            emitter.emitMetadataTag(metadataTag)
+                        }
                     }
                     return
                 }
@@ -2654,7 +2715,7 @@ open class OpenAIProvider(
                             emitter
                         )
                         closeReasoningModeIfOpen(state, emitter)
-                        OpenAIResponsesPayloadAdapter.createReasoningMetadataTag(item)?.let { metadataTag ->
+                        createResponsesReasoningMetadataTag(item)?.let { metadataTag ->
                             emitter.emitMetadataTag(metadataTag)
                         }
                     }
@@ -2920,6 +2981,23 @@ open class OpenAIProvider(
         processContentDelta("", regularContent, state, emitter)
     }
 
+    private suspend fun emitLiveResponsesOutputText(
+        outputIndex: Int,
+        text: String,
+        state: StreamingState,
+        emitter: StreamEmitter
+    ) {
+        if (text.isEmpty() || outputIndex < 0) {
+            return
+        }
+        val item = state.responsesMessageItems[outputIndex] ?: return
+        if (isResponsesCommentaryMessage(item)) {
+            return
+        }
+        processResponsesRegularContentDelta(text, state, emitter)
+        state.responsesLiveEmittedOutputIndexes.add(outputIndex)
+    }
+
     private suspend fun emitBufferedResponsesMessageItemContent(
         item: JSONObject,
         outputIndex: Int,
@@ -2937,9 +3015,9 @@ open class OpenAIProvider(
         }
 
         if (isResponsesCommentaryMessage(item)) {
+            // DeepSeek commentary is persisted as hidden metadata on output_item.done.
+            // Emitting it as think would show a second thinking block next to the reasoning item.
             state.reasoningObserved = true
-            processContentDelta(bufferedText, "", state, emitter)
-            closeReasoningModeIfOpen(state, emitter)
         } else {
             processResponsesRegularContentDelta(bufferedText, state, emitter)
         }
@@ -3272,7 +3350,7 @@ open class OpenAIProvider(
                                 val handledImages = tryHandleOpenAiImageResponse(jsonResponse, emitter, null)
 
                                 if (useResponsesApi) {
-                                    val parsed = OpenAIResponsesPayloadAdapter.parseNonStreamingResponse(jsonResponse)
+                                    val parsed = parseResponsesNonStreamingResponse(jsonResponse)
                                     val responseDisplayState = StreamingState()
 
                                     parsed.reasoningChunks.forEach { reasoningChunk ->

@@ -777,7 +777,9 @@ open class ClaudeProvider(
                 queuedOpenToolUses.add(
                     StructuredToolCallBridge.OpenToolCall(
                         toolUseId,
-                        sourceToolUse.optString("name", "").trim()
+                        // Claude returns the proxy envelope as the call name but tool execution
+                        // reports the concrete package tool; pairing must use that same concrete name.
+                        StructuredToolCallBridge.toolCallName(sourceToolUse)
                     )
                 )
             }
@@ -912,40 +914,40 @@ open class ClaudeProvider(
                         val (textContent, toolResults) = parseXmlToolResults(content)
                         val resultsList = toolResults ?: emptyList()
 
-                            if (resultsList.isNotEmpty() && openToolUses.isNotEmpty()) {
-                                val contentArray = JSONArray()
-                                val matchedCalls =
-                                    StructuredToolCallBridge.consumeMatchingToolCalls(
-                                        openToolUses,
-                                        resultsList.map { it.first }
-                                    )
-                                matchedCalls.forEach { matchedCall ->
-                                    val resultContent = resultsList[matchedCall.resultIndex].second
-                                    contentArray.put(
-                                        JSONObject().apply {
-                                            put("type", "tool_result")
-                                            put("tool_use_id", matchedCall.call.id)
-                                            put("content", nonEmptyContentText(resultContent))
-                                        }
-                                    )
-                                    AppLogger.d(
-                                        "AIService",
-                                        "历史XML→ClaudeToolResult: ID=${matchedCall.call.id}, content length=${resultContent.length}"
-                                    )
-                                }
+                        if (resultsList.isNotEmpty() && openToolUses.isNotEmpty()) {
+                            val contentArray = JSONArray()
+                            val matchedCalls =
+                                StructuredToolCallBridge.consumeMatchingToolCalls(
+                                    openToolUses,
+                                    resultsList.map { it.first }
+                                )
+                            matchedCalls.forEach { matchedCall ->
+                                val resultContent = resultsList[matchedCall.resultIndex].second
+                                contentArray.put(
+                                    JSONObject().apply {
+                                        put("type", "tool_result")
+                                        put("tool_use_id", matchedCall.call.id)
+                                        put("content", nonEmptyContentText(resultContent))
+                                    }
+                                )
+                                AppLogger.d(
+                                    "AIService",
+                                    "历史XML→ClaudeToolResult: ID=${matchedCall.call.id}, content length=${resultContent.length}"
+                                )
+                            }
 
-                                if (matchedCalls.size < resultsList.size) {
-                                    AppLogger.w(
-                                        "AIService",
-                                        "发现未匹配的tool_result: ${resultsList.size - matchedCalls.size}"
-                                    )
-                                }
+                            if (matchedCalls.size < resultsList.size) {
+                                AppLogger.w(
+                                    "AIService",
+                                    "发现未匹配的tool_result: ${resultsList.size - matchedCalls.size}"
+                                )
+                            }
 
-                                appendCancelledOpenToolUses(contentArray, "tool_result_partial_batch")
+                            appendCancelledOpenToolUses(contentArray, "tool_result_partial_batch")
 
-                                if (textContent.isNotEmpty()) {
-                                    appendContentBlocks(contentArray, buildContentArray(textContent))
-                                }
+                            if (textContent.isNotEmpty()) {
+                                appendContentBlocks(contentArray, buildContentArray(textContent))
+                            }
 
                             messagesArray.put(
                                 JSONObject().apply {
@@ -1337,7 +1339,9 @@ open class ClaudeProvider(
                         val text = block.optString("text", "")
                         if (text.isNotEmpty()) fullText.append(text)
                     }
-                    "thinking" -> {
+                    // A provider endpoint can still send thinking blocks when thinking is disabled. Do not
+                    // expose those blocks or turn them into visible <think> markup in that mode.
+                    "thinking" -> if (enableThinking) {
                         val thinking = block.optString("thinking", "")
                         if (thinking.isNotEmpty()) {
                             fullText.append("\n<think>")
@@ -1717,7 +1721,9 @@ open class ClaudeProvider(
                                                     }
                                                 }
                                             }
-                                            "thinking" -> {
+                                            // Keep response parsing aligned with the request flag;
+                                            // otherwise an unsolicited thinking block leaks to the UI.
+                                            "thinking" -> if (enableThinking) {
                                                 val thinkingStartTag = "\n<think>"
                                                 emittedAny = true
                                                 emit(thinkingStartTag)
