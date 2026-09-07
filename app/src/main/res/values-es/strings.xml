@@ -5145,7 +5145,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="logcat_saved_to">registros guardados en: %1$s</string>
     <string name="logcat_cannot_create_file">error al guardar: no se pudo crear el archivo, posible problema de permisos de almacenamiento</string>
     <string name="logcat_cannot_open_output_stream">no se pudo abrir el flujo de salida</string>
-    <string name="logcat_mediestore_save_failed">error al guardar en MediaStore: %1$s</string>
+    <string name="logcat_mediastore_save_failed">error al guardar en MediaStore: %1$s</string>
     <string name="logcat_cannot_create_download_dir">no se pudo crear el directorio de descargas</string>
     <string name="logcat_cannot_create_operit_dir">no se pudo crear el directorio operit</string>
     <string name="logcat_file_create_failed">no se pudo crear el archivo o está vacío</string>

@@ -4990,7 +4990,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="logcat_saved_to">Log telah disimpan ke: %1$s</string>
     <string name="logcat_cannot_create_file">Gagal menyimpan: Tidak dapat mencipta fail, mungkin masalah kebenaran storan</string>
     <string name="logcat_cannot_open_output_stream">Tidak dapat membuka aliran output</string>
-    <string name="logcat_mediestore_save_failed">MediaStore gagal menyimpan: %1$s</string>
+    <string name="logcat_mediastore_save_failed">MediaStore gagal menyimpan: %1$s</string>
     <string name="logcat_cannot_create_download_dir">Tidak dapat mencipta direktori muat turun</string>
     <string name="logcat_cannot_create_operit_dir">Tidak dapat mencipta direktori operit</string>
     <string name="logcat_file_create_failed">Penciptaan fail gagal atau kosong</string>

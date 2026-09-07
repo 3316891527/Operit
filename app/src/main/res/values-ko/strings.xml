@@ -5105,7 +5105,7 @@
     <string name="logcat_saved_to">로그 저장 위치: %1$s</string>
     <string name="logcat_cannot_create_file">저장 실패: 저장 권한으로 인해 파일을 생성할 수 없습니다.</string>
     <string name="logcat_cannot_open_output_stream">출력 스트림을 열 수 없습니다.</string>
-    <string name="logcat_mediestore_save_failed">MediaStore 저장 실패: %1$s</string>
+    <string name="logcat_mediastore_save_failed">MediaStore 저장 실패: %1$s</string>
     <string name="logcat_cannot_create_download_dir">다운로드 디렉터리를 생성할 수 없습니다.</string>
     <string name="logcat_cannot_create_operit_dir">operit 디렉터리를 생성할 수 없습니다.</string>
     <string name="logcat_file_create_failed">파일 생성에 실패했거나 비어 있습니다.</string>

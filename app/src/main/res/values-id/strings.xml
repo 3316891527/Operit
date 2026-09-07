@@ -4992,7 +4992,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="backup_raw_snapshot_progress_scanning_files">Menghitung file...</string>
     <string name="backup_raw_snapshot_progress_scanning_files_with_count">Menghitung file: %1$d</string>
 
-    <string name="logcat_mediestore_save_failed">MediaStore gagal menyimpan: %1$s</string>
+    <string name="logcat_mediastore_save_failed">MediaStore gagal menyimpan: %1$s</string>
     <string name="logcat_cannot_create_download_dir">Tidak dapat membuat direktori unduhan</string>
     <string name="logcat_cannot_create_operit_dir">Tidak dapat membuat direktori operit</string>
     <string name="logcat_file_create_failed">Gagal membuat file atau file kosong</string>

@@ -5843,7 +5843,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="logcat_saved_to">Jurnalul a fost salvat în:%1$s</string>
     <string name="logcat_cannot_create_file">Eroare la salvare: nu se poate crea fișierul; este posibil să fie o problemă legată de permisiunile de stocare</string>
     <string name="logcat_cannot_open_output_stream">Nu se poate deschide fluxul de ieșire</string>
-    <string name="logcat_mediestore_save_failed">MediaStoreEroare la salvare:%1$s</string>
+    <string name="logcat_mediastore_save_failed">MediaStoreEroare la salvare:%1$s</string>
     <string name="logcat_cannot_create_download_dir">Nu se poate crea directorul de descărcări</string>
     <string name="logcat_cannot_create_operit_dir">Nu se poate creaoperitCuprins</string>
     <string name="logcat_file_create_failed">Fișierul nu a putut fi creat sau este gol</string>

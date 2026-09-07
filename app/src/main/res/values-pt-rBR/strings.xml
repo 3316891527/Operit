@@ -4688,7 +4688,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="logcat_saved_to">Registro salvo em: %1$s</string>
     <string name="logcat_cannot_create_file">Falha ao salvar: não é possível criar o arquivo, possivelmente problema de permissão de armazenamento</string>
     <string name="logcat_cannot_open_output_stream">Não foi possível abrir o fluxo de saída</string>
-    <string name="logcat_mediestore_save_failed">Falha ao salvar no MediaStore: %1$s</string>
+    <string name="logcat_mediastore_save_failed">Falha ao salvar no MediaStore: %1$s</string>
     <string name="logcat_cannot_create_download_dir">Não foi possível criar o diretório de download</string>
     <string name="logcat_cannot_create_operit_dir">Não foi possível criar o diretório operacional</string>
     <string name="logcat_file_create_failed">A criação do arquivo falhou ou está vazia</string>
