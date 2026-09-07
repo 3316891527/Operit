@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.part
 
+import java.io.File
+import java.security.MessageDigest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -46,22 +48,16 @@ class StatusCardHtmlDocumentTest {
     }
 
     @Test
-    fun `bundled font covers the icons the built-in status cards use`() {
-        // 标签市场「AI状态卡片」和「剧情生成」的示例卡片里出现的图标名。
-        val builtIn =
-            listOf(
-                "favorite", "emoji_emotions", "bolt", "star",
-                "person_search", "psychology", "pending", "timer"
-            )
-        assertTrue(StatusCardHtmlDocument.ICON_NAMES.containsAll(builtIn))
-    }
+    fun `full static font preserves historical icons outside the former subset`() {
+        val html = render(SHOPPING_CART_SPAN)
+        assertTrue(html.contains(SHOPPING_CART_SPAN))
 
-    @Test
-    fun `icon names stay sorted and unique`() {
-        // 字体子集是拿这份名单按顺序向 Google Fonts 请求生成的，
-        // 乱序或重复会让下次重新生成的字体和名单对不上。
-        val names = StatusCardHtmlDocument.ICON_NAMES
-        assertEquals(names.distinct().sorted(), names)
+        // 这个 Google Fonts v370 静态实例经 fontTools 检查有 4,277 个 GSUB 连字，
+        // 包括不在原 140 图标子集里的 shopping_cart。锁定文件可防止以后误换回子集。
+        val font = File("src/main/assets/${StatusCardHtmlDocument.ICON_FONT_ASSET}")
+        assertTrue(font.isFile)
+        assertEquals(FULL_STATIC_FONT_BYTES, font.length())
+        assertEquals(FULL_STATIC_FONT_SHA256, sha256(font))
     }
 
     private fun render(body: String = ICON_SPAN): String =
@@ -71,8 +67,26 @@ class StatusCardHtmlDocumentTest {
             iconFontBase64 = FAKE_FONT
         )
 
+    private fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString(separator = "") { byte -> "%02x".format(byte) }
+    }
+
     private companion object {
         const val FAKE_FONT = "d09GMgABAAAAAA"
         const val ICON_SPAN = "<span class=\"material-symbols-rounded\">favorite</span>"
+        const val SHOPPING_CART_SPAN =
+            "<span class=\"material-symbols-rounded\">shopping_cart</span>"
+        const val FULL_STATIC_FONT_BYTES = 456_052L
+        const val FULL_STATIC_FONT_SHA256 =
+            "19a71b30e6267416493a0e4e925a6f14be60a9c3a83148a0dc0dcf507a8fb382"
     }
 }
