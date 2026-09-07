@@ -7413,6 +7413,12 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
 
     <string name="settings_summary_custom_rules">Reglas personalizadas de resumen</string>
     <string name="settings_summary_custom_rules_desc">Reglas adicionales enviadas al resumir la conversación. Déjelo en blanco para no agregar ninguna.</string>
+    <string name="settings_summary_structure">Estructura del resumen</string>
+    <string name="settings_summary_section_enabled_desc">Desactívalo para omitir esta sección de los resúmenes generados</string>
+    <string name="settings_summary_section_title">Título de la sección</string>
+    <string name="settings_summary_section_title_desc">Título mostrado en el resumen</string>
+    <string name="settings_summary_section_instruction">Instrucciones de la sección</string>
+    <string name="settings_summary_section_instruction_desc">Describe qué debe registrar esta sección</string>
     <string name="title_activity_data_recovery">Recuperación de datos</string>
     <string name="shortcut_data_recovery">Recuperación de datos</string>
     <string name="memory_space_select">Seleccionar espacio de memoria</string>

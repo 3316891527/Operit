@@ -893,6 +893,12 @@
     <string name="settings_summary_message_count_threshold_subtitle">Numărul de mesaje noi care declanșează generarea unui rezumat(1-20articol)</string>
     <string name="settings_summary_custom_rules">Reguli personalizate de rezumare</string>
     <string name="settings_summary_custom_rules_desc">Rezumați regulile suplimentare trimise în timpul conversației; dacă lăsați câmpul gol, nu se adaugă nimic</string>
+    <string name="settings_summary_structure">Structura rezumatului</string>
+    <string name="settings_summary_section_enabled_desc">Dezactivați pentru a omite această secțiune din rezumatele generate</string>
+    <string name="settings_summary_section_title">Titlul secțiunii</string>
+    <string name="settings_summary_section_title_desc">Titlul afișat în rezumat</string>
+    <string name="settings_summary_section_instruction">Instrucțiuni pentru secțiune</string>
+    <string name="settings_summary_section_instruction_desc">Descrieți ce trebuie să înregistreze această secțiune</string>
 
     <string name="settings_section_display">Afișare și comportament</string>
 

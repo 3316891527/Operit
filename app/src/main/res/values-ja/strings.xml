@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_summary_structure">要約の構成</string>
+    <string name="settings_summary_section_enabled_desc">オフにすると、生成される要約からこのセクションを除外します</string>
+    <string name="settings_summary_section_title">セクションのタイトル</string>
+    <string name="settings_summary_section_title_desc">要約に表示するタイトル</string>
+    <string name="settings_summary_section_instruction">セクションの指示</string>
+    <string name="settings_summary_section_instruction_desc">このセクションに記録する内容を説明します</string>
     <!-- Main navigation -->
     <string name="nav_ai_chat">AIチャット</string>
     <string name="nav_adb_commands">権限</string>
