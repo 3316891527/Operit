@@ -2220,12 +2220,11 @@ open class GeminiProvider(
             // 提供一个通用的系统提示，以防止某些需要它的模型出现错误。
             val testHistory = listOf("system" to "You are a helpful assistant.").toPromptTurns()
             val stream = sendMessage(
-                context,
-                testHistory + PromptTurn(kind = PromptTurnKind.USER, content = "Hi"),
-                emptyList(),
-                false,
-                false,
-                null,
+                context = context,
+                chatHistory = testHistory + PromptTurn(kind = PromptTurnKind.USER, content = "Hi"),
+                modelParameters = emptyList(),
+                enableThinking = false,
+                stream = false,
                 onTokensUpdated = { _, _, _ -> },
                 onUsageReported = null,
                 onNonFatalError = {},

@@ -78,7 +78,7 @@ class MultiServiceManager(private val context: Context) {
         }
     }
 
-    suspend fun getThinkingRequestForFunction(functionType: FunctionType): FunctionThinkingRequest {
+    internal suspend fun getThinkingRequestForFunction(functionType: FunctionType): FunctionThinkingRequest {
         val configMapping = functionalConfigManager.getConfigMappingForFunction(functionType)
         val config = modelConfigManager.getModelConfigFlow(configMapping.configId).first()
         val modelName =
