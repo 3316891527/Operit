@@ -1,1 +1,1 @@
-github_dev smoke v1
+github_dev smoke v2
