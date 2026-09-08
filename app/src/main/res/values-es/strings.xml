@@ -214,6 +214,7 @@
 
     <!-- Package Manager Screen -->
     <string name="packages">Scripts</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="package_manager">Gestor de paquetes</string>
     <string name="available_packages">Paquetes disponibles</string>
     <string name="imported_packages">Paquetes importados</string>

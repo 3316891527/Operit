@@ -706,6 +706,7 @@
     <string name="preference_lock_desc">Keutamaan pengguna tidak boleh diubah selepas dikunci</string>
     <string name="packages">Skrip</string>
     <string name="skills">Kemahiran</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">AI</string>
     <string name="package_manager">Pengurus pakej</string>
     <string name="available_packages">Pakej tersedia</string>

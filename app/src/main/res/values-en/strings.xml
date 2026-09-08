@@ -1081,6 +1081,7 @@
     <!-- Package Manager Screen -->
     <string name="packages">Scripts</string>
     <string name="skills">Skills</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">AI</string>
     <string name="package_manager">Package Manager</string>
     <string name="available_packages">Available Packages</string>

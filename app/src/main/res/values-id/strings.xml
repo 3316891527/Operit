@@ -716,6 +716,7 @@
     <string name="preference_lock_desc">Setelah dikunci, informasi preferensi pengguna tidak dapat diubah</string>
     <string name="packages">Skrip</string>
     <string name="skills">Keterampilan</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">AI</string>
     <string name="package_manager">Manajer paket</string>
     <string name="available_packages">Paket tersedia</string>

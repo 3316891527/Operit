@@ -912,6 +912,7 @@
     <string name="tag_count_locked_status">%1$d 선택 / %2$d 제한</string>
     <string name="packages">스크립트</string>
     <string name="skills">스킬</string>
+    <string name="package_tab_skills">스킬</string>
     <string name="quick_plugin_creator_title">신속하게 플러그인 만들기</string>
     <string name="quick_plugin_creator_desc">내장 목록이나 마켓에서 원하는 플러그인을 찾을 수 없나요? 직접 만들어 보세요.</string>
     <string name="quick_plugin_creator_step1_title">1. 패키지 생성 스킬 업데이트 또는 다운로드</string>

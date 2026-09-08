@@ -899,6 +899,7 @@
     <string name="preference_lock_desc">Uma vez bloqueadas, as informações de preferência do usuário não podem ser modificadas.</string>
     <string name="packages">Scripts</string>
     <string name="skills">Habilidade</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">IA</string>
     <string name="package_manager">Gerenciador de pacotes</string>
     <string name="available_packages">Pacotes disponíveis</string>
