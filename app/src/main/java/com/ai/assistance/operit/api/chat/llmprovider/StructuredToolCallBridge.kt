@@ -15,7 +15,6 @@ internal object StructuredToolCallBridge {
     private const val PACKAGE_PROXY_TOOL_NAME = "package_proxy"
     private const val CLI_PROXY_TOOL_NAME = "proxy"
     private const val PROXY_TARGET_TOOL_NAME_PARAM = "tool_name"
-    const val UNMATCHED_TOOL_RESULT_CONTENT = "软件未匹配到工具结果"
 
     private enum class ProviderHistoryBlockType {
         ASSISTANT,
@@ -97,6 +96,28 @@ internal object StructuredToolCallBridge {
             }
         }
         return matched
+    }
+
+    /**
+     * Keeps provider tool-call history protocol-valid without claiming an execution completed or
+     * that the user cancelled it.
+     */
+    fun unmatchedToolResultContent(reason: String, toolName: String?): String {
+        val toolLabel = toolName?.trim().orEmpty().ifEmpty { "未知工具" }
+        val detail =
+            when (reason) {
+                "tool_result_partial_batch", "tool_result_without_structured_match" ->
+                    "没有匹配到执行结果"
+                "typed_tool_call_without_payload" -> "调用没有可执行参数"
+                "tool_call_api_disabled" -> "工具调用协议已关闭"
+                "user_boundary", "system_boundary", "assistant_boundary",
+                "assistant_tool_call_before_result", "typed_tool_call_before_result",
+                "typed_function_call_before_result", "typed_tool_use_before_result",
+                "assistant_function_call_before_result", "assistant_tool_use_before_result",
+                "history_end" -> "后续对话历史已到达，但未返回执行结果"
+                else -> "调用在未返回执行结果时结束"
+            }
+        return "工具结果缺失：$toolLabel $detail。这不是用户取消。"
     }
 
     fun buildToolsJson(toolPrompts: List<ToolPrompt>?): String? {
@@ -288,16 +309,21 @@ internal object StructuredToolCallBridge {
             queuedOpenToolCalls.clear()
         }
 
-        fun flushOpenToolCallsAsUnmatched() {
+        fun flushOpenToolCallsAsUnmatched(reason: String) {
             emitQueuedToolCallsIfNeeded()
             if (openToolCalls.isEmpty()) return
+
+            AppLogger.w(
+                "StructuredToolCallBridge",
+                "发现未匹配的tool_calls，按工具结果缺失处理: count=${openToolCalls.size}, reason=$reason"
+            )
 
             for (openToolCall in openToolCalls) {
                 messagesArray.put(
                     JSONObject().apply {
                         put("role", "tool")
                         put("tool_call_id", openToolCall.id)
-                        put("content", UNMATCHED_TOOL_RESULT_CONTENT)
+                        put("content", unmatchedToolResultContent(reason, openToolCall.matchingName))
                     }
                 )
             }
@@ -315,7 +341,7 @@ internal object StructuredToolCallBridge {
 
             when (turn.kind) {
                 PromptTurnKind.SYSTEM -> {
-                    flushOpenToolCallsAsUnmatched()
+                    flushOpenToolCallsAsUnmatched("system_boundary")
                     messagesArray.put(
                         JSONObject().apply {
                             put("role", "system")
@@ -326,7 +352,7 @@ internal object StructuredToolCallBridge {
 
                 PromptTurnKind.USER,
                 PromptTurnKind.SUMMARY -> {
-                    flushOpenToolCallsAsUnmatched()
+                    flushOpenToolCallsAsUnmatched("user_boundary")
                     messagesArray.put(
                         JSONObject().apply {
                             put("role", "user")
@@ -345,10 +371,10 @@ internal object StructuredToolCallBridge {
                         }
 
                     if (toolCalls != null && toolCalls.length() > 0) {
-                        flushOpenToolCallsAsUnmatched()
+                        flushOpenToolCallsAsUnmatched("assistant_tool_call_before_result")
                         queueToolCalls(textContent, toolCalls)
                     } else {
-                        flushOpenToolCallsAsUnmatched()
+                        flushOpenToolCallsAsUnmatched("assistant_boundary")
                         messagesArray.put(
                             JSONObject().apply {
                                 put("role", "assistant")
@@ -368,10 +394,10 @@ internal object StructuredToolCallBridge {
                         }
 
                     if (toolCalls != null && toolCalls.length() > 0) {
-                        flushOpenToolCallsAsUnmatched()
+                        flushOpenToolCallsAsUnmatched("typed_tool_call_before_result")
                         queueToolCalls(textContent, toolCalls)
                     } else {
-                        flushOpenToolCallsAsUnmatched()
+                        flushOpenToolCallsAsUnmatched("typed_tool_call_without_payload")
                         messagesArray.put(
                             JSONObject().apply {
                                 put("role", "assistant")
@@ -409,7 +435,7 @@ internal object StructuredToolCallBridge {
                             )
                         }
 
-                        flushOpenToolCallsAsUnmatched()
+                        flushOpenToolCallsAsUnmatched("tool_result_partial_batch")
                         if (textContent.isNotBlank()) {
                             messagesArray.put(
                                 JSONObject().apply {
@@ -419,7 +445,7 @@ internal object StructuredToolCallBridge {
                             )
                         }
                     } else {
-                        flushOpenToolCallsAsUnmatched()
+                        flushOpenToolCallsAsUnmatched("tool_result_without_structured_match")
                         if (textContent.isNotBlank()) {
                             messagesArray.put(
                                 JSONObject().apply {
@@ -433,7 +459,7 @@ internal object StructuredToolCallBridge {
             }
         }
 
-        flushOpenToolCallsAsUnmatched()
+        flushOpenToolCallsAsUnmatched("history_end")
         return messagesArray
     }
     private fun nonEmptyContent(content: String): String {

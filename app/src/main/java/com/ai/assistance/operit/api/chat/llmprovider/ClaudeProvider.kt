@@ -822,7 +822,13 @@ open class ClaudeProvider(
                     JSONObject().apply {
                         put("type", "tool_result")
                         put("tool_use_id", openToolUse.id)
-                        put("content", StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT)
+                        put(
+                            "content",
+                            StructuredToolCallBridge.unmatchedToolResultContent(
+                                reason,
+                                openToolUse.matchingName
+                            )
+                        )
                     }
                 )
             }

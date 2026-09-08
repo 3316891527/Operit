@@ -247,7 +247,13 @@ open class KimiProvider(
                     JSONObject().apply {
                         put("role", "tool")
                         put("tool_call_id", openToolCall.id)
-                        put("content", StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT)
+                        put(
+                            "content",
+                            StructuredToolCallBridge.unmatchedToolResultContent(
+                                reason,
+                                openToolCall.matchingName
+                            )
+                        )
                     }
                 )
             }

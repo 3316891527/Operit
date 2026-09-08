@@ -764,7 +764,13 @@ open class GeminiProvider(
                                 put(
                                     "response",
                                     JSONObject().apply {
-                                        put("result", StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT)
+                                        put(
+                                            "result",
+                                            StructuredToolCallBridge.unmatchedToolResultContent(
+                                                reason,
+                                                openFunctionCall.matchingName
+                                            )
+                                        )
                                     }
                                 )
                             }
