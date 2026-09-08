@@ -213,7 +213,8 @@
     <string name="preference_lock_desc">Una vez bloqueado, no podrá modificar la información de preferencias de usuario</string>
 
     <!-- Package Manager Screen -->
-    <string name="packages">Gestión de paquetes</string>
+    <string name="packages">Scripts</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="package_manager">Gestor de paquetes</string>
     <string name="available_packages">Paquetes disponibles</string>
     <string name="imported_packages">Paquetes importados</string>
@@ -2064,6 +2065,7 @@
     <string name="message_info_token_input_short">↑</string>
     <string name="message_info_token_output_short">↓</string>
     <string name="message_info_token_cached_short">Caché</string>
+    <string name="message_info_token_hit_rate_short">Tasa de aciertos</string>
     <string name="message_info_unavailable">No registrado</string>
     <string name="webview_ssl_cert_error">Error de certificado SSL</string>
     <string name="webview_ssl_error_untrusted">La entidad emisora del certificado no es de confianza</string>
@@ -3280,6 +3282,15 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="test_item_image">Imagen</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Este modelo puede entender imágenes</string>
+    <string name="test_media_audio_understood">Este modelo puede entender audio</string>
+    <string name="test_media_video_understood">Este modelo puede entender video</string>
+    <string name="test_media_image_unverified">La solicitud de imagen se conectó, pero no se pudo verificar la comprensión</string>
+    <string name="test_media_audio_unverified">La solicitud de audio se conectó, pero no se pudo verificar la comprensión</string>
+    <string name="test_media_video_unverified">La solicitud de video se conectó, pero no se pudo verificar la comprensión</string>
+    <string name="test_media_unverified">Conectado, pero no verificado</string>
+    <string name="test_result_expand">Expandir</string>
+    <string name="test_result_collapse">Contraer</string>
     <string name="functional_config_warning_image_unsupported">Advertencia: el modelo seleccionado actualmente no tiene habilitada la opción "Soporte de reconocimiento de imágenes". Es posible que el reconocimiento de imágenes no esté disponible. Cambie a un modelo que admita visión y active "El modelo admite reconocimiento de imágenes".</string>
     <string name="functional_config_warning_audio_unsupported">Advertencia: el modelo seleccionado actualmente no tiene habilitada la opción "Soporte de análisis de audio". Es posible que el reconocimiento/transcripción de audio no esté disponible. Cambie a un modelo que admita entrada/transcripción de audio y active "El modelo admite análisis de audio".</string>
     <string name="functional_config_warning_video_unsupported">Advertencia: el modelo seleccionado actualmente no tiene habilitada la opción "Soporte de análisis de video". Es posible que la comprensión de video no esté disponible. Cambie a un modelo que admita entrada de video/imagen y active "El modelo admite análisis de video".</string>
@@ -4848,7 +4859,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="show_message_timing_stats_description">Mostrar el tiempo del primer paquete y el tiempo de generación en la parte inferior de los mensajes de IA</string>
     <string name="show_message_token_speed">Mostrar velocidad de generación de tokens del mensaje</string>
     <string name="show_message_token_speed_description">Mostrar la velocidad de generación de tokens de salida debajo de los mensajes de IA (t/s)</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (caché: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (caché: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">tiempo: %1$s (primer %2$s generar %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="global_user_name">Nombre de usuario global</string>
@@ -7439,7 +7450,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="market_tab_categories">Categorías</string>
     <string name="market_category_type_all">Todo</string>
     <string name="market_category_type_script">Script</string>
-    <string name="market_category_type_package">Paquete de herramientas</string>
+    <string name="market_category_type_package">Complemento</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">Búsqueda e investigación</string>

@@ -1030,8 +1030,9 @@
     <string name="tag_count_locked_status">已选择 %1$d / 上限 %2$d</string>
     
     <!-- Package Manager Screen -->
-    <string name="packages">包管理</string>
+    <string name="packages">沙盒包</string>
     <string name="skills">技能</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="quick_plugin_creator_title">快速创作你的插件</string>
     <string name="quick_plugin_creator_desc">内置和市场都找不到想要的插件？创作你自己想要的！</string>
     <string name="quick_plugin_creator_step1_title">1. 更新或者下载包创作 Skill</string>
@@ -1823,6 +1824,7 @@
     <string name="message_info_token_input_short">↑</string>
     <string name="message_info_token_output_short">↓</string>
     <string name="message_info_token_cached_short">缓存</string>
+    <string name="message_info_token_hit_rate_short">命中率</string>
     <string name="message_info_unavailable">未记录</string>
     <string name="selected_content_copied">已复制选中内容</string>
     <string name="requesting_root_permission">正在请求Root权限...</string>
@@ -2999,6 +3001,15 @@
     <string name="test_item_image">图片</string>
     <string name="test_item_audio">音频</string>
     <string name="test_item_video">视频</string>
+    <string name="test_media_image_understood">该模型能理解图片</string>
+    <string name="test_media_audio_understood">该模型能理解音频</string>
+    <string name="test_media_video_understood">该模型能理解视频</string>
+    <string name="test_media_image_unverified">图片请求已连通，但未能验证理解能力</string>
+    <string name="test_media_audio_unverified">音频请求已连通，但未能验证理解能力</string>
+    <string name="test_media_video_unverified">视频请求已连通，但未能验证理解能力</string>
+    <string name="test_media_unverified">已连通，但未能验证</string>
+    <string name="test_result_expand">展开</string>
+    <string name="test_result_collapse">收起</string>
     <string name="test">测试</string>
     <string name="expand_desc">展开</string>
     <string name="selected_desc">已选择</string>
@@ -4464,8 +4475,8 @@
     <string name="market_tab_skill">Skill</string>
     <string name="market_tab_mine">我的</string>
     <string name="market_category_type_all">全部</string>
-    <string name="market_category_type_script">脚本</string>
-    <string name="market_category_type_package">工具包</string>
+    <string name="market_category_type_script">沙盒包</string>
+    <string name="market_category_type_package">插件</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">搜索与研究</string>
@@ -5680,7 +5691,7 @@
     <string name="show_message_token_speed_description">在 AI 消息底部显示输出 Token 生成速率（t/s）</string>
     <string name="show_message_timestamp">显示消息时间</string>
     <string name="show_message_timestamp_description">在 AI 消息底部显示该条消息的时间</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">usage: %1$s (首 %2$s 生成 %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="chat_message_timestamp_compact">time: %1$s</string>

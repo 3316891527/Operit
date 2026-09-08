@@ -897,8 +897,9 @@
     <string name="preferences_guide_title">Para melhor atendê-lo, preencha as seguintes configurações</string>
     <string name="preference_lock">Bloquear preferências do usuário</string>
     <string name="preference_lock_desc">Uma vez bloqueadas, as informações de preferência do usuário não podem ser modificadas.</string>
-    <string name="packages">Gerenciamento de pacotes</string>
+    <string name="packages">Scripts</string>
     <string name="skills">Habilidade</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">IA</string>
     <string name="package_manager">Gerenciador de pacotes</string>
     <string name="available_packages">Pacotes disponíveis</string>
@@ -1516,6 +1517,7 @@
     <string name="message_info_token_input_short" />
     <string name="message_info_token_output_short" />
     <string name="message_info_token_cached_short">esconderijo</string>
+    <string name="message_info_token_hit_rate_short">Taxa de acerto</string>
     <string name="message_info_unavailable">Não registrado</string>
     <string name="selected_content_copied">Conteúdo selecionado copiado</string>
     <string name="requesting_root_permission">Solicitando permissão de root...</string>
@@ -2524,6 +2526,15 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="test_item_image">foto</string>
     <string name="test_item_audio">Áudio</string>
     <string name="test_item_video">vídeo</string>
+    <string name="test_media_image_understood">Este modelo consegue entender imagens</string>
+    <string name="test_media_audio_understood">Este modelo consegue entender áudio</string>
+    <string name="test_media_video_understood">Este modelo consegue entender vídeo</string>
+    <string name="test_media_image_unverified">A solicitação de imagem foi conectada, mas a compreensão não pôde ser verificada</string>
+    <string name="test_media_audio_unverified">A solicitação de áudio foi conectada, mas a compreensão não pôde ser verificada</string>
+    <string name="test_media_video_unverified">A solicitação de vídeo foi conectada, mas a compreensão não pôde ser verificada</string>
+    <string name="test_media_unverified">Conectado, mas não verificado</string>
+    <string name="test_result_expand">Expandir</string>
+    <string name="test_result_collapse">Recolher</string>
     <string name="test">teste</string>
     <string name="expand_desc">Expandir</string>
     <string name="selected_desc">Selecionado</string>
@@ -6736,7 +6747,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="show_message_timing_stats_description">Exibe o tempo do primeiro pacote e o tempo de geração na parte inferior das mensagens da IA.</string>
     <string name="show_message_token_speed">Mostrar taxa de geração de tokens da mensagem</string>
     <string name="show_message_token_speed_description">Exibe a taxa de geração de tokens de saída abaixo das mensagens da IA (t/s).</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">tempo: %1$s (primeiro %2$s geração %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="software_identity_title">Identidade do software</string>
@@ -7209,7 +7220,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="market_tab_categories">Categorias</string>
     <string name="market_category_type_all">Todos</string>
     <string name="market_category_type_script">Script</string>
-    <string name="market_category_type_package">Pacote de ferramentas</string>
+    <string name="market_category_type_package">Plugin</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">Pesquisa e estudo</string>

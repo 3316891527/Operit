@@ -1478,6 +1478,7 @@ private fun MessageFooterBar(
                 message.cachedInputTokens,
                 message.inputTokens,
                 message.outputTokens,
+                formatCacheHitRate(message.cachedInputTokens, message.inputTokens),
             )
         }
     val timeSummary =

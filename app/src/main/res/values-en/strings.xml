@@ -1079,8 +1079,9 @@
     <string name="tag_count_locked_status">Selected %1$d / Limit %2$d</string>
     
     <!-- Package Manager Screen -->
-    <string name="packages">Packages</string>
+    <string name="packages">Scripts</string>
     <string name="skills">Skills</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">AI</string>
     <string name="package_manager">Package Manager</string>
     <string name="available_packages">Available Packages</string>
@@ -1698,6 +1699,7 @@
     <string name="message_info_token_input_short">↑</string>
     <string name="message_info_token_output_short">↓</string>
     <string name="message_info_token_cached_short">Cached</string>
+    <string name="message_info_token_hit_rate_short">Hit rate</string>
     <string name="message_info_unavailable">Not recorded</string>
     <string name="selected_content_copied">Selected content copied</string>
     <string name="requesting_root_permission">Requesting Root permission...</string>
@@ -2919,6 +2921,15 @@
     <string name="test_item_image">Image</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">This model can understand images</string>
+    <string name="test_media_audio_understood">This model can understand audio</string>
+    <string name="test_media_video_understood">This model can understand video</string>
+    <string name="test_media_image_unverified">The image request succeeded, but understanding could not be verified</string>
+    <string name="test_media_audio_unverified">The audio request succeeded, but understanding could not be verified</string>
+    <string name="test_media_video_unverified">The video request succeeded, but understanding could not be verified</string>
+    <string name="test_media_unverified">Connected, but not verified</string>
+    <string name="test_result_expand">Expand</string>
+    <string name="test_result_collapse">Collapse</string>
     <string name="expand_desc">Expand</string>
     <string name="selected_desc">Selected</string>
     <string name="functional_config_warning_image_unsupported">Warning: the selected model is not marked as “supports vision”, so image recognition may not work. Switch to a model that supports vision and enable “Model supports vision”.</string>
@@ -5221,7 +5232,7 @@
     <string name="show_message_token_speed_description">Show output token generation rate below AI messages (t/s)</string>
     <string name="show_message_timestamp">Show Message Time</string>
     <string name="show_message_timestamp_description">Show the time of that AI message below it</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">usage: %1$s (first %2$s out %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="chat_message_timestamp_compact">time: %1$s</string>
@@ -7827,7 +7838,7 @@
     <string name="market_tab_mine">Mine</string>
     <string name="market_category_type_all">All</string>
     <string name="market_category_type_script">Script</string>
-    <string name="market_category_type_package">Package</string>
+    <string name="market_category_type_package">Plugin</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">Search &amp; Research</string>

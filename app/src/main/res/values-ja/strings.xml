@@ -183,6 +183,8 @@
     <string name="token_stats_rate_manual">手動設定</string>
     <string name="token_stats_rate_edit">為替レートを編集</string>
     <string name="token_stats_cache_rate">キャッシュ率</string>
+    <string name="message_info_token_hit_rate_short">ヒット率</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="token_stats_period_overview">期間の概要</string>
     <string name="token_stats_composition">トークンの内訳</string>
     <string name="token_stats_trends">傾向分析</string>
@@ -209,4 +211,13 @@
     <string name="market_version_incompatible_title">ダウンロードできません：対応していないアプリ版です</string>
     <string name="market_version_too_low_message">現在のアプリ版%1$sは、この項目に必要な最低版%2$sより古い版です。アプリを更新してからダウンロードしてください。</string>
     <string name="market_version_too_high_message">現在のアプリ版%1$sは、この項目が対応する最高版%2$sより新しい版です。対応しているアプリ版を使用してください。</string>
+    <string name="test_media_image_understood">このモデルは画像を理解できます</string>
+    <string name="test_media_audio_understood">このモデルは音声を理解できます</string>
+    <string name="test_media_video_understood">このモデルは動画を理解できます</string>
+    <string name="test_media_image_unverified">画像リクエストは成功しましたが、理解を確認できませんでした</string>
+    <string name="test_media_audio_unverified">音声リクエストは成功しましたが、理解を確認できませんでした</string>
+    <string name="test_media_video_unverified">動画リクエストは成功しましたが、理解を確認できませんでした</string>
+    <string name="test_media_unverified">接続できましたが、確認できませんでした</string>
+    <string name="test_result_expand">展開</string>
+    <string name="test_result_collapse">折りたたむ</string>
 </resources>

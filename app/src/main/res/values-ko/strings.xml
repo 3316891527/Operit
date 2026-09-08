@@ -910,8 +910,9 @@
     <string name="tag_count_lock">잠금 횟수</string>
     <string name="tag_count_limit">최대 선택 가능</string>
     <string name="tag_count_locked_status">%1$d 선택 / %2$d 제한</string>
-    <string name="packages">패키지</string>
+    <string name="packages">스크립트</string>
     <string name="skills">스킬</string>
+    <string name="package_tab_skills">스킬</string>
     <string name="quick_plugin_creator_title">신속하게 플러그인 만들기</string>
     <string name="quick_plugin_creator_desc">내장 목록이나 마켓에서 원하는 플러그인을 찾을 수 없나요? 직접 만들어 보세요.</string>
     <string name="quick_plugin_creator_step1_title">1. 패키지 생성 스킬 업데이트 또는 다운로드</string>
@@ -1562,6 +1563,7 @@
     <string name="message_info_token_input_short">↑</string>
     <string name="message_info_token_output_short">↓</string>
     <string name="message_info_token_cached_short">캐시됨</string>
+    <string name="message_info_token_hit_rate_short">적중률</string>
     <string name="message_info_unavailable">기록되지 않음</string>
     <string name="selected_content_copied">선택한 콘텐츠가 복사되었습니다.</string>
     <string name="requesting_root_permission">루트 권한을 요청하는 중...</string>
@@ -2621,6 +2623,15 @@
     <string name="test_item_image">이미지</string>
     <string name="test_item_audio">오디오</string>
     <string name="test_item_video">동영상</string>
+    <string name="test_media_image_understood">이 모델은 이미지를 이해할 수 있습니다</string>
+    <string name="test_media_audio_understood">이 모델은 오디오를 이해할 수 있습니다</string>
+    <string name="test_media_video_understood">이 모델은 동영상을 이해할 수 있습니다</string>
+    <string name="test_media_image_unverified">이미지 요청은 연결되었지만 이해 여부를 확인할 수 없습니다</string>
+    <string name="test_media_audio_unverified">오디오 요청은 연결되었지만 이해 여부를 확인할 수 없습니다</string>
+    <string name="test_media_video_unverified">동영상 요청은 연결되었지만 이해 여부를 확인할 수 없습니다</string>
+    <string name="test_media_unverified">연결되었지만 확인되지 않음</string>
+    <string name="test_result_expand">펼치기</string>
+    <string name="test_result_collapse">접기</string>
     <string name="test">테스트</string>
     <string name="expand_desc">확장</string>
     <string name="selected_desc">선택됨</string>
@@ -4783,7 +4794,7 @@
     <string name="show_message_token_speed_description">AI 메시지 아래에 출력 토큰 생성 속도를 표시합니다 (t/s)</string>
     <string name="show_message_timestamp">메시지 시간 표시</string>
     <string name="show_message_timestamp_description">해당 AI 메시지 아래에 시간을 표시합니다.</string>
-    <string name="chat_message_token_stats_compact">토큰: %1$d ↑ %3$d (캐시: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">토큰: %1$d ↑ %3$d (캐시: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">소요 시간: %1$s(대기 %2$s, 출력 %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="chat_message_timestamp_compact">시간: %1$s</string>
@@ -7218,7 +7229,7 @@
     <string name="market_tab_categories">카테고리</string>
     <string name="market_category_type_all">전체</string>
     <string name="market_category_type_script">스크립트</string>
-    <string name="market_category_type_package">도구 패키지</string>
+    <string name="market_category_type_package">플러그인</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">검색 및 연구</string>

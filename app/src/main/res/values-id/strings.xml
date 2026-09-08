@@ -714,8 +714,9 @@
     <string name="preferences_guide_title">Untuk layanan yang lebih baik, harap lengkapi pengaturan berikut</string>
     <string name="preference_lock">Kunci preferensi pengguna</string>
     <string name="preference_lock_desc">Setelah dikunci, informasi preferensi pengguna tidak dapat diubah</string>
-    <string name="packages">Manajemen paket</string>
+    <string name="packages">Skrip</string>
     <string name="skills">Keterampilan</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">AI</string>
     <string name="package_manager">Manajer paket</string>
     <string name="available_packages">Paket tersedia</string>
@@ -1462,6 +1463,7 @@
     <string name="message_info_token_input_short">↑</string>
     <string name="message_info_token_output_short">↓</string>
     <string name="message_info_token_cached_short">Cache</string>
+    <string name="message_info_token_hit_rate_short">Hit rate</string>
     <string name="message_info_unavailable">Tidak tercatat</string>
 
     <string name="script_code">Kode Skrip</string>
@@ -2799,6 +2801,15 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="test_item_image">Gambar</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Model ini dapat memahami gambar</string>
+    <string name="test_media_audio_understood">Model ini dapat memahami audio</string>
+    <string name="test_media_video_understood">Model ini dapat memahami video</string>
+    <string name="test_media_image_unverified">Permintaan gambar terhubung, tetapi pemahaman tidak dapat diverifikasi</string>
+    <string name="test_media_audio_unverified">Permintaan audio terhubung, tetapi pemahaman tidak dapat diverifikasi</string>
+    <string name="test_media_video_unverified">Permintaan video terhubung, tetapi pemahaman tidak dapat diverifikasi</string>
+    <string name="test_media_unverified">Terhubung, tetapi tidak diverifikasi</string>
+    <string name="test_result_expand">Bentangkan</string>
+    <string name="test_result_collapse">Ciutkan</string>
     <string name="test">Uji</string>
     <string name="expand_desc">Bentangkan</string>
     <string name="selected_desc">Terpilih</string>
@@ -6903,7 +6914,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="show_message_timing_stats_description">Tampilkan waktu paket pertama dan waktu generasi di bagian bawah pesan AI</string>
     <string name="show_message_token_speed">Tampilkan laju pembuatan token pesan</string>
     <string name="show_message_token_speed_description">Tampilkan laju pembuatan token keluaran di bawah pesan AI (t/s)</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">waktu: %1$s (pertama %2$s generasi %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="software_identity_title">Identitas Perangkat Lunak</string>
@@ -7371,7 +7382,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="market_tab_categories">Kategori</string>
     <string name="market_category_type_all">Semua</string>
     <string name="market_category_type_script">Skrip</string>
-    <string name="market_category_type_package">Paket Alat</string>
+    <string name="market_category_type_package">Plugin</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">Pencarian &amp; Riset</string>

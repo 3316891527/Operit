@@ -1009,8 +1009,9 @@
     <string name="tag_count_locked_status">A fost selectat %1$d / Limita maximă %2$d</string>
 
     <!-- Package Manager Screen -->
-    <string name="packages">Gestionarea pachetelor</string>
+    <string name="packages">Scripturi</string>
     <string name="skills">Abilități</string>
+    <string name="package_tab_skills">Skill</string>
     <string name="quick_plugin_creator_title">Creează-ți rapid pluginul</string>
     <string name="quick_plugin_creator_desc">Nu găsești pluginul dorit nici în cele preinstalate, nici în magazin? Creează-l tu însuți!</string>
     <string name="quick_plugin_creator_step1_title">1. Actualizare sau descărcare de pachete de creație Skill</string>
@@ -1759,6 +1760,7 @@
     <string name="message_info_token_input_short">↑</string>
     <string name="message_info_token_output_short">↓</string>
     <string name="message_info_token_cached_short">Cache</string>
+    <string name="message_info_token_hit_rate_short">Rată de hit</string>
     <string name="message_info_unavailable">Nu a fost înregistrat</string>
     <string name="selected_content_copied">Conținutul selectat a fost copiat</string>
     <string name="requesting_root_permission">Se solicităRootDrepturi...</string>
@@ -2925,6 +2927,15 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="test_item_image">Imagine</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Acest model poate înțelege imagini</string>
+    <string name="test_media_audio_understood">Acest model poate înțelege audio</string>
+    <string name="test_media_video_understood">Acest model poate înțelege video</string>
+    <string name="test_media_image_unverified">Cererea de imagine s-a conectat, dar înțelegerea nu a putut fi verificată</string>
+    <string name="test_media_audio_unverified">Cererea audio s-a conectat, dar înțelegerea nu a putut fi verificată</string>
+    <string name="test_media_video_unverified">Cererea video s-a conectat, dar înțelegerea nu a putut fi verificată</string>
+    <string name="test_media_unverified">Conectat, dar neverificat</string>
+    <string name="test_result_expand">Extindeți</string>
+    <string name="test_result_collapse">Restrângeți</string>
     <string name="test">Testare</string>
     <string name="expand_desc">Extindeți</string>
     <string name="selected_desc">A fost selectat</string>
@@ -4295,7 +4306,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="market_tab_mine">Al meu</string>
     <string name="market_category_type_all">Toate</string>
     <string name="market_category_type_script">Scenariu</string>
-    <string name="market_category_type_package">Set de instrumente</string>
+    <string name="market_category_type_package">Plugin</string>
     <string name="market_category_type_skill">Skill</string>
     <string name="market_category_type_mcp">MCP</string>
     <string name="market_category_search_research">Căutare și cercetare</string>
@@ -5494,7 +5505,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="show_message_token_speed_description">Afișează viteza de generare a tokenilor de ieșire sub mesajele AI (t/s)</string>
     <string name="show_message_timestamp">Afișează ora mesajului</string>
     <string name="show_message_timestamp_description">în AI În partea de jos a mesajului este afișată ora la care a fost postat mesajul respectiv</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="chat_message_timing_stats_compact">usage: %1$s (Primul %2$s Generare %3$s)</string>
     <string name="chat_message_token_speed_compact">%1$s t/s</string>
     <string name="chat_message_timestamp_compact">time: %1$s</string>
