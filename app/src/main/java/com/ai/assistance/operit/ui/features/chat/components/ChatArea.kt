@@ -62,6 +62,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -69,6 +70,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -1267,14 +1270,50 @@ private enum class MessageCopyMode {
     XML_SOURCE,
 }
 
+private const val COPY_PREVIEW_SELECTION_EDGE_FRACTION = 0.2f
+private const val COPY_PREVIEW_SELECTION_MIN_DP_PER_SEC = 32f
+private const val COPY_PREVIEW_SELECTION_MAX_DP_PER_SEC = 110f
+
 /**
- * Consume leftover nested-scroll at both edges of the copy preview so
- * [ModalBottomSheet] does not start a rebound of its own.
+ * Consume leftover nested-scroll at the top of the copy preview so a downward
+ * pull does not drag [ModalBottomSheet]. Bottom leftover is left for the sheet
+ * so its rebound animation can still run once the preview no longer fills the
+ * screen.
  */
-private fun copyPreviewConsumedOverscrollY(scrollState: ScrollState, availableY: Float): Float {
+internal fun copyPreviewConsumedOverscrollY(
+    canScrollBackward: Boolean,
+    availableY: Float,
+): Float {
+    return if (availableY > 0f && !canScrollBackward) availableY else 0f
+}
+
+private class CopyPreviewSelectionTracker {
+    var pointerY: Float? = null
+    var viewportHeightPx: Float = 0f
+}
+
+internal fun copyPreviewSelectionAutoScrollPxPerSec(
+    pointerY: Float,
+    viewportHeightPx: Float,
+    edgePx: Float,
+    minPxPerSec: Float,
+    maxPxPerSec: Float,
+    canScrollBackward: Boolean,
+    canScrollForward: Boolean,
+): Float {
+    if (viewportHeightPx <= 0f || edgePx <= 0f) return 0f
+    val zonePx = edgePx.coerceAtMost(viewportHeightPx / 2f)
+    if (zonePx <= 0f) return 0f
+    val speedRange = (maxPxPerSec - minPxPerSec).coerceAtLeast(0f)
     return when {
-        availableY > 0f && !scrollState.canScrollBackward -> availableY
-        availableY < 0f && !scrollState.canScrollForward -> availableY
+        pointerY <= zonePx && canScrollBackward -> {
+            val t = ((zonePx - pointerY) / zonePx).coerceIn(0f, 1f)
+            -(minPxPerSec + speedRange * t * t)
+        }
+        pointerY >= viewportHeightPx - zonePx && canScrollForward -> {
+            val t = ((pointerY - (viewportHeightPx - zonePx)) / zonePx).coerceIn(0f, 1f)
+            minPxPerSec + speedRange * t * t
+        }
         else -> 0f
     }
 }
@@ -1290,9 +1329,9 @@ private fun MessageCopyPreviewBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val textScrollState = rememberScrollState()
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val previewMaxHeight =
+    val sheetMaxHeight =
         remember(screenHeightDp) {
-            (screenHeightDp * 0.4f).coerceIn(120.dp, 520.dp)
+            (screenHeightDp * 0.4f).coerceIn(200.dp, 520.dp)
         }
     val copyPreviewNestedScrollConnection =
         remember(textScrollState) {
@@ -1302,7 +1341,11 @@ private fun MessageCopyPreviewBottomSheet(
                     available: Offset,
                     source: NestedScrollSource,
                 ): Offset {
-                    val consumedY = copyPreviewConsumedOverscrollY(textScrollState, available.y)
+                    val consumedY =
+                        copyPreviewConsumedOverscrollY(
+                            canScrollBackward = textScrollState.canScrollBackward,
+                            availableY = available.y,
+                        )
                     return if (consumedY == 0f) Offset.Zero else Offset(x = 0f, y = consumedY)
                 }
 
@@ -1310,11 +1353,47 @@ private fun MessageCopyPreviewBottomSheet(
                     consumed: Velocity,
                     available: Velocity,
                 ): Velocity {
-                    val consumedY = copyPreviewConsumedOverscrollY(textScrollState, available.y)
+                    val consumedY =
+                        copyPreviewConsumedOverscrollY(
+                            canScrollBackward = textScrollState.canScrollBackward,
+                            availableY = available.y,
+                        )
                     return if (consumedY == 0f) Velocity.Zero else Velocity(x = 0f, y = consumedY)
                 }
             }
         }
+    val density = LocalDensity.current
+    val selectionTracker = remember { CopyPreviewSelectionTracker() }
+    val minAutoScrollPxPerSec = with(density) { COPY_PREVIEW_SELECTION_MIN_DP_PER_SEC.dp.toPx() }
+    val maxAutoScrollPxPerSec = with(density) { COPY_PREVIEW_SELECTION_MAX_DP_PER_SEC.dp.toPx() }
+    LaunchedEffect(textScrollState) {
+        var lastFrameNanos = 0L
+        while (true) {
+            withFrameNanos { frameNanos ->
+                val pointerY = selectionTracker.pointerY
+                val viewportHeightPx = selectionTracker.viewportHeightPx
+                if (pointerY != null && viewportHeightPx > 0f) {
+                    val pxPerSec =
+                        copyPreviewSelectionAutoScrollPxPerSec(
+                            pointerY = pointerY,
+                            viewportHeightPx = viewportHeightPx,
+                            edgePx = viewportHeightPx * COPY_PREVIEW_SELECTION_EDGE_FRACTION,
+                            minPxPerSec = minAutoScrollPxPerSec,
+                            maxPxPerSec = maxAutoScrollPxPerSec,
+                            canScrollBackward = textScrollState.canScrollBackward,
+                            canScrollForward = textScrollState.canScrollForward,
+                        )
+                    if (pxPerSec != 0f && lastFrameNanos != 0L) {
+                        val deltaSeconds =
+                            ((frameNanos - lastFrameNanos).coerceAtLeast(0L) / 1_000_000_000f)
+                                .coerceAtMost(0.05f)
+                        textScrollState.dispatchRawDelta(pxPerSec * deltaSeconds)
+                    }
+                }
+                lastFrameNanos = frameNanos
+            }
+        }
+    }
     var copyMode by remember(content) { mutableStateOf(MessageCopyMode.PLAIN_TEXT) }
     var plainText by remember(content.markdownSource) { mutableStateOf<String?>(null) }
     LaunchedEffect(content.markdownSource, context) {
@@ -1343,6 +1422,7 @@ private fun MessageCopyPreviewBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = sheetMaxHeight)
                 .padding(start = 20.dp, end = 20.dp, bottom = 24.dp)
         ) {
             Text(
@@ -1385,9 +1465,23 @@ private fun MessageCopyPreviewBottomSheet(
             } else {
                 SelectionContainer(
                     modifier = Modifier
+                        .weight(1f, fill = false)
                         .fillMaxWidth()
-                        .heightIn(max = previewMaxHeight)
-                        // Keep leftover edge overscroll in the preview so the sheet does not rebound with it.
+                        .onGloballyPositioned { coordinates ->
+                            selectionTracker.viewportHeightPx = coordinates.size.height.toFloat()
+                        }
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(PointerEventPass.Final)
+                                    val pressed = event.changes.filter { it.pressed }
+                                    selectionTracker.pointerY =
+                                        if (pressed.size == 1) pressed.first().position.y else null
+                                }
+                            }
+                        }
+                        // Keep leftover top overscroll in the preview so a downward pull
+                        // does not drag the sheet. Bottom leftover is left for sheet rebound.
                         .nestedScroll(copyPreviewNestedScrollConnection)
                         .verticalScroll(textScrollState)
                         .padding(bottom = 12.dp)
