@@ -1268,7 +1268,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     message = message.copy(selectedVariantIndex = nextVariantIndex, variantCount = nextVariantIndex),
                 )
             messageVariantDao.insertVariant(variant)
-            val persistedMessage = variant.applyTo(baseMessage, nextVariantIndex)
+            val persistedMessage = variant.applyTo(baseMessage.toChatMessage(), nextVariantIndex)
             messageDao.updateSelectedVariantIndex(chatId, messageTimestamp, nextVariantIndex)
             chatDao.getChatById(chatId)?.let { chat ->
                 chatDao.updateChatMetadata(
