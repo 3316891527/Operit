@@ -183,6 +183,8 @@
     <string name="token_stats_rate_manual">手動設定</string>
     <string name="token_stats_rate_edit">為替レートを編集</string>
     <string name="token_stats_cache_rate">キャッシュ率</string>
+    <string name="message_info_token_hit_rate_short">ヒット率</string>
+    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="token_stats_period_overview">期間の概要</string>
     <string name="token_stats_composition">トークンの内訳</string>
     <string name="token_stats_trends">傾向分析</string>
