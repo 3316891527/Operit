@@ -2799,6 +2799,15 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="test_item_image">Gambar</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">Model ini dapat memahami gambar</string>
+    <string name="test_media_audio_understood">Model ini dapat memahami audio</string>
+    <string name="test_media_video_understood">Model ini dapat memahami video</string>
+    <string name="test_media_image_unverified">Permintaan gambar terhubung, tetapi pemahaman tidak dapat diverifikasi</string>
+    <string name="test_media_audio_unverified">Permintaan audio terhubung, tetapi pemahaman tidak dapat diverifikasi</string>
+    <string name="test_media_video_unverified">Permintaan video terhubung, tetapi pemahaman tidak dapat diverifikasi</string>
+    <string name="test_media_unverified">Terhubung, tetapi tidak diverifikasi</string>
+    <string name="test_result_expand">Bentangkan</string>
+    <string name="test_result_collapse">Ciutkan</string>
     <string name="test">Uji</string>
     <string name="expand_desc">Bentangkan</string>
     <string name="selected_desc">Terpilih</string>

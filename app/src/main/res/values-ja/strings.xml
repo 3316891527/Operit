@@ -209,4 +209,13 @@
     <string name="market_version_incompatible_title">ダウンロードできません：対応していないアプリ版です</string>
     <string name="market_version_too_low_message">現在のアプリ版%1$sは、この項目に必要な最低版%2$sより古い版です。アプリを更新してからダウンロードしてください。</string>
     <string name="market_version_too_high_message">現在のアプリ版%1$sは、この項目が対応する最高版%2$sより新しい版です。対応しているアプリ版を使用してください。</string>
+    <string name="test_media_image_understood">このモデルは画像を理解できます</string>
+    <string name="test_media_audio_understood">このモデルは音声を理解できます</string>
+    <string name="test_media_video_understood">このモデルは動画を理解できます</string>
+    <string name="test_media_image_unverified">画像リクエストは成功しましたが、理解を確認できませんでした</string>
+    <string name="test_media_audio_unverified">音声リクエストは成功しましたが、理解を確認できませんでした</string>
+    <string name="test_media_video_unverified">動画リクエストは成功しましたが、理解を確認できませんでした</string>
+    <string name="test_media_unverified">接続できましたが、確認できませんでした</string>
+    <string name="test_result_expand">展開</string>
+    <string name="test_result_collapse">折りたたむ</string>
 </resources>

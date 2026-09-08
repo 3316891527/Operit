@@ -2919,6 +2919,15 @@
     <string name="test_item_image">Image</string>
     <string name="test_item_audio">Audio</string>
     <string name="test_item_video">Video</string>
+    <string name="test_media_image_understood">This model can understand images</string>
+    <string name="test_media_audio_understood">This model can understand audio</string>
+    <string name="test_media_video_understood">This model can understand video</string>
+    <string name="test_media_image_unverified">The image request succeeded, but understanding could not be verified</string>
+    <string name="test_media_audio_unverified">The audio request succeeded, but understanding could not be verified</string>
+    <string name="test_media_video_unverified">The video request succeeded, but understanding could not be verified</string>
+    <string name="test_media_unverified">Connected, but not verified</string>
+    <string name="test_result_expand">Expand</string>
+    <string name="test_result_collapse">Collapse</string>
     <string name="expand_desc">Expand</string>
     <string name="selected_desc">Selected</string>
     <string name="functional_config_warning_image_unsupported">Warning: the selected model is not marked as “supports vision”, so image recognition may not work. Switch to a model that supports vision and enable “Model supports vision”.</string>

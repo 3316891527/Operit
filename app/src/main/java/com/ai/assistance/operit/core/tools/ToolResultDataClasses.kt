@@ -2702,6 +2702,7 @@ data class FunctionModelBindingResultData(
 data class ModelConfigConnectionTestItemResultData(
     val type: String,
     val success: Boolean,
+    val outcome: String,
     val error: String? = null
 )
 
