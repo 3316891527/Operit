@@ -1166,6 +1166,7 @@ open class GeminiProvider(
             chatHistory: List<PromptTurn>,
             modelParameters: List<ModelParameter<*>>,
             enableThinking: Boolean,
+            thinkingOptionId: String?,
             stream: Boolean,
             availableTools: List<ToolPrompt>?,
             preserveThinkInHistory: Boolean,
@@ -1236,7 +1237,7 @@ open class GeminiProvider(
                     )
                 }
 
-                val requestBody = createRequestBody(context, chatHistory, modelParameters, enableThinking, availableTools, preserveThinkInHistory)
+                val requestBody = createRequestBody(context, chatHistory, modelParameters, enableThinking, thinkingOptionId, availableTools, preserveThinkInHistory)
                 onTokensUpdated(
                         tokenCacheManager.totalInputTokenCount,
                         tokenCacheManager.cachedInputTokenCount,
@@ -1351,6 +1352,7 @@ open class GeminiProvider(
             chatHistory: List<PromptTurn>,
             modelParameters: List<ModelParameter<*>>,
             enableThinking: Boolean,
+            thinkingOptionId: String? = null,
             availableTools: List<ToolPrompt>? = null,
             preserveThinkInHistory: Boolean = false
     ): RequestBody {
@@ -1456,7 +1458,7 @@ open class GeminiProvider(
             apiEndpoint = apiEndpoint,
             thinkingConfigurations = thinkingConfigurations,
             enableThinking = enableThinking,
-            optionId = thinkingOptionId,
+            optionId = thinkingOptionId ?: this.thinkingOptionId,
         )
 
         val jsonString = json.toString()
