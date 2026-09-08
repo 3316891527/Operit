@@ -1360,6 +1360,15 @@
           },
           "type": "string",
           "required": false
+        },
+        {
+          "name": "content_encoding",
+          "description": {
+            "zh": "内容编码：utf-8（默认）或 base64",
+            "en": "Content encoding: utf-8 (default) or base64."
+          },
+          "type": "string",
+          "required": false
         }
       ]
     },
@@ -1429,8 +1438,8 @@
     {
       "name": "create_branch",
       "description": {
-        "zh": "创建分支。",
-        "en": "Create a branch."
+        "zh": "创建分支（通过 /repos/{owner}/{repo}/git/refs）。",
+        "en": "Create a branch (via /repos/{owner}/{repo}/git/refs)."
       },
       "parameters": [
         {
@@ -1452,7 +1461,7 @@
           "required": true
         },
         {
-          "name": "branch",
+          "name": "new_branch",
           "description": {
             "zh": "新分支名",
             "en": "New branch name."
@@ -1463,17 +1472,8 @@
         {
           "name": "from_branch",
           "description": {
-            "zh": "基于哪个分支创建（默认默认分支）",
-            "en": "Branch to create from (default: default branch)."
-          },
-          "type": "string",
-          "required": false
-        },
-        {
-          "name": "sha",
-          "description": {
-            "zh": "直接指定起始 commit sha（优先于 from_branch）",
-            "en": "Starting commit SHA (overrides from_branch)."
+            "zh": "基于哪个分支创建（默认仓库默认分支）",
+            "en": "Branch to create from (default: repository default branch)."
           },
           "type": "string",
           "required": false
