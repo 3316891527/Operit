@@ -809,20 +809,20 @@ open class ClaudeProvider(
             queuedOpenToolUses.clear()
         }
 
-        fun appendCancelledOpenToolUses(target: JSONArray, reason: String): Boolean {
+        fun appendUnmatchedOpenToolUses(target: JSONArray, reason: String): Boolean {
             emitQueuedToolUsesIfNeeded()
             if (openToolUses.isEmpty()) return false
 
             AppLogger.w(
                 "AIService",
-                "发现未完成的tool_use，按取消处理: count=${openToolUses.size}, reason=$reason"
+                "发现未匹配的tool_use，按工具结果未匹配处理: count=${openToolUses.size}, reason=$reason"
             )
             for (openToolUse in openToolUses) {
                 target.put(
                     JSONObject().apply {
                         put("type", "tool_result")
                         put("tool_use_id", openToolUse.id)
-                        put("content", "User cancelled")
+                        put("content", StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT)
                     }
                 )
             }
@@ -830,9 +830,9 @@ open class ClaudeProvider(
             return true
         }
 
-        fun flushOpenToolUsesAsCancelled(reason: String) {
+        fun flushOpenToolUsesAsUnmatched(reason: String) {
             val contentArray = JSONArray()
-            if (!appendCancelledOpenToolUses(contentArray, reason)) return
+            if (!appendUnmatchedOpenToolUses(contentArray, reason)) return
             messagesArray.put(
                 JSONObject().apply {
                     put("role", "user")
@@ -858,11 +858,11 @@ open class ClaudeProvider(
                         val (textContent, toolUses) = parseXmlToolCalls(content)
                         if (toolUses != null && toolUses.length() > 0) {
                             if (openToolUses.isNotEmpty()) {
-                                flushOpenToolUsesAsCancelled("assistant_tool_use_before_result")
+                                flushOpenToolUsesAsUnmatched("assistant_tool_use_before_result")
                             }
                             queueToolUses(textContent, toolUses)
                         } else {
-                            flushOpenToolUsesAsCancelled("assistant_boundary")
+                            flushOpenToolUsesAsUnmatched("assistant_boundary")
                             messagesArray.put(
                                 JSONObject().apply {
                                     put("role", "assistant")
@@ -876,11 +876,11 @@ open class ClaudeProvider(
                         val (textContent, toolUses) = parseXmlToolCalls(content)
                         if (toolUses != null && toolUses.length() > 0) {
                             if (openToolUses.isNotEmpty()) {
-                                flushOpenToolUsesAsCancelled("typed_tool_use_before_result")
+                                flushOpenToolUsesAsUnmatched("typed_tool_use_before_result")
                             }
                             queueToolUses(textContent, toolUses)
                         } else {
-                            flushOpenToolUsesAsCancelled("typed_tool_call_without_payload")
+                            flushOpenToolUsesAsUnmatched("typed_tool_call_without_payload")
                             messagesArray.put(
                                 JSONObject().apply {
                                     put("role", "assistant")
@@ -893,7 +893,7 @@ open class ClaudeProvider(
                     PromptTurnKind.USER,
                     PromptTurnKind.SUMMARY -> {
                         val contentArray = JSONArray()
-                        appendCancelledOpenToolUses(contentArray, "user_boundary")
+                        appendUnmatchedOpenToolUses(contentArray, "user_boundary")
                         appendContentBlocks(
                             contentArray,
                             buildContentArray(
@@ -943,7 +943,7 @@ open class ClaudeProvider(
                                 )
                             }
 
-                            appendCancelledOpenToolUses(contentArray, "tool_result_partial_batch")
+                            appendUnmatchedOpenToolUses(contentArray, "tool_result_partial_batch")
 
                             if (textContent.isNotEmpty()) {
                                 appendContentBlocks(contentArray, buildContentArray(textContent))
@@ -957,7 +957,7 @@ open class ClaudeProvider(
                             )
                         } else {
                             val contentArray = JSONArray()
-                            appendCancelledOpenToolUses(contentArray, "tool_result_without_structured_match")
+                            appendUnmatchedOpenToolUses(contentArray, "tool_result_without_structured_match")
                             if (textContent.isNotEmpty()) {
                                 appendContentBlocks(contentArray, buildContentArray(textContent))
                             }
@@ -987,7 +987,7 @@ open class ClaudeProvider(
             }
         }
 
-        flushOpenToolUsesAsCancelled("history_end")
+        flushOpenToolUsesAsUnmatched("history_end")
 
         return ClaudeSerializedHistory(
             messagesArray = messagesArray,

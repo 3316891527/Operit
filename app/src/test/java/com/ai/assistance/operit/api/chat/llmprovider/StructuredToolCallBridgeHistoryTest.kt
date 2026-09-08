@@ -34,6 +34,7 @@ class StructuredToolCallBridgeHistoryTest {
             )
 
         assertEquals(listOf("user", "assistant", "tool", "tool", "user"), messages.roles())
+        assertEquals(StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT, messages.at(3).getString("content"))
         assertEquals("The second read was skipped.", messages.at(4).getString("content"))
         assertToolResultsFollowTheirCalls(messages)
     }
@@ -147,6 +148,44 @@ class StructuredToolCallBridgeHistoryTest {
 
         assertEquals(1, matched.size)
         assertEquals("claude-tool-use-id", matched.single().call.id)
+        assertTrue(openToolCalls.isEmpty())
+    }
+
+    @Test
+    fun `OpenAI local proxy result matches concrete target from arguments`() {
+        val openAiProxyCall =
+            JSONObject().apply {
+                put("id", "openai-local-proxy-id")
+                put(
+                    "function",
+                    JSONObject().apply {
+                        put("name", "proxy")
+                        put(
+                            "arguments",
+                            JSONObject().apply {
+                                put("tool_name", "read_file")
+                                put("params", JSONObject().apply { put("path", "a.txt") }.toString())
+                            }.toString()
+                        )
+                    }
+                )
+            }
+        val openToolCalls =
+            mutableListOf(
+                StructuredToolCallBridge.OpenToolCall(
+                    id = openAiProxyCall.getString("id"),
+                    matchingName = StructuredToolCallBridge.toolCallName(openAiProxyCall),
+                )
+            )
+
+        val matched =
+            StructuredToolCallBridge.consumeMatchingToolCalls(
+                openToolCalls,
+                listOf("read_file")
+            )
+
+        assertEquals(1, matched.size)
+        assertEquals("openai-local-proxy-id", matched.single().call.id)
         assertTrue(openToolCalls.isEmpty())
     }
 

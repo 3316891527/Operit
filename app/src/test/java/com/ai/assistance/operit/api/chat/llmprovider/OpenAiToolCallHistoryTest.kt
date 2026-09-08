@@ -142,6 +142,37 @@ class OpenAiToolCallHistoryTest {
     }
 
     @Test
+    fun `OpenAI local proxy results are paired through the target tool name`() {
+        val messages =
+            buildMessages(
+                listOf(
+                    PromptTurn(kind = PromptTurnKind.USER, content = "Read it."),
+                    PromptTurn(
+                        kind = PromptTurnKind.ASSISTANT,
+                        content =
+                            toolCall(
+                                "proxy",
+                                "tool_name" to "read_file",
+                                "params" to "{\"path\":\"a.txt\"}"
+                            )
+                    ),
+                    PromptTurn(
+                        kind = PromptTurnKind.TOOL_RESULT,
+                        content = toolResult("read_file", "alpha")
+                    )
+                )
+            )
+
+        assertToolResultsFollowTheirCalls(messages)
+        assertEquals(listOf("user", "assistant", "tool"), messages.roles())
+        val proxyCall = messages.at(1).getJSONArray("tool_calls").getJSONObject(0)
+        assertEquals("proxy", proxyCall.getJSONObject("function").getString("name"))
+        assertEquals(proxyCall.getString("id"), messages.at(2).getString("tool_call_id"))
+        assertEquals("alpha", messages.at(2).getString("content"))
+        assertFalse(messages.toString().contains(StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT))
+    }
+
+    @Test
     fun `assistant tool call message omits empty content`() {
         val messages =
             buildMessages(ModelConfigConnectionTester.buildToolCallProbeHistory("echo"))
@@ -171,7 +202,7 @@ class OpenAiToolCallHistoryTest {
         assertEquals(toolCalls.getJSONObject(0).getString("id"), messages.at(2).getString("tool_call_id"))
         assertEquals("ok", messages.at(2).getString("content"))
         assertEquals(toolCalls.getJSONObject(1).getString("id"), messages.at(3).getString("tool_call_id"))
-        assertEquals("User cancelled", messages.at(3).getString("content"))
+        assertEquals(StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT, messages.at(3).getString("content"))
         assertEquals(4, messages.length())
     }
 

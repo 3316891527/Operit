@@ -12,6 +12,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 internal object StructuredToolCallBridge {
+    private const val PACKAGE_PROXY_TOOL_NAME = "package_proxy"
+    private const val CLI_PROXY_TOOL_NAME = "proxy"
+    private const val PROXY_TARGET_TOOL_NAME_PARAM = "tool_name"
+    const val UNMATCHED_TOOL_RESULT_CONTENT = "软件未匹配到工具结果"
+
     private enum class ProviderHistoryBlockType {
         ASSISTANT,
         USER_INPUT,
@@ -32,18 +37,23 @@ internal object StructuredToolCallBridge {
     data class MatchedToolCall(val resultIndex: Int, val call: OpenToolCall)
 
     /**
-     * The executable tool name behind a queued tool call, unwrapping the `package_proxy` envelope
-     * so that a `pkg:tool` result can still be matched back to the call that produced it. Gemini
-     * passes a bare `functionCall` with an object-valued `args`; Claude passes `input`; OpenAI-style
+     * The executable tool name behind a queued tool call, unwrapping proxy envelopes so the tool
+     * result emitted by execution is matched back to the call that produced it. Gemini passes a
+     * bare `functionCall` with an object-valued `args`; Claude passes `input`; OpenAI-style
      * providers wrap the function and serialize its `arguments`.
      */
     fun toolCallName(toolCall: JSONObject): String {
         val function = toolCall.optJSONObject("function") ?: toolCall
         val name = function.optString("name", "").trim()
-        if (name != "package_proxy") {
+        if (name != PACKAGE_PROXY_TOOL_NAME && name != CLI_PROXY_TOOL_NAME) {
             return name
         }
 
+        val targetName = proxyTargetToolName(function, name)
+        return if (targetName.isNotBlank()) targetName else name
+    }
+
+    private fun proxyTargetToolName(function: JSONObject, proxyName: String): String {
         return try {
             val rawArguments = when {
                 function.has("arguments") -> function.opt("arguments")
@@ -57,10 +67,10 @@ internal object StructuredToolCallBridge {
                     else -> null
                 } ?: return ""
             arguments
-                .optString("tool_name", "")
+                .optString(PROXY_TARGET_TOOL_NAME_PARAM, "")
                 .trim()
         } catch (e: Exception) {
-            AppLogger.w("StructuredToolCallBridge", "package_proxy arguments are not valid JSON", e)
+            AppLogger.w("StructuredToolCallBridge", "$proxyName arguments are not valid JSON", e)
             ""
         }
     }
@@ -278,7 +288,7 @@ internal object StructuredToolCallBridge {
             queuedOpenToolCalls.clear()
         }
 
-        fun flushOpenToolCallsAsCancelled() {
+        fun flushOpenToolCallsAsUnmatched() {
             emitQueuedToolCallsIfNeeded()
             if (openToolCalls.isEmpty()) return
 
@@ -287,7 +297,7 @@ internal object StructuredToolCallBridge {
                     JSONObject().apply {
                         put("role", "tool")
                         put("tool_call_id", openToolCall.id)
-                        put("content", "User cancelled")
+                        put("content", UNMATCHED_TOOL_RESULT_CONTENT)
                     }
                 )
             }
@@ -305,7 +315,7 @@ internal object StructuredToolCallBridge {
 
             when (turn.kind) {
                 PromptTurnKind.SYSTEM -> {
-                    flushOpenToolCallsAsCancelled()
+                    flushOpenToolCallsAsUnmatched()
                     messagesArray.put(
                         JSONObject().apply {
                             put("role", "system")
@@ -316,7 +326,7 @@ internal object StructuredToolCallBridge {
 
                 PromptTurnKind.USER,
                 PromptTurnKind.SUMMARY -> {
-                    flushOpenToolCallsAsCancelled()
+                    flushOpenToolCallsAsUnmatched()
                     messagesArray.put(
                         JSONObject().apply {
                             put("role", "user")
@@ -335,10 +345,10 @@ internal object StructuredToolCallBridge {
                         }
 
                     if (toolCalls != null && toolCalls.length() > 0) {
-                        flushOpenToolCallsAsCancelled()
+                        flushOpenToolCallsAsUnmatched()
                         queueToolCalls(textContent, toolCalls)
                     } else {
-                        flushOpenToolCallsAsCancelled()
+                        flushOpenToolCallsAsUnmatched()
                         messagesArray.put(
                             JSONObject().apply {
                                 put("role", "assistant")
@@ -358,10 +368,10 @@ internal object StructuredToolCallBridge {
                         }
 
                     if (toolCalls != null && toolCalls.length() > 0) {
-                        flushOpenToolCallsAsCancelled()
+                        flushOpenToolCallsAsUnmatched()
                         queueToolCalls(textContent, toolCalls)
                     } else {
-                        flushOpenToolCallsAsCancelled()
+                        flushOpenToolCallsAsUnmatched()
                         messagesArray.put(
                             JSONObject().apply {
                                 put("role", "assistant")
@@ -399,7 +409,7 @@ internal object StructuredToolCallBridge {
                             )
                         }
 
-                        flushOpenToolCallsAsCancelled()
+                        flushOpenToolCallsAsUnmatched()
                         if (textContent.isNotBlank()) {
                             messagesArray.put(
                                 JSONObject().apply {
@@ -409,7 +419,7 @@ internal object StructuredToolCallBridge {
                             )
                         }
                     } else {
-                        flushOpenToolCallsAsCancelled()
+                        flushOpenToolCallsAsUnmatched()
                         if (textContent.isNotBlank()) {
                             messagesArray.put(
                                 JSONObject().apply {
@@ -423,7 +433,7 @@ internal object StructuredToolCallBridge {
             }
         }
 
-        flushOpenToolCallsAsCancelled()
+        flushOpenToolCallsAsUnmatched()
         return messagesArray
     }
     private fun nonEmptyContent(content: String): String {

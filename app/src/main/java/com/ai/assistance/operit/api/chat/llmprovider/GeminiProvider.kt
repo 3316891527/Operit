@@ -749,22 +749,22 @@ open class GeminiProvider(
             queuedFunctionCalls.clear()
         }
 
-        fun appendCancelledOpenFunctionResponses(target: JSONArray, reason: String): Boolean {
+        fun appendUnmatchedOpenFunctionResponses(target: JSONArray, reason: String): Boolean {
             emitQueuedFunctionCallsIfNeeded()
             if (openFunctionCalls.isEmpty()) return false
 
-            logDebug("发现未完成的Gemini functionCall，按取消处理: count=${openFunctionCalls.size}, reason=$reason")
+            logDebug("发现未匹配的Gemini functionCall，按工具结果未匹配处理: count=${openFunctionCalls.size}, reason=$reason")
             openFunctionCalls.forEach { openFunctionCall ->
                 target.put(
                     JSONObject().apply {
                         put(
                             "functionResponse",
                             JSONObject().apply {
-                                put("name", openFunctionCall.id.ifBlank { "cancelled_function" })
+                                put("name", openFunctionCall.id.ifBlank { "unmatched_function" })
                                 put(
                                     "response",
                                     JSONObject().apply {
-                                        put("result", "User cancelled")
+                                        put("result", StructuredToolCallBridge.UNMATCHED_TOOL_RESULT_CONTENT)
                                     }
                                 )
                             }
@@ -776,9 +776,9 @@ open class GeminiProvider(
             return true
         }
 
-        fun flushOpenFunctionCallsAsCancelled(reason: String) {
+        fun flushOpenFunctionCallsAsUnmatched(reason: String) {
             val partsArray = JSONArray()
-            if (!appendCancelledOpenFunctionResponses(partsArray, reason)) return
+            if (!appendUnmatchedOpenFunctionResponses(partsArray, reason)) return
             contentsArray.put(
                 JSONObject().apply {
                     put("role", "user")
@@ -803,7 +803,7 @@ open class GeminiProvider(
                         val functionCallPayload = parseXmlToolCalls(content)
                         if (functionCallPayload.functionCalls.isNotEmpty()) {
                             if (openFunctionCalls.isNotEmpty()) {
-                                flushOpenFunctionCallsAsCancelled("assistant_function_call_before_result")
+                                flushOpenFunctionCallsAsUnmatched("assistant_function_call_before_result")
                             }
                             queueFunctionCalls(
                                 functionCallPayload.textContent,
@@ -811,7 +811,7 @@ open class GeminiProvider(
                                 functionCallPayload.thoughtSignature
                             )
                         } else {
-                            flushOpenFunctionCallsAsCancelled("assistant_boundary")
+                            flushOpenFunctionCallsAsUnmatched("assistant_boundary")
                             contentsArray.put(
                                 JSONObject().apply {
                                     put("role", "model")
@@ -825,7 +825,7 @@ open class GeminiProvider(
                         val functionCallPayload = parseXmlToolCalls(content)
                         if (functionCallPayload.functionCalls.isNotEmpty()) {
                             if (openFunctionCalls.isNotEmpty()) {
-                                flushOpenFunctionCallsAsCancelled("typed_function_call_before_result")
+                                flushOpenFunctionCallsAsUnmatched("typed_function_call_before_result")
                             }
                             queueFunctionCalls(
                                 functionCallPayload.textContent,
@@ -833,7 +833,7 @@ open class GeminiProvider(
                                 functionCallPayload.thoughtSignature
                             )
                         } else {
-                            flushOpenFunctionCallsAsCancelled("typed_tool_call_without_payload")
+                            flushOpenFunctionCallsAsUnmatched("typed_tool_call_without_payload")
                             contentsArray.put(
                                 JSONObject().apply {
                                     put("role", "model")
@@ -846,7 +846,7 @@ open class GeminiProvider(
                     PromptTurnKind.USER,
                     PromptTurnKind.SUMMARY -> {
                         val partsArray = JSONArray()
-                        appendCancelledOpenFunctionResponses(partsArray, "user_boundary")
+                        appendUnmatchedOpenFunctionResponses(partsArray, "user_boundary")
                         appendParts(partsArray, buildPartsArray(contentWithoutGeminiMeta))
                         contentsArray.put(
                             JSONObject().apply {
@@ -887,7 +887,7 @@ open class GeminiProvider(
                                 logDebug("发现未匹配的Gemini functionResponse: ${responsesList.size - matchedCalls.size}")
                             }
 
-                            appendCancelledOpenFunctionResponses(partsArray, "tool_result_partial_batch")
+                            appendUnmatchedOpenFunctionResponses(partsArray, "tool_result_partial_batch")
 
                             if (textContent.isNotEmpty()) {
                                 appendParts(partsArray, buildPartsArray(textContent))
@@ -901,7 +901,7 @@ open class GeminiProvider(
                             )
                         } else {
                             val partsArray = JSONArray()
-                            appendCancelledOpenFunctionResponses(partsArray, "tool_result_without_structured_match")
+                            appendUnmatchedOpenFunctionResponses(partsArray, "tool_result_without_structured_match")
                             if (textContent.isNotEmpty()) {
                                 appendParts(partsArray, buildPartsArray(textContent))
                             }
@@ -934,7 +934,7 @@ open class GeminiProvider(
             }
         }
 
-        flushOpenFunctionCallsAsCancelled("history_end")
+        flushOpenFunctionCallsAsUnmatched("history_end")
 
         return Pair(Pair(contentsArray, systemInstruction), tokenCount)
     }
