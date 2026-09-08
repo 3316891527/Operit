@@ -1421,8 +1421,10 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                         actualModelIndex = report.actualModelIndex,
                         testedModelName = report.testedModelName,
                         success = report.success,
+                        verified = report.verified,
                         totalTests = report.items.size,
                         passedTests = report.items.count { it.success },
+                        unverifiedTests = report.items.count { it.outcome == ModelConnectionTestOutcome.UNVERIFIED },
                         failedTests = report.items.count { it.outcome == ModelConnectionTestOutcome.FAILED },
                         tests = testItems
                     ),

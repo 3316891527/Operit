@@ -36,15 +36,15 @@ object MediaCapabilityProbe {
             "nine" to "9"
         )
 
-    fun matchesImage(response: String): Boolean = alnumUpper(response).contains(IMAGE_CODE)
+    fun matchesImage(response: String): Boolean = alnumUpper(response) == IMAGE_CODE
 
-    fun matchesVideo(response: String): Boolean = alnumUpper(response).contains(VIDEO_CODE)
+    fun matchesVideo(response: String): Boolean = alnumUpper(response) == VIDEO_CODE
 
     fun matchesAudio(response: String): Boolean {
-        if (alnumUpper(response).contains(AUDIO_CODE)) {
+        if (alnumUpper(response) == AUDIO_CODE) {
             return true
         }
-        return extractDigits(response).contains(AUDIO_CODE)
+        return extractStrictDigitWords(response) == AUDIO_CODE
     }
 
     internal fun alnumUpper(text: String): String {
@@ -57,7 +57,7 @@ object MediaCapabilityProbe {
         return builder.toString()
     }
 
-    internal fun extractDigits(text: String): String {
+    internal fun extractStrictDigitWords(text: String): String? {
         val lower = text.lowercase()
         val builder = StringBuilder()
         var index = 0
@@ -65,6 +65,10 @@ object MediaCapabilityProbe {
             val ch = lower[index]
             if (ch.isDigit()) {
                 builder.append(ch)
+                index++
+                continue
+            }
+            if (!ch.isLetter()) {
                 index++
                 continue
             }
@@ -82,7 +86,7 @@ object MediaCapabilityProbe {
                 }
             }
             if (!matched) {
-                index++
+                return null
             }
         }
         return builder.toString()

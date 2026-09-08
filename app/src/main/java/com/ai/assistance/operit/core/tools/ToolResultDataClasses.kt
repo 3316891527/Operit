@@ -2716,12 +2716,14 @@ data class ModelConfigConnectionTestResultData(
     val actualModelIndex: Int,
     val testedModelName: String,
     val success: Boolean,
+    val verified: Boolean,
     val totalTests: Int,
     val passedTests: Int,
+    val unverifiedTests: Int,
     val failedTests: Int,
     val tests: List<ModelConfigConnectionTestItemResultData>
 ) : ToolResultData() {
     override fun toString(): String {
-        return "Model config connection test: $configId, success=$success, passed=$passedTests/$totalTests"
+        return "Model config connection test: $configId, success=$success, verified=$verified, passed=$passedTests/$totalTests"
     }
 }

@@ -50,6 +50,9 @@ data class ModelConnectionTestReport(
 ) {
     val success: Boolean
         get() = items.none { it.outcome == ModelConnectionTestOutcome.FAILED }
+
+    val verified: Boolean
+        get() = items.isNotEmpty() && items.all { it.outcome == ModelConnectionTestOutcome.PASSED }
 }
 
 object ModelConfigConnectionTester {
