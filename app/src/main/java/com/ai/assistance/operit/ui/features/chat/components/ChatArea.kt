@@ -1268,7 +1268,7 @@ private enum class MessageCopyMode {
     XML_SOURCE,
 }
 
-private const val COPY_PREVIEW_SHEET_HEIGHT_FRACTION = 0.4f
+private const val COPY_PREVIEW_SHEET_HEIGHT_FRACTION = 0.7f
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -1282,7 +1282,7 @@ private fun MessageCopyPreviewBottomSheet(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val sheetMaxHeight =
         remember(screenHeightDp) {
-            (screenHeightDp * COPY_PREVIEW_SHEET_HEIGHT_FRACTION).coerceIn(200.dp, 520.dp)
+            (screenHeightDp * COPY_PREVIEW_SHEET_HEIGHT_FRACTION).coerceIn(200.dp, 720.dp)
         }
     var copyMode by remember(content) { mutableStateOf(MessageCopyMode.PLAIN_TEXT) }
     var plainText by remember(content.markdownSource) { mutableStateOf<String?>(null) }
