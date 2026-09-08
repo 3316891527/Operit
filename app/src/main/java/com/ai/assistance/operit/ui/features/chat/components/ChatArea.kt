@@ -14,7 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,16 +62,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -1270,53 +1268,7 @@ private enum class MessageCopyMode {
     XML_SOURCE,
 }
 
-private const val COPY_PREVIEW_SELECTION_EDGE_FRACTION = 0.2f
-private const val COPY_PREVIEW_SELECTION_MIN_DP_PER_SEC = 32f
-private const val COPY_PREVIEW_SELECTION_MAX_DP_PER_SEC = 110f
-
-/**
- * Consume leftover nested-scroll at the top of the copy preview so a downward
- * pull does not drag [ModalBottomSheet]. Bottom leftover is left for the sheet
- * so its rebound animation can still run once the preview no longer fills the
- * screen.
- */
-internal fun copyPreviewConsumedOverscrollY(
-    canScrollBackward: Boolean,
-    availableY: Float,
-): Float {
-    return if (availableY > 0f && !canScrollBackward) availableY else 0f
-}
-
-private class CopyPreviewSelectionTracker {
-    var pointerY: Float? = null
-    var viewportHeightPx: Float = 0f
-}
-
-internal fun copyPreviewSelectionAutoScrollPxPerSec(
-    pointerY: Float,
-    viewportHeightPx: Float,
-    edgePx: Float,
-    minPxPerSec: Float,
-    maxPxPerSec: Float,
-    canScrollBackward: Boolean,
-    canScrollForward: Boolean,
-): Float {
-    if (viewportHeightPx <= 0f || edgePx <= 0f) return 0f
-    val zonePx = edgePx.coerceAtMost(viewportHeightPx / 2f)
-    if (zonePx <= 0f) return 0f
-    val speedRange = (maxPxPerSec - minPxPerSec).coerceAtLeast(0f)
-    return when {
-        pointerY <= zonePx && canScrollBackward -> {
-            val t = ((zonePx - pointerY) / zonePx).coerceIn(0f, 1f)
-            -(minPxPerSec + speedRange * t * t)
-        }
-        pointerY >= viewportHeightPx - zonePx && canScrollForward -> {
-            val t = ((pointerY - (viewportHeightPx - zonePx)) / zonePx).coerceIn(0f, 1f)
-            minPxPerSec + speedRange * t * t
-        }
-        else -> 0f
-    }
-}
+private const val COPY_PREVIEW_SHEET_HEIGHT_FRACTION = 0.4f
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -1327,73 +1279,11 @@ private fun MessageCopyPreviewBottomSheet(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val textScrollState = rememberScrollState()
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val sheetMaxHeight =
         remember(screenHeightDp) {
-            (screenHeightDp * 0.4f).coerceIn(200.dp, 520.dp)
+            (screenHeightDp * COPY_PREVIEW_SHEET_HEIGHT_FRACTION).coerceIn(200.dp, 520.dp)
         }
-    val copyPreviewNestedScrollConnection =
-        remember(textScrollState) {
-            object : NestedScrollConnection {
-                override fun onPostScroll(
-                    consumed: Offset,
-                    available: Offset,
-                    source: NestedScrollSource,
-                ): Offset {
-                    val consumedY =
-                        copyPreviewConsumedOverscrollY(
-                            canScrollBackward = textScrollState.canScrollBackward,
-                            availableY = available.y,
-                        )
-                    return if (consumedY == 0f) Offset.Zero else Offset(x = 0f, y = consumedY)
-                }
-
-                override suspend fun onPostFling(
-                    consumed: Velocity,
-                    available: Velocity,
-                ): Velocity {
-                    val consumedY =
-                        copyPreviewConsumedOverscrollY(
-                            canScrollBackward = textScrollState.canScrollBackward,
-                            availableY = available.y,
-                        )
-                    return if (consumedY == 0f) Velocity.Zero else Velocity(x = 0f, y = consumedY)
-                }
-            }
-        }
-    val density = LocalDensity.current
-    val selectionTracker = remember { CopyPreviewSelectionTracker() }
-    val minAutoScrollPxPerSec = with(density) { COPY_PREVIEW_SELECTION_MIN_DP_PER_SEC.dp.toPx() }
-    val maxAutoScrollPxPerSec = with(density) { COPY_PREVIEW_SELECTION_MAX_DP_PER_SEC.dp.toPx() }
-    LaunchedEffect(textScrollState) {
-        var lastFrameNanos = 0L
-        while (true) {
-            withFrameNanos { frameNanos ->
-                val pointerY = selectionTracker.pointerY
-                val viewportHeightPx = selectionTracker.viewportHeightPx
-                if (pointerY != null && viewportHeightPx > 0f) {
-                    val pxPerSec =
-                        copyPreviewSelectionAutoScrollPxPerSec(
-                            pointerY = pointerY,
-                            viewportHeightPx = viewportHeightPx,
-                            edgePx = viewportHeightPx * COPY_PREVIEW_SELECTION_EDGE_FRACTION,
-                            minPxPerSec = minAutoScrollPxPerSec,
-                            maxPxPerSec = maxAutoScrollPxPerSec,
-                            canScrollBackward = textScrollState.canScrollBackward,
-                            canScrollForward = textScrollState.canScrollForward,
-                        )
-                    if (pxPerSec != 0f && lastFrameNanos != 0L) {
-                        val deltaSeconds =
-                            ((frameNanos - lastFrameNanos).coerceAtLeast(0L) / 1_000_000_000f)
-                                .coerceAtMost(0.05f)
-                        textScrollState.dispatchRawDelta(pxPerSec * deltaSeconds)
-                    }
-                }
-                lastFrameNanos = frameNanos
-            }
-        }
-    }
     var copyMode by remember(content) { mutableStateOf(MessageCopyMode.PLAIN_TEXT) }
     var plainText by remember(content.markdownSource) { mutableStateOf<String?>(null) }
     LaunchedEffect(content.markdownSource, context) {
@@ -1463,36 +1353,21 @@ private fun MessageCopyPreviewBottomSheet(
                     CircularProgressIndicator()
                 }
             } else {
-                SelectionContainer(
+                BasicTextField(
+                    value = displayedText,
+                    onValueChange = {},
+                    readOnly = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    // BasicTextField owns selection dragging, so it scrolls itself while a
+                    // handle is dragged past an edge and keeps the selection in sync.
                     modifier = Modifier
                         .weight(1f, fill = false)
                         .fillMaxWidth()
-                        .onGloballyPositioned { coordinates ->
-                            selectionTracker.viewportHeightPx = coordinates.size.height.toFloat()
-                        }
-                        .pointerInput(Unit) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent(PointerEventPass.Final)
-                                    val pressed = event.changes.filter { it.pressed }
-                                    selectionTracker.pointerY =
-                                        if (pressed.size == 1) pressed.first().position.y else null
-                                }
-                            }
-                        }
-                        // Keep leftover top overscroll in the preview so a downward pull
-                        // does not drag the sheet. Bottom leftover is left for sheet rebound.
-                        .nestedScroll(copyPreviewNestedScrollConnection)
-                        .verticalScroll(textScrollState)
                         .padding(bottom = 12.dp)
-                ) {
-                    Text(
-                        text = displayedText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
