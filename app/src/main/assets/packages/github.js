@@ -1,12 +1,11 @@
 /* METADATA
 {
   "name": "github",
-
   "display_name": {
       "zh": "GitHub API",
       "en": "GitHub API"
   },
-  "description": { "zh": "基于 GitHub REST API 的工具集合（不依赖 GitHub MCP）。包含 GitHub 侧（仓库/Issues/PR/文件提交/分支/差异提交）与本地侧（apply_file 差异更新、terminal 终端）能力。", "en": "A toolkit built on the GitHub REST API (does not depend on GitHub MCP). Includes GitHub-side operations (repos/issues/PRs/commits/branches/diffs) and local-side utilities (apply_file patch updates, terminal)." },
+  "description": { "zh": "基于 GitHub REST API 的工具集合（不依赖 GitHub MCP）。包含 GitHub 侧（仓库/Issues/PR/文件提交/分支/差异/Actions/搜索/fork）与本地侧（apply_file 差异更新、terminal 终端）能力。", "en": "A toolkit built on the GitHub REST API (does not depend on GitHub MCP). Includes GitHub-side operations (repos/issues/PRs/commits/branches/diffs/Actions/search/fork) and local-side utilities (apply_file patch updates, terminal)." },
   "category": "Development",
   "env": [
     {
@@ -24,229 +23,2613 @@
   "enabledByDefault": false,
   "tools": [
     {
-      "name": "search_repositories",
-      "description": { "zh": "搜索 GitHub 仓库（/search/repositories）。", "en": "Search GitHub repositories (/search/repositories)." },
-      "parameters": [
-        { "name": "query", "description": { "zh": "搜索关键词（GitHub search query）", "en": "Search keywords (GitHub search query)." }, "type": "string", "required": true },
-        { "name": "sort", "description": { "zh": "排序字段：stars/forks/help-wanted-issues/updated", "en": "Sort field: stars/forks/help-wanted-issues/updated." }, "type": "string", "required": false },
-        { "name": "order", "description": { "zh": "排序方向：desc/asc", "en": "Sort order: desc/asc." }, "type": "string", "required": false },
-        { "name": "page", "description": { "zh": "页码（默认 1）", "en": "Page number (default: 1)." }, "type": "number", "required": false },
-        { "name": "per_page", "description": { "zh": "每页数量（默认 30，最大 100）", "en": "Items per page (default: 30, max: 100)." }, "type": "number", "required": false }
-      ]
+        "name": "search_repositories",
+        "description": {
+            "zh": "搜索 GitHub 仓库（/search/repositories）。",
+            "en": "Search GitHub repositories (/search/repositories)."
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "description": {
+                    "zh": "搜索关键词（GitHub search query）",
+                    "en": "Search keywords (GitHub search query)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "sort",
+                "description": {
+                    "zh": "排序字段：stars/forks/help-wanted-issues/updated",
+                    "en": "Sort field: stars/forks/help-wanted-issues/updated."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "order",
+                "description": {
+                    "zh": "排序方向：desc/asc",
+                    "en": "Sort order: desc/asc."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30，最大 100）",
+                    "en": "Items per page (default: 30, max: 100)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "get_repository",
-      "description": { "zh": "获取仓库信息（/repos/{owner}/{repo}）。", "en": "Get repository information (/repos/{owner}/{repo})." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true }
-      ]
+        "name": "get_repository",
+        "description": {
+            "zh": "获取仓库信息（/repos/{owner}/{repo}）。",
+            "en": "Get repository information (/repos/{owner}/{repo})."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            }
+        ]
     },
     {
-      "name": "list_issues",
-      "description": { "zh": "列出仓库 Issues（/repos/{owner}/{repo}/issues）。注意：GitHub 的 issues API 默认也会包含 PR，需要时可用 include_pull_requests 控制。", "en": "List repository issues (/repos/{owner}/{repo}/issues). Note: GitHub issues API also includes PRs by default; use include_pull_requests when needed." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "state", "description": { "zh": "open/closed/all（默认 open）", "en": "open/closed/all (default: open)." }, "type": "string", "required": false },
-        { "name": "labels", "description": { "zh": "labels 逗号分隔", "en": "Labels, comma-separated." }, "type": "string", "required": false },
-        { "name": "creator", "description": { "zh": "创建者 login", "en": "Creator login." }, "type": "string", "required": false },
-        { "name": "page", "description": { "zh": "页码（默认 1）", "en": "Page number (default: 1)." }, "type": "number", "required": false },
-        { "name": "per_page", "description": { "zh": "每页数量（默认 30，最大 100）", "en": "Items per page (default: 30, max: 100)." }, "type": "number", "required": false },
-        { "name": "include_pull_requests", "description": { "zh": "是否保留 PR（默认 false，仅返回 issue）", "en": "Whether to include PRs (default: false; issues only)." }, "type": "boolean", "required": false }
-      ]
+        "name": "list_issues",
+        "description": {
+            "zh": "列出仓库 Issues（/repos/{owner}/{repo}/issues）。",
+            "en": "List repository issues (/repos/{owner}/{repo}/issues)."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "state",
+                "description": {
+                    "zh": "open/closed/all（默认 open）",
+                    "en": "open/closed/all (default: open)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "labels",
+                "description": {
+                    "zh": "labels 逗号分隔",
+                    "en": "Labels, comma-separated."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "creator",
+                "description": {
+                    "zh": "创建者 login",
+                    "en": "Creator login."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "include_pull_requests",
+                "description": {
+                    "zh": "是否保留 PR（默认 false）",
+                    "en": "Whether to include PRs (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "create_issue",
-      "description": { "zh": "创建 Issue（/repos/{owner}/{repo}/issues）。", "en": "Create an issue (/repos/{owner}/{repo}/issues)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "title", "description": { "zh": "Issue 标题", "en": "Issue title." }, "type": "string", "required": true },
-        { "name": "body", "description": { "zh": "Issue 内容", "en": "Issue body." }, "type": "string", "required": false },
-        { "name": "labels", "description": { "zh": "labels 数组（字符串数组）", "en": "Labels array (string array)." }, "type": "array", "required": false },
-        { "name": "assignees", "description": { "zh": "assignees 数组（字符串数组）", "en": "Assignees array (string array)." }, "type": "array", "required": false }
-      ]
+        "name": "get_issue",
+        "description": {
+            "zh": "获取单个 Issue 详情（/repos/{owner}/{repo}/issues/{issue_number}）。",
+            "en": "Get a single issue."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "issue_number",
+                "description": {
+                    "zh": "Issue 编号",
+                    "en": "Issue number."
+                },
+                "type": "number",
+                "required": true
+            }
+        ]
     },
     {
-      "name": "comment_issue",
-      "description": { "zh": "给 Issue/PR 评论（/repos/{owner}/{repo}/issues/{issue_number}/comments）。", "en": "Comment on an issue/PR (/repos/{owner}/{repo}/issues/{issue_number}/comments)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "issue_number", "description": { "zh": "Issue 编号", "en": "Issue number." }, "type": "number", "required": true },
-        { "name": "body", "description": { "zh": "评论内容", "en": "Comment body." }, "type": "string", "required": true }
-      ]
+        "name": "create_issue",
+        "description": {
+            "zh": "创建 Issue（/repos/{owner}/{repo}/issues）。",
+            "en": "Create an issue."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "title",
+                "description": {
+                    "zh": "Issue 标题",
+                    "en": "Issue title."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "Issue 内容",
+                    "en": "Issue body."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "labels",
+                "description": {
+                    "zh": "labels 数组",
+                    "en": "Labels array."
+                },
+                "type": "array",
+                "required": false
+            },
+            {
+                "name": "assignees",
+                "description": {
+                    "zh": "assignees 数组",
+                    "en": "Assignees array."
+                },
+                "type": "array",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "list_issue_comments",
-      "description": { "zh": "列出 Issue/PR 的评论（/repos/{owner}/{repo}/issues/{issue_number}/comments）。", "en": "List comments on an issue/PR (/repos/{owner}/{repo}/issues/{issue_number}/comments)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "issue_number", "description": { "zh": "Issue 编号", "en": "Issue number." }, "type": "number", "required": true },
-        { "name": "page", "description": { "zh": "页码（默认 1）", "en": "Page number (default: 1)." }, "type": "number", "required": false },
-        { "name": "per_page", "description": { "zh": "每页数量（默认 30，最大 100）", "en": "Items per page (default: 30, max: 100)." }, "type": "number", "required": false }
-      ]
+        "name": "update_issue",
+        "description": {
+            "zh": "更新 Issue。",
+            "en": "Update an issue."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "issue_number",
+                "description": {
+                    "zh": "Issue 编号",
+                    "en": "Issue number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "title",
+                "description": {
+                    "zh": "新标题",
+                    "en": "New title."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "新内容",
+                    "en": "New body."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "state",
+                "description": {
+                    "zh": "open/closed",
+                    "en": "open/closed."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "labels",
+                "description": {
+                    "zh": "labels 数组",
+                    "en": "Labels array."
+                },
+                "type": "array",
+                "required": false
+            },
+            {
+                "name": "assignees",
+                "description": {
+                    "zh": "assignees 数组",
+                    "en": "Assignees array."
+                },
+                "type": "array",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "list_pull_requests",
-      "description": { "zh": "列出 PR（/repos/{owner}/{repo}/pulls）。", "en": "List pull requests (/repos/{owner}/{repo}/pulls)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "state", "description": { "zh": "open/closed/all（默认 open）", "en": "open/closed/all (default: open)." }, "type": "string", "required": false },
-        { "name": "head", "description": { "zh": "head 过滤（可选）", "en": "Head filter (optional)." }, "type": "string", "required": false },
-        { "name": "base", "description": { "zh": "base 过滤（可选）", "en": "Base filter (optional)." }, "type": "string", "required": false },
-        { "name": "page", "description": { "zh": "页码（默认 1）", "en": "Page number (default: 1)." }, "type": "number", "required": false },
-        { "name": "per_page", "description": { "zh": "每页数量（默认 30，最大 100）", "en": "Items per page (default: 30, max: 100)." }, "type": "number", "required": false }
-      ]
+        "name": "comment_issue",
+        "description": {
+            "zh": "给 Issue/PR 评论。",
+            "en": "Comment on an issue/PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "issue_number",
+                "description": {
+                    "zh": "Issue 编号",
+                    "en": "Issue number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "评论内容",
+                    "en": "Comment body."
+                },
+                "type": "string",
+                "required": true
+            }
+        ]
     },
     {
-      "name": "create_pull_request",
-      "description": { "zh": "创建 PR（/repos/{owner}/{repo}/pulls）。", "en": "Create a pull request (/repos/{owner}/{repo}/pulls)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "title", "description": { "zh": "PR 标题", "en": "PR title." }, "type": "string", "required": true },
-        { "name": "head", "description": { "zh": "源分支，例如 feature-branch 或 owner:branch", "en": "Head branch, e.g. feature-branch or owner:branch." }, "type": "string", "required": true },
-        { "name": "base", "description": { "zh": "目标分支，例如 main", "en": "Base branch, e.g. main." }, "type": "string", "required": true },
-        { "name": "body", "description": { "zh": "PR 内容", "en": "PR body." }, "type": "string", "required": false },
-        { "name": "draft", "description": { "zh": "是否为 Draft", "en": "Whether this is a draft PR." }, "type": "boolean", "required": false }
-      ]
+        "name": "list_issue_comments",
+        "description": {
+            "zh": "列出 Issue/PR 的评论。",
+            "en": "List comments on an issue/PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "issue_number",
+                "description": {
+                    "zh": "Issue 编号",
+                    "en": "Issue number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "get_pull_request",
-      "description": { "zh": "获取 PR 详情（/repos/{owner}/{repo}/pulls/{pull_number}）。", "en": "Get pull request details (/repos/{owner}/{repo}/pulls/{pull_number})." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "pull_number", "description": { "zh": "PR 编号", "en": "PR number." }, "type": "number", "required": true }
-      ]
+        "name": "list_pull_requests",
+        "description": {
+            "zh": "列出 PR（/repos/{owner}/{repo}/pulls）。",
+            "en": "List pull requests."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "state",
+                "description": {
+                    "zh": "open/closed/all（默认 open）",
+                    "en": "open/closed/all (default: open)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "head",
+                "description": {
+                    "zh": "head 分支过滤，格式 user:branch",
+                    "en": "Head branch filter (user:branch)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "base",
+                "description": {
+                    "zh": "base 分支过滤",
+                    "en": "Base branch filter."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "merge_pull_request",
-      "description": { "zh": "合并 PR（/repos/{owner}/{repo}/pulls/{pull_number}/merge）。", "en": "Merge a pull request (/repos/{owner}/{repo}/pulls/{pull_number}/merge)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "pull_number", "description": { "zh": "PR 编号", "en": "PR number." }, "type": "number", "required": true },
-        { "name": "commit_title", "description": { "zh": "可选，merge commit 标题", "en": "Optional: merge commit title." }, "type": "string", "required": false },
-        { "name": "commit_message", "description": { "zh": "可选，merge commit 内容", "en": "Optional: merge commit message." }, "type": "string", "required": false },
-        { "name": "merge_method", "description": { "zh": "merge/squash/rebase", "en": "merge/squash/rebase." }, "type": "string", "required": false }
-      ]
+        "name": "create_pull_request",
+        "description": {
+            "zh": "创建 PR。",
+            "en": "Create a pull request."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "title",
+                "description": {
+                    "zh": "PR 标题",
+                    "en": "PR title."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "head",
+                "description": {
+                    "zh": "head 分支（含跨 fork 的 user:branch 格式）",
+                    "en": "Head branch (use user:branch for cross-fork)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "base",
+                "description": {
+                    "zh": "目标 base 分支",
+                    "en": "Target base branch."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "PR 描述",
+                    "en": "PR body."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "draft",
+                "description": {
+                    "zh": "是否草稿",
+                    "en": "Whether to create as draft."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "get_file_content",
-      "description": { "zh": "读取仓库文件内容（/repos/{owner}/{repo}/contents/{path}）。若文件是 base64 返回，将自动解码为文本并返回。", "en": "Read repository file content (/repos/{owner}/{repo}/contents/{path}). If the API returns base64, it will be decoded and returned as text." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "path", "description": { "zh": "文件路径（如 README.md）", "en": "File path (e.g. README.md)." }, "type": "string", "required": true },
-        { "name": "ref", "description": { "zh": "分支/Tag/SHA（可选）", "en": "Branch/Tag/SHA (optional)." }, "type": "string", "required": false }
-      ]
+        "name": "get_pull_request",
+        "description": {
+            "zh": "获取单个 PR 详情。",
+            "en": "Get a single pull request."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            }
+        ]
     },
     {
-      "name": "create_or_update_file",
-      "description": { "zh": "创建或更新仓库文件并提交（/repos/{owner}/{repo}/contents/{path}，PUT）。", "en": "Create or update a repository file and commit it (/repos/{owner}/{repo}/contents/{path}, PUT)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "path", "description": { "zh": "文件路径", "en": "File path." }, "type": "string", "required": true },
-        { "name": "message", "description": { "zh": "提交信息", "en": "Commit message." }, "type": "string", "required": true },
-        { "name": "content", "description": { "zh": "文件内容（默认按 utf-8 文本编码为 base64）", "en": "File content (base64-encoded as utf-8 text by default)." }, "type": "string", "required": true },
-        { "name": "content_encoding", "description": { "zh": "utf-8/base64（默认 utf-8）", "en": "utf-8/base64 (default: utf-8)." }, "type": "string", "required": false },
-        { "name": "branch", "description": { "zh": "目标分支（可选）", "en": "Target branch (optional)." }, "type": "string", "required": false },
-        { "name": "sha", "description": { "zh": "可选：已知 sha（更新文件时）", "en": "Optional: known sha (when updating a file)." }, "type": "string", "required": false }
-      ]
+        "name": "update_pull_request",
+        "description": {
+            "zh": "更新 PR 标题/描述/状态/base/draft。",
+            "en": "Update PR title/body/state/base/draft."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "title",
+                "description": {
+                    "zh": "新标题",
+                    "en": "New title."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "新描述",
+                    "en": "New body."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "state",
+                "description": {
+                    "zh": "open/closed",
+                    "en": "open/closed."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "base",
+                "description": {
+                    "zh": "新 base 分支",
+                    "en": "New base branch."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "draft",
+                "description": {
+                    "zh": "是否草稿",
+                    "en": "Whether draft."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "patch_file_in_repo",
-      "description": { "zh": "对仓库文件做差异更新（传入 [START-REPLACE]/[START-DELETE] 块），并提交。", "en": "Patch a repository file by applying diff blocks ([START-REPLACE]/[START-DELETE]) and commit." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "path", "description": { "zh": "文件路径", "en": "File path." }, "type": "string", "required": true },
-        { "name": "message", "description": { "zh": "提交信息", "en": "Commit message." }, "type": "string", "required": true },
-        { "name": "patch", "description": { "zh": "差异块字符串（可多块）", "en": "Diff blocks string (can include multiple blocks)." }, "type": "string", "required": true },
-        { "name": "branch", "description": { "zh": "目标分支（可选）", "en": "Target branch (optional)." }, "type": "string", "required": false }
-      ]
+        "name": "merge_pull_request",
+        "description": {
+            "zh": "合并 PR。",
+            "en": "Merge a pull request."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "commit_title",
+                "description": {
+                    "zh": "合并 commit 标题",
+                    "en": "Merge commit title."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "commit_message",
+                "description": {
+                    "zh": "合并 commit 消息",
+                    "en": "Merge commit message."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "merge_method",
+                "description": {
+                    "zh": "merge/squash/rebase（默认 merge）",
+                    "en": "merge/squash/rebase (default: merge)."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "delete_file",
-      "description": { "zh": "删除仓库文件并提交（/repos/{owner}/{repo}/contents/{path}，DELETE）。", "en": "Delete a repository file and commit (/repos/{owner}/{repo}/contents/{path}, DELETE)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "path", "description": { "zh": "文件路径", "en": "File path." }, "type": "string", "required": true },
-        { "name": "message", "description": { "zh": "提交信息", "en": "Commit message." }, "type": "string", "required": true },
-        { "name": "branch", "description": { "zh": "目标分支（可选）", "en": "Target branch (optional)." }, "type": "string", "required": false },
-        { "name": "sha", "description": { "zh": "可选：已知 sha（删除文件时）", "en": "Optional: known sha (when deleting a file)." }, "type": "string", "required": false }
-      ]
+        "name": "list_pull_request_files",
+        "description": {
+            "zh": "列出 PR 变更文件。",
+            "en": "List files changed in a PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "include_patch",
+                "description": {
+                    "zh": "是否包含 patch 内容（默认 false）",
+                    "en": "Include patch content (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 100）",
+                    "en": "Items per page (default: 100)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "create_branch",
-      "description": { "zh": "基于已有分支创建新分支（/git/refs）。", "en": "Create a new branch from an existing branch (/git/refs)." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner", "en": "Repository owner." }, "type": "string", "required": true },
-        { "name": "repo", "description": { "zh": "仓库名", "en": "Repository name." }, "type": "string", "required": true },
-        { "name": "new_branch", "description": { "zh": "新分支名", "en": "New branch name." }, "type": "string", "required": true },
-        { "name": "from_branch", "description": { "zh": "源分支（可选，默认使用 default_branch）", "en": "Source branch (optional; defaults to default_branch)." }, "type": "string", "required": false }
-      ]
+        "name": "get_pull_request_diff",
+        "description": {
+            "zh": "获取 PR 的 unified diff 文本。",
+            "en": "Get PR unified diff text."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "max_chars",
+                "description": {
+                    "zh": "截断字符数（默认 20000）",
+                    "en": "Truncate to this many chars (default: 20000)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "apply_local_replace",
-      "description": { "zh": "使用 Tools.Files.apply 对本地文件做 REPLACE（结构化块）。", "en": "Run Tools.Files.apply REPLACE on a local file (structured blocks)." },
-      "parameters": [
-        { "name": "path", "description": { "zh": "本地文件路径", "en": "Local file path." }, "type": "string", "required": true },
-        { "name": "old", "description": { "zh": "要替换的旧内容片段", "en": "Old content snippet to replace." }, "type": "string", "required": true },
-        { "name": "new", "description": { "zh": "替换后的新内容片段", "en": "New content snippet." }, "type": "string", "required": true },
-        { "name": "environment", "description": { "zh": "android/linux（可选）", "en": "android/linux (optional)." }, "type": "string", "required": false }
-      ]
+        "name": "list_pull_request_commits",
+        "description": {
+            "zh": "列出 PR 的提交。",
+            "en": "List commits in a PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "apply_local_delete",
-      "description": { "zh": "使用 Tools.Files.apply 对本地文件做 DELETE（结构化块）。", "en": "Run Tools.Files.apply DELETE on a local file (structured blocks)." },
-      "parameters": [
-        { "name": "path", "description": { "zh": "本地文件路径", "en": "Local file path." }, "type": "string", "required": true },
-        { "name": "old", "description": { "zh": "要删除的旧内容片段", "en": "Old content snippet to delete." }, "type": "string", "required": true },
-        { "name": "environment", "description": { "zh": "android/linux（可选）", "en": "android/linux (optional)." }, "type": "string", "required": false }
-      ]
+        "name": "list_pull_request_reviews",
+        "description": {
+            "zh": "列出 PR 的 review。",
+            "en": "List reviews on a PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "overwrite_local_file",
-      "description": { "zh": "覆盖写入本地文件（如果存在会先删除再写入）。", "en": "Overwrite a local file (if it exists, it will be deleted before writing)." },
-      "parameters": [
-        { "name": "path", "description": { "zh": "本地文件路径", "en": "Local file path." }, "type": "string", "required": true },
-        { "name": "content", "description": { "zh": "完整文件内容", "en": "Full file content." }, "type": "string", "required": true },
-        { "name": "environment", "description": { "zh": "android/linux（可选）", "en": "android/linux (optional)." }, "type": "string", "required": false }
-      ]
+        "name": "list_review_comments",
+        "description": {
+            "zh": "列出 PR 的行内 review comments。",
+            "en": "List inline review comments on a PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "terminal_exec",
-      "description": { "zh": "在终端会话中执行命令（Tools.System.terminal）。", "en": "Execute a command in a terminal session (Tools.System.terminal)." },
-      "parameters": [
-        { "name": "command", "description": { "zh": "要执行的命令", "en": "Command to execute." }, "type": "string", "required": true },
-        { "name": "session_name", "description": { "zh": "会话名（可选，默认 github_tools_session）", "en": "Session name (optional; default: github_tools_session)." }, "type": "string", "required": false },
-        { "name": "close", "description": { "zh": "是否执行后关闭会话", "en": "Whether to close the session after execution." }, "type": "boolean", "required": false }
-      ]
+        "name": "create_review",
+        "description": {
+            "zh": "提交 PR review（APPROVE/REQUEST_CHANGES/COMMENT）。",
+            "en": "Submit a PR review (APPROVE/REQUEST_CHANGES/COMMENT)."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "review 总评内容",
+                    "en": "Review body."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "event",
+                "description": {
+                    "zh": "APPROVE/REQUEST_CHANGES/COMMENT（默认 COMMENT）",
+                    "en": "APPROVE/REQUEST_CHANGES/COMMENT (default: COMMENT)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "commit_id",
+                "description": {
+                    "zh": "关联的 commit sha",
+                    "en": "Commit SHA to associate."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "comments",
+                "description": {
+                    "zh": "行内评论数组（JSON 字符串），每项含 path/line/body",
+                    "en": "Inline comments array (JSON string), each with path/line/body."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
     },
     {
-      "name": "main",
-      "description": { "zh": "用于快速连通性自测：拉取一个仓库信息并做一次仓库搜索，然后返回结果。", "en": "Quick connectivity self-test: fetch a repository and run a repository search, then return results." },
-      "parameters": [
-        { "name": "owner", "description": { "zh": "仓库 owner（默认 octocat）", "en": "Repository owner (default: octocat)." }, "type": "string", "required": false },
-        { "name": "repo", "description": { "zh": "仓库名（默认 Hello-World）", "en": "Repository name (default: Hello-World)." }, "type": "string", "required": false },
-        { "name": "query", "description": { "zh": "搜索关键词（默认 operit）", "en": "Search keyword (default: operit)." }, "type": "string", "required": false }
-      ]
+        "name": "reply_review_comment",
+        "description": {
+            "zh": "回复 PR 行内 review comment。",
+            "en": "Reply to a PR inline review comment."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "comment_id",
+                "description": {
+                    "zh": "被回复的 comment id",
+                    "en": "Comment ID to reply to."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "body",
+                "description": {
+                    "zh": "回复内容",
+                    "en": "Reply body."
+                },
+                "type": "string",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "request_reviewers",
+        "description": {
+            "zh": "请求 PR reviewer。",
+            "en": "Request reviewers for a PR."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "pull_number",
+                "description": {
+                    "zh": "PR 编号",
+                    "en": "PR number."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "reviewers",
+                "description": {
+                    "zh": "reviewer login 列表，逗号分隔或数组",
+                    "en": "Reviewer logins, comma-separated or array."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "team_reviewers",
+                "description": {
+                    "zh": "team reviewer slug 列表，逗号分隔或数组",
+                    "en": "Team reviewer slugs, comma-separated or array."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "get_file_content",
+        "description": {
+            "zh": "获取仓库文件内容（/repos/{owner}/{repo}/contents/{path}）。",
+            "en": "Get file content from a repository."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "path",
+                "description": {
+                    "zh": "文件路径（相对仓库根目录）",
+                    "en": "File path relative to repository root."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "ref",
+                "description": {
+                    "zh": "分支/tag/commit（默认默认分支）",
+                    "en": "Branch/tag/commit (default: default branch)."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "create_or_update_file",
+        "description": {
+            "zh": "创建或更新仓库文件。更新时需传 sha。",
+            "en": "Create or update a file in the repository. Provide sha when updating."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "path",
+                "description": {
+                    "zh": "文件路径",
+                    "en": "File path."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "message",
+                "description": {
+                    "zh": "commit 消息",
+                    "en": "Commit message."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "content",
+                "description": {
+                    "zh": "文件内容（明文，会自动 base64 编码）",
+                    "en": "File content (plain text, will be base64-encoded)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "sha",
+                "description": {
+                    "zh": "更新时必填：现有文件的 blob sha",
+                    "en": "Required when updating: existing file blob SHA."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "branch",
+                "description": {
+                    "zh": "目标分支（默认默认分支）",
+                    "en": "Target branch (default: default branch)."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "delete_file",
+        "description": {
+            "zh": "删除仓库文件。",
+            "en": "Delete a file from the repository."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "path",
+                "description": {
+                    "zh": "文件路径",
+                    "en": "File path."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "message",
+                "description": {
+                    "zh": "commit 消息",
+                    "en": "Commit message."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "sha",
+                "description": {
+                    "zh": "文件的 blob sha",
+                    "en": "File blob SHA."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "branch",
+                "description": {
+                    "zh": "目标分支",
+                    "en": "Target branch."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "create_branch",
+        "description": {
+            "zh": "创建分支。",
+            "en": "Create a branch."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "branch",
+                "description": {
+                    "zh": "新分支名",
+                    "en": "New branch name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "from_branch",
+                "description": {
+                    "zh": "基于哪个分支创建（默认默认分支）",
+                    "en": "Branch to create from (default: default branch)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "sha",
+                "description": {
+                    "zh": "直接指定起始 commit sha（优先于 from_branch）",
+                    "en": "Starting commit SHA (overrides from_branch)."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "list_branches",
+        "description": {
+            "zh": "列出仓库分支。",
+            "en": "List repository branches."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "protected_only",
+                "description": {
+                    "zh": "只返回受保护分支（默认 false）",
+                    "en": "Return only protected branches (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "list_commits",
+        "description": {
+            "zh": "列出仓库提交。",
+            "en": "List repository commits."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "sha",
+                "description": {
+                    "zh": "分支/tag/commit sha（默认默认分支）",
+                    "en": "Branch/tag/commit SHA (default: default branch)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "path",
+                "description": {
+                    "zh": "只返回修改了该路径的提交",
+                    "en": "Only commits affecting this path."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "author",
+                "description": {
+                    "zh": "作者 login 过滤",
+                    "en": "Author login filter."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 20）",
+                    "en": "Items per page (default: 20)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "get_commit",
+        "description": {
+            "zh": "获取单个提交详情。",
+            "en": "Get a single commit."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "ref",
+                "description": {
+                    "zh": "commit sha / 分支 / tag",
+                    "en": "Commit SHA, branch, or tag."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "include_files",
+                "description": {
+                    "zh": "是否包含文件变更列表（默认 true）",
+                    "en": "Whether to include file changes (default: true)."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "compare_refs",
+        "description": {
+            "zh": "比较两个 ref。",
+            "en": "Compare two refs."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "base",
+                "description": {
+                    "zh": "base ref（分支/tag/sha）",
+                    "en": "Base ref (branch/tag/sha)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "head",
+                "description": {
+                    "zh": "head ref（分支/tag/sha）",
+                    "en": "Head ref (branch/tag/sha)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "include_files",
+                "description": {
+                    "zh": "是否包含文件列表（默认 true）",
+                    "en": "Whether to include file list (default: true)."
+                },
+                "type": "boolean",
+                "required": false
+            },
+            {
+                "name": "include_patch",
+                "description": {
+                    "zh": "文件列表是否包含 patch（默认 false）",
+                    "en": "Whether file list includes patch (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "get_compare_diff",
+        "description": {
+            "zh": "获取两个 ref 之间的 unified diff 文本。",
+            "en": "Get unified diff text between two refs."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "base",
+                "description": {
+                    "zh": "base ref",
+                    "en": "Base ref."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "head",
+                "description": {
+                    "zh": "head ref",
+                    "en": "Head ref."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "max_chars",
+                "description": {
+                    "zh": "截断字符数（默认 20000）",
+                    "en": "Truncate to this many chars (default: 20000)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "list_workflows",
+        "description": {
+            "zh": "列出仓库 GitHub Actions workflow。",
+            "en": "List GitHub Actions workflows."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "list_workflow_runs",
+        "description": {
+            "zh": "列出 workflow run。",
+            "en": "List workflow runs."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "workflow_id",
+                "description": {
+                    "zh": "workflow id 或文件名（如 android-tests.yml），不传则列出所有",
+                    "en": "Workflow ID or filename (e.g. android-tests.yml); omit to list all."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "branch",
+                "description": {
+                    "zh": "按分支过滤",
+                    "en": "Filter by branch."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "status",
+                "description": {
+                    "zh": "按状态过滤：queued/in_progress/completed/failure/success 等",
+                    "en": "Filter by status: queued/in_progress/completed/failure/success etc."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "event",
+                "description": {
+                    "zh": "按触发事件过滤：push/pull_request/workflow_dispatch 等",
+                    "en": "Filter by event: push/pull_request/workflow_dispatch etc."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 20）",
+                    "en": "Items per page (default: 20)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "get_workflow_run",
+        "description": {
+            "zh": "获取单个 workflow run 详情。",
+            "en": "Get a single workflow run."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "run_id",
+                "description": {
+                    "zh": "workflow run id",
+                    "en": "Workflow run ID."
+                },
+                "type": "number",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "trigger_workflow",
+        "description": {
+            "zh": "手动触发 workflow（workflow_dispatch）。",
+            "en": "Manually trigger a workflow (workflow_dispatch)."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "workflow_id",
+                "description": {
+                    "zh": "workflow id 或文件名（如 android-tests.yml）",
+                    "en": "Workflow ID or filename (e.g. android-tests.yml)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "ref",
+                "description": {
+                    "zh": "触发分支或 tag",
+                    "en": "Branch or tag to trigger on."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "inputs",
+                "description": {
+                    "zh": "workflow inputs（JSON 字符串或对象）",
+                    "en": "Workflow inputs (JSON string or object)."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "get_workflow_jobs",
+        "description": {
+            "zh": "获取 workflow run 的 jobs（含可选日志）。",
+            "en": "Get jobs for a workflow run (with optional logs)."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "run_id",
+                "description": {
+                    "zh": "workflow run id",
+                    "en": "Workflow run ID."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "include_logs",
+                "description": {
+                    "zh": "是否拉取每个 job 的日志（默认 false）",
+                    "en": "Whether to fetch logs for each job (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            },
+            {
+                "name": "failed_only",
+                "description": {
+                    "zh": "只返回失败/非成功的 job（默认 false）",
+                    "en": "Return only failed/non-success jobs (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            },
+            {
+                "name": "max_log_chars",
+                "description": {
+                    "zh": "日志截断字符数（默认 8000）",
+                    "en": "Log truncation in characters (default: 8000)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 50）",
+                    "en": "Items per page (default: 50)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "rerun_workflow_run",
+        "description": {
+            "zh": "重新运行 workflow run（全部或仅失败 job）。",
+            "en": "Re-run a workflow run (all jobs or failed jobs only)."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "run_id",
+                "description": {
+                    "zh": "workflow run id",
+                    "en": "Workflow run ID."
+                },
+                "type": "number",
+                "required": true
+            },
+            {
+                "name": "failed_jobs_only",
+                "description": {
+                    "zh": "只重跑失败 job（默认 false）",
+                    "en": "Only re-run failed jobs (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            },
+            {
+                "name": "enable_debug_logging",
+                "description": {
+                    "zh": "是否开启 debug 日志",
+                    "en": "Whether to enable debug logging."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "cancel_workflow_run",
+        "description": {
+            "zh": "取消 workflow run。",
+            "en": "Cancel a workflow run."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "run_id",
+                "description": {
+                    "zh": "workflow run id",
+                    "en": "Workflow run ID."
+                },
+                "type": "number",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "list_check_runs",
+        "description": {
+            "zh": "列出某个 commit 的 check runs。",
+            "en": "List check runs for a commit."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "ref",
+                "description": {
+                    "zh": "commit sha / 分支 / tag",
+                    "en": "Commit SHA, branch, or tag."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "status",
+                "description": {
+                    "zh": "queued/in_progress/completed 过滤",
+                    "en": "Filter by status: queued/in_progress/completed."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "filter",
+                "description": {
+                    "zh": "latest/all（默认 latest）",
+                    "en": "latest/all (default: latest)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 30）",
+                    "en": "Items per page (default: 30)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "search_code",
+        "description": {
+            "zh": "搜索代码（/search/code）。",
+            "en": "Search code (/search/code)."
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "description": {
+                    "zh": "搜索查询（支持 GitHub code search 语法）",
+                    "en": "Search query (GitHub code search syntax, e.g. repo:owner/name keyword)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "sort",
+                "description": {
+                    "zh": "排序字段（indexed）",
+                    "en": "Sort field (indexed)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "order",
+                "description": {
+                    "zh": "排序方向：desc/asc",
+                    "en": "Sort order: desc/asc."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 20）",
+                    "en": "Items per page (default: 20)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "search_issues",
+        "description": {
+            "zh": "搜索 Issue/PR（/search/issues）。",
+            "en": "Search issues and PRs (/search/issues)."
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "description": {
+                    "zh": "搜索查询（支持 GitHub issue search 语法）",
+                    "en": "Search query (GitHub issue search syntax)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "sort",
+                "description": {
+                    "zh": "排序字段：comments/reactions/created/updated 等",
+                    "en": "Sort field: comments/reactions/created/updated etc."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "order",
+                "description": {
+                    "zh": "排序方向：desc/asc",
+                    "en": "Sort order: desc/asc."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "page",
+                "description": {
+                    "zh": "页码（默认 1）",
+                    "en": "Page number (default: 1)."
+                },
+                "type": "number",
+                "required": false
+            },
+            {
+                "name": "per_page",
+                "description": {
+                    "zh": "每页数量（默认 20）",
+                    "en": "Items per page (default: 20)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "get_authenticated_user",
+        "description": {
+            "zh": "获取当前认证用户信息（/user）。",
+            "en": "Get the currently authenticated user (/user)."
+        },
+        "parameters": []
+    },
+    {
+        "name": "get_rate_limit",
+        "description": {
+            "zh": "查询 GitHub API 请求频率限制（/rate_limit）。",
+            "en": "Query GitHub API rate limit (/rate_limit)."
+        },
+        "parameters": []
+    },
+    {
+        "name": "fork_repository",
+        "description": {
+            "zh": "fork 仓库（/repos/{owner}/{repo}/forks）。",
+            "en": "Fork a repository."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "organization",
+                "description": {
+                    "zh": "fork 到指定组织（不填则 fork 到个人账号）",
+                    "en": "Fork to a specific organization (omit for personal account)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "name",
+                "description": {
+                    "zh": "fork 后的仓库名（默认与原仓库同名）",
+                    "en": "Name for the forked repository (default: same as original)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "default_branch_only",
+                "description": {
+                    "zh": "只 fork 默认分支（默认 false）",
+                    "en": "Fork only the default branch (default: false)."
+                },
+                "type": "boolean",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "sync_fork",
+        "description": {
+            "zh": "同步 fork 到上游（/repos/{owner}/{repo}/merge-upstream）。",
+            "en": "Sync a fork with upstream."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "fork 仓库的 owner",
+                    "en": "Fork repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "fork 仓库名",
+                    "en": "Fork repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "branch",
+                "description": {
+                    "zh": "要同步的分支（默认默认分支）",
+                    "en": "Branch to sync (default: default branch)."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "patch_file_in_repo",
+        "description": {
+            "zh": "在仓库中对文件应用 search/replace patch（先读取文件，替换内容后写回）。",
+            "en": "Apply a search/replace patch to a file in the repository (read -> replace -> write back)."
+        },
+        "parameters": [
+            {
+                "name": "owner",
+                "description": {
+                    "zh": "仓库 owner",
+                    "en": "Repository owner."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "repo",
+                "description": {
+                    "zh": "仓库名",
+                    "en": "Repository name."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "path",
+                "description": {
+                    "zh": "文件路径",
+                    "en": "File path."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "search",
+                "description": {
+                    "zh": "要查找的文本（精确匹配）",
+                    "en": "Text to search for (exact match)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "replace",
+                "description": {
+                    "zh": "替换后的文本",
+                    "en": "Replacement text."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "message",
+                "description": {
+                    "zh": "commit 消息",
+                    "en": "Commit message."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "branch",
+                "description": {
+                    "zh": "目标分支",
+                    "en": "Target branch."
+                },
+                "type": "string",
+                "required": false
+            }
+        ]
+    },
+    {
+        "name": "apply_local_replace",
+        "description": {
+            "zh": "在本地文件系统中对文件应用 search/replace（不经过 GitHub API）。",
+            "en": "Apply a search/replace patch to a local file (no GitHub API)."
+        },
+        "parameters": [
+            {
+                "name": "path",
+                "description": {
+                    "zh": "本地文件路径（绝对路径）",
+                    "en": "Local file path (absolute)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "search",
+                "description": {
+                    "zh": "要查找的文本",
+                    "en": "Text to search for."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "replace",
+                "description": {
+                    "zh": "替换后的文本",
+                    "en": "Replacement text."
+                },
+                "type": "string",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "apply_local_delete",
+        "description": {
+            "zh": "删除本地文件（不经过 GitHub API）。",
+            "en": "Delete a local file (no GitHub API)."
+        },
+        "parameters": [
+            {
+                "name": "path",
+                "description": {
+                    "zh": "本地文件路径（绝对路径）",
+                    "en": "Local file path (absolute)."
+                },
+                "type": "string",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "overwrite_local_file",
+        "description": {
+            "zh": "用新内容完整覆盖本地文件（不经过 GitHub API）。",
+            "en": "Overwrite a local file with new content (no GitHub API)."
+        },
+        "parameters": [
+            {
+                "name": "path",
+                "description": {
+                    "zh": "本地文件路径（绝对路径）",
+                    "en": "Local file path (absolute)."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "content",
+                "description": {
+                    "zh": "新的文件内容",
+                    "en": "New file content."
+                },
+                "type": "string",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "terminal_exec",
+        "description": {
+            "zh": "在本地终端执行命令（调用 Operit 内置终端，注意权限和安全）。",
+            "en": "Execute a command in the local terminal (uses Operit built-in terminal)."
+        },
+        "parameters": [
+            {
+                "name": "command",
+                "description": {
+                    "zh": "要执行的 shell 命令",
+                    "en": "Shell command to execute."
+                },
+                "type": "string",
+                "required": true
+            },
+            {
+                "name": "cwd",
+                "description": {
+                    "zh": "工作目录（默认当前目录）",
+                    "en": "Working directory (default: current directory)."
+                },
+                "type": "string",
+                "required": false
+            },
+            {
+                "name": "timeout_ms",
+                "description": {
+                    "zh": "超时毫秒数（默认 30000）",
+                    "en": "Timeout in milliseconds (default: 30000)."
+                },
+                "type": "number",
+                "required": false
+            }
+        ]
     }
-  ]
+]
 }
 */
 
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __propIsEnum = Object.prototype.propertyIsEnumerable;
@@ -263,22 +2646,76 @@ var __spreadValues = (a, b) => {
   return a;
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-
-// src/utils/wrap.ts
-async function wrap(func, params, successMessage, failMessage) {
-  try {
-    const data = await func(params);
-    const result = { success: true, message: successMessage, data };
-    complete(result);
-  } catch (error) {
-    const result = {
-      success: false,
-      message: `${failMessage}: ${String(error && error.message ? error.message : error)}`,
-      error_stack: String(error && error.stack ? error.stack : "")
-    };
-    complete(result);
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
-}
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.ts
+var index_exports = {};
+__export(index_exports, {
+  apply_local_delete: () => apply_local_delete,
+  apply_local_replace: () => apply_local_replace,
+  cancel_workflow_run: () => cancel_workflow_run,
+  comment_issue: () => comment_issue,
+  compare_refs: () => compare_refs,
+  create_branch: () => create_branch,
+  create_issue: () => create_issue,
+  create_or_update_file: () => create_or_update_file,
+  create_pull_request: () => create_pull_request,
+  create_review: () => create_review,
+  delete_file: () => delete_file,
+  fork_repository: () => fork_repository,
+  get_authenticated_user: () => get_authenticated_user,
+  get_commit: () => get_commit,
+  get_compare_diff: () => get_compare_diff,
+  get_file_content: () => get_file_content,
+  get_issue: () => get_issue,
+  get_pull_request: () => get_pull_request,
+  get_pull_request_diff: () => get_pull_request_diff,
+  get_rate_limit: () => get_rate_limit,
+  get_repository: () => get_repository,
+  get_workflow_jobs: () => get_workflow_jobs,
+  get_workflow_run: () => get_workflow_run,
+  list_branches: () => list_branches,
+  list_check_runs: () => list_check_runs,
+  list_commits: () => list_commits,
+  list_issue_comments: () => list_issue_comments,
+  list_issues: () => list_issues,
+  list_pull_request_commits: () => list_pull_request_commits,
+  list_pull_request_files: () => list_pull_request_files,
+  list_pull_request_reviews: () => list_pull_request_reviews,
+  list_pull_requests: () => list_pull_requests,
+  list_review_comments: () => list_review_comments,
+  list_workflow_runs: () => list_workflow_runs,
+  list_workflows: () => list_workflows,
+  main: () => main,
+  merge_pull_request: () => merge_pull_request,
+  overwrite_local_file: () => overwrite_local_file,
+  patch_file_in_repo: () => patch_file_in_repo,
+  reply_review_comment: () => reply_review_comment,
+  request_reviewers: () => request_reviewers,
+  rerun_workflow_run: () => rerun_workflow_run,
+  search_code: () => search_code,
+  search_issues: () => search_issues,
+  search_repositories: () => search_repositories,
+  sync_fork: () => sync_fork,
+  terminal_exec: () => terminal_exec,
+  toolImpl: () => toolImpl,
+  trigger_workflow: () => trigger_workflow,
+  update_issue: () => update_issue,
+  update_pull_request: () => update_pull_request
+});
+module.exports = __toCommonJS(index_exports);
 
 // src/github/api.ts
 function getBaseUrl() {
@@ -290,6 +2727,13 @@ function getToken() {
   const trimmed = String(token || "").trim();
   return trimmed ? trimmed : void 0;
 }
+function requireToken(operation) {
+  const token = getToken();
+  if (!token) {
+    throw new Error(`GITHUB_TOKEN is required for ${operation}.`);
+  }
+  return token;
+}
 function buildUrl(pathname, query) {
   const base = getBaseUrl().replace(/\/+$/, "");
   const path = pathname.startsWith("/") ? pathname : `/${pathname}`;
@@ -297,17 +2741,24 @@ function buildUrl(pathname, query) {
   if (query) {
     Object.keys(query).forEach((k) => {
       const v = query[k];
-      if (v === void 0 || v === null) return;
+      if (v === void 0 || v === null || v === "") return;
       qs.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
     });
   }
   return qs.length > 0 ? `${base}${path}?${qs.join("&")}` : `${base}${path}`;
 }
+function repoPath(owner, repo, suffix = "") {
+  const extra = suffix ? suffix.startsWith("/") ? suffix : `/${suffix}` : "";
+  return `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}${extra}`;
+}
+function encodeRef(ref) {
+  return String(ref || "").split("/").map((part) => encodeURIComponent(part)).join("/");
+}
 function defaultHeaders(extra) {
   const headers = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "Operit-Examples-GitHub"
+    "User-Agent": "Operit-GitHub"
   };
   const token = getToken();
   if (token) {
@@ -321,143 +2772,279 @@ function defaultHeaders(extra) {
   return headers;
 }
 function createHttpClient(timeoutMs = 3e4) {
-  return OkHttp.newBuilder().connectTimeout(timeoutMs).readTimeout(timeoutMs).writeTimeout(timeoutMs).build();
+  return OkHttp.newBuilder().connectTimeout(timeoutMs).readTimeout(timeoutMs).writeTimeout(timeoutMs).followRedirects(true).build();
 }
-async function requestJson(options) {
+async function requestRaw(options) {
   var _a;
   const client = createHttpClient((_a = options.timeoutMs) != null ? _a : 3e4);
   const req = client.newRequest().url(options.url).method(options.method);
-  const headers = defaultHeaders(options.headers);
-  req.headers(headers);
-  if (options.body !== void 0 && options.body !== null && options.method !== "GET") {
-    req.body(JSON.stringify(options.body), "json");
+  req.headers(defaultHeaders(options.headers));
+  if (options.method !== "GET") {
+    const payload = options.body === void 0 || options.body === null ? {} : options.body;
+    req.body(JSON.stringify(payload), "json");
   }
   const resp = await req.build().execute();
   if (!resp.isSuccessful()) {
     throw new Error(`GitHub API Error: ${resp.statusCode} ${resp.statusMessage}
 ${resp.content}`);
   }
-  return resp.json();
+  return {
+    statusCode: resp.statusCode,
+    statusMessage: resp.statusMessage,
+    headers: resp.headers || {},
+    content: typeof resp.content === "string" ? resp.content : String(resp.content || "")
+  };
 }
+async function requestJson(options) {
+  const resp = await requestRaw(options);
+  const text = String(resp.content || "").trim();
+  if (resp.statusCode === 204 || !text) {
+    return { ok: true, statusCode: resp.statusCode };
+  }
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error(`Failed to parse GitHub JSON response (${resp.statusCode}): ${text.slice(0, 500)}`);
+  }
+}
+async function requestText(options) {
+  const resp = await requestRaw(options);
+  return {
+    text: resp.content || "",
+    statusCode: resp.statusCode,
+    headers: resp.headers
+  };
+}
+function parseJsonParam(value, fieldName) {
+  if (value === void 0 || value === null || value === "") return void 0;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return void 0;
+  try {
+    return JSON.parse(trimmed);
+  } catch (e) {
+    throw new Error(`${fieldName} must be valid JSON.`);
+  }
+}
+function splitCsv(value) {
+  if (value === void 0 || value === null || value === "") return void 0;
+  if (Array.isArray(value)) {
+    const items2 = value.map((it) => String(it).trim()).filter(Boolean);
+    return items2.length > 0 ? items2 : void 0;
+  }
+  const items = String(value).split(",").map((it) => it.trim()).filter(Boolean);
+  return items.length > 0 ? items : void 0;
+}
+function compactCommit(commit) {
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
+  if (!commit) return commit;
+  return {
+    sha: commit.sha || ((_b = (_a = commit.commit) == null ? void 0 : _a.tree) == null ? void 0 : _b.sha),
+    html_url: commit.html_url,
+    message: ((_c = commit.commit) == null ? void 0 : _c.message) || commit.message,
+    author: ((_e = (_d = commit.commit) == null ? void 0 : _d.author) == null ? void 0 : _e.name) || ((_f = commit.author) == null ? void 0 : _f.login),
+    date: ((_h = (_g = commit.commit) == null ? void 0 : _g.author) == null ? void 0 : _h.date) || ((_j = (_i = commit.commit) == null ? void 0 : _i.committer) == null ? void 0 : _j.date),
+    login: (_k = commit.author) == null ? void 0 : _k.login
+  };
+}
+function compactFileChange(file, includePatch) {
+  if (!file) return file;
+  const item = {
+    filename: file.filename,
+    status: file.status,
+    additions: file.additions,
+    deletions: file.deletions,
+    changes: file.changes,
+    sha: file.sha,
+    blob_url: file.blob_url,
+    previous_filename: file.previous_filename
+  };
+  if (includePatch && typeof file.patch === "string") {
+    item.patch = file.patch;
+  }
+  return item;
+}
+function truncateText(text, maxChars) {
+  const src = String(text != null ? text : "");
+  const limit = maxChars > 0 ? maxChars : src.length;
+  if (src.length <= limit) {
+    return { text: src, truncated: false, original_length: src.length };
+  }
+  const headChars = Math.max(200, Math.floor(limit * 0.35));
+  const tailChars = Math.max(200, limit - headChars - 80);
+  const omitted = src.length - headChars - tailChars;
+  return {
+    text: `${src.slice(0, headChars)}
 
-// src/github/repos.ts
-async function searchRepositories(params) {
-  var _a, _b;
-  const page = (_a = params.page) != null ? _a : 1;
-  const perPage = (_b = params.per_page) != null ? _b : 30;
-  const url = buildUrl("/search/repositories", {
-    q: params.query,
-    sort: params.sort,
-    order: params.order,
-    page,
-    per_page: perPage
-  });
-  return requestJson({ method: "GET", url });
-}
-async function getRepository(params) {
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}`);
-  return requestJson({ method: "GET", url });
+... truncated ${omitted} chars ...
+
+${src.slice(-tailChars)}`,
+    truncated: true,
+    original_length: src.length
+  };
 }
 
 // src/github/issues.ts
+function compactIssue(item) {
+  var _a;
+  if (!item) return item;
+  return {
+    number: item.number,
+    title: item.title,
+    state: item.state,
+    html_url: item.html_url,
+    user: (_a = item.user) == null ? void 0 : _a.login,
+    labels: Array.isArray(item.labels) ? item.labels.map((it) => typeof it === "string" ? it : it.name) : [],
+    assignees: Array.isArray(item.assignees) ? item.assignees.map((it) => it.login) : [],
+    comments: item.comments,
+    pull_request: Boolean(item.pull_request),
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    body: item.body
+  };
+}
 async function listIssues(params) {
   var _a, _b, _c;
-  const page = (_a = params.page) != null ? _a : 1;
-  const perPage = (_b = params.per_page) != null ? _b : 30;
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/issues`, {
-    state: (_c = params.state) != null ? _c : "open",
+  const url = buildUrl(repoPath(params.owner, params.repo, "/issues"), {
+    state: (_a = params.state) != null ? _a : "open",
     labels: params.labels,
     creator: params.creator,
-    page,
-    per_page: perPage
+    page: (_b = params.page) != null ? _b : 1,
+    per_page: (_c = params.per_page) != null ? _c : 30
   });
   const items = await requestJson({ method: "GET", url });
   const includePRs = params.include_pull_requests === true;
-  if (includePRs) return items;
-  return items.filter((it) => !it || !it.pull_request);
+  const filtered = includePRs ? items : items.filter((it) => !it || !it.pull_request);
+  return Array.isArray(filtered) ? filtered.map(compactIssue) : [];
+}
+async function getIssue(params) {
+  const url = buildUrl(repoPath(params.owner, params.repo, `/issues/${params.issue_number}`));
+  return compactIssue(await requestJson({ method: "GET", url }));
 }
 async function createIssue(params) {
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for create_issue.");
-  }
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/issues`);
-  return requestJson({
-    method: "POST",
-    url,
-    body: {
-      title: params.title,
-      body: params.body,
-      labels: params.labels,
-      assignees: params.assignees
-    }
-  });
+  requireToken("create_issue");
+  const url = buildUrl(repoPath(params.owner, params.repo, "/issues"));
+  return compactIssue(
+    await requestJson({
+      method: "POST",
+      url,
+      body: {
+        title: params.title,
+        body: params.body,
+        labels: splitCsv(params.labels),
+        assignees: splitCsv(params.assignees)
+      }
+    })
+  );
+}
+async function updateIssue(params) {
+  requireToken("update_issue");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/issues/${params.issue_number}`));
+  return compactIssue(
+    await requestJson({
+      method: "PATCH",
+      url,
+      body: {
+        title: params.title,
+        body: params.body,
+        state: params.state,
+        labels: splitCsv(params.labels),
+        assignees: splitCsv(params.assignees)
+      }
+    })
+  );
 }
 async function commentIssue(params) {
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for comment_issue.");
-  }
-  const url = buildUrl(
-    `/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/issues/${params.issue_number}/comments`
-  );
-  return requestJson({ method: "POST", url, body: { body: params.body } });
+  var _a;
+  requireToken("comment_issue");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/issues/${params.issue_number}/comments`));
+  const data = await requestJson({ method: "POST", url, body: { body: params.body } });
+  return {
+    id: data.id,
+    html_url: data.html_url,
+    user: (_a = data.user) == null ? void 0 : _a.login,
+    body: data.body,
+    created_at: data.created_at
+  };
 }
 async function listIssueComments(params) {
   var _a, _b;
-  const page = (_a = params.page) != null ? _a : 1;
-  const perPage = (_b = params.per_page) != null ? _b : 30;
-  const url = buildUrl(
-    `/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/issues/${params.issue_number}/comments`,
-    { page, per_page: perPage }
-  );
-  return requestJson({ method: "GET", url });
+  const url = buildUrl(repoPath(params.owner, params.repo, `/issues/${params.issue_number}/comments`), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map((item) => {
+    var _a2;
+    return {
+      id: item.id,
+      html_url: item.html_url,
+      user: (_a2 = item.user) == null ? void 0 : _a2.login,
+      body: item.body,
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    };
+  }) : [];
 }
 
 // src/github/pulls.ts
+function compactPull(pr) {
+  var _a, _b, _c, _d, _e, _f;
+  if (!pr) return pr;
+  return {
+    number: pr.number,
+    title: pr.title,
+    state: pr.state,
+    draft: pr.draft,
+    merged: pr.merged,
+    mergeable: pr.mergeable,
+    html_url: pr.html_url,
+    user: (_a = pr.user) == null ? void 0 : _a.login,
+    head: ((_b = pr.head) == null ? void 0 : _b.label) || ((_c = pr.head) == null ? void 0 : _c.ref),
+    head_sha: (_d = pr.head) == null ? void 0 : _d.sha,
+    base: ((_e = pr.base) == null ? void 0 : _e.label) || ((_f = pr.base) == null ? void 0 : _f.ref),
+    body: pr.body,
+    created_at: pr.created_at,
+    updated_at: pr.updated_at
+  };
+}
 async function listPullRequests(params) {
   var _a, _b, _c;
-  const page = (_a = params.page) != null ? _a : 1;
-  const perPage = (_b = params.per_page) != null ? _b : 30;
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/pulls`, {
-    state: (_c = params.state) != null ? _c : "open",
+  const url = buildUrl(repoPath(params.owner, params.repo, "/pulls"), {
+    state: (_a = params.state) != null ? _a : "open",
     head: params.head,
     base: params.base,
-    page,
-    per_page: perPage
+    page: (_b = params.page) != null ? _b : 1,
+    per_page: (_c = params.per_page) != null ? _c : 30
   });
-  return requestJson({ method: "GET", url });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map(compactPull) : [];
 }
 async function createPullRequest(params) {
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for create_pull_request.");
-  }
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/pulls`);
-  return requestJson({
-    method: "POST",
-    url,
-    body: {
-      title: params.title,
-      head: params.head,
-      base: params.base,
-      body: params.body,
-      draft: params.draft
-    }
-  });
+  requireToken("create_pull_request");
+  const url = buildUrl(repoPath(params.owner, params.repo, "/pulls"));
+  return compactPull(
+    await requestJson({
+      method: "POST",
+      url,
+      body: {
+        title: params.title,
+        head: params.head,
+        base: params.base,
+        body: params.body,
+        draft: params.draft
+      }
+    })
+  );
 }
 async function getPullRequest(params) {
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/pulls/${params.pull_number}`);
-  return requestJson({ method: "GET", url });
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}`));
+  return compactPull(await requestJson({ method: "GET", url }));
 }
 async function mergePullRequest(params) {
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for merge_pull_request.");
-  }
-  const url = buildUrl(
-    `/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/pulls/${params.pull_number}/merge`
-  );
+  requireToken("merge_pull_request");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/merge`));
   return requestJson({
     method: "PUT",
     url,
@@ -467,6 +3054,162 @@ async function mergePullRequest(params) {
       merge_method: params.merge_method
     }
   });
+}
+async function updatePullRequest(params) {
+  requireToken("update_pull_request");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}`));
+  return compactPull(
+    await requestJson({
+      method: "PATCH",
+      url,
+      body: {
+        title: params.title,
+        body: params.body,
+        state: params.state,
+        base: params.base,
+        draft: params.draft
+      }
+    })
+  );
+}
+async function listPullRequestFiles(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/files`), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 100
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map((file) => compactFileChange(file, params.include_patch === true)) : [];
+}
+async function getPullRequestDiff(params) {
+  var _a;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}`));
+  const resp = await requestText({
+    method: "GET",
+    url,
+    headers: { Accept: "application/vnd.github.diff" },
+    timeoutMs: 6e4
+  });
+  const truncated = truncateText(resp.text, (_a = params.max_chars) != null ? _a : 2e4);
+  return {
+    pull_number: params.pull_number,
+    diff: truncated.text,
+    truncated: truncated.truncated,
+    original_length: truncated.original_length
+  };
+}
+async function listPullRequestCommits(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/commits`), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map(compactCommit) : [];
+}
+async function listPullRequestReviews(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/reviews`), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map((item) => {
+    var _a2;
+    return {
+      id: item.id,
+      user: (_a2 = item.user) == null ? void 0 : _a2.login,
+      state: item.state,
+      body: item.body,
+      submitted_at: item.submitted_at,
+      html_url: item.html_url,
+      commit_id: item.commit_id
+    };
+  }) : [];
+}
+async function listReviewComments(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/comments`), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map((item) => {
+    var _a2;
+    return {
+      id: item.id,
+      user: (_a2 = item.user) == null ? void 0 : _a2.login,
+      path: item.path,
+      line: item.line,
+      original_line: item.original_line,
+      side: item.side,
+      body: item.body,
+      html_url: item.html_url,
+      in_reply_to_id: item.in_reply_to_id,
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    };
+  }) : [];
+}
+async function createReview(params) {
+  var _a;
+  requireToken("create_review");
+  const comments = parseJsonParam(params.comments, "comments");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/reviews`));
+  const data = await requestJson({
+    method: "POST",
+    url,
+    body: {
+      body: params.body,
+      event: params.event,
+      commit_id: params.commit_id,
+      comments
+    }
+  });
+  return {
+    id: data.id,
+    state: data.state,
+    body: data.body,
+    html_url: data.html_url,
+    user: (_a = data.user) == null ? void 0 : _a.login
+  };
+}
+async function replyReviewComment(params) {
+  var _a;
+  requireToken("reply_review_comment");
+  const url = buildUrl(
+    repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/comments/${params.comment_id}/replies`)
+  );
+  const data = await requestJson({
+    method: "POST",
+    url,
+    body: { body: params.body }
+  });
+  return {
+    id: data.id,
+    body: data.body,
+    html_url: data.html_url,
+    in_reply_to_id: data.in_reply_to_id,
+    user: (_a = data.user) == null ? void 0 : _a.login
+  };
+}
+async function requestReviewers(params) {
+  requireToken("request_reviewers");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/pulls/${params.pull_number}/requested_reviewers`));
+  const data = await requestJson({
+    method: "POST",
+    url,
+    body: {
+      reviewers: splitCsv(params.reviewers),
+      team_reviewers: splitCsv(params.team_reviewers)
+    }
+  });
+  return {
+    number: data.number,
+    html_url: data.html_url,
+    requested_reviewers: Array.isArray(data.requested_reviewers) ? data.requested_reviewers.map((it) => it.login) : [],
+    requested_teams: Array.isArray(data.requested_teams) ? data.requested_teams.map((it) => it.slug || it.name) : []
+  };
 }
 
 // src/utils/base64.ts
@@ -634,10 +3377,7 @@ async function resolveFileSha(params) {
 }
 async function createOrUpdateFile(params) {
   var _a;
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for create_or_update_file.");
-  }
+  requireToken("create_or_update_file");
   const encoding = (params.content_encoding || "utf-8").toLowerCase();
   const base64Content = encoding === "base64" ? params.content : safeBtoaBase64(params.content);
   const sha = (_a = params.sha) != null ? _a : await resolveFileSha({ owner: params.owner, repo: params.repo, path: params.path, branch: params.branch });
@@ -657,10 +3397,7 @@ async function createOrUpdateFile(params) {
 }
 async function deleteFile(params) {
   var _a;
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for delete_file.");
-  }
+  requireToken("delete_file");
   const sha = (_a = params.sha) != null ? _a : await resolveFileSha({ owner: params.owner, repo: params.repo, path: params.path, branch: params.branch });
   if (!sha) {
     throw new Error("File sha is required (unable to resolve automatically).");
@@ -677,6 +3414,25 @@ async function deleteFile(params) {
       sha
     }
   });
+}
+
+// src/github/repos.ts
+async function searchRepositories(params) {
+  var _a, _b;
+  const page = (_a = params.page) != null ? _a : 1;
+  const perPage = (_b = params.per_page) != null ? _b : 30;
+  const url = buildUrl("/search/repositories", {
+    q: params.query,
+    sort: params.sort,
+    order: params.order,
+    page,
+    per_page: perPage
+  });
+  return requestJson({ method: "GET", url });
+}
+async function getRepository(params) {
+  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}`);
+  return requestJson({ method: "GET", url });
 }
 
 // src/github/branches.ts
@@ -696,10 +3452,7 @@ async function getBranchHeadSha(params) {
 }
 async function createBranch(params) {
   var _a, _b;
-  const token = getToken();
-  if (!token) {
-    throw new Error("GITHUB_TOKEN is required for create_branch.");
-  }
+  requireToken("create_branch");
   const fromBranch = (_b = params.from_branch) != null ? _b : String(((_a = await getRepository({ owner: params.owner, repo: params.repo })) == null ? void 0 : _a.default_branch) || "main");
   const sha = await getBranchHeadSha({ owner: params.owner, repo: params.repo, branch: fromBranch });
   const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/git/refs`);
@@ -711,6 +3464,424 @@ async function createBranch(params) {
       sha
     }
   });
+}
+
+// src/github/git.ts
+async function listBranches(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, "/branches"), {
+    protected: params.protected_only,
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map((item) => {
+    var _a2;
+    return {
+      name: item.name,
+      sha: (_a2 = item.commit) == null ? void 0 : _a2.sha,
+      protected: item.protected,
+      html_url: `https://github.com/${params.owner}/${params.repo}/tree/${item.name}`
+    };
+  }) : [];
+}
+async function listCommits(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, "/commits"), {
+    sha: params.sha,
+    path: params.path,
+    author: params.author,
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 20
+  });
+  const items = await requestJson({ method: "GET", url });
+  return Array.isArray(items) ? items.map(compactCommit) : [];
+}
+async function getCommit(params) {
+  const url = buildUrl(repoPath(params.owner, params.repo, `/commits/${encodeURIComponent(params.ref)}`));
+  const data = await requestJson({ method: "GET", url });
+  return __spreadProps(__spreadValues({}, compactCommit(data)), {
+    stats: data.stats,
+    files: params.include_files === false ? void 0 : Array.isArray(data.files) ? data.files.map((file) => compactFileChange(file, false)) : []
+  });
+}
+async function compareRefs(params) {
+  const spec = `${encodeRef(params.base)}...${encodeRef(params.head)}`;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/compare/${spec}`));
+  const data = await requestJson({ method: "GET", url });
+  const includeFiles = params.include_files !== false;
+  return {
+    status: data.status,
+    ahead_by: data.ahead_by,
+    behind_by: data.behind_by,
+    total_commits: data.total_commits,
+    html_url: data.html_url,
+    permalink_url: data.permalink_url,
+    base_commit: compactCommit(data.base_commit),
+    merge_base_commit: compactCommit(data.merge_base_commit),
+    commits: Array.isArray(data.commits) ? data.commits.map(compactCommit) : [],
+    files: includeFiles ? Array.isArray(data.files) ? data.files.map((file) => compactFileChange(file, params.include_patch === true)) : [] : void 0
+  };
+}
+async function getCompareDiff(params) {
+  var _a;
+  const spec = `${encodeRef(params.base)}...${encodeRef(params.head)}`;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/compare/${spec}`));
+  const resp = await requestText({
+    method: "GET",
+    url,
+    headers: { Accept: "application/vnd.github.diff" },
+    timeoutMs: 6e4
+  });
+  const truncated = truncateText(resp.text, (_a = params.max_chars) != null ? _a : 2e4);
+  return {
+    base: params.base,
+    head: params.head,
+    diff: truncated.text,
+    truncated: truncated.truncated,
+    original_length: truncated.original_length
+  };
+}
+
+// src/github/actions.ts
+function compactWorkflow(item) {
+  if (!item) return item;
+  return {
+    id: item.id,
+    name: item.name,
+    path: item.path,
+    state: item.state,
+    html_url: item.html_url,
+    badge_url: item.badge_url,
+    created_at: item.created_at,
+    updated_at: item.updated_at
+  };
+}
+function compactRun(item) {
+  var _a, _b;
+  if (!item) return item;
+  return {
+    id: item.id,
+    name: item.name,
+    display_title: item.display_title,
+    status: item.status,
+    conclusion: item.conclusion,
+    event: item.event,
+    head_branch: item.head_branch,
+    head_sha: item.head_sha,
+    html_url: item.html_url,
+    path: item.path,
+    run_number: item.run_number,
+    run_attempt: item.run_attempt,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    actor: (_a = item.actor) == null ? void 0 : _a.login,
+    triggering_actor: (_b = item.triggering_actor) == null ? void 0 : _b.login
+  };
+}
+function compactJob(item) {
+  if (!item) return item;
+  return {
+    id: item.id,
+    run_id: item.run_id,
+    name: item.name,
+    status: item.status,
+    conclusion: item.conclusion,
+    html_url: item.html_url,
+    started_at: item.started_at,
+    completed_at: item.completed_at,
+    runner_name: item.runner_name,
+    steps: Array.isArray(item.steps) ? item.steps.map((step) => ({
+      name: step.name,
+      status: step.status,
+      conclusion: step.conclusion,
+      number: step.number,
+      started_at: step.started_at,
+      completed_at: step.completed_at
+    })) : []
+  };
+}
+async function listWorkflows(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, "/actions/workflows"), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const data = await requestJson({ method: "GET", url });
+  return {
+    total_count: data == null ? void 0 : data.total_count,
+    workflows: Array.isArray(data == null ? void 0 : data.workflows) ? data.workflows.map(compactWorkflow) : []
+  };
+}
+async function listWorkflowRuns(params) {
+  var _a, _b;
+  const suffix = params.workflow_id ? `/actions/workflows/${encodeURIComponent(String(params.workflow_id))}/runs` : "/actions/runs";
+  const url = buildUrl(repoPath(params.owner, params.repo, suffix), {
+    branch: params.branch,
+    status: params.status,
+    event: params.event,
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 20
+  });
+  const data = await requestJson({ method: "GET", url });
+  return {
+    total_count: data == null ? void 0 : data.total_count,
+    workflow_runs: Array.isArray(data == null ? void 0 : data.workflow_runs) ? data.workflow_runs.map(compactRun) : []
+  };
+}
+async function getWorkflowRun(params) {
+  const url = buildUrl(repoPath(params.owner, params.repo, `/actions/runs/${encodeURIComponent(String(params.run_id))}`));
+  return compactRun(await requestJson({ method: "GET", url }));
+}
+async function triggerWorkflow(params) {
+  requireToken("trigger_workflow");
+  const url = buildUrl(
+    repoPath(params.owner, params.repo, `/actions/workflows/${encodeURIComponent(String(params.workflow_id))}/dispatches`)
+  );
+  const inputs = parseJsonParam(params.inputs, "inputs");
+  const result = await requestJson({
+    method: "POST",
+    url,
+    body: {
+      ref: params.ref,
+      inputs
+    }
+  });
+  return {
+    ok: true,
+    workflow_id: params.workflow_id,
+    ref: params.ref,
+    inputs: inputs || {},
+    dispatch: result
+  };
+}
+async function getWorkflowJobs(params) {
+  var _a, _b, _c;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/actions/runs/${encodeURIComponent(String(params.run_id))}/jobs`), {
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 50
+  });
+  const data = await requestJson({ method: "GET", url });
+  const jobs = Array.isArray(data == null ? void 0 : data.jobs) ? data.jobs.map(compactJob) : [];
+  const selected = params.failed_only ? jobs.filter((job) => job.conclusion && job.conclusion !== "success" && job.conclusion !== "skipped") : jobs;
+  if (!params.include_logs) {
+    return {
+      total_count: data == null ? void 0 : data.total_count,
+      jobs: selected
+    };
+  }
+  const maxLogChars = (_c = params.max_log_chars) != null ? _c : 8e3;
+  const withLogs = [];
+  for (const job of selected) {
+    try {
+      const logUrl = buildUrl(repoPath(params.owner, params.repo, `/actions/jobs/${encodeURIComponent(String(job.id))}/logs`));
+      const logResp = await requestText({ method: "GET", url: logUrl, timeoutMs: 6e4 });
+      const truncated = truncateText(logResp.text, maxLogChars);
+      withLogs.push(__spreadProps(__spreadValues({}, job), {
+        logs: truncated.text,
+        logs_truncated: truncated.truncated,
+        logs_original_length: truncated.original_length
+      }));
+    } catch (e) {
+      withLogs.push(__spreadProps(__spreadValues({}, job), {
+        logs_error: String(e && e.message ? e.message : e)
+      }));
+    }
+  }
+  return {
+    total_count: data == null ? void 0 : data.total_count,
+    jobs: withLogs
+  };
+}
+async function rerunWorkflowRun(params) {
+  requireToken("rerun_workflow_run");
+  const suffix = params.failed_jobs_only ? `/actions/runs/${encodeURIComponent(String(params.run_id))}/rerun-failed-jobs` : `/actions/runs/${encodeURIComponent(String(params.run_id))}/rerun`;
+  const url = buildUrl(repoPath(params.owner, params.repo, suffix));
+  const body = params.enable_debug_logging === void 0 ? void 0 : { enable_debug_logging: params.enable_debug_logging };
+  const result = await requestJson({ method: "POST", url, body });
+  return { ok: true, run_id: params.run_id, failed_jobs_only: Boolean(params.failed_jobs_only), result };
+}
+async function cancelWorkflowRun(params) {
+  requireToken("cancel_workflow_run");
+  const url = buildUrl(repoPath(params.owner, params.repo, `/actions/runs/${encodeURIComponent(String(params.run_id))}/cancel`));
+  const result = await requestJson({ method: "POST", url });
+  return { ok: true, run_id: params.run_id, result };
+}
+async function listCheckRuns(params) {
+  var _a, _b;
+  const url = buildUrl(repoPath(params.owner, params.repo, `/commits/${encodeURIComponent(params.ref)}/check-runs`), {
+    status: params.status,
+    filter: params.filter,
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 30
+  });
+  const data = await requestJson({ method: "GET", url });
+  return {
+    total_count: data == null ? void 0 : data.total_count,
+    check_runs: Array.isArray(data == null ? void 0 : data.check_runs) ? data.check_runs.map((item) => {
+      var _a2, _b2;
+      return {
+        id: item.id,
+        name: item.name,
+        status: item.status,
+        conclusion: item.conclusion,
+        html_url: item.html_url,
+        details_url: item.details_url,
+        started_at: item.started_at,
+        completed_at: item.completed_at,
+        app: ((_a2 = item.app) == null ? void 0 : _a2.slug) || ((_b2 = item.app) == null ? void 0 : _b2.name)
+      };
+    }) : []
+  };
+}
+
+// src/github/search.ts
+async function searchCode(params) {
+  var _a, _b;
+  const url = buildUrl("/search/code", {
+    q: params.query,
+    sort: params.sort,
+    order: params.order,
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 20
+  });
+  const data = await requestJson({
+    method: "GET",
+    url,
+    headers: { Accept: "application/vnd.github.text-match+json" }
+  });
+  return {
+    total_count: data == null ? void 0 : data.total_count,
+    incomplete_results: data == null ? void 0 : data.incomplete_results,
+    items: Array.isArray(data == null ? void 0 : data.items) ? data.items.map((item) => {
+      var _a2;
+      return {
+        name: item.name,
+        path: item.path,
+        sha: item.sha,
+        html_url: item.html_url,
+        repository: (_a2 = item.repository) == null ? void 0 : _a2.full_name,
+        score: item.score,
+        text_matches: Array.isArray(item.text_matches) ? item.text_matches.map((match) => ({
+          fragment: match.fragment,
+          property: match.property
+        })) : []
+      };
+    }) : []
+  };
+}
+async function searchIssues(params) {
+  var _a, _b;
+  const url = buildUrl("/search/issues", {
+    q: params.query,
+    sort: params.sort,
+    order: params.order,
+    page: (_a = params.page) != null ? _a : 1,
+    per_page: (_b = params.per_page) != null ? _b : 20
+  });
+  const data = await requestJson({ method: "GET", url });
+  return {
+    total_count: data == null ? void 0 : data.total_count,
+    incomplete_results: data == null ? void 0 : data.incomplete_results,
+    items: Array.isArray(data == null ? void 0 : data.items) ? data.items.map((item) => {
+      var _a2;
+      return {
+        number: item.number,
+        title: item.title,
+        state: item.state,
+        html_url: item.html_url,
+        repository: item.repository_url,
+        user: (_a2 = item.user) == null ? void 0 : _a2.login,
+        comments: item.comments,
+        pull_request: Boolean(item.pull_request),
+        updated_at: item.updated_at
+      };
+    }) : []
+  };
+}
+
+// src/github/users.ts
+async function getAuthenticatedUser() {
+  var _a;
+  const data = await requestJson({ method: "GET", url: buildUrl("/user") });
+  return {
+    login: data.login,
+    id: data.id,
+    name: data.name,
+    html_url: data.html_url,
+    type: data.type,
+    company: data.company,
+    public_repos: data.public_repos,
+    total_private_repos: data.total_private_repos,
+    plan: (_a = data.plan) == null ? void 0 : _a.name
+  };
+}
+async function getRateLimit() {
+  var _a, _b, _c;
+  const data = await requestJson({ method: "GET", url: buildUrl("/rate_limit") });
+  const core = ((_a = data == null ? void 0 : data.resources) == null ? void 0 : _a.core) || {};
+  const search = ((_b = data == null ? void 0 : data.resources) == null ? void 0 : _b.search) || {};
+  const graphql = ((_c = data == null ? void 0 : data.resources) == null ? void 0 : _c.graphql) || {};
+  return {
+    core: {
+      limit: core.limit,
+      remaining: core.remaining,
+      reset: core.reset,
+      used: core.used
+    },
+    search: {
+      limit: search.limit,
+      remaining: search.remaining,
+      reset: search.reset,
+      used: search.used
+    },
+    graphql: {
+      limit: graphql.limit,
+      remaining: graphql.remaining,
+      reset: graphql.reset,
+      used: graphql.used
+    }
+  };
+}
+
+// src/github/forks.ts
+async function forkRepository(params) {
+  var _a, _b;
+  requireToken("fork_repository");
+  const url = buildUrl(repoPath(params.owner, params.repo, "/forks"));
+  const data = await requestJson({
+    method: "POST",
+    url,
+    body: {
+      organization: params.organization,
+      name: params.name,
+      default_branch_only: params.default_branch_only
+    }
+  });
+  return {
+    full_name: data.full_name,
+    html_url: data.html_url,
+    default_branch: data.default_branch,
+    parent: (_a = data.parent) == null ? void 0 : _a.full_name,
+    source: (_b = data.source) == null ? void 0 : _b.full_name,
+    private: data.private
+  };
+}
+async function syncFork(params) {
+  requireToken("sync_fork");
+  const url = buildUrl(repoPath(params.owner, params.repo, "/merge-upstream"));
+  const data = await requestJson({
+    method: "POST",
+    url,
+    body: {
+      branch: params.branch
+    }
+  });
+  return {
+    message: data.message,
+    merge_type: data.merge_type,
+    base_branch: data.base_branch
+  };
 }
 
 // src/github/patch.ts
@@ -785,7 +3956,7 @@ async function patchFileInRepo(params) {
   });
 }
 
-// src/local/fileApply.ts
+// src/github/local/fileApply.ts
 async function applyLocalReplace(params) {
   return Tools.Files.apply(params.path, "replace", params.old, params.new, params.environment);
 }
@@ -801,7 +3972,7 @@ async function overwriteLocalFile(params) {
   return Tools.Files.write(params.path, String((_a = params.content) != null ? _a : ""), false, params.environment);
 }
 
-// src/local/terminal.ts
+// src/github/local/terminal.ts
 var terminalSessionId = null;
 async function getTerminalSession(sessionName) {
   if (terminalSessionId) return terminalSessionId;
@@ -819,282 +3990,131 @@ async function terminalExec(params) {
   return result;
 }
 
-// src/tools.ts
-var toolImpl = {
-  search_repositories: (p) => wrap(searchRepositories, p, "\u641C\u7D22\u4ED3\u5E93\u6210\u529F", "\u641C\u7D22\u4ED3\u5E93\u5931\u8D25"),
-  get_repository: (p) => wrap(getRepository, p, "\u83B7\u53D6\u4ED3\u5E93\u4FE1\u606F\u6210\u529F", "\u83B7\u53D6\u4ED3\u5E93\u4FE1\u606F\u5931\u8D25"),
-  list_issues: (p) => wrap(listIssues, p, "\u83B7\u53D6 Issues \u6210\u529F", "\u83B7\u53D6 Issues \u5931\u8D25"),
-  create_issue: (p) => wrap(createIssue, p, "\u521B\u5EFA Issue \u6210\u529F", "\u521B\u5EFA Issue \u5931\u8D25"),
-  comment_issue: (p) => wrap(commentIssue, p, "\u53D1\u8868\u8BC4\u8BBA\u6210\u529F", "\u53D1\u8868\u8BC4\u8BBA\u5931\u8D25"),
-  list_issue_comments: (p) => wrap(listIssueComments, p, "\u83B7\u53D6 Issue \u8BC4\u8BBA\u6210\u529F", "\u83B7\u53D6 Issue \u8BC4\u8BBA\u5931\u8D25"),
-  list_pull_requests: (p) => wrap(listPullRequests, p, "\u83B7\u53D6 PR \u5217\u8868\u6210\u529F", "\u83B7\u53D6 PR \u5217\u8868\u5931\u8D25"),
-  create_pull_request: (p) => wrap(createPullRequest, p, "\u521B\u5EFA PR \u6210\u529F", "\u521B\u5EFA PR \u5931\u8D25"),
-  get_pull_request: (p) => wrap(getPullRequest, p, "\u83B7\u53D6 PR \u6210\u529F", "\u83B7\u53D6 PR \u5931\u8D25"),
-  merge_pull_request: (p) => wrap(mergePullRequest, p, "\u5408\u5E76 PR \u6210\u529F", "\u5408\u5E76 PR \u5931\u8D25"),
-  get_file_content: (p) => wrap(getFileContent, p, "\u8BFB\u53D6\u6587\u4EF6\u6210\u529F", "\u8BFB\u53D6\u6587\u4EF6\u5931\u8D25"),
-  create_or_update_file: (p) => wrap(createOrUpdateFile, p, "\u63D0\u4EA4\u6587\u4EF6\u6210\u529F", "\u63D0\u4EA4\u6587\u4EF6\u5931\u8D25"),
-  delete_file: (p) => wrap(deleteFile, p, "\u5220\u9664\u6587\u4EF6\u6210\u529F", "\u5220\u9664\u6587\u4EF6\u5931\u8D25"),
-  create_branch: (p) => wrap(createBranch, p, "\u521B\u5EFA\u5206\u652F\u6210\u529F", "\u521B\u5EFA\u5206\u652F\u5931\u8D25"),
-  patch_file_in_repo: (p) => wrap(patchFileInRepo, p, "\u4ED3\u5E93\u6587\u4EF6\u5DEE\u5F02\u66F4\u65B0\u6210\u529F", "\u4ED3\u5E93\u6587\u4EF6\u5DEE\u5F02\u66F4\u65B0\u5931\u8D25"),
-  apply_local_replace: (p) => wrap(applyLocalReplace, p, "\u672C\u5730\u5DEE\u5F02\u66F4\u65B0\u6210\u529F", "\u672C\u5730\u5DEE\u5F02\u66F4\u65B0\u5931\u8D25"),
-  apply_local_delete: (p) => wrap(applyLocalDelete, p, "\u672C\u5730\u5220\u9664\u7247\u6BB5\u6210\u529F", "\u672C\u5730\u5220\u9664\u7247\u6BB5\u5931\u8D25"),
-  overwrite_local_file: (p) => wrap(overwriteLocalFile, p, "\u672C\u5730\u8986\u76D6\u5199\u5165\u6210\u529F", "\u672C\u5730\u8986\u76D6\u5199\u5165\u5931\u8D25"),
-  terminal_exec: (p) => wrap(terminalExec, p, "\u7EC8\u7AEF\u6267\u884C\u6210\u529F", "\u7EC8\u7AEF\u6267\u884C\u5931\u8D25")
-};
-
-// src/index.ts
-exports.search_repositories = toolImpl.search_repositories;
-exports.get_repository = toolImpl.get_repository;
-exports.list_issues = toolImpl.list_issues;
-exports.create_issue = toolImpl.create_issue;
-exports.comment_issue = toolImpl.comment_issue;
-exports.list_issue_comments = toolImpl.list_issue_comments;
-exports.list_pull_requests = toolImpl.list_pull_requests;
-exports.create_pull_request = toolImpl.create_pull_request;
-exports.get_pull_request = toolImpl.get_pull_request;
-exports.merge_pull_request = toolImpl.merge_pull_request;
-exports.get_file_content = toolImpl.get_file_content;
-exports.create_or_update_file = toolImpl.create_or_update_file;
-exports.patch_file_in_repo = toolImpl.patch_file_in_repo;
-exports.delete_file = toolImpl.delete_file;
-exports.create_branch = toolImpl.create_branch;
-exports.apply_local_replace = toolImpl.apply_local_replace;
-exports.apply_local_delete = toolImpl.apply_local_delete;
-exports.overwrite_local_file = toolImpl.overwrite_local_file;
-exports.terminal_exec = toolImpl.terminal_exec;
-async function main(params) {
-  var _a, _b, _c;
+// src/utils/wrap.ts
+async function wrap(func, params, successMessage, failMessage) {
   try {
-    const owner = String((params == null ? void 0 : params.owner) || "octocat");
-    const repo = String((params == null ? void 0 : params.repo) || "Hello-World");
-    const query = String((params == null ? void 0 : params.query) || "operit");
-    const path = String((params == null ? void 0 : params.path) || "README.md");
-    const enableWrite = (params == null ? void 0 : params.enable_write) === true;
-    const baseUrl = getBaseUrl();
-    const token = getToken();
-    const results = {};
-    const toErrMsg = (e) => String(e && e.message ? e.message : e);
-    const toErrStack = (e) => String(e && e.stack ? e.stack : "");
-    const run = async (name, fn) => {
-      try {
-        const data = await fn();
-        return { ok: true, data };
-      } catch (e) {
-        return { ok: false, error: toErrMsg(e), error_stack: toErrStack(e) };
-      }
-    };
-    const summarizeRepo = (r) => r ? {
-      id: r.id,
-      full_name: r.full_name,
-      private: r.private,
-      default_branch: r.default_branch
-    } : r;
-    const summarizeList = (items) => ({
-      count: Array.isArray(items) ? items.length : 0,
-      first: Array.isArray(items) && items.length > 0 ? items[0] : null
-    });
-    results.get_repository = await run("get_repository", async () => summarizeRepo(await getRepository({ owner, repo })));
-    results.search_repositories = await run("search_repositories", async () => {
-      const r = await searchRepositories({ query, per_page: 5 });
-      const items = Array.isArray(r == null ? void 0 : r.items) ? r.items : [];
-      return {
-        total_count: r == null ? void 0 : r.total_count,
-        count: items.length,
-        first: items[0] ? { id: items[0].id, full_name: items[0].full_name, stargazers_count: items[0].stargazers_count } : null
-      };
-    });
-    results.list_issues = await run("list_issues", async () => summarizeList(await listIssues({ owner, repo, per_page: 5 })));
-    let issueNumber = typeof (params == null ? void 0 : params.issue_number) === "number" ? params.issue_number : void 0;
-    if (!issueNumber && results.list_issues.ok) {
-      const first = (_a = results.list_issues.data) == null ? void 0 : _a.first;
-      if (first && typeof first.number === "number") issueNumber = first.number;
-    }
-    if (issueNumber) {
-      results.list_issue_comments = await run(
-        "list_issue_comments",
-        async () => summarizeList(await listIssueComments({ owner, repo, issue_number: issueNumber, per_page: 5 }))
-      );
-    } else {
-      results.list_issue_comments = { ok: false, skipped: true, reason: "No issue_number provided and cannot infer from list_issues." };
-    }
-    results.list_pull_requests = await run("list_pull_requests", async () => summarizeList(await listPullRequests({ owner, repo, per_page: 5 })));
-    let pullNumber = typeof (params == null ? void 0 : params.pull_number) === "number" ? params.pull_number : void 0;
-    if (!pullNumber && results.list_pull_requests.ok) {
-      const first = (_b = results.list_pull_requests.data) == null ? void 0 : _b.first;
-      if (first && typeof first.number === "number") pullNumber = first.number;
-    }
-    if (pullNumber) {
-      results.get_pull_request = await run("get_pull_request", async () => {
-        var _a2, _b2;
-        const pr = await getPullRequest({ owner, repo, pull_number: pullNumber });
-        return pr ? {
-          number: pr.number,
-          title: pr.title,
-          state: pr.state,
-          merged: pr.merged,
-          head: (_a2 = pr.head) == null ? void 0 : _a2.ref,
-          base: (_b2 = pr.base) == null ? void 0 : _b2.ref
-        } : pr;
-      });
-    } else {
-      results.get_pull_request = { ok: false, skipped: true, reason: "No pull_number provided and cannot infer from list_pull_requests." };
-    }
-    const inferReadableRepoFilePath = async () => {
-      if (params == null ? void 0 : params.path) {
-        return path;
-      }
-      try {
-        const root = await getFileContent({ owner, repo, path: "" });
-        if (!Array.isArray(root)) {
-          return void 0;
-        }
-        const prefer = ["README.md", "README", "readme.md", "Readme.md", "README.MD"];
-        for (const p of prefer) {
-          const hit = root.find((it) => it && it.type === "file" && String(it.path || it.name || "") === p);
-          if (hit) return String(hit.path || hit.name);
-        }
-        const firstFile = root.find((it) => it && it.type === "file" && (typeof it.path === "string" || typeof it.name === "string"));
-        if (firstFile) return String(firstFile.path || firstFile.name);
-        return void 0;
-      } catch (e) {
-        return void 0;
-      }
-    };
-    const resolvedPath = await inferReadableRepoFilePath();
-    if (!resolvedPath) {
-      results.get_file_content = { ok: false, skipped: true, reason: "No readable file found in repo root for get_file_content test." };
-    } else {
-      results.get_file_content = await run("get_file_content", async () => {
-        const f = await getFileContent({ owner, repo, path: resolvedPath });
-        return f ? {
-          type: f.type,
-          path: f.path,
-          sha: f.sha,
-          size: f.size,
-          has_decoded_text: typeof f.decoded_text === "string" && f.decoded_text.length > 0
-        } : f;
-      });
-    }
-    const writeSkipped = (name, reason) => {
-      results[name] = { ok: false, skipped: true, reason };
-    };
-    if (!enableWrite) {
-      writeSkipped("create_issue", "Skipped: enable_write=false (write operation).");
-      writeSkipped("comment_issue", "Skipped: enable_write=false (write operation).");
-      writeSkipped("create_branch", "Skipped: enable_write=false (write operation).");
-      writeSkipped("create_or_update_file", "Skipped: enable_write=false (write operation).");
-      writeSkipped("patch_file_in_repo", "Skipped: enable_write=false (write operation).");
-      writeSkipped("delete_file", "Skipped: enable_write=false (write operation).");
-      writeSkipped("create_pull_request", "Skipped: enable_write=false (write operation).");
-      writeSkipped("merge_pull_request", "Skipped: enable_write=false (write operation).");
-    } else {
-      const ts = Date.now();
-      const testBranch = `operit-test-${ts}`;
-      const testPath = `operit_test_${ts}.txt`;
-      const baseBranch = (results.get_repository.ok ? (_c = results.get_repository.data) == null ? void 0 : _c.default_branch : void 0) || "main";
-      results.create_branch = await run(
-        "create_branch",
-        async () => createBranch({ owner, repo, new_branch: testBranch, from_branch: baseBranch })
-      );
-      results.create_or_update_file = await run(
-        "create_or_update_file",
-        async () => createOrUpdateFile({
-          owner,
-          repo,
-          path: testPath,
-          message: `operit test create file ${ts}`,
-          content: `operit github tools self-test ${ts}`,
-          content_encoding: "utf-8",
-          branch: testBranch
-        })
-      );
-      results.patch_file_in_repo = await run(
-        "patch_file_in_repo",
-        async () => patchFileInRepo({
-          owner,
-          repo,
-          path: testPath,
-          message: `operit test patch file ${ts}`,
-          patch: `[START-REPLACE]
-[OLD]
-operit github tools self-test ${ts}
-[/OLD]
-[NEW]
-operit github tools self-test ${ts} (patched)
-[/NEW]
-[END-REPLACE]`,
-          branch: testBranch
-        })
-      );
-      results.delete_file = await run("delete_file", async () => {
-        const sha = results.create_or_update_file.ok && results.create_or_update_file.data && results.create_or_update_file.data.content ? results.create_or_update_file.data.content.sha : void 0;
-        if (!sha) {
-          throw new Error("Cannot infer sha from create_or_update_file response; pass sha explicitly if needed.");
-        }
-        return deleteFile({ owner, repo, path: testPath, message: `operit test delete file ${ts}`, branch: testBranch, sha });
-      });
-      const canIssue = Boolean(token) && issueNumber !== void 0;
-      if (!token) {
-        writeSkipped("create_issue", "Skipped: GITHUB_TOKEN missing (required for write operation).");
-      } else {
-        results.create_issue = await run(
-          "create_issue",
-          async () => createIssue({ owner, repo, title: `operit self-test issue ${ts}`, body: `created by operit github tools self-test ${ts}` })
-        );
-      }
-      if (!canIssue) {
-        writeSkipped("comment_issue", "Skipped: need GITHUB_TOKEN and issue_number (or at least one issue from list_issues).");
-      } else {
-        results.comment_issue = await run(
-          "comment_issue",
-          async () => commentIssue({ owner, repo, issue_number: issueNumber, body: `operit self-test comment ${ts}` })
-        );
-      }
-      const prHead = (params == null ? void 0 : params.pr_head) ? String(params.pr_head) : "";
-      const prBase = (params == null ? void 0 : params.pr_base) ? String(params.pr_base) : "";
-      if (!token) {
-        writeSkipped("create_pull_request", "Skipped: GITHUB_TOKEN missing (required for write operation).");
-      } else if (!prHead || !prBase) {
-        writeSkipped("create_pull_request", "Skipped: pr_head/pr_base not provided (required to create PR).");
-      } else {
-        results.create_pull_request = await run(
-          "create_pull_request",
-          async () => createPullRequest({ owner, repo, title: `operit self-test PR ${ts}`, head: prHead, base: prBase, body: `created by operit self-test ${ts}` })
-        );
-      }
-      if (!token) {
-        writeSkipped("merge_pull_request", "Skipped: GITHUB_TOKEN missing (required for write operation).");
-      } else if (!pullNumber) {
-        writeSkipped("merge_pull_request", "Skipped: pull_number missing (required to merge PR).");
-      } else {
-        results.merge_pull_request = await run(
-          "merge_pull_request",
-          async () => mergePullRequest({ owner, repo, pull_number: pullNumber, merge_method: "merge" })
-        );
-      }
-    }
-    const okCount = Object.values(results).filter((r) => r.ok === true).length;
-    const failCount = Object.values(results).filter((r) => r.ok === false && !r.skipped).length;
-    const skippedCount = Object.values(results).filter((r) => r.skipped).length;
-    complete({
-      success: failCount === 0,
-      message: failCount === 0 ? "GitHub tools main test finished." : `GitHub tools main test finished with failures: failed=${failCount}, ok=${okCount}, skipped=${skippedCount}.`,
-      data: {
-        baseUrl,
-        hasToken: Boolean(token),
-        enable_write: enableWrite,
-        owner,
-        repo,
-        summary: { ok: okCount, failed: failCount, skipped: skippedCount },
-        results
-      }
-    });
+    const data = await func(params);
+    const result = { success: true, message: successMessage, data };
+    complete(result);
   } catch (error) {
-    complete({
+    const result = {
       success: false,
-      message: `GitHub tools main test failed: ${String(error && error.message ? error.message : error)}`,
+      message: `${failMessage}: ${String(error && error.message ? error.message : error)}`,
       error_stack: String(error && error.stack ? error.stack : "")
-    });
+    };
+    complete(result);
   }
 }
-exports.main = main;
+
+// src/index.ts
+var toolImpl = {
+  search_repositories: (p) => wrap(searchRepositories, p, "\u641C\u7D22\u4ED3\u5E93\u6210\u529F", "\u641C\u7D22\u4ED3\u5E93\u5931\u8D25"),
+  get_repository: (p) => wrap(searchRepositories, p, "\u83B7\u53D6\u4ED3\u5E93\u6210\u529F", "\u83B7\u53D6\u4ED3\u5E93\u5931\u8D25"),
+  list_issues: (p) => wrap(listIssues, p, "\u5217\u51FA Issues \u6210\u529F", "\u5217\u51FA Issues \u5931\u8D25"),
+  get_issue: (p) => wrap(getIssue, p, "\u83B7\u53D6 Issue \u6210\u529F", "\u83B7\u53D6 Issue \u5931\u8D25"),
+  create_issue: (p) => wrap(createIssue, p, "\u521B\u5EFA Issue \u6210\u529F", "\u521B\u5EFA Issue \u5931\u8D25"),
+  update_issue: (p) => wrap(updateIssue, p, "\u66F4\u65B0 Issue \u6210\u529F", "\u66F4\u65B0 Issue \u5931\u8D25"),
+  comment_issue: (p) => wrap(commentIssue, p, "\u8BC4\u8BBA\u6210\u529F", "\u8BC4\u8BBA\u5931\u8D25"),
+  list_issue_comments: (p) => wrap(listIssueComments, p, "\u5217\u51FA\u8BC4\u8BBA\u6210\u529F", "\u5217\u51FA\u8BC4\u8BBA\u5931\u8D25"),
+  list_pull_requests: (p) => wrap(listPullRequests, p, "\u5217\u51FA PR \u6210\u529F", "\u5217\u51FA PR \u5931\u8D25"),
+  create_pull_request: (p) => wrap(createPullRequest, p, "\u521B\u5EFA PR \u6210\u529F", "\u521B\u5EFA PR \u5931\u8D25"),
+  get_pull_request: (p) => wrap(getPullRequest, p, "\u83B7\u53D6 PR \u6210\u529F", "\u83B7\u53D6 PR \u5931\u8D25"),
+  update_pull_request: (p) => wrap(updatePullRequest, p, "\u66F4\u65B0 PR \u6210\u529F", "\u66F4\u65B0 PR \u5931\u8D25"),
+  merge_pull_request: (p) => wrap(mergePullRequest, p, "\u5408\u5E76 PR \u6210\u529F", "\u5408\u5E76 PR \u5931\u8D25"),
+  list_pull_request_files: (p) => wrap(listPullRequestFiles, p, "\u83B7\u53D6 PR \u6587\u4EF6\u6210\u529F", "\u83B7\u53D6 PR \u6587\u4EF6\u5931\u8D25"),
+  get_pull_request_diff: (p) => wrap(getPullRequestDiff, p, "\u83B7\u53D6 PR diff \u6210\u529F", "\u83B7\u53D6 PR diff \u5931\u8D25"),
+  list_pull_request_commits: (p) => wrap(listPullRequestCommits, p, "\u83B7\u53D6 PR \u63D0\u4EA4\u6210\u529F", "\u83B7\u53D6 PR \u63D0\u4EA4\u5931\u8D25"),
+  list_pull_request_reviews: (p) => wrap(listPullRequestReviews, p, "\u83B7\u53D6 PR review \u6210\u529F", "\u83B7\u53D6 PR review \u5931\u8D25"),
+  list_review_comments: (p) => wrap(listReviewComments, p, "\u83B7\u53D6\u884C\u5185\u8BC4\u8BBA\u6210\u529F", "\u83B7\u53D6\u884C\u5185\u8BC4\u8BBA\u5931\u8D25"),
+  create_review: (p) => wrap(createReview, p, "\u63D0\u4EA4 review \u6210\u529F", "\u63D0\u4EA4 review \u5931\u8D25"),
+  reply_review_comment: (p) => wrap(replyReviewComment, p, "\u56DE\u590D\u8BC4\u8BBA\u6210\u529F", "\u56DE\u590D\u8BC4\u8BBA\u5931\u8D25"),
+  request_reviewers: (p) => wrap(requestReviewers, p, "\u8BF7\u6C42 reviewer \u6210\u529F", "\u8BF7\u6C42 reviewer \u5931\u8D25"),
+  get_file_content: (p) => wrap(getFileContent, p, "\u83B7\u53D6\u6587\u4EF6\u6210\u529F", "\u83B7\u53D6\u6587\u4EF6\u5931\u8D25"),
+  create_or_update_file: (p) => wrap(createOrUpdateFile, p, "\u5199\u5165\u6587\u4EF6\u6210\u529F", "\u5199\u5165\u6587\u4EF6\u5931\u8D25"),
+  delete_file: (p) => wrap(deleteFile, p, "\u5220\u9664\u6587\u4EF6\u6210\u529F", "\u5220\u9664\u6587\u4EF6\u5931\u8D25"),
+  create_branch: (p) => wrap(createBranch, p, "\u521B\u5EFA\u5206\u652F\u6210\u529F", "\u521B\u5EFA\u5206\u652F\u5931\u8D25"),
+  list_branches: (p) => wrap(listBranches, p, "\u5217\u51FA\u5206\u652F\u6210\u529F", "\u5217\u51FA\u5206\u652F\u5931\u8D25"),
+  list_commits: (p) => wrap(listCommits, p, "\u5217\u51FA\u63D0\u4EA4\u6210\u529F", "\u5217\u51FA\u63D0\u4EA4\u5931\u8D25"),
+  get_commit: (p) => wrap(getCommit, p, "\u83B7\u53D6\u63D0\u4EA4\u6210\u529F", "\u83B7\u53D6\u63D0\u4EA4\u5931\u8D25"),
+  compare_refs: (p) => wrap(compareRefs, p, "\u6BD4\u8F83 refs \u6210\u529F", "\u6BD4\u8F83 refs \u5931\u8D25"),
+  get_compare_diff: (p) => wrap(getCompareDiff, p, "\u83B7\u53D6 diff \u6210\u529F", "\u83B7\u53D6 diff \u5931\u8D25"),
+  list_workflows: (p) => wrap(listWorkflows, p, "\u5217\u51FA workflow \u6210\u529F", "\u5217\u51FA workflow \u5931\u8D25"),
+  list_workflow_runs: (p) => wrap(listWorkflowRuns, p, "\u83B7\u53D6 workflow run \u6210\u529F", "\u83B7\u53D6 workflow run \u5931\u8D25"),
+  get_workflow_run: (p) => wrap(getWorkflowRun, p, "\u83B7\u53D6 workflow run \u6210\u529F", "\u83B7\u53D6 workflow run \u5931\u8D25"),
+  trigger_workflow: (p) => wrap(triggerWorkflow, p, "\u89E6\u53D1 workflow \u6210\u529F", "\u89E6\u53D1 workflow \u5931\u8D25"),
+  get_workflow_jobs: (p) => wrap(getWorkflowJobs, p, "\u83B7\u53D6 workflow jobs \u6210\u529F", "\u83B7\u53D6 workflow jobs \u5931\u8D25"),
+  rerun_workflow_run: (p) => wrap(rerunWorkflowRun, p, "\u91CD\u65B0\u8FD0\u884C workflow \u6210\u529F", "\u91CD\u65B0\u8FD0\u884C workflow \u5931\u8D25"),
+  cancel_workflow_run: (p) => wrap(cancelWorkflowRun, p, "\u53D6\u6D88 workflow \u6210\u529F", "\u53D6\u6D88 workflow \u5931\u8D25"),
+  list_check_runs: (p) => wrap(listCheckRuns, p, "\u5217\u51FA check runs \u6210\u529F", "\u5217\u51FA check runs \u5931\u8D25"),
+  search_code: (p) => wrap(searchCode, p, "\u641C\u7D22\u4EE3\u7801\u6210\u529F", "\u641C\u7D22\u4EE3\u7801\u5931\u8D25"),
+  search_issues: (p) => wrap(searchIssues, p, "\u641C\u7D22 Issues \u6210\u529F", "\u641C\u7D22 Issues \u5931\u8D25"),
+  get_authenticated_user: (p) => wrap(getAuthenticatedUser, p, "\u83B7\u53D6\u7528\u6237\u6210\u529F", "\u83B7\u53D6\u7528\u6237\u5931\u8D25"),
+  get_rate_limit: (p) => wrap(getRateLimit, p, "\u83B7\u53D6 rate limit \u6210\u529F", "\u83B7\u53D6 rate limit \u5931\u8D25"),
+  fork_repository: (p) => wrap(forkRepository, p, "fork \u4ED3\u5E93\u6210\u529F", "fork \u4ED3\u5E93\u5931\u8D25"),
+  sync_fork: (p) => wrap(syncFork, p, "\u540C\u6B65 fork \u6210\u529F", "\u540C\u6B65 fork \u5931\u8D25"),
+  patch_file_in_repo: (p) => wrap(patchFileInRepo, p, "patch \u6587\u4EF6\u6210\u529F", "patch \u6587\u4EF6\u5931\u8D25"),
+  apply_local_replace: (p) => wrap(applyLocalReplace, p, "\u672C\u5730\u66FF\u6362\u6210\u529F", "\u672C\u5730\u66FF\u6362\u5931\u8D25"),
+  apply_local_delete: (p) => wrap(applyLocalDelete, p, "\u672C\u5730\u5220\u9664\u6210\u529F", "\u672C\u5730\u5220\u9664\u5931\u8D25"),
+  overwrite_local_file: (p) => wrap(overwriteLocalFile, p, "\u8986\u76D6\u6587\u4EF6\u6210\u529F", "\u8986\u76D6\u6587\u4EF6\u5931\u8D25"),
+  terminal_exec: (p) => wrap(terminalExec, p, "\u7EC8\u7AEF\u6267\u884C\u6210\u529F", "\u7EC8\u7AEF\u6267\u884C\u5931\u8D25")
+};
+async function main(params) {
+  const tool = params == null ? void 0 : params.tool;
+  if (!tool) {
+    return { ok: true, message: "GitHub API package loaded", tools: Object.keys(toolImpl) };
+  }
+  const fn = toolImpl[tool];
+  if (!fn) {
+    return { success: false, message: `Unknown tool: ${tool}`, available: Object.keys(toolImpl) };
+  }
+  return fn(params);
+}
+var search_repositories = toolImpl.search_repositories;
+var get_repository = toolImpl.get_repository;
+var list_issues = toolImpl.list_issues;
+var get_issue = toolImpl.get_issue;
+var create_issue = toolImpl.create_issue;
+var update_issue = toolImpl.update_issue;
+var comment_issue = toolImpl.comment_issue;
+var list_issue_comments = toolImpl.list_issue_comments;
+var list_pull_requests = toolImpl.list_pull_requests;
+var create_pull_request = toolImpl.create_pull_request;
+var get_pull_request = toolImpl.get_pull_request;
+var update_pull_request = toolImpl.update_pull_request;
+var merge_pull_request = toolImpl.merge_pull_request;
+var list_pull_request_files = toolImpl.list_pull_request_files;
+var get_pull_request_diff = toolImpl.get_pull_request_diff;
+var list_pull_request_commits = toolImpl.list_pull_request_commits;
+var list_pull_request_reviews = toolImpl.list_pull_request_reviews;
+var list_review_comments = toolImpl.list_review_comments;
+var create_review = toolImpl.create_review;
+var reply_review_comment = toolImpl.reply_review_comment;
+var request_reviewers = toolImpl.request_reviewers;
+var get_file_content = toolImpl.get_file_content;
+var create_or_update_file = toolImpl.create_or_update_file;
+var delete_file = toolImpl.delete_file;
+var create_branch = toolImpl.create_branch;
+var list_branches = toolImpl.list_branches;
+var list_commits = toolImpl.list_commits;
+var get_commit = toolImpl.get_commit;
+var compare_refs = toolImpl.compare_refs;
+var get_compare_diff = toolImpl.get_compare_diff;
+var list_workflows = toolImpl.list_workflows;
+var list_workflow_runs = toolImpl.list_workflow_runs;
+var get_workflow_run = toolImpl.get_workflow_run;
+var trigger_workflow = toolImpl.trigger_workflow;
+var get_workflow_jobs = toolImpl.get_workflow_jobs;
+var rerun_workflow_run = toolImpl.rerun_workflow_run;
+var cancel_workflow_run = toolImpl.cancel_workflow_run;
+var list_check_runs = toolImpl.list_check_runs;
+var search_code = toolImpl.search_code;
+var search_issues = toolImpl.search_issues;
+var get_authenticated_user = toolImpl.get_authenticated_user;
+var get_rate_limit = toolImpl.get_rate_limit;
+var fork_repository = toolImpl.fork_repository;
+var sync_fork = toolImpl.sync_fork;
+var patch_file_in_repo = toolImpl.patch_file_in_repo;
+var apply_local_replace = toolImpl.apply_local_replace;
+var apply_local_delete = toolImpl.apply_local_delete;
+var overwrite_local_file = toolImpl.overwrite_local_file;
+var terminal_exec = toolImpl.terminal_exec;

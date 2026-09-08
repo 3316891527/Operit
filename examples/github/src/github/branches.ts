@@ -1,4 +1,4 @@
-import { buildUrl, requestJson, getToken } from './api';
+import { buildUrl, requestJson, requireToken } from './api';
 import { getRepository } from './repos';
 
 export type RepoIdParams = {
@@ -27,10 +27,7 @@ async function getBranchHeadSha(params: RepoIdParams & { branch: string }): Prom
 }
 
 export async function createBranch(params: CreateBranchParams): Promise<any> {
-    const token = getToken();
-    if (!token) {
-        throw new Error('GITHUB_TOKEN is required for create_branch.');
-    }
+    requireToken('create_branch');
 
     const fromBranch = params.from_branch ?? String((await getRepository({ owner: params.owner, repo: params.repo }))?.default_branch || 'main');
 

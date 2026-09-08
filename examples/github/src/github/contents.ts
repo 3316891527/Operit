@@ -1,4 +1,4 @@
-import { buildUrl, requestJson, getToken } from './api';
+import { buildUrl, requestJson, requireToken } from './api';
 import { safeAtobBase64, safeBtoaBase64 } from '../utils/base64';
 
 export type RepoIdParams = {
@@ -66,10 +66,7 @@ async function resolveFileSha(params: RepoIdParams & { path: string; branch?: st
 }
 
 export async function createOrUpdateFile(params: CreateOrUpdateFileParams): Promise<any> {
-    const token = getToken();
-    if (!token) {
-        throw new Error('GITHUB_TOKEN is required for create_or_update_file.');
-    }
+    requireToken('create_or_update_file');
 
     const encoding = (params.content_encoding || 'utf-8').toLowerCase();
     const base64Content = encoding === 'base64' ? params.content : safeBtoaBase64(params.content);
@@ -96,10 +93,7 @@ export async function createOrUpdateFile(params: CreateOrUpdateFileParams): Prom
 }
 
 export async function deleteFile(params: DeleteFileParams): Promise<any> {
-    const token = getToken();
-    if (!token) {
-        throw new Error('GITHUB_TOKEN is required for delete_file.');
-    }
+    requireToken('delete_file');
 
     const sha = params.sha ?? (await resolveFileSha({ owner: params.owner, repo: params.repo, path: params.path, branch: params.branch }));
     if (!sha) {
