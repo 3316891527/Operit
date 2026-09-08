@@ -9,56 +9,28 @@ import androidx.compose.ui.graphics.toArgb
  * <html> 状态卡片在 WebView 里渲染时用的完整 HTML 文档。
  *
  * <metric> / <badge> 的图标是 Material Symbols 的连字字形。文档以前用 <link> 去
- * fonts.googleapis.com 取这份字体：卡片文字随文档一起出现，图标却要等整份 5.35 MB 的
+ * fonts.googleapis.com 取这份字体：卡片文字随文档一起出现，图标却要等整份 5.36 MB 的
  * 可变字体下载完才有，弱网下要 10~40 秒，离线时干脆把图标名按原文画出来（issue #930）。
- * 现在字体子集随 APK 打包，用 data: URI 内联进文档，图标和文字同时出现，也不再联网。
+ * 现在完整的静态字体实例随 APK 打包，用 data: URI 内联进文档，图标和文字同时出现，
+ * 也不再联网。
  */
 internal object StatusCardHtmlDocument {
 
-    /** 打包在 assets 里的图标字体，只覆盖 [ICON_NAMES] 里的图标。 */
-    const val ICON_FONT_ASSET: String = "fonts/material_symbols_rounded_subset.woff2"
-
     /**
-     * 字体子集覆盖的图标名，和标签市场「AI状态卡片」提示词里给模型的清单是同一份。
+     * Google Fonts Material Symbols Rounded v370 的完整静态实例。
+     * 四个轴固定为 opsz=24 / wght=400 / FILL=1 / GRAD=0，和下面的渲染样式一致。
+     * 该 WOFF2 为 456,052 字节；同版本、同样完整图标范围的四轴可变字体为 5,360,840 字节。
      *
-     * 增删图标要同时改这里、改那份提示词，并用同一批名字重新生成字体
-     * （列表保持排序去重，下面这个地址才是可复现的）：
-     * https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&icon_names=<逗号分隔的名字>
+     * 字体来源：
+     * https://fonts.gstatic.com/s/materialsymbolsrounded/v370/syl0-zNym6YjUruM-QrEh7-nyTnjDwKNJ_190FjpZIvDmUSVOK7BDJ_vb9vUSzq3wzLK-P0J-V_Zs-QtQth3-jOcbTCVpeRL2w5rwZu2rIelXxc.woff2
+     * 对应 CSS：
+     * https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=block
+     * SHA-256：19a71b30e6267416493a0e4e925a6f14be60a9c3a83148a0dc0dcf507a8fb382
      *
-     * 四个轴都钉成单值（opsz=24 / wght=400 / FILL=1 / GRAD=0），取回来的是静态实例，
-     * 和下面 .material-symbols-rounded 的 font-variation-settings 一致；同样这 140 个图标，
-     * 带全部轴插值数据的可变字体要大 9 倍。
+     * 保留完整字体很重要：状态卡片 renderer 一直接受任意合法 Material Symbols 名称，
+     * 历史消息和已安装的旧标签也可能包含当前内置示例没有列出的图标。
      */
-    val ICON_NAMES: List<String> = listOf(
-        "account_circle", "alarm", "analytics", "auto_awesome", "autorenew",
-        "badge", "bar_chart", "battery_alert", "battery_charging_full", "battery_full",
-        "bedtime", "block", "bolt", "book", "bookmark",
-        "bug_report", "build", "calendar_month", "campaign", "cancel",
-        "celebration", "chat", "check_circle", "close", "cloud",
-        "cloud_done", "cloud_off", "code", "construction", "dark_mode",
-        "data_usage", "description", "developer_board", "diamond", "directions_run",
-        "done_all", "draw", "eco", "edit", "electric_bolt",
-        "emoji_emotions", "emoji_events", "error", "event", "explore",
-        "extension", "face", "favorite", "flight", "forum",
-        "grade", "group", "groups", "handshake", "help",
-        "history", "home", "hourglass_empty", "hourglass_top", "hub",
-        "image", "info", "insights", "key", "leaderboard",
-        "light_mode", "lightbulb", "local_cafe", "local_fire_department", "lock",
-        "map", "memory", "menu_book", "military_tech", "monitor_heart",
-        "monitoring", "mood", "mood_bad", "music_note", "neurology",
-        "notifications", "palette", "park", "pause", "pending",
-        "person", "person_search", "pets", "pie_chart", "place",
-        "play_arrow", "priority_high", "psychology", "psychology_alt", "public",
-        "query_stats", "refresh", "report", "restaurant", "rocket_launch",
-        "schedule", "science", "search", "security", "self_improvement",
-        "sentiment_dissatisfied", "sentiment_neutral", "sentiment_satisfied", "sentiment_very_dissatisfied", "sentiment_very_satisfied",
-        "settings", "shield", "show_chart", "smart_toy", "speed",
-        "star", "storage", "sync", "task_alt", "terminal",
-        "thermostat", "thumb_down", "thumb_up", "timeline", "timer",
-        "tips_and_updates", "today", "translate", "travel_explore", "trending_down",
-        "trending_up", "tune", "update", "verified", "visibility",
-        "water_drop", "waving_hand", "wifi", "wifi_off", "workspace_premium",
-    )
+    const val ICON_FONT_ASSET: String = "fonts/material_symbols_rounded_static.woff2"
 
     @Volatile
     private var cachedIconFontBase64: String? = null
