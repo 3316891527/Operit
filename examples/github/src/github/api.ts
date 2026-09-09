@@ -17,6 +17,28 @@ export function getBaseUrl(): string {
     return (fromEnv && String(fromEnv).trim()) || 'https://api.github.com';
 }
 
+export function getUploadsBaseUrl(): string {
+    const fromEnv = (typeof getEnv === 'function' ? getEnv('GITHUB_UPLOADS_BASE_URL') : undefined) || '';
+    const trimmed = String(fromEnv || '').trim().replace(/\/+$/, '');
+    if (trimmed) return trimmed;
+    const api = getBaseUrl().replace(/\/+$/, '');
+    if (api === 'https://api.github.com') return 'https://uploads.github.com';
+    return api;
+}
+
+export function parseBool(value: any): boolean | undefined {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'boolean') return value;
+    const s = String(value).trim().toLowerCase();
+    if (s === 'true' || s === '1' || s === 'yes') return true;
+    if (s === 'false' || s === '0' || s === 'no') return false;
+    return undefined;
+}
+
+export function shellQuote(value: string): string {
+    return "'" + String(value ?? '').replace(/'/g, "'\''") + "'";
+}
+
 export function getToken(): string | undefined {
     const token = (typeof getEnv === 'function' ? getEnv('GITHUB_TOKEN') : undefined) || '';
     const trimmed = String(token || '').trim();

@@ -1,3 +1,10 @@
+import { listReleases, getRelease, getLatestRelease, getReleaseByTag, createRelease, updateRelease, deleteRelease, uploadReleaseAsset, deleteReleaseAsset } from './github/releases';
+import { listWebhooks, getWebhook, createWebhook, updateWebhook, deleteWebhook, pingWebhook } from './github/webhooks';
+import { listCollaborators, checkCollaborator, addCollaborator, removeCollaborator, getCollaboratorPermission } from './github/collaborators';
+import { listLabels, getLabel, createLabel, updateLabel, deleteLabel } from './github/labels';
+import { listMilestones, getMilestone, createMilestone, updateMilestone, deleteMilestone } from './github/milestones';
+import { getBranchProtection, updateBranchProtection, deleteBranchProtection } from './github/protection';
+import { getContributorsStats, getCommitActivity, getCodeFrequency } from './github/stats';
 import { wrap } from './utils/wrap';
 import { searchRepositories, getRepository } from './github/repos';
 import { listIssues, getIssue, createIssue, updateIssue, commentIssue, listIssueComments } from './github/issues';
@@ -92,5 +99,41 @@ export const toolImpl = {
     apply_local_replace: (p: any) => wrap(applyLocalReplace as any, p, '本地差异更新成功', '本地差异更新失败'),
     apply_local_delete: (p: any) => wrap(applyLocalDelete as any, p, '本地删除片段成功', '本地删除片段失败'),
     overwrite_local_file: (p: any) => wrap(overwriteLocalFile as any, p, '本地覆盖写入成功', '本地覆盖写入失败'),
-    terminal_exec: (p: any) => wrap(terminalExec as any, p, '终端执行成功', '终端执行失败')
+    terminal_exec: (p: any) => wrap(terminalExec as any, p, '终端执行成功', '终端执行失败'),
+    list_releases: (p: any) => wrap(listReleases as any, p, '列出 Releases 成功', '列出 Releases 失败'),
+    get_release: (p: any) => wrap(getRelease as any, p, '获取 Release 成功', '获取 Release 失败'),
+    get_latest_release: (p: any) => wrap(getLatestRelease as any, p, '获取最新 Release 成功', '获取最新 Release 失败'),
+    get_release_by_tag: (p: any) => wrap(getReleaseByTag as any, p, '按 tag 获取 Release 成功', '按 tag 获取 Release 失败'),
+    create_release: (p: any) => wrap(createRelease as any, p, '创建 Release 成功', '创建 Release 失败'),
+    update_release: (p: any) => wrap(updateRelease as any, p, '更新 Release 成功', '更新 Release 失败'),
+    delete_release: (p: any) => wrap(deleteRelease as any, p, '删除 Release 成功', '删除 Release 失败'),
+    upload_release_asset: (p: any) => wrap(uploadReleaseAsset as any, p, '上传 Release 资产成功', '上传 Release 资产失败'),
+    delete_release_asset: (p: any) => wrap(deleteReleaseAsset as any, p, '删除 Release 资产成功', '删除 Release 资产失败'),
+    list_webhooks: (p: any) => wrap(listWebhooks as any, p, '列出 Webhooks 成功', '列出 Webhooks 失败'),
+    get_webhook: (p: any) => wrap(getWebhook as any, p, '获取 Webhook 成功', '获取 Webhook 失败'),
+    create_webhook: (p: any) => wrap(createWebhook as any, p, '创建 Webhook 成功', '创建 Webhook 失败'),
+    update_webhook: (p: any) => wrap(updateWebhook as any, p, '更新 Webhook 成功', '更新 Webhook 失败'),
+    delete_webhook: (p: any) => wrap(deleteWebhook as any, p, '删除 Webhook 成功', '删除 Webhook 失败'),
+    ping_webhook: (p: any) => wrap(pingWebhook as any, p, 'ping Webhook 成功', 'ping Webhook 失败'),
+    list_collaborators: (p: any) => wrap(listCollaborators as any, p, '列出协作者成功', '列出协作者失败'),
+    check_collaborator: (p: any) => wrap(checkCollaborator as any, p, '检查协作者成功', '检查协作者失败'),
+    add_collaborator: (p: any) => wrap(addCollaborator as any, p, '添加协作者成功', '添加协作者失败'),
+    remove_collaborator: (p: any) => wrap(removeCollaborator as any, p, '移除协作者成功', '移除协作者失败'),
+    get_collaborator_permission: (p: any) => wrap(getCollaboratorPermission as any, p, '获取协作者权限成功', '获取协作者权限失败'),
+    list_labels: (p: any) => wrap(listLabels as any, p, '列出 Labels 成功', '列出 Labels 失败'),
+    get_label: (p: any) => wrap(getLabel as any, p, '获取 Label 成功', '获取 Label 失败'),
+    create_label: (p: any) => wrap(createLabel as any, p, '创建 Label 成功', '创建 Label 失败'),
+    update_label: (p: any) => wrap(updateLabel as any, p, '更新 Label 成功', '更新 Label 失败'),
+    delete_label: (p: any) => wrap(deleteLabel as any, p, '删除 Label 成功', '删除 Label 失败'),
+    list_milestones: (p: any) => wrap(listMilestones as any, p, '列出 Milestones 成功', '列出 Milestones 失败'),
+    get_milestone: (p: any) => wrap(getMilestone as any, p, '获取 Milestone 成功', '获取 Milestone 失败'),
+    create_milestone: (p: any) => wrap(createMilestone as any, p, '创建 Milestone 成功', '创建 Milestone 失败'),
+    update_milestone: (p: any) => wrap(updateMilestone as any, p, '更新 Milestone 成功', '更新 Milestone 失败'),
+    delete_milestone: (p: any) => wrap(deleteMilestone as any, p, '删除 Milestone 成功', '删除 Milestone 失败'),
+    get_branch_protection: (p: any) => wrap(getBranchProtection as any, p, '获取分支保护成功', '获取分支保护失败'),
+    update_branch_protection: (p: any) => wrap(updateBranchProtection as any, p, '更新分支保护成功', '更新分支保护失败'),
+    delete_branch_protection: (p: any) => wrap(deleteBranchProtection as any, p, '删除分支保护成功', '删除分支保护失败'),
+    get_contributors_stats: (p: any) => wrap(getContributorsStats as any, p, '获取贡献者统计成功', '获取贡献者统计失败'),
+    get_commit_activity: (p: any) => wrap(getCommitActivity as any, p, '获取提交活动成功', '获取提交活动失败'),
+    get_code_frequency: (p: any) => wrap(getCodeFrequency as any, p, '获取代码频率成功', '获取代码频率失败')
 };

@@ -6,8 +6,8 @@
     "en": "GitHub API"
   },
   "description": {
-    "zh": "基于 GitHub REST API 的工具集合（不依赖 GitHub MCP）。包含 GitHub 侧（仓库/Issues/PR/文件提交/分支/差异/Actions/搜索/fork）与本地侧（apply_file 差异更新、terminal 终端）能力。",
-    "en": "A toolkit built on the GitHub REST API (does not depend on GitHub MCP). Includes GitHub-side operations (repos/issues/PRs/commits/branches/diffs/Actions/search/fork) and local-side utilities (apply_file patch updates, terminal)."
+    "zh": "基于 GitHub REST API 的工具集合（不依赖 GitHub MCP）。包含 GitHub 侧（仓库/Issues/PR/文件提交/分支/差异/Actions/Releases/Webhooks/协作者/Labels/Milestones/分支保护/统计/搜索/fork）与本地侧（apply_file 差异更新、terminal 终端）能力。",
+    "en": "A toolkit built on the GitHub REST API (does not depend on GitHub MCP). Includes GitHub-side operations (repos/issues/PRs/commits/branches/diffs/Actions/releases/webhooks/collaborators/labels/milestones/branch protection/stats/search/fork) and local-side utilities (apply_file patch updates, terminal)."
   },
   "category": "Development",
   "env": [
@@ -27,6 +27,15 @@
       },
       "required": false,
       "defaultValue": "https://api.github.com"
+    },
+    {
+      "name": "GITHUB_UPLOADS_BASE_URL",
+      "description": {
+        "zh": "GitHub Release 资产上传基础 URL（默认 https://uploads.github.com）",
+        "en": "GitHub release asset upload base URL (default: https://uploads.github.com)."
+      },
+      "required": false,
+      "defaultValue": "https://uploads.github.com"
     }
   ],
   "enabledByDefault": false,
@@ -2656,6 +2665,1806 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "list_releases",
+      "description": {
+        "zh": "列出仓库 Releases。",
+        "en": "List repository releases."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "page",
+          "description": {
+            "zh": "页码（默认 1）",
+            "en": "Page number (default: 1)."
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "description": {
+            "zh": "每页数量（默认 30）",
+            "en": "Items per page (default: 30)."
+          },
+          "type": "number",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "get_release",
+      "description": {
+        "zh": "获取指定 Release。",
+        "en": "Get a release."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "release_id",
+          "description": {
+            "zh": "Release ID",
+            "en": "Release ID."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_latest_release",
+      "description": {
+        "zh": "获取最新的正式 Release。",
+        "en": "Get the latest release."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_release_by_tag",
+      "description": {
+        "zh": "按 tag 获取 Release。",
+        "en": "Get a release by tag."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "tag",
+          "description": {
+            "zh": "Git tag 名称",
+            "en": "Git tag name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "create_release",
+      "description": {
+        "zh": "创建 Release。",
+        "en": "Create a release."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "tag_name",
+          "description": {
+            "zh": "tag 名称",
+            "en": "Tag name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "target_commitish",
+          "description": {
+            "zh": "目标分支或 commit",
+            "en": "Target branch or commit."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "Release 标题",
+            "en": "Release name."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "body",
+          "description": {
+            "zh": "Release 描述",
+            "en": "Release body."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "draft",
+          "description": {
+            "zh": "是否草稿",
+            "en": "Whether draft."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "prerelease",
+          "description": {
+            "zh": "是否预发布",
+            "en": "Whether prerelease."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "generate_release_notes",
+          "description": {
+            "zh": "是否自动生成说明",
+            "en": "Whether to generate release notes."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "make_latest",
+          "description": {
+            "zh": "latest 标记：true/false/legacy",
+            "en": "Latest marker: true/false/legacy."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "discussion_category_name",
+          "description": {
+            "zh": "Discussion 分类名",
+            "en": "Discussion category name."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "update_release",
+      "description": {
+        "zh": "更新 Release。",
+        "en": "Update a release."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "release_id",
+          "description": {
+            "zh": "Release ID",
+            "en": "Release ID."
+          },
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "tag_name",
+          "description": {
+            "zh": "tag 名称",
+            "en": "Tag name."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "target_commitish",
+          "description": {
+            "zh": "目标分支或 commit",
+            "en": "Target branch or commit."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "Release 标题",
+            "en": "Release name."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "body",
+          "description": {
+            "zh": "Release 描述",
+            "en": "Release body."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "draft",
+          "description": {
+            "zh": "是否草稿",
+            "en": "Whether draft."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "prerelease",
+          "description": {
+            "zh": "是否预发布",
+            "en": "Whether prerelease."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "make_latest",
+          "description": {
+            "zh": "latest 标记：true/false/legacy",
+            "en": "Latest marker: true/false/legacy."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "discussion_category_name",
+          "description": {
+            "zh": "Discussion 分类名",
+            "en": "Discussion category name."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_release",
+      "description": {
+        "zh": "删除 Release。",
+        "en": "Delete a release."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "release_id",
+          "description": {
+            "zh": "Release ID",
+            "en": "Release ID."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "upload_release_asset",
+      "description": {
+        "zh": "向 Release 上传本地文件资产。",
+        "en": "Upload a local file as a release asset."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "release_id",
+          "description": {
+            "zh": "Release ID",
+            "en": "Release ID."
+          },
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "asset_path",
+          "description": {
+            "zh": "本地资产路径",
+            "en": "Local asset path."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "上传后的文件名（默认取路径文件名）",
+            "en": "Uploaded filename (defaults to the path basename)."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "label",
+          "description": {
+            "zh": "资产说明",
+            "en": "Asset label."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "content_type",
+          "description": {
+            "zh": "MIME 类型（默认 application/octet-stream）",
+            "en": "MIME type (default application/octet-stream)."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "environment",
+          "description": {
+            "zh": "文件环境：android 或 linux",
+            "en": "File environment: android or linux."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_release_asset",
+      "description": {
+        "zh": "删除 Release 资产。",
+        "en": "Delete a release asset."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "asset_id",
+          "description": {
+            "zh": "资产 ID",
+            "en": "Asset ID."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "list_webhooks",
+      "description": {
+        "zh": "列出仓库 Webhooks。",
+        "en": "List repository webhooks."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "page",
+          "description": {
+            "zh": "页码（默认 1）",
+            "en": "Page number (default: 1)."
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "description": {
+            "zh": "每页数量（默认 30）",
+            "en": "Items per page (default: 30)."
+          },
+          "type": "number",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "get_webhook",
+      "description": {
+        "zh": "获取仓库 Webhook。",
+        "en": "Get a repository webhook."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "hook_id",
+          "description": {
+            "zh": "Webhook ID",
+            "en": "Webhook ID."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "create_webhook",
+      "description": {
+        "zh": "创建仓库 Webhook。",
+        "en": "Create a repository webhook."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "url",
+          "description": {
+            "zh": "Webhook 接收 URL",
+            "en": "Webhook receiver URL."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "content_type",
+          "description": {
+            "zh": "内容类型：json 或 form",
+            "en": "Content type: json or form."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "secret",
+          "description": {
+            "zh": "Webhook secret",
+            "en": "Webhook secret."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "insecure_ssl",
+          "description": {
+            "zh": "是否允许不安全 SSL",
+            "en": "Whether to allow insecure SSL."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "events",
+          "description": {
+            "zh": "事件列表，逗号分隔或数组",
+            "en": "Events, comma-separated or array."
+          },
+          "type": "array",
+          "required": false
+        },
+        {
+          "name": "active",
+          "description": {
+            "zh": "是否启用",
+            "en": "Whether active."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "config",
+          "description": {
+            "zh": "额外 config JSON",
+            "en": "Additional config JSON."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "update_webhook",
+      "description": {
+        "zh": "更新仓库 Webhook。",
+        "en": "Update a repository webhook."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "hook_id",
+          "description": {
+            "zh": "Webhook ID",
+            "en": "Webhook ID."
+          },
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "url",
+          "description": {
+            "zh": "Webhook 接收 URL",
+            "en": "Webhook receiver URL."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "content_type",
+          "description": {
+            "zh": "内容类型：json 或 form",
+            "en": "Content type: json or form."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "secret",
+          "description": {
+            "zh": "Webhook secret",
+            "en": "Webhook secret."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "insecure_ssl",
+          "description": {
+            "zh": "是否允许不安全 SSL",
+            "en": "Whether to allow insecure SSL."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "events",
+          "description": {
+            "zh": "完整事件列表，逗号分隔或数组",
+            "en": "Complete event list, comma-separated or array."
+          },
+          "type": "array",
+          "required": false
+        },
+        {
+          "name": "add_events",
+          "description": {
+            "zh": "追加事件列表",
+            "en": "Events to add."
+          },
+          "type": "array",
+          "required": false
+        },
+        {
+          "name": "remove_events",
+          "description": {
+            "zh": "移除事件列表",
+            "en": "Events to remove."
+          },
+          "type": "array",
+          "required": false
+        },
+        {
+          "name": "active",
+          "description": {
+            "zh": "是否启用",
+            "en": "Whether active."
+          },
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "config",
+          "description": {
+            "zh": "额外 config JSON",
+            "en": "Additional config JSON."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_webhook",
+      "description": {
+        "zh": "删除仓库 Webhook。",
+        "en": "Delete a repository webhook."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "hook_id",
+          "description": {
+            "zh": "Webhook ID",
+            "en": "Webhook ID."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "ping_webhook",
+      "description": {
+        "zh": "向仓库 Webhook 发送 ping。",
+        "en": "Ping a repository webhook."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "hook_id",
+          "description": {
+            "zh": "Webhook ID",
+            "en": "Webhook ID."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "list_collaborators",
+      "description": {
+        "zh": "列出仓库协作者。",
+        "en": "List repository collaborators."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "affiliation",
+          "description": {
+            "zh": "筛选：outside/direct/all",
+            "en": "Filter: outside/direct/all."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "permission",
+          "description": {
+            "zh": "权限筛选：pull/triage/push/maintain/admin",
+            "en": "Permission filter: pull/triage/push/maintain/admin."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "page",
+          "description": {
+            "zh": "页码（默认 1）",
+            "en": "Page number (default: 1)."
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "description": {
+            "zh": "每页数量（默认 30）",
+            "en": "Items per page (default: 30)."
+          },
+          "type": "number",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "check_collaborator",
+      "description": {
+        "zh": "检查用户是否为仓库协作者。",
+        "en": "Check whether a user is a repository collaborator."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "username",
+          "description": {
+            "zh": "GitHub 用户名",
+            "en": "GitHub username."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "add_collaborator",
+      "description": {
+        "zh": "添加仓库协作者。",
+        "en": "Add a repository collaborator."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "username",
+          "description": {
+            "zh": "GitHub 用户名",
+            "en": "GitHub username."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "permission",
+          "description": {
+            "zh": "权限：pull/triage/push/maintain/admin",
+            "en": "Permission: pull/triage/push/maintain/admin."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "remove_collaborator",
+      "description": {
+        "zh": "移除仓库协作者。",
+        "en": "Remove a repository collaborator."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "username",
+          "description": {
+            "zh": "GitHub 用户名",
+            "en": "GitHub username."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_collaborator_permission",
+      "description": {
+        "zh": "获取用户在仓库中的权限。",
+        "en": "Get repository permissions for a user."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "username",
+          "description": {
+            "zh": "GitHub 用户名",
+            "en": "GitHub username."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "list_labels",
+      "description": {
+        "zh": "列出仓库 Labels。",
+        "en": "List repository labels."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "page",
+          "description": {
+            "zh": "页码（默认 1）",
+            "en": "Page number (default: 1)."
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "description": {
+            "zh": "每页数量（默认 30）",
+            "en": "Items per page (default: 30)."
+          },
+          "type": "number",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "get_label",
+      "description": {
+        "zh": "获取仓库 Label。",
+        "en": "Get a repository label."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "Label 名称",
+            "en": "Label name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "create_label",
+      "description": {
+        "zh": "创建仓库 Label。",
+        "en": "Create a repository label."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "Label 名称",
+            "en": "Label name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "color",
+          "description": {
+            "zh": "六位十六进制颜色，可带 #",
+            "en": "Six-digit hexadecimal color, with optional #."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "description",
+          "description": {
+            "zh": "Label 描述",
+            "en": "Label description."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "update_label",
+      "description": {
+        "zh": "更新仓库 Label。",
+        "en": "Update a repository label."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "当前 Label 名称",
+            "en": "Current label name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "new_name",
+          "description": {
+            "zh": "新 Label 名称",
+            "en": "New label name."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "color",
+          "description": {
+            "zh": "六位十六进制颜色，可带 #",
+            "en": "Six-digit hexadecimal color, with optional #."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "description",
+          "description": {
+            "zh": "Label 描述",
+            "en": "Label description."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_label",
+      "description": {
+        "zh": "删除仓库 Label。",
+        "en": "Delete a repository label."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "description": {
+            "zh": "Label 名称",
+            "en": "Label name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "list_milestones",
+      "description": {
+        "zh": "列出仓库 Milestones。",
+        "en": "List repository milestones."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "state",
+          "description": {
+            "zh": "状态：open/closed/all",
+            "en": "State: open/closed/all."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "description": {
+            "zh": "排序：due_on/completeness",
+            "en": "Sort: due_on/completeness."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "direction",
+          "description": {
+            "zh": "方向：asc/desc",
+            "en": "Direction: asc/desc."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "page",
+          "description": {
+            "zh": "页码（默认 1）",
+            "en": "Page number (default: 1)."
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "description": {
+            "zh": "每页数量（默认 30）",
+            "en": "Items per page (default: 30)."
+          },
+          "type": "number",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "get_milestone",
+      "description": {
+        "zh": "获取 Milestone。",
+        "en": "Get a milestone."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "milestone_number",
+          "description": {
+            "zh": "Milestone 编号",
+            "en": "Milestone number."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "create_milestone",
+      "description": {
+        "zh": "创建 Milestone。",
+        "en": "Create a milestone."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "title",
+          "description": {
+            "zh": "Milestone 标题",
+            "en": "Milestone title."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "state",
+          "description": {
+            "zh": "状态：open/closed",
+            "en": "State: open/closed."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "description",
+          "description": {
+            "zh": "Milestone 描述",
+            "en": "Milestone description."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "due_on",
+          "description": {
+            "zh": "截止时间，ISO 8601",
+            "en": "Due date, ISO 8601."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "update_milestone",
+      "description": {
+        "zh": "更新 Milestone。",
+        "en": "Update a milestone."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "milestone_number",
+          "description": {
+            "zh": "Milestone 编号",
+            "en": "Milestone number."
+          },
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "title",
+          "description": {
+            "zh": "Milestone 标题",
+            "en": "Milestone title."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "state",
+          "description": {
+            "zh": "状态：open/closed",
+            "en": "State: open/closed."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "description",
+          "description": {
+            "zh": "Milestone 描述",
+            "en": "Milestone description."
+          },
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "due_on",
+          "description": {
+            "zh": "截止时间，ISO 8601",
+            "en": "Due date, ISO 8601."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_milestone",
+      "description": {
+        "zh": "删除 Milestone。",
+        "en": "Delete a milestone."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "milestone_number",
+          "description": {
+            "zh": "Milestone 编号",
+            "en": "Milestone number."
+          },
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_branch_protection",
+      "description": {
+        "zh": "获取分支保护规则。",
+        "en": "Get branch protection."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "description": {
+            "zh": "分支名",
+            "en": "Branch name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "update_branch_protection",
+      "description": {
+        "zh": "更新分支保护规则。protection 需传 GitHub PUT 接口要求的完整 JSON。",
+        "en": "Update branch protection. protection must be the complete JSON body required by the GitHub PUT endpoint."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "description": {
+            "zh": "分支名",
+            "en": "Branch name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "protection",
+          "description": {
+            "zh": "分支保护 JSON 对象或 JSON 字符串",
+            "en": "Branch protection JSON object or JSON string."
+          },
+          "type": "object",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "delete_branch_protection",
+      "description": {
+        "zh": "删除分支保护规则。",
+        "en": "Delete branch protection."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "description": {
+            "zh": "分支名",
+            "en": "Branch name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_contributors_stats",
+      "description": {
+        "zh": "获取仓库贡献者统计。",
+        "en": "Get repository contributor statistics."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_commit_activity",
+      "description": {
+        "zh": "获取最近一年按周提交活动。",
+        "en": "Get the last year of weekly commit activity."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "get_code_frequency",
+      "description": {
+        "zh": "获取每周代码增删统计。",
+        "en": "Get weekly code additions and deletions."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        }
+      ]
     }
   ]
 }
@@ -2674,6 +4483,13 @@ import { forkRepository, syncFork } from './github/forks';
 import { patchFileInRepo } from './github/patch';
 import { applyLocalReplace, applyLocalDelete, overwriteLocalFile } from './github/local/fileApply';
 import { terminalExec } from './github/local/terminal';
+import { listReleases, getRelease, getLatestRelease, getReleaseByTag, createRelease, updateRelease, deleteRelease, uploadReleaseAsset, deleteReleaseAsset } from './github/releases';
+import { listWebhooks, getWebhook, createWebhook, updateWebhook, deleteWebhook, pingWebhook } from './github/webhooks';
+import { listCollaborators, checkCollaborator, addCollaborator, removeCollaborator, getCollaboratorPermission } from './github/collaborators';
+import { listLabels, getLabel, createLabel, updateLabel, deleteLabel } from './github/labels';
+import { listMilestones, getMilestone, createMilestone, updateMilestone, deleteMilestone } from './github/milestones';
+import { getBranchProtection, updateBranchProtection, deleteBranchProtection } from './github/protection';
+import { getContributorsStats, getCommitActivity, getCodeFrequency } from './github/stats';
 import { wrap } from './utils/wrap';
 
 export const toolImpl: Record<string, (params: any) => Promise<any>> = {
@@ -2725,7 +4541,43 @@ export const toolImpl: Record<string, (params: any) => Promise<any>> = {
     apply_local_replace: (p) => wrap(applyLocalReplace as any, p, '本地替换成功', '本地替换失败'),
     apply_local_delete: (p) => wrap(applyLocalDelete as any, p, '本地删除成功', '本地删除失败'),
     overwrite_local_file: (p) => wrap(overwriteLocalFile as any, p, '覆盖文件成功', '覆盖文件失败'),
-    terminal_exec: (p) => wrap(terminalExec as any, p, '终端执行成功', '终端执行失败')
+    terminal_exec: (p) => wrap(terminalExec as any, p, '终端执行成功', '终端执行失败'),
+    list_releases: (p) => wrap(listReleases as any, p, '列出 Releases 成功', '列出 Releases 失败'),
+    get_release: (p) => wrap(getRelease as any, p, '获取 Release 成功', '获取 Release 失败'),
+    get_latest_release: (p) => wrap(getLatestRelease as any, p, '获取最新 Release 成功', '获取最新 Release 失败'),
+    get_release_by_tag: (p) => wrap(getReleaseByTag as any, p, '按 tag 获取 Release 成功', '按 tag 获取 Release 失败'),
+    create_release: (p) => wrap(createRelease as any, p, '创建 Release 成功', '创建 Release 失败'),
+    update_release: (p) => wrap(updateRelease as any, p, '更新 Release 成功', '更新 Release 失败'),
+    delete_release: (p) => wrap(deleteRelease as any, p, '删除 Release 成功', '删除 Release 失败'),
+    upload_release_asset: (p) => wrap(uploadReleaseAsset as any, p, '上传 Release 资产成功', '上传 Release 资产失败'),
+    delete_release_asset: (p) => wrap(deleteReleaseAsset as any, p, '删除 Release 资产成功', '删除 Release 资产失败'),
+    list_webhooks: (p) => wrap(listWebhooks as any, p, '列出 Webhooks 成功', '列出 Webhooks 失败'),
+    get_webhook: (p) => wrap(getWebhook as any, p, '获取 Webhook 成功', '获取 Webhook 失败'),
+    create_webhook: (p) => wrap(createWebhook as any, p, '创建 Webhook 成功', '创建 Webhook 失败'),
+    update_webhook: (p) => wrap(updateWebhook as any, p, '更新 Webhook 成功', '更新 Webhook 失败'),
+    delete_webhook: (p) => wrap(deleteWebhook as any, p, '删除 Webhook 成功', '删除 Webhook 失败'),
+    ping_webhook: (p) => wrap(pingWebhook as any, p, 'ping Webhook 成功', 'ping Webhook 失败'),
+    list_collaborators: (p) => wrap(listCollaborators as any, p, '列出协作者成功', '列出协作者失败'),
+    check_collaborator: (p) => wrap(checkCollaborator as any, p, '检查协作者成功', '检查协作者失败'),
+    add_collaborator: (p) => wrap(addCollaborator as any, p, '添加协作者成功', '添加协作者失败'),
+    remove_collaborator: (p) => wrap(removeCollaborator as any, p, '移除协作者成功', '移除协作者失败'),
+    get_collaborator_permission: (p) => wrap(getCollaboratorPermission as any, p, '获取协作者权限成功', '获取协作者权限失败'),
+    list_labels: (p) => wrap(listLabels as any, p, '列出 Labels 成功', '列出 Labels 失败'),
+    get_label: (p) => wrap(getLabel as any, p, '获取 Label 成功', '获取 Label 失败'),
+    create_label: (p) => wrap(createLabel as any, p, '创建 Label 成功', '创建 Label 失败'),
+    update_label: (p) => wrap(updateLabel as any, p, '更新 Label 成功', '更新 Label 失败'),
+    delete_label: (p) => wrap(deleteLabel as any, p, '删除 Label 成功', '删除 Label 失败'),
+    list_milestones: (p) => wrap(listMilestones as any, p, '列出 Milestones 成功', '列出 Milestones 失败'),
+    get_milestone: (p) => wrap(getMilestone as any, p, '获取 Milestone 成功', '获取 Milestone 失败'),
+    create_milestone: (p) => wrap(createMilestone as any, p, '创建 Milestone 成功', '创建 Milestone 失败'),
+    update_milestone: (p) => wrap(updateMilestone as any, p, '更新 Milestone 成功', '更新 Milestone 失败'),
+    delete_milestone: (p) => wrap(deleteMilestone as any, p, '删除 Milestone 成功', '删除 Milestone 失败'),
+    get_branch_protection: (p) => wrap(getBranchProtection as any, p, '获取分支保护成功', '获取分支保护失败'),
+    update_branch_protection: (p) => wrap(updateBranchProtection as any, p, '更新分支保护成功', '更新分支保护失败'),
+    delete_branch_protection: (p) => wrap(deleteBranchProtection as any, p, '删除分支保护成功', '删除分支保护失败'),
+    get_contributors_stats: (p) => wrap(getContributorsStats as any, p, '获取贡献者统计成功', '获取贡献者统计失败'),
+    get_commit_activity: (p) => wrap(getCommitActivity as any, p, '获取提交活动成功', '获取提交活动失败'),
+    get_code_frequency: (p) => wrap(getCodeFrequency as any, p, '获取代码频率成功', '获取代码频率失败'),
 };
 
 export async function main(params: any): Promise<any> {
@@ -2789,3 +4641,39 @@ export const apply_local_replace = toolImpl.apply_local_replace;
 export const apply_local_delete = toolImpl.apply_local_delete;
 export const overwrite_local_file = toolImpl.overwrite_local_file;
 export const terminal_exec = toolImpl.terminal_exec;
+export const list_releases = toolImpl.list_releases;
+export const get_release = toolImpl.get_release;
+export const get_latest_release = toolImpl.get_latest_release;
+export const get_release_by_tag = toolImpl.get_release_by_tag;
+export const create_release = toolImpl.create_release;
+export const update_release = toolImpl.update_release;
+export const delete_release = toolImpl.delete_release;
+export const upload_release_asset = toolImpl.upload_release_asset;
+export const delete_release_asset = toolImpl.delete_release_asset;
+export const list_webhooks = toolImpl.list_webhooks;
+export const get_webhook = toolImpl.get_webhook;
+export const create_webhook = toolImpl.create_webhook;
+export const update_webhook = toolImpl.update_webhook;
+export const delete_webhook = toolImpl.delete_webhook;
+export const ping_webhook = toolImpl.ping_webhook;
+export const list_collaborators = toolImpl.list_collaborators;
+export const check_collaborator = toolImpl.check_collaborator;
+export const add_collaborator = toolImpl.add_collaborator;
+export const remove_collaborator = toolImpl.remove_collaborator;
+export const get_collaborator_permission = toolImpl.get_collaborator_permission;
+export const list_labels = toolImpl.list_labels;
+export const get_label = toolImpl.get_label;
+export const create_label = toolImpl.create_label;
+export const update_label = toolImpl.update_label;
+export const delete_label = toolImpl.delete_label;
+export const list_milestones = toolImpl.list_milestones;
+export const get_milestone = toolImpl.get_milestone;
+export const create_milestone = toolImpl.create_milestone;
+export const update_milestone = toolImpl.update_milestone;
+export const delete_milestone = toolImpl.delete_milestone;
+export const get_branch_protection = toolImpl.get_branch_protection;
+export const update_branch_protection = toolImpl.update_branch_protection;
+export const delete_branch_protection = toolImpl.delete_branch_protection;
+export const get_contributors_stats = toolImpl.get_contributors_stats;
+export const get_commit_activity = toolImpl.get_commit_activity;
+export const get_code_frequency = toolImpl.get_code_frequency;
