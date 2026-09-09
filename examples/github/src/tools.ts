@@ -24,7 +24,7 @@ import {
     requestReviewers
 } from './github/pulls';
 import { getFileContent, createOrUpdateFile, deleteFile } from './github/contents';
-import { createBranch } from './github/branches';
+import { createBranch, deleteBranch } from './github/branches';
 import { patchFileInRepo } from './github/patch';
 import {
     listWorkflows,
@@ -72,6 +72,7 @@ export const toolImpl = {
     create_or_update_file: (p: any) => wrap(createOrUpdateFile, p, '提交文件成功', '提交文件失败'),
     delete_file: (p: any) => wrap(deleteFile, p, '删除文件成功', '删除文件失败'),
     create_branch: (p: any) => wrap(createBranch, p, '创建分支成功', '创建分支失败'),
+    delete_branch: (p: any) => wrap(deleteBranch as any, p, '删除分支成功', '删除分支失败'),
     patch_file_in_repo: (p: any) => wrap(patchFileInRepo, p, '仓库文件差异更新成功', '仓库文件差异更新失败'),
 
     list_workflows: (p: any) => wrap(listWorkflows, p, '获取 workflow 成功', '获取 workflow 失败'),

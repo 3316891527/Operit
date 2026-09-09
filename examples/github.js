@@ -1447,8 +1447,8 @@
     {
       "name": "create_branch",
       "description": {
-        "zh": "创建分支（通过 /repos/{owner}/{repo}/git/refs）。",
-        "en": "Create a branch (via /repos/{owner}/{repo}/git/refs)."
+        "zh": "创建或恢复分支（POST /repos/{owner}/{repo}/git/refs）。可从已有分支或指定 commit SHA 建 ref。",
+        "en": "Create or restore a branch (POST /repos/{owner}/{repo}/git/refs). Point the new ref at an existing branch or a commit SHA."
       },
       "parameters": [
         {
@@ -1481,11 +1481,56 @@
         {
           "name": "from_branch",
           "description": {
-            "zh": "基于哪个分支创建（默认仓库默认分支）",
-            "en": "Branch to create from (default: repository default branch)."
+            "zh": "基于哪个分支创建（默认仓库默认分支；若传了 from_sha 则忽略）",
+            "en": "Branch to create from (default: repository default branch; ignored when from_sha is set)."
           },
           "type": "string",
           "required": false
+        },
+        {
+          "name": "from_sha",
+          "description": {
+            "zh": "基于哪个 commit SHA 创建（优先于 from_branch；用于从提交恢复已删分支）",
+            "en": "Commit SHA to create from (takes precedence over from_branch; use this to restore a deleted branch)."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_branch",
+      "description": {
+        "zh": "删除非默认分支（DELETE /repos/{owner}/{repo}/git/refs/heads/{branch}）。不会删除仓库默认分支。",
+        "en": "Delete a non-default branch (DELETE /repos/{owner}/{repo}/git/refs/heads/{branch}). Refuses to delete the repository default branch."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "description": {
+            "zh": "要删除的分支名（不能是仓库默认分支）",
+            "en": "Branch name to delete (cannot be the repository default branch)."
+          },
+          "type": "string",
+          "required": true
         }
       ]
     },
@@ -4524,6 +4569,7 @@ __export(index_exports, {
   create_release: () => create_release,
   create_review: () => create_review,
   create_webhook: () => create_webhook,
+  delete_branch: () => delete_branch,
   delete_branch_protection: () => delete_branch_protection,
   delete_file: () => delete_file,
   delete_label: () => delete_label,
@@ -5336,13 +5382,16 @@ async function getRepository(params) {
 }
 
 // src/github/branches.ts
+function requiredName(value, field) {
+  const name = String(value != null ? value : "").trim();
+  if (!name) {
+    throw new Error(`${field} is required`);
+  }
+  return name;
+}
 async function getBranchHeadSha(params) {
   var _a;
-  const url = buildUrl(
-    `/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/git/ref/heads/${encodeURIComponent(
-      params.branch
-    )}`
-  );
+  const url = buildUrl(repoPath(params.owner, params.repo, `/git/ref/heads/${encodeRef(params.branch)}`));
   const data = await requestJson({ method: "GET", url });
   const sha = (_a = data == null ? void 0 : data.object) == null ? void 0 : _a.sha;
   if (!sha) {
@@ -5351,19 +5400,42 @@ async function getBranchHeadSha(params) {
   return sha;
 }
 async function createBranch(params) {
-  var _a, _b;
+  var _a, _b, _c;
   requireToken("create_branch");
-  const fromBranch = (_b = params.from_branch) != null ? _b : String(((_a = await getRepository({ owner: params.owner, repo: params.repo })) == null ? void 0 : _a.default_branch) || "main");
-  const sha = await getBranchHeadSha({ owner: params.owner, repo: params.repo, branch: fromBranch });
-  const url = buildUrl(`/repos/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/git/refs`);
-  return requestJson({
+  const newBranch = requiredName(params.new_branch, "new_branch");
+  const fromSha = String((_a = params.from_sha) != null ? _a : "").trim();
+  let sha = fromSha;
+  let fromBranch;
+  if (!sha) {
+    fromBranch = String((_b = params.from_branch) != null ? _b : "").trim() || String(((_c = await getRepository({ owner: params.owner, repo: params.repo })) == null ? void 0 : _c.default_branch) || "main");
+    sha = await getBranchHeadSha({ owner: params.owner, repo: params.repo, branch: fromBranch });
+  }
+  const url = buildUrl(repoPath(params.owner, params.repo, "/git/refs"));
+  const result = await requestJson({
     method: "POST",
     url,
     body: {
-      ref: `refs/heads/${params.new_branch}`,
+      ref: `refs/heads/${newBranch}`,
       sha
     }
   });
+  return __spreadProps(__spreadValues({}, result), {
+    new_branch: newBranch,
+    from_sha: sha,
+    from_branch: fromBranch
+  });
+}
+async function deleteBranch(params) {
+  requireToken("delete_branch");
+  const branch = requiredName(params.branch, "branch");
+  const repoInfo = await getRepository({ owner: params.owner, repo: params.repo });
+  const defaultBranch = String((repoInfo == null ? void 0 : repoInfo.default_branch) || "").trim();
+  if (defaultBranch && branch === defaultBranch) {
+    throw new Error(`Refusing to delete the default branch '${defaultBranch}'.`);
+  }
+  const url = buildUrl(repoPath(params.owner, params.repo, `/git/refs/heads/${encodeRef(branch)}`));
+  const result = await requestJson({ method: "DELETE", url });
+  return { ok: true, branch, result };
 }
 
 // src/github/git.ts
@@ -6571,6 +6643,7 @@ var toolImpl = {
   create_or_update_file: (p) => wrap(createOrUpdateFile, p, "\u5199\u5165\u6587\u4EF6\u6210\u529F", "\u5199\u5165\u6587\u4EF6\u5931\u8D25"),
   delete_file: (p) => wrap(deleteFile, p, "\u5220\u9664\u6587\u4EF6\u6210\u529F", "\u5220\u9664\u6587\u4EF6\u5931\u8D25"),
   create_branch: (p) => wrap(createBranch, p, "\u521B\u5EFA\u5206\u652F\u6210\u529F", "\u521B\u5EFA\u5206\u652F\u5931\u8D25"),
+  delete_branch: (p) => wrap(deleteBranch, p, "\u5220\u9664\u5206\u652F\u6210\u529F", "\u5220\u9664\u5206\u652F\u5931\u8D25"),
   list_branches: (p) => wrap(listBranches, p, "\u5217\u51FA\u5206\u652F\u6210\u529F", "\u5217\u51FA\u5206\u652F\u5931\u8D25"),
   list_commits: (p) => wrap(listCommits, p, "\u5217\u51FA\u63D0\u4EA4\u6210\u529F", "\u5217\u51FA\u63D0\u4EA4\u5931\u8D25"),
   get_commit: (p) => wrap(getCommit, p, "\u83B7\u53D6\u63D0\u4EA4\u6210\u529F", "\u83B7\u53D6\u63D0\u4EA4\u5931\u8D25"),
@@ -6668,6 +6741,7 @@ var get_file_content = toolImpl.get_file_content;
 var create_or_update_file = toolImpl.create_or_update_file;
 var delete_file = toolImpl.delete_file;
 var create_branch = toolImpl.create_branch;
+var delete_branch = toolImpl.delete_branch;
 var list_branches = toolImpl.list_branches;
 var list_commits = toolImpl.list_commits;
 var get_commit = toolImpl.get_commit;

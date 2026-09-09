@@ -1447,8 +1447,8 @@
     {
       "name": "create_branch",
       "description": {
-        "zh": "创建分支（通过 /repos/{owner}/{repo}/git/refs）。",
-        "en": "Create a branch (via /repos/{owner}/{repo}/git/refs)."
+        "zh": "创建或恢复分支（POST /repos/{owner}/{repo}/git/refs）。可从已有分支或指定 commit SHA 建 ref。",
+        "en": "Create or restore a branch (POST /repos/{owner}/{repo}/git/refs). Point the new ref at an existing branch or a commit SHA."
       },
       "parameters": [
         {
@@ -1481,11 +1481,56 @@
         {
           "name": "from_branch",
           "description": {
-            "zh": "基于哪个分支创建（默认仓库默认分支）",
-            "en": "Branch to create from (default: repository default branch)."
+            "zh": "基于哪个分支创建（默认仓库默认分支；若传了 from_sha 则忽略）",
+            "en": "Branch to create from (default: repository default branch; ignored when from_sha is set)."
           },
           "type": "string",
           "required": false
+        },
+        {
+          "name": "from_sha",
+          "description": {
+            "zh": "基于哪个 commit SHA 创建（优先于 from_branch；用于从提交恢复已删分支）",
+            "en": "Commit SHA to create from (takes precedence over from_branch; use this to restore a deleted branch)."
+          },
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "delete_branch",
+      "description": {
+        "zh": "删除非默认分支（DELETE /repos/{owner}/{repo}/git/refs/heads/{branch}）。不会删除仓库默认分支。",
+        "en": "Delete a non-default branch (DELETE /repos/{owner}/{repo}/git/refs/heads/{branch}). Refuses to delete the repository default branch."
+      },
+      "parameters": [
+        {
+          "name": "owner",
+          "description": {
+            "zh": "仓库 owner",
+            "en": "Repository owner."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "description": {
+            "zh": "仓库名",
+            "en": "Repository name."
+          },
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "description": {
+            "zh": "要删除的分支名（不能是仓库默认分支）",
+            "en": "Branch name to delete (cannot be the repository default branch)."
+          },
+          "type": "string",
+          "required": true
         }
       ]
     },
@@ -4473,7 +4518,7 @@
 import { listIssues, getIssue, createIssue, updateIssue, commentIssue, listIssueComments } from './github/issues';
 import { listPullRequests, createPullRequest, getPullRequest, updatePullRequest, mergePullRequest, listPullRequestFiles, getPullRequestDiff, listPullRequestCommits, listPullRequestReviews, listReviewComments, createReview, replyReviewComment, requestReviewers } from './github/pulls';
 import { getFileContent, createOrUpdateFile, deleteFile } from './github/contents';
-import { createBranch } from './github/branches';
+import { createBranch, deleteBranch } from './github/branches';
 import { listBranches, listCommits, getCommit, compareRefs, getCompareDiff } from './github/git';
 import { listWorkflows, listWorkflowRuns, getWorkflowRun, triggerWorkflow, getWorkflowJobs, rerunWorkflowRun, cancelWorkflowRun, listCheckRuns } from './github/actions';
 import { searchRepositories, getRepository } from './github/repos';
@@ -4518,6 +4563,7 @@ export const toolImpl: Record<string, (params: any) => Promise<any>> = {
     create_or_update_file: (p) => wrap(createOrUpdateFile as any, p, '写入文件成功', '写入文件失败'),
     delete_file: (p) => wrap(deleteFile as any, p, '删除文件成功', '删除文件失败'),
     create_branch: (p) => wrap(createBranch as any, p, '创建分支成功', '创建分支失败'),
+    delete_branch: (p) => wrap(deleteBranch as any, p, '删除分支成功', '删除分支失败'),
     list_branches: (p) => wrap(listBranches as any, p, '列出分支成功', '列出分支失败'),
     list_commits: (p) => wrap(listCommits as any, p, '列出提交成功', '列出提交失败'),
     get_commit: (p) => wrap(getCommit as any, p, '获取提交成功', '获取提交失败'),
@@ -4617,6 +4663,7 @@ export const get_file_content = toolImpl.get_file_content;
 export const create_or_update_file = toolImpl.create_or_update_file;
 export const delete_file = toolImpl.delete_file;
 export const create_branch = toolImpl.create_branch;
+export const delete_branch = toolImpl.delete_branch;
 export const list_branches = toolImpl.list_branches;
 export const list_commits = toolImpl.list_commits;
 export const get_commit = toolImpl.get_commit;
