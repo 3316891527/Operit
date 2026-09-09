@@ -899,6 +899,10 @@
     <string name="settings_summary_section_title_desc">Titlul afișat în rezumat</string>
     <string name="settings_summary_section_instruction">Instrucțiuni pentru secțiune</string>
     <string name="settings_summary_section_instruction_desc">Descrieți ce trebuie să înregistreze această secțiune</string>
+    <string name="settings_summary_dialogue_review">Retrospectiva conversației</string>
+    <string name="settings_summary_dialogue_review_desc">Adaugă la sfârșitul rezumatului o evidență generată de program pentru utilizatori, asistenți și apeluri de instrumente</string>
+    <string name="settings_summary_dialogue_review_title">Titlul retrospectivei</string>
+    <string name="settings_summary_dialogue_review_title_desc">Titlul afișat la sfârșitul rezumatului. Lăsați necompletat pentru titlul implicit</string>
 
     <string name="settings_section_display">Afișare și comportament</string>
 

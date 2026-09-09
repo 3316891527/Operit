@@ -7433,6 +7433,10 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="settings_summary_section_title_desc">Título mostrado en el resumen</string>
     <string name="settings_summary_section_instruction">Instrucciones de la sección</string>
     <string name="settings_summary_section_instruction_desc">Describe qué debe registrar esta sección</string>
+    <string name="settings_summary_dialogue_review">Revisión de la conversación</string>
+    <string name="settings_summary_dialogue_review_desc">Añade al final del resumen un registro generado por el programa de usuarios, asistentes y llamadas a herramientas</string>
+    <string name="settings_summary_dialogue_review_title">Título de la revisión</string>
+    <string name="settings_summary_dialogue_review_title_desc">Título mostrado al final del resumen. Déjalo vacío para usar el predeterminado</string>
     <string name="title_activity_data_recovery">Recuperación de datos</string>
     <string name="shortcut_data_recovery">Recuperación de datos</string>
     <string name="memory_space_select">Seleccionar espacio de memoria</string>

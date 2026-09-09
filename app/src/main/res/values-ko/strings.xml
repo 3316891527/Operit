@@ -7212,6 +7212,10 @@
     <string name="settings_summary_section_title_desc">요약에 표시할 제목</string>
     <string name="settings_summary_section_instruction">섹션 설명</string>
     <string name="settings_summary_section_instruction_desc">이 섹션에 기록할 내용을 설명합니다</string>
+    <string name="settings_summary_dialogue_review">대화 돌아보기</string>
+    <string name="settings_summary_dialogue_review_desc">요약 끝에 사용자, 어시스턴트 및 도구 호출을 프로그램이 정리한 기록을 추가합니다</string>
+    <string name="settings_summary_dialogue_review_title">돌아보기 제목</string>
+    <string name="settings_summary_dialogue_review_title_desc">요약 끝에 표시할 제목입니다. 비워 두면 기본 제목을 사용합니다</string>
     <string name="title_activity_data_recovery">데이터 복구</string>
     <string name="shortcut_data_recovery">데이터 복구</string>
     <string name="memory_space_select">메모리 공간 선택</string>

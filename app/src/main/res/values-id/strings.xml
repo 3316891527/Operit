@@ -7365,6 +7365,10 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="settings_summary_section_title_desc">Judul yang ditampilkan dalam ringkasan</string>
     <string name="settings_summary_section_instruction">Petunjuk Bagian</string>
     <string name="settings_summary_section_instruction_desc">Jelaskan isi yang harus dicatat bagian ini</string>
+    <string name="settings_summary_dialogue_review">Tinjauan Percakapan</string>
+    <string name="settings_summary_dialogue_review_desc">Tambahkan catatan pengguna, asisten, dan pemanggilan alat yang dibuat program di akhir ringkasan</string>
+    <string name="settings_summary_dialogue_review_title">Judul Tinjauan</string>
+    <string name="settings_summary_dialogue_review_title_desc">Judul yang ditampilkan di akhir ringkasan. Kosongkan untuk menggunakan judul bawaan</string>
     <string name="title_activity_data_recovery">Pemulihan Data</string>
     <string name="shortcut_data_recovery">Pemulihan Data</string>
     <string name="memory_space_select">Pilih Ruang Memori</string>

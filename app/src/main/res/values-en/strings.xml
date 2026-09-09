@@ -956,6 +956,10 @@
     <string name="settings_summary_section_title_desc">Title shown in the summary</string>
     <string name="settings_summary_section_instruction">Section Instructions</string>
     <string name="settings_summary_section_instruction_desc">Describe what this section should record</string>
+    <string name="settings_summary_dialogue_review">Conversation Review</string>
+    <string name="settings_summary_dialogue_review_desc">Append a program-generated record of users, assistants, and tool calls to the end of the summary</string>
+    <string name="settings_summary_dialogue_review_title">Review Title</string>
+    <string name="settings_summary_dialogue_review_title_desc">Title displayed at the end of the summary. Leave blank to use the default title</string>
     
     <string name="settings_section_display">Display and Behavior</string>
 

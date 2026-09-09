@@ -7362,6 +7362,10 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="settings_summary_section_title_desc">Tajuk yang dipaparkan dalam ringkasan</string>
     <string name="settings_summary_section_instruction">Arahan Bahagian</string>
     <string name="settings_summary_section_instruction_desc">Terangkan perkara yang perlu direkodkan oleh bahagian ini</string>
+    <string name="settings_summary_dialogue_review">Ulasan Perbualan</string>
+    <string name="settings_summary_dialogue_review_desc">Tambahkan rekod pengguna, pembantu dan panggilan alat yang dijana program pada akhir ringkasan</string>
+    <string name="settings_summary_dialogue_review_title">Tajuk Ulasan</string>
+    <string name="settings_summary_dialogue_review_title_desc">Tajuk yang dipaparkan pada akhir ringkasan. Biarkan kosong untuk menggunakan tajuk lalai</string>
     <string name="title_activity_data_recovery">Pemulihan Data</string>
     <string name="shortcut_data_recovery">Pemulihan Data</string>
     <string name="memory_space_select">Pilih Ruang Memori</string>

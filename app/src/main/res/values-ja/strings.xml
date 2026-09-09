@@ -6,6 +6,11 @@
     <string name="settings_summary_section_title_desc">要約に表示するタイトル</string>
     <string name="settings_summary_section_instruction">セクションの指示</string>
     <string name="settings_summary_section_instruction_desc">このセクションに記録する内容を説明します</string>
+    <string name="settings_summary_dialogue_review">会話の振り返り</string>
+    <string name="settings_summary_dialogue_review_desc">要約の末尾に、ユーザー、アシスタント、ツール呼び出しの記録を追加します</string>
+    <string name="settings_summary_dialogue_review_title">振り返りのタイトル</string>
+    <string name="settings_summary_dialogue_review_title_desc">要約末尾に表示するタイトルです。空欄の場合は既定のタイトルを使用します</string>
+    <string name="ai_message_dialogue_review">\n\n会話の振り返り：\n</string>
     <!-- Main navigation -->
     <string name="nav_ai_chat">AIチャット</string>
     <string name="nav_adb_commands">権限</string>
