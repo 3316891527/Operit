@@ -28,7 +28,7 @@ class ClaudeProviderHistoryTest {
     private fun toolResult(name: String, content: String): String =
         "<" + "tool_result name=\"$name\" status=\"success\"><" + "content>" + content + "</" + "content></" + "tool_result>"
 
-    <Test
+    @Test
     fun parallel_tool_results_are_ordered_by_tool_use_definition_order_to_preserve_prompt_cache() {
         val provider = createProvider(enableToolCall = true)
 
