@@ -14,6 +14,8 @@
 
 健康检查区域追加在 SQL 执行器之后，不改变现有入口、数据路径和操作语义。
 
+界面默认只显示检查通过数量和需要用户注意的问题；完整检查项、数据库路径和技术细节通过点击报告展开查看。
+
 ## 检查内容
 
 `RoomDatabaseHealthManager` 在执行检查前关闭 `:repair` 进程内的 Room singleton，然后直接以只读模式打开 `app_database`。自定义 `DatabaseErrorHandler` 只记录 SQLite corruption 信号，不删除数据库文件。
