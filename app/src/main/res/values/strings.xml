@@ -3552,7 +3552,7 @@
     <string name="chat_history_selected_actions">操作已选聊天 (%1$d)</string>
     <string name="chat_history_selected_actions_title">已选聊天操作</string>
     <string name="chat_memory_rebuild_title">分窗口构建记忆库</string>
-    <string name="chat_memory_rebuild_subtitle">按有限的原始用户和助手消息窗口依次提取记忆</string>
+    <string name="chat_memory_rebuild_subtitle">可指定时间段，并按有限的原始用户和助手消息窗口依次提取记忆</string>
     <string name="chat_memory_rebuild_window_size">每个窗口的消息数</string>
     <string name="chat_memory_rebuild_window_size_value">%1$d 条消息</string>
     <string name="chat_memory_rebuild_start">为已选 %1$d 条聊天构建记忆</string>
@@ -3564,7 +3564,16 @@
     <string name="chat_memory_rebuild_failed">构建失败：%1$s</string>
     <string name="chat_memory_rebuild_confirm_title">确认构建记忆库</string>
     <string name="chat_memory_rebuild_confirm_message">将把已选的 %1$d 条聊天按每窗 %2$d 条消息顺序交给记忆模型处理。过程会产生模型请求并写入对应记忆空间。</string>
+    <string name="chat_memory_rebuild_confirm_message_range">将把已选的 %1$d 条聊天中 %2$s 至 %3$s 的消息按每窗 %4$d 条顺序交给记忆模型处理。过程会产生模型请求并写入对应记忆空间。</string>
     <string name="chat_memory_rebuild_confirm_action">开始构建</string>
+    <string name="chat_memory_rebuild_time_scope">消息时间范围</string>
+    <string name="chat_memory_rebuild_time_scope_all">全部消息</string>
+    <string name="chat_memory_rebuild_time_scope_range">指定时间段</string>
+    <string name="chat_memory_rebuild_time_scope_pick">选择起止日期</string>
+    <string name="chat_memory_rebuild_time_scope_value">%1$s – %2$s</string>
+    <string name="chat_memory_rebuild_date_range_title">选择记忆时间段</string>
+    <string name="chat_memory_rebuild_date_range_confirm">确定</string>
+    <string name="chat_memory_rebuild_empty_range">所选时间段内没有可用于构建记忆的用户消息</string>
     <string name="long_press_to_manage">长按管理</string>
     <string name="edit_title_desc">编辑标题</string>
     <string name="reorder">Reorder</string>
