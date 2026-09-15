@@ -223,6 +223,17 @@ data class ModelConfigSummary(
         val modelIndex: Int = 0 // 当modelName包含多个模型（逗号分隔）时，选择第几个模型（从0开始）
 )
 
+/** One preference snapshot for the selected group, its candidates, and existing bindings. */
+data class ModelConfigSelection(
+        val allConfigs: List<ModelConfigSummary> = emptyList(),
+        val groups: List<ModelConfigGroup> = emptyList(),
+        val selectedGroupId: String? = null
+) {
+    val selectedGroup: ModelConfigGroup? = groups.firstOrNull { it.id == selectedGroupId }
+    val availableConfigs: List<ModelConfigSummary> =
+            allConfigs.filter { it.groupId == selectedGroupId }
+}
+
 /** 从逗号分隔的模型名称字符串中根据索引获取具体模型 */
 fun getModelByIndex(modelName: String, index: Int): String {
     if (modelName.isEmpty()) return ""

@@ -3066,7 +3066,6 @@
     <string name="manage_all_model_configs">管理所有模型配置</string>
     <string name="manage_model_configs_desc">管理模型配置</string>
     <string name="reset_all_functions_to_default">重置所有功能至默认配置</string>
-    <string name="current_group_label">当前分组: %1$s</string>
     <string name="current_config_label">当前配置: %1$s</string>
     <string name="default_config">默认配置</string>
     <string name="model_label">模型: %1$s</string>
@@ -4080,8 +4079,6 @@
     <string name="model_config_current_selection">当前选择：%1$s</string>
     <string name="model_config_save_group_order_failed">保存分组顺序失败</string>
     <string name="model_config_save_order_failed">保存配置顺序失败</string>
-    <string name="model_config_group_empty">“%1$s”中没有模型配置</string>
-    <string name="current_config_group_label">已绑定配置所在组：%1$s</string>
     <string name="default_config_warning">请修改默认配置的API Key，否则将被判断为未使用自己的配置</string>
     <string name="config_deleted">配置已删除</string>
     <string name="new_model_config">新建模型配置</string>
@@ -8471,4 +8468,6 @@
     <string name="codex_usage_unavailable">额度暂时不可用</string>
     <string name="codex_reset_after_days">%1$d 天后重置</string>
     <string name="codex_reset_after_clock">%1$02d:%2$02d 后重置</string>
+    <string name="model_config_group_empty">“%1$s”中没有模型配置</string>
+    <string name="model_config_name_with_group">%1$s（%2$s）</string>
 </resources>

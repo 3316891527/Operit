@@ -14,6 +14,7 @@ import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ModelConfigDefaults
 import com.ai.assistance.operit.data.model.ModelConfigGroup
+import com.ai.assistance.operit.data.model.ModelConfigSelection
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ParameterCategory
@@ -434,8 +435,8 @@ class ModelConfigManager(
                 else json.decodeFromString<List<String>>(configList)
             }
 
-    // 所有配置摘要的响应式版本。主界面模型选择器必须持续收集它，才能在配置页
-    // 新增或修改模型后立即更新，而不需要重新进入配置页。
+    // 所有配置摘要的响应式版本，保留完整列表以解析已有绑定。
+    // 按分组筛选的选择器使用 configSelectionFlow 同步读取当前组与候选。
     val configSummariesFlow: Flow<List<ModelConfigSummary>> =
             configDataStore.data.map { preferences ->
                 readConfigSummariesFromPrefs(preferences)
@@ -456,6 +457,19 @@ class ModelConfigManager(
                 val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
                 normalizeConfigGroupId(preferences[SELECTED_CONFIG_GROUP_KEY])
                         ?.takeIf { it in validGroupIds }
+            }
+
+    // Read the filter and candidates together so a group switch cannot display the previous group's list.
+    val configSelectionFlow: Flow<ModelConfigSelection> =
+            configDataStore.data.map { preferences ->
+                val groups = readGroups(preferences)
+                val selectedGroupId = normalizeConfigGroupId(preferences[SELECTED_CONFIG_GROUP_KEY])
+                        ?.takeIf { id -> groups.any { it.id == id } }
+                ModelConfigSelection(
+                        allConfigs = readConfigSummariesFromPrefs(preferences),
+                        groups = groups,
+                        selectedGroupId = selectedGroupId
+                )
             }
 
     suspend fun setSelectedConfigGroup(groupId: String?) {
