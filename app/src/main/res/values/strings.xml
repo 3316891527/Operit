@@ -8462,17 +8462,18 @@
     <string name="data_storage_scanning">正在扫描 Operit 数据…</string>
     <string name="data_storage_scan_failed">无法完成存储扫描</string>
     <string name="data_storage_retry">重试</string>
-    <string name="data_storage_overview_title">存储概览</string>
+    <string name="data_storage_overview_title">Operit 数据占用</string>
+    <string name="data_storage_overview_hint">仅展示七个核心数据板块，不包含 Android 设备空间</string>
     <string name="data_storage_refresh">重新扫描</string>
     <string name="data_storage_device_total">设备总容量</string>
-    <string name="data_storage_operit_tracked">Operit 已跟踪</string>
+    <string name="data_storage_operit_tracked">七个核心板块合计</string>
     <string name="data_storage_available">可用空间</string>
     <string name="data_storage_device_unavailable">设备容量暂时不可用，分类统计仍可正常查看。</string>
     <string name="data_storage_scope_app_data">应用数据</string>
     <string name="data_storage_scope_user_files">Operit 用户文件</string>
     <string name="data_storage_scope_cache">可重建缓存</string>
     <string name="data_storage_other_used">系统与其他应用</string>
-    <string name="data_storage_categories_title">分类与明细</string>
+    <string name="data_storage_categories_title">数据板块</string>
     <string name="data_storage_expand_details">展开明细</string>
     <string name="data_storage_collapse_details">收起明细</string>
     <string name="data_storage_manage_category">管理%1$s</string>
@@ -8481,17 +8482,18 @@
     <string name="data_storage_unavailable_entries">%1$d 项不可读取</string>
     <string name="data_storage_chat_counts">%1$d 个对话 · %2$d 条消息</string>
     <string name="data_storage_memory_counts">%1$d 条记忆 · %2$d 个空间</string>
-    <string name="data_storage_configuration_counts">%1$d 张角色卡 · %2$d 个模型配置</string>
+    <string name="data_storage_configuration_counts">%1$d 张角色卡 · %2$d 个配置与扩展项</string>
     <string name="data_storage_partial_title">部分数据未计入</string>
     <string name="data_storage_partial_description">有 %1$d 个条目无法读取；已跳过 %2$d 个符号链接。当前结果仅包含可访问数据。</string>
 
     <string name="data_storage_category_linux">Linux 环境</string>
     <string name="data_storage_category_models">本地模型</string>
     <string name="data_storage_category_workspaces">工作区与媒体</string>
-    <string name="data_storage_category_chats">聊天与使用记录</string>
+    <string name="data_storage_category_chats">聊天记录</string>
     <string name="data_storage_category_memory">记忆库</string>
     <string name="data_storage_category_backups">备份与导出</string>
     <string name="data_storage_category_configuration">配置与角色资源</string>
+    <string name="data_storage_category_roles_resources">角色卡与扩展资源</string>
     <string name="data_storage_category_packages">插件与技能</string>
     <string name="data_storage_category_cache">缓存与临时文件</string>
     <string name="data_storage_category_other">其他数据</string>
@@ -8524,9 +8526,9 @@
     <string name="data_storage_detail_other_app_data">其他应用数据</string>
     <string name="data_storage_detail_other_user_files">其他 Operit 用户文件</string>
 
-    <string name="data_storage_cleanup_title">安全清理</string>
-    <string name="data_storage_cleanup_description">选择可重新生成的数据</string>
-    <string name="data_storage_cleanup_note">这里只会删除可重建缓存、临时文件和日志，不会删除聊天、记忆、模型、工作区或备份。</string>
+    <string name="data_storage_cleanup_title">可释放空间</string>
+    <string name="data_storage_cleanup_description">应用缓存、临时文件、日志和软件包缓存</string>
+    <string name="data_storage_cleanup_note">这里只会删除可重建内容，不会删除聊天、记忆、模型、工作区或备份。</string>
     <string name="data_storage_nothing_to_clean">目前没有可清理的文件。</string>
     <string name="data_storage_cleanup_select">选择要清理的项目</string>
     <string name="data_storage_cleanup_running">正在处理…</string>

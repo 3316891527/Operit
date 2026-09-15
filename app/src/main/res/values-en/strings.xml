@@ -8477,17 +8477,18 @@
     <string name="data_storage_scanning">Scanning Operit data…</string>
     <string name="data_storage_scan_failed">Storage scan could not be completed</string>
     <string name="data_storage_retry">Retry</string>
-    <string name="data_storage_overview_title">Storage overview</string>
+    <string name="data_storage_overview_title">Operit data usage</string>
+    <string name="data_storage_overview_hint">Seven core data areas only; Android device storage is not included</string>
     <string name="data_storage_refresh">Scan again</string>
     <string name="data_storage_device_total">Total device storage</string>
-    <string name="data_storage_operit_tracked">Tracked by Operit</string>
+    <string name="data_storage_operit_tracked">Total across seven core areas</string>
     <string name="data_storage_available">Available</string>
     <string name="data_storage_device_unavailable">Device capacity is temporarily unavailable. Category totals are still available.</string>
     <string name="data_storage_scope_app_data">App data</string>
     <string name="data_storage_scope_user_files">Operit user files</string>
     <string name="data_storage_scope_cache">Rebuildable cache</string>
     <string name="data_storage_other_used">System and other apps</string>
-    <string name="data_storage_categories_title">Categories and details</string>
+    <string name="data_storage_categories_title">Data areas</string>
     <string name="data_storage_expand_details">Expand details</string>
     <string name="data_storage_collapse_details">Collapse details</string>
     <string name="data_storage_manage_category">Manage %1$s</string>
@@ -8496,17 +8497,18 @@
     <string name="data_storage_unavailable_entries">%1$d unavailable</string>
     <string name="data_storage_chat_counts">%1$d chats · %2$d messages</string>
     <string name="data_storage_memory_counts">%1$d memories · %2$d spaces</string>
-    <string name="data_storage_configuration_counts">%1$d character cards · %2$d model configs</string>
+    <string name="data_storage_configuration_counts">%1$d character cards · %2$d config and extension items</string>
     <string name="data_storage_partial_title">Some data was not counted</string>
     <string name="data_storage_partial_description">%1$d entries could not be read and %2$d symbolic links were skipped. Current totals include accessible data only.</string>
 
     <string name="data_storage_category_linux">Linux environment</string>
     <string name="data_storage_category_models">Local models</string>
     <string name="data_storage_category_workspaces">Workspaces and media</string>
-    <string name="data_storage_category_chats">Chats and usage records</string>
+    <string name="data_storage_category_chats">Chat history</string>
     <string name="data_storage_category_memory">Memory library</string>
     <string name="data_storage_category_backups">Backups and exports</string>
     <string name="data_storage_category_configuration">Configuration and character assets</string>
+    <string name="data_storage_category_roles_resources">Character cards and extensions</string>
     <string name="data_storage_category_packages">Plugins and skills</string>
     <string name="data_storage_category_cache">Cache and temporary files</string>
     <string name="data_storage_category_other">Other data</string>
@@ -8539,9 +8541,9 @@
     <string name="data_storage_detail_other_app_data">Other app data</string>
     <string name="data_storage_detail_other_user_files">Other Operit user files</string>
 
-    <string name="data_storage_cleanup_title">Safe cleanup</string>
-    <string name="data_storage_cleanup_description">Select data that can be rebuilt</string>
-    <string name="data_storage_cleanup_note">Only rebuildable cache, temporary files, and logs are removed. Chats, memories, models, workspaces, and backups are kept.</string>
+    <string name="data_storage_cleanup_title">Releasable space</string>
+    <string name="data_storage_cleanup_description">App cache, temporary files, logs, and package caches</string>
+    <string name="data_storage_cleanup_note">Only rebuildable content is removed. Chats, memories, models, workspaces, and backups are kept.</string>
     <string name="data_storage_nothing_to_clean">There are no files to clean right now.</string>
     <string name="data_storage_cleanup_select">Select items to clean</string>
     <string name="data_storage_cleanup_running">Working…</string>

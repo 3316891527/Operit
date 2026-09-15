@@ -1,7 +1,6 @@
 package com.ai.assistance.operit.ui.features.storage
 
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,8 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Forum
@@ -35,7 +32,6 @@ import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -77,12 +73,10 @@ import com.ai.assistance.operit.data.storage.DataStorageSnapshot
 import com.ai.assistance.operit.data.storage.StorageCategory
 import com.ai.assistance.operit.data.storage.StorageCategoryUsage
 import com.ai.assistance.operit.data.storage.StorageDetail
-import com.ai.assistance.operit.data.storage.StorageDetailUsage
-import com.ai.assistance.operit.data.storage.StorageScope
 import com.ai.assistance.operit.data.storage.formatStorageSize
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import java.util.Locale
-import kotlin.math.min
+import kotlin.math.roundToInt
 
 @Composable
 fun DataStorageScreen(
@@ -97,6 +91,9 @@ fun DataStorageScreen(
     var showCleanupConfirmation by remember { mutableStateOf(false) }
 
     val snapshot = state.snapshot
+    val displayedCategories =
+        snapshot?.let { displayCategoryUsages(it.categories) }.orEmpty()
+
     LaunchedEffect(snapshot?.scannedAtMillis) {
         val availableTargets =
             snapshot?.cleanupTargets
@@ -153,7 +150,7 @@ fun DataStorageScreen(
             } else {
                 item {
                     StorageOverview(
-                        snapshot = snapshot,
+                        categories = displayedCategories,
                         isRefreshing = state.isScanning || state.isCleaning,
                         onRefresh = storageViewModel::refresh,
                     )
@@ -177,7 +174,7 @@ fun DataStorageScreen(
 
                 item {
                     StorageCategories(
-                        categories = snapshot.categories,
+                        categories = displayedCategories,
                         onManageCategory = onManageCategory,
                     )
                 }
@@ -278,31 +275,37 @@ private fun InitialScanState(
 
 @Composable
 private fun StorageOverview(
-    snapshot: DataStorageSnapshot,
+    categories: List<StorageCategoryUsage>,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
 ) {
-    val containerColor = overviewContainerColor()
     val locale = Locale.getDefault()
-    val deviceStorage = snapshot.deviceStorage
+    val totalBytes = categories.sumOf { it.bytes.coerceAtLeast(0L) }
+    val colors = storageCategoryColors()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = containerColor,
+        shape = RoundedCornerShape(20.dp),
+        color = overviewContainerColor(),
         tonalElevation = 1.dp,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.data_storage_overview_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.data_storage_overview_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(R.string.data_storage_overview_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) {
                         CircularProgressIndicator(
@@ -318,92 +321,43 @@ private fun StorageOverview(
                 }
             }
 
-            if (deviceStorage != null) {
-                Text(
-                    text = formatStorageSize(deviceStorage.totalBytes, locale),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = stringResource(R.string.data_storage_device_total),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                StorageSegmentBar(snapshot)
-                Spacer(modifier = Modifier.height(12.dp))
-                StorageLegend(snapshot)
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    OverviewMetric(
-                        label = stringResource(R.string.data_storage_operit_tracked),
-                        value = formatStorageSize(snapshot.trackedBytes, locale),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OverviewMetric(
-                        label = stringResource(R.string.data_storage_available),
-                        value = formatStorageSize(deviceStorage.availableBytes, locale),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            } else {
-                Text(
-                    text = formatStorageSize(snapshot.trackedBytes, locale),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = stringResource(R.string.data_storage_operit_tracked),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = stringResource(R.string.data_storage_device_unavailable),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(
+                text = formatStorageSize(totalBytes, locale),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = stringResource(R.string.data_storage_operit_tracked),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            StorageCategorySegmentBar(categories, colors)
+            Spacer(modifier = Modifier.height(14.dp))
+            StorageCategoryLegend(categories, colors, locale)
         }
     }
 }
 
 @Composable
-private fun OverviewMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
+private fun StorageCategorySegmentBar(
+    categories: List<StorageCategoryUsage>,
+    colors: Map<StorageCategory, Color>,
 ) {
-    Column(modifier = modifier) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
+    val totalBytes = categories.sumOf { it.bytes.coerceAtLeast(0L) }
+    val positiveCategories = categories.filter { it.bytes > 0L }
 
-@Composable
-private fun StorageSegmentBar(snapshot: DataStorageSnapshot) {
-    val device = snapshot.deviceStorage ?: return
-    val total = device.totalBytes.coerceAtLeast(0L)
-    if (total == 0L) return
-
-    val available = device.availableBytes.coerceIn(0L, total)
-    val used = total - available
-    val rawScopeBytes = StorageScope.entries.associateWith { scope ->
-        snapshot.scopes.firstOrNull { it.scope == scope }?.bytes?.coerceAtLeast(0L) ?: 0L
+    if (positiveCategories.isEmpty() || totalBytes <= 0L) {
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(14.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+        )
+        return
     }
-    val rawTracked = rawScopeBytes.values.sum()
-    val boundedTracked = min(rawTracked, used)
-    val scale = if (rawTracked > 0L) boundedTracked.toDouble() / rawTracked.toDouble() else 0.0
-    val otherUsed = (used - boundedTracked).coerceAtLeast(0L)
-    val colors = scopeColors()
 
     Row(
         modifier =
@@ -412,58 +366,29 @@ private fun StorageSegmentBar(snapshot: DataStorageSnapshot) {
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        StorageScope.entries.forEach { scope ->
-            val weight = rawScopeBytes.getValue(scope).toDouble() * scale
-            if (weight > 0.0) {
-                Box(
-                    modifier =
-                        Modifier.weight(weight.toFloat())
-                            .fillMaxHeight()
-                            .background(colors.getValue(scope)),
-                )
-            }
-        }
-        if (otherUsed > 0L) {
+        positiveCategories.forEach { usage ->
             Box(
                 modifier =
-                    Modifier.weight(otherUsed.toFloat())
+                    Modifier.weight((usage.bytes.toDouble() / totalBytes).toFloat())
                         .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.outlineVariant),
+                        .background(colors.getValue(usage.category)),
             )
-        }
-        if (available > 0L) {
-            Spacer(modifier = Modifier.weight(available.toFloat()).fillMaxHeight())
         }
     }
 }
 
 @Composable
-private fun StorageLegend(snapshot: DataStorageSnapshot) {
-    val device = snapshot.deviceStorage ?: return
-    val locale = Locale.getDefault()
-    val scopeBytes = StorageScope.entries.associateWith { scope ->
-        snapshot.scopes.firstOrNull { it.scope == scope }?.bytes ?: 0L
-    }
-    val used = (device.totalBytes - device.availableBytes).coerceAtLeast(0L)
-    val otherUsed = (used - snapshot.trackedBytes).coerceAtLeast(0L)
-    val scopeColors = scopeColors()
+private fun StorageCategoryLegend(
+    categories: List<StorageCategoryUsage>,
+    colors: Map<StorageCategory, Color>,
+    locale: Locale,
+) {
     val items =
-        buildList {
-            StorageScope.entries.forEach { scope ->
-                add(
-                    LegendValue(
-                        label = stringResource(scope.labelRes),
-                        value = formatStorageSize(scopeBytes.getValue(scope), locale),
-                        color = scopeColors.getValue(scope),
-                    ),
-                )
-            }
-            add(
-                LegendValue(
-                    label = stringResource(R.string.data_storage_other_used),
-                    value = formatStorageSize(otherUsed, locale),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                ),
+        categories.map { usage ->
+            LegendValue(
+                label = stringResource(usage.category.titleRes),
+                value = formatStorageSize(usage.bytes, locale),
+                color = colors.getValue(usage.category),
             )
         }
 
@@ -515,172 +440,114 @@ private fun StorageCategories(
     categories: List<StorageCategoryUsage>,
     onManageCategory: (StorageCategory) -> Unit,
 ) {
-    var expandedCategories by remember { mutableStateOf<Set<StorageCategory>>(emptySet()) }
-    val visibleCategories = categories.filter { it.category != StorageCategory.OTHER || it.bytes > 0L }
+    val totalBytes = categories.sumOf { it.bytes.coerceAtLeast(0L) }
+    val colors = storageCategoryColors()
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = groupedContainerColor(),
-    ) {
-        Column {
-            Text(
-                text = stringResource(R.string.data_storage_categories_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = stringResource(R.string.data_storage_categories_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        categories.forEach { usage ->
+            StorageCategoryCard(
+                usage = usage,
+                totalBytes = totalBytes,
+                accent = colors.getValue(usage.category),
+                onClick = { onManageCategory(usage.category) },
             )
-            visibleCategories.forEachIndexed { index, usage ->
-                if (index > 0) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                    )
-                }
-                StorageCategoryRow(
-                    usage = usage,
-                    expanded = usage.category in expandedCategories,
-                    onToggleExpanded = {
-                        expandedCategories =
-                            if (usage.category in expandedCategories) {
-                                expandedCategories - usage.category
-                            } else {
-                                expandedCategories + usage.category
-                            }
-                    },
-                    onManage = { onManageCategory(usage.category) },
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun StorageCategoryRow(
+private fun StorageCategoryCard(
     usage: StorageCategoryUsage,
-    expanded: Boolean,
-    onToggleExpanded: () -> Unit,
-    onManage: () -> Unit,
+    totalBytes: Long,
+    accent: Color,
+    onClick: () -> Unit,
 ) {
     val categoryTitle = stringResource(usage.category.titleRes)
-    val hasDetails = usage.details.isNotEmpty()
-    val manageable = usage.category.isManageable
+    val fraction =
+        if (totalBytes > 0L) {
+            (usage.bytes.toDouble() / totalBytes.toDouble()).toFloat().coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+    val percentage = (fraction * 100f).roundToInt()
 
-    Column {
-        Row(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .clickable(enabled = hasDetails || manageable) {
-                        if (hasDetails) onToggleExpanded() else onManage()
-                    }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier.size(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = usage.category.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(21.dp),
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = categoryTitle,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = categorySummary(usage),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (hasDetails) {
-                IconButton(onClick = onToggleExpanded) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = groupedContainerColor(),
+        tonalElevation = 1.dp,
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier =
+                        Modifier.size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription =
-                            stringResource(
-                                if (expanded) R.string.data_storage_collapse_details
-                                else R.string.data_storage_expand_details,
-                            ),
+                        imageVector = usage.category.icon,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
-            }
-            if (manageable) {
-                IconButton(onClick = onManage) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = categoryTitle,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = categorySummary(usage),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = formatStorageSize(usage.bytes),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription =
                             stringResource(R.string.data_storage_manage_category, categoryTitle),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
-        }
 
-        AnimatedVisibility(visible = expanded && hasDetails) {
-            Column(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.28f))
-                        .padding(start = 64.dp, end = 16.dp, bottom = 8.dp),
-            ) {
-                usage.details.forEachIndexed { index, detail ->
-                    if (index > 0) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
-                    }
-                    StorageDetailRow(detail)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StorageDetailRow(detail: StorageDetailUsage) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(detail.detail.titleRes),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = stringResource(R.string.data_storage_file_count, detail.fileCount),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (detail.inaccessibleEntryCount > 0) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LinearProgressIndicator(
+                    progress = { fraction },
+                    modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
+                    color = accent,
+                    trackColor = accent.copy(alpha = 0.14f),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text =
-                        stringResource(
-                            R.string.data_storage_unavailable_entries,
-                            detail.inaccessibleEntryCount,
-                        ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
+                    text = "$percentage%",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        Text(
-            text = formatStorageSize(detail.bytes),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-        )
     }
 }
 
@@ -698,8 +565,9 @@ private fun CleanupSection(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         color = groupedContainerColor(),
+        tonalElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(vertical = 14.dp)) {
             Row(
@@ -954,9 +822,67 @@ private fun ScanErrorNotice(
     }
 }
 
+private val mainStorageCategoryOrder =
+    listOf(
+        StorageCategory.LINUX_ENVIRONMENT,
+        StorageCategory.LOCAL_MODELS,
+        StorageCategory.WORKSPACES_AND_MEDIA,
+        StorageCategory.CHAT_HISTORY,
+        StorageCategory.MEMORY_LIBRARY,
+        StorageCategory.BACKUPS_AND_EXPORTS,
+        StorageCategory.CONFIGURATION,
+    )
+
+private fun displayCategoryUsages(categories: List<StorageCategoryUsage>): List<StorageCategoryUsage> {
+    val byCategory = categories.associateBy { it.category }
+    val roleResources =
+        mergeCategoryUsages(
+            category = StorageCategory.CONFIGURATION,
+            first = byCategory[StorageCategory.CONFIGURATION],
+            second = byCategory[StorageCategory.PACKAGES_AND_PLUGINS],
+        )
+
+    return mainStorageCategoryOrder.map { category ->
+        if (category == StorageCategory.CONFIGURATION) {
+            roleResources
+        } else {
+            byCategory[category] ?: emptyCategoryUsage(category)
+        }
+    }
+}
+
+private fun emptyCategoryUsage(category: StorageCategory): StorageCategoryUsage =
+    StorageCategoryUsage(category = category, bytes = 0L, fileCount = 0L, inaccessibleEntryCount = 0)
+
+private fun mergeCategoryUsages(
+    category: StorageCategory,
+    first: StorageCategoryUsage?,
+    second: StorageCategoryUsage?,
+): StorageCategoryUsage {
+    val usages = listOfNotNull(first, second)
+    val firstSecondaryCount = first?.secondaryItemCount
+    val secondPrimaryCount = second?.itemCount
+    val secondaryCount =
+        when {
+            firstSecondaryCount != null && secondPrimaryCount != null ->
+                firstSecondaryCount + secondPrimaryCount
+            firstSecondaryCount != null -> firstSecondaryCount
+            else -> secondPrimaryCount
+        }
+    return StorageCategoryUsage(
+        category = category,
+        bytes = usages.sumOf { it.bytes.coerceAtLeast(0L) },
+        fileCount = usages.sumOf { it.fileCount.coerceAtLeast(0L) },
+        inaccessibleEntryCount = usages.sumOf { it.inaccessibleEntryCount.coerceAtLeast(0) },
+        itemCount = first?.itemCount,
+        secondaryItemCount = secondaryCount,
+        details = usages.flatMap { it.details },
+    )
+}
+
 @Composable
 private fun categorySummary(usage: StorageCategoryUsage): String {
-    val parts = mutableListOf(formatStorageSize(usage.bytes))
+    val parts = mutableListOf<String>()
     when (usage.category) {
         StorageCategory.CHAT_HISTORY -> {
             if (usage.itemCount != null && usage.secondaryItemCount != null) {
@@ -993,6 +919,9 @@ private fun categorySummary(usage: StorageCategoryUsage): String {
 
         else -> usage.itemCount?.let { parts += stringResource(R.string.data_storage_item_count, it) }
     }
+    if (parts.isEmpty()) {
+        parts += stringResource(R.string.data_storage_file_count, usage.fileCount)
+    }
     if (usage.inaccessibleEntryCount > 0) {
         parts += stringResource(R.string.data_storage_unavailable_entries, usage.inaccessibleEntryCount)
     }
@@ -1000,12 +929,18 @@ private fun categorySummary(usage: StorageCategoryUsage): String {
 }
 
 @Composable
-private fun scopeColors(): Map<StorageScope, Color> =
-    mapOf(
-        StorageScope.APP_DATA to MaterialTheme.colorScheme.primary,
-        StorageScope.USER_FILES to MaterialTheme.colorScheme.secondary,
-        StorageScope.CACHE to MaterialTheme.colorScheme.tertiary,
+private fun storageCategoryColors(): Map<StorageCategory, Color> {
+    val colors = MaterialTheme.colorScheme
+    return mapOf(
+        StorageCategory.LINUX_ENVIRONMENT to colors.primary,
+        StorageCategory.LOCAL_MODELS to colors.secondary,
+        StorageCategory.WORKSPACES_AND_MEDIA to colors.tertiary,
+        StorageCategory.CHAT_HISTORY to colors.error,
+        StorageCategory.MEMORY_LIBRARY to colors.primary.copy(alpha = 0.72f),
+        StorageCategory.BACKUPS_AND_EXPORTS to colors.secondary.copy(alpha = 0.72f),
+        StorageCategory.CONFIGURATION to colors.tertiary.copy(alpha = 0.72f),
     )
+}
 
 @Composable
 private fun groupedContainerColor(): Color {
@@ -1033,14 +968,6 @@ private data class LegendValue(
     val color: Color,
 )
 
-private val StorageScope.labelRes: Int
-    @StringRes get() =
-        when (this) {
-            StorageScope.APP_DATA -> R.string.data_storage_scope_app_data
-            StorageScope.USER_FILES -> R.string.data_storage_scope_user_files
-            StorageScope.CACHE -> R.string.data_storage_scope_cache
-        }
-
 private val StorageCategory.titleRes: Int
     @StringRes get() =
         when (this) {
@@ -1050,7 +977,7 @@ private val StorageCategory.titleRes: Int
             StorageCategory.CHAT_HISTORY -> R.string.data_storage_category_chats
             StorageCategory.MEMORY_LIBRARY -> R.string.data_storage_category_memory
             StorageCategory.BACKUPS_AND_EXPORTS -> R.string.data_storage_category_backups
-            StorageCategory.CONFIGURATION -> R.string.data_storage_category_configuration
+            StorageCategory.CONFIGURATION -> R.string.data_storage_category_roles_resources
             StorageCategory.PACKAGES_AND_PLUGINS -> R.string.data_storage_category_packages
             StorageCategory.CACHE_AND_TEMPORARY -> R.string.data_storage_category_cache
             StorageCategory.OTHER -> R.string.data_storage_category_other
@@ -1065,25 +992,10 @@ private val StorageCategory.icon: ImageVector
             StorageCategory.CHAT_HISTORY -> Icons.Default.Forum
             StorageCategory.MEMORY_LIBRARY -> Icons.Default.Psychology
             StorageCategory.BACKUPS_AND_EXPORTS -> Icons.Default.Backup
-            StorageCategory.CONFIGURATION -> Icons.Default.Tune
+            StorageCategory.CONFIGURATION -> Icons.Default.Extension
             StorageCategory.PACKAGES_AND_PLUGINS -> Icons.Default.Extension
             StorageCategory.CACHE_AND_TEMPORARY -> Icons.Default.CleaningServices
             StorageCategory.OTHER -> Icons.Default.MoreHoriz
-        }
-
-private val StorageCategory.isManageable: Boolean
-    get() =
-        when (this) {
-            StorageCategory.LINUX_ENVIRONMENT,
-            StorageCategory.LOCAL_MODELS,
-            StorageCategory.WORKSPACES_AND_MEDIA,
-            StorageCategory.CHAT_HISTORY,
-            StorageCategory.MEMORY_LIBRARY,
-            StorageCategory.BACKUPS_AND_EXPORTS,
-            StorageCategory.CONFIGURATION,
-            StorageCategory.PACKAGES_AND_PLUGINS -> true
-            StorageCategory.CACHE_AND_TEMPORARY,
-            StorageCategory.OTHER -> false
         }
 
 private val StorageDetail.titleRes: Int
