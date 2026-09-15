@@ -452,12 +452,21 @@ class ModelConfigManager(
             }
 
     val selectedConfigGroupFlow: Flow<String?> =
-            configDataStore.data.map { preferences -> preferences[SELECTED_CONFIG_GROUP_KEY] }
+            configDataStore.data.map { preferences ->
+                val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
+                normalizeConfigGroupId(preferences[SELECTED_CONFIG_GROUP_KEY])
+                        ?.takeIf { it in validGroupIds }
+            }
 
     suspend fun setSelectedConfigGroup(groupId: String?) {
+        val normalizedGroupId = normalizeConfigGroupId(groupId)
         configDataStore.edit { preferences ->
-            if (groupId == null) preferences.remove(SELECTED_CONFIG_GROUP_KEY)
-            else preferences[SELECTED_CONFIG_GROUP_KEY] = groupId
+            val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
+            require(normalizedGroupId == null || normalizedGroupId in validGroupIds) {
+                "Unknown config group ID: $groupId"
+            }
+            if (normalizedGroupId == null) preferences.remove(SELECTED_CONFIG_GROUP_KEY)
+            else preferences[SELECTED_CONFIG_GROUP_KEY] = normalizedGroupId
         }
     }
 
@@ -468,12 +477,13 @@ class ModelConfigManager(
     }
 
     private fun readConfigSummariesFromPrefs(prefs: Preferences): List<ModelConfigSummary> {
+        val validGroupIds = readGroups(prefs).mapTo(mutableSetOf()) { it.id }
         return readConfigListFromPrefs(prefs).map { configId ->
             val configJson = prefs[stringPreferencesKey("config_${configId}")]
             val config =
                     if (configJson != null) {
                         try {
-                            json.decodeFromString<ModelConfigData>(configJson)
+                            normalizeConfig(json.decodeFromString<ModelConfigData>(configJson))
                         } catch (_: Exception) {
                             fallbackConfigFor(configId)
                         }
@@ -483,7 +493,7 @@ class ModelConfigManager(
             ModelConfigSummary(
                     id = config.id,
                     name = config.name,
-                    groupId = config.groupId,
+                    groupId = config.groupId?.takeIf { it in validGroupIds },
                     modelName = config.modelName,
                     apiEndpoint = config.apiEndpoint,
                     apiProviderType = config.apiProviderType,
@@ -492,6 +502,14 @@ class ModelConfigManager(
                     thinkingOptionId = config.thinkingOptionId
             )
         }
+    }
+
+    private fun normalizeConfigGroupId(groupId: String?): String? {
+        return groupId?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun normalizeConfig(config: ModelConfigData): ModelConfigData {
+        return config.copy(groupId = normalizeConfigGroupId(config.groupId))
     }
 
     private fun fallbackConfigFor(configId: String): ModelConfigData {
@@ -511,7 +529,7 @@ class ModelConfigManager(
     suspend fun saveModelConfig(config: ModelConfigData) {
         val configKey = stringPreferencesKey("config_${config.id}")
         configDataStore.edit { preferences ->
-            preferences[configKey] = json.encodeToString(config)
+            preferences[configKey] = json.encodeToString(normalizeConfig(config))
         }
     }
 
@@ -522,7 +540,7 @@ class ModelConfigManager(
             val configJson = preferences[configKey]
             if (configJson != null) {
                 try {
-                    json.decodeFromString<ModelConfigData>(configJson)
+                    normalizeConfig(json.decodeFromString<ModelConfigData>(configJson))
                 } catch (e: Exception) {
                     // 如果解析失败，回退到创建一个新配置
                     if (configId == DEFAULT_CONFIG_ID) {
@@ -538,14 +556,6 @@ class ModelConfigManager(
                     ModelConfigData(id = configId, name = context.getString(R.string.model_config_config_id, configId))
                 }
             }
-        }
-    }
-
-    // 将配置保存到DataStore
-    private suspend fun saveConfigToDataStore(config: ModelConfigData) {
-        val configKey = stringPreferencesKey("config_${config.id}")
-        configDataStore.edit { preferences ->
-            preferences[configKey] = json.encodeToString(config)
         }
     }
 
@@ -578,7 +588,7 @@ class ModelConfigManager(
                         }
                     }
 
-            val newConfig = transform(current)
+            val newConfig = normalizeConfig(transform(current))
             preferences[configKey] = json.encodeToString(newConfig)
             updated = newConfig
         }
@@ -617,13 +627,12 @@ class ModelConfigManager(
     // 创建新配置
     suspend fun createConfig(name: String, groupId: String? = null): String {
         val configId = UUID.randomUUID().toString()
-        val configList = configListFlow.first().toMutableList()
-
+        val normalizedGroupId = normalizeConfigGroupId(groupId)
         val newConfig =
                 ModelConfigData(
                         id = configId,
                         name = name,
-                        groupId = groupId,
+                        groupId = normalizedGroupId,
                         apiProviderType = ApiProviderType.OPENAI_GENERIC,
                         apiProviderTypeId = ApiProviderType.OPENAI_GENERIC.name,
                         thinkingConfigurations = thinkingRulesForProvider(ApiProviderType.OPENAI_GENERIC.name),
@@ -631,13 +640,14 @@ class ModelConfigManager(
                         enableToolCall = ModelConfigDefaults.DEFAULT_ENABLE_TOOL_CALL
                 )
 
-        // 保存新配置
-        saveConfigToDataStore(newConfig)
-
-        // 更新配置列表
-        configList.add(configId)
         configDataStore.edit { preferences ->
-            preferences[CONFIG_LIST_KEY] = json.encodeToString(configList)
+            val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
+            require(normalizedGroupId == null || normalizedGroupId in validGroupIds) {
+                "Unknown config group ID: $groupId"
+            }
+            val configList = readConfigListFromPrefs(preferences)
+            preferences[stringPreferencesKey("config_${configId}")] = json.encodeToString(newConfig)
+            preferences[CONFIG_LIST_KEY] = json.encodeToString(configList + configId)
         }
 
         return configId
@@ -702,10 +712,13 @@ class ModelConfigManager(
             }
             val validGroupIds = groups.map { it.id }.toSet()
             orderedConfigs.forEach { (configId, groupId) ->
-                require(groupId == null || groupId in validGroupIds) { "Unknown config group ID: $groupId" }
+                val normalizedGroupId = normalizeConfigGroupId(groupId)
+                require(normalizedGroupId == null || normalizedGroupId in validGroupIds) {
+                    "Unknown config group ID: $groupId"
+                }
                 val configKey = stringPreferencesKey("config_${configId}")
                 val config = readConfig(preferences, configId)
-                preferences[configKey] = json.encodeToString(config.copy(groupId = groupId))
+                preferences[configKey] = json.encodeToString(config.copy(groupId = normalizedGroupId))
             }
             preferences[CONFIG_GROUPS_KEY] = json.encodeToString(groups)
             preferences[CONFIG_LIST_KEY] = json.encodeToString(orderedIds)
@@ -737,6 +750,9 @@ class ModelConfigManager(
         configDataStore.edit { preferences ->
             preferences[CONFIG_GROUPS_KEY] =
                     json.encodeToString(readGroups(preferences).filterNot { it.id == groupId })
+            if (preferences[SELECTED_CONFIG_GROUP_KEY] == groupId) {
+                preferences.remove(SELECTED_CONFIG_GROUP_KEY)
+            }
             readConfigListFromPrefs(preferences).forEach { configId ->
                 val config = readConfig(preferences, configId)
                 if (config.groupId == groupId) {
@@ -763,7 +779,11 @@ class ModelConfigManager(
 
     private fun readConfig(preferences: Preferences, configId: String): ModelConfigData {
         return preferences[stringPreferencesKey("config_${configId}")]
-                ?.let { runCatching { json.decodeFromString<ModelConfigData>(it) }.getOrNull() }
+                ?.let {
+                    runCatching {
+                        normalizeConfig(json.decodeFromString<ModelConfigData>(it))
+                    }.getOrNull()
+                }
                 ?: fallbackConfigFor(configId)
     }
 
@@ -1288,37 +1308,49 @@ class ModelConfigManager(
     suspend fun importConfigs(jsonContent: String): Triple<Int, Int, Int> {
         try {
             val importedConfigs = json.decodeFromString<List<ModelConfigData>>(jsonContent)
-            val existingConfigList = configListFlow.first().toMutableList()
-            val existingConfigIds = existingConfigList.toSet()
-            
             var newCount = 0
             var updatedCount = 0
             var skippedCount = 0
-            
-            for (config in importedConfigs) {
-                if (config.id.isEmpty() || config.name.isEmpty()) {
-                    skippedCount++
-                    continue
+
+            configDataStore.edit { preferences ->
+                val existingConfigList = readConfigListFromPrefs(preferences).toMutableList()
+                val existingConfigIds = existingConfigList.toMutableSet()
+                val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
+
+                importedConfigs.forEach { rawConfig ->
+                    val configId = rawConfig.id.trim()
+                    val configName = rawConfig.name.trim()
+                    if (configId.isEmpty() || configName.isEmpty()) {
+                        skippedCount++
+                        return@forEach
+                    }
+
+                    // Old exports do not have groupId. Empty or unknown IDs must remain visible as ungrouped.
+                    val groupId =
+                            normalizeConfigGroupId(rawConfig.groupId)
+                                    ?.takeIf { it in validGroupIds }
+                    val config = normalizeConfig(
+                            rawConfig.copy(
+                                    id = configId,
+                                    name = configName,
+                                    groupId = groupId
+                            )
+                    )
+                    preferences[stringPreferencesKey("config_${config.id}")] =
+                            json.encodeToString(config)
+
+                    if (existingConfigIds.add(config.id)) {
+                        existingConfigList.add(config.id)
+                        newCount++
+                    } else {
+                        updatedCount++
+                    }
                 }
-                
-                // 保存配置
-                saveConfigToDataStore(config)
-                
-                if (existingConfigIds.contains(config.id)) {
-                    updatedCount++
-                } else {
-                    newCount++
-                    existingConfigList.add(config.id)
-                }
+
+                // Always rewrite the list in the same transaction as the config records.
+                preferences[CONFIG_LIST_KEY] = json.encodeToString(existingConfigList)
             }
-            
-            // 更新配置列表
-            if (newCount > 0) {
-                configDataStore.edit { preferences ->
-                    preferences[CONFIG_LIST_KEY] = json.encodeToString(existingConfigList)
-                }
-            }
-            
+
             return Triple(newCount, updatedCount, skippedCount)
         } catch (e: Exception) {
             AppLogger.e("ModelConfigManager", "导入配置失败", e)
