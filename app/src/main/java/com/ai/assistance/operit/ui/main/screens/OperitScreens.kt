@@ -65,6 +65,8 @@ import com.ai.assistance.operit.ui.features.settings.screens.ThemeSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScreen
 import com.ai.assistance.operit.ui.features.settings.screens.UserPreferencesSettingsScreen
+import com.ai.assistance.operit.data.storage.StorageCategory
+import com.ai.assistance.operit.ui.features.storage.DataStorageScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
@@ -607,6 +609,7 @@ sealed class Screen(
                     navigateToGlobalDisplaySettings = { navigateTo(GlobalDisplaySettings) },
                     navigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
                     navigateToFunctionalConfig = { navigateTo(FunctionalConfig) },
+                    navigateToDataStorageManagement = { navigateTo(DataStorageManagement) },
                     navigateToChatHistorySettings = { navigateTo(ChatHistorySettings) },
                     navigateToChatBackupSettings = { navigateTo(ChatBackupSettings) },
                     navigateToLanguageSettings = { navigateTo(LanguageSettings) },
@@ -1063,6 +1066,41 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             LayoutAdjustmentSettingsScreen(onNavigateBack = onGoBack)
+        }
+    }
+
+    data object DataStorageManagement :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_data_storage_management,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            DataStorageScreen(
+                    onManageCategory = { category ->
+                        when (category) {
+                            StorageCategory.LINUX_ENVIRONMENT -> navigateTo(Terminal)
+                            StorageCategory.LOCAL_MODELS -> navigateTo(MnnModelDownload)
+                            StorageCategory.WORKSPACES_AND_MEDIA,
+                            StorageCategory.CHAT_HISTORY -> navigateTo(ChatHistorySettings)
+                            StorageCategory.MEMORY_LIBRARY -> navigateTo(MemoryBase)
+                            StorageCategory.BACKUPS_AND_EXPORTS,
+                            StorageCategory.CONFIGURATION -> navigateTo(ChatBackupSettings)
+                            StorageCategory.PACKAGES_AND_PLUGINS -> navigateTo(Packages)
+                            StorageCategory.CACHE_AND_TEMPORARY,
+                            StorageCategory.OTHER -> Unit
+                        }
+                    }
+            )
         }
     }
 

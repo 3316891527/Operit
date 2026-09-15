@@ -45,6 +45,7 @@ fun SettingsScreen(
         navigateToGlobalDisplaySettings: () -> Unit,
         navigateToModelPrompts: () -> Unit,
         navigateToFunctionalConfig: () -> Unit,
+        navigateToDataStorageManagement: () -> Unit,
         navigateToChatHistorySettings: () -> Unit,
         navigateToChatBackupSettings: () -> Unit,
         navigateToLanguageSettings: () -> Unit,
@@ -285,6 +286,13 @@ fun SettingsScreen(
                         icon = Icons.Default.DeleteSweep,
                         containerColor = cardContainerColor
                 ) {
+                        CompactSettingsItem(
+                                title = stringResource(id = R.string.settings_data_storage),
+                                subtitle = stringResource(id = R.string.settings_data_storage_subtitle),
+                                icon = Icons.Default.Storage,
+                                onClick = navigateToDataStorageManagement
+                        )
+
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_clear_cookies),
                                 subtitle = stringResource(id = R.string.settings_clear_cookies_subtitle),
