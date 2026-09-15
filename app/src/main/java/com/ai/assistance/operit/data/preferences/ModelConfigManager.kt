@@ -13,6 +13,7 @@ import com.ai.assistance.operit.data.model.CustomParameterData
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ModelConfigDefaults
+import com.ai.assistance.operit.data.model.ModelConfigGroup
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ParameterCategory
@@ -64,6 +65,8 @@ class ModelConfigManager(
     companion object {
         // 配置相关key
         val CONFIG_LIST_KEY = stringPreferencesKey("config_list")
+        val CONFIG_GROUPS_KEY = stringPreferencesKey("config_groups")
+        val SELECTED_CONFIG_GROUP_KEY = stringPreferencesKey("selected_config_group")
 
         // 默认值
         const val DEFAULT_CONFIG_ID = "default"
@@ -437,6 +440,26 @@ class ModelConfigManager(
             configDataStore.data.map { preferences ->
                 readConfigSummariesFromPrefs(preferences)
             }
+    val configGroupsFlow: Flow<List<ModelConfigGroup>> =
+            configDataStore.data.map { preferences ->
+                preferences[CONFIG_GROUPS_KEY]
+                        ?.let {
+                            runCatching {
+                                json.decodeFromString<List<ModelConfigGroup>>(it)
+                            }.getOrNull()
+                        }
+                        .orEmpty()
+            }
+
+    val selectedConfigGroupFlow: Flow<String?> =
+            configDataStore.data.map { preferences -> preferences[SELECTED_CONFIG_GROUP_KEY] }
+
+    suspend fun setSelectedConfigGroup(groupId: String?) {
+        configDataStore.edit { preferences ->
+            if (groupId == null) preferences.remove(SELECTED_CONFIG_GROUP_KEY)
+            else preferences[SELECTED_CONFIG_GROUP_KEY] = groupId
+        }
+    }
 
     private fun readConfigListFromPrefs(prefs: Preferences): List<String> {
         val configList = prefs[CONFIG_LIST_KEY] ?: ""
@@ -460,6 +483,7 @@ class ModelConfigManager(
             ModelConfigSummary(
                     id = config.id,
                     name = config.name,
+                    groupId = config.groupId,
                     modelName = config.modelName,
                     apiEndpoint = config.apiEndpoint,
                     apiProviderType = config.apiProviderType,
@@ -591,7 +615,7 @@ class ModelConfigManager(
     }
 
     // 创建新配置
-    suspend fun createConfig(name: String): String {
+    suspend fun createConfig(name: String, groupId: String? = null): String {
         val configId = UUID.randomUUID().toString()
         val configList = configListFlow.first().toMutableList()
 
@@ -599,6 +623,7 @@ class ModelConfigManager(
                 ModelConfigData(
                         id = configId,
                         name = name,
+                        groupId = groupId,
                         apiProviderType = ApiProviderType.OPENAI_GENERIC,
                         apiProviderTypeId = ApiProviderType.OPENAI_GENERIC.name,
                         thinkingConfigurations = thinkingRulesForProvider(ApiProviderType.OPENAI_GENERIC.name),
@@ -616,6 +641,130 @@ class ModelConfigManager(
         }
 
         return configId
+    }
+
+    suspend fun reorderConfigs(configIds: List<String>) {
+        configDataStore.edit { preferences ->
+            val currentIds = readConfigListFromPrefs(preferences)
+            require(configIds.size == currentIds.size && configIds.toSet() == currentIds.toSet()) {
+                "Reordered config IDs must match the existing config list"
+            }
+            preferences[CONFIG_LIST_KEY] = json.encodeToString(configIds)
+        }
+    }
+
+    suspend fun createConfigGroup(name: String): String {
+        val normalizedName = name.trim()
+        require(normalizedName.isNotEmpty()) { "Config group name must not be blank" }
+        val group = ModelConfigGroup(UUID.randomUUID().toString(), normalizedName)
+        configDataStore.edit { preferences ->
+            preferences[CONFIG_GROUPS_KEY] = json.encodeToString(readGroups(preferences) + group)
+        }
+        return group.id
+    }
+
+    suspend fun renameConfigGroup(groupId: String, name: String) {
+        val normalizedName = name.trim()
+        require(normalizedName.isNotEmpty()) { "Config group name must not be blank" }
+        configDataStore.edit { preferences ->
+            preferences[CONFIG_GROUPS_KEY] = json.encodeToString(
+                    readGroups(preferences).map {
+                        if (it.id == groupId) it.copy(name = normalizedName) else it
+                    }
+            )
+        }
+    }
+
+    suspend fun reorderConfigGroups(groupIds: List<String>) {
+        configDataStore.edit { preferences ->
+            val groups = readGroups(preferences)
+            require(groupIds.size == groups.size && groupIds.toSet() == groups.map { it.id }.toSet()) {
+                "Reordered group IDs must match the existing group list"
+            }
+            val groupsById = groups.associateBy { it.id }
+            preferences[CONFIG_GROUPS_KEY] =
+                    json.encodeToString(groupIds.mapNotNull(groupsById::get))
+        }
+    }
+
+    suspend fun updateConfigOrganization(
+            groups: List<ModelConfigGroup>,
+            orderedConfigs: List<Pair<String, String?>>
+    ) {
+        configDataStore.edit { preferences ->
+            val currentIds = readConfigListFromPrefs(preferences)
+            val orderedIds = orderedConfigs.map { it.first }
+            require(orderedIds.size == currentIds.size && orderedIds.toSet() == currentIds.toSet()) {
+                "Organized config IDs must match the existing config list"
+            }
+            require(groups.map { it.id }.distinct().size == groups.size) {
+                "Config group IDs must be unique"
+            }
+            val validGroupIds = groups.map { it.id }.toSet()
+            orderedConfigs.forEach { (configId, groupId) ->
+                require(groupId == null || groupId in validGroupIds) { "Unknown config group ID: $groupId" }
+                val configKey = stringPreferencesKey("config_${configId}")
+                val config = readConfig(preferences, configId)
+                preferences[configKey] = json.encodeToString(config.copy(groupId = groupId))
+            }
+            preferences[CONFIG_GROUPS_KEY] = json.encodeToString(groups)
+            preferences[CONFIG_LIST_KEY] = json.encodeToString(orderedIds)
+        }
+    }
+
+    suspend fun moveConfig(configId: String, groupId: String?, targetIndex: Int) {
+        configDataStore.edit { preferences ->
+            val configIds = readConfigListFromPrefs(preferences).toMutableList()
+            require(configIds.remove(configId)) { "Unknown config ID: $configId" }
+            val configKey = stringPreferencesKey("config_${configId}")
+            val config = readConfig(preferences, configId)
+            val destinationIds = configIds.filter { readConfig(preferences, it).groupId == groupId }
+            val boundedIndex = targetIndex.coerceIn(0, destinationIds.size)
+            val insertionIndex =
+                    if (boundedIndex < destinationIds.size) {
+                        configIds.indexOf(destinationIds[boundedIndex])
+                    } else {
+                        destinationIds.lastOrNull()?.let { configIds.indexOf(it) + 1 }
+                                ?: configIds.size
+                    }
+            configIds.add(insertionIndex, configId)
+            preferences[configKey] = json.encodeToString(config.copy(groupId = groupId))
+            preferences[CONFIG_LIST_KEY] = json.encodeToString(configIds)
+        }
+    }
+
+    suspend fun deleteConfigGroup(groupId: String) {
+        configDataStore.edit { preferences ->
+            preferences[CONFIG_GROUPS_KEY] =
+                    json.encodeToString(readGroups(preferences).filterNot { it.id == groupId })
+            readConfigListFromPrefs(preferences).forEach { configId ->
+                val config = readConfig(preferences, configId)
+                if (config.groupId == groupId) {
+                    preferences[stringPreferencesKey("config_${configId}")] =
+                            json.encodeToString(config.copy(groupId = null))
+                }
+            }
+        }
+    }
+
+    suspend fun updateModelOrder(configId: String, modelOrder: List<String>): ModelConfigData {
+        return updateConfigInternal(configId) {
+            it.copy(modelOrder = modelOrder.map(String::trim).filter(String::isNotEmpty).distinct())
+        }
+    }
+
+    private fun readGroups(preferences: Preferences): List<ModelConfigGroup> {
+        return preferences[CONFIG_GROUPS_KEY]
+                ?.let {
+                    runCatching { json.decodeFromString<List<ModelConfigGroup>>(it) }.getOrNull()
+                }
+                .orEmpty()
+    }
+
+    private fun readConfig(preferences: Preferences, configId: String): ModelConfigData {
+        return preferences[stringPreferencesKey("config_${configId}")]
+                ?.let { runCatching { json.decodeFromString<ModelConfigData>(it) }.getOrNull() }
+                ?: fallbackConfigFor(configId)
     }
 
     // 删除配置并清理所有功能对该配置的引用

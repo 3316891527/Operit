@@ -90,12 +90,19 @@ data class ConversationSummaryConfig(
         val dialogueReviewTitle: String = ""
 )
 
+@Serializable
+data class ModelConfigGroup(
+        val id: String,
+        val name: String
+)
+
 /** 表示完整的模型配置，包括API设置和模型参数 */
 @Serializable
 data class ModelConfigData(
         val id: String,
         val name: String,
-
+        val groupId: String? = null,
+        val modelOrder: List<String> = emptyList(),
         // API设置
         val apiKey: String = "",
         val apiEndpoint: String = "",
@@ -206,6 +213,7 @@ data class ModelConfigData(
 data class ModelConfigSummary(
         val id: String,
         val name: String,
+        val groupId: String? = null,
         val modelName: String = "",
         val apiEndpoint: String = "",
         val apiProviderType: ApiProviderType = ApiProviderType.DEEPSEEK,
@@ -226,6 +234,19 @@ fun getModelByIndex(modelName: String, index: Int): String {
 fun getModelList(modelName: String): List<String> {
     if (modelName.isEmpty()) return emptyList()
     return modelName.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+}
+
+fun applySavedModelOrder(models: List<String>, savedOrder: List<String>): List<String> {
+    val availableModels = models.distinct()
+    val availableSet = availableModels.toSet()
+    return buildList {
+        savedOrder.distinct().forEach { model ->
+            if (model in availableSet) add(model)
+        }
+        availableModels.forEach { model ->
+            if (model !in this) add(model)
+        }
+    }
 }
 
 /** 
