@@ -19,7 +19,7 @@
       "required": true
     },
     {
-      "name": "XAI_BASE_URL",
+      "name": "XAI_API_BASE_URL",
       "description": {
         "zh": "xAI API 基地址（可选；默认 https://api.x.ai/v1）",
         "en": "xAI API base URL (optional; default https://api.x.ai/v1)"
@@ -148,7 +148,7 @@ const xaiDraw = (function () {
     }
 
     function getBaseUrl(): string {
-        const base = String(getEnv("XAI_BASE_URL") || "").trim();
+        const base = String(getEnv("XAI_API_BASE_URL") || "").trim();
         return (base || DEFAULT_BASE_URL).replace(/\/+$/, "");
     }
 
