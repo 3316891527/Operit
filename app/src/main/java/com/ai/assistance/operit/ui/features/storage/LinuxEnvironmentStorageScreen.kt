@@ -96,9 +96,10 @@ fun LinuxEnvironmentStorageScreen() {
                         selected = unit.kind in state.selectedKinds,
                         enabled = !unit.locked && !empty && !state.job.running,
                         locked = unit.locked,
+                        empty = empty && !unit.locked,
                         title = stringResource(unit.kind.titleRes),
-                        subtitle = if (empty) {
-                            stringResource(unit.kind.emptyRes)
+                        subtitle = if (empty && !unit.locked) {
+                            stringResource(R.string.data_storage_nothing_deletable)
                         } else {
                             stringResource(R.string.data_storage_linux_files_count, unit.fileCount)
                         },
@@ -107,11 +108,12 @@ fun LinuxEnvironmentStorageScreen() {
                         statusTags = listOfNotNull(
                             if (unit.locked) {
                                 StorageStatusTag(stringResource(R.string.data_storage_linux_locked_note), emphasis = true)
+                            } else if (empty) {
+                                StorageStatusTag(stringResource(unit.kind.emptyRes))
                             } else {
                                 null
                             },
                         ),
-                        note = unit.deletionPaths().joinToString("\n") { it.absolutePath }.takeIf { !empty },
                         onToggle = { storageViewModel.toggle(unit) },
                     )
                 }

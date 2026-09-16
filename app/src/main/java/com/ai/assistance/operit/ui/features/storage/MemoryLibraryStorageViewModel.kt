@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 data class MemoryLibraryUiState(
     val snapshot: MemoryLibrarySnapshot? = null,
     val selectedKeys: Set<String> = emptySet(),
+    val expandedKeys: Set<String> = emptySet(),
     val profileFilter: String = ALL,
     val isLoading: Boolean = false,
     val job: StorageJobState = StorageJobState(),
@@ -25,16 +26,26 @@ data class MemoryLibraryUiState(
 ) {
     val folders: List<MemoryFolderGroup>
         get() = snapshot?.folders.orEmpty().filter { profileFilter == ALL || it.profileId == profileFilter }
-    val selected: List<MemoryFolderGroup>
-        get() = folders.filter { it.key in selectedKeys }
+
     val selectedEntries: List<MemoryStorageEntry>
-        get() = selected.flatMap { it.entries }
-    val selectedBytes: Long get() = selected.sumOf { it.estimatedBytes }
+        get() {
+            val selected = selectedKeys
+            return folders.flatMap { folder ->
+                folder.entries.filter { entry ->
+                    folder.key in selected || entry.key in selected
+                }
+            }.distinctBy { it.key }
+        }
+
+    val selectedBytes: Long get() = selectedEntries.sumOf { it.estimatedBytes }
+    val selectedCount: Int get() = selectedEntries.size
 
     companion object {
         const val ALL = "all"
     }
 }
+
+val MemoryStorageEntry.key: String get() = "$profileId:$uuid"
 
 class MemoryLibraryStorageViewModel(
     private val inventory: MemoryLibraryInventory,
@@ -62,15 +73,41 @@ class MemoryLibraryStorageViewModel(
     }
 
     fun setProfileFilter(profileId: String) {
-        _state.update { it.copy(profileFilter = profileId, selectedKeys = emptySet()) }
+        _state.update { it.copy(profileFilter = profileId, selectedKeys = emptySet(), expandedKeys = emptySet()) }
     }
 
-    fun toggle(folder: MemoryFolderGroup) {
+    fun toggleFolder(folder: MemoryFolderGroup) {
         if (_state.value.job.running) return
         _state.update {
             val next = it.selectedKeys.toMutableSet()
-            if (!next.add(folder.key)) next.remove(folder.key)
+            val entryKeys = folder.entries.map { entry -> entry.key }
+            if (folder.key in next || entryKeys.all { key -> key in next }) {
+                next.remove(folder.key)
+                next.removeAll(entryKeys.toSet())
+            } else {
+                next.add(folder.key)
+                next.addAll(entryKeys)
+            }
             it.copy(selectedKeys = next)
+        }
+    }
+
+    fun toggleEntry(folder: MemoryFolderGroup, entry: MemoryStorageEntry) {
+        if (_state.value.job.running) return
+        _state.update {
+            val next = it.selectedKeys.toMutableSet()
+            if (!next.add(entry.key)) next.remove(entry.key)
+            val allSelected = folder.entries.all { item -> item.key in next }
+            if (allSelected) next.add(folder.key) else next.remove(folder.key)
+            it.copy(selectedKeys = next)
+        }
+    }
+
+    fun toggleExpanded(folder: MemoryFolderGroup) {
+        _state.update {
+            val next = it.expandedKeys.toMutableSet()
+            if (!next.add(folder.key)) next.remove(folder.key)
+            it.copy(expandedKeys = next)
         }
     }
 

@@ -41,9 +41,9 @@ fun MemoryLibraryStorageScreen() {
             errorMessage = state.errorMessage,
             bottomBar = {
                 StorageBottomBar(
-                    selectedCount = state.selected.size,
+                    selectedCount = state.selectedCount,
                     selectedBytes = state.selectedBytes,
-                    enabled = state.selected.isNotEmpty() && !state.job.running,
+                    enabled = state.selectedCount > 0 && !state.job.running,
                     actionLabel = stringResource(R.string.data_storage_delete_selected),
                     onAction = { showConfirm = true },
                 )
@@ -81,29 +81,51 @@ fun MemoryLibraryStorageScreen() {
             if (state.folders.isEmpty() && !state.isLoading) {
                 item { StorageEmptyCard(stringResource(R.string.data_storage_memory_empty_folders)) }
             } else {
-                items(state.folders, key = { it.key }) { folder ->
+                state.folders.forEach { folder ->
                     val folderTitle = folder.folderName.ifBlank {
                         stringResource(R.string.data_storage_memory_uncategorized_folder)
                     }
-                    StorageSelectableRow(
-                        selected = folder.key in state.selectedKeys,
-                        enabled = !state.job.running,
-                        locked = false,
-                        title = folderTitle,
-                        subtitle = folder.profileName,
-                        bytes = folder.estimatedBytes,
-                        leadingIcon = Icons.Default.Folder,
-                        statusTags = listOfNotNull(
-                            StorageStatusTag(stringResource(R.string.data_storage_memory_folder_items, folder.memoryCount)),
-                            if (folder.documentCount > 0) {
-                                StorageStatusTag(stringResource(R.string.data_storage_memory_document))
-                            } else {
-                                null
-                            },
-                        ),
-                        note = stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(folder.updatedAtMillis)),
-                        onToggle = { storageViewModel.toggle(folder) },
-                    )
+                    val expanded = folder.key in state.expandedKeys
+                    item(key = folder.key) {
+                        StorageSelectableRow(
+                            selected = folder.key in state.selectedKeys || folder.entries.all { it.key in state.selectedKeys },
+                            enabled = !state.job.running,
+                            locked = false,
+                            title = folderTitle,
+                            subtitle = folder.profileName,
+                            bytes = folder.estimatedBytes,
+                            leadingIcon = Icons.Default.Folder,
+                            expanded = expanded,
+                            onExpand = { storageViewModel.toggleExpanded(folder) },
+                            statusTags = listOfNotNull(
+                                StorageStatusTag(stringResource(R.string.data_storage_memory_folder_items, folder.memoryCount)),
+                                if (folder.documentCount > 0) {
+                                    StorageStatusTag(stringResource(R.string.data_storage_memory_document))
+                                } else {
+                                    null
+                                },
+                            ),
+                            onToggle = { storageViewModel.toggleFolder(folder) },
+                        )
+                    }
+                    if (expanded) {
+                        items(folder.entries, key = { it.key }) { entry ->
+                            StorageSelectableRow(
+                                selected = entry.key in state.selectedKeys || folder.key in state.selectedKeys,
+                                enabled = !state.job.running,
+                                locked = false,
+                                indent = true,
+                                title = entry.title,
+                                subtitle = if (entry.isDocument) {
+                                    stringResource(R.string.data_storage_memory_document)
+                                } else {
+                                    stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(entry.updatedAtMillis))
+                                },
+                                bytes = entry.estimatedBytes,
+                                onToggle = { storageViewModel.toggleEntry(folder, entry) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -114,7 +136,7 @@ fun MemoryLibraryStorageScreen() {
             title = stringResource(R.string.data_storage_memory_delete_title),
             message = stringResource(
                 R.string.data_storage_delete_items_message,
-                state.selectedEntries.size,
+                state.selectedCount,
                 formatStorageSize(state.selectedBytes),
             ),
             warnings = listOf(stringResource(R.string.data_storage_memory_delete_warning)),

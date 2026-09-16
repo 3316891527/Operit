@@ -28,12 +28,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -270,7 +273,11 @@ fun StorageSelectableRow(
     leadingInitial: String? = null,
     leadingCircular: Boolean = true,
     showBytes: Boolean = true,
+    empty: Boolean = false,
+    expanded: Boolean? = null,
+    indent: Boolean = false,
     onToggle: () -> Unit,
+    onExpand: (() -> Unit)? = null,
     leadingContent: (@Composable () -> Unit)? = null,
 ) {
     val resolvedTags =
@@ -280,7 +287,12 @@ fun StorageSelectableRow(
             tags.map { StorageStatusTag(it) }
         }
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onToggle() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = if (indent) 18.dp else 0.dp)
+            .clickable(enabled = enabled || onExpand != null) {
+                if (enabled) onToggle() else onExpand?.invoke()
+            },
         shape = RoundedCornerShape(20.dp),
         color = storagePanelColor(),
         tonalElevation = 1.dp,
@@ -293,11 +305,19 @@ fun StorageSelectableRow(
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(22.dp),
                 )
             } else {
-                Checkbox(checked = selected, onCheckedChange = { onToggle() }, enabled = enabled)
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = { onToggle() },
+                    enabled = enabled && !empty,
+                    colors = CheckboxDefaults.colors(
+                        disabledUncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+                        disabledCheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+                    ),
+                )
             }
             Spacer(modifier = Modifier.width(8.dp))
             when {
@@ -355,7 +375,20 @@ fun StorageSelectableRow(
                     text = formatStorageSize(bytes),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
+                    color = if (empty) {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                 )
+            }
+            if (expanded != null && onExpand != null) {
+                IconButton(onClick = onExpand) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                    )
+                }
             }
         }
     }

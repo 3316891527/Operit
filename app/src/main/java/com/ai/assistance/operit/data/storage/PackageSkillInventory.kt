@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.data.storage
 
 import android.content.Context
+import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.core.tools.skill.SkillManager
 import com.ai.assistance.operit.data.mcp.MCPRepository
 import com.ai.assistance.operit.util.OperitPaths
@@ -8,115 +10,108 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-enum class PackageSkillKind {
+enum class ExtensionCategory {
     PLUGIN,
+    SCRIPT,
+    MCP,
     SKILL,
+    PLUGIN_SOURCE,
+    DEV_PACKAGE,
+    MCP_BRIDGE,
+    THEME,
 }
 
-data class PackageSkillEntry(
+data class ExtensionItem(
     val id: String,
-    val kind: PackageSkillKind,
+    val category: ExtensionCategory,
     val name: String,
-    val path: File?,
+    val path: File,
     val bytes: Long,
     val fileCount: Long,
     val subtitle: String,
-    val installed: Boolean,
+    val packageName: String? = null,
+    val hasLogo: Boolean = false,
+    val lastModifiedMillis: Long = 0L,
+)
+
+data class ExtensionCategoryGroup(
+    val category: ExtensionCategory,
+    val items: List<ExtensionItem>,
+    val bytes: Long,
+    val itemCount: Int,
 )
 
 data class PackageSkillSnapshot(
-    val plugins: List<PackageSkillEntry>,
-    val skills: List<PackageSkillEntry>,
+    val groups: List<ExtensionCategoryGroup>,
+    val items: List<ExtensionItem>,
     val totalBytes: Long,
     val scannedAtMillis: Long,
-)
+) {
+    val plugins: List<ExtensionItem>
+        get() = items.filter { it.category == ExtensionCategory.PLUGIN }
+    val skills: List<ExtensionItem>
+        get() = items.filter { it.category == ExtensionCategory.SKILL }
+}
 
 class PackageSkillInventory(context: Context) {
     private val appContext = context.applicationContext
     private val mcpRepository = MCPRepository(appContext)
     private val skillManager = SkillManager.getInstance(appContext)
     private val storageRepository = DataStorageRepository(appContext)
+    private val cleaner = SafeDirectoryCleaner()
+    private val packageManager: PackageManager by lazy {
+        PackageManager.getInstance(appContext, AIToolHandler.getInstance(appContext))
+    }
 
     suspend fun load(): PackageSkillSnapshot = withContext(Dispatchers.IO) {
-        mcpRepository.refreshInstalledPlugins()
-        val plugins = mcpRepository.mcpServers.value.map { metadata ->
-            val path = mcpRepository.getInstalledPluginPath(metadata.id)
-            val file = path?.takeUnless { it.startsWith("virtual://") }?.let(::File)
-            val stats = file?.computeStorageStats() ?: PathStorageStats()
-            PackageSkillEntry(
-                id = "plugin:${metadata.id}",
-                kind = PackageSkillKind.PLUGIN,
-                name = metadata.name.ifBlank { metadata.id },
-                path = file,
-                bytes = stats.bytes,
-                fileCount = stats.fileCount,
-                subtitle = metadata.author.ifBlank { metadata.type },
-                installed = metadata.isInstalled || stats.exists,
-            )
-        }.filter { it.installed || it.bytes > 0L }
+        val items = mutableListOf<ExtensionItem>()
+        items += scanRuntimePackages()
+        items += scanMcpPlugins()
+        items += scanSkills()
+        items += scanDirectoryChildren(
+            root = OperitPaths.pluginsDir(),
+            category = ExtensionCategory.PLUGIN_SOURCE,
+            idPrefix = "plugin-source",
+        )
+        items += scanDirectoryChildren(
+            root = File(OperitPaths.operitRootDir(), "dev_package"),
+            category = ExtensionCategory.DEV_PACKAGE,
+            idPrefix = "dev-package",
+        )
+        items += scanBridge()
+        items += scanDirectoryChildren(
+            root = File(OperitPaths.operitRootDir(), "themes"),
+            category = ExtensionCategory.THEME,
+            idPrefix = "theme",
+        )
 
-        val skills = skillManager.getAvailableSkills().values.map { skill ->
-            val stats = skill.directory.computeStorageStats()
-            PackageSkillEntry(
-                id = "skill:${skill.name}",
-                kind = PackageSkillKind.SKILL,
-                name = skill.name,
-                path = skill.directory,
-                bytes = stats.bytes,
-                fileCount = stats.fileCount,
-                subtitle = skill.description,
-                installed = true,
-            )
-        }
-
-        val extraPluginDirs = listOf(
-            OperitPaths.pluginsDir(),
-            File(OperitPaths.operitRootDir(), "bridge"),
-            File(OperitPaths.operitRootDir(), "dev_package"),
-        ).filter { dir ->
-            dir.isDirectory && plugins.none { entry ->
-                entry.path?.canonicalOrAbsolute() == dir.canonicalOrAbsolute()
-            }
-        }.map { directory ->
-            val stats = directory.computeStorageStats()
-            PackageSkillEntry(
-                id = "plugin-dir:${directory.canonicalOrAbsolute()}",
-                kind = PackageSkillKind.PLUGIN,
-                name = directory.name,
-                path = directory,
-                bytes = stats.bytes,
-                fileCount = stats.fileCount,
-                subtitle = directory.absolutePath,
-                installed = stats.exists,
+        val groups = ExtensionCategory.entries.map { category ->
+            val grouped = items.filter { it.category == category }.sortedByDescending { it.bytes }
+            ExtensionCategoryGroup(
+                category = category,
+                items = grouped,
+                bytes = grouped.sumOf { it.bytes },
+                itemCount = grouped.size,
             )
         }
-
         PackageSkillSnapshot(
-            plugins = (plugins + extraPluginDirs).sortedByDescending { it.bytes },
-            skills = skills.sortedByDescending { it.bytes },
-            totalBytes = plugins.sumOf { it.bytes } + extraPluginDirs.sumOf { it.bytes } + skills.sumOf { it.bytes },
+            groups = groups,
+            items = items.sortedByDescending { it.bytes },
+            totalBytes = items.sumOf { it.bytes },
             scannedAtMillis = System.currentTimeMillis(),
         )
     }
 
-    suspend fun delete(entries: List<PackageSkillEntry>, onProgress: (String, Int, Int, Long) -> Unit): StorageDeleteBatchResult {
+    suspend fun delete(
+        entries: List<ExtensionItem>,
+        onProgress: (String, Int, Int, Long) -> Unit,
+    ): StorageDeleteBatchResult {
         var released = 0L
         var deleted = 0
         var failed = 0
         entries.forEachIndexed { index, entry ->
             onProgress(entry.name, index, entries.size, released)
-            val ok = runCatching {
-                when (entry.kind) {
-                    PackageSkillKind.PLUGIN -> {
-                        if (entry.id.startsWith("plugin:")) {
-                            mcpRepository.uninstallMCPServer(entry.id.removePrefix("plugin:"))
-                        } else {
-                            entry.path?.deleteRecursively() == true || entry.path?.exists() != true
-                        }
-                    }
-                    PackageSkillKind.SKILL -> skillManager.deleteSkill(entry.name)
-                }
-            }.getOrDefault(false)
+            val ok = runCatching { deleteEntry(entry) }.getOrDefault(false)
             if (ok) {
                 deleted++
                 released += entry.bytes
@@ -126,5 +121,144 @@ class PackageSkillInventory(context: Context) {
         }
         storageRepository.invalidateCache()
         return StorageDeleteBatchResult(deleted, failed, released)
+    }
+
+    fun readPluginLogo(packageName: String): PackageManager.ToolPkgLogoBytes? {
+        return runCatching { packageManager.readToolPkgLogoBytes(packageName) }.getOrNull()
+    }
+
+    private fun scanRuntimePackages(): List<ExtensionItem> {
+        val sources = runCatching {
+            packageManager.getAvailablePackages(forceRefresh = true)
+            packageManager.getPublishablePackageSources()
+        }.getOrDefault(emptyList())
+        return sources.map { source ->
+            val file = File(source.sourcePath)
+            val stats = file.computeStorageStats()
+            val details = runCatching {
+                packageManager.getToolPkgContainerDetails(source.packageName, appContext)
+            }.getOrNull()
+            ExtensionItem(
+                id = if (source.isToolPkg) "plugin:${source.packageName}" else "script:${source.packageName}",
+                category = if (source.isToolPkg) ExtensionCategory.PLUGIN else ExtensionCategory.SCRIPT,
+                name = source.displayName.ifBlank { source.packageName },
+                path = file,
+                bytes = stats.bytes,
+                fileCount = stats.fileCount,
+                subtitle = source.description.ifBlank { source.sourceFileName },
+                packageName = source.packageName,
+                hasLogo = !details?.logoResourceKey.isNullOrBlank(),
+                lastModifiedMillis = stats.lastModifiedMillis,
+            )
+        }
+    }
+
+    private fun scanMcpPlugins(): List<ExtensionItem> {
+        mcpRepository.refreshInstalledPlugins()
+        return mcpRepository.mcpServers.value.mapNotNull { metadata ->
+            val path = mcpRepository.getInstalledPluginPath(metadata.id) ?: return@mapNotNull null
+            if (path.startsWith("virtual://")) return@mapNotNull null
+            val file = File(path)
+            val stats = file.computeStorageStats()
+            if (!stats.exists && stats.bytes <= 0L) return@mapNotNull null
+            ExtensionItem(
+                id = "mcp:${metadata.id}",
+                category = ExtensionCategory.MCP,
+                name = metadata.name.ifBlank { metadata.id },
+                path = file,
+                bytes = stats.bytes,
+                fileCount = stats.fileCount,
+                subtitle = metadata.author.ifBlank { metadata.type },
+                lastModifiedMillis = stats.lastModifiedMillis,
+            )
+        }
+    }
+
+    private fun scanSkills(): List<ExtensionItem> {
+        return skillManager.getAvailableSkills().values.map { skill ->
+            val stats = skill.directory.computeStorageStats()
+            ExtensionItem(
+                id = "skill:${skill.name}",
+                category = ExtensionCategory.SKILL,
+                name = skill.name,
+                path = skill.directory,
+                bytes = stats.bytes,
+                fileCount = stats.fileCount,
+                subtitle = skill.description,
+                lastModifiedMillis = stats.lastModifiedMillis,
+            )
+        }
+    }
+
+    private fun scanDirectoryChildren(
+        root: File,
+        category: ExtensionCategory,
+        idPrefix: String,
+    ): List<ExtensionItem> {
+        if (!root.isDirectory) return emptyList()
+        return root.listFiles().orEmpty()
+            .filter { it.isDirectory || it.isFile }
+            .map { child ->
+                val stats = child.computeStorageStats()
+                ExtensionItem(
+                    id = "$idPrefix:${child.canonicalOrAbsolute()}",
+                    category = category,
+                    name = child.name,
+                    path = child,
+                    bytes = stats.bytes,
+                    fileCount = stats.fileCount,
+                    subtitle = "",
+                    lastModifiedMillis = stats.lastModifiedMillis,
+                )
+            }
+    }
+
+    private fun scanBridge(): List<ExtensionItem> {
+        val directory = OperitPaths.bridgeDir()
+        val stats = directory.computeStorageStats()
+        if (!stats.exists || stats.fileCount <= 0L) return emptyList()
+        return listOf(
+            ExtensionItem(
+                id = "bridge:${directory.canonicalOrAbsolute()}",
+                category = ExtensionCategory.MCP_BRIDGE,
+                name = directory.name,
+                path = directory,
+                bytes = stats.bytes,
+                fileCount = stats.fileCount,
+                subtitle = "",
+                lastModifiedMillis = stats.lastModifiedMillis,
+            )
+        )
+    }
+
+    private suspend fun deleteEntry(entry: ExtensionItem): Boolean {
+        return when (entry.category) {
+            ExtensionCategory.PLUGIN,
+            ExtensionCategory.SCRIPT -> {
+                val packageName = entry.packageName
+                if (!packageName.isNullOrBlank()) {
+                    packageManager.deletePackage(packageName)
+                } else {
+                    deletePath(entry.path)
+                }
+            }
+            ExtensionCategory.MCP -> {
+                val pluginId = entry.id.removePrefix("mcp:")
+                mcpRepository.uninstallMCPServer(pluginId) || deletePath(entry.path)
+            }
+            ExtensionCategory.SKILL -> skillManager.deleteSkill(entry.name) || deletePath(entry.path)
+            ExtensionCategory.PLUGIN_SOURCE,
+            ExtensionCategory.DEV_PACKAGE,
+            ExtensionCategory.THEME,
+            ExtensionCategory.MCP_BRIDGE -> deletePath(entry.path)
+        }
+    }
+
+    private suspend fun deletePath(path: File): Boolean {
+        return if (path.isFile) {
+            path.delete() || !path.exists()
+        } else {
+            cleaner.cleanDirectory(path).failedEntryCount == 0 || !path.exists()
+        }
     }
 }

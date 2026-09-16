@@ -24,7 +24,7 @@ data class LinuxEnvironmentUiState(
 ) {
     val units: List<LinuxStorageUnit> get() = snapshot?.units.orEmpty()
     val selectedUnits: List<LinuxStorageUnit>
-        get() = units.filter { it.kind in selectedKinds && !it.locked }
+        get() = units.filter { it.kind in selectedKinds && !it.locked && it.exists && it.bytes > 0L }
     val selectedBytes: Long get() = selectedUnits.sumOf { it.bytes }
 }
 
@@ -62,7 +62,7 @@ class LinuxEnvironmentStorageViewModel(
     }
 
     fun toggle(unit: LinuxStorageUnit) {
-        if (unit.locked || _state.value.job.running) return
+        if (unit.locked || !unit.exists || unit.bytes <= 0L || _state.value.job.running) return
         _state.update {
             val next = it.selectedKinds.toMutableSet()
             if (!next.add(unit.kind)) next.remove(unit.kind)

@@ -8472,7 +8472,7 @@
     <string name="thinking_config_invalid_json">Invalid Thinking Configuration</string>
 <!-- Data and storage management -->
     <string name="settings_data_storage">Data and storage</string>
-    <string name="settings_data_storage_subtitle">Review usage details, clear cache, and clear cookies</string>
+    <string name="settings_data_storage_subtitle">View usage details and manage data</string>
     <string name="screen_title_data_storage_management">Data and storage</string>
     <string name="data_storage_scanning">Scanning Operit data…</string>
     <string name="data_storage_scan_failed">Storage scan could not be completed</string>
@@ -8691,4 +8691,23 @@
     <string name="data_storage_exports_empty">No exported files. This tab only lists files created by chat or prompt exports.</string>
     <string name="data_storage_bound">Bound</string>
     <string name="data_storage_config_primary_model">Primary model: %1$s</string>
+    <string name="data_storage_nothing_deletable">Nothing to delete</string>
+    <string name="data_storage_extension_item_count">%1$d items</string>
+    <string name="data_storage_extension_plugins">Plugins</string>
+    <string name="data_storage_extension_scripts">Scripts</string>
+    <string name="data_storage_extension_mcp">Model Context Protocol</string>
+    <string name="data_storage_extension_skills">Skills</string>
+    <string name="data_storage_extension_plugin_source">Plugin source</string>
+    <string name="data_storage_extension_dev_package">Development packages</string>
+    <string name="data_storage_extension_themes">Theme packages</string>
+    <string name="data_storage_extension_bridge">MCP bridge</string>
+    <string name="data_storage_extension_bridge_desc">Rebuildable MCP terminal bridge scripts</string>
+    <string name="data_storage_extension_plugins_empty">No runtime plugins found</string>
+    <string name="data_storage_extension_scripts_empty">No scripts found</string>
+    <string name="data_storage_extension_mcp_empty">No MCP plugins found</string>
+    <string name="data_storage_extension_skills_empty">No skills found</string>
+    <string name="data_storage_extension_plugin_source_empty">No plugin source folders found</string>
+    <string name="data_storage_extension_dev_package_empty">No development packages found</string>
+    <string name="data_storage_extension_themes_empty">No theme packages found</string>
+    <string name="data_storage_extension_bridge_empty">No MCP bridge files found</string>
 </resources>

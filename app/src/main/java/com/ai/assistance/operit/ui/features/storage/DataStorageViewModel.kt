@@ -46,6 +46,12 @@ class DataStorageViewModel(
         scan(forceRefresh = true)
     }
 
+    fun refreshIfInvalidated() {
+        if (_state.value.isCleaning || _state.value.isScanning) return
+        if (repository.cachedSnapshot() != null) return
+        scan(forceRefresh = false)
+    }
+
     private fun scan(forceRefresh: Boolean) {
         scanJob?.cancel()
         scanJob =

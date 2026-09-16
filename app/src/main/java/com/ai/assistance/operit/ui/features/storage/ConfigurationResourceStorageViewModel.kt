@@ -4,10 +4,13 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.data.storage.ConfigurationResourceEntry
 import com.ai.assistance.operit.data.storage.ConfigurationResourceInventory
 import com.ai.assistance.operit.data.storage.ConfigurationResourceSnapshot
-import com.ai.assistance.operit.data.storage.PackageSkillEntry
+import com.ai.assistance.operit.data.storage.ExtensionCategory
+import com.ai.assistance.operit.data.storage.ExtensionCategoryGroup
+import com.ai.assistance.operit.data.storage.ExtensionItem
 import com.ai.assistance.operit.data.storage.PackageSkillInventory
 import com.ai.assistance.operit.data.storage.PackageSkillSnapshot
 import kotlinx.coroutines.CancellationException
@@ -28,25 +31,38 @@ data class ConfigurationResourceUiState(
     val packages: PackageSkillSnapshot? = null,
     val tab: ConfigurationResourceTab = ConfigurationResourceTab.CARDS,
     val selectedIds: Set<String> = emptySet(),
+    val expandedCategories: Set<ExtensionCategory> = emptySet(),
     val isLoading: Boolean = false,
     val job: StorageJobState = StorageJobState(),
     val errorMessage: String? = null,
 ) {
     val displayedCards: List<ConfigurationResourceEntry> get() = snapshot?.cards.orEmpty()
     val displayedConfigs: List<ConfigurationResourceEntry> get() = snapshot?.configs.orEmpty()
-    val displayedExtensions: List<PackageSkillEntry>
-        get() = packages?.plugins.orEmpty() + packages?.skills.orEmpty()
+    val extensionGroups: List<ExtensionCategoryGroup>
+        get() = packages?.groups.orEmpty().filter { group ->
+            group.category != ExtensionCategory.MCP_BRIDGE &&
+                group.category != ExtensionCategory.THEME
+        }
+    val bridgeItems: List<ExtensionItem>
+        get() = packages?.groups.orEmpty().firstOrNull { it.category == ExtensionCategory.MCP_BRIDGE }?.items.orEmpty()
+    val selectedExtensionItems: List<ExtensionItem>
+        get() {
+            val selected = selectedIds
+            return (packages?.items.orEmpty()).filter { item ->
+                item.id in selected || item.category.name in selected
+            }.distinctBy { it.id }
+        }
     val selectedBytes: Long
         get() = when (tab) {
             ConfigurationResourceTab.CARDS -> displayedCards.filter { it.id in selectedIds && !it.locked }.sumOf { it.bytes }
             ConfigurationResourceTab.CONFIGS -> displayedConfigs.filter { it.id in selectedIds && !it.locked }.sumOf { it.bytes }
-            ConfigurationResourceTab.EXTENSIONS -> displayedExtensions.filter { it.id in selectedIds }.sumOf { it.bytes }
+            ConfigurationResourceTab.EXTENSIONS -> selectedExtensionItems.sumOf { it.bytes }
         }
     val selectedCount: Int
         get() = when (tab) {
             ConfigurationResourceTab.CARDS -> displayedCards.count { it.id in selectedIds && !it.locked }
             ConfigurationResourceTab.CONFIGS -> displayedConfigs.count { it.id in selectedIds && !it.locked }
-            ConfigurationResourceTab.EXTENSIONS -> displayedExtensions.count { it.id in selectedIds }
+            ConfigurationResourceTab.EXTENSIONS -> selectedExtensionItems.size
         }
 }
 
@@ -89,6 +105,46 @@ class ConfigurationResourceStorageViewModel(
         }
     }
 
+    fun toggleCategory(group: ExtensionCategoryGroup) {
+        if (_state.value.job.running || group.items.isEmpty()) return
+        _state.update {
+            val next = it.selectedIds.toMutableSet()
+            val itemIds = group.items.map { item -> item.id }
+            val categoryKey = group.category.name
+            if (categoryKey in next || itemIds.all { id -> id in next }) {
+                next.remove(categoryKey)
+                next.removeAll(itemIds.toSet())
+            } else {
+                next.add(categoryKey)
+                next.addAll(itemIds)
+            }
+            it.copy(selectedIds = next)
+        }
+    }
+
+    fun toggleItem(group: ExtensionCategoryGroup, item: ExtensionItem) {
+        if (_state.value.job.running) return
+        _state.update {
+            val next = it.selectedIds.toMutableSet()
+            if (!next.add(item.id)) next.remove(item.id)
+            val allSelected = group.items.all { entry -> entry.id in next }
+            if (allSelected) next.add(group.category.name) else next.remove(group.category.name)
+            it.copy(selectedIds = next)
+        }
+    }
+
+    fun toggleExpanded(category: ExtensionCategory) {
+        _state.update {
+            val next = it.expandedCategories.toMutableSet()
+            if (!next.add(category)) next.remove(category)
+            it.copy(expandedCategories = next)
+        }
+    }
+
+    fun readPluginLogo(packageName: String): PackageManager.ToolPkgLogoBytes? {
+        return packageInventory.readPluginLogo(packageName)
+    }
+
     fun deleteSelected() {
         val current = _state.value
         if (current.selectedCount == 0 || current.job.running) return
@@ -100,7 +156,7 @@ class ConfigurationResourceStorageViewModel(
                 ConfigurationResourceTab.CONFIGS ->
                     inventory.delete(current.displayedConfigs.filter { it.id in current.selectedIds && !it.locked }, ::report)
                 ConfigurationResourceTab.EXTENSIONS ->
-                    packageInventory.delete(current.displayedExtensions.filter { it.id in current.selectedIds }, ::report)
+                    packageInventory.delete(current.selectedExtensionItems, ::report)
             }
             _state.update {
                 it.copy(

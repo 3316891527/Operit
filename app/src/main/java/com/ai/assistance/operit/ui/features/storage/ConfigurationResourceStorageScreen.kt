@@ -2,7 +2,14 @@ package com.ai.assistance.operit.ui.features.storage
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Cable
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -10,16 +17,23 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.data.storage.PackageSkillKind
+import com.ai.assistance.operit.core.tools.packTool.PackageManager
+import com.ai.assistance.operit.data.storage.ExtensionCategory
+import com.ai.assistance.operit.data.storage.ExtensionItem
 import com.ai.assistance.operit.data.storage.formatStorageSize
+import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
 import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ConfigurationResourceStorageScreen() {
@@ -54,7 +68,7 @@ fun ConfigurationResourceStorageScreen() {
                         stringResource(
                             R.string.data_storage_configuration_counts,
                             state.displayedCards.size,
-                            state.displayedConfigs.size + state.displayedExtensions.size,
+                            state.displayedConfigs.size + (state.packages?.items.orEmpty().size),
                         ),
                     ),
                     scannedAtMillis = state.snapshot?.scannedAtMillis,
@@ -135,29 +149,59 @@ fun ConfigurationResourceStorageScreen() {
                     }
                 }
                 ConfigurationResourceTab.EXTENSIONS -> {
-                    if (state.displayedExtensions.isEmpty() && !state.isLoading) {
+                    if (state.extensionGroups.isEmpty() && state.bridgeItems.isEmpty() && !state.isLoading) {
                         item { StorageEmptyCard(stringResource(R.string.data_storage_extensions_empty)) }
                     } else {
-                        items(state.displayedExtensions, key = { it.id }) { entry ->
+                        state.extensionGroups.forEach { group ->
+                            val expanded = group.category in state.expandedCategories
+                            val empty = group.items.isEmpty()
+                            item(key = "ext-group:${group.category.name}") {
+                                StorageSelectableRow(
+                                    selected = group.category.name in state.selectedIds ||
+                                        (group.items.isNotEmpty() && group.items.all { it.id in state.selectedIds }),
+                                    enabled = !empty && !state.job.running,
+                                    locked = false,
+                                    empty = empty,
+                                    title = stringResource(group.category.titleRes),
+                                    subtitle = if (empty) {
+                                        stringResource(R.string.data_storage_nothing_deletable)
+                                    } else {
+                                        stringResource(R.string.data_storage_extension_item_count, group.itemCount)
+                                    },
+                                    bytes = group.bytes,
+                                    leadingIcon = group.category.icon,
+                                    expanded = expanded,
+                                    onExpand = { storageViewModel.toggleExpanded(group.category) },
+                                    onToggle = { storageViewModel.toggleCategory(group) },
+                                )
+                            }
+                            if (expanded) {
+                                if (group.items.isEmpty()) {
+                                    item(key = "ext-empty:${group.category.name}") {
+                                        StorageEmptyCard(stringResource(group.category.emptyRes))
+                                    }
+                                } else {
+                                    items(group.items, key = { it.id }) { entry ->
+                                        ExtensionItemRow(
+                                            entry = entry,
+                                            selected = entry.id in state.selectedIds || group.category.name in state.selectedIds,
+                                            enabled = !state.job.running,
+                                            loadLogo = storageViewModel::readPluginLogo,
+                                            onToggle = { storageViewModel.toggleItem(group, entry) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        items(state.bridgeItems, key = { it.id }) { entry ->
                             StorageSelectableRow(
                                 selected = entry.id in state.selectedIds,
                                 enabled = !state.job.running,
                                 locked = false,
-                                title = entry.name,
-                                subtitle = entry.subtitle.ifBlank { entry.path?.absolutePath.orEmpty() },
+                                title = stringResource(R.string.data_storage_extension_bridge),
+                                subtitle = stringResource(R.string.data_storage_extension_bridge_desc),
                                 bytes = entry.bytes,
-                                leadingIcon = Icons.Default.Extension,
-                                statusTags = listOf(
-                                    StorageStatusTag(
-                                        stringResource(
-                                            if (entry.kind == PackageSkillKind.PLUGIN) {
-                                                R.string.data_storage_kind_plugin
-                                            } else {
-                                                R.string.data_storage_kind_skill
-                                            },
-                                        ),
-                                    ),
-                                ),
+                                leadingIcon = Icons.Default.Cable,
                                 onToggle = { storageViewModel.toggle(entry.id, false) },
                             )
                         }
@@ -186,9 +230,87 @@ fun ConfigurationResourceStorageScreen() {
     }
 }
 
+@Composable
+private fun ExtensionItemRow(
+    entry: ExtensionItem,
+    selected: Boolean,
+    enabled: Boolean,
+    loadLogo: (String) -> PackageManager.ToolPkgLogoBytes?,
+    onToggle: () -> Unit,
+) {
+    val packageName = entry.packageName
+    val logo by produceState<PackageManager.ToolPkgLogoBytes?>(
+        initialValue = null,
+        packageName,
+        entry.hasLogo,
+    ) {
+        value = if (!entry.hasLogo || packageName.isNullOrBlank()) {
+            null
+        } else {
+            withContext(Dispatchers.IO) { loadLogo(packageName) }
+        }
+    }
+    val painter = rememberLogoPainter(
+        logoKey = "${entry.packageName}:${logo?.resourceKey}",
+        bytes = logo?.bytes,
+        mimeType = logo?.mimeType,
+        fileName = logo?.fileName,
+        size = 32.dp,
+    )
+    StorageSelectableRow(
+        selected = selected,
+        enabled = enabled,
+        locked = false,
+        indent = true,
+        title = entry.name,
+        subtitle = entry.subtitle,
+        bytes = entry.bytes,
+        leadingPainter = painter,
+        leadingInitial = entry.name,
+        leadingCircular = false,
+        onToggle = onToggle,
+    )
+}
+
 private val ConfigurationResourceTab.labelRes: Int
     get() = when (this) {
         ConfigurationResourceTab.CARDS -> R.string.data_storage_tab_cards
         ConfigurationResourceTab.CONFIGS -> R.string.data_storage_tab_configs
         ConfigurationResourceTab.EXTENSIONS -> R.string.data_storage_tab_extensions
+    }
+
+private val ExtensionCategory.titleRes: Int
+    get() = when (this) {
+        ExtensionCategory.PLUGIN -> R.string.data_storage_extension_plugins
+        ExtensionCategory.SCRIPT -> R.string.data_storage_extension_scripts
+        ExtensionCategory.MCP -> R.string.data_storage_extension_mcp
+        ExtensionCategory.SKILL -> R.string.data_storage_extension_skills
+        ExtensionCategory.PLUGIN_SOURCE -> R.string.data_storage_extension_plugin_source
+        ExtensionCategory.DEV_PACKAGE -> R.string.data_storage_extension_dev_package
+        ExtensionCategory.THEME -> R.string.data_storage_extension_themes
+        ExtensionCategory.MCP_BRIDGE -> R.string.data_storage_extension_bridge
+    }
+
+private val ExtensionCategory.emptyRes: Int
+    get() = when (this) {
+        ExtensionCategory.PLUGIN -> R.string.data_storage_extension_plugins_empty
+        ExtensionCategory.SCRIPT -> R.string.data_storage_extension_scripts_empty
+        ExtensionCategory.MCP -> R.string.data_storage_extension_mcp_empty
+        ExtensionCategory.SKILL -> R.string.data_storage_extension_skills_empty
+        ExtensionCategory.PLUGIN_SOURCE -> R.string.data_storage_extension_plugin_source_empty
+        ExtensionCategory.DEV_PACKAGE -> R.string.data_storage_extension_dev_package_empty
+        ExtensionCategory.THEME -> R.string.data_storage_extension_themes_empty
+        ExtensionCategory.MCP_BRIDGE -> R.string.data_storage_extension_bridge_empty
+    }
+
+private val ExtensionCategory.icon: ImageVector
+    get() = when (this) {
+        ExtensionCategory.PLUGIN -> Icons.Default.Extension
+        ExtensionCategory.SCRIPT -> Icons.Default.Code
+        ExtensionCategory.MCP -> Icons.Default.Hub
+        ExtensionCategory.SKILL -> Icons.Default.AutoAwesome
+        ExtensionCategory.PLUGIN_SOURCE -> Icons.Default.Folder
+        ExtensionCategory.DEV_PACKAGE -> Icons.Default.Build
+        ExtensionCategory.THEME -> Icons.Default.Palette
+        ExtensionCategory.MCP_BRIDGE -> Icons.Default.Cable
     }

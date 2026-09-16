@@ -8457,7 +8457,7 @@
     <string name="codex_reset_after_clock">%1$02d:%2$02d 后重置</string>
     <!-- Data and storage management -->
     <string name="settings_data_storage">数据与存储</string>
-    <string name="settings_data_storage_subtitle">查看占用明细，清理缓存，并清除 Cookie</string>
+    <string name="settings_data_storage_subtitle">查看数据占用明细，管理数据</string>
     <string name="screen_title_data_storage_management">数据与存储</string>
     <string name="data_storage_scanning">正在扫描 Operit 数据…</string>
     <string name="data_storage_scan_failed">无法完成存储扫描</string>
@@ -8676,4 +8676,23 @@
     <string name="data_storage_exports_empty">暂无导出文件。这里只显示聊天或提示词导出产生的文件。</string>
     <string name="data_storage_bound">已绑定</string>
     <string name="data_storage_config_primary_model">主模型：%1$s</string>
+    <string name="data_storage_nothing_deletable">无可删除内容</string>
+    <string name="data_storage_extension_item_count">%1$d 项</string>
+    <string name="data_storage_extension_plugins">插件</string>
+    <string name="data_storage_extension_scripts">脚本</string>
+    <string name="data_storage_extension_mcp">模型上下文协议</string>
+    <string name="data_storage_extension_skills">技能</string>
+    <string name="data_storage_extension_plugin_source">插件源码</string>
+    <string name="data_storage_extension_dev_package">开发包</string>
+    <string name="data_storage_extension_themes">主题包</string>
+    <string name="data_storage_extension_bridge">MCP 桥接</string>
+    <string name="data_storage_extension_bridge_desc">可重建的 MCP 终端桥接脚本</string>
+    <string name="data_storage_extension_plugins_empty">暂无运行时插件</string>
+    <string name="data_storage_extension_scripts_empty">暂无脚本</string>
+    <string name="data_storage_extension_mcp_empty">暂无 MCP 插件</string>
+    <string name="data_storage_extension_skills_empty">暂无技能</string>
+    <string name="data_storage_extension_plugin_source_empty">暂无插件源码</string>
+    <string name="data_storage_extension_dev_package_empty">暂无开发包</string>
+    <string name="data_storage_extension_themes_empty">暂无主题包</string>
+    <string name="data_storage_extension_bridge_empty">暂无 MCP 桥接文件</string>
 </resources>
