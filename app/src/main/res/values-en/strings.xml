@@ -8673,4 +8673,22 @@
     <string name="data_storage_tab_cards">Character cards</string>
     <string name="data_storage_tab_configs">Model configs</string>
     <string name="data_storage_tab_extensions">Extensions</string>
+    <string name="data_storage_linux_empty_root">Ubuntu root environment is not installed</string>
+    <string name="data_storage_linux_empty_home">User home is empty</string>
+    <string name="data_storage_linux_empty_apt">No APT cache found</string>
+    <string name="data_storage_linux_empty_logs">No logs or temporary files found</string>
+    <string name="data_storage_linux_empty_packages">No terminal installers found</string>
+    <string name="data_storage_linux_delete_paths">These paths will be deleted:</string>
+    <string name="data_storage_linux_files_count">%1$d files</string>
+    <string name="data_storage_delete_progress_title">Deleting</string>
+    <string name="data_storage_delete_progress_overall">Overall %1$d%%</string>
+    <string name="data_storage_delete_progress_item">Item %1$d of %2$d</string>
+    <string name="data_storage_delete_progress_current">Current item %1$d%% · %2$s / %3$s</string>
+    <string name="data_storage_memory_folder_count">%1$d folders</string>
+    <string name="data_storage_memory_folder_items">%1$d memories</string>
+    <string name="data_storage_memory_uncategorized_folder">Uncategorized</string>
+    <string name="data_storage_memory_empty_folders">No memory folders found</string>
+    <string name="data_storage_exports_empty">No exported files. This tab only lists files created by chat or prompt exports.</string>
+    <string name="data_storage_bound">Bound</string>
+    <string name="data_storage_config_primary_model">Primary model: %1$s</string>
 </resources>

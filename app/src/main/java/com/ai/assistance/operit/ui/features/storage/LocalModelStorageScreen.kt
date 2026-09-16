@@ -67,7 +67,6 @@ fun LocalModelStorageScreen() {
                     onSelect = { storageViewModel.setFilter(LocalModelFilter.valueOf(it)) },
                 )
             }
-            item { StorageJobCard(state.job) }
             if (state.displayedModels.isEmpty() && !state.isLoading) {
                 item { StorageEmptyCard(stringResource(R.string.data_storage_local_models_empty)) }
             } else {
@@ -77,9 +76,12 @@ fun LocalModelStorageScreen() {
                         enabled = model.canDelete && !state.isDeleting && !state.job.running,
                         locked = !model.canDelete,
                         title = model.displayName,
-                        subtitle = "${stringResource(model.kind.labelRes)} · ${model.path.absolutePath}",
+                        subtitle = stringResource(model.kind.labelRes),
                         bytes = model.bytes,
-                        tags = listOfNotNull(modelStatusText(model)),
+                        leadingIcon = Icons.Default.SmartToy,
+                        statusTags = listOf(
+                            StorageStatusTag(modelStatusText(model), emphasis = model.inUse),
+                        ),
                         note = model.lastUsedText(),
                         onToggle = { storageViewModel.toggle(model) },
                     )
@@ -105,6 +107,8 @@ fun LocalModelStorageScreen() {
             onDismiss = { showConfirm = false },
         )
     }
+
+    StorageDeleteProgressDialog(state = state.job)
 }
 
 private val LocalModelFilter.labelRes: Int

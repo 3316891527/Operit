@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.ai.assistance.operit.data.storage.MemoryFolderGroup
 import com.ai.assistance.operit.data.storage.MemoryLibraryInventory
 import com.ai.assistance.operit.data.storage.MemoryLibrarySnapshot
 import com.ai.assistance.operit.data.storage.MemoryStorageEntry
@@ -22,18 +23,18 @@ data class MemoryLibraryUiState(
     val job: StorageJobState = StorageJobState(),
     val errorMessage: String? = null,
 ) {
-    val entries: List<MemoryStorageEntry>
-        get() = snapshot?.entries.orEmpty().filter { profileFilter == ALL || it.profileId == profileFilter }
-    val selected: List<MemoryStorageEntry>
-        get() = entries.filter { it.key in selectedKeys }
+    val folders: List<MemoryFolderGroup>
+        get() = snapshot?.folders.orEmpty().filter { profileFilter == ALL || it.profileId == profileFilter }
+    val selected: List<MemoryFolderGroup>
+        get() = folders.filter { it.key in selectedKeys }
+    val selectedEntries: List<MemoryStorageEntry>
+        get() = selected.flatMap { it.entries }
     val selectedBytes: Long get() = selected.sumOf { it.estimatedBytes }
 
     companion object {
         const val ALL = "all"
     }
 }
-
-val MemoryStorageEntry.key: String get() = "$profileId:$uuid"
 
 class MemoryLibraryStorageViewModel(
     private val inventory: MemoryLibraryInventory,
@@ -64,17 +65,17 @@ class MemoryLibraryStorageViewModel(
         _state.update { it.copy(profileFilter = profileId, selectedKeys = emptySet()) }
     }
 
-    fun toggle(entry: MemoryStorageEntry) {
+    fun toggle(folder: MemoryFolderGroup) {
         if (_state.value.job.running) return
         _state.update {
             val next = it.selectedKeys.toMutableSet()
-            if (!next.add(entry.key)) next.remove(entry.key)
+            if (!next.add(folder.key)) next.remove(folder.key)
             it.copy(selectedKeys = next)
         }
     }
 
     fun deleteSelected() {
-        val entries = _state.value.selected
+        val entries = _state.value.selectedEntries
         if (entries.isEmpty() || _state.value.job.running) return
         viewModelScope.launch {
             _state.update { it.copy(job = StorageJobState(running = true, total = entries.size)) }

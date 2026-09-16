@@ -47,25 +47,31 @@ object LocalModelRuntimeRegistry {
         }
     }
 
-    fun deleteIfUnused(path: File): LocalModelDeleteOutcome {
+    fun deleteIfUnused(
+        path: File,
+        onProgress: ((deletedBytes: Long, totalBytes: Long) -> Unit)? = null,
+    ): LocalModelDeleteOutcome {
         val canonicalFile =
             runCatching { path.canonicalFile }.getOrElse { return LocalModelDeleteOutcome.FAILED }
         synchronized(lock) {
             if (referenceCounts.keys.any { activePath -> pathsOverlap(canonicalFile.path, activePath) }) {
                 return LocalModelDeleteOutcome.IN_USE
             }
-            if (!canonicalFile.exists()) {
-                return LocalModelDeleteOutcome.DELETED
-            }
-            val deleted =
-                runCatching {
-                    if (canonicalFile.isDirectory) {
-                        canonicalFile.deleteRecursively()
-                    } else {
-                        canonicalFile.delete()
-                    }
-                }.getOrDefault(false)
-            return if (deleted) LocalModelDeleteOutcome.DELETED else LocalModelDeleteOutcome.FAILED
+        }
+        if (!canonicalFile.exists()) {
+            onProgress?.invoke(0L, 0L)
+            return LocalModelDeleteOutcome.DELETED
+        }
+        val deleted =
+            runCatching {
+                canonicalFile.deleteTreeWithProgress { deletedBytes, totalBytes ->
+                    onProgress?.invoke(deletedBytes, totalBytes)
+                }
+            }.getOrDefault(false)
+        return if (deleted || !canonicalFile.exists()) {
+            LocalModelDeleteOutcome.DELETED
+        } else {
+            LocalModelDeleteOutcome.FAILED
         }
     }
 

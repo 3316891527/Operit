@@ -64,7 +64,15 @@ fun BackupExportStorageScreen() {
             }
             item { StorageJobCard(state.job) }
             if (state.displayed.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_backups_empty)) }
+                item {
+                    StorageEmptyCard(
+                        if (state.tab == BackupExportTab.EXPORTS) {
+                            stringResource(R.string.data_storage_exports_empty)
+                        } else {
+                            stringResource(R.string.data_storage_backups_empty)
+                        },
+                    )
+                }
             } else {
                 items(state.displayed, key = { it.id }) { entry ->
                     StorageSelectableRow(
@@ -72,10 +80,15 @@ fun BackupExportStorageScreen() {
                         enabled = !state.job.running,
                         locked = false,
                         title = entry.name,
-                        subtitle = "${stringResource(entry.kind.labelRes)} · ${entry.path.absolutePath}",
+                        subtitle = stringResource(entry.kind.labelRes),
                         bytes = entry.bytes,
-                        tags = listOfNotNull(
-                            if (!entry.valid) stringResource(R.string.data_storage_invalid_file) else null,
+                        leadingIcon = Icons.Default.Backup,
+                        statusTags = listOfNotNull(
+                            if (!entry.valid) {
+                                StorageStatusTag(stringResource(R.string.data_storage_invalid_file), emphasis = true)
+                            } else {
+                                null
+                            },
                         ),
                         note = stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(entry.lastModifiedMillis)),
                         onToggle = { storageViewModel.toggle(entry) },

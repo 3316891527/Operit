@@ -5,6 +5,7 @@ import com.ai.assistance.operit.data.db.ObjectBoxManager
 import com.ai.assistance.operit.data.model.Memory
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.MemoryRepository
+import com.ai.assistance.operit.data.repository.MemoryRepository.Companion.normalizeFolderPath
 import com.ai.assistance.operit.util.OperitPaths
 import io.objectbox.kotlin.boxFor
 import java.io.File
@@ -24,10 +25,25 @@ data class MemoryStorageEntry(
     val isDocument: Boolean,
 )
 
+data class MemoryFolderGroup(
+    val key: String,
+    val profileId: String,
+    val profileName: String,
+    val folderPath: String?,
+    val folderName: String,
+    val memoryCount: Int,
+    val estimatedBytes: Long,
+    val updatedAtMillis: Long,
+    val documentCount: Int,
+    val entries: List<MemoryStorageEntry>,
+)
+
 data class MemoryLibrarySnapshot(
     val entries: List<MemoryStorageEntry>,
+    val folders: List<MemoryFolderGroup>,
     val profileCount: Int,
     val memoryCount: Int,
+    val folderCount: Int,
     val databaseBytes: Long,
     val estimatedBytes: Long,
     val scannedAtMillis: Long,
@@ -67,7 +83,7 @@ class MemoryLibraryInventory(context: Context) {
                     memoryId = memory.id,
                     uuid = memory.uuid,
                     title = memory.title.ifBlank { memory.uuid },
-                    folderPath = memory.folderPath,
+                    folderPath = normalizeFolderPath(memory.folderPath),
                     estimatedBytes = contentBytes + share,
                     updatedAtMillis = memory.updatedAt.time,
                     isDocument = memory.isDocumentNode,
@@ -75,10 +91,28 @@ class MemoryLibraryInventory(context: Context) {
             }
         }
         val indexBytes = OperitPaths.vectorIndexDir(appContext).computeStorageStats().bytes
+        val folders = entries.groupBy { "${it.profileId}:${it.folderPath.orEmpty()}" }.map { (_, grouped) ->
+            val first = grouped.first()
+            val folderPath = first.folderPath
+            MemoryFolderGroup(
+                key = "${first.profileId}:${folderPath.orEmpty()}",
+                profileId = first.profileId,
+                profileName = first.profileName,
+                folderPath = folderPath,
+                folderName = folderPath?.substringAfterLast('/') ?: "",
+                memoryCount = grouped.size,
+                estimatedBytes = grouped.sumOf { it.estimatedBytes },
+                updatedAtMillis = grouped.maxOf { it.updatedAtMillis },
+                documentCount = grouped.count { it.isDocument },
+                entries = grouped,
+            )
+        }.sortedByDescending { it.estimatedBytes }
         MemoryLibrarySnapshot(
             entries = entries.sortedByDescending { it.estimatedBytes },
+            folders = folders,
             profileCount = profileIds.size,
             memoryCount = entries.size,
+            folderCount = folders.size,
             databaseBytes = databaseBytes + indexBytes,
             estimatedBytes = entries.sumOf { it.estimatedBytes } + indexBytes,
             scannedAtMillis = System.currentTimeMillis(),

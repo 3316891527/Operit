@@ -127,12 +127,39 @@ class LocalModelStorageViewModel(
                             total = selected.size,
                             releasedBytes = released,
                             failed = failed,
+                            currentItemProgress = 0f,
+                            currentItemDeletedBytes = 0L,
+                            currentItemTotalBytes = entry.bytes,
                         ),
                     )
                 }
-                val outcome = runCatching { inventory.delete(entry) }.getOrNull()
+                val outcome = runCatching {
+                    inventory.delete(entry) { deletedBytes, totalBytes ->
+                        val safeTotal = totalBytes.coerceAtLeast(1L)
+                        _state.update { current ->
+                            current.copy(
+                                job = current.job.copy(
+                                    currentItemProgress = (deletedBytes.toFloat() / safeTotal.toFloat()).coerceIn(0f, 1f),
+                                    currentItemDeletedBytes = deletedBytes,
+                                    currentItemTotalBytes = totalBytes,
+                                ),
+                            )
+                        }
+                    }
+                }.getOrNull()
                 if (outcome == LocalModelDeleteOutcome.DELETED) {
                     released += entry.bytes
+                    _state.update {
+                        it.copy(
+                            job = it.job.copy(
+                                processed = index + 1,
+                                currentItemProgress = 1f,
+                                currentItemDeletedBytes = entry.bytes,
+                                currentItemTotalBytes = entry.bytes,
+                                releasedBytes = released,
+                            ),
+                        )
+                    }
                 } else {
                     failed++
                 }

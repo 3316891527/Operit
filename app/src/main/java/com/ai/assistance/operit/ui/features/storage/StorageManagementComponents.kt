@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.storage
 
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -54,11 +56,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.formatStorageSize
 import com.ai.assistance.operit.data.storage.formatStorageTimestamp
@@ -74,11 +80,28 @@ data class StorageJobState(
     val releasedBytes: Long = 0L,
     val failed: Int = 0,
     val done: Boolean = false,
-)
+    val currentItemProgress: Float = 0f,
+    val currentItemDeletedBytes: Long = 0L,
+    val currentItemTotalBytes: Long = 0L,
+) {
+    val overallProgress: Float
+        get()
+            {
+                if (total <= 0) return 0f
+                val completed = processed.coerceAtLeast(0).toFloat()
+                val current = currentItemProgress.coerceIn(0f, 1f)
+                return ((completed + current) / total.toFloat()).coerceIn(0f, 1f)
+            }
+}
 
 data class StorageChip(
     val id: String,
     val label: String,
+)
+
+data class StorageStatusTag(
+    val label: String,
+    val emphasis: Boolean = false,
 )
 
 @Composable
@@ -138,23 +161,28 @@ fun StorageSummaryCard(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     actions: @Composable RowScope.() -> Unit = {},
+    leadingContent: (@Composable () -> Unit)? = null,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = storageSummaryColor(),
         tonalElevation = 1.dp,
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier =
-                        Modifier.size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                if (leadingContent != null) {
+                    leadingContent()
+                } else {
+                    Box(
+                        modifier =
+                            Modifier.size(52.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -236,12 +264,24 @@ fun StorageSelectableRow(
     bytes: Long,
     note: String? = null,
     tags: List<String> = emptyList(),
+    statusTags: List<StorageStatusTag> = emptyList(),
     leadingIcon: ImageVector? = null,
+    leadingPainter: Painter? = null,
+    leadingInitial: String? = null,
+    leadingCircular: Boolean = true,
+    showBytes: Boolean = true,
     onToggle: () -> Unit,
+    leadingContent: (@Composable () -> Unit)? = null,
 ) {
+    val resolvedTags =
+        if (statusTags.isNotEmpty()) {
+            statusTags
+        } else {
+            tags.map { StorageStatusTag(it) }
+        }
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onToggle() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         color = storagePanelColor(),
         tonalElevation = 1.dp,
     ) {
@@ -260,14 +300,17 @@ fun StorageSelectableRow(
                 Checkbox(checked = selected, onCheckedChange = { onToggle() }, enabled = enabled)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            if (leadingIcon != null) {
-                Icon(
-                    imageVector = leadingIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+            when {
+                leadingContent != null -> leadingContent()
+                leadingPainter != null || leadingIcon != null || !leadingInitial.isNullOrBlank() -> {
+                    StorageLeadingMark(
+                        painter = leadingPainter,
+                        icon = leadingIcon,
+                        initial = leadingInitial ?: title,
+                        circular = leadingCircular,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -286,20 +329,11 @@ fun StorageSelectableRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (tags.isNotEmpty()) {
+                if (resolvedTags.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        tags.take(3).forEach { tag ->
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                            ) {
-                                Text(
-                                    text = tag,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
+                        resolvedTags.take(3).forEach { tag ->
+                            StorageStatusBadge(tag)
                         }
                     }
                 }
@@ -315,13 +349,94 @@ fun StorageSelectableRow(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = formatStorageSize(bytes),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
+            if (showBytes) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = formatStorageSize(bytes),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
+    }
+}
+
+@Composable
+fun StorageLeadingMark(
+    painter: Painter? = null,
+    icon: ImageVector? = null,
+    initial: String? = null,
+    size: Dp = 40.dp,
+    circular: Boolean = true,
+) {
+    val shape = if (circular) CircleShape else RoundedCornerShape(12.dp)
+    Box(
+        modifier =
+            Modifier.size(size)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            painter != null -> {
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(if (circular) 0.dp else 4.dp),
+                    contentScale = if (circular) ContentScale.Crop else ContentScale.Fit,
+                )
+            }
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(size * 0.52f),
+                )
+            }
+            else -> {
+                Text(
+                    text = initial.orEmpty().trim().take(1).ifBlank { "?" }.uppercase(),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun rememberStorageAvatarPainter(avatarUri: String?): Painter? {
+    if (avatarUri.isNullOrBlank()) return null
+    return rememberAsyncImagePainter(model = Uri.parse(avatarUri))
+}
+
+@Composable
+private fun StorageStatusBadge(tag: StorageStatusTag) {
+    val container =
+        if (tag.emphasis) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+        } else {
+            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
+        }
+    val content =
+        if (tag.emphasis) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        }
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = container,
+    ) {
+        Text(
+            text = tag.label,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = content,
+            fontWeight = if (tag.emphasis) FontWeight.SemiBold else FontWeight.Medium,
+        )
     }
 }
 
@@ -352,10 +467,8 @@ fun StorageJobCard(state: StorageJobState) {
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            val progress =
-                if (state.total <= 0) 0f else (state.processed.toFloat() / state.total.toFloat()).coerceIn(0f, 1f)
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { state.overallProgress },
                 modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -393,6 +506,66 @@ fun StorageJobCard(state: StorageJobState) {
             }
         }
     }
+}
+
+@Composable
+fun StorageDeleteProgressDialog(
+    state: StorageJobState,
+    title: String = stringResource(R.string.data_storage_delete_progress_title),
+) {
+    if (!state.running) return
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = stringResource(
+                        R.string.data_storage_delete_progress_overall,
+                        (state.overallProgress * 100).toInt().coerceIn(0, 100),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                LinearProgressIndicator(
+                    progress = { state.overallProgress },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.data_storage_delete_progress_item,
+                        (state.processed + 1).coerceAtMost(state.total.coerceAtLeast(1)),
+                        state.total.coerceAtLeast(1),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (state.currentName.isNotBlank()) {
+                    Text(
+                        text = state.currentName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                LinearProgressIndicator(
+                    progress = { state.currentItemProgress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.data_storage_delete_progress_current,
+                        (state.currentItemProgress * 100).toInt().coerceIn(0, 100),
+                        formatStorageSize(state.currentItemDeletedBytes),
+                        formatStorageSize(state.currentItemTotalBytes),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {},
+    )
 }
 
 @Composable

@@ -587,14 +587,17 @@ class MnnModelDownloadManager private constructor(private val context: Context) 
     }
 
     suspend fun deleteModel(modelName: String): LocalModelDeleteOutcome =
-        deleteModelFolder(modelFolderFor(modelName), setOf(modelName))
+        deleteModelFolder(modelFolderFor(modelName), setOf(modelName), null)
 
-    suspend fun deleteModelFolder(modelFolder: File): LocalModelDeleteOutcome =
-        deleteModelFolder(modelFolder, emptySet())
+    suspend fun deleteModelFolder(
+        modelFolder: File,
+        onProgress: ((deletedBytes: Long, totalBytes: Long) -> Unit)? = null,
+    ): LocalModelDeleteOutcome = deleteModelFolder(modelFolder, emptySet(), onProgress)
 
     private suspend fun deleteModelFolder(
         modelFolder: File,
         additionalModelNames: Set<String>,
+        onProgress: ((deletedBytes: Long, totalBytes: Long) -> Unit)?,
     ): LocalModelDeleteOutcome = withContext(Dispatchers.IO) {
         val canonicalTarget = canonicalPath(modelFolder)
         val knownModelNames = downloadStates.keys + persistentStates.keys + modelFolderNames.keys
@@ -615,7 +618,7 @@ class MnnModelDownloadManager private constructor(private val context: Context) 
             affectedModelNames.mapNotNull { modelName -> downloadJobs.remove(modelName) }
                 .forEach { job -> job.cancelAndJoin() }
 
-            val outcome = LocalModelRuntimeRegistry.deleteIfUnused(modelFolder)
+            val outcome = LocalModelRuntimeRegistry.deleteIfUnused(modelFolder, onProgress)
             if (outcome == LocalModelDeleteOutcome.DELETED) {
                 val preferenceEditor = folderPreferences.edit()
                 affectedModelNames.forEach { modelName ->

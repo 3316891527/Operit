@@ -77,9 +77,18 @@ fun ChatHistoryStorageScreen() {
             } else {
                 items(state.chats, key = { it.id }) { chat ->
                     val tags = buildList {
-                        chat.characterName?.takeIf { it.isNotBlank() }?.let(::add)
-                        if (chat.hasWorkspace) add(stringResource(R.string.data_storage_chat_has_workspace))
-                        if (chat.chat.locked) add(stringResource(R.string.data_storage_locked))
+                        chat.characterName?.takeIf { it.isNotBlank() }?.let { name ->
+                            add(StorageStatusTag(name))
+                        }
+                        if (chat.hasWorkspace) {
+                            add(StorageStatusTag(stringResource(R.string.data_storage_chat_has_workspace)))
+                        }
+                        if (chat.chat.locked) {
+                            add(StorageStatusTag(stringResource(R.string.data_storage_locked), emphasis = true))
+                        }
+                        if (chat.isCurrent) {
+                            add(StorageStatusTag(stringResource(R.string.data_storage_current_item), emphasis = true))
+                        }
                     }
                     StorageSelectableRow(
                         selected = chat.id in state.selectedIds,
@@ -88,7 +97,9 @@ fun ChatHistoryStorageScreen() {
                         title = chat.title,
                         subtitle = stringResource(R.string.data_storage_chat_message_count, chat.messageCount),
                         bytes = chat.estimatedBytes,
-                        tags = tags,
+                        leadingPainter = rememberStorageAvatarPainter(chat.avatarUri),
+                        leadingInitial = chat.characterName ?: chat.title,
+                        statusTags = tags,
                         note = if (chat.isCurrent) {
                             stringResource(R.string.data_storage_current_item)
                         } else {

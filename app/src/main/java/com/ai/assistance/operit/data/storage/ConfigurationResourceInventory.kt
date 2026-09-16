@@ -1,11 +1,13 @@
 package com.ai.assistance.operit.data.storage
 
 import android.content.Context
-import com.ai.assistance.operit.data.model.ApiProviderType
+import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
+import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
+import com.ai.assistance.operit.ui.features.settings.sections.getProviderDisplayName
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -26,6 +28,10 @@ data class ConfigurationResourceEntry(
     val boundCount: Int,
     val inUse: Boolean,
     val locked: Boolean,
+    val avatarUri: String? = null,
+    val providerTypeId: String? = null,
+    val providerDisplayName: String? = null,
+    val primaryModelName: String? = null,
 )
 
 data class ConfigurationResourceSnapshot(
@@ -42,6 +48,7 @@ class ConfigurationResourceInventory(context: Context) {
     private val modelConfigManager = ModelConfigManager(appContext)
     private val functionalConfigManager = FunctionalConfigManager(appContext)
     private val chatHistoryManager = ChatHistoryManager.getInstance(appContext)
+    private val userPreferences = UserPreferencesManager.getInstance(appContext)
     private val storageRepository = DataStorageRepository(appContext)
     private val cleaner = SafeDirectoryCleaner()
 
@@ -69,23 +76,30 @@ class ConfigurationResourceInventory(context: Context) {
                 boundCount = bound,
                 inUse = currentCardName == card.name,
                 locked = card.id == CharacterCardManager.DEFAULT_CHARACTER_CARD_ID || card.isDefault,
+                avatarUri = userPreferences.getAiAvatarForCharacterCardFlow(card.id).first(),
             )
         }
 
         val configEntries = configSummaries.map { config ->
             val inUse = functionMapping.values.contains(config.id)
+            val providerTypeId = config.apiProviderTypeId.ifBlank { config.apiProviderType.name }
+            val providerName = getProviderDisplayName(providerTypeId, appContext)
+            val primaryModel = getModelByIndex(config.modelName, config.modelIndex).ifBlank { config.modelName }
             ConfigurationResourceEntry(
                 id = "config:${config.id}",
                 kind = ConfigurationResourceKind.MODEL_CONFIG,
                 name = config.name,
                 subtitle = listOfNotNull(
-                    config.apiProviderType.takeIf { it != ApiProviderType.OTHER }?.name,
-                    config.modelName.takeIf { it.isNotBlank() },
+                    providerName.takeIf { it.isNotBlank() },
+                    primaryModel.takeIf { it.isNotBlank() },
                 ).joinToString(" · "),
                 bytes = estimateTextBytes((config.name.length + config.modelName.length).toLong()),
                 boundCount = functionMapping.values.count { it == config.id },
                 inUse = inUse,
                 locked = config.id == ModelConfigManager.DEFAULT_CONFIG_ID || inUse,
+                providerTypeId = providerTypeId,
+                providerDisplayName = providerName,
+                primaryModelName = primaryModel,
             )
         }
 

@@ -3,6 +3,8 @@ package com.ai.assistance.operit.data.storage
 import android.content.Context
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.model.ChatHistory
+import com.ai.assistance.operit.data.preferences.CharacterCardManager
+import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +18,8 @@ data class ChatStorageEntry(
     val databaseBytes: Long,
     val canDelete: Boolean,
     val isCurrent: Boolean,
+    val characterCardId: String? = null,
+    val avatarUri: String? = null,
 ) {
     val id: String get() = chat.id
     val title: String get() = chat.title
@@ -37,6 +41,8 @@ data class ChatHistorySnapshot(
 class ChatHistoryInventory(context: Context) {
     private val appContext = context.applicationContext
     private val chatHistoryManager = ChatHistoryManager.getInstance(appContext)
+    private val characterCardManager = CharacterCardManager.getInstance(appContext)
+    private val userPreferences = UserPreferencesManager.getInstance(appContext)
     private val database = AppDatabase.getDatabase(appContext)
     private val storageRepository = DataStorageRepository(appContext)
 
@@ -54,11 +60,17 @@ class ChatHistoryInventory(context: Context) {
                 File(databaseFile.absolutePath + suffix).takeIf { it.isFile }?.length() ?: 0L
             }
         val totalMessages = messageCounts.values.sum().toLong().coerceAtLeast(1L)
+        val cards = characterCardManager.getAllCharacterCards()
+        val cardsByName = cards.associateBy { it.name }
+        val avatarByCardId = cards.associate { card ->
+            card.id to userPreferences.getAiAvatarForCharacterCardFlow(card.id).first()
+        }
         val entries = chats.map { chat ->
             val messages = messageCounts[chat.id] ?: 0
             val contentBytes = estimateTextBytes(contentCounts[chat.id] ?: 0L)
             val share =
                 if (totalMessages <= 0L) 0L else databaseBytes * messages.toLong() / totalMessages
+            val characterCardId = chat.characterCardName?.takeIf { it.isNotBlank() }?.let { cardsByName[it]?.id }
             ChatStorageEntry(
                 chat = chat,
                 messageCount = messages,
@@ -66,6 +78,8 @@ class ChatHistoryInventory(context: Context) {
                 databaseBytes = share,
                 canDelete = chat.locked != true,
                 isCurrent = chat.id == currentId,
+                characterCardId = characterCardId,
+                avatarUri = characterCardId?.let { avatarByCardId[it] },
             )
         }
         ChatHistorySnapshot(

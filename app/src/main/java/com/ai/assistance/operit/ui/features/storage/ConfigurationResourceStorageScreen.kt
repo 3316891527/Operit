@@ -14,10 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.PackageSkillKind
 import com.ai.assistance.operit.data.storage.formatStorageSize
+import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
 
 @Composable
 fun ConfigurationResourceStorageScreen() {
@@ -81,12 +83,15 @@ fun ConfigurationResourceStorageScreen() {
                                 enabled = !entry.locked && !state.job.running,
                                 locked = entry.locked,
                                 title = entry.name,
-                                subtitle = entry.subtitle,
+                                subtitle = stringResource(R.string.data_storage_bound_chats, entry.boundCount),
                                 bytes = entry.bytes,
-                                tags = listOfNotNull(
-                                    if (entry.inUse) stringResource(R.string.data_storage_in_use) else null,
-                                    if (entry.boundCount > 0) {
-                                        stringResource(R.string.data_storage_bound_chats, entry.boundCount)
+                                leadingPainter = rememberStorageAvatarPainter(entry.avatarUri),
+                                leadingInitial = entry.name,
+                                statusTags = listOfNotNull(
+                                    if (entry.inUse) {
+                                        StorageStatusTag(stringResource(R.string.data_storage_in_use), emphasis = true)
+                                    } else if (entry.boundCount > 0) {
+                                        StorageStatusTag(stringResource(R.string.data_storage_bound), emphasis = true)
                                     } else {
                                         null
                                     },
@@ -106,10 +111,23 @@ fun ConfigurationResourceStorageScreen() {
                                 enabled = !entry.locked && !state.job.running,
                                 locked = entry.locked,
                                 title = entry.name,
-                                subtitle = entry.subtitle,
+                                subtitle = listOfNotNull(
+                                    entry.providerDisplayName,
+                                    entry.primaryModelName?.takeIf { it.isNotBlank() }?.let {
+                                        stringResource(R.string.data_storage_config_primary_model, it)
+                                    },
+                                ).joinToString(" · "),
                                 bytes = entry.bytes,
-                                tags = listOfNotNull(
-                                    if (entry.inUse) stringResource(R.string.data_storage_in_use) else null,
+                                showBytes = false,
+                                leadingPainter = rememberProviderLogoPainter(entry.providerTypeId, 32.dp),
+                                leadingInitial = entry.providerDisplayName ?: entry.name,
+                                leadingCircular = false,
+                                statusTags = listOfNotNull(
+                                    if (entry.inUse) {
+                                        StorageStatusTag(stringResource(R.string.data_storage_in_use), emphasis = true)
+                                    } else {
+                                        null
+                                    },
                                 ),
                                 onToggle = { storageViewModel.toggle(entry.id, entry.locked) },
                             )
@@ -128,13 +146,16 @@ fun ConfigurationResourceStorageScreen() {
                                 title = entry.name,
                                 subtitle = entry.subtitle.ifBlank { entry.path?.absolutePath.orEmpty() },
                                 bytes = entry.bytes,
-                                tags = listOf(
-                                    stringResource(
-                                        if (entry.kind == PackageSkillKind.PLUGIN) {
-                                            R.string.data_storage_kind_plugin
-                                        } else {
-                                            R.string.data_storage_kind_skill
-                                        },
+                                leadingIcon = Icons.Default.Extension,
+                                statusTags = listOf(
+                                    StorageStatusTag(
+                                        stringResource(
+                                            if (entry.kind == PackageSkillKind.PLUGIN) {
+                                                R.string.data_storage_kind_plugin
+                                            } else {
+                                                R.string.data_storage_kind_skill
+                                            },
+                                        ),
                                     ),
                                 ),
                                 onToggle = { storageViewModel.toggle(entry.id, false) },

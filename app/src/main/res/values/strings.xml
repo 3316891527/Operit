@@ -8658,4 +8658,22 @@
     <string name="data_storage_tab_cards">角色卡</string>
     <string name="data_storage_tab_configs">模型配置</string>
     <string name="data_storage_tab_extensions">扩展资源</string>
+    <string name="data_storage_linux_empty_root">尚未安装 Ubuntu 根环境</string>
+    <string name="data_storage_linux_empty_home">用户目录为空</string>
+    <string name="data_storage_linux_empty_apt">暂无 APT 缓存</string>
+    <string name="data_storage_linux_empty_logs">暂无日志或临时文件</string>
+    <string name="data_storage_linux_empty_packages">暂无终端安装包</string>
+    <string name="data_storage_linux_delete_paths">将删除以下路径：</string>
+    <string name="data_storage_linux_files_count">%1$d 个文件</string>
+    <string name="data_storage_delete_progress_title">正在删除</string>
+    <string name="data_storage_delete_progress_overall">总体进度 %1$d%%</string>
+    <string name="data_storage_delete_progress_item">当前第 %1$d / %2$d 项</string>
+    <string name="data_storage_delete_progress_current">当前项 %1$d%% · %2$s / %3$s</string>
+    <string name="data_storage_memory_folder_count">%1$d 个文件夹</string>
+    <string name="data_storage_memory_folder_items">%1$d 条记忆</string>
+    <string name="data_storage_memory_uncategorized_folder">未分类</string>
+    <string name="data_storage_memory_empty_folders">暂无记忆文件夹</string>
+    <string name="data_storage_exports_empty">暂无导出文件。这里只显示聊天或提示词导出产生的文件。</string>
+    <string name="data_storage_bound">已绑定</string>
+    <string name="data_storage_config_primary_model">主模型：%1$s</string>
 </resources>

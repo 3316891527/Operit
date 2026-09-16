@@ -64,11 +64,14 @@ class LocalModelInventory(
         )
     }
 
-    suspend fun delete(entry: LocalModelEntry): LocalModelDeleteOutcome = withContext(Dispatchers.IO) {
+    suspend fun delete(
+        entry: LocalModelEntry,
+        onProgress: ((deletedBytes: Long, totalBytes: Long) -> Unit)? = null,
+    ): LocalModelDeleteOutcome = withContext(Dispatchers.IO) {
         val outcome = when (entry.kind) {
-            LocalModelKind.MNN -> downloadManager.deleteModelFolder(entry.path)
+            LocalModelKind.MNN -> downloadManager.deleteModelFolder(entry.path, onProgress)
             LocalModelKind.LLAMA,
-            LocalModelKind.SPEECH -> LocalModelRuntimeRegistry.deleteIfUnused(entry.path)
+            LocalModelKind.SPEECH -> LocalModelRuntimeRegistry.deleteIfUnused(entry.path, onProgress)
         }
         if (outcome == LocalModelDeleteOutcome.DELETED) {
             storageRepository.invalidateCache()

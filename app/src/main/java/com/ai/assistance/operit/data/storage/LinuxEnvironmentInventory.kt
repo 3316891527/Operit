@@ -22,7 +22,13 @@ data class LinuxStorageUnit(
     val exists: Boolean,
     val locked: Boolean,
     val lastModifiedMillis: Long,
-)
+) {
+    fun deletionPaths(): List<File> =
+        when (kind) {
+            LinuxStorageUnitKind.TERMINAL_PACKAGES -> extraPaths
+            else -> listOf(path) + extraPaths
+        }.distinctBy { it.canonicalOrAbsolute() }
+}
 
 data class LinuxEnvironmentSnapshot(
     val units: List<LinuxStorageUnit>,
@@ -143,11 +149,7 @@ class LinuxEnvironmentInventory(
         if (unit.locked) {
             return@withContext StorageDeleteBatchResult(0, 1, 0L)
         }
-        val paths =
-            when (unit.kind) {
-                LinuxStorageUnitKind.TERMINAL_PACKAGES -> unit.extraPaths
-                else -> listOf(unit.path) + unit.extraPaths
-            }.distinctBy { it.canonicalOrAbsolute() }
+        val paths = unit.deletionPaths()
         val preserved = if (unit.kind == LinuxStorageUnitKind.APT_CACHE) setOf("lock") else emptySet()
         var deletedBytes = 0L
         var deletedFiles = 0L

@@ -76,3 +76,43 @@ internal suspend fun SafeDirectoryCleaner.cleanDirectory(
 }
 
 internal fun estimateTextBytes(characterCount: Long): Long = characterCount.coerceAtLeast(0L)
+
+internal fun File.deleteTreeWithProgress(
+    onProgress: (deletedBytes: Long, totalBytes: Long) -> Unit,
+): Boolean {
+    if (!exists()) {
+        onProgress(0L, 0L)
+        return true
+    }
+    val totalBytes = computeStorageStats().bytes
+    if (isFile) {
+        val size = length().coerceAtLeast(0L)
+        val deleted = delete()
+        onProgress(if (deleted) size else 0L, size)
+        return deleted
+    }
+    var deletedBytes = 0L
+    fun report() {
+        onProgress(deletedBytes.coerceAtMost(totalBytes.coerceAtLeast(deletedBytes)), totalBytes)
+    }
+    fun walk(file: File): Boolean {
+        if (!file.exists()) return true
+        if (file.isDirectory) {
+            var ok = true
+            file.listFiles()?.forEach { child ->
+                if (!walk(child)) ok = false
+            }
+            return file.delete() && ok
+        }
+        val size = file.length().coerceAtLeast(0L)
+        val deleted = file.delete()
+        if (deleted) {
+            deletedBytes += size
+            report()
+        }
+        return deleted
+    }
+    val result = walk(this)
+    onProgress(if (result) totalBytes.coerceAtLeast(deletedBytes) else deletedBytes, totalBytes)
+    return result
+}

@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.storage
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +29,7 @@ fun MemoryLibraryStorageScreen() {
     var showConfirm by remember { mutableStateOf(false) }
     val profileChips = buildList {
         add(StorageChip(MemoryLibraryUiState.ALL, stringResource(R.string.data_storage_filter_all_spaces)))
-        state.snapshot?.entries.orEmpty()
+        state.snapshot?.folders.orEmpty()
             .map { it.profileId to it.profileName }
             .distinctBy { it.first }
             .forEach { (id, name) -> add(StorageChip(id, name)) }
@@ -59,6 +60,10 @@ fun MemoryLibraryStorageScreen() {
                             state.snapshot?.memoryCount ?: 0,
                             state.snapshot?.profileCount ?: 0,
                         ),
+                        stringResource(
+                            R.string.data_storage_memory_folder_count,
+                            state.snapshot?.folderCount ?: 0,
+                        ),
                     ),
                     scannedAtMillis = state.snapshot?.scannedAtMillis,
                     isRefreshing = state.isLoading,
@@ -73,22 +78,31 @@ fun MemoryLibraryStorageScreen() {
                 )
             }
             item { StorageJobCard(state.job) }
-            if (state.entries.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_memory_empty)) }
+            if (state.folders.isEmpty() && !state.isLoading) {
+                item { StorageEmptyCard(stringResource(R.string.data_storage_memory_empty_folders)) }
             } else {
-                items(state.entries, key = { it.key }) { entry ->
+                items(state.folders, key = { it.key }) { folder ->
+                    val folderTitle = folder.folderName.ifBlank {
+                        stringResource(R.string.data_storage_memory_uncategorized_folder)
+                    }
                     StorageSelectableRow(
-                        selected = entry.key in state.selectedKeys,
+                        selected = folder.key in state.selectedKeys,
                         enabled = !state.job.running,
                         locked = false,
-                        title = entry.title,
-                        subtitle = listOfNotNull(entry.profileName, entry.folderPath).joinToString(" · "),
-                        bytes = entry.estimatedBytes,
-                        tags = listOfNotNull(
-                            if (entry.isDocument) stringResource(R.string.data_storage_memory_document) else null,
+                        title = folderTitle,
+                        subtitle = folder.profileName,
+                        bytes = folder.estimatedBytes,
+                        leadingIcon = Icons.Default.Folder,
+                        statusTags = listOfNotNull(
+                            StorageStatusTag(stringResource(R.string.data_storage_memory_folder_items, folder.memoryCount)),
+                            if (folder.documentCount > 0) {
+                                StorageStatusTag(stringResource(R.string.data_storage_memory_document))
+                            } else {
+                                null
+                            },
                         ),
-                        note = stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(entry.updatedAtMillis)),
-                        onToggle = { storageViewModel.toggle(entry) },
+                        note = stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(folder.updatedAtMillis)),
+                        onToggle = { storageViewModel.toggle(folder) },
                     )
                 }
             }
@@ -100,7 +114,7 @@ fun MemoryLibraryStorageScreen() {
             title = stringResource(R.string.data_storage_memory_delete_title),
             message = stringResource(
                 R.string.data_storage_delete_items_message,
-                state.selected.size,
+                state.selectedEntries.size,
                 formatStorageSize(state.selectedBytes),
             ),
             warnings = listOf(stringResource(R.string.data_storage_memory_delete_warning)),
