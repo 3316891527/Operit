@@ -67,6 +67,8 @@ import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScr
 import com.ai.assistance.operit.ui.features.settings.screens.UserPreferencesSettingsScreen
 import com.ai.assistance.operit.data.storage.StorageCategory
 import com.ai.assistance.operit.ui.features.storage.DataStorageScreen
+import com.ai.assistance.operit.ui.features.storage.LinuxEnvironmentStorageScreen
+import com.ai.assistance.operit.ui.features.storage.LocalModelStorageScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
@@ -1088,8 +1090,8 @@ sealed class Screen(
             DataStorageScreen(
                     onManageCategory = { category ->
                         when (category) {
-                            StorageCategory.LINUX_ENVIRONMENT -> navigateTo(Terminal)
-                            StorageCategory.LOCAL_MODELS -> navigateTo(MnnModelDownload)
+                            StorageCategory.LINUX_ENVIRONMENT -> navigateTo(LinuxEnvironmentStorage)
+                            StorageCategory.LOCAL_MODELS -> navigateTo(LocalModelStorage)
                             StorageCategory.WORKSPACES_AND_MEDIA,
                             StorageCategory.CHAT_HISTORY -> navigateTo(ChatHistorySettings)
                             StorageCategory.MEMORY_LIBRARY -> navigateTo(MemoryBase)
@@ -1100,6 +1102,51 @@ sealed class Screen(
                             StorageCategory.OTHER -> Unit
                         }
                     }
+            )
+        }
+    }
+
+    data object LocalModelStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_local_model_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            LocalModelStorageScreen(
+                    onDownloadMnnModels = { navigateTo(MnnModelDownload) },
+            )
+        }
+    }
+
+    data object LinuxEnvironmentStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_linux_environment_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            LinuxEnvironmentStorageScreen(
+                    onOpenTerminal = { navigateTo(Terminal) },
+                    onOpenFileManager = { navigateTo(FileManager) },
             )
         }
     }

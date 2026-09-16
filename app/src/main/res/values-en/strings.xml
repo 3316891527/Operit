@@ -8478,7 +8478,6 @@
     <string name="data_storage_scan_failed">Storage scan could not be completed</string>
     <string name="data_storage_retry">Retry</string>
     <string name="data_storage_overview_title">Operit data usage</string>
-    <string name="data_storage_overview_hint">Seven core data areas only; Android device storage is not included</string>
     <string name="data_storage_refresh">Scan again</string>
     <string name="data_storage_device_total">Total device storage</string>
     <string name="data_storage_operit_tracked">Total across seven core areas</string>
@@ -8501,7 +8500,7 @@
     <string name="data_storage_partial_title">Some data was not counted</string>
     <string name="data_storage_partial_description">%1$d entries could not be read and %2$d symbolic links were skipped. Current totals include accessible data only.</string>
 
-    <string name="data_storage_category_linux">Linux environment</string>
+    <string name="data_storage_category_linux">Linux environment and terminal</string>
     <string name="data_storage_category_models">Local models</string>
     <string name="data_storage_category_workspaces">Workspaces and media</string>
     <string name="data_storage_category_chats">Chat history</string>
@@ -8513,7 +8512,33 @@
     <string name="data_storage_category_cache">Cache and temporary files</string>
     <string name="data_storage_category_other">Other data</string>
 
+    <string name="screen_title_linux_environment_storage">Linux environment and terminal</string>
+    <string name="data_storage_linux_usage_title">Linux environment and terminal usage</string>
+    <string name="data_storage_linux_details_title">Storage details</string>
+    <string name="data_storage_linux_actions_title">Related tools</string>
+    <string name="data_storage_linux_open_terminal">Open terminal</string>
+    <string name="data_storage_linux_open_file_manager">Browse environment files</string>
+    <string name="data_storage_linux_no_data">No Linux environment or terminal files were found.</string>
+    <string name="screen_title_local_model_storage">Local models</string>
+    <string name="data_storage_local_models_usage_title">Local model usage</string>
+    <string name="data_storage_local_models_count">%1$d models</string>
+    <string name="data_storage_local_models_filter_all">All</string>
+    <string name="data_storage_local_models_download_mnn">Download MNN models</string>
+    <string name="data_storage_local_models_empty">No local models or unfinished downloads were found.</string>
+    <string name="data_storage_local_models_delete_title">Delete model</string>
+    <string name="data_storage_local_models_delete_message">This will cancel any unfinished download and delete “%1$s”. Models that are currently in use cannot be deleted.</string>
+    <string name="data_storage_local_models_deleted">Model deleted</string>
+    <string name="data_storage_local_models_in_use">This model is in use and cannot be deleted</string>
+    <string name="data_storage_local_models_delete_failed">Delete failed</string>
+    <string name="data_storage_local_models_status_in_use">In use</string>
+    <string name="data_storage_local_models_status_connecting">Connecting</string>
+    <string name="data_storage_local_models_status_downloading">Downloading %1$d%%</string>
+    <string name="data_storage_local_models_status_paused">Paused %1$d%%</string>
+    <string name="data_storage_local_models_status_failed">Download failed: %1$s</string>
+    <string name="data_storage_local_models_status_complete">Complete</string>
+    <string name="data_storage_local_models_status_incomplete">Incomplete</string>
     <string name="data_storage_detail_linux_system">Ubuntu system and runtime</string>
+    <string name="data_storage_detail_terminal_runtime">Terminal runtime and setup files</string>
     <string name="data_storage_detail_mnn_models">MNN models</string>
     <string name="data_storage_detail_llama_models">llama.cpp models</string>
     <string name="data_storage_detail_speech_models">Speech recognition models</string>

@@ -42,6 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -49,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -125,7 +127,10 @@ fun DataStorageScreen(
         storageViewModel.consumeCleanupResult()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    CompositionLocalProvider(
+        LocalContentColor provides MaterialTheme.colorScheme.onSurface,
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
@@ -215,6 +220,7 @@ fun DataStorageScreen(
             },
         )
     }
+    }
 }
 
 @Composable
@@ -299,11 +305,6 @@ private fun StorageOverview(
                         text = stringResource(R.string.data_storage_overview_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = stringResource(R.string.data_storage_overview_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 IconButton(onClick = onRefresh, enabled = !isRefreshing) {
@@ -1002,6 +1003,7 @@ private val StorageDetail.titleRes: Int
     @StringRes get() =
         when (this) {
             StorageDetail.LINUX_SYSTEM -> R.string.data_storage_detail_linux_system
+            StorageDetail.TERMINAL_RUNTIME -> R.string.data_storage_detail_terminal_runtime
             StorageDetail.MNN_MODELS -> R.string.data_storage_detail_mnn_models
             StorageDetail.LLAMA_MODELS -> R.string.data_storage_detail_llama_models
             StorageDetail.SPEECH_MODELS -> R.string.data_storage_detail_speech_models

@@ -21,6 +21,7 @@ enum class StorageScope {
 
 enum class StorageDetail {
     LINUX_SYSTEM,
+    TERMINAL_RUNTIME,
     MNN_MODELS,
     LLAMA_MODELS,
     SPEECH_MODELS,

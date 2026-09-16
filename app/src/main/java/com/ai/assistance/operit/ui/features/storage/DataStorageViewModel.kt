@@ -33,17 +33,27 @@ class DataStorageViewModel(
     private var scanJob: Job? = null
 
     init {
-        refresh()
+        val cachedSnapshot = repository.cachedSnapshot()
+        if (cachedSnapshot != null) {
+            _state.value = DataStorageUiState(snapshot = cachedSnapshot)
+        } else {
+            scan(forceRefresh = false)
+        }
     }
 
     fun refresh() {
         if (_state.value.isCleaning) return
+        scan(forceRefresh = true)
+    }
+
+    private fun scan(forceRefresh: Boolean) {
         scanJob?.cancel()
         scanJob =
             viewModelScope.launch {
                 _state.update { it.copy(isScanning = true, errorMessage = null) }
                 try {
-                    val snapshot = repository.scan()
+                    val snapshot =
+                        if (forceRefresh) repository.refresh() else repository.scan()
                     _state.update {
                         it.copy(snapshot = snapshot, isScanning = false, errorMessage = null)
                     }
@@ -74,7 +84,7 @@ class DataStorageViewModel(
                     val result = repository.cleanup(targets)
                     val refreshedSnapshot =
                         try {
-                            repository.scan()
+                            repository.refresh()
                         } catch (cancellation: CancellationException) {
                             throw cancellation
                         } catch (error: Exception) {

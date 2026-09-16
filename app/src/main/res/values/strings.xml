@@ -8463,7 +8463,6 @@
     <string name="data_storage_scan_failed">无法完成存储扫描</string>
     <string name="data_storage_retry">重试</string>
     <string name="data_storage_overview_title">Operit 数据占用</string>
-    <string name="data_storage_overview_hint">仅展示七个核心数据板块，不包含 Android 设备空间</string>
     <string name="data_storage_refresh">重新扫描</string>
     <string name="data_storage_device_total">设备总容量</string>
     <string name="data_storage_operit_tracked">七个核心板块合计</string>
@@ -8486,7 +8485,7 @@
     <string name="data_storage_partial_title">部分数据未计入</string>
     <string name="data_storage_partial_description">有 %1$d 个条目无法读取；已跳过 %2$d 个符号链接。当前结果仅包含可访问数据。</string>
 
-    <string name="data_storage_category_linux">Linux 环境</string>
+    <string name="data_storage_category_linux">Linux 环境和终端</string>
     <string name="data_storage_category_models">本地模型</string>
     <string name="data_storage_category_workspaces">工作区与媒体</string>
     <string name="data_storage_category_chats">聊天记录</string>
@@ -8498,7 +8497,33 @@
     <string name="data_storage_category_cache">缓存与临时文件</string>
     <string name="data_storage_category_other">其他数据</string>
 
+    <string name="screen_title_linux_environment_storage">Linux 环境和终端</string>
+    <string name="data_storage_linux_usage_title">Linux 环境和终端占用</string>
+    <string name="data_storage_linux_details_title">存储明细</string>
+    <string name="data_storage_linux_actions_title">相关功能</string>
+    <string name="data_storage_linux_open_terminal">打开终端</string>
+    <string name="data_storage_linux_open_file_manager">浏览环境文件</string>
+    <string name="data_storage_linux_no_data">暂未发现 Linux 环境或终端文件。</string>
+    <string name="screen_title_local_model_storage">本地模型</string>
+    <string name="data_storage_local_models_usage_title">本地模型占用</string>
+    <string name="data_storage_local_models_count">%1$d 个模型</string>
+    <string name="data_storage_local_models_filter_all">全部</string>
+    <string name="data_storage_local_models_download_mnn">下载 MNN 模型</string>
+    <string name="data_storage_local_models_empty">暂未发现本地模型或未完成的下载。</string>
+    <string name="data_storage_local_models_delete_title">删除模型</string>
+    <string name="data_storage_local_models_delete_message">将取消未完成的下载并删除“%1$s”。正在使用的模型无法删除。</string>
+    <string name="data_storage_local_models_deleted">模型已删除</string>
+    <string name="data_storage_local_models_in_use">该模型正在使用，无法删除</string>
+    <string name="data_storage_local_models_delete_failed">删除失败</string>
+    <string name="data_storage_local_models_status_in_use">正在使用</string>
+    <string name="data_storage_local_models_status_connecting">正在连接</string>
+    <string name="data_storage_local_models_status_downloading">下载中 %1$d%%</string>
+    <string name="data_storage_local_models_status_paused">已暂停 %1$d%%</string>
+    <string name="data_storage_local_models_status_failed">下载失败：%1$s</string>
+    <string name="data_storage_local_models_status_complete">完整</string>
+    <string name="data_storage_local_models_status_incomplete">未完成</string>
     <string name="data_storage_detail_linux_system">Ubuntu 系统与运行环境</string>
+    <string name="data_storage_detail_terminal_runtime">终端运行文件与安装包</string>
     <string name="data_storage_detail_mnn_models">MNN 模型</string>
     <string name="data_storage_detail_llama_models">llama.cpp 模型</string>
     <string name="data_storage_detail_speech_models">语音识别模型</string>

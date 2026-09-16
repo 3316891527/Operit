@@ -16,6 +16,8 @@ import io.objectbox.kotlin.boxFor
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class DataStorageRepository internal constructor(
@@ -27,89 +29,109 @@ class DataStorageRepository internal constructor(
 
     private val appContext = context.applicationContext
 
-    suspend fun scan(): DataStorageSnapshot = withContext(Dispatchers.IO) {
-        val layout = buildLayout()
-        val raw = scanner.scan(layout.roots, layout.rules)
-        val counts = loadCategoryCounts(layout, raw)
+    suspend fun scan(): DataStorageSnapshot = loadSnapshot(forceRefresh = false)
 
-        val categories =
-            StorageCategory.values().map { category ->
-                val usage = raw.categoryUsage[category] ?: RawStorageUsage()
-                val categoryCounts = counts[category] ?: CategoryCounts()
-                StorageCategoryUsage(
-                    category = category,
-                    bytes = usage.bytes,
-                    fileCount = usage.fileCount,
-                    inaccessibleEntryCount = usage.inaccessibleEntryCount,
-                    itemCount = categoryCounts.primary,
-                    secondaryItemCount = categoryCounts.secondary,
-                    details =
-                        StorageDetail.values().mapNotNull { detail ->
-                            if (detail.category != category) return@mapNotNull null
-                            val detailUsage = raw.detailUsage[detail] ?: return@mapNotNull null
-                            if (
-                                detailUsage.bytes == 0L &&
-                                    detailUsage.fileCount == 0L &&
-                                    detailUsage.inaccessibleEntryCount == 0
-                            ) {
-                                return@mapNotNull null
-                            }
-                            StorageDetailUsage(
-                                detail = detail,
-                                bytes = detailUsage.bytes,
-                                fileCount = detailUsage.fileCount,
-                                inaccessibleEntryCount = detailUsage.inaccessibleEntryCount,
-                            )
-                        },
-                )
+    suspend fun refresh(): DataStorageSnapshot = loadSnapshot(forceRefresh = true)
+
+    fun cachedSnapshot(): DataStorageSnapshot? = snapshotCache
+
+    fun invalidateCache() {
+        snapshotCache = null
+    }
+
+    private suspend fun loadSnapshot(forceRefresh: Boolean): DataStorageSnapshot =
+        snapshotMutex.withLock {
+            if (!forceRefresh) {
+                snapshotCache?.let { return@withLock it }
             }
 
-        DataStorageSnapshot(
-            trackedBytes = raw.scopeBytes.values.sum(),
-            deviceStorage = readDeviceStorageUsage(),
-            scopes =
-                StorageScope.values().map { scope ->
-                    StorageScopeUsage(scope = scope, bytes = raw.scopeBytes[scope] ?: 0L)
-                },
-            categories = categories,
-            cleanupTargets =
-                CleanupTarget.values().map { target ->
-                    val usage = raw.cleanupUsage[target] ?: RawStorageUsage()
-                    CleanupTargetUsage(
-                        target = target,
-                        bytes = usage.bytes,
-                        fileCount = usage.fileCount,
-                        inaccessibleEntryCount = usage.inaccessibleEntryCount,
-                    )
-                },
-            inaccessibleEntryCount = raw.inaccessibleEntryCount,
-            skippedSymbolicLinkCount = raw.skippedSymbolicLinkCount,
-            scannedAtMillis = System.currentTimeMillis(),
-        )
-    }
+            withContext(Dispatchers.IO) {
+                val layout = buildLayout()
+                val raw = scanner.scan(layout.roots, layout.rules)
+                val counts = loadCategoryCounts(layout, raw)
+
+                val categories =
+                    StorageCategory.values().map { category ->
+                        val usage = raw.categoryUsage[category] ?: RawStorageUsage()
+                        val categoryCounts = counts[category] ?: CategoryCounts()
+                        StorageCategoryUsage(
+                            category = category,
+                            bytes = usage.bytes,
+                            fileCount = usage.fileCount,
+                            inaccessibleEntryCount = usage.inaccessibleEntryCount,
+                            itemCount = categoryCounts.primary,
+                            secondaryItemCount = categoryCounts.secondary,
+                            details =
+                                StorageDetail.values().mapNotNull { detail ->
+                                    if (detail.category != category) return@mapNotNull null
+                                    val detailUsage = raw.detailUsage[detail] ?: return@mapNotNull null
+                                    if (
+                                        detailUsage.bytes == 0L &&
+                                            detailUsage.fileCount == 0L &&
+                                            detailUsage.inaccessibleEntryCount == 0
+                                    ) {
+                                        return@mapNotNull null
+                                    }
+                                    StorageDetailUsage(
+                                        detail = detail,
+                                        bytes = detailUsage.bytes,
+                                        fileCount = detailUsage.fileCount,
+                                        inaccessibleEntryCount = detailUsage.inaccessibleEntryCount,
+                                    )
+                                },
+                        )
+                    }
+
+                DataStorageSnapshot(
+                    trackedBytes = raw.scopeBytes.values.sum(),
+                    deviceStorage = readDeviceStorageUsage(),
+                    scopes =
+                        StorageScope.values().map { scope ->
+                            StorageScopeUsage(scope = scope, bytes = raw.scopeBytes[scope] ?: 0L)
+                        },
+                    categories = categories,
+                    cleanupTargets =
+                        CleanupTarget.values().map { target ->
+                            val usage = raw.cleanupUsage[target] ?: RawStorageUsage()
+                            CleanupTargetUsage(
+                                target = target,
+                                bytes = usage.bytes,
+                                fileCount = usage.fileCount,
+                                inaccessibleEntryCount = usage.inaccessibleEntryCount,
+                            )
+                        },
+                    inaccessibleEntryCount = raw.inaccessibleEntryCount,
+                    skippedSymbolicLinkCount = raw.skippedSymbolicLinkCount,
+                    scannedAtMillis = System.currentTimeMillis(),
+                ).also { snapshotCache = it }
+            }
+        }
 
     suspend fun cleanup(targets: Set<CleanupTarget>): DataStorageCleanupResult {
         if (targets.isEmpty()) {
             return DataStorageCleanupResult(emptySet(), 0L, 0L, 0)
         }
 
-        val cleanupLocations = buildLayout().cleanupLocations
-        val requests =
-            targets.flatMap { target ->
-                cleanupLocations[target].orEmpty().map { location ->
-                    DirectoryCleanupRequest(
-                        directory = location.directory,
-                        preservedNames = location.preservedNames,
-                    )
+        return snapshotMutex.withLock {
+            snapshotCache = null
+            val cleanupLocations = buildLayout().cleanupLocations
+            val requests =
+                targets.flatMap { target ->
+                    cleanupLocations[target].orEmpty().map { location ->
+                        DirectoryCleanupRequest(
+                            directory = location.directory,
+                            preservedNames = location.preservedNames,
+                        )
+                    }
                 }
-            }
-        val result = cleaner.clean(requests)
-        return DataStorageCleanupResult(
-            targets = targets,
-            deletedBytes = result.deletedBytes,
-            deletedFileCount = result.deletedFileCount,
-            failedEntryCount = result.failedEntryCount,
-        )
+            val result = cleaner.clean(requests)
+            DataStorageCleanupResult(
+                targets = targets,
+                deletedBytes = result.deletedBytes,
+                deletedFileCount = result.deletedFileCount,
+                failedEntryCount = result.failedEntryCount,
+            )
+        }
     }
 
     private fun buildLayout(): StorageLayout {
@@ -145,7 +167,29 @@ class DataStorageRepository internal constructor(
         val ubuntuRoot = File(filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu")
         val linuxPackageCache = File(ubuntuRoot, "var/cache/apt/archives")
         rule(linuxRoot, StorageCategory.LINUX_ENVIRONMENT, StorageDetail.LINUX_SYSTEM)
-        rule(File(filesDir, ".local"), StorageCategory.LINUX_ENVIRONMENT, StorageDetail.LINUX_SYSTEM)
+        rule(
+            File(filesDir, ".local"),
+            StorageCategory.LINUX_ENVIRONMENT,
+            StorageDetail.LINUX_SYSTEM,
+        )
+        listOf(
+
+            File(linuxRoot, "bin"),
+            File(filesDir, "bin"),
+            File(filesDir, "common.sh"),
+            File(filesDir, "setup_fake_sysdata.sh"),
+            File(filesDir, "proot-distro.zip"),
+            File(filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"),
+        ).forEach { path ->
+            rule(path, StorageCategory.LINUX_ENVIRONMENT, StorageDetail.TERMINAL_RUNTIME)
+        }
+        rule(
+            File(filesDir, "tmp"),
+            StorageCategory.LINUX_ENVIRONMENT,
+            StorageDetail.TERMINAL_RUNTIME,
+            StorageScope.CACHE,
+            CleanupTarget.TEMPORARY_FILES,
+        )
         rule(
             linuxPackageCache,
             StorageCategory.CACHE_AND_TEMPORARY,
@@ -298,11 +342,8 @@ class DataStorageRepository internal constructor(
             StorageDetail.TEMPORARY_FILES,
             CleanupTarget.TEMPORARY_FILES,
         )
-        cleanupRule(
-            File(filesDir, "tmp"),
-            StorageDetail.TEMPORARY_FILES,
-            CleanupTarget.TEMPORARY_FILES,
-        )
+        cleanupLocations.getOrPut(CleanupTarget.TEMPORARY_FILES, ::mutableListOf) +=
+            CleanupLocation(File(filesDir, "tmp"))
         cleanupRule(
             File(filesDir, "image_cache"),
             StorageDetail.TEMPORARY_FILES,
@@ -450,7 +491,8 @@ class DataStorageRepository internal constructor(
     private val StorageDetail.category: StorageCategory
         get() =
             when (this) {
-                StorageDetail.LINUX_SYSTEM -> StorageCategory.LINUX_ENVIRONMENT
+                StorageDetail.LINUX_SYSTEM,
+                StorageDetail.TERMINAL_RUNTIME -> StorageCategory.LINUX_ENVIRONMENT
                 StorageDetail.MNN_MODELS,
                 StorageDetail.LLAMA_MODELS,
                 StorageDetail.SPEECH_MODELS,
@@ -481,5 +523,8 @@ class DataStorageRepository internal constructor(
 
     private companion object {
         const val TAG = "DataStorageRepository"
+        private val snapshotMutex = Mutex()
+
+        @Volatile private var snapshotCache: DataStorageSnapshot? = null
     }
 }
