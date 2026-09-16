@@ -44,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -56,6 +57,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +71,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.core.tools.defaultTool.standard.CookiePrivacyManager
 import com.ai.assistance.operit.data.storage.CleanupTarget
 import com.ai.assistance.operit.data.storage.CleanupTargetUsage
 import com.ai.assistance.operit.data.storage.DataStorageSnapshot
@@ -77,7 +80,9 @@ import com.ai.assistance.operit.data.storage.StorageCategoryUsage
 import com.ai.assistance.operit.data.storage.StorageDetail
 import com.ai.assistance.operit.data.storage.formatStorageSize
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
+import com.ai.assistance.operit.util.AppLogger
 import java.util.Locale
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -89,8 +94,10 @@ fun DataStorageScreen(
     val storageViewModel: DataStorageViewModel = viewModel(factory = factory)
     val state by storageViewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var selectedTargets by remember { mutableStateOf<Set<CleanupTarget>>(emptySet()) }
     var showCleanupConfirmation by remember { mutableStateOf(false) }
+    var showClearCookieConfirm by remember { mutableStateOf(false) }
 
     val snapshot = state.snapshot
     val displayedCategories =
@@ -195,6 +202,7 @@ fun DataStorageScreen(
                                 if (selected) selectedTargets + target else selectedTargets - target
                         },
                         onCleanup = { showCleanupConfirmation = true },
+                        onClearCookies = { showClearCookieConfirm = true },
                     )
                 }
             }
@@ -205,6 +213,39 @@ fun DataStorageScreen(
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+        )
+    }
+
+    if (showClearCookieConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearCookieConfirm = false },
+            title = { Text(stringResource(R.string.clear_cookies_dialog_title)) },
+            text = { Text(stringResource(R.string.clear_cookies_dialog_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearCookieConfirm = false
+                        scope.launch {
+                            val message =
+                                try {
+                                    CookiePrivacyManager.clearAllCookies()
+                                    context.getString(R.string.clear_cookies_success)
+                                } catch (error: Exception) {
+                                    AppLogger.e("DataStorageScreen", "Failed to clear cookies", error)
+                                    context.getString(R.string.clear_cookies_failed)
+                                }
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.clear_cookies_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearCookieConfirm = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
         )
     }
 
@@ -560,6 +601,7 @@ private fun CleanupSection(
     isCleaning: Boolean,
     onTargetChanged: (CleanupTarget, Boolean) -> Unit,
     onCleanup: () -> Unit,
+    onClearCookies: () -> Unit,
 ) {
     val selectedBytes = targets.filter { it.target in selectedTargets }.sumOf { it.bytes }
     val hasCleanableFiles = targets.any { it.fileCount > 0L }
@@ -626,6 +668,16 @@ private fun CleanupSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             )
+
+            OutlinedButton(
+                onClick = onClearCookies,
+                enabled = !isScanning && !isCleaning,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            ) {
+                Text(stringResource(R.string.settings_clear_cookies))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = onCleanup,

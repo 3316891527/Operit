@@ -29,10 +29,12 @@ enum class LocalModelFilter {
 data class LocalModelStorageUiState(
     val models: List<LocalModelEntry> = emptyList(),
     val filter: LocalModelFilter = LocalModelFilter.ALL,
+    val selectedIds: Set<String> = emptySet(),
     val isLoading: Boolean = false,
     val isDeleting: Boolean = false,
+    val job: StorageJobState = StorageJobState(),
+    val scannedAtMillis: Long? = null,
     val errorMessage: String? = null,
-    val deleteOutcome: LocalModelDeleteOutcome? = null,
 ) {
     val displayedModels: List<LocalModelEntry>
         get() = when (filter) {
@@ -61,7 +63,16 @@ class LocalModelStorageViewModel(
     }
 
     fun setFilter(filter: LocalModelFilter) {
-        _state.update { it.copy(filter = filter) }
+        _state.update { it.copy(filter = filter, selectedIds = emptySet()) }
+    }
+
+    fun toggle(entry: LocalModelEntry) {
+        if (!entry.canDelete || _state.value.isDeleting || _state.value.job.running) return
+        _state.update {
+            val next = it.selectedIds.toMutableSet()
+            if (!next.add(entry.id)) next.remove(entry.id)
+            it.copy(selectedIds = next)
+        }
     }
 
     fun refresh() {
@@ -72,7 +83,12 @@ class LocalModelStorageViewModel(
                 try {
                     val models = inventory.listModels()
                     _state.update {
-                        it.copy(models = models, isLoading = false, errorMessage = null)
+                        it.copy(
+                            models = models,
+                            isLoading = false,
+                            scannedAtMillis = System.currentTimeMillis(),
+                            errorMessage = null,
+                        )
                     }
                 } catch (cancellation: CancellationException) {
                     throw cancellation
@@ -89,44 +105,62 @@ class LocalModelStorageViewModel(
             }
     }
 
-    fun delete(entry: LocalModelEntry) {
-        if (_state.value.isDeleting || !entry.canDelete) return
+    fun deleteSelected() {
+        val selected = _state.value.displayedModels.filter { it.id in _state.value.selectedIds && it.canDelete }
+        if (selected.isEmpty() || _state.value.isDeleting || _state.value.job.running) return
         viewModelScope.launch {
-            _state.update { it.copy(isDeleting = true, errorMessage = null, deleteOutcome = null) }
-            try {
-                val outcome = inventory.delete(entry)
-                val models = inventory.listModels()
+            var released = 0L
+            var failed = 0
+            _state.update {
+                it.copy(
+                    isDeleting = true,
+                    errorMessage = null,
+                    job = StorageJobState(running = true, total = selected.size),
+                )
+            }
+            selected.forEachIndexed { index, entry ->
                 _state.update {
                     it.copy(
-                        models = models,
-                        isDeleting = false,
-                        deleteOutcome = outcome,
-                        errorMessage = null,
+                        job = it.job.copy(
+                            currentName = entry.displayName,
+                            processed = index,
+                            total = selected.size,
+                            releasedBytes = released,
+                            failed = failed,
+                        ),
                     )
                 }
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
-                _state.update {
-                    it.copy(
-                        isDeleting = false,
-                        errorMessage = error.localizedMessage?.takeIf { message ->
-                            message.isNotBlank()
-                        } ?: error.javaClass.simpleName,
-                    )
+                val outcome = runCatching { inventory.delete(entry) }.getOrNull()
+                if (outcome == LocalModelDeleteOutcome.DELETED) {
+                    released += entry.bytes
+                } else {
+                    failed++
                 }
             }
+            val models = runCatching { inventory.listModels() }.getOrDefault(_state.value.models)
+            _state.update {
+                it.copy(
+                    models = models,
+                    selectedIds = emptySet(),
+                    isDeleting = false,
+                    scannedAtMillis = System.currentTimeMillis(),
+                    job = StorageJobState(
+                        running = false,
+                        processed = selected.size,
+                        total = selected.size,
+                        releasedBytes = released,
+                        failed = failed,
+                        done = true,
+                    ),
+                )
+            }
         }
-    }
-
-    fun consumeDeleteOutcome() {
-        _state.update { it.copy(deleteOutcome = null) }
     }
 
     private fun observeRuntimeUsage() {
         viewModelScope.launch {
             LocalModelRuntimeRegistry.activePaths.collect {
-                if (!_state.value.isDeleting) {
+                if (!_state.value.isDeleting && !_state.value.job.running) {
                     refresh()
                 }
             }
@@ -135,7 +169,7 @@ class LocalModelStorageViewModel(
             downloadManager.downloadSnapshots
                 .debounce(400)
                 .collect {
-                    if (!_state.value.isDeleting) {
+                    if (!_state.value.isDeleting && !_state.value.job.running) {
                         refresh()
                     }
                 }

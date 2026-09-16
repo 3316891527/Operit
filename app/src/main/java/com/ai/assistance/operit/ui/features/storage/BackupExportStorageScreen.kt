@@ -1,0 +1,123 @@
+package com.ai.assistance.operit.ui.features.storage
+
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.data.storage.BackupExportKind
+import com.ai.assistance.operit.data.storage.formatStorageSize
+import com.ai.assistance.operit.data.storage.formatStorageTimestamp
+
+@Composable
+fun BackupExportStorageScreen() {
+    val context = LocalContext.current
+    val factory = remember(context) { BackupExportStorageViewModel.Factory(context) }
+    val storageViewModel: BackupExportStorageViewModel = viewModel(factory = factory)
+    val state by storageViewModel.state.collectAsState()
+    var showConfirm by remember { mutableStateOf(false) }
+
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+        StorageManageScaffold(
+            isBusy = state.isLoading || state.job.running,
+            errorMessage = state.errorMessage,
+            bottomBar = {
+                StorageBottomBar(
+                    selectedCount = state.selected.size,
+                    selectedBytes = state.selectedBytes,
+                    enabled = state.selected.isNotEmpty() && !state.job.running,
+                    actionLabel = stringResource(R.string.data_storage_delete_selected),
+                    onAction = { showConfirm = true },
+                )
+            },
+        ) {
+            item {
+                StorageSummaryCard(
+                    icon = Icons.Default.Backup,
+                    title = stringResource(R.string.screen_title_backup_export_storage),
+                    primaryValue = formatStorageSize(state.snapshot?.totalBytes ?: 0L),
+                    extras = listOf(stringResource(R.string.data_storage_item_count, state.snapshot?.entries.orEmpty().size)),
+                    scannedAtMillis = state.snapshot?.scannedAtMillis,
+                    isRefreshing = state.isLoading,
+                    onRefresh = storageViewModel::refresh,
+                )
+            }
+            item {
+                StorageFilterRow(
+                    chips = BackupExportTab.entries.map { tab ->
+                        StorageChip(tab.name, stringResource(tab.labelRes))
+                    },
+                    selectedId = state.tab.name,
+                    onSelect = { storageViewModel.setTab(BackupExportTab.valueOf(it)) },
+                )
+            }
+            item { StorageJobCard(state.job) }
+            if (state.displayed.isEmpty() && !state.isLoading) {
+                item { StorageEmptyCard(stringResource(R.string.data_storage_backups_empty)) }
+            } else {
+                items(state.displayed, key = { it.id }) { entry ->
+                    StorageSelectableRow(
+                        selected = entry.id in state.selectedIds,
+                        enabled = !state.job.running,
+                        locked = false,
+                        title = entry.name,
+                        subtitle = "${stringResource(entry.kind.labelRes)} · ${entry.path.absolutePath}",
+                        bytes = entry.bytes,
+                        tags = listOfNotNull(
+                            if (!entry.valid) stringResource(R.string.data_storage_invalid_file) else null,
+                        ),
+                        note = stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(entry.lastModifiedMillis)),
+                        onToggle = { storageViewModel.toggle(entry) },
+                    )
+                }
+            }
+        }
+    }
+
+    if (showConfirm) {
+        StorageConfirmDialog(
+            title = stringResource(R.string.data_storage_backups_delete_title),
+            message = stringResource(
+                R.string.data_storage_delete_items_message,
+                state.selected.size,
+                formatStorageSize(state.selectedBytes),
+            ),
+            warnings = listOf(stringResource(R.string.data_storage_backups_delete_warning)),
+            confirmLabel = stringResource(R.string.data_storage_confirm_delete),
+            onConfirm = {
+                showConfirm = false
+                storageViewModel.deleteSelected()
+            },
+            onDismiss = { showConfirm = false },
+        )
+    }
+}
+
+private val BackupExportTab.labelRes: Int
+    get() = when (this) {
+        BackupExportTab.BACKUPS -> R.string.data_storage_tab_backups
+        BackupExportTab.EXPORTS -> R.string.data_storage_tab_exports
+    }
+
+private val BackupExportKind.labelRes: Int
+    get() = when (this) {
+        BackupExportKind.CHAT_BACKUP -> R.string.data_storage_backup_chat
+        BackupExportKind.DATABASE_BACKUP -> R.string.data_storage_backup_database
+        BackupExportKind.RAW_SNAPSHOT -> R.string.data_storage_backup_snapshot
+        BackupExportKind.CHARACTER_CARDS -> R.string.data_storage_backup_cards
+        BackupExportKind.MEMORY -> R.string.data_storage_backup_memory
+        BackupExportKind.MODEL_CONFIG -> R.string.data_storage_backup_config
+        BackupExportKind.EXPORT_FILE -> R.string.data_storage_backup_export
+        BackupExportKind.UNKNOWN -> R.string.data_storage_backup_unknown
+    }

@@ -66,9 +66,14 @@ import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSetti
 import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScreen
 import com.ai.assistance.operit.ui.features.settings.screens.UserPreferencesSettingsScreen
 import com.ai.assistance.operit.data.storage.StorageCategory
+import com.ai.assistance.operit.ui.features.storage.BackupExportStorageScreen
+import com.ai.assistance.operit.ui.features.storage.ChatHistoryStorageScreen
+import com.ai.assistance.operit.ui.features.storage.ConfigurationResourceStorageScreen
 import com.ai.assistance.operit.ui.features.storage.DataStorageScreen
 import com.ai.assistance.operit.ui.features.storage.LinuxEnvironmentStorageScreen
 import com.ai.assistance.operit.ui.features.storage.LocalModelStorageScreen
+import com.ai.assistance.operit.ui.features.storage.MemoryLibraryStorageScreen
+import com.ai.assistance.operit.ui.features.storage.WorkspaceMediaStorageScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
@@ -1092,12 +1097,12 @@ sealed class Screen(
                         when (category) {
                             StorageCategory.LINUX_ENVIRONMENT -> navigateTo(LinuxEnvironmentStorage)
                             StorageCategory.LOCAL_MODELS -> navigateTo(LocalModelStorage)
-                            StorageCategory.WORKSPACES_AND_MEDIA,
-                            StorageCategory.CHAT_HISTORY -> navigateTo(ChatHistorySettings)
-                            StorageCategory.MEMORY_LIBRARY -> navigateTo(MemoryBase)
-                            StorageCategory.BACKUPS_AND_EXPORTS,
-                            StorageCategory.CONFIGURATION -> navigateTo(ChatBackupSettings)
-                            StorageCategory.PACKAGES_AND_PLUGINS -> navigateTo(Packages)
+                            StorageCategory.WORKSPACES_AND_MEDIA -> navigateTo(WorkspaceMediaStorage)
+                            StorageCategory.CHAT_HISTORY -> navigateTo(ChatHistoryStorage)
+                            StorageCategory.MEMORY_LIBRARY -> navigateTo(MemoryLibraryStorage)
+                            StorageCategory.BACKUPS_AND_EXPORTS -> navigateTo(BackupExportStorage)
+                            StorageCategory.CONFIGURATION,
+                            StorageCategory.PACKAGES_AND_PLUGINS -> navigateTo(ConfigurationResourceStorage)
                             StorageCategory.CACHE_AND_TEMPORARY,
                             StorageCategory.OTHER -> Unit
                         }
@@ -1122,9 +1127,7 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            LocalModelStorageScreen(
-                    onDownloadMnnModels = { navigateTo(MnnModelDownload) },
-            )
+            LocalModelStorageScreen()
         }
     }
 
@@ -1144,10 +1147,107 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            LinuxEnvironmentStorageScreen(
-                    onOpenTerminal = { navigateTo(Terminal) },
-                    onOpenFileManager = { navigateTo(FileManager) },
-            )
+            LinuxEnvironmentStorageScreen()
+        }
+    }
+
+    data object WorkspaceMediaStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_workspace_media_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            WorkspaceMediaStorageScreen()
+        }
+    }
+
+    data object ChatHistoryStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_chat_history_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            ChatHistoryStorageScreen()
+        }
+    }
+
+    data object MemoryLibraryStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_memory_library_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            MemoryLibraryStorageScreen()
+        }
+    }
+
+    data object BackupExportStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_backup_export_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            BackupExportStorageScreen()
+        }
+    }
+
+    data object ConfigurationResourceStorage :
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_configuration_resource_storage,
+                    usesRouteViewModelStore = true
+            ) {
+        @Composable
+        override fun Content(
+                navController: NavController,
+                navigateTo: ScreenNavigationHandler,
+                onGoBack: () -> Unit,
+                hasBackgroundImage: Boolean,
+                onLoading: (Boolean) -> Unit,
+                onError: (String) -> Unit,
+                onGestureConsumed: (Boolean) -> Unit
+        ) {
+            ConfigurationResourceStorageScreen()
         }
     }
 
