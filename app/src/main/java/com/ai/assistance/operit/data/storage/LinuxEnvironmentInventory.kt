@@ -33,9 +33,9 @@ data class LinuxEnvironmentSnapshot(
 
 class LinuxEnvironmentInventory(
     context: Context,
-    private val cleaner: SafeDirectoryCleaner = SafeDirectoryCleaner(),
-    private val storageRepository: DataStorageRepository = DataStorageRepository(context),
 ) {
+    private val cleaner = SafeDirectoryCleaner()
+    private val storageRepository = DataStorageRepository(context)
     private val filesDir = context.applicationContext.filesDir
     private val ubuntuRoot =
         File(filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu")
@@ -139,9 +139,9 @@ class LinuxEnvironmentInventory(
         )
     }
 
-    suspend fun delete(unit: LinuxStorageUnit): RawDirectoryCleanupResult = withContext(Dispatchers.IO) {
+    suspend fun delete(unit: LinuxStorageUnit): StorageDeleteBatchResult = withContext(Dispatchers.IO) {
         if (unit.locked) {
-            return@withContext RawDirectoryCleanupResult(0L, 0L, 1)
+            return@withContext StorageDeleteBatchResult(0, 1, 0L)
         }
         val paths =
             when (unit.kind) {
@@ -169,6 +169,10 @@ class LinuxEnvironmentInventory(
             }
         }
         storageRepository.invalidateCache()
-        RawDirectoryCleanupResult(deletedBytes, deletedFiles, failed)
+        StorageDeleteBatchResult(
+            deletedCount = if (failed == 0) 1 else 0,
+            failedCount = failed,
+            releasedBytes = deletedBytes,
+        )
     }
 }

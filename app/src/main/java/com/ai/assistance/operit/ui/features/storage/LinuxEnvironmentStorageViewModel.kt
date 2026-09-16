@@ -90,10 +90,10 @@ class LinuxEnvironmentStorageViewModel(
                     )
                 }
                 val result = runCatching { inventory.delete(unit) }.getOrNull()
-                if (result == null || result.failedEntryCount > 0) {
+                if (result == null || result.failedCount > 0) {
                     failed++
                 } else {
-                    released += maxOf(result.deletedBytes, unit.bytes)
+                    released += maxOf(result.releasedBytes, unit.bytes)
                 }
             }
             _state.update {
