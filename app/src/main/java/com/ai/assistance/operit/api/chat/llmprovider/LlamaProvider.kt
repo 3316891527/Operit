@@ -133,6 +133,9 @@ class LlamaProvider(
         }
 
         val usageHandle = LocalModelRuntimeRegistry.acquire(modelFile)
+            ?: return@withContext Result.failure(
+                Exception(context.getString(R.string.llama_error_create_session_failed))
+            )
         val testSession =
             try {
                 LlamaSession.create(
@@ -422,7 +425,7 @@ class LlamaProvider(
         synchronized(sessionLock) {
             session?.let { return it }
             val modelFile = getModelFile(context, modelName)
-            val usageHandle = LocalModelRuntimeRegistry.acquire(modelFile)
+            val usageHandle = LocalModelRuntimeRegistry.acquire(modelFile) ?: return null
             val created =
                 try {
                     LlamaSession.create(

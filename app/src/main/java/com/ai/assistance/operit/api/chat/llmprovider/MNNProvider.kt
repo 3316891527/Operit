@@ -193,6 +193,9 @@ class MNNProvider(
                 
                 // 创建 LLM Session（配置必须在创建时传入！）
                 val usageHandle = LocalModelRuntimeRegistry.acquire(modelDirFile)
+                    ?: return@withContext Result.failure(
+                        Exception(context.getString(R.string.mnn_cannot_create_session))
+                    )
                 val createdSession =
                     try {
                         MNNLlmSession.create(

@@ -97,7 +97,7 @@ class PackageSkillInventory(context: Context) {
         PackageSkillSnapshot(
             groups = groups,
             items = items.sortedByDescending { it.bytes },
-            totalBytes = items.sumOf { it.bytes },
+            totalBytes = items.filter { it.category != ExtensionCategory.THEME }.sumOf { it.bytes },
             scannedAtMillis = System.currentTimeMillis(),
         )
     }

@@ -99,7 +99,7 @@ fun ChatHistoryStorageScreen() {
                     StorageSelectableRow(
                         selected = chat.id in state.selectedIds,
                         enabled = chat.canDelete && !state.job.running,
-                        locked = !chat.canDelete,
+                        locked = chat.chat.locked,
                         title = chat.title,
                         subtitle = stringResource(R.string.data_storage_chat_message_count, chat.messageCount),
                         bytes = chat.estimatedBytes,

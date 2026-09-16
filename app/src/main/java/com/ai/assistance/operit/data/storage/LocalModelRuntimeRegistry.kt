@@ -27,13 +27,17 @@ class LocalModelUsageHandle internal constructor(
 object LocalModelRuntimeRegistry {
     private val lock = Any()
     private val referenceCounts = mutableMapOf<String, Int>()
+    private val deletionHolds = mutableMapOf<String, Int>()
     private val _activePaths = MutableStateFlow<Set<String>>(emptySet())
 
     val activePaths: StateFlow<Set<String>> = _activePaths.asStateFlow()
 
-    fun acquire(path: File): LocalModelUsageHandle {
+    fun acquire(path: File): LocalModelUsageHandle? {
         val canonicalPath = runCatching { path.canonicalPath }.getOrDefault(path.absolutePath)
         synchronized(lock) {
+            if (deletionHolds.keys.any { heldPath -> pathsOverlap(canonicalPath, heldPath) }) {
+                return null
+            }
             referenceCounts[canonicalPath] = (referenceCounts[canonicalPath] ?: 0) + 1
             publishActivePathsLocked()
         }
@@ -43,7 +47,7 @@ object LocalModelRuntimeRegistry {
     fun isInUse(path: File): Boolean {
         val canonicalPath = runCatching { path.canonicalPath }.getOrDefault(path.absolutePath)
         synchronized(lock) {
-            return referenceCounts.keys.any { activePath -> pathsOverlap(canonicalPath, activePath) }
+            return isBusyLocked(canonicalPath)
         }
     }
 
@@ -53,25 +57,48 @@ object LocalModelRuntimeRegistry {
     ): LocalModelDeleteOutcome {
         val canonicalFile =
             runCatching { path.canonicalFile }.getOrElse { return LocalModelDeleteOutcome.FAILED }
+        val canonicalPath = canonicalFile.path
         synchronized(lock) {
-            if (referenceCounts.keys.any { activePath -> pathsOverlap(canonicalFile.path, activePath) }) {
+            if (isBusyLocked(canonicalPath)) {
                 return LocalModelDeleteOutcome.IN_USE
             }
+            deletionHolds[canonicalPath] = (deletionHolds[canonicalPath] ?: 0) + 1
+            publishActivePathsLocked()
         }
-        if (!canonicalFile.exists()) {
-            onProgress?.invoke(0L, 0L)
-            return LocalModelDeleteOutcome.DELETED
-        }
-        val deleted =
-            runCatching {
-                canonicalFile.deleteTreeWithProgress { deletedBytes, totalBytes ->
-                    onProgress?.invoke(deletedBytes, totalBytes)
+        try {
+            if (!canonicalFile.exists()) {
+                onProgress?.invoke(0L, 0L)
+                return LocalModelDeleteOutcome.DELETED
+            }
+            val deleted =
+                runCatching {
+                    canonicalFile.deleteTreeWithProgress { deletedBytes, totalBytes ->
+                        onProgress?.invoke(deletedBytes, totalBytes)
+                    }
+                }.getOrDefault(false)
+            return if (deleted || !canonicalFile.exists()) {
+                LocalModelDeleteOutcome.DELETED
+            } else {
+                LocalModelDeleteOutcome.FAILED
+            }
+        } finally {
+            synchronized(lock) {
+                val remaining = (deletionHolds[canonicalPath] ?: 1) - 1
+                if (remaining > 0) {
+                    deletionHolds[canonicalPath] = remaining
+                } else {
+                    deletionHolds.remove(canonicalPath)
                 }
-            }.getOrDefault(false)
-        return if (deleted || !canonicalFile.exists()) {
-            LocalModelDeleteOutcome.DELETED
-        } else {
-            LocalModelDeleteOutcome.FAILED
+                publishActivePathsLocked()
+            }
+        }
+    }
+
+    internal fun resetForTests() {
+        synchronized(lock) {
+            referenceCounts.clear()
+            deletionHolds.clear()
+            publishActivePathsLocked()
         }
     }
 
@@ -88,8 +115,12 @@ object LocalModelRuntimeRegistry {
     }
 
     private fun publishActivePathsLocked() {
-        _activePaths.value = referenceCounts.keys.toSet()
+        _activePaths.value = (referenceCounts.keys + deletionHolds.keys).toSet()
     }
+
+    private fun isBusyLocked(canonicalPath: String): Boolean =
+        referenceCounts.keys.any { activePath -> pathsOverlap(canonicalPath, activePath) } ||
+            deletionHolds.keys.any { heldPath -> pathsOverlap(canonicalPath, heldPath) }
 
     private fun pathsOverlap(first: String, second: String): Boolean =
         isAtOrBelow(first, second) || isAtOrBelow(second, first)

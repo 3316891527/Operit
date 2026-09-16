@@ -188,6 +188,13 @@ class SherpaSpeechProvider(private val context: Context) : SpeechService {
                 )
 
         val usageHandle = LocalModelRuntimeRegistry.acquire(localModelDir)
+        if (usageHandle == null) {
+            AppLogger.e(TAG, "Speech model is being deleted; skip recognizer creation.")
+            _recognitionState.value = SpeechService.RecognitionState.ERROR
+            _recognitionError.value =
+                SpeechService.RecognitionError(-1, "Failed to initialize recognizer")
+            return
+        }
         recognizer =
                 try {
                     SherpaNcnn(

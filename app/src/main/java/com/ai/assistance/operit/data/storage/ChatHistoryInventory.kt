@@ -76,7 +76,7 @@ class ChatHistoryInventory(context: Context) {
                 messageCount = messages,
                 estimatedBytes = contentBytes + share,
                 databaseBytes = share,
-                canDelete = chat.locked != true,
+                canDelete = chat.locked != true && chat.id != currentId,
                 isCurrent = chat.id == currentId,
                 characterCardId = characterCardId,
                 avatarUri = characterCardId?.let { avatarByCardId[it] },

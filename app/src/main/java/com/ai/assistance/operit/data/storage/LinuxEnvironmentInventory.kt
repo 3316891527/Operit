@@ -76,12 +76,13 @@ class LinuxEnvironmentInventory(
             )
         }
         val rootStats = ubuntuRoot.computeStorageStats()
+        val localStats = File(filesDir, ".local").computeStorageStats()
         val lockedRootBytes =
             (rootStats.bytes - homeStats.bytes - aptStats.bytes - logStats.bytes - ubuntuTmpStats.bytes)
-                .coerceAtLeast(0L)
+                .coerceAtLeast(0L) + localStats.bytes
         val lockedRootFiles =
             (rootStats.fileCount - homeStats.fileCount - aptStats.fileCount - logStats.fileCount - ubuntuTmpStats.fileCount)
-                .coerceAtLeast(0L)
+                .coerceAtLeast(0L) + localStats.fileCount
 
         val units = listOf(
             LinuxStorageUnit(
@@ -139,7 +140,7 @@ class LinuxEnvironmentInventory(
 
         LinuxEnvironmentSnapshot(
             units = units,
-            totalBytes = units.sumOf { it.bytes },
+            totalBytes = units.filter { it.kind != LinuxStorageUnitKind.APT_CACHE }.sumOf { it.bytes },
             ubuntuInstalled = ubuntuRoot.isDirectory,
             scannedAtMillis = System.currentTimeMillis(),
         )

@@ -8,7 +8,6 @@ import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.ui.features.settings.sections.getProviderDisplayName
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -50,7 +49,6 @@ class ConfigurationResourceInventory(context: Context) {
     private val chatHistoryManager = ChatHistoryManager.getInstance(appContext)
     private val userPreferences = UserPreferencesManager.getInstance(appContext)
     private val storageRepository = DataStorageRepository(appContext)
-    private val cleaner = SafeDirectoryCleaner()
 
     suspend fun load(): ConfigurationResourceSnapshot = withContext(Dispatchers.IO) {
         val cards = characterCardManager.getAllCharacterCards()
@@ -59,14 +57,11 @@ class ConfigurationResourceInventory(context: Context) {
         val currentCardName = chats.firstOrNull { it.id == currentChatId }?.characterCardName
         val functionMapping = functionalConfigManager.functionConfigMappingFlow.first()
         val configSummaries = modelConfigManager.getAllConfigSummaries()
-        val emojiRoot = File(appContext.filesDir, "custom_emoji")
-
         val cardEntries = cards.map { card ->
             val bound = chats.count { it.characterCardName == card.name }
-            val assetDir = File(emojiRoot, "character_card_${card.id}")
             val bytes = estimateTextBytes(
                 (card.characterSetting.length + card.description.length + card.openingStatement.length).toLong(),
-            ) + assetDir.computeStorageStats().bytes
+            )
             ConfigurationResourceEntry(
                 id = "card:${card.id}",
                 kind = ConfigurationResourceKind.CHARACTER_CARD,
@@ -103,27 +98,11 @@ class ConfigurationResourceInventory(context: Context) {
             )
         }
 
-        val assetEntries = listOf(
-            File(appContext.filesDir, "custom_emoji"),
-        ).filter { it.exists() }.map { directory ->
-            val stats = directory.computeStorageStats()
-            ConfigurationResourceEntry(
-                id = "asset:${directory.canonicalOrAbsolute()}",
-                kind = ConfigurationResourceKind.CHARACTER_ASSETS,
-                name = directory.name,
-                subtitle = directory.absolutePath,
-                bytes = stats.bytes,
-                boundCount = 0,
-                inUse = false,
-                locked = false,
-            )
-        }
-
         ConfigurationResourceSnapshot(
             cards = cardEntries,
             configs = configEntries,
-            assets = assetEntries,
-            totalBytes = cardEntries.sumOf { it.bytes } + configEntries.sumOf { it.bytes } + assetEntries.sumOf { it.bytes },
+            assets = emptyList(),
+            totalBytes = cardEntries.sumOf { it.bytes } + configEntries.sumOf { it.bytes },
             scannedAtMillis = System.currentTimeMillis(),
         )
     }
@@ -147,10 +126,7 @@ class ConfigurationResourceInventory(context: Context) {
                     ConfigurationResourceKind.MODEL_CONFIG -> {
                         modelConfigManager.deleteConfig(entry.id.removePrefix("config:")).let { true }
                     }
-                    ConfigurationResourceKind.CHARACTER_ASSETS -> {
-                        val path = File(entry.subtitle.ifBlank { entry.name })
-                        cleaner.cleanDirectory(path).failedEntryCount == 0 || !path.exists()
-                    }
+                    ConfigurationResourceKind.CHARACTER_ASSETS -> false
                 }
             }.getOrDefault(false)
             if (ok) {
