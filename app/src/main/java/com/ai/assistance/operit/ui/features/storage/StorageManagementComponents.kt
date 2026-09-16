@@ -1,6 +1,12 @@
 package com.ai.assistance.operit.ui.features.storage
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,9 +33,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
@@ -64,9 +70,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.formatStorageSize
@@ -111,13 +119,19 @@ data class StorageStatusTag(
 fun StorageManageScaffold(
     isBusy: Boolean,
     errorMessage: String?,
+    selectedCount: Int = 0,
     bottomBar: @Composable () -> Unit,
     content: LazyListScope.() -> Unit,
 ) {
+    val showBottomBar = selectedCount > 0
+    val bottomPadding by animateDpAsState(
+        targetValue = if (showBottomBar) 108.dp else 24.dp,
+        label = "storageBottomPadding",
+    )
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 108.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = bottomPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = {
                 if (isBusy) {
@@ -149,7 +163,13 @@ fun StorageManageScaffold(
         Box(
             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
         ) {
-            bottomBar()
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+                bottomBar()
+            }
         }
     }
 }
@@ -410,8 +430,10 @@ fun StorageLeadingMark(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
         contentAlignment = Alignment.Center,
     ) {
+        val asyncPainter = painter as? AsyncImagePainter
+        val painterReady = painter != null && (asyncPainter == null || asyncPainter.state is AsyncImagePainter.State.Success)
         when {
-            painter != null -> {
+            painterReady && painter != null -> {
                 Image(
                     painter = painter,
                     contentDescription = null,
@@ -602,23 +624,48 @@ fun StorageDeleteProgressDialog(
 }
 
 @Composable
-fun StorageEmptyCard(text: String) {
+fun StorageEmptyCard(
+    text: String,
+    icon: ImageVector = Icons.Default.Inbox,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         color = storagePanelColor(),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(
-                imageVector = Icons.Default.ErrorOutline,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box(
+                modifier =
+                    Modifier.size(72.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(34.dp),
+                )
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(text = text, style = MaterialTheme.typography.bodyMedium)
+            if (!actionLabel.isNullOrBlank() && onAction != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onAction) {
+                    Text(actionLabel)
+                }
+            }
         }
     }
 }

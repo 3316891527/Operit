@@ -24,7 +24,9 @@ import com.ai.assistance.operit.data.storage.formatStorageSize
 import com.ai.assistance.operit.data.storage.formatStorageTimestamp
 
 @Composable
-fun LocalModelStorageScreen() {
+fun LocalModelStorageScreen(
+    onDownloadMnn: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
     val factory = remember(context) { LocalModelStorageViewModel.Factory(context) }
     val storageViewModel: LocalModelStorageViewModel = viewModel(factory = factory)
@@ -37,6 +39,7 @@ fun LocalModelStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.isDeleting || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = selected.size,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = selected.size,
@@ -68,7 +71,18 @@ fun LocalModelStorageScreen() {
                 )
             }
             if (state.displayedModels.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_local_models_empty)) }
+                item {
+                    StorageEmptyCard(
+                        text = stringResource(R.string.data_storage_local_models_empty),
+                        icon = Icons.Default.SmartToy,
+                        actionLabel = if (onDownloadMnn != null) {
+                            stringResource(R.string.data_storage_local_models_download_mnn)
+                        } else {
+                            null
+                        },
+                        onAction = onDownloadMnn,
+                    )
+                }
             } else {
                 items(state.displayedModels, key = { it.id }) { model ->
                     StorageSelectableRow(

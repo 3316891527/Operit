@@ -31,6 +31,7 @@ fun ChatHistoryStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = state.selected.size,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = state.selected.size,
@@ -73,7 +74,12 @@ fun ChatHistoryStorageScreen() {
             }
             item { StorageJobCard(state.job) }
             if (state.chats.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_chats_empty)) }
+                item {
+                    StorageEmptyCard(
+                        text = stringResource(R.string.data_storage_chats_empty),
+                        icon = Icons.Default.Forum,
+                    )
+                }
             } else {
                 items(state.chats, key = { it.id }) { chat ->
                     val tags = buildList {

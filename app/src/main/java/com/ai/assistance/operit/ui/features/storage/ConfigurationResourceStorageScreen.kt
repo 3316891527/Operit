@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -47,6 +49,7 @@ fun ConfigurationResourceStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = state.selectedCount,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = state.selectedCount,
@@ -89,7 +92,12 @@ fun ConfigurationResourceStorageScreen() {
             when (state.tab) {
                 ConfigurationResourceTab.CARDS -> {
                     if (state.displayedCards.isEmpty() && !state.isLoading) {
-                        item { StorageEmptyCard(stringResource(R.string.data_storage_cards_empty)) }
+                        item {
+                            StorageEmptyCard(
+                                text = stringResource(R.string.data_storage_cards_empty),
+                                icon = Icons.Default.Person,
+                            )
+                        }
                     } else {
                         items(state.displayedCards, key = { it.id }) { entry ->
                             StorageSelectableRow(
@@ -117,7 +125,12 @@ fun ConfigurationResourceStorageScreen() {
                 }
                 ConfigurationResourceTab.CONFIGS -> {
                     if (state.displayedConfigs.isEmpty() && !state.isLoading) {
-                        item { StorageEmptyCard(stringResource(R.string.data_storage_configs_empty)) }
+                        item {
+                            StorageEmptyCard(
+                                text = stringResource(R.string.data_storage_configs_empty),
+                                icon = Icons.Default.Tune,
+                            )
+                        }
                     } else {
                         items(state.displayedConfigs, key = { it.id }) { entry ->
                             StorageSelectableRow(
@@ -150,7 +163,12 @@ fun ConfigurationResourceStorageScreen() {
                 }
                 ConfigurationResourceTab.EXTENSIONS -> {
                     if (state.extensionGroups.isEmpty() && state.bridgeItems.isEmpty() && !state.isLoading) {
-                        item { StorageEmptyCard(stringResource(R.string.data_storage_extensions_empty)) }
+                        item {
+                            StorageEmptyCard(
+                                text = stringResource(R.string.data_storage_extensions_empty),
+                                icon = Icons.Default.Extension,
+                            )
+                        }
                     } else {
                         state.extensionGroups.forEach { group ->
                             val expanded = group.category in state.expandedCategories
@@ -178,7 +196,10 @@ fun ConfigurationResourceStorageScreen() {
                             if (expanded) {
                                 if (group.items.isEmpty()) {
                                     item(key = "ext-empty:${group.category.name}") {
-                                        StorageEmptyCard(stringResource(group.category.emptyRes))
+                                        StorageEmptyCard(
+                                            text = stringResource(group.category.emptyRes),
+                                            icon = group.category.icon,
+                                        )
                                     }
                                 } else {
                                     items(group.items, key = { it.id }) { entry ->

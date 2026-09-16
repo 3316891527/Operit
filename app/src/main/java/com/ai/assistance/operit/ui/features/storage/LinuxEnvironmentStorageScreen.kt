@@ -43,6 +43,7 @@ fun LinuxEnvironmentStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = state.selectedUnits.size,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = state.selectedUnits.size,
@@ -88,7 +89,12 @@ fun LinuxEnvironmentStorageScreen() {
                 )
             }
             if (state.units.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_linux_no_data)) }
+                item {
+                    StorageEmptyCard(
+                        text = stringResource(R.string.data_storage_linux_no_data),
+                        icon = Icons.Default.Terminal,
+                    )
+                }
             } else {
                 items(state.units, key = { it.kind.name }) { unit ->
                     val empty = !unit.exists || unit.bytes <= 0L

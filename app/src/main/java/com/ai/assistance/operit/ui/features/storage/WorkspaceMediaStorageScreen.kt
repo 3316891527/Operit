@@ -32,6 +32,7 @@ fun WorkspaceMediaStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = state.selected.size,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = state.selected.size,
@@ -70,7 +71,12 @@ fun WorkspaceMediaStorageScreen() {
             }
             item { StorageJobCard(state.job) }
             if (state.displayed.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_workspaces_empty)) }
+                item {
+                    StorageEmptyCard(
+                        text = stringResource(R.string.data_storage_workspaces_empty),
+                        icon = Icons.Default.Folder,
+                    )
+                }
             } else {
                 items(state.displayed, key = { it.id }) { entry ->
                     StorageSelectableRow(

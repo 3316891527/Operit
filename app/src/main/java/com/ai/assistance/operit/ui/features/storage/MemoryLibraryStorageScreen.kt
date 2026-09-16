@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.storage
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.LocalContentColor
@@ -39,6 +40,7 @@ fun MemoryLibraryStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = state.selectedCount,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = state.selectedCount,
@@ -79,14 +81,19 @@ fun MemoryLibraryStorageScreen() {
             }
             item { StorageJobCard(state.job) }
             if (state.folders.isEmpty() && !state.isLoading) {
-                item { StorageEmptyCard(stringResource(R.string.data_storage_memory_empty_folders)) }
+                item {
+                    StorageEmptyCard(
+                        text = stringResource(R.string.data_storage_memory_empty_folders),
+                        icon = Icons.Default.Psychology,
+                    )
+                }
             } else {
                 state.folders.forEach { folder ->
-                    val folderTitle = folder.folderName.ifBlank {
-                        stringResource(R.string.data_storage_memory_uncategorized_folder)
-                    }
                     val expanded = folder.key in state.expandedKeys
                     item(key = folder.key) {
+                        val folderTitle = folder.folderName.ifBlank {
+                            stringResource(R.string.data_storage_memory_uncategorized_folder)
+                        }
                         StorageSelectableRow(
                             selected = folder.key in state.selectedKeys || folder.entries.all { it.key in state.selectedKeys },
                             enabled = !state.job.running,
@@ -122,6 +129,7 @@ fun MemoryLibraryStorageScreen() {
                                     stringResource(R.string.data_storage_updated_at, formatStorageTimestamp(entry.updatedAtMillis))
                                 },
                                 bytes = entry.estimatedBytes,
+                                leadingIcon = if (entry.isDocument) Icons.Default.Description else Icons.Default.Psychology,
                                 onToggle = { storageViewModel.toggleEntry(folder, entry) },
                             )
                         }

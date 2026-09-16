@@ -3,6 +3,14 @@ package com.ai.assistance.operit.ui.features.storage
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -12,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +41,7 @@ fun BackupExportStorageScreen() {
         StorageManageScaffold(
             isBusy = state.isLoading || state.job.running,
             errorMessage = state.errorMessage,
+            selectedCount = state.selected.size,
             bottomBar = {
                 StorageBottomBar(
                     selectedCount = state.selected.size,
@@ -66,10 +76,15 @@ fun BackupExportStorageScreen() {
             if (state.displayed.isEmpty() && !state.isLoading) {
                 item {
                     StorageEmptyCard(
-                        if (state.tab == BackupExportTab.EXPORTS) {
+                        text = if (state.tab == BackupExportTab.EXPORTS) {
                             stringResource(R.string.data_storage_exports_empty)
                         } else {
                             stringResource(R.string.data_storage_backups_empty)
+                        },
+                        icon = if (state.tab == BackupExportTab.EXPORTS) {
+                            Icons.Default.IosShare
+                        } else {
+                            Icons.Default.Backup
                         },
                     )
                 }
@@ -82,7 +97,7 @@ fun BackupExportStorageScreen() {
                         title = entry.name,
                         subtitle = stringResource(entry.kind.labelRes),
                         bytes = entry.bytes,
-                        leadingIcon = Icons.Default.Backup,
+                        leadingIcon = entry.kind.icon,
                         statusTags = listOfNotNull(
                             if (!entry.valid) {
                                 StorageStatusTag(stringResource(R.string.data_storage_invalid_file), emphasis = true)
@@ -133,4 +148,16 @@ private val BackupExportKind.labelRes: Int
         BackupExportKind.MODEL_CONFIG -> R.string.data_storage_backup_config
         BackupExportKind.EXPORT_FILE -> R.string.data_storage_backup_export
         BackupExportKind.UNKNOWN -> R.string.data_storage_backup_unknown
+    }
+
+private val BackupExportKind.icon: ImageVector
+    get() = when (this) {
+        BackupExportKind.CHAT_BACKUP -> Icons.Default.Forum
+        BackupExportKind.DATABASE_BACKUP -> Icons.Default.Storage
+        BackupExportKind.RAW_SNAPSHOT -> Icons.Default.Inventory
+        BackupExportKind.CHARACTER_CARDS -> Icons.Default.Person
+        BackupExportKind.MEMORY -> Icons.Default.Psychology
+        BackupExportKind.MODEL_CONFIG -> Icons.Default.Tune
+        BackupExportKind.EXPORT_FILE -> Icons.Default.IosShare
+        BackupExportKind.UNKNOWN -> Icons.Default.InsertDriveFile
     }
