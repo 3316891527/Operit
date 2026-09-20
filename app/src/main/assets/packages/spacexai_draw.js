@@ -7,8 +7,8 @@
     "en": "SpaceXAI Images and Video"
   },
   "description": {
-    "zh": "使用 SpaceXAI 接口生成图片和视频，并保存到本地。",
-    "en": "Generate images and videos with the SpaceXAI APIs and save them locally."
+    "zh": "使用 SpaceXAI 接口生成图片和视频，并保存到本地。图片支持文生图和图生图：可传公网参考图 URL，或本地图片路径（本地图会转成 data URI，不必先上传图床）。",
+    "en": "Generate images and videos with the SpaceXAI APIs and save them locally. Images support text-to-image and image-to-image via public reference URLs or local file paths (local files are sent as data URIs, no image host required)."
   },
   "env": [
     {
@@ -49,15 +49,17 @@
     {
       "name": "draw_image",
       "description": {
-        "zh": "根据提示词调用 SpaceXAI 图像生成 API 生成图片，保存到本地并返回 Markdown 图片提示。",
-        "en": "Generate an image via the SpaceXAI image generation API using a prompt, save it locally, and return a Markdown image reference."
+        "zh": "根据提示词调用 SpaceXAI 图像 API 生成或编辑图片。无参考图走文生图；传入 image_urls 或 image_paths 时走图生图（最多 5 张）。本地图片会转成 data URI。保存到本地并返回 Markdown 图片提示。",
+        "en": "Generate or edit an image with the SpaceXAI image API. Text-to-image when no reference is given; image-to-image when image_urls or image_paths are provided (up to 5). Local files are sent as data URIs. Saves locally and returns a Markdown image reference."
       },
       "parameters": [
-        { "name": "prompt", "description": { "zh": "绘图提示词（支持多行，英文或中文皆可）", "en": "Multiline prompt for image generation (Chinese or English)" }, "type": "string", "required": true },
+        { "name": "prompt", "description": { "zh": "绘图或编辑提示词（支持多行，英文或中文皆可）", "en": "Multiline prompt for image generation or editing (Chinese or English)" }, "type": "string", "required": true },
         { "name": "model", "description": { "zh": "SpaceXAI 图像模型名称；不传则优先取 XAI_IMAGE_MODEL，再用默认值 grok-imagine-image-2.0", "en": "SpaceXAI image model name; falls back to XAI_IMAGE_MODEL, then grok-imagine-image-2.0" }, "type": "string", "required": false },
         { "name": "aspect_ratio", "description": { "zh": "画布宽高比，例如 9:16 或 2:3；只控制画面形状，不控制清晰度（可选）", "en": "Canvas aspect ratio, e.g. 9:16 or 2:3; controls shape, not detail (optional)" }, "type": "string", "required": false },
         { "name": "resolution", "description": { "zh": "输出分辨率档位，可选 1k、2k 或 4k；控制像素与细节量，不改变宽高比（可选）", "en": "Output resolution tier: 1k, 2k, or 4k; controls pixel detail without changing aspect ratio (optional)" }, "type": "string", "required": false },
         { "name": "quality", "description": { "zh": "生成质量档位，可选 low、medium 或 auto；影响质量、耗时与成本，不改变宽高比或分辨率（可选）", "en": "Generation quality: low, medium, or auto; affects quality, latency, and cost, not dimensions (optional)" }, "type": "string", "required": false },
+        { "name": "image_urls", "description": { "zh": "参考图公网 URL 数组（可选；图生图用）。支持字符串数组、JSON 字符串或逗号分隔字符串，最多 5 张", "en": "Public reference image URLs for image-to-image (optional). Accepts a string array, JSON string, or comma-separated string. Up to 5 images." }, "type": "array", "required": false },
+        { "name": "image_paths", "description": { "zh": "参考图本地路径数组（可选；图生图用，会转成 data URI，不必先上传图床）。支持字符串数组、JSON 字符串或逗号分隔字符串，最多 5 张", "en": "Local reference image paths for image-to-image (optional; converted to data URIs, no image host required). Accepts a string array, JSON string, or comma-separated string. Up to 5 images." }, "type": "array", "required": false },
         { "name": "file_name", "description": { "zh": "自定义保存到本地的文件名（不含路径和扩展名）", "en": "Custom output file name (without path or extension)" }, "type": "string", "required": false }
       ]
     },
@@ -108,6 +110,7 @@ const spacexaiDraw = (function () {
     const STORAGE_DIR = `${DRAW_ROOT_DIR}/spacexai_draw`;
     const DRAWS_DIR = `${STORAGE_DIR}/draws`;
     const VIDEOS_DIR = `${STORAGE_DIR}/videos`;
+    const MAX_IMAGE_REFERENCES = 5;
     function getErrorMessage(error) {
         if (error instanceof Error)
             return error.message;
@@ -134,6 +137,9 @@ const spacexaiDraw = (function () {
     }
     function getImageApiEndpoint() {
         return `${getBaseUrl()}/images/generations`;
+    }
+    function getImageEditApiEndpoint() {
+        return `${getBaseUrl()}/images/edits`;
     }
     function getVideoGenerationEndpoint() {
         return `${getBaseUrl()}/videos/generations`;
@@ -423,6 +429,36 @@ const spacexaiDraw = (function () {
             return "gif";
         return "png";
     }
+    function parseStringList(value, fieldName) {
+        if (value === undefined || value === null || value === "") {
+            return [];
+        }
+        if (Array.isArray(value)) {
+            return value.map(item => String(item || "").trim()).filter(item => item.length > 0);
+        }
+        if (typeof value === "string") {
+            const trimmed = value.trim();
+            if (!trimmed)
+                return [];
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) {
+                    return parsed.map(item => String(item || "").trim()).filter(item => item.length > 0);
+                }
+            }
+            catch {
+                // ignore and try comma-separated parsing
+            }
+            return trimmed.split(",").map(item => item.trim()).filter(item => item.length > 0);
+        }
+        throw new Error(`${fieldName} 必须是字符串数组、JSON 字符串或逗号分隔字符串。`);
+    }
+    function buildImageReference(url) {
+        return {
+            url,
+            type: "image_url"
+        };
+    }
     async function readLocalImageAsDataUrl(filePath) {
         const trimmedPath = String(filePath || "").trim();
         if (!trimmedPath) {
@@ -440,6 +476,22 @@ const spacexaiDraw = (function () {
             throw new Error(`读取本地图片失败: ${trimmedPath}`);
         }
         return `data:${guessMimeTypeFromPath(trimmedPath)};base64,${base64Content}`;
+    }
+    async function resolveImageReferences(imageUrls, imagePaths) {
+        const resolvedUrls = parseStringList(imageUrls, "image_urls");
+        const resolvedPaths = parseStringList(imagePaths, "image_paths");
+        for (const url of resolvedUrls) {
+            if (!isProbablyUrl(url) && !url.toLowerCase().startsWith("data:image/")) {
+                throw new Error(`image_urls 中包含无效链接: ${url}`);
+            }
+        }
+        for (const filePath of resolvedPaths) {
+            resolvedUrls.push(await readLocalImageAsDataUrl(filePath));
+        }
+        if (resolvedUrls.length > MAX_IMAGE_REFERENCES) {
+            throw new Error(`图生图参考图最多 ${MAX_IMAGE_REFERENCES} 张。`);
+        }
+        return resolvedUrls;
     }
     async function resolveVideoInputs(imageUrl, imagePath, videoUrl) {
         const trimmedImageUrl = String(imageUrl || "").trim();
@@ -484,6 +536,7 @@ const spacexaiDraw = (function () {
         const apiKey = getApiKey();
         const modelFromParam = String(params.model || "").trim();
         const effectiveModel = modelFromParam || getDefaultImageModel();
+        const references = await resolveImageReferences(params.image_urls, params.image_paths);
         const body = {
             model: effectiveModel,
             prompt: params.prompt
@@ -496,7 +549,13 @@ const spacexaiDraw = (function () {
         const resolution = normalizeImageResolution(params.resolution);
         if (resolution)
             body.resolution = resolution;
-        const endpoint = getImageApiEndpoint();
+        if (references.length === 1) {
+            body.image = buildImageReference(references[0]);
+        }
+        else if (references.length > 1) {
+            body.image_urls = references;
+        }
+        const endpoint = references.length > 0 ? getImageEditApiEndpoint() : getImageApiEndpoint();
         const request = client
             .newRequest()
             .url(endpoint)
@@ -529,7 +588,8 @@ const spacexaiDraw = (function () {
         }
         return {
             ...imageResult,
-            effective_model: effectiveModel
+            effective_model: effectiveModel,
+            reference_count: references.length
         };
     }
     async function createVideoTask(params) {
@@ -638,7 +698,9 @@ const spacexaiDraw = (function () {
             model: params.model,
             aspect_ratio: params.aspect_ratio,
             resolution: params.resolution,
-            quality: params.quality
+            quality: params.quality,
+            image_urls: params.image_urls,
+            image_paths: params.image_paths
         });
         const ext = apiResult.response_format === "url"
             ? guessExtensionFromUrl(apiResult.image_url, "png")
@@ -661,6 +723,9 @@ const spacexaiDraw = (function () {
         const markdown = `![AI生成的图片](${fileUri})`;
         const hintLines = [];
         hintLines.push(`图片已生成并保存在本地 ${DRAWS_DIR}。`);
+        if (apiResult.reference_count > 0) {
+            hintLines.push(`本次使用了 ${apiResult.reference_count} 张参考图。`);
+        }
         hintLines.push(`本地路径: ${filePath}`);
         hintLines.push("");
         hintLines.push("在后续回答中，请直接输出下面这一行 Markdown 来展示这张图片：");
@@ -672,6 +737,7 @@ const spacexaiDraw = (function () {
             response_format: apiResult.response_format,
             response_source: apiResult.source_field,
             remote_image_url: apiResult.image_url || null,
+            reference_count: apiResult.reference_count,
             file_path: filePath,
             file_uri: fileUri,
             markdown,
