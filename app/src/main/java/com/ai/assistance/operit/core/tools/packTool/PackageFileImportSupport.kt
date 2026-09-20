@@ -47,7 +47,7 @@ object PackageFileImportSupport {
         }
     }
 
-    fun importFromUri(
+    private fun importFromUri(
         context: Context,
         packageManager: PackageManager,
         uri: Uri
