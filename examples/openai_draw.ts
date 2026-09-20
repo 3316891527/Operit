@@ -299,35 +299,10 @@ const openaiDraw = (function () {
                 "Authorization": `Bearer ${apiKey}`
             };
 
-            if (imagePaths.length === 0) {
-                const body: any = {
-                    model: effectiveModel,
-                    prompt: params.prompt,
-                    images: imageUrls.map(url => ({ image_url: url }))
-                };
-                if (params.size && params.size.trim().length > 0) {
-                    body.size = params.size.trim();
-                }
-                const response = await client
-                    .newRequest()
-                    .url(endpoint)
-                    .method("POST")
-                    .headers({
-                        ...headers,
-                        "content-type": "application/json"
-                    })
-                    .body(JSON.stringify(body), "json")
-                    .build()
-                    .execute();
-                if (!response.isSuccessful()) {
-                    throw new Error(`OpenAI 图片编辑 API 调用失败: ${response.statusCode} - ${response.content}`);
-                }
-                return parseOpenAIImageResponse(response.content, effectiveModel, referenceCount);
-            }
-
             const tempFiles: string[] = [];
             try {
                 const files: Array<{ field_name: string; file_path: string; content_type?: string; file_name?: string }> = [];
+                // OpenAI 图片编辑接口只接受 multipart 文件；远程参考图也必须先下载再作为 image[] 上传。
                 for (let index = 0; index < imageUrls.length; index += 1) {
                     const tempPath = `${DRAWS_DIR}/openai_ref_${Date.now()}_${index}.png`;
                     const downloadResult = await Tools.Files.download(imageUrls[index], tempPath);
@@ -373,8 +348,8 @@ const openaiDraw = (function () {
                 for (const tempPath of tempFiles) {
                     try {
                         await Tools.Files.deleteFile(tempPath);
-                    } catch {
-                        // ignore
+                    } catch (error: any) {
+                        console.error(`清理 OpenAI 临时参考图失败: ${tempPath}`, error);
                     }
                 }
             }
