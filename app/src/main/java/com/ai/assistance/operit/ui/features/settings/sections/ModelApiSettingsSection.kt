@@ -97,6 +97,7 @@ internal fun providerRegionWarningType(providerType: ApiProviderType?): Provider
         ApiProviderType.OPENROUTER,
         ApiProviderType.FOUR_ROUTER -> ProviderRegionWarningType.INTERNATIONAL_PROXY
         ApiProviderType.OPENAI,
+        ApiProviderType.OPENAI_CODEX,
         ApiProviderType.XAI,
         ApiProviderType.GOOGLE,
         ApiProviderType.ANTIGRAVITY,
@@ -130,6 +131,27 @@ private val genericCompatibleProviderOrder =
         ApiProviderType.OPENAI_RESPONSES_GENERIC,
         ApiProviderType.GEMINI_GENERIC,
         ApiProviderType.ANTHROPIC_GENERIC
+    )
+
+private val modelAggregationProviderOrder =
+    listOf(
+        ApiProviderType.SILICONFLOW,
+        ApiProviderType.IFLOW,
+        ApiProviderType.OPENROUTER,
+        ApiProviderType.OPENCODE,
+        ApiProviderType.FOUR_ROUTER,
+        ApiProviderType.NVIDIA,
+        ApiProviderType.PPINFRA,
+        ApiProviderType.NOVITA
+    )
+
+private val localModelProviderOrder =
+    listOf(
+        ApiProviderType.LMSTUDIO,
+        ApiProviderType.OLLAMA,
+        ApiProviderType.OPENAI_LOCAL,
+        ApiProviderType.MNN,
+        ApiProviderType.LLAMA_CPP
     )
 
 @Composable
@@ -496,6 +518,11 @@ fun ModelApiSettingsSection(
         ApiProviderConfigs.requiresApiKey(selectedProviderTypeId, apiEndpointInput)
     val isMnnProvider = selectedApiProvider == ApiProviderType.MNN
     val isLlamaProvider = selectedApiProvider == ApiProviderType.LLAMA_CPP
+    val isEmbeddedLocalProvider = isMnnProvider || isLlamaProvider
+    val isOptionalApiKeyProvider =
+        selectedApiProvider == ApiProviderType.LMSTUDIO ||
+            selectedApiProvider == ApiProviderType.OLLAMA ||
+            selectedApiProvider == ApiProviderType.OPENAI_LOCAL
     val isToolPkgProvider = selectedApiProvider == null
     val canUseKeylessModelUi = isToolPkgProvider || !providerRequiresApiKey
     val canEditModelName =
@@ -717,7 +744,7 @@ fun ModelApiSettingsSection(
                         imeAction = ImeAction.Next,
                     ),
                 )
-            } else {
+            } else if (!isEmbeddedLocalProvider) {
                 SettingsTextField(
                         title = stringResource(R.string.api_endpoint),
                         subtitle = stringResource(R.string.api_endpoint_placeholder),
@@ -801,6 +828,7 @@ fun ModelApiSettingsSection(
                         }
                     }
                 }
+            }
 
             val completedEndpoint =
                 selectedApiProvider?.let {
@@ -819,21 +847,26 @@ fun ModelApiSettingsSection(
                     )
                 }
 
-                val apiKeyInteractionSource = remember { MutableInteractionSource() }
-                val isApiKeyFocused by apiKeyInteractionSource.collectIsFocusedAsState()
+            val apiKeyInteractionSource = remember { MutableInteractionSource() }
+            val isApiKeyFocused by apiKeyInteractionSource.collectIsFocusedAsState()
 
-                SettingsTextField(
+            if (!isEmbeddedLocalProvider) SettingsTextField(
                         title = stringResource(R.string.api_key),
                         subtitle =
-                                if (isUsingDefaultApiKey)
+                                if (isOptionalApiKeyProvider)
+                                        stringResource(R.string.api_key_optional_local)
+                                else if (isUsingDefaultApiKey)
                                         stringResource(R.string.api_key_placeholder_default)
                                 else
                                         stringResource(R.string.api_key_placeholder_custom),
                         value = if (isUsingDefaultApiKey) "" else apiKeyInput,
                         onValueChange = {
-                            val filteredInput = it.replace("\n", "").replace("\r", "").replace(" ", "")
-                            apiKeyInput = filteredInput
+                            if (!isOptionalApiKeyProvider) {
+                                val filteredInput = it.replace("\n", "").replace("\r", "").replace(" ", "")
+                                apiKeyInput = filteredInput
+                            }
                         },
+                        enabled = !isOptionalApiKeyProvider,
                         keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Text,
                                 imeAction = ImeAction.Next
@@ -841,7 +874,6 @@ fun ModelApiSettingsSection(
                         visualTransformation = if (isApiKeyFocused || apiKeyInput.isEmpty()) VisualTransformation.None else ApiKeyVisualTransformation(),
                          interactionSource = apiKeyInteractionSource
                  )
-            }
             SettingsTextField(
                     title = stringResource(R.string.model_name),
                     subtitle = when {
@@ -1748,25 +1780,22 @@ private fun getProviderDisplayName(providerTypeId: String, context: android.cont
     return ToolPkgAiProviderRegistry.get(providerTypeId)?.displayName ?: providerTypeId
 }
 
-private fun getProviderSelectionGroups(context: android.content.Context): List<ProviderSelectionGroup> {
-    val genericProviderSet = genericCompatibleProviderOrder.toSet()
-    val genericProviders =
-        genericCompatibleProviderOrder.map { provider ->
-            ProviderSelectionOption(
-                id = provider.name,
-                displayName = getBuiltInProviderDisplayName(provider, context)
-            )
-        }
+private fun providerSelectionOptions(
+    providers: List<ApiProviderType>,
+    context: android.content.Context
+): List<ProviderSelectionOption> =
+    providers.map { provider ->
+        ProviderSelectionOption(
+            id = provider.name,
+            displayName = getBuiltInProviderDisplayName(provider, context)
+        )
+    }
 
-    val dedicatedBuiltInProviders =
-        ApiProviderType.values()
-            .filter { provider -> provider !in genericProviderSet }
-            .map { provider ->
-                ProviderSelectionOption(
-                    id = provider.name,
-                    displayName = getBuiltInProviderDisplayName(provider, context)
-                )
-            }
+private fun getProviderSelectionGroups(context: android.content.Context): List<ProviderSelectionGroup> {
+    val groupedProviders =
+        (genericCompatibleProviderOrder + modelAggregationProviderOrder + localModelProviderOrder).toSet()
+    val dedicatedProviders =
+        ApiProviderType.values().filter { provider -> provider !in groupedProviders }
 
     val toolPkgProviders =
         ToolPkgAiProviderRegistry.list().map { provider ->
@@ -1779,11 +1808,19 @@ private fun getProviderSelectionGroups(context: android.content.Context): List<P
     return listOf(
         ProviderSelectionGroup(
             titleResId = R.string.provider_section_generic_compatible,
-            providers = genericProviders
+            providers = providerSelectionOptions(genericCompatibleProviderOrder, context)
         ),
         ProviderSelectionGroup(
             titleResId = R.string.provider_section_proprietary,
-            providers = dedicatedBuiltInProviders + toolPkgProviders
+            providers = providerSelectionOptions(dedicatedProviders, context) + toolPkgProviders
+        ),
+        ProviderSelectionGroup(
+            titleResId = R.string.provider_section_aggregation,
+            providers = providerSelectionOptions(modelAggregationProviderOrder, context)
+        ),
+        ProviderSelectionGroup(
+            titleResId = R.string.provider_section_local,
+            providers = providerSelectionOptions(localModelProviderOrder, context)
         )
     )
 }
