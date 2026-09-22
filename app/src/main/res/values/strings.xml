@@ -8504,4 +8504,26 @@
     <string name="codex_usage_unavailable">额度暂时不可用</string>
     <string name="codex_reset_after_days">%1$d 天后重置</string>
     <string name="codex_reset_after_clock">%1$02d:%2$02d 后重置</string>
+
+    <string name="provider_antigravity">Antigravity</string>
+    <string name="onboarding_config_antigravity_login_required">请先登录 Antigravity</string>
+    <string name="antigravity_login_title">登录 Antigravity</string>
+    <string name="antigravity_login_starting">正在准备 Antigravity 登录...</string>
+    <string name="antigravity_login_waiting">请在浏览器中完成 Google 登录</string>
+    <string name="antigravity_login_action">登录 Google</string>
+    <string name="antigravity_login_success">Antigravity 登录成功</string>
+    <string name="antigravity_login_failed">Antigravity 登录失败：%1$s</string>
+    <string name="antigravity_logout_action">退出 Antigravity 登录</string>
+    <string name="antigravity_logout_success">已退出 Antigravity 登录</string>
+    <string name="antigravity_auth_title">Antigravity 账号</string>
+    <string name="antigravity_auth_not_logged_in">登录 Google 后使用 Antigravity 订阅额度</string>
+    <string name="antigravity_auth_account">账号：%1$s</string>
+    <string name="antigravity_endpoint_fixed">Antigravity endpoint 由系统固定</string>
+    <string name="antigravity_plan">套餐：%1$s</string>
+    <string name="antigravity_direct_media_processing_desc">将图片直接发送给 Antigravity 处理</string>
+    <string name="antigravity_quota_remaining">剩余 %1$d%%</string>
+    <string name="antigravity_quota_no_data">暂无额度数据</string>
+    <string name="antigravity_quota_refresh">刷新 Antigravity 额度</string>
+    <string name="antigravity_quota_unavailable">额度暂时不可用</string>
+    <string name="antigravity_quota_reset_unknown">重置时间未知</string>
 </resources>
