@@ -55,6 +55,8 @@ import com.ai.assistance.operit.api.chat.llmprovider.ModelListFetcher
 import com.ai.assistance.operit.data.api.AntigravityAuthManager
 import com.ai.assistance.operit.data.api.AntigravityQuotaGroup
 import com.ai.assistance.operit.data.api.CodexAuthManager
+import com.ai.assistance.operit.data.api.VertexAuthManager
+import com.ai.assistance.operit.data.api.VertexOAuthProtocol
 import com.ai.assistance.operit.data.api.CodexUsageSnapshot
 import com.ai.assistance.operit.data.api.CodexUsageWindow
 import com.ai.assistance.operit.data.collects.ApiProviderConfigs
@@ -63,6 +65,7 @@ import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ModelOption
 import com.ai.assistance.operit.data.preferences.AntigravityAuthState
 import com.ai.assistance.operit.data.preferences.CodexAuthState
+import com.ai.assistance.operit.data.preferences.VertexAuthState
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistry
 import com.ai.assistance.operit.ui.common.input.bringIntoViewOnImeFocus
@@ -73,6 +76,7 @@ import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
 import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveAction
 import com.ai.assistance.operit.ui.features.antigravity.AntigravityLoginDialog
 import com.ai.assistance.operit.ui.features.codex.CodexLoginDialog
+import com.ai.assistance.operit.ui.features.vertex.VertexLoginDialog
 import com.ai.assistance.operit.util.LocationUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -101,6 +105,7 @@ internal fun providerRegionWarningType(providerType: ApiProviderType?): Provider
         ApiProviderType.XAI,
         ApiProviderType.GOOGLE,
         ApiProviderType.ANTIGRAVITY,
+        ApiProviderType.VERTEX_AI,
         ApiProviderType.ANTHROPIC,
         ApiProviderType.MISTRAL,
         ApiProviderType.NVIDIA,
@@ -179,6 +184,19 @@ fun ModelApiSettingsSection(
     var antigravityQuotaLoading by remember(config.id) { mutableStateOf(false) }
     var antigravityQuotaError by remember(config.id) { mutableStateOf(false) }
     var antigravityQuotaNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val vertexAuthManager = remember { VertexAuthManager.getInstance(context) }
+    val vertexAuthState by vertexAuthManager.authState.collectAsState()
+    var showVertexLoginDialog by remember(config.id) { mutableStateOf(false) }
+    var vertexProjectInput by remember(config.id) {
+        mutableStateOf(config.apiEndpoint.substringBefore('|').trim())
+    }
+    var vertexLocationInput by remember(config.id) {
+        mutableStateOf(
+            config.apiEndpoint.substringAfter('|', VertexOAuthProtocol.DEFAULT_LOCATION)
+                .trim()
+                .ifBlank { VertexOAuthProtocol.DEFAULT_LOCATION },
+        )
+    }
 
     // 区域告警类型；null 表示当前无需显示。
     var regionWarningType by remember(config.id) { mutableStateOf<ProviderRegionWarningType?>(null) }
@@ -209,6 +227,7 @@ fun ModelApiSettingsSection(
     val selectedApiProvider = ApiProviderType.fromProviderTypeId(selectedProviderTypeId)
     val isCodexProvider = selectedApiProvider == ApiProviderType.OPENAI_CODEX
     val isAntigravityProvider = selectedApiProvider == ApiProviderType.ANTIGRAVITY
+    val isVertexProvider = selectedApiProvider == ApiProviderType.VERTEX_AI
     val codexUsage = persistedCodexUsage
         ?.takeIf { it.accountId == codexAuthState?.accountId }
         ?.usage
@@ -302,7 +321,7 @@ fun ModelApiSettingsSection(
     var enableToolCallInput by remember(config.id) { mutableStateOf(config.enableToolCall) }
 
     LaunchedEffect(selectedProviderTypeId) {
-        if (isCodexProvider || isAntigravityProvider) {
+        if (isCodexProvider || isAntigravityProvider || isVertexProvider) {
             enableDirectImageProcessingInput = true
             enableDirectAudioProcessingInput = false
             enableDirectVideoProcessingInput = false
@@ -365,8 +384,13 @@ fun ModelApiSettingsSection(
     }
 
     fun buildAutoSaveState(): ApiAutoSaveState {
+        val endpointToSave = if (isVertexProvider) {
+            vertexEndpoint(vertexProjectInput, vertexLocationInput)
+        } else {
+            apiEndpointInput
+        }
         return ApiAutoSaveState(
-            apiEndpoint = apiEndpointInput,
+            apiEndpoint = endpointToSave,
             apiKey = apiKeyInput,
             modelName = modelNameInput,
             providerTypeId = selectedProviderTypeId,
@@ -477,7 +501,8 @@ fun ModelApiSettingsSection(
         if (!shouldSyncEndpointByProviderChange) {
             // 首次进入页面时保留持久化配置，避免把用户已选择的端点覆盖成默认值。
             if (selectedApiProvider == ApiProviderType.OPENAI_CODEX ||
-                selectedApiProvider == ApiProviderType.ANTIGRAVITY
+                selectedApiProvider == ApiProviderType.ANTIGRAVITY ||
+                selectedApiProvider == ApiProviderType.VERTEX_AI
             ) {
                 apiEndpointInput = getDefaultApiEndpoint(selectedApiProvider)
             }
@@ -495,6 +520,7 @@ fun ModelApiSettingsSection(
         val shouldApplyNewProviderDefault =
             selectedApiProvider == ApiProviderType.OPENAI_CODEX ||
             selectedApiProvider == ApiProviderType.ANTIGRAVITY ||
+            selectedApiProvider == ApiProviderType.VERTEX_AI ||
             apiEndpointInput.isEmpty() ||
                 isDefaultApiEndpoint(apiEndpointInput) ||
                 (previousDefaultEndpoint.isNotEmpty() && apiEndpointInput == previousDefaultEndpoint)
@@ -532,6 +558,7 @@ fun ModelApiSettingsSection(
     val canRequestModelList = when {
         isCodexProvider -> codexAuthState != null && apiEndpointInput.isNotBlank()
         isAntigravityProvider -> antigravityAuthState != null && apiEndpointInput.isNotBlank()
+        isVertexProvider -> vertexAuthState != null && vertexProjectInput.isNotBlank()
         isToolPkgProvider || isMnnProvider || isLlamaProvider -> true
         else ->
             apiEndpointInput.isNotBlank() &&
@@ -557,6 +584,11 @@ fun ModelApiSettingsSection(
             isCodexProvider -> CodexModelListFetcher.getModelsList()
             isAntigravityProvider -> Result.success(
                 com.ai.assistance.operit.data.api.AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
+                    ModelOption(id = id, name = name)
+                },
+            )
+            isVertexProvider -> Result.success(
+                VertexOAuthProtocol.defaultModels.map { (id, name) ->
                     ModelOption(id = id, name = name)
                 },
             )
@@ -684,6 +716,30 @@ fun ModelApiSettingsSection(
                             llamaGpuLayersInput = input
                         }
                     }
+                )
+            } else if (isVertexProvider) {
+                VertexAuthSettingsBlock(
+                    authState = vertexAuthState,
+                    project = vertexProjectInput,
+                    location = vertexLocationInput,
+                    onProjectChange = { input ->
+                        vertexProjectInput = input.trim().replace("|", "")
+                        apiEndpointInput = vertexEndpoint(vertexProjectInput, vertexLocationInput)
+                    },
+                    onLocationChange = { input ->
+                        vertexLocationInput = input.trim().replace("|", "").ifBlank {
+                            VertexOAuthProtocol.DEFAULT_LOCATION
+                        }
+                        apiEndpointInput = vertexEndpoint(vertexProjectInput, vertexLocationInput)
+                    },
+                    onLogin = { showVertexLoginDialog = true },
+                    onLogout = {
+                        scope.launch {
+                            vertexAuthManager.logout()
+                            EnhancedAIService.refreshAllServices(configManager.appContext)
+                            showNotification(context.getString(R.string.vertex_logout_success))
+                        }
+                    },
                 )
             } else if (isAntigravityProvider) {
                 AntigravityAuthSettingsBlock(
@@ -850,7 +906,7 @@ fun ModelApiSettingsSection(
             val apiKeyInteractionSource = remember { MutableInteractionSource() }
             val isApiKeyFocused by apiKeyInteractionSource.collectIsFocusedAsState()
 
-            if (!isEmbeddedLocalProvider) SettingsTextField(
+            if (!isEmbeddedLocalProvider && !isVertexProvider) SettingsTextField(
                         title = stringResource(R.string.api_key),
                         subtitle =
                                 if (isOptionalApiKeyProvider)
@@ -971,7 +1027,14 @@ fun ModelApiSettingsSection(
                     }
             )
 
-             if (isAntigravityProvider) {
+             if (isVertexProvider) {
+                 SettingsSwitchRow(
+                     title = stringResource(R.string.codex_direct_media_processing),
+                     subtitle = stringResource(R.string.vertex_direct_media_processing_desc),
+                     checked = enableDirectImageProcessingInput,
+                     onCheckedChange = { enableDirectImageProcessingInput = it }
+                 )
+             } else if (isAntigravityProvider) {
                  SettingsSwitchRow(
                      title = stringResource(R.string.codex_direct_media_processing),
                      subtitle = stringResource(R.string.antigravity_direct_media_processing_desc),
@@ -1053,6 +1116,19 @@ fun ModelApiSettingsSection(
             )
 
         }
+    }
+
+    if (showVertexLoginDialog) {
+        VertexLoginDialog(
+            onDismissRequest = { showVertexLoginDialog = false },
+            onLoginSuccess = {
+                showVertexLoginDialog = false
+                scope.launch {
+                    EnhancedAIService.refreshAllServices(configManager.appContext)
+                    showNotification(context.getString(R.string.vertex_login_success))
+                }
+            },
+        )
     }
 
     if (showAntigravityLoginDialog) {
@@ -1359,7 +1435,73 @@ fun ModelApiSettingsSection(
     }
 }
 
+private fun vertexEndpoint(project: String, location: String): String {
+    val normalizedLocation = location.trim().ifBlank { VertexOAuthProtocol.DEFAULT_LOCATION }
+    val normalizedProject = project.trim()
+    return if (normalizedProject.isEmpty()) "" else "$normalizedProject|$normalizedLocation"
+}
+
 @Composable
+private fun VertexAuthSettingsBlock(
+    authState: VertexAuthState?,
+    project: String,
+    location: String,
+    onProjectChange: (String) -> Unit,
+    onLocationChange: (String) -> Unit,
+    onLogin: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.vertex_auth_title),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (authState == null) {
+            Text(
+                text = stringResource(R.string.vertex_auth_not_logged_in),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(onClick = onLogin, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Login, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.vertex_login_action))
+            }
+        } else {
+            Text(
+                text = stringResource(R.string.vertex_auth_account, authState.email ?: "-"),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.vertex_logout_action))
+            }
+        }
+        SettingsTextField(
+            title = stringResource(R.string.vertex_project_id),
+            subtitle = stringResource(R.string.vertex_project_id_desc),
+            value = project,
+            onValueChange = { onProjectChange(it.replace("\n", "").replace("\r", "").replace(" ", "")) },
+            enabled = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+        )
+        SettingsTextField(
+            title = stringResource(R.string.vertex_location),
+            subtitle = stringResource(R.string.vertex_location_desc),
+            value = location,
+            onValueChange = { onLocationChange(it.replace("\n", "").replace("\r", "").replace(" ", "")) },
+            enabled = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+        )
+    }
+}
+
 private fun AntigravityAuthSettingsBlock(
     authState: AntigravityAuthState?,
     groups: List<AntigravityQuotaGroup>,
@@ -1735,6 +1877,7 @@ private fun getBuiltInProviderDisplayName(provider: ApiProviderType, context: an
         ApiProviderType.OPENAI_RESPONSES -> context.getString(R.string.provider_openai_responses)
         ApiProviderType.OPENAI_CODEX -> context.getString(R.string.provider_openai_codex)
         ApiProviderType.ANTIGRAVITY -> context.getString(R.string.provider_antigravity)
+        ApiProviderType.VERTEX_AI -> context.getString(R.string.provider_vertex)
         ApiProviderType.OPENAI_RESPONSES_GENERIC -> context.getString(R.string.provider_openai_responses_generic)
         ApiProviderType.OPENAI_GENERIC -> context.getString(R.string.provider_openai_generic)
         ApiProviderType.ANTHROPIC -> context.getString(R.string.provider_anthropic)
@@ -2475,6 +2618,7 @@ private fun getProviderColor(providerTypeId: String): androidx.compose.ui.graphi
         ApiProviderType.OPENAI_RESPONSES -> MaterialTheme.colorScheme.primary.copy(alpha = 0.92f)
         ApiProviderType.OPENAI_CODEX -> MaterialTheme.colorScheme.primary.copy(alpha = 0.98f)
         ApiProviderType.ANTIGRAVITY -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.95f)
+        ApiProviderType.VERTEX_AI -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.88f)
         ApiProviderType.OPENAI_RESPONSES_GENERIC -> MaterialTheme.colorScheme.primary.copy(alpha = 0.88f)
         ApiProviderType.OPENAI_GENERIC -> MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
         ApiProviderType.ANTHROPIC -> MaterialTheme.colorScheme.tertiary

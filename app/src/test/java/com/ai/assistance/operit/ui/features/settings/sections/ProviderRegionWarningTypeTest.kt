@@ -38,6 +38,8 @@ class ProviderRegionWarningTypeTest {
             ApiProviderType.OPENAI,
             ApiProviderType.OPENAI_CODEX,
             ApiProviderType.GOOGLE,
+            ApiProviderType.ANTIGRAVITY,
+            ApiProviderType.VERTEX_AI,
             ApiProviderType.ANTHROPIC,
             ApiProviderType.MISTRAL,
             ApiProviderType.NVIDIA,

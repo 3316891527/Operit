@@ -395,6 +395,21 @@ object AIServiceFactory {
                     thinkingOptionId = config.thinkingOptionId,
                 )
 
+            ApiProviderType.VERTEX_AI ->
+                VertexProvider(
+                    authManager = com.ai.assistance.operit.data.api.VertexAuthManager.getInstance(context),
+                    apiEndpoint = com.ai.assistance.operit.data.api.VertexOAuthProtocol.openAiRoot(
+                        project = config.apiEndpoint.substringBefore('|').trim(),
+                        location = config.apiEndpoint.substringAfter('|', "global").trim().ifBlank { "global" },
+                    ),
+                    modelName = config.modelName,
+                    client = httpClient,
+                    customHeaders = customHeaders,
+                    enableToolCall = enableToolCall,
+                    thinkingConfigurations = config.thinkingConfigurations,
+                    thinkingOptionId = config.thinkingOptionId,
+                )
+
             ApiProviderType.OPENAI_CODEX ->
                 CodexProvider(
                     authManager = com.ai.assistance.operit.data.api.CodexAuthManager.getInstance(context),

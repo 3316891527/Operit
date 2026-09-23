@@ -10,6 +10,7 @@ enum class ApiProviderType {
         OPENAI_RESPONSES, // ChatGPT Responses（OpenAI）
         OPENAI_CODEX, // Codex（OpenAI）
         ANTIGRAVITY, // Antigravity（Google）
+        VERTEX_AI, // Vertex AI（Google）
         OPENAI_RESPONSES_GENERIC, // OpenAI Responses（通用）
         OPENAI_GENERIC, // OpenAI（通用）
         ANTHROPIC, // Claude（Anthropic）

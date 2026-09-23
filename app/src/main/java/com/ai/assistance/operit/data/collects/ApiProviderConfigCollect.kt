@@ -46,6 +46,12 @@ object ApiProviderConfigs {
             requiresApiKey = false,
         ),
         ProviderApiConfig(
+            providerType = ApiProviderType.VERTEX_AI,
+            defaultModelName = "gemini-3.8-flash",
+            defaultApiEndpoint = "",
+            requiresApiKey = false,
+        ),
+        ProviderApiConfig(
             providerType = ApiProviderType.OPENAI_RESPONSES_GENERIC,
             defaultModelName = "",
             defaultApiEndpoint = ""

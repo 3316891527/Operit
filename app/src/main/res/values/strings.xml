@@ -8529,4 +8529,25 @@
     <string name="antigravity_quota_refresh">刷新 Antigravity 额度</string>
     <string name="antigravity_quota_unavailable">额度暂时不可用</string>
     <string name="antigravity_quota_reset_unknown">重置时间未知</string>
+
+    <string name="provider_vertex">Vertex AI（Google）</string>
+    <string name="onboarding_config_vertex_login_required">请先登录 Vertex AI</string>
+    <string name="onboarding_config_vertex_project_missing">请填写 Vertex AI 项目 ID</string>
+    <string name="vertex_login_title">登录 Vertex AI</string>
+    <string name="vertex_login_starting">正在准备 Vertex AI 登录...</string>
+    <string name="vertex_login_waiting">请在浏览器中完成 Google 登录</string>
+    <string name="vertex_login_action">登录 Google</string>
+    <string name="vertex_login_success">Vertex AI 登录成功</string>
+    <string name="vertex_login_failed">Vertex AI 登录失败：%1$s</string>
+    <string name="vertex_logout_action">退出 Vertex AI 登录</string>
+    <string name="vertex_logout_success">已退出 Vertex AI 登录</string>
+    <string name="vertex_auth_title">Vertex AI 账号</string>
+    <string name="vertex_auth_not_logged_in">登录 Google 后使用 Vertex AI</string>
+    <string name="vertex_auth_account">账号：%1$s</string>
+    <string name="vertex_project_id">项目 ID</string>
+    <string name="vertex_project_id_desc">填写 GCP 项目 ID，登录不会自动发现</string>
+    <string name="vertex_location">位置</string>
+    <string name="vertex_location_desc">默认 global，也可以填写区域，例如 us-central1</string>
+    <string name="vertex_direct_media_processing_desc">将图片直接发送给 Vertex AI 处理</string>
+
 </resources>

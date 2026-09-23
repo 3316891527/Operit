@@ -15,6 +15,8 @@ enum class ChatConfigReadinessIssue {
     MODEL_MISSING,
     CODEX_LOGIN_REQUIRED,
     ANTIGRAVITY_LOGIN_REQUIRED,
+    VERTEX_LOGIN_REQUIRED,
+    VERTEX_PROJECT_MISSING,
     API_KEY_MISSING,
     API_KEY_INVALID
 }
@@ -30,6 +32,7 @@ object ChatConfigReadiness {
             ApiProviderType.OPENAI_RESPONSES_GENERIC,
             ApiProviderType.OPENAI_CODEX,
             ApiProviderType.ANTIGRAVITY,
+            ApiProviderType.VERTEX_AI,
             ApiProviderType.OPENAI_GENERIC,
             ApiProviderType.ANTHROPIC_GENERIC,
             ApiProviderType.GEMINI_GENERIC,
@@ -42,6 +45,7 @@ object ChatConfigReadiness {
         registeredPluginProviderIds: Set<String>,
         codexAuthenticated: Boolean = false,
         antigravityAuthenticated: Boolean = false,
+        vertexAuthenticated: Boolean = false,
     ): ChatConfigReadinessResult {
         val providerTypeId = config.apiProviderTypeId.trim()
         if (providerTypeId.isEmpty()) {
@@ -63,12 +67,24 @@ object ChatConfigReadiness {
         if (providerType == ApiProviderType.ANTIGRAVITY && !antigravityAuthenticated) {
             return ChatConfigReadinessResult(ChatConfigReadinessIssue.ANTIGRAVITY_LOGIN_REQUIRED)
         }
+        if (providerType == ApiProviderType.VERTEX_AI && !vertexAuthenticated) {
+            return ChatConfigReadinessResult(ChatConfigReadinessIssue.VERTEX_LOGIN_REQUIRED)
+        }
+        if (providerType == ApiProviderType.VERTEX_AI &&
+            config.apiEndpoint.substringBefore('|').trim().isEmpty()
+        ) {
+            return ChatConfigReadinessResult(ChatConfigReadinessIssue.VERTEX_PROJECT_MISSING)
+        }
         val validModelIndex = getValidModelIndex(config.modelName, modelIndex)
         if (getModelByIndex(config.modelName, validModelIndex).isBlank()) {
             return ChatConfigReadinessResult(ChatConfigReadinessIssue.MODEL_MISSING)
         }
 
         if (providerType == ApiProviderType.MNN || providerType == ApiProviderType.LLAMA_CPP) {
+            return ChatConfigReadinessResult()
+        }
+
+        if (providerType == ApiProviderType.VERTEX_AI) {
             return ChatConfigReadinessResult()
         }
 
