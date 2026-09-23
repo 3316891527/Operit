@@ -1502,6 +1502,7 @@ private fun VertexAuthSettingsBlock(
     }
 }
 
+@Composable
 private fun AntigravityAuthSettingsBlock(
     authState: AntigravityAuthState?,
     groups: List<AntigravityQuotaGroup>,
