@@ -56,21 +56,15 @@ object RawSnapshotBackupManager {
     private const val RESTORE_ROOT_APP_DATA = "app_data"
     private const val RESTORE_ROOT_EXTERNAL_FILES = "external_files"
 
-    // Theme assets (avatars / background / bubble image / fonts) picked by the user are persisted
-    // by FileUtils.copyFileToInternalStorage() as flat files in filesDir root, named
-    // "<kind>_<UUID>.<ext>" (or "avatar_<id>_<UUID>", "group_avatar_<id>_<UUID>"). Only these
-    // prefixes are candidates when pruning unreferenced historical media from a raw snapshot.
-    private val themeMediaFlatNamePrefixes = listOf(
-        "background",
-        "bubble_ai",
-        "bubble_user",
-        "custom_font",
-        "user_avatar",
-        "ai_avatar",
-        "global_user_avatar",
-        "avatar_",
-        "group_avatar_",
+    // FileUtils.copyFileToInternalStorage() 生成的主题资源都以固定前缀、UUID 和扩展名结尾。
+    // 只有完整匹配该格式的根目录文件才允许进入“未引用主题资源”筛选。
+    private val themeMediaFlatNamePattern = Regex(
+        """^(?:background(?:_video)?|bubble_(?:ai|user)(?:_font)?|custom_font|user_avatar|ai_avatar|global_user_avatar|avatar_.+|group_avatar_.+)_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[A-Za-z0-9]+$""",
+        RegexOption.IGNORE_CASE,
     )
+
+    internal fun isThemeMediaFlatFileName(name: String): Boolean =
+        themeMediaFlatNamePattern.matches(name)
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -935,7 +929,7 @@ object RawSnapshotBackupManager {
         val rel = canonical.path.substring(baseCanonical.path.length + 1)
         if (rel.contains('/')) return false
         val name = canonical.name
-        return themeMediaFlatNamePrefixes.any { name.startsWith(it) }
+        return isThemeMediaFlatFileName(name)
     }
 
     private fun shouldPruneDirForZip(
