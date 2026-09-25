@@ -42,7 +42,7 @@ data class MessageEntity(
 ) {
     /** 转换为ChatMessage对象（供UI层使用） */
     fun toChatMessage(): ChatMessage {
-        val parsed = MessageSectionStorage.decode(sections)
+        val parsed = MessageSectionStorage.decode(sections, searchText)
         return ChatMessage(
             sender = sender,
             content = MessageSectionCodec.render(parsed),

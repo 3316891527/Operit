@@ -16,7 +16,10 @@ object MessageSectionStorage {
 
     fun encode(sections: List<MessageSection>): String = json.encodeToString(sections)
 
-    fun decode(stored: String): List<MessageSection> = json.decodeFromString(stored)
+    fun decode(stored: String, legacyContent: String = ""): List<MessageSection> {
+        if (stored.isNotEmpty()) return json.decodeFromString(stored)
+        return if (legacyContent.isEmpty()) emptyList() else decodeLegacy(legacyContent)
+    }
 
     /** 只在旧库升级、旧备份导入时调用，保留已写入的开发版前缀记录。 */
     fun decodeLegacy(content: String): List<MessageSection> {

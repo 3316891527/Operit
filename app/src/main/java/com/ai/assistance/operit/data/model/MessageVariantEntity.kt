@@ -39,7 +39,7 @@ data class MessageVariantEntity(
     val completedAt: Long = 0L,
 ) {
     fun applyTo(baseMessage: ChatMessage, variantCount: Int): ChatMessage {
-        val parsed = MessageSectionStorage.decode(sections)
+        val parsed = MessageSectionStorage.decode(sections, searchText)
         return baseMessage.copy(
             content = MessageSectionCodec.render(parsed),
             sections = parsed,
