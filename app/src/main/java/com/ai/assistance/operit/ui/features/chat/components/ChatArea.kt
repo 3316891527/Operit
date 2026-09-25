@@ -86,6 +86,8 @@ import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.data.model.MessageSectionCodec
+import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
 
@@ -114,6 +116,7 @@ import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleS
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.util.ThinkingMarkup
 import com.ai.assistance.operit.util.LatexMathMlConverter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -127,15 +130,13 @@ import kotlinx.coroutines.withContext
  * 清理复制文本中的内部标记，保留Markdown格式和纯文本内容
  */
 internal fun cleanMessageContentForCopy(content: String): String {
-    return content
+    return ThinkingMarkup.remove(content)
         // Provider元数据必须保留在消息中供后续轮次使用，但不能暴露在复制内容中
         .let(ChatMarkupRegex::removeGeminiThoughtSignatureMeta)
         .let(ChatMarkupRegex::removeOpenAiResponsesProtocolMeta)
         // 移除状态标签
         .replace(ChatMarkupRegex.statusTag, "")
         .replace(ChatMarkupRegex.statusSelfClosingTag, "")
-        // 移除思考标签（包括 <think> 和 <thinking>）
-        .replace(ChatMarkupRegex.thinkTag, "")
         .replace(ChatMarkupRegex.thinkSelfClosingTag, "")
         // 移除搜索来源标签
         .replace(ChatMarkupRegex.searchTag, "")
@@ -160,16 +161,24 @@ internal fun cleanMessageContentForCopy(content: String): String {
 
 /** 保留结构化标记用于复制，同时移除供应商协议元数据。 */
 internal fun cleanMessageContentForXmlCopy(content: String): String {
-    return content
-        .let(ChatMarkupRegex::removeGeminiThoughtSignatureMeta)
-        .let(ChatMarkupRegex::removeOpenAiResponsesProtocolMeta)
-        .trim()
+    return MessageSectionCodec.render(
+        MessageSectionCodec.parse(content).filterNot { it is MessageSection.Protocol }
+    ).trim()
 }
 
 internal data class MessageCopyContent(
     val markdownSource: String,
     val xmlSource: String,
 )
+
+/** 复制与聊天展示使用相同的协议过滤，原始 sections 继续供保存和后续请求使用。 */
+internal fun buildMessageCopyContent(message: ChatMessage): MessageCopyContent {
+    val visibleContent = message.displayContent()
+    return MessageCopyContent(
+        markdownSource = cleanMessageContentForCopy(visibleContent),
+        xmlSource = cleanMessageContentForXmlCopy(visibleContent),
+    )
+}
 
 internal suspend fun buildSelectedMessagesPlainText(
     messages: List<ChatMessage>,
@@ -179,7 +188,7 @@ internal suspend fun buildSelectedMessagesPlainText(
         .filter { message -> message.sender == "user" || message.sender == "ai" }
         .filterNot(::isHiddenUserPlaceholder)
         .mapNotNull { message ->
-            markdownToPlainText(cleanMessageContentForCopy(message.content))
+            markdownToPlainText(buildMessageCopyContent(message).markdownSource)
                 .trim()
                 .takeIf(String::isNotEmpty)
         }
@@ -831,10 +840,7 @@ private fun MessageItem(
                         )
                     },
                     onClick = {
-                        copyPreviewContent = MessageCopyContent(
-                            markdownSource = cleanMessageContentForCopy(message.content),
-                            xmlSource = cleanMessageContentForXmlCopy(message.content),
-                        )
+                        copyPreviewContent = buildMessageCopyContent(message)
                         onCopyMessage?.invoke(message)
                         showContextMenu = false
                     },

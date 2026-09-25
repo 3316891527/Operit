@@ -121,4 +121,40 @@ class MessageCopyTextTest {
         assertEquals(messageCount, conversionCount)
         assertEquals(messageCount * messageContent.length + (messageCount - 1) * 2, result.length)
     }
+
+    @Test fun cleanMessageContentForCopy_tokenThoughtNeverLeaksAfterFakeClose() {
+        val raw = "前文<think token=\"aBc4\">前半</think>后半</think token=\"aBc4\">回答"
+        assertEquals("前文回答", cleanMessageContentForCopy(raw))
+    }
+
+    @Test fun buildMessageCopyContent_hidesEveryProtocolProviderAndKeepsStoredPayload() {
+        for (provider in listOf("openai", "openai:responses_reasoning", "gemini:thought_signature", "custom")) {
+            val raw = "VISIBLE_BEGIN<meta provider=\"$provider\">META_HIDDEN</meta>VISIBLE_END"
+            val message = ChatMessage(sender = "ai", content = raw)
+
+            assertEquals(
+                MessageCopyContent("VISIBLE_BEGINVISIBLE_END", "VISIBLE_BEGINVISIBLE_END"),
+                buildMessageCopyContent(message),
+            )
+            assertEquals(raw, message.content)
+            assertEquals(raw, com.ai.assistance.operit.data.model.MessageSectionCodec.render(message.resolvedSections()))
+        }
+    }
+
+    @Test fun buildSelectedMessagesPlainText_hidesGenericProtocolPayloads() = runTest {
+        val message = ChatMessage(
+            sender = "ai",
+            content = "VISIBLE_BEGIN<meta provider=\"openai\">META_HIDDEN</meta>VISIBLE_END",
+        )
+        assertEquals(
+            "VISIBLE_BEGINVISIBLE_END",
+            buildSelectedMessagesPlainText(listOf(message)) { it },
+        )
+    }
+
+    @Test fun buildMessageCopyContent_preservesLiteralProtocolCodeInXmlSource() {
+        val code = "`<meta provider=\"openai\">example</meta>`"
+        val message = ChatMessage(sender = "ai", content = code)
+        assertEquals(code, buildMessageCopyContent(message).xmlSource)
+    }
 }
