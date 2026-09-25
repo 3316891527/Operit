@@ -34,7 +34,7 @@ class MessageSectionCodecTest {
         assertEquals(content, MessageSectionCodec.render(MessageSectionCodec.parse(content)))
     }
 
-    private fun sample(): String = "<think>draft</think><tool_abcd name="use_package"><param name="package_name">extended_file_tools</param></tool_abcd>answer"
-    private fun protocolSample(): String = "answer<meta provider="openai:responses_reasoning">cGF5bG9hZA==</meta>"
-    private fun toolResultSample(): String = "<tool_result_qgmS name="use_package" status="success"><content>ok</content></tool_result_qgmS>"
+    private fun sample(): String = "<think>draft</think><tool_abcd name=\"use_package\"><param name=\"package_name\">extended_file_tools</param></tool_abcd>answer"
+    private fun protocolSample(): String = "answer<meta provider=\"openai:responses_reasoning\">cGF5bG9hZA==</meta>"
+    private fun toolResultSample(): String = "<tool_result_qgmS name=\"use_package\" status=\"success\"><content>ok</content></tool_result_qgmS>"
 }
