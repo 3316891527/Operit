@@ -17,12 +17,6 @@ enum class WorkspaceMediaKind {
     MEDIA_TRANSCODED,
 }
 
-internal val WorkspaceMediaKind.isMediaPool: Boolean
-    get() = this == WorkspaceMediaKind.MEDIA_IMAGES ||
-        this == WorkspaceMediaKind.MEDIA_AUDIO ||
-        this == WorkspaceMediaKind.MEDIA_VIDEO ||
-        this == WorkspaceMediaKind.MEDIA_TRANSCODED
-
 data class WorkspaceMediaEntry(
     val id: String,
     val kind: WorkspaceMediaKind,

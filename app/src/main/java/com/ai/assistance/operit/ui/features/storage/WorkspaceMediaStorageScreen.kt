@@ -122,7 +122,7 @@ fun WorkspaceMediaStorageScreen() {
             ),
             warnings = buildList {
                 add(stringResource(R.string.data_storage_workspaces_delete_warning))
-                if (state.selected.any { it.kind.isMediaPool }) {
+                if (state.selected.any { it.kind in mediaPoolKinds }) {
                     add(stringResource(R.string.data_storage_media_delete_attachment_warning))
                 }
             },
@@ -141,6 +141,14 @@ private val WorkspaceMediaTab.labelRes: Int
         WorkspaceMediaTab.WORKSPACES -> R.string.data_storage_tab_workspaces
         WorkspaceMediaTab.MEDIA -> R.string.data_storage_tab_media
     }
+
+private val mediaPoolKinds =
+    setOf(
+        WorkspaceMediaKind.MEDIA_IMAGES,
+        WorkspaceMediaKind.MEDIA_AUDIO,
+        WorkspaceMediaKind.MEDIA_VIDEO,
+        WorkspaceMediaKind.MEDIA_TRANSCODED,
+    )
 
 private val WorkspaceMediaKind.titleRes: Int
     get() = when (this) {
