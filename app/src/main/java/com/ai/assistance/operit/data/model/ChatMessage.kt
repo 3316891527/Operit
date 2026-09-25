@@ -10,6 +10,8 @@ import kotlinx.serialization.Transient
 data class ChatMessage(
         val sender: String, // "user" or "ai"
         var content: String = "",
+        @Transient
+        var sections: List<MessageSection> = emptyList(),
         val timestamp: Long = ChatMessageTimestampAllocator.next(),
         val roleName: String = "", // 角色名字字段
         val selectedVariantIndex: Int = 0, // 当前选中的回答版本，0 表示原始回答
@@ -33,6 +35,20 @@ data class ChatMessage(
 ) : Parcelable {
     init {
         ChatMessageTimestampAllocator.observe(timestamp)
+        if (sections.isEmpty() && content.isNotEmpty()) {
+            sections = MessageSectionCodec.parse(content)
+        } else if (content.isEmpty() && sections.isNotEmpty()) {
+            content = MessageSectionCodec.render(sections)
+        }
+    }
+
+    fun displaySections(): List<MessageSection> {
+        return sections.ifEmpty { MessageSectionCodec.parse(content) }
+            .filterNot { it is MessageSection.Protocol }
+    }
+
+    fun displayContent(): String {
+        return MessageSectionCodec.render(displaySections())
     }
 
     constructor(

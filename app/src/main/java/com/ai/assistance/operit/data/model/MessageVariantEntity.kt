@@ -40,6 +40,7 @@ data class MessageVariantEntity(
     fun applyTo(baseMessage: ChatMessage, variantCount: Int): ChatMessage {
         return baseMessage.copy(
             content = content,
+            sections = MessageSectionCodec.parse(content),
             roleName = roleName.ifBlank { baseMessage.roleName },
             selectedVariantIndex = variantIndex,
             variantCount = variantCount,
