@@ -29,6 +29,7 @@ import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -359,7 +360,13 @@ class SafFileSystemTools(
                                 result = FileOperationData(operation = "copy", env = envLabel, path = destPath, successful = false, details = "Failed to create destination directory"),
                                 error = "Failed to create destination directory"
                             )
-                        copyDirectoryContents(resolvedSourceUri, created)
+                        try {
+                            copyDirectoryContents(resolvedSourceUri, created)
+                        } catch (error: Exception) {
+                            // 复制中途失败时清掉半成品，避免重试生成重名副本。
+                            runCatching { deleteRecursive(created) }
+                            throw error
+                        }
                         return@withContext ToolResult(
                             toolName = tool.name,
                             success = true,
@@ -374,7 +381,12 @@ class SafFileSystemTools(
                             result = FileOperationData(operation = "copy", env = envLabel, path = destPath, successful = false, details = "Failed to create destination file"),
                             error = "Failed to create destination file"
                         )
-                    copyStreams(resolvedSourceUri, created)
+                    try {
+                        copyStreams(resolvedSourceUri, created)
+                    } catch (error: Exception) {
+                        runCatching { deleteRecursive(created) }
+                        throw error
+                    }
                     return@withContext ToolResult(
                         toolName = tool.name,
                         success = true,
@@ -601,6 +613,8 @@ class SafFileSystemTools(
                     result = FileOperationData(operation = "copy", env = envLabel, path = sourcePath, successful = true, details = "Successfully copied $sourcePath to $destPath"),
                     error = ""
                 )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 ToolResult(
                     toolName = tool.name,
@@ -688,6 +702,8 @@ class SafFileSystemTools(
                     result = FileOperationData(operation = "move", env = envLabel, path = sourcePath, successful = true, details = "Successfully moved $sourcePath to $destPath"),
                     error = ""
                 )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 ToolResult(
                     toolName = tool.name,
