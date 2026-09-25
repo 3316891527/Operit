@@ -62,6 +62,12 @@ class SafFileSystemTools(
         return p
     }
 
+    private fun isSameOrDescendantPath(sourcePath: String, destinationPath: String): Boolean {
+        val source = normalizeAbsolutePath(sourcePath)
+        val destination = normalizeAbsolutePath(destinationPath)
+        return source == "/" || destination == source || destination.startsWith("$source/")
+    }
+
     private suspend fun resolveTreeUriFromEnvironment(environment: String?): Uri? {
         val name = extractSafBookmarkNameOrNull(environment) ?: return null
         val bookmarks = apiPreferences.safBookmarksFlow.first()
@@ -330,6 +336,14 @@ class SafFileSystemTools(
                             "application/octet-stream"
                         }
                     if (sourceMime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        if (isSameOrDescendantPath(sourcePath, destPath)) {
+                            return@withContext ToolResult(
+                                toolName = tool.name,
+                                success = false,
+                                result = FileOperationData(operation = "copy", env = envLabel, path = destPath, successful = false, details = "Cannot copy a directory into itself or its subdirectory"),
+                                error = "Cannot copy a directory into itself or its subdirectory"
+                            )
+                        }
                         if (!recursive) {
                             return@withContext ToolResult(
                                 toolName = tool.name,
