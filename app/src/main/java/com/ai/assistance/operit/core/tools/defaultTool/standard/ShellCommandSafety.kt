@@ -149,7 +149,7 @@ object ShellCommandSafety {
                         "adb" -> {
                             val shellIndex =
                                 (index until tokens.size).firstOrNull { candidate ->
-                                    candidate.substringAfterLast('/').equals("shell", ignoreCase = true)
+                                    tokens[candidate].substringAfterLast('/').equals("shell", ignoreCase = true)
                                 }
                             if (shellIndex != null) {
                                 var commandIndex = shellIndex + 1
