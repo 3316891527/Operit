@@ -10,7 +10,6 @@ import kotlinx.serialization.Transient
 data class ChatMessage(
         val sender: String, // "user" or "ai"
         var content: String = "",
-        @Transient
         var sections: List<MessageSection> = emptyList(),
         val timestamp: Long = ChatMessageTimestampAllocator.next(),
         val roleName: String = "", // 角色名字字段

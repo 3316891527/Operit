@@ -41,9 +41,11 @@ data class MessageEntity(
 ) {
     /** 转换为ChatMessage对象（供UI层使用） */
     fun toChatMessage(): ChatMessage {
+        val parsed = MessageContentStorage.decode(content)
         return ChatMessage(
-            sender = sender, 
-            content = content, 
+            sender = sender,
+            content = parsed.content,
+            sections = parsed.sections, 
             timestamp = timestamp,
             roleName = roleName,
             selectedVariantIndex = selectedVariantIndex,
@@ -75,7 +77,7 @@ data class MessageEntity(
                     messageId = messageId,
                     chatId = chatId,
                     sender = message.sender,
-                    content = message.content,
+                    content = MessageContentStorage.encode(message.content, message.sections),
                     timestamp = message.timestamp,
                     orderIndex = orderIndex,
                     roleName = message.roleName,
