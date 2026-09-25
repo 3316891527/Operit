@@ -146,6 +146,25 @@ object ShellCommandSafety {
                 if (base in wrapperCommands) {
                     index++
                     when (base) {
+                        "adb" -> {
+                            val shellIndex =
+                                (index until tokens.size).firstOrNull { candidate ->
+                                    candidate.substringAfterLast('/').equals("shell", ignoreCase = true)
+                                }
+                            if (shellIndex != null) {
+                                var commandIndex = shellIndex + 1
+                                while (commandIndex < tokens.size && tokens[commandIndex] in setOf("-T", "-t")) {
+                                    commandIndex++
+                                }
+                                if (commandIndex < tokens.size) {
+                                    val embedded = tokens.subList(commandIndex, tokens.size).joinToString(" ")
+                                    validate(embedded)?.let { reason ->
+                                        return "Embedded adb shell command rejected: $reason"
+                                    }
+                                }
+                                index = tokens.size
+                            }
+                        }
                         "timeout" -> {
                             while (index < tokens.size) {
                                 val t = tokens[index]
@@ -262,8 +281,8 @@ object ShellCommandSafety {
             if (lowerCommand in unconditionalDangerousCommands) {
                 return "Dangerous command '$commandWord' is not allowed"
             }
-
             val args = tokens.subList(index, tokens.size)
+            validateIndirectExecution(lowerCommand, args)?.let { return it }
             if (lowerCommand == "rm" && hasRecursiveForce(args)) {
                 return "rm with recursive force flags is not allowed"
             }
@@ -281,10 +300,77 @@ object ShellCommandSafety {
         return null
     }
 
-    /**
-     * Splits a command line into shell pipeline/sequence segments on control operators
-     * (`|`, `||`, `&&`, `;`, `&`, newline, `(`, `)`) while ignoring separators inside quotes.
-     */
+    private fun validateIndirectExecution(command: String, args: List<String>): String? {
+        when (command) {
+            "find" -> {
+                var index = 0
+                while (index < args.size) {
+                    if (args[index] == "-exec" || args[index] == "-execdir") {
+                        val commandStart = index + 1
+                        var commandEnd = commandStart
+                        while (commandEnd < args.size && args[commandEnd] != ";" && args[commandEnd] != "+") {
+                            commandEnd++
+                        }
+                        if (commandStart < commandEnd) {
+                            val embedded = args.subList(commandStart, commandEnd).joinToString(" ")
+                            validate(embedded)?.let { reason ->
+                                return "Embedded find command rejected: $reason"
+                            }
+                        }
+                        index = if (commandEnd < args.size) commandEnd + 1 else args.size
+                    } else {
+                        index++
+                    }
+                }
+            }
+            "xargs" -> {
+                val optionsWithValue =
+                    setOf(
+                        "-a",
+                        "-d",
+                        "-E",
+                        "-I",
+                        "-L",
+                        "-n",
+                        "-P",
+                        "-s",
+                        "--arg-file",
+                        "--delimiter",
+                        "--eof",
+                        "--max-args",
+                        "--max-chars",
+                        "--max-lines",
+                        "--max-procs",
+                        "--process-slot-var",
+                        "--replace",
+                    )
+                var index = 0
+                while (index < args.size) {
+                    val token = args[index]
+                    if (token == "--") {
+                        index++
+                        break
+                    }
+                    if (!token.startsWith("-")) break
+                    val option = token.substringBefore('=')
+                    if (option in optionsWithValue && !token.contains('=') && index + 1 < args.size) {
+                        index += 2
+                    } else {
+                        index++
+                    }
+                }
+                if (index < args.size) {
+                    val embedded = args.drop(index).joinToString(" ")
+                    validate(embedded)?.let { reason ->
+                        return "Embedded xargs command rejected: $reason"
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    /** 按 shell 控制操作符切分命令，同时忽略引号内的分隔符。 */
     private fun splitSegments(command: String): List<String> {
         val segments = mutableListOf<String>()
         val current = StringBuilder()

@@ -98,6 +98,20 @@ class ShellCommandSafetyTest {
         assertSafe("sh -c \"ffprobe -show_format /sdcard/a.mp4\"")
     }
 
+    @Test
+    fun `quoted adb shell command is checked recursively`() {
+        assertDangerous("adb shell \"rm -rf /\"")
+        assertSafe("adb shell \"echo rm -rf /\"")
+    }
+
+    @Test
+    fun `indirect find and xargs commands are checked`() {
+        assertDangerous("find /data -name '*.log' -exec rm -rf {} +")
+        assertDangerous("xargs rm -rf /")
+        assertSafe("find /data -name '*.log' -exec echo {} +")
+        assertSafe("xargs echo")
+    }
+
     // --- Edge cases ---
 
     @Test
