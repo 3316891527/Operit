@@ -721,7 +721,7 @@ class CustomXmlRenderer(
         return "https://www.google.com/s2/favicons?sz=64&domain=$host"
     }
 
-    /** 渲染 <think> 和 <thinking> 标签内容 */
+    /** 渲染 think、thinking 和 operit_thinking 标签内容。 */
     @Composable
     private fun renderThinkContent(
         content: String,
@@ -729,8 +729,7 @@ class CustomXmlRenderer(
         textColor: Color,
         xmlStream: Stream<String>?
     ) {
-        val tagName =
-            if (content.contains("<thinking")) "thinking" else "think"
+        val tagName = extractRawTagName(content) ?: "operit_thinking"
 
         var expandThinkingProcess by rememberLocal(key = "expand_thinking_process_default", defaultValue = false)
         // 仅在"流仍然存在"且标签未闭合时，才判定为进行中。
