@@ -37,15 +37,18 @@ object ShellCommandSafety {
     private val wrapperCommands =
         setOf(
             "adb",
+            "command",
             "env",
-            "shell",
-            "timeout",
+            "exec",
             "nice",
             "nohup",
-            "exec",
+            "run-as",
+            "shell",
             "stdbuf",
-            "time",
             "strace",
+            "sudo",
+            "time",
+            "timeout",
         )
 
     /** Reserved keywords in shell compound commands. */
@@ -74,8 +77,10 @@ object ShellCommandSafety {
      */
     fun validate(command: String): String? {
         if (command.isBlank()) return null
-        checkCommandSubstitutions(command)?.let { return it }
-        return validateSegments(splitSegments(command))
+        // Shell 会在执行前删除反斜杠续行，校验也必须使用相同的命令词。
+        val normalizedCommand = command.replace(Regex("""\\\r?\n"""), "")
+        checkCommandSubstitutions(normalizedCommand)?.let { return it }
+        return validateSegments(splitSegments(normalizedCommand))
     }
 
     /**
@@ -196,6 +201,46 @@ object ShellCommandSafety {
                                 index++
                                 if (t == "-a" && index < tokens.size) index++
                             }
+                        }
+                        "sudo" -> {
+                            val optionsWithValue =
+                                setOf(
+                                    "-a",
+                                    "-C",
+                                    "-D",
+                                    "-g",
+                                    "-p",
+                                    "-R",
+                                    "-r",
+                                    "-t",
+                                    "-U",
+                                    "-u",
+                                    "--close-from",
+                                    "--chdir",
+                                    "--chroot",
+                                    "--group",
+                                    "--prompt",
+                                    "--role",
+                                    "--type",
+                                    "--user",
+                                )
+                            while (index < tokens.size && tokens[index].startsWith("-")) {
+                                val t = tokens[index]
+                                index++
+                                if (t == "--") break
+                                if (!t.contains("=") && t in optionsWithValue && index < tokens.size) {
+                                    index++
+                                }
+                            }
+                        }
+                        "run-as" -> {
+                            while (index < tokens.size && tokens[index].startsWith("-")) {
+                                val t = tokens[index]
+                                index++
+                                if (t == "--user" && index < tokens.size) index++
+                            }
+                            // Android run-as 的第一个非选项参数是包名，不是实际命令。
+                            if (index < tokens.size) index++
                         }
                         else -> {
                             while (index < tokens.size && tokens[index].startsWith("-")) {

@@ -113,6 +113,22 @@ class ShellCommandSafetyTest {
     }
 
     @Test
+    fun `sudo command and run-as wrappers do not bypass safety checks`() {
+        assertDangerous("sudo rm -rf /tmp")
+        assertDangerous("sudo -u root rm -rf /tmp")
+        assertDangerous("command rm -rf /tmp")
+        assertDangerous("run-as com.example.app rm -rf /tmp")
+    }
+
+    @Test
+    fun `shell continuation does not bypass command checks`() {
+        assertDangerous("""r\
+m -rf /tmp""")
+        assertDangerous("""forma\
+t /dev/block/mmcblk0""")
+    }
+
+    @Test
     fun `blank command is safe`() {
         assertSafe("")
         assertSafe("   ")
