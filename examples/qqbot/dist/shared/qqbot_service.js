@@ -77,13 +77,31 @@ function uniqueStrings(values) {
     }
     return result;
 }
-async function isProcessAliveAsync(pid) {
+async function isQQBotServiceProcessAliveAsync(pid) {
     const trimmed = pid.trim();
-    if (!trimmed) {
+    const pidNumber = Number(trimmed);
+    if (!/^\d+$/.test(trimmed) || !Number.isSafeInteger(pidNumber) || pidNumber <= 0) {
         return false;
     }
-    const probe = await runTerminalCommand(`kill -0 ${(0, qqbot_common_1.shellQuote)(trimmed)} >/dev/null 2>&1`, 1500);
-    return Number(probe.exitCode ?? 1) === 0;
+    const stateDir = (0, qqbot_state_1.getStateDirectoryPath)();
+    const scriptName = qqbot_common_1.TERMINAL_SERVICE_OUTPUT_FILE_NAME;
+    const result = await runTerminalCommand([
+        "python3 - <<'PY'",
+        "import os",
+        `pid = ${pidNumber}`,
+        `needle = ${JSON.stringify(scriptName)}`,
+        `state = ${JSON.stringify(stateDir)}`,
+        "try:",
+        "    os.kill(pid, 0)",
+        "    with open('/proc/%d/cmdline' % pid, 'rb') as handle:",
+        "        cmd = handle.read().replace(b'\\x00', b' ').decode('utf-8', 'replace')",
+        "except (OSError, ValueError):",
+        "    print('0')",
+        "else:",
+        "    print('1' if needle in cmd and '--state-dir' in cmd and state in cmd else '0')",
+        "PY"
+    ].join("\n"), 3000);
+    return (0, qqbot_common_1.asText)(result.output).trim() === "1";
 }
 async function listQQBotServicePidsAsync() {
     const stateDir = (0, qqbot_state_1.getStateDirectoryPath)();
@@ -338,7 +356,7 @@ async function buildServiceStatusAsync(options = {}) {
 async function waitForProcessExitAsync(pid, timeoutMs) {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() <= deadline) {
-        if (!(await isProcessAliveAsync(pid))) {
+        if (!(await isQQBotServiceProcessAliveAsync(pid))) {
             return true;
         }
         await sleepMsAsync(qqbot_common_1.SERVICE_POLL_INTERVAL_MS);
@@ -346,12 +364,16 @@ async function waitForProcessExitAsync(pid, timeoutMs) {
     return false;
 }
 async function stopProcessByPidAsync(pid, timeoutMs) {
-    if (!pid.trim()) {
+    if (!pid.trim() || !(await isQQBotServiceProcessAliveAsync(pid))) {
         return { stopped: true, killedBy: "none" };
     }
     await runTerminalCommand(`kill ${(0, qqbot_common_1.shellQuote)(pid)} >/dev/null 2>&1`, 1500);
     if (await waitForProcessExitAsync(pid, Math.max(800, Math.floor(timeoutMs / 2)))) {
         return { stopped: true, killedBy: "term" };
+    }
+    // 升级到 SIGKILL 前再次确认 PID 仍属于 QQ Bot 服务，避免 PID 复用导致误杀。
+    if (!(await isQQBotServiceProcessAliveAsync(pid))) {
+        return { stopped: true, killedBy: "none" };
     }
     await runTerminalCommand(`kill -9 ${(0, qqbot_common_1.shellQuote)(pid)} >/dev/null 2>&1`, 1500);
     const stopped = await waitForProcessExitAsync(pid, Math.max(800, Math.floor(timeoutMs / 2)));
@@ -379,7 +401,7 @@ async function stopQQBotServiceInternalAsync(timeoutMs) {
     const alivePids = [];
     for (let index = 0; index < candidatePids.length; index += 1) {
         const pid = candidatePids[index];
-        if (await isProcessAliveAsync(pid)) {
+        if (await isQQBotServiceProcessAliveAsync(pid)) {
             alivePids.push(pid);
         }
     }
@@ -400,7 +422,7 @@ async function stopQQBotServiceInternalAsync(timeoutMs) {
     const remainingPids = [];
     for (let index = 0; index < alivePids.length; index += 1) {
         const pid = alivePids[index];
-        if (await isProcessAliveAsync(pid)) {
+        if (await isQQBotServiceProcessAliveAsync(pid)) {
             remainingPids.push(pid);
         }
     }
