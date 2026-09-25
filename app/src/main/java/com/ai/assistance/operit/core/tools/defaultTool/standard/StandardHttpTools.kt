@@ -93,7 +93,8 @@ class StandardHttpTools(private val context: Context) {
             useCookies: Boolean = true,
             proxyHost: String? = null,
             proxyPort: Int = 0,
-            ignoreSsl: Boolean = false
+            ignoreSsl: Boolean = false,
+            callTimeout: Long? = null
     ): OkHttpClient {
         val builder =
                 OkHttpClient.Builder()
@@ -102,6 +103,9 @@ class StandardHttpTools(private val context: Context) {
                         .writeTimeout(writeTimeout, TimeUnit.SECONDS)
                         .followRedirects(followRedirects)
                         .followSslRedirects(followSslRedirects)
+        if (callTimeout != null) {
+            builder.callTimeout(callTimeout, TimeUnit.SECONDS)
+        }
 
         // 配置Cookie支持
         if (useCookies) {
@@ -239,6 +243,7 @@ class StandardHttpTools(private val context: Context) {
                         connectTimeout = timeouts.connectSeconds,
                         readTimeout = timeouts.readSeconds,
                         writeTimeout = timeouts.writeSeconds,
+                        callTimeout = timeouts.overallSeconds,
                         followRedirects = followRedirectsParam?.lowercase() != "false",
                         followSslRedirects = followRedirectsParam?.lowercase() != "false",
                         useCookies = useCookies,
@@ -676,6 +681,7 @@ class StandardHttpTools(private val context: Context) {
                             connectTimeout = timeouts.connectSeconds,
                             readTimeout = timeouts.readSeconds,
                             writeTimeout = timeouts.writeSeconds,
+                            callTimeout = timeouts.overallSeconds,
                             followRedirects = followRedirectsParam?.lowercase() != "false",
                             followSslRedirects = followRedirectsParam?.lowercase() != "false",
                             useCookies = useCookiesParam?.lowercase() != "false",
@@ -827,17 +833,17 @@ class StandardHttpTools(private val context: Context) {
         val connectSeconds: Long,
         val readSeconds: Long,
         val writeSeconds: Long,
+        val overallSeconds: Long?,
     )
 
     private fun resolveHttpTimeouts(tool: AITool): HttpTimeouts {
         val connectTimeoutParam = tool.parameters.find { it.name == "connect_timeout" }?.value
         val readTimeoutParam = tool.parameters.find { it.name == "read_timeout" }?.value
         val writeTimeoutParam = tool.parameters.find { it.name == "write_timeout" }?.value
-        val overallTimeoutParam =
-            tool.parameters.find { it.name == "timeout" }?.value
-                ?: tool.parameters.find { it.name == "timeout_ms" }?.value
+        val overallSeconds =
+            tool.parameters.find { it.name == "timeout" }?.value?.let(::parseTimeoutSeconds)
+                ?: tool.parameters.find { it.name == "timeout_ms" }?.value?.let(::parseTimeoutMilliseconds)
 
-        val overallSeconds = parseTimeoutSeconds(overallTimeoutParam)
         val connectSeconds = parseTimeoutSeconds(connectTimeoutParam) ?: overallSeconds ?: 15L
         val readSeconds = parseTimeoutSeconds(readTimeoutParam) ?: overallSeconds ?: 20L
         val writeSeconds = parseTimeoutSeconds(writeTimeoutParam) ?: overallSeconds ?: 15L
@@ -845,6 +851,7 @@ class StandardHttpTools(private val context: Context) {
             connectSeconds = connectSeconds.coerceIn(1L, 600L),
             readSeconds = readSeconds.coerceIn(1L, 600L),
             writeSeconds = writeSeconds.coerceIn(1L, 600L),
+            overallSeconds = overallSeconds?.coerceIn(1L, 600L),
         )
     }
 
@@ -852,9 +859,15 @@ class StandardHttpTools(private val context: Context) {
         val value = raw?.trim()?.toLongOrNull() ?: return null
         if (value <= 0L) return null
         return if (value >= 1000L) {
-            ((value + 999L) / 1000L).coerceAtLeast(1L)
+            parseTimeoutMilliseconds(raw)
         } else {
             value
         }
+    }
+
+    private fun parseTimeoutMilliseconds(raw: String?): Long? {
+        val value = raw?.trim()?.toLongOrNull() ?: return null
+        if (value <= 0L) return null
+        return (value / 1000L + if (value % 1000L == 0L) 0L else 1L).coerceAtLeast(1L)
     }
 }
