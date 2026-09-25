@@ -120,7 +120,12 @@ fun WorkspaceMediaStorageScreen() {
                 state.selected.size,
                 formatStorageSize(state.selectedBytes),
             ),
-            warnings = listOf(stringResource(R.string.data_storage_workspaces_delete_warning)),
+            warnings = buildList {
+                add(stringResource(R.string.data_storage_workspaces_delete_warning))
+                if (state.selected.any { it.kind.isMediaPool }) {
+                    add(stringResource(R.string.data_storage_media_delete_attachment_warning))
+                }
+            },
             confirmLabel = stringResource(R.string.data_storage_confirm_delete),
             onConfirm = {
                 showConfirm = false

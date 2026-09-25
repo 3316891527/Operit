@@ -8619,6 +8619,7 @@
     <string name="data_storage_bound_chats">绑定 %1$d 个聊天</string>
     <string name="data_storage_workspaces_delete_title">删除所选工作区或媒体</string>
     <string name="data_storage_workspaces_delete_warning">工作区文件及其内容将被永久删除。当前正在使用的工作区不会被删除。</string>
+    <string name="data_storage_media_delete_attachment_warning">删除后，历史聊天消息中引用这些图片、音频或视频的附件将无法打开。</string>
     <string name="data_storage_tab_workspaces">工作区</string>
     <string name="data_storage_tab_media">媒体资源</string>
     <string name="data_storage_media_images">图片</string>

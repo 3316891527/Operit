@@ -146,6 +146,8 @@ class LocalModelStorageViewModel(
                             )
                         }
                     }
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
                 }.getOrNull()
                 if (outcome == LocalModelDeleteOutcome.DELETED) {
                     released += entry.bytes

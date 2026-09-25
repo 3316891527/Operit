@@ -17,6 +17,12 @@ enum class WorkspaceMediaKind {
     MEDIA_TRANSCODED,
 }
 
+internal val WorkspaceMediaKind.isMediaPool: Boolean
+    get() = this == WorkspaceMediaKind.MEDIA_IMAGES ||
+        this == WorkspaceMediaKind.MEDIA_AUDIO ||
+        this == WorkspaceMediaKind.MEDIA_VIDEO ||
+        this == WorkspaceMediaKind.MEDIA_TRANSCODED
+
 data class WorkspaceMediaEntry(
     val id: String,
     val kind: WorkspaceMediaKind,
@@ -209,7 +215,10 @@ class WorkspaceMediaInventory(context: Context) {
         var deletedBytes = 0L
         var deletedFiles = 0L
         var failed = 0
-        directory.walkTopDown().forEach { file ->
+        directory.walkTopDown()
+            .onEnter { directoryEntry -> !directoryEntry.isSymbolic() }
+            .forEach { file ->
+            if (file.isSymbolic()) return@forEach
             if (file.isFile && file.extension.lowercase() in extensions) {
                 val bytes = file.length()
                 if (file.delete()) {

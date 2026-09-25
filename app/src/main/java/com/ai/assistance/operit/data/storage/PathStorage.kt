@@ -97,6 +97,10 @@ internal fun File.deleteTreeWithProgress(
     }
     fun walk(file: File): Boolean {
         if (!file.exists()) return true
+        // 符号链接只删链接本身，不跟随到目标。
+        if (file.isSymbolic()) {
+            return file.delete() || !file.exists()
+        }
         if (file.isDirectory) {
             var ok = true
             file.listFiles()?.forEach { child ->

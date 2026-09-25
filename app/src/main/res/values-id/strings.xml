@@ -7836,6 +7836,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="data_storage_bound_chats">Bound to %1$d chats</string>
     <string name="data_storage_workspaces_delete_title">Delete selected workspaces or media</string>
     <string name="data_storage_workspaces_delete_warning">Workspace files will be permanently deleted. The workspace currently in use will not be deleted.</string>
+    <string name="data_storage_media_delete_attachment_warning">Setelah dihapus, lampiran di pesan chat sebelumnya yang merujuk ke gambar, audio, atau video ini tidak akan bisa dibuka.</string>
     <string name="data_storage_tab_workspaces">Workspaces</string>
     <string name="data_storage_tab_media">Media</string>
     <string name="data_storage_media_images">Images</string>

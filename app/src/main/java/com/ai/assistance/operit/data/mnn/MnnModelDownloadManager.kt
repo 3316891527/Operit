@@ -639,6 +639,8 @@ class MnnModelDownloadManager private constructor(private val context: Context) 
             }
             publishDownloadSnapshots()
             outcome
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (error: Exception) {
             AppLogger.e(TAG, "删除模型失败", error)
             LocalModelDeleteOutcome.FAILED
