@@ -4118,6 +4118,7 @@
     <string name="model_config_add_to_group">Create configuration in group</string>
     <string name="model_config_rename_group">Rename configuration group</string>
     <string name="model_config_delete_group">Delete configuration group</string>
+    <string name="model_config_delete_group_confirmation">Delete configuration group "%1$s"? Its configurations will be moved to Ungrouped. This action cannot be undone.</string>
     <string name="model_config_drag_group">Long press to reorder group</string>
     <string name="model_config_drag_config">Long press to reorder configuration</string>
     <string name="model_config_current_selection">Current selection: %1$s</string>

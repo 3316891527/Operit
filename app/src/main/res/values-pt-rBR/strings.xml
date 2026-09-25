@@ -3321,6 +3321,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="model_config_add_to_group">Criar configuração no grupo</string>
     <string name="model_config_rename_group">Renomear grupo de configurações</string>
     <string name="model_config_delete_group">Excluir grupo de configurações</string>
+    <string name="model_config_delete_group_confirmation">Excluir o grupo de configurações “%1$s”? As configurações serão movidas para Sem grupo. Esta ação não pode ser desfeita.</string>
     <string name="model_config_drag_group">Mantenha pressionado para reordenar o grupo</string>
     <string name="model_config_drag_config">Mantenha pressionado para reordenar a configuração</string>
     <string name="model_config_current_selection">Seleção atual: %1$s</string>

@@ -3399,6 +3399,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="model_config_add_to_group">Buat konfigurasi di dalam grup</string>
     <string name="model_config_rename_group">Ganti nama grup konfigurasi</string>
     <string name="model_config_delete_group">Hapus grup konfigurasi</string>
+    <string name="model_config_delete_group_confirmation">Hapus grup konfigurasi “%1$s”? Konfigurasinya akan dipindahkan ke Tidak dikelompokkan. Tindakan ini tidak dapat dibatalkan.</string>
     <string name="model_config_drag_group">Tekan lama untuk mengurutkan ulang grup</string>
     <string name="model_config_drag_config">Tekan lama untuk mengurutkan ulang konfigurasi</string>
     <string name="model_config_current_selection">Pilihan saat ini: %1$s</string>

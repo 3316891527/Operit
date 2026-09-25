@@ -1188,6 +1188,7 @@
     <string name="model_config_add_to_group">Crear una configuración en el grupo</string>
     <string name="model_config_rename_group">Cambiar el nombre del grupo de configuraciones</string>
     <string name="model_config_delete_group">Eliminar el grupo de configuraciones</string>
+    <string name="model_config_delete_group_confirmation">¿Eliminar el grupo de configuraciones «%1$s»? Sus configuraciones se moverán a Sin grupo. Esta acción no se puede deshacer.</string>
     <string name="model_config_drag_group">Mantén pulsado para reordenar el grupo</string>
     <string name="model_config_drag_config">Mantén pulsado para reordenar la configuración</string>
     <string name="model_config_current_selection">Selección actual: %1$s</string>

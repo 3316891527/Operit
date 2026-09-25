@@ -1561,6 +1561,7 @@ private fun ConfigOrganizerDialog(
     var targetGroupForConfig by remember { mutableStateOf<String?>(null) }
     var creatingConfig by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
+    var groupPendingDeletion by remember { mutableStateOf<ModelConfigGroup?>(null) }
     var nameInput by remember { mutableStateOf("") }
 
     fun buildRows(): List<ConfigOrganizerRow> = buildList {
@@ -1757,11 +1758,7 @@ private fun ConfigOrganizerDialog(
                                         )
                                     }
                                     IconButton(
-                                        onClick = {
-                                            scope.launch {
-                                                configManager.deleteConfigGroup(group.id)
-                                            }
-                                        },
+                                        onClick = { groupPendingDeletion = group },
                                         modifier = Modifier.size(32.dp)
                                     ) {
                                         Icon(
@@ -1838,6 +1835,36 @@ private fun ConfigOrganizerDialog(
                 }
             }
         }
+    }
+
+    groupPendingDeletion?.let { group ->
+        AlertDialog(
+            onDismissRequest = { groupPendingDeletion = null },
+            title = { Text(stringResource(R.string.model_config_delete_group)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.model_config_delete_group_confirmation,
+                        group.name,
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        groupPendingDeletion = null
+                        scope.launch { configManager.deleteConfigGroup(group.id) }
+                    }
+                ) {
+                    Text(stringResource(R.string.confirm_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { groupPendingDeletion = null }) {
+                    Text(stringResource(R.string.cancel_action))
+                }
+            }
+        )
     }
 
     if (showNameDialog) {

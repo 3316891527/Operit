@@ -3842,6 +3842,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="model_config_add_to_group">Creează o configurație în grup</string>
     <string name="model_config_rename_group">Redenumește grupul de configurații</string>
     <string name="model_config_delete_group">Șterge grupul de configurații</string>
+    <string name="model_config_delete_group_confirmation">Ștergi grupul de configurații „%1$s”? Configurațiile vor fi mutate în Negrupate. Această acțiune nu poate fi anulată.</string>
     <string name="model_config_drag_group">Apasă lung pentru a reordona grupul</string>
     <string name="model_config_drag_config">Apasă lung pentru a reordona configurația</string>
     <string name="model_config_current_selection">Selecția actuală: %1$s</string>

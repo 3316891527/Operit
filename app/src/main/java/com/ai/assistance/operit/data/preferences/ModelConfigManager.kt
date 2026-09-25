@@ -742,11 +742,17 @@ class ModelConfigManager(
 
     suspend fun moveConfig(configId: String, groupId: String?, targetIndex: Int) {
         configDataStore.edit { preferences ->
+            val normalizedGroupId = normalizeConfigGroupId(groupId)
+            val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
+            require(normalizedGroupId == null || normalizedGroupId in validGroupIds) {
+                "Unknown config group ID: $groupId"
+            }
             val configIds = readConfigListFromPrefs(preferences).toMutableList()
             require(configIds.remove(configId)) { "Unknown config ID: $configId" }
             val configKey = stringPreferencesKey("config_${configId}")
             val config = readConfig(preferences, configId)
-            val destinationIds = configIds.filter { readConfig(preferences, it).groupId == groupId }
+            val destinationIds =
+                configIds.filter { readConfig(preferences, it).groupId == normalizedGroupId }
             val boundedIndex = targetIndex.coerceIn(0, destinationIds.size)
             val insertionIndex =
                     if (boundedIndex < destinationIds.size) {
@@ -756,7 +762,7 @@ class ModelConfigManager(
                                 ?: configIds.size
                     }
             configIds.add(insertionIndex, configId)
-            preferences[configKey] = json.encodeToString(config.copy(groupId = groupId))
+            preferences[configKey] = json.encodeToString(config.copy(groupId = normalizedGroupId))
             preferences[CONFIG_LIST_KEY] = json.encodeToString(configIds)
         }
     }

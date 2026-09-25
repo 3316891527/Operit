@@ -305,6 +305,7 @@
     <string name="model_config_add_to_group">グループ内に設定を作成</string>
     <string name="model_config_rename_group">設定グループ名を変更</string>
     <string name="model_config_delete_group">設定グループを削除</string>
+    <string name="model_config_delete_group_confirmation">設定グループ「%1$s」を削除しますか？グループ内の設定は未分類に移動されます。この操作は元に戻せません。</string>
     <string name="model_config_drag_group">長押ししてグループを並べ替え</string>
     <string name="model_config_drag_config">長押しして設定を並べ替え</string>
     <string name="model_config_current_selection">現在の選択：%1$s</string>

@@ -3460,6 +3460,7 @@
     <string name="model_config_add_to_group">그룹에 구성 만들기</string>
     <string name="model_config_rename_group">구성 그룹 이름 바꾸기</string>
     <string name="model_config_delete_group">구성 그룹 삭제</string>
+    <string name="model_config_delete_group_confirmation">구성 그룹 “%1$s”을(를) 삭제하시겠습니까? 그룹의 구성은 그룹 미지정으로 이동되며 이 작업은 되돌릴 수 없습니다.</string>
     <string name="model_config_drag_group">길게 눌러 그룹 순서 변경</string>
     <string name="model_config_drag_config">길게 눌러 구성 순서 변경</string>
     <string name="model_config_current_selection">현재 선택: %1$s</string>
