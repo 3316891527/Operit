@@ -11,7 +11,7 @@ object MessageSectionCodec {
         """<(operit_thinking|think(?:ing)?|search|status|meta|""" +
             ChatMarkupRegex.TOOL_RESULT_TAG_NAME_REGEX_SOURCE + "|" +
             ChatMarkupRegex.TOOL_TAG_NAME_REGEX_SOURCE +
-            "")\\b""",
+            """)\\b""",
         setOf(RegexOption.IGNORE_CASE)
     )
 
