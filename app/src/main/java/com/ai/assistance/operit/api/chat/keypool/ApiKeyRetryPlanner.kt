@@ -7,7 +7,9 @@ object ApiKeyRetryPlanner {
         if (!poolMode) {
             return LlmRetryPolicy.MAX_RETRY_ATTEMPTS + 1
         }
-        return candidateCount.coerceIn(1, LlmRetryPolicy.MAX_POOL_ATTEMPTS)
+        return candidateCount
+            .coerceAtLeast(2)
+            .coerceAtMost(LlmRetryPolicy.MAX_POOL_ATTEMPTS)
     }
 
     fun decide(
@@ -19,7 +21,8 @@ object ApiKeyRetryPlanner {
         retryAfterMs: Long? = null,
     ): ApiKeyRetryDecision {
         val switchNow = switchesKeyImmediately(errorClass, remainingCandidatesAfterExclude)
-        val canRetrySameKey = !switchNow && sameKeyAttempts < 2
+        val canRetrySameKey =
+            !switchNow && sameKeyAttempts < LlmRetryPolicy.MAX_RETRY_ATTEMPTS
         val willExclude = switchNow || !canRetrySameKey
         val hasAnotherKey = remainingCandidatesAfterExclude > 0
         val canContinueOnSameKey = !willExclude && httpAttemptsIncludingThis < maxHttpAttempts
@@ -60,17 +63,6 @@ object ApiKeyRetryPlanner {
         errorClass: ApiKeyErrorClass,
         remainingCandidatesAfterExclude: Int = 0,
     ): Boolean {
-        if (errorClass == ApiKeyErrorClass.NONE) return false
-        if (remainingCandidatesAfterExclude > 0) return true
-        return when (errorClass) {
-            ApiKeyErrorClass.AUTH,
-            ApiKeyErrorClass.QUOTA,
-            ApiKeyErrorClass.RATE_LIMIT,
-            ApiKeyErrorClass.MODEL,
-            ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT -> true
-            ApiKeyErrorClass.SERVER,
-            ApiKeyErrorClass.NETWORK,
-            ApiKeyErrorClass.NONE -> false
-        }
+        return errorClass != ApiKeyErrorClass.NONE && remainingCandidatesAfterExclude > 0
     }
 }

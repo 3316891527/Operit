@@ -112,6 +112,7 @@ class ApiKeyRetryPlannerTest {
     fun poolAttemptsFollowCandidateCount() {
         assertEquals(3, ApiKeyRetryPlanner.maxHttpAttempts(3, poolMode = true))
         assertEquals(20, ApiKeyRetryPlanner.maxHttpAttempts(40, poolMode = true))
+        assertEquals(2, ApiKeyRetryPlanner.maxHttpAttempts(1, poolMode = true))
         assertEquals(6, ApiKeyRetryPlanner.maxHttpAttempts(1, poolMode = false))
     }
 
@@ -131,7 +132,7 @@ class ApiKeyRetryPlannerTest {
     }
 
     @Test
-    fun quotaExhaustsWhenNoOtherKeysRemain() {
+    fun quotaRetriesWhenNoOtherKeysRemain() {
         val decision =
             ApiKeyRetryPlanner.decide(
                 errorClass = ApiKeyErrorClass.QUOTA,
@@ -140,7 +141,23 @@ class ApiKeyRetryPlannerTest {
                 httpAttemptsIncludingThis = 1,
                 maxHttpAttempts = 3,
             )
-        assertTrue(decision.exhausted)
+        assertEquals(false, decision.exhausted)
+        assertEquals(1_000L, decision.delayMs)
+        assertEquals(false, decision.switchedKey)
+    }
+
+    @Test
+    fun singleKeyRetainsTheLegacyRetryBudget() {
+        val decision =
+            ApiKeyRetryPlanner.decide(
+                errorClass = ApiKeyErrorClass.NETWORK,
+                sameKeyAttempts = 4,
+                remainingCandidatesAfterExclude = 0,
+                httpAttemptsIncludingThis = 5,
+                maxHttpAttempts = 6,
+            )
+        assertEquals(false, decision.exhausted)
+        assertEquals(8_000L, decision.delayMs)
     }
 
     @Test
