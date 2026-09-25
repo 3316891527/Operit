@@ -1,10 +1,8 @@
 package com.ai.assistance.operit.data.recovery
 
-import android.app.ActivityManager
 import android.content.Context
 import android.database.DatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
-import android.os.Process
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.backup.OperitBackupDirs
 import com.ai.assistance.operit.data.db.AppDatabase
@@ -49,12 +47,6 @@ object RoomDatabaseHealthManager {
         RUN_ROOM_MIGRATIONS
     }
 
-    private enum class MainProcessState {
-        RUNNING,
-        NOT_RUNNING,
-        UNKNOWN
-    }
-
     data class CheckItem(
         val title: String,
         val detail: String,
@@ -66,7 +58,9 @@ object RoomDatabaseHealthManager {
         val summary: String,
         val databasePath: String,
         val checks: List<CheckItem>,
-        val repairActions: List<RepairAction>
+        val repairActions: List<RepairAction>,
+        val databaseVersion: Int? = null,
+        val canRunRoomMigrations: Boolean = false
     ) {
         val canRepair: Boolean
             get() = status == Status.NEEDS_REPAIR && repairActions.isNotEmpty()
@@ -87,6 +81,33 @@ object RoomDatabaseHealthManager {
         withContext(Dispatchers.IO) {
             operationMutex.withLock {
                 inspectLocked(context)
+            }
+        }
+
+    suspend fun migrateDatabase(context: Context): RepairResult =
+        withContext(Dispatchers.IO) {
+            operationMutex.withLock {
+                val displayContext = context
+                val appContext = context.applicationContext
+                val before = inspectLocked(displayContext)
+                check(before.canRunRoomMigrations) {
+                    displayContext.getString(R.string.data_recovery_database_no_supported_repair)
+                }
+                check(MainProcessController.stopAndWait(appContext)) {
+                    displayContext.getString(R.string.data_recovery_database_main_process_stop_failed)
+                }
+
+                val archive = preserveDatabaseFiles(appContext)
+                try {
+                    runRoomMigrations(appContext)
+                    RepairResult(
+                        sourceArchive = archive,
+                        completedActions = listOf(RepairAction.RUN_ROOM_MIGRATIONS),
+                        report = inspectLocked(displayContext)
+                    )
+                } catch (e: Exception) {
+                    throw RepairFailedException(archive, e)
+                }
             }
         }
 
@@ -131,6 +152,8 @@ object RoomDatabaseHealthManager {
         val repairActions = linkedSetOf<RepairAction>()
         var hasBlockingFailure = false
         var hasRepairableIssue = false
+        var detectedDatabaseVersion: Int? = null
+        var canRunRoomMigrations = false
 
         try {
             AppDatabase.closeDatabase()
@@ -309,6 +332,7 @@ object RoomDatabaseHealthManager {
                 }
 
                 val version = readUserVersion(openedDatabase)
+                detectedDatabaseVersion = version
                 when {
                     version == AppDatabase.DATABASE_VERSION -> {
                         checks +=
@@ -382,6 +406,9 @@ object RoomDatabaseHealthManager {
                             status = ItemStatus.FAILURE
                         )
                 }
+                canRunRoomMigrations =
+                    detectedDatabaseVersion in 1 until AppDatabase.DATABASE_VERSION &&
+                        !hasBlockingFailure
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "Room database health queries failed", e)
@@ -402,19 +429,31 @@ object RoomDatabaseHealthManager {
             hasBlockingFailure = true
         }
 
-        val processState = mainProcessState(appContext)
-        when (processState) {
-            MainProcessState.RUNNING -> {
+        val processInspection = MainProcessController.inspect(appContext)
+        when (processInspection.state) {
+            MainProcessController.State.RUNNING -> {
                 hasBlockingFailure = true
+                val process = processInspection.process
+                val detail =
+                    if (process == null) {
+                        context.getString(R.string.data_recovery_database_main_process_running)
+                    } else {
+                        context.getString(
+                            R.string.data_recovery_database_main_process_running_details,
+                            process.pid,
+                            process.processName,
+                            process.importance
+                        )
+                    }
                 checks +=
                     CheckItem(
                         title = context.getString(R.string.data_recovery_database_check_process),
-                        detail = context.getString(R.string.data_recovery_database_main_process_running),
+                        detail = detail,
                         status = ItemStatus.FAILURE
                     )
             }
 
-            MainProcessState.UNKNOWN -> {
+            MainProcessController.State.UNKNOWN -> {
                 hasBlockingFailure = true
                 checks +=
                     CheckItem(
@@ -424,7 +463,7 @@ object RoomDatabaseHealthManager {
                     )
             }
 
-            MainProcessState.NOT_RUNNING -> {
+            MainProcessController.State.NOT_RUNNING -> {
                 checks +=
                     CheckItem(
                         title = context.getString(R.string.data_recovery_database_check_process),
@@ -435,7 +474,7 @@ object RoomDatabaseHealthManager {
         }
 
         when {
-            processState != MainProcessState.NOT_RUNNING -> {
+            processInspection.state != MainProcessController.State.NOT_RUNNING -> {
                 checks +=
                     CheckItem(
                         title = context.getString(R.string.data_recovery_database_check_room_schema),
@@ -495,7 +534,9 @@ object RoomDatabaseHealthManager {
             summary = summaryFor(context, status),
             databasePath = databaseFile.absolutePath,
             checks = checks,
-            repairActions = supportedActions
+            repairActions = supportedActions,
+            databaseVersion = detectedDatabaseVersion,
+            canRunRoomMigrations = canRunRoomMigrations
         )
     }
 
@@ -644,30 +685,14 @@ object RoomDatabaseHealthManager {
         return canonical.parentFile == parent && canonical.name == expectedName
     }
 
-    private fun mainProcessState(context: Context): MainProcessState {
-        val activityManager =
-            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-                ?: return MainProcessState.UNKNOWN
-        val processes = activityManager.runningAppProcesses ?: return MainProcessState.UNKNOWN
-        return if (
-            processes.any { process ->
-                process.pid != Process.myPid() && process.processName == context.packageName
-            }
-        ) {
-            MainProcessState.RUNNING
-        } else {
-            MainProcessState.NOT_RUNNING
-        }
-    }
-
     private fun requireMainProcessStopped(context: Context) {
-        when (mainProcessState(context.applicationContext)) {
-            MainProcessState.NOT_RUNNING -> Unit
-            MainProcessState.RUNNING ->
+        when (MainProcessController.inspect(context.applicationContext).state) {
+            MainProcessController.State.NOT_RUNNING -> Unit
+            MainProcessController.State.RUNNING ->
                 throw IllegalStateException(
                     context.getString(R.string.data_recovery_database_main_process_running)
                 )
-            MainProcessState.UNKNOWN ->
+            MainProcessController.State.UNKNOWN ->
                 throw IllegalStateException(
                     context.getString(R.string.data_recovery_database_main_process_unknown)
                 )
