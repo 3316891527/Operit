@@ -329,14 +329,23 @@ class SafFileSystemTools(
                         } else {
                             "application/octet-stream"
                         }
-                    val created = createChildDocumentOrNull(parentUri, destParts.second, sourceMime)
-                        ?: return@withContext ToolResult(
-                            toolName = tool.name,
-                            success = false,
-                            result = FileOperationData(operation = "copy", env = envLabel, path = destPath, successful = false, details = "Failed to create destination file"),
-                            error = "Failed to create destination file"
-                        )
                     if (sourceMime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        if (!recursive) {
+                            return@withContext ToolResult(
+                                toolName = tool.name,
+                                success = false,
+                                result = FileOperationData(operation = "copy", env = envLabel, path = sourcePath, successful = false, details = "Recursive flag is required to copy a directory"),
+                                error = "Recursive flag is required to copy a directory"
+                            )
+                        }
+                        val created = createChildDocumentOrNull(parentUri, destParts.second, sourceMime)
+                            ?: return@withContext ToolResult(
+                                toolName = tool.name,
+                                success = false,
+                                result = FileOperationData(operation = "copy", env = envLabel, path = destPath, successful = false, details = "Failed to create destination directory"),
+                                error = "Failed to create destination directory"
+                            )
+                        copyDirectoryContents(resolvedSourceUri, created)
                         return@withContext ToolResult(
                             toolName = tool.name,
                             success = true,
@@ -344,6 +353,13 @@ class SafFileSystemTools(
                             error = ""
                         )
                     }
+                    val created = createChildDocumentOrNull(parentUri, destParts.second, sourceMime)
+                        ?: return@withContext ToolResult(
+                            toolName = tool.name,
+                            success = false,
+                            result = FileOperationData(operation = "copy", env = envLabel, path = destPath, successful = false, details = "Failed to create destination file"),
+                            error = "Failed to create destination file"
+                        )
                     copyStreams(resolvedSourceUri, created)
                     return@withContext ToolResult(
                         toolName = tool.name,
@@ -708,6 +724,56 @@ class SafFileSystemTools(
     private fun openInputStreamOrNull(uri: Uri) = runCatching { contentResolver.openInputStream(uri) }.getOrNull()
 
     private fun openOutputStreamOrNull(uri: Uri, mode: String) = runCatching { contentResolver.openOutputStream(uri, mode) }.getOrNull()
+
+    private fun copyDirectoryContents(srcDirUri: Uri, dstDirUri: Uri) {
+        val childrenQuery = resolveChildrenQueryUri(srcDirUri)
+            ?: throw IllegalStateException("Repository directory copy requires a tree-backed document uri")
+        val treeUri = toTreeUriOrNull(srcDirUri)
+            ?: throw IllegalStateException("Repository directory copy requires a tree-backed document uri")
+        val dstDirDocUri = ensureDirectoryDocumentUriOrNull(dstDirUri)
+            ?: throw IllegalStateException("Destination is not a directory")
+
+        contentResolver.query(
+            childrenQuery.first,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
+            ),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val idIdx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+            val nameIdx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+            val mimeIdx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+            while (cursor.moveToNext()) {
+                if (idIdx < 0 || cursor.isNull(idIdx)) continue
+                val childId = cursor.getString(idIdx)
+                val childName = if (nameIdx >= 0 && !cursor.isNull(nameIdx)) cursor.getString(nameIdx) else null
+                if (childName.isNullOrBlank()) continue
+                val childMime = if (mimeIdx >= 0 && !cursor.isNull(mimeIdx)) cursor.getString(mimeIdx) else null
+                val childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
+                if (childMime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                    val createdDir = DocumentsContract.createDocument(
+                        contentResolver,
+                        dstDirDocUri,
+                        DocumentsContract.Document.MIME_TYPE_DIR,
+                        childName
+                    ) ?: throw IllegalStateException("Failed to create directory: $childName")
+                    copyDirectoryContents(childUri, createdDir)
+                } else {
+                    val createdFile = DocumentsContract.createDocument(
+                        contentResolver,
+                        dstDirDocUri,
+                        childMime ?: "application/octet-stream",
+                        childName
+                    ) ?: throw IllegalStateException("Failed to create file: $childName")
+                    copyStreams(childUri, createdFile)
+                }
+            }
+        } ?: throw IllegalStateException("Failed to query child documents")
+    }
 
     private fun copyStreams(src: Uri, dst: Uri) {
         openInputStreamOrNull(src).use { input ->
