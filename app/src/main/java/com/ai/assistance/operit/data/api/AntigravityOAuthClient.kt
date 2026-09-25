@@ -31,21 +31,19 @@ object AntigravityOAuthProtocol {
     const val USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo?alt=json"
     const val DEFAULT_ENDPOINT = "https://cloudcode-pa.googleapis.com"
     const val SANDBOX_ENDPOINT = "https://daily-cloudcode-pa.sandbox.googleapis.com"
-    const val CALLBACK_PORT = 51121
     const val CALLBACK_PATH = "/oauth-callback"
     const val OAUTH_TIMEOUT_MILLIS = 5 * 60 * 1000L
     const val EXPIRY_SKEW_MILLIS = 5 * 60 * 1000L
-    const val USER_AGENT = "antigravity/1.15.8 linux/amd64"
+    const val USER_AGENT = "Operit"
 
     val apiEndpoints = listOf(DEFAULT_ENDPOINT, SANDBOX_ENDPOINT)
 
     val scopes = listOf(
         "https://www.googleapis.com/auth/aicode",
-        "https://www.googleapis.com/auth/cloud-platform",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/cclog",
         "https://www.googleapis.com/auth/experimentsandconfigs",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
     )
 
     // 公开模型名到 Cloud Code Assist 运行时模型名。来源是 dsh-antigravity 的静态路由。
@@ -77,9 +75,7 @@ object AntigravityOAuthProtocol {
         "gpt-oss-120b" to "GPT-OSS 120B",
     )
 
-    // 按字符反转存放，避免仓库密钥扫描把公开客户端标识当成密钥拦截。
     private val clientId = reversed("moc.tnetnocresuelgoog.sppa.pe304g4hjolotv532ercl12h2nisshmt-1950606001701")
-    private val clientSecret = reversed("fADq6z4CXs8BLm1JLdL684RWF85K-XPSCOG")
 
     fun generatePkce(random: SecureRandom = SecureRandom()): AntigravityPkceCodes {
         val verifier = encodeBase64Url(randomBytes(32, random))
@@ -132,7 +128,6 @@ object AntigravityOAuthProtocol {
     ): List<Pair<String, String>> {
         return listOf(
             "client_id" to clientId,
-            "client_secret" to clientSecret,
             "code" to code,
             "grant_type" to "authorization_code",
             "redirect_uri" to redirectUri,
@@ -143,7 +138,6 @@ object AntigravityOAuthProtocol {
     fun refreshTokenBody(refreshToken: String): List<Pair<String, String>> {
         return listOf(
             "client_id" to clientId,
-            "client_secret" to clientSecret,
             "refresh_token" to refreshToken,
             "grant_type" to "refresh_token",
         )

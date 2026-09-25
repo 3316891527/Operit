@@ -29,7 +29,6 @@ object VertexOAuthProtocol {
     const val AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     const val TOKEN_URL = "https://oauth2.googleapis.com/token"
     const val USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo?alt=json"
-    const val CALLBACK_PORT = 51122
     const val CALLBACK_PATH = "/vertex-oauth-callback"
     const val OAUTH_TIMEOUT_MILLIS = 5 * 60 * 1000L
     const val EXPIRY_SKEW_MILLIS = 5 * 60 * 1000L
@@ -52,9 +51,7 @@ object VertexOAuthProtocol {
         "gemini-2.5-flash-lite" to "Gemini 2.5 Flash-Lite",
     )
 
-    // gcloud CLI 的公开桌面客户端标识，按字符反转存放。
     private val clientId = reversed("moc.stnetnocelgoog.sppa.95504555923")
-    private val clientSecret = reversed("2rje2gTC4Dh8992yJjNLssmZ")
 
     fun generatePkce(random: SecureRandom = SecureRandom()): VertexPkceCodes {
         val verifier = encodeBase64Url(randomBytes(32, random))
@@ -108,7 +105,6 @@ object VertexOAuthProtocol {
     ): List<Pair<String, String>> {
         return listOf(
             "client_id" to clientId,
-            "client_secret" to clientSecret,
             "code" to code,
             "grant_type" to "authorization_code",
             "redirect_uri" to redirectUri,
@@ -119,7 +115,6 @@ object VertexOAuthProtocol {
     fun refreshTokenBody(refreshToken: String): List<Pair<String, String>> {
         return listOf(
             "client_id" to clientId,
-            "client_secret" to clientSecret,
             "refresh_token" to refreshToken,
             "grant_type" to "refresh_token",
         )

@@ -55,7 +55,7 @@ internal class VertexOAuthLoopbackCallbackServer private constructor(
         private const val NOT_FOUND = "<html><body>Not found.</body></html>"
 
         fun open(): VertexOAuthLoopbackCallbackServer {
-            val socket = ServerSocket(VertexOAuthProtocol.CALLBACK_PORT, 1, InetAddress.getByName("127.0.0.1"))
+            val socket = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
             return VertexOAuthLoopbackCallbackServer(socket)
         }
     }
