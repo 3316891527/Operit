@@ -56,9 +56,6 @@ class LinuxEnvironmentInventory(
             listOf(
                 File(filesDir, "proot-distro.zip"),
                 File(filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"),
-                File(filesDir, "bin"),
-                File(filesDir, "common.sh"),
-                File(filesDir, "setup_fake_sysdata.sh"),
             ).filter { it.exists() }
 
         val homeStats = home.computeStorageStats()
