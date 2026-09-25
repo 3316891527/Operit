@@ -90,17 +90,21 @@ class DefaultRawSnapshotResourceReferenceProvider(
                 id = group.id,
                 name = group.name,
             )
+            val themeSnapshot =
+                userPreferences.resolveThemePreferenceSnapshot(characterGroupId = group.id)
+            addReference(
+                references,
+                owner,
+                RawSnapshotResourceKind.USER_AVATAR,
+                themeSnapshot.customUserAvatarUri,
+            )
             addReference(
                 references,
                 owner,
                 RawSnapshotResourceKind.AI_AVATAR,
                 userPreferences.getAiAvatarForCharacterGroupFlow(group.id).first(),
             )
-            addThemeReferences(
-                references,
-                userPreferences.resolveThemePreferenceSnapshot(characterGroupId = group.id),
-                owner,
-            )
+            addThemeReferences(references, themeSnapshot, owner)
         }
 
         return references
@@ -140,24 +144,13 @@ class DefaultRawSnapshotResourceReferenceProvider(
         snapshot: ThemePreferenceSnapshot,
         owner: RawSnapshotResourceOwner,
     ) {
-        if (snapshot.useBackgroundImage) {
-            addReference(references, owner, RawSnapshotResourceKind.BACKGROUND, snapshot.backgroundImageUri)
-        }
-        if (snapshot.bubbleUserUseImage) {
-            addReference(references, owner, RawSnapshotResourceKind.BUBBLE_USER, snapshot.bubbleUserImageUri)
-        }
-        if (snapshot.bubbleAiUseImage) {
-            addReference(references, owner, RawSnapshotResourceKind.BUBBLE_AI, snapshot.bubbleAiImageUri)
-        }
-        if (snapshot.useCustomFont) {
-            addReference(references, owner, RawSnapshotResourceKind.FONT_MAIN, snapshot.customFontPath)
-        }
-        if (snapshot.bubbleUserUseCustomFont) {
-            addReference(references, owner, RawSnapshotResourceKind.FONT_USER, snapshot.bubbleUserCustomFontPath)
-        }
-        if (snapshot.bubbleAiUseCustomFont) {
-            addReference(references, owner, RawSnapshotResourceKind.FONT_AI, snapshot.bubbleAiCustomFontPath)
-        }
+        // 开关只控制当前显示，已保存的 URI 仍可能在用户重新启用后被使用。
+        addReference(references, owner, RawSnapshotResourceKind.BACKGROUND, snapshot.backgroundImageUri)
+        addReference(references, owner, RawSnapshotResourceKind.BUBBLE_USER, snapshot.bubbleUserImageUri)
+        addReference(references, owner, RawSnapshotResourceKind.BUBBLE_AI, snapshot.bubbleAiImageUri)
+        addReference(references, owner, RawSnapshotResourceKind.FONT_MAIN, snapshot.customFontPath)
+        addReference(references, owner, RawSnapshotResourceKind.FONT_USER, snapshot.bubbleUserCustomFontPath)
+        addReference(references, owner, RawSnapshotResourceKind.FONT_AI, snapshot.bubbleAiCustomFontPath)
     }
 
     private fun addReference(

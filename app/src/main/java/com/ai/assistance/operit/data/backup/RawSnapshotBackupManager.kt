@@ -22,6 +22,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -173,7 +174,15 @@ object RawSnapshotBackupManager {
             val sharedPrefsDir = File(dataDir, "shared_prefs")
             val datastoreDir = File(dataDir, "datastore")
             val databasesDir = File(dataDir, "databases")
-            val resourceReferences = DefaultRawSnapshotResourceReferenceProvider(context).collectReferences()
+            val resourceReferences = try {
+                DefaultRawSnapshotResourceReferenceProvider(context).collectReferences()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                // 原始快照首先用于数据救援，偏好解析失败不能阻断原始文件归档。
+                AppLogger.w(TAG, "collect resource references failed; exporting raw data without resource mapping", error)
+                emptySet()
+            }
             val preparedResources = prepareImageResources(
                 context = context,
                 references = resourceReferences,
