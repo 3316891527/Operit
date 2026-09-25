@@ -52,9 +52,17 @@ object PackageFileImportSupport {
         packageManager: PackageManager,
         uri: Uri
     ): PackageManager.ExternalPackageImportResult {
-        val fileName = queryDisplayName(context, uri)
+        val rawFileName = queryDisplayName(context, uri)
             ?: return PackageManager.ExternalPackageImportResult("Cannot determine file name")
-        val tempFile = File(context.cacheDir, fileName)
+        val fileName = rawFileName.substringAfterLast('/').substringAfterLast('\\')
+        if (fileName.isBlank() || fileName == "." || fileName == "..") {
+            return PackageManager.ExternalPackageImportResult("Invalid shared file name")
+        }
+        val cacheDir = context.cacheDir.canonicalFile
+        val tempFile = File(cacheDir, fileName).canonicalFile
+        if (tempFile.parentFile != cacheDir) {
+            return PackageManager.ExternalPackageImportResult("Invalid shared file name")
+        }
         return try {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 tempFile.outputStream().use { output -> input.copyTo(output) }
