@@ -130,6 +130,23 @@ class ModelConfigSummariesFlowTest {
     }
 
     @Test
+    fun `export includes groups and import recreates missing groups`() = runBlocking {
+        val sourceStore = TestPreferencesDataStore(MutableStateFlow<Preferences>(mutablePreferencesOf()))
+        val context = Mockito.mock(Context::class.java)
+        val source = ModelConfigManager(context, sourceStore)
+        val groupId = source.createConfigGroup("Remote")
+        val configId = source.createConfig("Remote model", groupId)
+
+        val exported = source.exportAllConfigs()
+
+        val targetStore = TestPreferencesDataStore(MutableStateFlow<Preferences>(mutablePreferencesOf()))
+        val target = ModelConfigManager(context, targetStore)
+        assertEquals(Triple(1, 0, 0), target.importConfigs(exported))
+        assertEquals(listOf(groupId), target.configGroupsFlow.first().map { it.id })
+        assertEquals(groupId, target.getModelConfig(configId)?.groupId)
+    }
+
+    @Test
     fun `group candidates track selection and organization without hiding existing bindings`() = runBlocking {
         withTimeout(5_000) {
             val dataStore = TestPreferencesDataStore(MutableStateFlow<Preferences>(mutablePreferencesOf()))

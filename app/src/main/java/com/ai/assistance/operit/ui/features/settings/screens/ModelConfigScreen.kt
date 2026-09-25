@@ -214,12 +214,10 @@ fun ModelConfigScreen(
     val configNameMap = remember { mutableStateMapOf<String, String>() }
 
     // UI状态
-    var showAddConfigDialog by remember { mutableStateOf(false) }
     var showRenameConfigDialog by remember { mutableStateOf(false) }
     var showConfigOrganizer by remember { mutableStateOf(false) }
     var showSaveSuccessMessage by remember { mutableStateOf(false) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
-    var newConfigName by remember { mutableStateOf("") }
     var renameConfigName by remember { mutableStateOf("") }
     var confirmMessage by remember { mutableStateOf("") }
 
@@ -944,78 +942,6 @@ fun ModelConfigScreen(
                 showNotification = ::showNotification
             )
         }
-        // 新建配置对话框
-        if (showAddConfigDialog) {
-            AlertDialog(
-                onDismissRequest = {
-                    showAddConfigDialog = false
-                    newConfigName = ""
-                },
-                title = {
-                    Text(
-                        stringResource(R.string.new_model_config),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            stringResource(R.string.new_model_config_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = newConfigName,
-                            onValueChange = { newConfigName = it },
-                            label = {
-                                Text(
-                                    stringResource(R.string.model_config_name),
-                                    fontSize = 12.sp
-                                )
-                            },
-                            placeholder = {
-                                Text(
-                                    stringResource(R.string.model_config_name_placeholder),
-                                    fontSize = 12.sp
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            singleLine = true
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (newConfigName.isNotBlank()) {
-                                scope.launch {
-                                    val configId =
-                                        configManager.createConfig(newConfigName, selectedGroupId)
-                                    selectedConfigId = configId
-                                    showAddConfigDialog = false
-                                    newConfigName = ""
-                                    showNotification(context.getString(R.string.new_config_created))
-                                }
-                            }
-                        },
-                        shape = RoundedCornerShape(8.dp)
-                    ) { Text(stringResource(R.string.create_action), fontSize = 13.sp) }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showAddConfigDialog = false
-                            newConfigName = ""
-                        }
-                    ) { Text(stringResource(R.string.cancel_action), fontSize = 13.sp) }
-                },
-                shape = RoundedCornerShape(12.dp)
-            )
-        }
-
         // 重命名配置对话框
         if (showRenameConfigDialog) {
             AlertDialog(

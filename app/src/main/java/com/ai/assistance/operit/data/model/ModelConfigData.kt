@@ -96,6 +96,13 @@ data class ModelConfigGroup(
         val name: String
 )
 
+/** 导出文件同时保留配置和分组定义，换设备导入时不会丢失分组。 */
+@Serializable
+data class ModelConfigExport(
+        val groups: List<ModelConfigGroup> = emptyList(),
+        val configs: List<ModelConfigData> = emptyList()
+)
+
 /** 表示完整的模型配置，包括API设置和模型参数 */
 @Serializable
 data class ModelConfigData(

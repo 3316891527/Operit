@@ -13,6 +13,7 @@ import com.ai.assistance.operit.data.model.CustomParameterData
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ModelConfigDefaults
+import com.ai.assistance.operit.data.model.ModelConfigExport
 import com.ai.assistance.operit.data.model.ModelConfigGroup
 import com.ai.assistance.operit.data.model.ModelConfigSelection
 import com.ai.assistance.operit.data.model.ModelConfigSummary
@@ -783,6 +784,30 @@ class ModelConfigManager(
         }
     }
 
+    private fun decodeImportedConfigs(jsonContent: String): ModelConfigExport {
+        val trimmed = jsonContent.trim()
+        if (trimmed.startsWith("{")) {
+            return json.decodeFromString<ModelConfigExport>(trimmed)
+        }
+        // 旧导出只有配置数组，不会带分组定义。
+        return ModelConfigExport(configs = json.decodeFromString<List<ModelConfigData>>(trimmed))
+    }
+
+    private fun mergeImportedGroups(
+        existing: List<ModelConfigGroup>,
+        imported: List<ModelConfigGroup>
+    ): List<ModelConfigGroup> {
+        val merged = existing.toMutableList()
+        val ids = merged.mapTo(mutableSetOf()) { it.id }
+        imported.forEach { rawGroup ->
+            val id = rawGroup.id.trim()
+            val name = rawGroup.name.trim()
+            if (id.isEmpty() || name.isEmpty() || !ids.add(id)) return@forEach
+            merged.add(ModelConfigGroup(id = id, name = name))
+        }
+        return merged
+    }
+
     private fun readGroups(preferences: Preferences): List<ModelConfigGroup> {
         return preferences[CONFIG_GROUPS_KEY]
                 ?.let {
@@ -1305,13 +1330,14 @@ class ModelConfigManager(
             val config = getModelConfigFlow(configId).first()
             allConfigs.add(config)
         }
+        val groups = configGroupsFlow.first()
         
         val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
         }
         
-        return json.encodeToString(allConfigs)
+        return json.encodeToString(ModelConfigExport(groups = groups, configs = allConfigs))
     }
     
     /**
@@ -1321,7 +1347,8 @@ class ModelConfigManager(
      */
     suspend fun importConfigs(jsonContent: String): Triple<Int, Int, Int> {
         try {
-            val importedConfigs = json.decodeFromString<List<ModelConfigData>>(jsonContent)
+            val imported = decodeImportedConfigs(jsonContent)
+            val importedConfigs = imported.configs
             var newCount = 0
             var updatedCount = 0
             var skippedCount = 0
@@ -1329,7 +1356,9 @@ class ModelConfigManager(
             configDataStore.edit { preferences ->
                 val existingConfigList = readConfigListFromPrefs(preferences).toMutableList()
                 val existingConfigIds = existingConfigList.toMutableSet()
-                val validGroupIds = readGroups(preferences).mapTo(mutableSetOf()) { it.id }
+                val mergedGroups = mergeImportedGroups(readGroups(preferences), imported.groups)
+                preferences[CONFIG_GROUPS_KEY] = json.encodeToString(mergedGroups)
+                val validGroupIds = mergedGroups.mapTo(mutableSetOf()) { it.id }
 
                 importedConfigs.forEach { rawConfig ->
                     val configId = rawConfig.id.trim()
