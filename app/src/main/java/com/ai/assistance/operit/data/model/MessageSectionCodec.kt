@@ -4,14 +4,14 @@ import com.ai.assistance.operit.util.ChatMarkupRegex
 
 /**
  * 旧标记字符串和 sections 的双向转换。
- * 数据库仍保存标记字符串，读取时转成 sections。
+ * 仅在旧记录导入和运行时协议边界转换，持久化使用 sections。
  */
 object MessageSectionCodec {
     private val structuralTag = Regex(
         """<(operit_thinking|think(?:ing)?|search|status|meta|""" +
             ChatMarkupRegex.TOOL_RESULT_TAG_NAME_REGEX_SOURCE + "|" +
             ChatMarkupRegex.TOOL_TAG_NAME_REGEX_SOURCE +
-            """)\\b""",
+            """)\b""",
         setOf(RegexOption.IGNORE_CASE)
     )
 
@@ -59,6 +59,19 @@ object MessageSectionCodec {
         }
     }
 
+    /** 搜索索引不是消息来源，不包含协议负载和 XML 外壳。 */
+    fun searchText(sections: List<MessageSection>): String = sections.joinToString("") { section ->
+        when (section) {
+            is MessageSection.Text -> section.content
+            is MessageSection.Thinking -> section.content
+            is MessageSection.ToolCall -> section.name + " " + section.params.values.joinToString(" ")
+            is MessageSection.ToolResult -> section.name + " " + section.content
+            is MessageSection.Protocol -> ""
+            is MessageSection.Search -> section.raw
+            is MessageSection.Status -> section.raw
+        }
+    }
+
     private fun parseBlock(tagName: String, raw: String): MessageSection {
         val normalized = tagName.lowercase()
         return when {
@@ -102,7 +115,7 @@ object MessageSectionCodec {
 
     private fun parseProtocol(raw: String): MessageSection {
         val provider = ChatMarkupRegex.extractOpeningTagName(raw).let {
-            Regex("""\\bprovider\\s*=\\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
+            Regex("""\bprovider\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
                 .find(raw.substringBefore('>'))
                 ?.groupValues
                 ?.getOrNull(1)
@@ -145,31 +158,12 @@ object MessageSectionCodec {
     }
 
     private fun findThinkingBlockEnd(content: String, openEnd: Int, tagName: String): Int {
+        // 新标记只由提供商适配层包裹，正文中的 think 标签不是结构边界。
+        // 每次关闭当前块，避免把工具之后或下一轮的思考合并到本块。
         val close = "</$tagName>"
-        var searchFrom = openEnd + 1
-        var chosen = -1
-        while (searchFrom < content.length) {
-            val closeAt = content.indexOf(close, searchFrom, ignoreCase = true)
-            if (closeAt < 0) {
-                break
-            }
-            val between = content.substring(openEnd + 1, closeAt)
-            val nextStructural = structuralTag.find(between)
-            val nextName = nextStructural?.groupValues?.getOrNull(1)?.lowercase()
-            if (
-                nextStructural != null &&
-                nextName != "think" &&
-                nextName != "thinking" &&
-                nextName != "operit_thinking"
-            ) {
-                break
-            }
-            chosen = closeAt
-            searchFrom = closeAt + close.length
-        }
-        return if (chosen < 0) -1 else chosen + close.length
+        val closeAt = content.indexOf(close, openEnd + 1, ignoreCase = true)
+        return if (closeAt < 0) -1 else closeAt + close.length
     }
-
     private fun extractBody(raw: String): String {
         val openEnd = raw.indexOf('>')
         val closeStart = raw.lastIndexOf("</")

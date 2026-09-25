@@ -2,6 +2,7 @@ package com.ai.assistance.operit.data.model
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MessageVariantEntityTest {
@@ -16,45 +17,45 @@ class MessageVariantEntityTest {
             chatId = "chat1",
             messageTimestamp = 1000L,
             variantIndex = 0,
-            content = "Variant content",
+            sections = "Variant content",
         )
         assertEquals("chat1", variant.chatId)
         assertEquals(1000L, variant.messageTimestamp)
         assertEquals(0, variant.variantIndex)
-        assertEquals("Variant content", variant.content)
+        assertEquals("Variant content", variant.sections)
     }
 
     @Test fun `variant id defaults to zero`() {
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "c"
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "c"
         )
         assertEquals(0L, variant.variantId)
     }
 
     @Test fun `role name defaults to empty`() {
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "c"
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "c"
         )
         assertEquals("", variant.roleName)
     }
 
     @Test fun `provider defaults to empty`() {
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "c"
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "c"
         )
         assertEquals("", variant.provider)
     }
 
     @Test fun `model name defaults to empty`() {
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "c"
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "c"
         )
         assertEquals("", variant.modelName)
     }
 
     @Test fun `tokens default to zero`() {
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "c"
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "c"
         )
         assertEquals(0, variant.inputTokens)
         assertEquals(0, variant.outputTokens)
@@ -62,9 +63,9 @@ class MessageVariantEntityTest {
     }
 
     @Test fun `applyTo updates message content`() {
-        val base = ChatMessage(sender = "ai", content = "Original")
+        val base = ChatMessage(sender = "ai", sections = "Original")
         val variant = MessageVariantEntity(
-            chatId = "chat1", messageTimestamp = 100L, variantIndex = 1, content = "Updated"
+            chatId = "chat1", messageTimestamp = 100L, variantIndex = 1, sections = "Updated"
         )
         val result = variant.applyTo(base, variantCount = 3)
         assertEquals("Updated", result.content)
@@ -74,13 +75,13 @@ class MessageVariantEntityTest {
 
     @Test fun `applyTo preserves base message fields`() {
         val base = ChatMessage(
-            sender = "ai", content = "Original", timestamp = 500L,
+            sender = "ai", sections = "Original", timestamp = 500L,
             roleName = "Assistant",
             displayMode = ChatMessageDisplayMode.HIDDEN_PLACEHOLDER,
             isFavorite = true,
         )
         val variant = MessageVariantEntity(
-            chatId = "chat1", messageTimestamp = 100L, variantIndex = 1, content = "Updated"
+            chatId = "chat1", messageTimestamp = 100L, variantIndex = 1, sections = "Updated"
         )
         val result = variant.applyTo(base, variantCount = 2)
         assertEquals("ai", result.sender)
@@ -91,9 +92,9 @@ class MessageVariantEntityTest {
     }
 
     @Test fun `applyTo uses variant role name when not blank`() {
-        val base = ChatMessage(sender = "ai", content = "Original", roleName = "Assistant")
+        val base = ChatMessage(sender = "ai", sections = "Original", roleName = "Assistant")
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "New",
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "New",
             roleName = "CustomBot",
         )
         val result = variant.applyTo(base, variantCount = 1)
@@ -101,18 +102,18 @@ class MessageVariantEntityTest {
     }
 
     @Test fun `applyTo uses base role name when variant role is blank`() {
-        val base = ChatMessage(sender = "ai", content = "Original", roleName = "Assistant")
+        val base = ChatMessage(sender = "ai", sections = "Original", roleName = "Assistant")
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "New"
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "New"
         )
         val result = variant.applyTo(base, variantCount = 1)
         assertEquals("Assistant", result.roleName)
     }
 
     @Test fun `applyTo updates provider and model`() {
-        val base = ChatMessage(sender = "ai", content = "Original")
+        val base = ChatMessage(sender = "ai", sections = "Original")
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "New",
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "New",
             provider = "anthropic", modelName = "claude-3",
         )
         val result = variant.applyTo(base, variantCount = 1)
@@ -121,9 +122,9 @@ class MessageVariantEntityTest {
     }
 
     @Test fun `applyTo updates token counts`() {
-        val base = ChatMessage(sender = "ai", content = "Original")
+        val base = ChatMessage(sender = "ai", sections = "Original")
         val variant = MessageVariantEntity(
-            chatId = "c", messageTimestamp = 1L, variantIndex = 0, content = "New",
+            chatId = "c", messageTimestamp = 1L, variantIndex = 0, sections = "New",
             inputTokens = 50, outputTokens = 30,
         )
         val result = variant.applyTo(base, variantCount = 1)
@@ -143,7 +144,7 @@ class MessageVariantEntityTest {
         assertEquals("chat1", variant.chatId)
         assertEquals(1000L, variant.messageTimestamp)
         assertEquals(0, variant.variantIndex)
-        assertEquals("Response", variant.content)
+        assertTrue(variant.sections.startsWith("[{"type":"text""))
         assertEquals("Bot", variant.roleName)
         assertEquals("openai", variant.provider)
         assertEquals("gpt-4", variant.modelName)
@@ -160,7 +161,7 @@ class MessageVariantEntityTest {
     }
 
     @Test fun `applyTo round trip preserves variant fields`() {
-        val original = ChatMessage(sender = "ai", content = "Original", roleName = "Bot")
+        val original = ChatMessage(sender = "ai", sections = "Original", roleName = "Bot")
         val variantEntity = MessageVariantEntity.fromChatMessage(
             chatId = "chat1", messageTimestamp = 100L, variantIndex = 0, message = original
         )

@@ -25,7 +25,8 @@ data class MessageVariantEntity(
     val chatId: String,
     val messageTimestamp: Long,
     val variantIndex: Int,
-    val content: String,
+    val sections: String,
+    val searchText: String,
     val roleName: String = "",
     val provider: String = "",
     val modelName: String = "",
@@ -38,10 +39,10 @@ data class MessageVariantEntity(
     val completedAt: Long = 0L,
 ) {
     fun applyTo(baseMessage: ChatMessage, variantCount: Int): ChatMessage {
-        val parsed = MessageContentStorage.decode(content)
+        val parsed = MessageSectionStorage.decode(sections)
         return baseMessage.copy(
-            content = parsed.content,
-            sections = parsed.sections,
+            content = MessageSectionCodec.render(parsed),
+            sections = parsed,
             roleName = roleName.ifBlank { baseMessage.roleName },
             selectedVariantIndex = variantIndex,
             variantCount = variantCount,
@@ -70,7 +71,8 @@ data class MessageVariantEntity(
                 chatId = chatId,
                 messageTimestamp = messageTimestamp,
                 variantIndex = variantIndex,
-                content = MessageContentStorage.encode(message.content, message.sections),
+                sections = MessageSectionStorage.encode(message.resolvedSections()),
+                    searchText = MessageSectionCodec.searchText(message.resolvedSections()),
                 roleName = message.roleName,
                 provider = message.provider,
                 modelName = message.modelName,

@@ -6,7 +6,7 @@ import com.ai.assistance.operit.util.stream.Stream
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
-@Serializable
+@Serializable(with = ChatMessageSerializer::class)
 data class ChatMessage(
         val sender: String, // "user" or "ai"
         var content: String = "",
@@ -36,15 +36,17 @@ data class ChatMessage(
         ChatMessageTimestampAllocator.observe(timestamp)
         if (sections.isEmpty() && content.isNotEmpty()) {
             sections = MessageSectionCodec.parse(content)
-        } else if (content.isEmpty() && sections.isNotEmpty()) {
-            content = MessageSectionCodec.render(sections)
         }
     }
 
-    fun displaySections(): List<MessageSection> {
-        return sections.ifEmpty { MessageSectionCodec.parse(content) }
-            .filterNot { it is MessageSection.Protocol }
+    /** 编辑和流式更新仍会修改 content，保存前必须消除旧片段快照。 */
+    fun resolvedSections(): List<MessageSection> {
+        return if (MessageSectionCodec.render(sections) == content) sections
+        else MessageSectionCodec.parse(content)
     }
+
+    fun displaySections(): List<MessageSection> =
+        resolvedSections().filterNot { it is MessageSection.Protocol }
 
     fun displayContent(): String {
         return MessageSectionCodec.render(displaySections())

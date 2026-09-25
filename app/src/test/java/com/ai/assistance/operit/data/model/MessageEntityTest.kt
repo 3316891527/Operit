@@ -15,65 +15,65 @@ class MessageEntityTest {
     }
 
     @Test fun `create with required fields`() {
-        val entity = MessageEntity(chatId = "chat1", sender = "user", content = "Hello", orderIndex = 0)
+        val entity = MessageEntity(chatId = "chat1", sender = "user", sections = "Hello", orderIndex = 0)
         assertEquals("chat1", entity.chatId)
         assertEquals("user", entity.sender)
-        assertEquals("Hello", entity.content)
+        assertEquals("Hello", entity.sections)
         assertEquals(0, entity.orderIndex)
     }
 
     @Test fun `message id defaults to zero`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals(0L, entity.messageId)
     }
 
     @Test fun `timestamp defaults to current time`() {
         val before = System.currentTimeMillis()
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         val after = System.currentTimeMillis()
         assertTrue(entity.timestamp >= before)
         assertTrue(entity.timestamp <= after + 1000)
     }
 
     @Test fun `order index is preserved`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 42)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 42)
         assertEquals(42, entity.orderIndex)
     }
 
     @Test fun `role name defaults to empty`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals("", entity.roleName)
     }
 
     @Test fun `selected variant index defaults to zero`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals(0, entity.selectedVariantIndex)
     }
 
     @Test fun `provider defaults to empty`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals("", entity.provider)
     }
 
     @Test fun `model name defaults to empty`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals("", entity.modelName)
     }
 
     @Test fun `tokens default to zero`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals(0, entity.inputTokens)
         assertEquals(0, entity.outputTokens)
         assertEquals(0, entity.cachedInputTokens)
     }
 
     @Test fun `display mode defaults to NORMAL`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertEquals(ChatMessageDisplayMode.NORMAL.name, entity.displayMode)
     }
 
     @Test fun `is favorite defaults to false`() {
-        val entity = MessageEntity(chatId = "c", sender = "s", content = "c", orderIndex = 0)
+        val entity = MessageEntity(chatId = "c", sender = "s", sections = "c", orderIndex = 0)
         assertFalse(entity.isFavorite)
     }
 
@@ -81,7 +81,7 @@ class MessageEntityTest {
         val entity = MessageEntity(
             chatId = "chat1",
             sender = "ai",
-            content = "Response",
+            sections = "Response",
             orderIndex = 1,
             timestamp = 1000L,
             roleName = "Assistant",
@@ -109,7 +109,7 @@ class MessageEntityTest {
 
     @Test fun `toChatMessage handles unknown display mode`() {
         val entity = MessageEntity(
-            chatId = "c", sender = "s", content = "c", orderIndex = 0,
+            chatId = "c", sender = "s", sections = "c", orderIndex = 0,
             displayMode = "UNKNOWN_MODE"
         )
         val msg = entity.toChatMessage()
@@ -132,7 +132,7 @@ class MessageEntityTest {
         val entity = MessageEntity.fromChatMessage("chat1", msg, orderIndex = 0)
         assertEquals("chat1", entity.chatId)
         assertEquals("user", entity.sender)
-        assertEquals("Hello", entity.content)
+        assertTrue(entity.sections.startsWith("[{"type":"text""))
         assertEquals(500L, entity.timestamp)
         assertEquals(0, entity.orderIndex)
         assertEquals("User", entity.roleName)

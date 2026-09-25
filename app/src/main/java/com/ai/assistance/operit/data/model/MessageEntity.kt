@@ -22,7 +22,8 @@ data class MessageEntity(
         @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
         val chatId: String,
         val sender: String,
-        val content: String,
+        val sections: String,
+        val searchText: String,
         val timestamp: Long = System.currentTimeMillis(),
         val orderIndex: Int, // 保持消息顺序
         val roleName: String = "", // 角色名字段
@@ -41,11 +42,11 @@ data class MessageEntity(
 ) {
     /** 转换为ChatMessage对象（供UI层使用） */
     fun toChatMessage(): ChatMessage {
-        val parsed = MessageContentStorage.decode(content)
+        val parsed = MessageSectionStorage.decode(sections)
         return ChatMessage(
             sender = sender,
-            content = parsed.content,
-            sections = parsed.sections, 
+            content = MessageSectionCodec.render(parsed),
+            sections = parsed,
             timestamp = timestamp,
             roleName = roleName,
             selectedVariantIndex = selectedVariantIndex,
@@ -77,7 +78,8 @@ data class MessageEntity(
                     messageId = messageId,
                     chatId = chatId,
                     sender = message.sender,
-                    content = MessageContentStorage.encode(message.content, message.sections),
+                    sections = MessageSectionStorage.encode(message.resolvedSections()),
+                    searchText = MessageSectionCodec.searchText(message.resolvedSections()),
                     timestamp = message.timestamp,
                     orderIndex = orderIndex,
                     roleName = message.roleName,

@@ -1048,7 +1048,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                             )
                     val promotedBaseMessage =
                         baseMessage.copy(
-                            content = replacementVariant.content,
+                            sections = replacementVariant.sections,
+                            searchText = replacementVariant.searchText,
                             roleName = replacementVariant.roleName.ifBlank { baseMessage.roleName },
                             selectedVariantIndex = 0,
                             provider = replacementVariant.provider,
@@ -1173,7 +1174,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
                     val shouldUpdateChatMetadata =
                         message.contentStream == null ||
-                            (existingMessage.content.isEmpty() && message.content.isNotEmpty())
+                            (existingMessage.sections == "[]" && message.content.isNotEmpty())
                     val updatedMessageEntity =
                         MessageEntity.fromChatMessage(
                             chatId = chatId,
