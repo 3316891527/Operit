@@ -36,7 +36,6 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         val affectedRows: Int? = null,
         val lastSnapshotPath: String? = null,
         val restoreCompleted: Boolean = false,
-<<<<<<< HEAD
         val configurationHealthReport: PreferencesHealthManager.Report? = null,
         val databaseHealthReport: RoomDatabaseHealthManager.Report? = null,
         val lastConfigurationRepairArchivePath: String? = null,
