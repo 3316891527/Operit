@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.plugins.toolpkg
 
+import android.provider.Settings
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.services.floating.ToolPkgFloatingWindowService
 import java.util.concurrent.atomic.AtomicBoolean
@@ -31,6 +32,13 @@ internal object ToolPkgFloatingWindowHost {
                     candidate.containerPackageName == request.packageName &&
                         candidate.windowId.equals(windowId, ignoreCase = true)
                 } ?: error("Floating window is not registered: $windowId")
+
+        if (operation == "show" && !Settings.canDrawOverlays(request.context)) {
+            throw ToolPkgHostBridge.HostError(
+                code = "overlay_permission_required",
+                message = "SYSTEM_ALERT_WINDOW permission is required to show floating windows",
+            )
+        }
 
         val command =
             JSONObject()

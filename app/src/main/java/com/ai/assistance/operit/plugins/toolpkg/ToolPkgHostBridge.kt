@@ -5,9 +5,13 @@ import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.util.AppLogger
 import java.util.concurrent.ConcurrentHashMap
 import org.json.JSONObject
-
 internal object ToolPkgHostBridge {
     private const val TAG = "ToolPkgHostBridge"
+
+    class HostError(
+        val code: String,
+        message: String,
+    ) : IllegalStateException(message)
 
     data class Request(
         val context: Context,
@@ -92,6 +96,7 @@ internal object ToolPkgHostBridge {
 
     private fun errorCode(error: Exception): String {
         return when (error) {
+            is HostError -> error.code
             is IllegalArgumentException -> "invalid_request"
             is IllegalStateException -> "capability_unavailable"
             else -> "host_error"
