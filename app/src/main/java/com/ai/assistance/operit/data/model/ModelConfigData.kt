@@ -200,7 +200,10 @@ data class ModelConfigData(
 
         // 请求频率限制配置
         val requestLimitPerMinute: Int = 0, // 每分钟最大请求次数，0表示不限流
-        val maxConcurrentRequests: Int = 0 // 最大并发请求数，0表示不限制
+        val maxConcurrentRequests: Int = 0, // 最大并发请求数，0表示不限制
+        // Vertex 项目和区域独立存储，apiEndpoint 只表示服务端点。
+        val vertexProjectId: String = "",
+        val vertexLocation: String = "global",
 )
 
 /** 简化版的模型配置数据，用于列表显示 */

@@ -399,8 +399,8 @@ object AIServiceFactory {
                 VertexProvider(
                     authManager = com.ai.assistance.operit.data.api.VertexAuthManager.getInstance(context),
                     apiEndpoint = com.ai.assistance.operit.data.api.VertexOAuthProtocol.openAiRoot(
-                        project = config.apiEndpoint.substringBefore('|').trim(),
-                        location = config.apiEndpoint.substringAfter('|', "global").trim().ifBlank { "global" },
+                        project = config.vertexProjectId,
+                        location = config.vertexLocation,
                     ),
                     modelName = config.modelName,
                     client = httpClient,

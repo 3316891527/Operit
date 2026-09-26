@@ -71,7 +71,7 @@ object ChatConfigReadiness {
             return ChatConfigReadinessResult(ChatConfigReadinessIssue.VERTEX_LOGIN_REQUIRED)
         }
         if (providerType == ApiProviderType.VERTEX_AI &&
-            config.apiEndpoint.substringBefore('|').trim().isEmpty()
+            config.vertexProjectId.isBlank()
         ) {
             return ChatConfigReadinessResult(ChatConfigReadinessIssue.VERTEX_PROJECT_MISSING)
         }

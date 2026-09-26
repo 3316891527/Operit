@@ -8550,4 +8550,5 @@
     <string name="vertex_location_desc">默认 global，也可以填写区域，例如 us-central1</string>
     <string name="vertex_direct_media_processing_desc">将图片直接发送给 Vertex AI 处理</string>
 
+    <string name="google_oauth_experimental_notice">实验性功能：Antigravity 和 Vertex AI 的账号登录及模型服务接入仍在验证中，可能不稳定。</string>
 </resources>

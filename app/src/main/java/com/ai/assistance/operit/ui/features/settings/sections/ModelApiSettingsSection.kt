@@ -188,13 +188,11 @@ fun ModelApiSettingsSection(
     val vertexAuthState by vertexAuthManager.authState.collectAsState()
     var showVertexLoginDialog by remember(config.id) { mutableStateOf(false) }
     var vertexProjectInput by remember(config.id) {
-        mutableStateOf(config.apiEndpoint.substringBefore('|').trim())
+        mutableStateOf(config.vertexProjectId)
     }
     var vertexLocationInput by remember(config.id) {
         mutableStateOf(
-            config.apiEndpoint.substringAfter('|', VertexOAuthProtocol.DEFAULT_LOCATION)
-                .trim()
-                .ifBlank { VertexOAuthProtocol.DEFAULT_LOCATION },
+            config.vertexLocation,
         )
     }
 
@@ -330,6 +328,8 @@ fun ModelApiSettingsSection(
     }
 
     data class ApiAutoSaveState(
+        val vertexProjectId: String,
+        val vertexLocation: String,
         val apiEndpoint: String,
         val apiKey: String,
         val modelName: String,
@@ -358,6 +358,8 @@ fun ModelApiSettingsSection(
                     configId = config.id,
                     apiKey = state.apiKey,
                     apiEndpoint = state.apiEndpoint,
+                    vertexProjectId = state.vertexProjectId,
+                    vertexLocation = state.vertexLocation,
                     modelName = state.modelName,
                     apiProviderType = state.provider,
                     apiProviderTypeId = state.providerTypeId,
@@ -384,13 +386,10 @@ fun ModelApiSettingsSection(
     }
 
     fun buildAutoSaveState(): ApiAutoSaveState {
-        val endpointToSave = if (isVertexProvider) {
-            vertexEndpoint(vertexProjectInput, vertexLocationInput)
-        } else {
-            apiEndpointInput
-        }
         return ApiAutoSaveState(
-            apiEndpoint = endpointToSave,
+            apiEndpoint = if (isVertexProvider) "" else apiEndpointInput,
+            vertexProjectId = vertexProjectInput,
+            vertexLocation = vertexLocationInput,
             apiKey = apiKeyInput,
             modelName = modelNameInput,
             providerTypeId = selectedProviderTypeId,
@@ -680,6 +679,9 @@ fun ModelApiSettingsSection(
                 )
             }
 
+            if (isAntigravityProvider || isVertexProvider) {
+                SettingsInfoBanner(text = stringResource(R.string.google_oauth_experimental_notice))
+            }
             regionWarningType?.let { warningType ->
                 SettingsInfoBanner(text = stringResource(warningType.messageResource()))
             }
@@ -724,13 +726,11 @@ fun ModelApiSettingsSection(
                     location = vertexLocationInput,
                     onProjectChange = { input ->
                         vertexProjectInput = input.trim().replace("|", "")
-                        apiEndpointInput = vertexEndpoint(vertexProjectInput, vertexLocationInput)
                     },
                     onLocationChange = { input ->
                         vertexLocationInput = input.trim().replace("|", "").ifBlank {
                             VertexOAuthProtocol.DEFAULT_LOCATION
                         }
-                        apiEndpointInput = vertexEndpoint(vertexProjectInput, vertexLocationInput)
                     },
                     onLogin = { showVertexLoginDialog = true },
                     onLogout = {
@@ -1433,12 +1433,6 @@ fun ModelApiSettingsSection(
             }
         }
     }
-}
-
-private fun vertexEndpoint(project: String, location: String): String {
-    val normalizedLocation = location.trim().ifBlank { VertexOAuthProtocol.DEFAULT_LOCATION }
-    val normalizedProject = project.trim()
-    return if (normalizedProject.isEmpty()) "" else "$normalizedProject|$normalizedLocation"
 }
 
 @Composable

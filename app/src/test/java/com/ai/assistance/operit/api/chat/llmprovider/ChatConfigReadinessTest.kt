@@ -58,7 +58,8 @@ class ChatConfigReadinessTest {
     fun vertexWithoutOAuthLogin_isRejected() {
         assertIssue(
             ChatConfigReadinessIssue.VERTEX_LOGIN_REQUIRED,
-            remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = "my-project|global"),
+            remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = "")
+                .copy(vertexProjectId = "my-project", vertexLocation = "global"),
         )
     }
 
@@ -74,7 +75,8 @@ class ChatConfigReadinessTest {
     @Test
     fun vertexWithLoginAndProject_doesNotRequireApiKey() {
         val result = ChatConfigReadiness.evaluate(
-            config = remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = "my-project|global"),
+            config = remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = "")
+                .copy(vertexProjectId = "my-project", vertexLocation = "global"),
             modelIndex = 0,
             registeredPluginProviderIds = emptySet(),
             vertexAuthenticated = true,
