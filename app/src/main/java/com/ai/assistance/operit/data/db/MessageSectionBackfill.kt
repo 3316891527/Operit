@@ -3,6 +3,7 @@ package com.ai.assistance.operit.data.db
 import com.ai.assistance.operit.data.model.MessageSectionCodec
 import com.ai.assistance.operit.data.model.MessageSectionStorage
 import com.ai.assistance.operit.util.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -31,17 +32,27 @@ internal object MessageSectionBackfill {
             db.beginTransaction()
             try {
                 rows.forEach { (id, _, legacy) ->
-                    val sections = MessageSectionStorage.decodeLegacy(legacy)
+                    val encoded = try {
+                        val sections = MessageSectionStorage.decodeLegacy(legacy)
+                        MessageSectionStorage.encode(sections) to MessageSectionCodec.searchText(sections)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        AppLogger.e(TAG, "Backfill failed for $table row $id; preserving legacy text", e)
+                        db.execSQL(
+                            "UPDATE `$table` SET sections = ? WHERE `$key` = ?",
+                            arrayOf("[]", id),
+                        )
+                        return@forEach
+                    }
                     db.execSQL(
                         "UPDATE `$table` SET sections = ?, searchText = ? WHERE `$key` = ?",
-                        arrayOf(
-                            MessageSectionStorage.encode(sections),
-                            MessageSectionCodec.searchText(sections),
-                            id,
-                        ),
+                        arrayOf(encoded.first, encoded.second, id),
                     )
                 }
                 db.setTransactionSuccessful()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Backfill failed for $table", e)
                 return

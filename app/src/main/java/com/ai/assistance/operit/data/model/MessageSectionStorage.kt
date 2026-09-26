@@ -15,11 +15,42 @@ object MessageSectionStorage {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun encode(sections: List<MessageSection>): String = json.encodeToString(sections)
-
     fun decode(stored: String, legacyContent: String = ""): List<MessageSection> {
-        if (stored.isNotEmpty()) return json.decodeFromString(stored)
-        return if (legacyContent.isEmpty()) emptyList() else decodeLegacy(legacyContent)
+        if (stored.isNotEmpty()) {
+            val decoded = try {
+                decodeStored(stored)
+            } catch (_: Exception) {
+                null
+            }
+            if (decoded != null && (decoded.isNotEmpty() || legacyContent.isEmpty())) return decoded
+        }
+        if (legacyContent.isEmpty()) return emptyList()
+        return try {
+            decodeLegacy(legacyContent)
+        } catch (_: Exception) {
+            try {
+                MessageSectionCodec.parse(legacyContent)
+            } catch (_: Exception) {
+                listOf(MessageSection.Text(legacyContent))
+            }
+        }
     }
+
+    private fun decodeStored(stored: String): List<MessageSection> {
+        if (stored.startsWith("operit-sections:1:")) return decodeLegacy(stored)
+        return when (val element = json.parseToJsonElement(stored)) {
+            is kotlinx.serialization.json.JsonArray ->
+                json.decodeFromJsonElement<List<MessageSection>>(element)
+            is JsonObject -> decodeLegacySections(
+                element["sections"]
+                    ?: throw kotlinx.serialization.SerializationException("Missing sections field")
+            )
+            else -> throw kotlinx.serialization.SerializationException(
+                "Expected a sections array or envelope"
+            )
+        }
+    }
+
 
     /** 只在旧库升级、旧备份导入时调用，保留已写入的开发版前缀记录。 */
     fun decodeLegacy(content: String): List<MessageSection> {

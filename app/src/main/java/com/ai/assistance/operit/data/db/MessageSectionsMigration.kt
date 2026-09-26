@@ -148,9 +148,7 @@ internal object MessageSectionsMigration : Migration(21, 22) {
             } finally { statement.close() }
         }
     }
+    private const val pendingSections = "''"
+    private const val pendingSearch = "content"
 
-    private const val pendingSections =
-        "CASE WHEN content LIKE 'operit-sections:1:%' THEN substr(content, 19) ELSE '' END"
-    private const val pendingSearch =
-        "CASE WHEN content LIKE 'operit-sections:1:%' THEN '' ELSE content END"
 }

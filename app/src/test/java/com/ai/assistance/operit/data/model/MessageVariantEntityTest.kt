@@ -165,7 +165,6 @@ class MessageVariantEntityTest {
         )
         assertEquals(55L, variant.variantId)
     }
-
     @Test fun `applyTo round trip preserves variant fields`() {
         val original = ChatMessage(sender = "ai", content = "Original", roleName = "Bot")
         val variantEntity = MessageVariantEntity.fromChatMessage(
@@ -177,6 +176,16 @@ class MessageVariantEntityTest {
         assertEquals(0, applied.selectedVariantIndex)
         assertEquals(1, applied.variantCount)
     }
+    @Test fun `archive conversion falls back to legacy variant text`() {
+        val entity = variantEntity(
+            chatId = "chat", messageTimestamp = 1L, variantIndex = 0, sections = ""
+        ).copy(searchText = "legacy variant")
+
+        val archived = OperitArchivedMessageVariant.fromEntity(entity)
+
+        assertEquals(listOf(MessageSection.Text("legacy variant")), archived.sections)
+    }
+
 
     private fun variantEntity(
         chatId: String,

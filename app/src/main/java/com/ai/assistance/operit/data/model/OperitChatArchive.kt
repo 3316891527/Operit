@@ -134,7 +134,7 @@ data class OperitArchivedMessageVariant(
         fun fromEntity(entity: MessageVariantEntity): OperitArchivedMessageVariant {
             return OperitArchivedMessageVariant(
                 variantIndex = entity.variantIndex,
-                sections = MessageSectionStorage.decode(entity.sections),
+                sections = MessageSectionStorage.decode(entity.sections, entity.searchText),
                 roleName = entity.roleName,
                 provider = entity.provider,
                 modelName = entity.modelName,
