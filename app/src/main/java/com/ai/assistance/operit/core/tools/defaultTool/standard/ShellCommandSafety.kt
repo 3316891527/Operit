@@ -147,19 +147,22 @@ object ShellCommandSafety {
                     index++
                     when (base) {
                         "adb" -> {
-                            val shellIndex =
+                            val deviceCommandIndex =
                                 (index until tokens.size).firstOrNull { candidate ->
-                                    tokens[candidate].substringAfterLast('/').equals("shell", ignoreCase = true)
+                                    val deviceCommand = tokens[candidate].substringAfterLast('/')
+                                    deviceCommand.equals("shell", ignoreCase = true) ||
+                                        deviceCommand.equals("exec-out", ignoreCase = true)
                                 }
-                            if (shellIndex != null) {
-                                var commandIndex = shellIndex + 1
+                            if (deviceCommandIndex != null) {
+                                val deviceCommand = tokens[deviceCommandIndex].substringAfterLast('/')
+                                var commandIndex = deviceCommandIndex + 1
                                 while (commandIndex < tokens.size && tokens[commandIndex] in setOf("-T", "-t")) {
                                     commandIndex++
                                 }
                                 if (commandIndex < tokens.size) {
                                     val embedded = tokens.subList(commandIndex, tokens.size).joinToString(" ")
                                     validate(embedded)?.let { reason ->
-                                        return "Embedded adb shell command rejected: $reason"
+                                        return "Embedded adb $deviceCommand command rejected: $reason"
                                     }
                                 }
                                 index = tokens.size
@@ -305,7 +308,11 @@ object ShellCommandSafety {
             "find" -> {
                 var index = 0
                 while (index < args.size) {
-                    if (args[index] == "-exec" || args[index] == "-execdir") {
+                    if (args[index] == "-exec" ||
+                        args[index] == "-execdir" ||
+                        args[index] == "-ok" ||
+                        args[index] == "-okdir"
+                    ) {
                         val commandStart = index + 1
                         var commandEnd = commandStart
                         while (commandEnd < args.size && args[commandEnd] != ";" && args[commandEnd] != "+") {

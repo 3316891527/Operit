@@ -99,16 +99,22 @@ class ShellCommandSafetyTest {
     }
 
     @Test
-    fun `quoted adb shell command is checked recursively`() {
+    fun `quoted adb shell and exec-out commands are checked recursively`() {
         assertDangerous("adb shell \"rm -rf /\"")
         assertSafe("adb shell \"echo rm -rf /\"")
+        assertDangerous("adb exec-out \"rm -rf /\"")
+        assertSafe("adb exec-out \"echo rm -rf /\"")
     }
 
     @Test
     fun `indirect find and xargs commands are checked`() {
         assertDangerous("find /data -name '*.log' -exec rm -rf {} +")
+        assertDangerous("find /data -name '*.log' -ok rm -rf {} \\;")
+        assertDangerous("find /data -name '*.log' -okdir rm -rf {} \\;")
         assertDangerous("xargs rm -rf /")
         assertSafe("find /data -name '*.log' -exec echo {} +")
+        assertSafe("find /data -name '*.log' -ok echo {} \\;")
+        assertSafe("find /data -name '*.log' -okdir echo {} \\;")
         assertSafe("xargs echo")
     }
 
