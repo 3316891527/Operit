@@ -198,7 +198,10 @@ private fun DataRecoveryScreen() {
                     }
                     if (state.restoreCompleted) {
                         Spacer(modifier = Modifier.height(10.dp))
-                        FilledTonalButton(onClick = { restartMainApp(context) }) {
+                        FilledTonalButton(
+                            onClick = { restartMainApp(context) },
+                            enabled = !state.isRunning
+                        ) {
                             Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(stringResource(R.string.data_recovery_start_main_app))
@@ -425,7 +428,10 @@ private fun DataRecoveryScreen() {
 
                     if (state.healthRepairCompleted || state.databaseUpgradeCompleted) {
                         Spacer(modifier = Modifier.height(10.dp))
-                        FilledTonalButton(onClick = { restartMainApp(context) }) {
+                        FilledTonalButton(
+                            onClick = { restartMainApp(context) },
+                            enabled = !state.isRunning
+                        ) {
                             Icon(
                                 Icons.Default.RestartAlt,
                                 contentDescription = null,
