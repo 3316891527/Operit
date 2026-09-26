@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -105,6 +106,8 @@ object RoomDatabaseHealthManager {
                         completedActions = listOf(RepairAction.RUN_ROOM_MIGRATIONS),
                         report = inspectLocked(displayContext)
                     )
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     throw RepairFailedException(archive, e)
                 }

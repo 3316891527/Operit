@@ -1172,9 +1172,11 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         return@withLock
                     }
 
+                    val hasNoStoredSections =
+                        existingMessage.sections.isEmpty() || existingMessage.sections == "[]"
                     val shouldUpdateChatMetadata =
                         message.contentStream == null ||
-                            (existingMessage.sections == "[]" && message.content.isNotEmpty())
+                            (hasNoStoredSections && message.content.isNotEmpty())
                     val updatedMessageEntity =
                         MessageEntity.fromChatMessage(
                             chatId = chatId,

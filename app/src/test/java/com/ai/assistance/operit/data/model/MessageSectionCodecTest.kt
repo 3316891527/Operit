@@ -1,7 +1,6 @@
 package com.ai.assistance.operit.data.model
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MessageSectionCodecTest {
@@ -15,18 +14,23 @@ class MessageSectionCodecTest {
         assertEquals("answer", (sections[2] as MessageSection.Text).content)
     }
 
-    @Test fun parse_keepsLiteralThinkInsideThinking() {
+    @Test fun parse_unmatchedThinkingCloseRemainsLiteralText() {
         val sections = MessageSectionCodec.parse("<think>before </think> after</think>answer")
-        assertEquals(2, sections.size)
-        assertTrue(sections[0] is MessageSection.Thinking)
-        assertEquals("answer", (sections[1] as MessageSection.Text).content)
+        assertEquals(
+            listOf(
+                MessageSection.Thinking("before "),
+                MessageSection.Text(" after</think>answer"),
+            ),
+            sections,
+        )
     }
 
     @Test fun displaySections_hidesProtocolPayload() {
         val message = ChatMessage(sender = "ai", content = protocolSample())
         assertEquals(1, message.displaySections().size)
         assertEquals("answer", (message.displaySections().single() as MessageSection.Text).content)
-        assertTrue(message.sections.any { it is MessageSection.Protocol })
+        val protocol = message.sections.filterIsInstance<MessageSection.Protocol>().single()
+        assertEquals("openai:responses_reasoning", protocol.provider)
     }
 
     @Test fun render_preservesOriginalToolMarkup() {

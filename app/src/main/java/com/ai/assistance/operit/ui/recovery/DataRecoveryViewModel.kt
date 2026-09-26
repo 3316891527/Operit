@@ -13,6 +13,7 @@ import com.ai.assistance.operit.data.recovery.PreferencesHealthManager
 import com.ai.assistance.operit.data.recovery.RoomDatabaseHealthManager
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.LocaleUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -237,6 +238,8 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
                         lastDatabaseRepairArchivePath = result.sourceArchive.absolutePath,
                         databaseUpgradeCompleted = true
                     )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: RoomDatabaseHealthManager.RepairFailedException) {
                 AppLogger.e(TAG, "Room database migration failed after source preservation", e)
                 _state.value =

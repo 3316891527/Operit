@@ -114,13 +114,12 @@ object MessageSectionCodec {
     }
 
     private fun parseProtocol(raw: String): MessageSection {
-        val provider = ChatMarkupRegex.extractOpeningTagName(raw).let {
+        val provider =
             Regex("""\bprovider\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
                 .find(raw.substringBefore('>'))
                 ?.groupValues
                 ?.getOrNull(1)
                 .orEmpty()
-        }
         return MessageSection.Protocol(
             provider = provider,
             payload = extractBody(raw).trim(),

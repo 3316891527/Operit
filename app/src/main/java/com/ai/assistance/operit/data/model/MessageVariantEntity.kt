@@ -66,13 +66,14 @@ data class MessageVariantEntity(
             message: ChatMessage,
             variantId: Long = 0,
         ): MessageVariantEntity {
+            val sections = message.resolvedSections()
             return MessageVariantEntity(
                 variantId = variantId,
                 chatId = chatId,
                 messageTimestamp = messageTimestamp,
                 variantIndex = variantIndex,
-                sections = MessageSectionStorage.encode(message.resolvedSections()),
-                    searchText = MessageSectionCodec.searchText(message.resolvedSections()),
+                sections = MessageSectionStorage.encode(sections),
+                searchText = MessageSectionCodec.searchText(sections),
                 roleName = message.roleName,
                 provider = message.provider,
                 modelName = message.modelName,

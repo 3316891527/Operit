@@ -74,12 +74,13 @@ data class MessageEntity(
             orderIndex: Int,
             messageId: Long = 0
         ): MessageEntity {
+            val sections = message.resolvedSections()
             return MessageEntity(
                     messageId = messageId,
                     chatId = chatId,
                     sender = message.sender,
-                    sections = MessageSectionStorage.encode(message.resolvedSections()),
-                    searchText = MessageSectionCodec.searchText(message.resolvedSections()),
+                    sections = MessageSectionStorage.encode(sections),
+                    searchText = MessageSectionCodec.searchText(sections),
                     timestamp = message.timestamp,
                     orderIndex = orderIndex,
                     roleName = message.roleName,
