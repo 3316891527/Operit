@@ -174,12 +174,15 @@ object RawSnapshotBackupManager {
             val sharedPrefsDir = File(dataDir, "shared_prefs")
             val datastoreDir = File(dataDir, "datastore")
             val databasesDir = File(dataDir, "databases")
+            var resourceReferencesLoaded = true
             val resourceReferences = try {
                 DefaultRawSnapshotResourceReferenceProvider(context).collectReferences()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {
                 // 原始快照首先用于数据救援，偏好解析失败不能阻断原始文件归档。
+                // 但此时不能把“未知”误判为空集合，否则会裁掉仍在使用的主题媒体。
+                resourceReferencesLoaded = false
                 AppLogger.w(TAG, "collect resource references failed; exporting raw data without resource mapping", error)
                 emptySet()
             }
@@ -258,6 +261,7 @@ object RawSnapshotBackupManager {
                     entryPrefix = ENTRY_FILES,
                     excludedTopLevelDirNames = excludedNames,
                     referencedResourcePaths = referencedImagePaths,
+                    pruneUnreferencedThemeMedia = resourceReferencesLoaded,
                     onScannedCountChanged = { scanned ->
                         if (onProgress != null) {
                             mainHandler.post {
@@ -281,6 +285,7 @@ object RawSnapshotBackupManager {
                         entryPrefix = ENTRY_FILES,
                         excludedTopLevelDirNames = excludedNames,
                         referencedResourcePaths = referencedImagePaths,
+                        pruneUnreferencedThemeMedia = resourceReferencesLoaded,
                         totalFiles = filesTotalCount,
                         onPercentChanged = { percent ->
                             if (onProgress != null) {
@@ -536,6 +541,7 @@ object RawSnapshotBackupManager {
         entryPrefix: String,
         excludedTopLevelDirNames: Set<String> = emptySet(),
         referencedResourcePaths: Set<String> = emptySet(),
+        pruneUnreferencedThemeMedia: Boolean = false,
         totalFiles: Int = 0,
         onPercentChanged: ((Int) -> Unit)? = null
     ) {
@@ -560,7 +566,10 @@ object RawSnapshotBackupManager {
                 AppLogger.i(TAG, "export skip referenced resource in raw copy: ${canonical.absolutePath}")
                 return@forEach
             }
-            if (entryPrefix == ENTRY_FILES && isUnreferencedThemeMediaFlatFile(canonical, baseCanonical)) {
+            if (pruneUnreferencedThemeMedia &&
+                entryPrefix == ENTRY_FILES &&
+                isUnreferencedThemeMediaFlatFile(canonical, baseCanonical)
+            ) {
                 AppLogger.i(TAG, "export skip unreferenced theme media: ${canonical.name}")
                 return@forEach
             }
@@ -1011,6 +1020,7 @@ object RawSnapshotBackupManager {
         entryPrefix: String,
         excludedTopLevelDirNames: Set<String>,
         referencedResourcePaths: Set<String> = emptySet(),
+        pruneUnreferencedThemeMedia: Boolean = false,
         onScannedCountChanged: ((Int) -> Unit)? = null
     ): Int {
         if (!dir.exists() || !dir.isDirectory) return 0
@@ -1027,7 +1037,10 @@ object RawSnapshotBackupManager {
             if (referencedResourcePaths.isNotEmpty() && referencedResourcePaths.contains(canonical.path)) {
                 return@forEach
             }
-            if (entryPrefix == ENTRY_FILES && isUnreferencedThemeMediaFlatFile(canonical, baseCanonical)) {
+            if (pruneUnreferencedThemeMedia &&
+                entryPrefix == ENTRY_FILES &&
+                isUnreferencedThemeMediaFlatFile(canonical, baseCanonical)
+            ) {
                 return@forEach
             }
             if (shouldSkipForZip(canonical, baseCanonical, entryPrefix, excludedTopLevelDirNames)) return@forEach
