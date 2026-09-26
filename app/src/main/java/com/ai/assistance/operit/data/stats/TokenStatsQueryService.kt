@@ -4,13 +4,15 @@ import android.content.Context
 import com.ai.assistance.operit.data.collects.PricingCurrency
 import com.ai.assistance.operit.data.dao.TokenUsageActivityDayRow
 import com.ai.assistance.operit.data.dao.TokenUsageModelAggregateRow
+import com.ai.assistance.operit.data.model.BillingMode
 import com.ai.assistance.operit.data.model.TokenStatsModelEntity
+import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
 import com.ai.assistance.operit.data.model.normalizeProviderModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-/** SQL-backed statistics queries. Only aggregate rows leave Room. */
+/** 基于 SQL 的统计查询；费用档位依据请求级记录计算。 */
 object TokenStatsQueryService {
     suspend fun lifetimeOverview(
         context: Context,
@@ -23,9 +25,27 @@ object TokenStatsQueryService {
                 allModels = params.providerModels == null,
             )
             val prices = dao.getAllStatsModels().toPriceSnapshot()
+            val recordsByIdentity = if (prices.requiresRequestLevelPricing()) {
+                dao
+                    .getAllUsageRecordsForStats(
+                        providerModels = params.providerModels.queryValues(),
+                        allModels = params.providerModels == null,
+                    )
+                    .groupBy(::usageIdentityKey)
+            } else {
+                emptyMap()
+            }
             TokenStatsLifetimeOverview(
-                totals = combineTotals(requestRows.map { it.toTotals(prices, params) }, params),
-                displayModels = buildDisplayModels(requestRows, prices, params),
+                totals = combineTotals(
+                    requestRows.map { it.toTotals(prices, params, recordsByIdentity) },
+                    params,
+                ),
+                displayModels = buildDisplayModels(
+                    requestRows,
+                    prices,
+                    params,
+                    recordsByIdentity,
+                ),
             )
         }
     }
@@ -39,16 +59,33 @@ object TokenStatsQueryService {
         val repository = TokenUsageRepository.getInstance(context)
         return repository.withDao { dao ->
             val prices = dao.getAllStatsModels().toPriceSnapshot()
+            val usageRecords = if (prices.requiresRequestLevelPricing()) {
+                dao.getUsageRecordsInRange(
+                    startMs = range.startMs,
+                    endMs = range.endMs,
+                    providerModels = params.providerModels.queryValues(),
+                    allModels = params.providerModels == null,
+                )
+            } else {
+                emptyList()
+            }
+            val recordsByIdentity = usageRecords.groupBy(::usageIdentityKey)
+            val granularity = TokenStatsTimeRanges.granularityFor(range)
+            val starts = TokenStatsTimeRanges.bucketStarts(range, granularity, zone)
             val modelRows = dao.aggregateModelsInRange(
                 startMs = range.startMs,
                 endMs = range.endMs,
                 providerModels = params.providerModels.queryValues(),
                 allModels = params.providerModels == null,
             )
-            val displayModels = buildDisplayModels(modelRows, prices, params)
+            val displayModels = buildDisplayModels(
+                modelRows,
+                prices,
+                params,
+                recordsByIdentity,
+            )
             val summary = combineTotals(displayModels.map(TokenStatsDisplayModelBreakdown::totals), params)
-            val granularity = TokenStatsTimeRanges.granularityFor(range)
-            val starts = TokenStatsTimeRanges.bucketStarts(range, granularity, zone)
+            val recordsByBucket = recordsByBucket(usageRecords, starts, granularity, zone)
             val buckets = starts.mapIndexed { index, bucketStart ->
                 val bucketEnd = minOf(
                     range.endMs,
@@ -60,7 +97,13 @@ object TokenStatsQueryService {
                     providerModels = params.providerModels.queryValues(),
                     allModels = params.providerModels == null,
                 )
-                val models = buildDisplayModels(bucketRows, prices, params)
+                val bucketRecordsByIdentity = recordsByBucket[index].groupBy(::usageIdentityKey)
+                val models = buildDisplayModels(
+                    bucketRows,
+                    prices,
+                    params,
+                    bucketRecordsByIdentity,
+                )
                 TokenStatsTrendBucket(
                     bucketStartMs = bucketStart,
                     bucketEndMs = bucketEnd,
@@ -121,6 +164,7 @@ object TokenStatsQueryService {
         rows: List<TokenUsageModelAggregateRow>,
         prices: TokenPriceSettingsSnapshot,
         params: TokenStatsQueryParams,
+        recordsByIdentity: Map<UsageIdentityKey, List<TokenUsageRecordEntity>> = emptyMap(),
     ): List<TokenStatsDisplayModelBreakdown> =
         rows.groupBy { row -> displayModelIdFor(row.model) }
             .map { (displayModelId, groupRows) ->
@@ -129,7 +173,7 @@ object TokenStatsQueryService {
                         configId = row.configId,
                         provider = row.provider,
                         model = row.model,
-                        totals = row.toTotals(prices, params),
+                        totals = row.toTotals(prices, params, recordsByIdentity),
                     )
                 }
                 TokenStatsDisplayModelBreakdown(
@@ -146,6 +190,7 @@ object TokenStatsQueryService {
     private fun TokenUsageModelAggregateRow.toTotals(
         prices: TokenPriceSettingsSnapshot,
         params: TokenStatsQueryParams,
+        recordsByIdentity: Map<UsageIdentityKey, List<TokenUsageRecordEntity>>,
     ): TokenStatsTotals {
         val usageRow = normalizeLegacyCacheWriteUsage(this)
         val pricingProviderModel = normalizeProviderModel(usageRow.providerModel)
@@ -170,7 +215,14 @@ object TokenStatsQueryService {
             totalInput = totalInput,
             output = output,
             totalTokens = combineComponents(listOf(totalInput, output), usageRow.requests),
-            cost = TokenCostCalculator.currentCost(
+            cost = recordsByIdentity[usageIdentityKey(usageRow)]?.let { records ->
+                TokenCostCalculator.currentCost(
+                    records,
+                    pricing,
+                    params.targetCurrency,
+                    params.manualRate,
+                )
+            } ?: TokenCostCalculator.currentCost(
                 usageRow,
                 pricing,
                 params.targetCurrency,
@@ -268,6 +320,38 @@ object TokenStatsQueryService {
         )
     }
 
+    private data class UsageIdentityKey(
+        val provider: String,
+        val model: String,
+        val configId: String,
+    )
+
+    private fun usageIdentityKey(row: TokenUsageModelAggregateRow) =
+        UsageIdentityKey(row.provider, row.model, row.configId)
+
+    private fun usageIdentityKey(record: TokenUsageRecordEntity) =
+        UsageIdentityKey(record.provider, record.model, record.configId)
+
+    private fun recordsByBucket(
+        records: List<TokenUsageRecordEntity>,
+        starts: List<Long>,
+        granularity: TokenStatsGranularity,
+        zone: ZoneId,
+    ): List<List<TokenUsageRecordEntity>> {
+        val buckets = List(starts.size) { mutableListOf<TokenUsageRecordEntity>() }
+        records.forEach { record ->
+            val occurredAtMs = record.occurredAtMs ?: return@forEach
+            val index = TokenStatsTimeRanges.bucketIndexOf(
+                occurredAtMs,
+                starts,
+                granularity,
+                zone,
+            ) ?: return@forEach
+            buckets[index].add(record)
+        }
+        return buckets
+    }
+
     private fun <T> Iterable<T>.sumLong(selector: (T) -> Long): Long =
         fold(0L) { sum, item -> TokenCostCalculator.saturatedAdd(sum, selector(item)) }
 
@@ -275,6 +359,14 @@ object TokenStatsQueryService {
         if (this == null || isEmpty()) listOf("__none__") else toList()
 
     private fun displayModelIdFor(model: String): String = "model:${model.trim().lowercase()}"
+
+    private fun TokenPriceSettingsSnapshot.requiresRequestLevelPricing(): Boolean =
+        providerModels.values.any { it?.requiresRequestLevelPricing() == true } ||
+            configs.values.any { it.requiresRequestLevelPricing() }
+
+    private fun ModelPriceSettings.requiresRequestLevelPricing(): Boolean =
+        billingMode != BillingMode.COUNT &&
+            (peakPricingEnabled == true || longContextPricingEnabled == true)
 
     private fun List<TokenStatsModelEntity>.toPriceSnapshot(): TokenPriceSettingsSnapshot {
         val priceRows = filter(TokenStatsModelEntity::hasPriceSetting)
