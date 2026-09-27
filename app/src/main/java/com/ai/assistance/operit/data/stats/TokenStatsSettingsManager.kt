@@ -22,6 +22,8 @@ data class TokenStatsPriceDraft(
     val outputPricePerMillion: Double? = null,
     val pricePerRequest: Double? = null,
     val peakPricingEnabled: Boolean = false,
+    val weekendOffPeakPricingEnabled: Boolean = true,
+    val holidayOffPeakPricingEnabled: Boolean = true,
     val peakSchedule: List<TokenPeakTimeRange> = DEFAULT_TOKEN_PEAK_TIME_RANGES,
     val peakInputMultiplier: Double = 1.0,
     val peakCachedInputMultiplier: Double = 1.0,
@@ -49,6 +51,8 @@ data class TokenStatsPriceSetting(
     val outputPricePerMillion: Double?,
     val pricePerRequest: Double?,
     val peakPricingEnabled: Boolean?,
+    val weekendOffPeakPricingEnabled: Boolean?,
+    val holidayOffPeakPricingEnabled: Boolean?,
     val peakSchedule: List<TokenPeakTimeRange>?,
     val peakInputMultiplier: Double?,
     val peakCachedInputMultiplier: Double?,
@@ -150,6 +154,8 @@ class TokenStatsSettingsManager(context: Context) {
                             null
                         },
                     peakPricingEnabled = draft.peakPricingEnabled,
+                    weekendOffPeakPricingEnabled = draft.weekendOffPeakPricingEnabled,
+                    holidayOffPeakPricingEnabled = draft.holidayOffPeakPricingEnabled,
                     peakScheduleJson = encodePeakSchedule(
                         draft.peakPricingEnabled,
                         draft.peakSchedule,
@@ -250,6 +256,8 @@ internal fun TokenStatsModelEntity.hasPriceSetting(): Boolean =
         outputPricePerMillion != null ||
         pricePerRequest != null ||
         peakPricingEnabled != null ||
+        weekendOffPeakPricingEnabled != null ||
+        holidayOffPeakPricingEnabled != null ||
         peakScheduleJson != null ||
         peakInputMultiplier != null ||
         peakCachedInputMultiplier != null ||
@@ -272,6 +280,8 @@ internal fun TokenStatsModelEntity.toModelPriceSettings(): ModelPriceSettings =
         outputPricePerMillion = outputPricePerMillion,
         pricePerRequest = pricePerRequest,
         peakPricingEnabled = peakPricingEnabled,
+        weekendOffPeakPricingEnabled = weekendOffPeakPricingEnabled,
+        holidayOffPeakPricingEnabled = holidayOffPeakPricingEnabled,
         peakSchedule = peakScheduleJson?.let(TokenPricingRules::decodePeakTimeRanges),
         peakInputMultiplier = peakInputMultiplier,
         peakCachedInputMultiplier = peakCachedInputMultiplier,
@@ -302,6 +312,8 @@ private fun TokenStatsModelEntity.toPriceSetting(): TokenStatsPriceSetting {
         outputPricePerMillion = outputPricePerMillion,
         pricePerRequest = pricePerRequest,
         peakPricingEnabled = peakPricingEnabled,
+        weekendOffPeakPricingEnabled = weekendOffPeakPricingEnabled,
+        holidayOffPeakPricingEnabled = holidayOffPeakPricingEnabled,
         peakSchedule = peakScheduleJson?.let(TokenPricingRules::decodePeakTimeRanges),
         peakInputMultiplier = peakInputMultiplier,
         peakCachedInputMultiplier = peakCachedInputMultiplier,

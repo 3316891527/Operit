@@ -25,15 +25,20 @@ object TokenStatsQueryService {
                 allModels = params.providerModels == null,
             )
             val prices = dao.getAllStatsModels().toPriceSnapshot()
-            val recordsByIdentity = if (prices.requiresRequestLevelPricing()) {
+            val requestLevelPricing = prices.requestLevelPricingSelection()
+            val recordsByIdentity = if (requestLevelPricing.isEmpty) {
+                emptyMap()
+            } else {
                 dao
                     .getAllUsageRecordsForStats(
                         providerModels = params.providerModels.queryValues(),
                         allModels = params.providerModels == null,
+                        requestLevelProviderModels =
+                            requestLevelPricing.providerModels.ifEmpty { listOf("__none__") },
+                        requestLevelConfigIdentities =
+                            requestLevelPricing.configIdentities.ifEmpty { listOf("__none__") },
                     )
                     .groupBy(::usageIdentityKey)
-            } else {
-                emptyMap()
             }
             TokenStatsLifetimeOverview(
                 totals = combineTotals(
@@ -59,15 +64,20 @@ object TokenStatsQueryService {
         val repository = TokenUsageRepository.getInstance(context)
         return repository.withDao { dao ->
             val prices = dao.getAllStatsModels().toPriceSnapshot()
-            val usageRecords = if (prices.requiresRequestLevelPricing()) {
+            val requestLevelPricing = prices.requestLevelPricingSelection()
+            val usageRecords = if (requestLevelPricing.isEmpty) {
+                emptyList()
+            } else {
                 dao.getUsageRecordsInRange(
                     startMs = range.startMs,
                     endMs = range.endMs,
                     providerModels = params.providerModels.queryValues(),
                     allModels = params.providerModels == null,
+                    requestLevelProviderModels =
+                        requestLevelPricing.providerModels.ifEmpty { listOf("__none__") },
+                    requestLevelConfigIdentities =
+                        requestLevelPricing.configIdentities.ifEmpty { listOf("__none__") },
                 )
-            } else {
-                emptyList()
             }
             val recordsByIdentity = usageRecords.groupBy(::usageIdentityKey)
             val granularity = TokenStatsTimeRanges.granularityFor(range)
@@ -339,6 +349,7 @@ object TokenStatsQueryService {
         zone: ZoneId,
     ): List<List<TokenUsageRecordEntity>> {
         val buckets = List(starts.size) { mutableListOf<TokenUsageRecordEntity>() }
+        // 范围汇总和趋势查询都排除无时间戳记录；这里仅把可定位的请求放入时间桶。
         records.forEach { record ->
             val occurredAtMs = record.occurredAtMs ?: return@forEach
             val index = TokenStatsTimeRanges.bucketIndexOf(
@@ -360,9 +371,35 @@ object TokenStatsQueryService {
 
     private fun displayModelIdFor(model: String): String = "model:${model.trim().lowercase()}"
 
-    private fun TokenPriceSettingsSnapshot.requiresRequestLevelPricing(): Boolean =
-        providerModels.values.any { it?.requiresRequestLevelPricing() == true } ||
-            configs.values.any { it.requiresRequestLevelPricing() }
+    private data class RequestLevelPricingSelection(
+        val providerModels: List<String>,
+        val configIdentities: List<String>,
+    ) {
+        val isEmpty: Boolean
+            get() = providerModels.isEmpty() && configIdentities.isEmpty()
+    }
+
+    private fun TokenPriceSettingsSnapshot.requestLevelPricingSelection(): RequestLevelPricingSelection {
+        val providerModels = this.providerModels
+            .filterValues { it?.requiresRequestLevelPricing() == true }
+            .keys
+            .toList()
+        val configIdentities = configs.keys.mapNotNull { key ->
+            val separator = key.indexOf('\u001f')
+            if (separator <= 0 || separator == key.lastIndex) return@mapNotNull null
+            val providerModel = key.substring(0, separator)
+            val configId = key.substring(separator + 1)
+            if (
+                providerModel !in providerModels &&
+                settingFor(providerModel, configId)?.requiresRequestLevelPricing() == true
+            ) {
+                "$providerModel\u001f$configId"
+            } else {
+                null
+            }
+        }
+        return RequestLevelPricingSelection(providerModels, configIdentities)
+    }
 
     private fun ModelPriceSettings.requiresRequestLevelPricing(): Boolean =
         billingMode != BillingMode.COUNT &&

@@ -165,14 +165,13 @@ object TokenCostCalculator {
         return knownTokens.toDouble() * price / 1_000_000.0
     }
 
-    private fun contextTokens(record: TokenUsageRecordEntity): Long? =
-        record.totalInputTokens?.takeIf { it >= 0L }
-            ?: listOf(
-                record.uncachedInputTokens,
-                record.cachedInputTokens,
-                record.cacheWriteTokens,
-            ).takeIf { values -> values.all { it != null && it >= 0L } }
-                ?.sumOf { it ?: 0L }
+    // 长上下文阈值按未缓存输入、缓存输入和输出 Token 的总和判断。
+    private fun longContextTokens(record: TokenUsageRecordEntity): Long? {
+        val uncachedInput = record.uncachedInputTokens?.takeIf { it >= 0L } ?: return null
+        val cachedInput = record.cachedInputTokens?.takeIf { it >= 0L } ?: return null
+        val output = record.outputTokens?.takeIf { it >= 0L } ?: return null
+        return saturatedAdd(saturatedAdd(uncachedInput, cachedInput), output)
+    }
 
     private data class PriceMultipliers(
         val input: Double,
@@ -189,7 +188,7 @@ object TokenCostCalculator {
         var cachedInput = 1.0
         var cacheWrite = 1.0
         var output = 1.0
-        val contextTokens = contextTokens(record)
+        val contextTokens = longContextTokens(record)
         val longContextThreshold = pricing.longContextThreshold
         val requestLevelEligible = record.occurredAtMs != null && record.requestCount == 1L
         if (
@@ -207,7 +206,12 @@ object TokenCostCalculator {
         if (
             requestLevelEligible &&
             pricing.peakPricingEnabled &&
-            TokenPricingRules.isPeakTime(record.occurredAtMs, pricing.peakSchedule)
+            TokenPricingRules.isPeakTime(
+                occurredAtMs = record.occurredAtMs,
+                periods = pricing.peakSchedule,
+                weekendOffPeakPricingEnabled = pricing.weekendOffPeakPricingEnabled,
+                holidayOffPeakPricingEnabled = pricing.holidayOffPeakPricingEnabled,
+            )
         ) {
             input *= pricing.peakInputMultiplier
             cachedInput *= pricing.peakCachedInputMultiplier

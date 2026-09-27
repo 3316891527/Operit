@@ -19,6 +19,8 @@ data class TokenStatsModelEntity(
     val outputPricePerMillion: Double? = null,
     val pricePerRequest: Double? = null,
     val peakPricingEnabled: Boolean? = null,
+    val weekendOffPeakPricingEnabled: Boolean? = null,
+    val holidayOffPeakPricingEnabled: Boolean? = null,
     val peakScheduleJson: String? = null,
     val peakInputMultiplier: Double? = null,
     val peakCachedInputMultiplier: Double? = null,

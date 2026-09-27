@@ -13,6 +13,8 @@ data class ModelPriceSettings(
     val outputPricePerMillion: Double? = null,
     val pricePerRequest: Double? = null,
     val peakPricingEnabled: Boolean? = null,
+    val weekendOffPeakPricingEnabled: Boolean? = null,
+    val holidayOffPeakPricingEnabled: Boolean? = null,
     val peakSchedule: List<TokenPeakTimeRange>? = null,
     val peakInputMultiplier: Double? = null,
     val peakCachedInputMultiplier: Double? = null,
@@ -34,6 +36,8 @@ data class ModelPriceSettings(
             outputPricePerMillion != null ||
             pricePerRequest != null ||
             peakPricingEnabled != null ||
+            weekendOffPeakPricingEnabled != null ||
+            holidayOffPeakPricingEnabled != null ||
             peakSchedule != null ||
             peakInputMultiplier != null ||
             peakCachedInputMultiplier != null ||
@@ -66,6 +70,10 @@ data class TokenPriceSettingsSnapshot(
             outputPricePerMillion = config.outputPricePerMillion ?: model?.outputPricePerMillion,
             pricePerRequest = config.pricePerRequest ?: model?.pricePerRequest,
             peakPricingEnabled = config.peakPricingEnabled ?: model?.peakPricingEnabled,
+            weekendOffPeakPricingEnabled =
+                config.weekendOffPeakPricingEnabled ?: model?.weekendOffPeakPricingEnabled,
+            holidayOffPeakPricingEnabled =
+                config.holidayOffPeakPricingEnabled ?: model?.holidayOffPeakPricingEnabled,
             peakSchedule = config.peakSchedule ?: model?.peakSchedule,
             peakInputMultiplier = config.peakInputMultiplier ?: model?.peakInputMultiplier,
             peakCachedInputMultiplier =
@@ -100,6 +108,8 @@ data class ResolvedTokenPricing(
     val outputPricePerMillion: Double,
     val pricePerRequest: Double,
     val peakPricingEnabled: Boolean = false,
+    val weekendOffPeakPricingEnabled: Boolean = true,
+    val holidayOffPeakPricingEnabled: Boolean = true,
     val peakSchedule: List<TokenPeakTimeRange> = DEFAULT_TOKEN_PEAK_TIME_RANGES,
     val peakInputMultiplier: Double = 1.0,
     val peakCachedInputMultiplier: Double = 1.0,
@@ -136,6 +146,8 @@ object TokenPriceResolver {
             outputPricePerMillion = user?.outputPricePerMillion ?: defaults.outputPricePerMillion,
             pricePerRequest = user?.pricePerRequest ?: defaults.pricePerRequest,
             peakPricingEnabled = user?.peakPricingEnabled ?: false,
+            weekendOffPeakPricingEnabled = user?.weekendOffPeakPricingEnabled ?: true,
+            holidayOffPeakPricingEnabled = user?.holidayOffPeakPricingEnabled ?: true,
             peakSchedule = user?.peakSchedule ?: DEFAULT_TOKEN_PEAK_TIME_RANGES,
             peakInputMultiplier = user?.peakInputMultiplier ?: 1.0,
             peakCachedInputMultiplier = user?.peakCachedInputMultiplier ?: 1.0,

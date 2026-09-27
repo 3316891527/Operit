@@ -44,6 +44,48 @@ class TokenPricingRulesTest {
     }
 
     @Test
+    fun `weekend off peak can be disabled independently`() {
+        assertFalse(
+            TokenPricingRules.isPeakTime(
+                at("2026-08-08T10:00"),
+                DEFAULT_TOKEN_PEAK_TIME_RANGES,
+            )
+        )
+        assertTrue(
+            TokenPricingRules.isPeakTime(
+                at("2026-08-08T10:00"),
+                DEFAULT_TOKEN_PEAK_TIME_RANGES,
+                weekendOffPeakPricingEnabled = false,
+            )
+        )
+    }
+
+    @Test
+    fun `holiday off peak can be disabled independently`() {
+        assertFalse(
+            TokenPricingRules.isPeakTime(
+                at("2026-10-02T10:00"),
+                DEFAULT_TOKEN_PEAK_TIME_RANGES,
+            )
+        )
+        assertTrue(
+            TokenPricingRules.isPeakTime(
+                at("2026-10-02T10:00"),
+                DEFAULT_TOKEN_PEAK_TIME_RANGES,
+                holidayOffPeakPricingEnabled = false,
+            )
+        )
+    }
+
+    @Test
+    fun `peak time uses the fixed Shanghai billing zone`() {
+        val localTime = LocalDateTime.of(2026, 8, 3, 10, 0)
+        val occurredAtMs = localTime.atZone(TokenPricingRules.PRICING_ZONE).toInstant().toEpochMilli()
+
+        assertTrue(TokenPricingRules.isPeakTime(occurredAtMs, DEFAULT_TOKEN_PEAK_TIME_RANGES))
+    }
+
+    @Test
     fun `peak time ranges round trip through storage`() {
         val source = listOf(
             TokenPeakTimeRange(540, 720),

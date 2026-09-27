@@ -204,6 +204,38 @@ class TokenCostCalculatorTest {
     }
 
     @Test
+    fun `long context threshold includes output tokens`() {
+        val result = TokenCostCalculator.currentCost(
+            records = listOf(
+                TokenUsageRecordEntity(
+                    occurredAtMs = at("2026-08-03T13:00"),
+                    configId = "config",
+                    provider = "OPENAI",
+                    model = "gpt-test",
+                    requestCount = 1L,
+                    uncachedInputTokens = 1_000_000L,
+                    cachedInputTokens = 1_000_000L,
+                    cacheWriteTokens = 10_000_000L,
+                    totalInputTokens = 2_000_000L,
+                    outputTokens = 1_000_000L,
+                ),
+            ),
+            pricing = tokenPricing().copy(
+                longContextPricingEnabled = true,
+                longContextThreshold = 2_500_000L,
+                longContextInputMultiplier = 2.0,
+                longContextCachedInputMultiplier = 1.0,
+                longContextCacheWriteMultiplier = 1.0,
+                longContextOutputMultiplier = 1.0,
+            ),
+            targetCurrency = PricingCurrency.USD,
+            usdToCnyRate = 7.0,
+        )
+
+        assertEquals(4.5, result.knownAmount, 1e-12)
+    }
+
+    @Test
     fun `count pricing ignores token-only advanced rules`() {
         val result = TokenCostCalculator.currentCost(
             records = listOf(

@@ -60,14 +60,19 @@ object TokenPricingRules {
     fun isPeakTime(
         occurredAtMs: Long?,
         periods: List<TokenPeakTimeRange>,
+        weekendOffPeakPricingEnabled: Boolean = true,
+        holidayOffPeakPricingEnabled: Boolean = true,
     ): Boolean {
         if (occurredAtMs == null || periods.isEmpty()) return false
         val local = Instant.ofEpochMilli(occurredAtMs).atZone(PRICING_ZONE)
         if (local.year < PEAK_PRICING_START_YEAR) return false
-        if (local.dayOfWeek == DayOfWeek.SATURDAY ||
-            local.dayOfWeek == DayOfWeek.SUNDAY ||
-            local.toLocalDate() in HOLIDAYS_2026
+        if (
+            weekendOffPeakPricingEnabled &&
+            (local.dayOfWeek == DayOfWeek.SATURDAY || local.dayOfWeek == DayOfWeek.SUNDAY)
         ) {
+            return false
+        }
+        if (holidayOffPeakPricingEnabled && local.toLocalDate() in HOLIDAYS_2026) {
             return false
         }
         val minuteOfDay = local.hour * 60 + local.minute

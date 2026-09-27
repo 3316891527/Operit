@@ -248,6 +248,19 @@ internal fun PriceSettingsDialog(
     var peakPricingEnabled by remember(existing, initialDraft) {
         mutableStateOf(existing?.peakPricingEnabled ?: initialDraft.peakPricingEnabled)
     }
+    var weekendOffPeakPricingEnabled by remember(existing, initialDraft) {
+        mutableStateOf(
+            existing?.weekendOffPeakPricingEnabled
+                ?: initialDraft.weekendOffPeakPricingEnabled
+        )
+    }
+    var holidayOffPeakPricingEnabled by remember(existing, initialDraft) {
+        mutableStateOf(
+            existing?.holidayOffPeakPricingEnabled
+                ?: initialDraft.holidayOffPeakPricingEnabled
+        )
+    }
+    var advancedRulesExpanded by remember { mutableStateOf(false) }
     var peakExpanded by remember { mutableStateOf(false) }
     var peakPeriods by remember(existing, initialDraft) {
         mutableStateOf(
@@ -439,13 +452,32 @@ internal fun PriceSettingsDialog(
                         onChange = { outputPrice = it },
                     )
                     HorizontalDivider()
-                    PricingRuleSection(
-                        title = stringResource(R.string.token_stats_peak_pricing),
+                    PricingRuleGroup(
+                        title = stringResource(R.string.token_stats_advanced_pricing),
+                        expanded = advancedRulesExpanded,
+                        onExpandedChange = { advancedRulesExpanded = it },
+                    ) {
+                        PricingRuleSection(
+                            title = stringResource(R.string.token_stats_peak_pricing),
                         enabled = peakPricingEnabled,
                         expanded = peakExpanded,
                         onEnabledChange = { peakPricingEnabled = it },
                         onExpandedChange = { peakExpanded = it },
                     ) {
+                        PricingRuleSwitch(
+                            title = stringResource(R.string.token_stats_weekend_off_peak),
+                            checked = weekendOffPeakPricingEnabled,
+                            onCheckedChange = { weekendOffPeakPricingEnabled = it },
+                        )
+                        PricingRuleSwitch(
+                            title = stringResource(R.string.token_stats_holiday_off_peak),
+                            checked = holidayOffPeakPricingEnabled,
+                            onCheckedChange = { holidayOffPeakPricingEnabled = it },
+                        )
+                        Text(
+                            text = stringResource(R.string.token_stats_holiday_schedule_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                         Text(
                             text = stringResource(
                                 R.string.token_stats_pricing_timezone,
@@ -554,6 +586,7 @@ internal fun PriceSettingsDialog(
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+                    }
                 } else {
                     PriceField(
                         label = stringResource(R.string.token_stats_pricing_per_request),
@@ -599,6 +632,8 @@ internal fun PriceSettingsDialog(
                                     null
                                 },
                             peakPricingEnabled = peakPricingEnabled,
+                            weekendOffPeakPricingEnabled = weekendOffPeakPricingEnabled,
+                            holidayOffPeakPricingEnabled = holidayOffPeakPricingEnabled,
                             peakSchedule = parsedPeakPeriods ?: DEFAULT_TOKEN_PEAK_TIME_RANGES,
                             peakInputMultiplier = peakInputMultiplier.toDoubleOrNull() ?: 1.0,
                             peakCachedInputMultiplier = peakCachedInputMultiplier.toDoubleOrNull() ?: 1.0,
@@ -629,6 +664,57 @@ internal fun PriceSettingsDialog(
             }
         },
     )
+}
+
+@Composable
+private fun PricingRuleGroup(
+    title: String,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = { onExpandedChange(!expanded) }) {
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                )
+            }
+        }
+        if (expanded) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun PricingRuleSwitch(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
 @Composable

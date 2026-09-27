@@ -1444,6 +1444,8 @@ private fun priceDraftForIdentity(
         outputPricePerMillion = resolved.outputPricePerMillion,
         pricePerRequest = resolved.pricePerRequest,
         peakPricingEnabled = resolved.peakPricingEnabled,
+        weekendOffPeakPricingEnabled = resolved.weekendOffPeakPricingEnabled,
+        holidayOffPeakPricingEnabled = resolved.holidayOffPeakPricingEnabled,
         peakSchedule = resolved.peakSchedule,
         peakInputMultiplier = resolved.peakInputMultiplier,
         peakCachedInputMultiplier = resolved.peakCachedInputMultiplier,
@@ -1473,6 +1475,10 @@ private fun mergePriceSettings(
         outputPricePerMillion = configuration?.outputPricePerMillion ?: provider?.outputPricePerMillion,
         pricePerRequest = configuration?.pricePerRequest ?: provider?.pricePerRequest,
         peakPricingEnabled = configuration?.peakPricingEnabled ?: provider?.peakPricingEnabled,
+        weekendOffPeakPricingEnabled =
+            configuration?.weekendOffPeakPricingEnabled ?: provider?.weekendOffPeakPricingEnabled,
+        holidayOffPeakPricingEnabled =
+            configuration?.holidayOffPeakPricingEnabled ?: provider?.holidayOffPeakPricingEnabled,
         peakSchedule = configuration?.peakSchedule ?: provider?.peakSchedule,
         peakInputMultiplier = configuration?.peakInputMultiplier ?: provider?.peakInputMultiplier,
         peakCachedInputMultiplier =
@@ -1503,6 +1509,8 @@ private fun TokenStatsPriceSetting.toModelPriceSettings() =
         outputPricePerMillion = outputPricePerMillion,
         pricePerRequest = pricePerRequest,
         peakPricingEnabled = peakPricingEnabled,
+        weekendOffPeakPricingEnabled = weekendOffPeakPricingEnabled,
+        holidayOffPeakPricingEnabled = holidayOffPeakPricingEnabled,
         peakSchedule = peakSchedule,
         peakInputMultiplier = peakInputMultiplier,
         peakCachedInputMultiplier = peakCachedInputMultiplier,

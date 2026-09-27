@@ -21,7 +21,7 @@ import com.ai.assistance.operit.util.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 22
+private const val APP_DATABASE_VERSION = 23
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
@@ -253,6 +253,21 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextCachedInputMultiplier` REAL")
                     db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextCacheWriteMultiplier` REAL")
                     db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextOutputMultiplier` REAL")
+                }
+            }
+
+        /** v22 -> v23: 为峰谷规则增加周末和法定节假日低谷开关。 */
+        internal val MIGRATION_22_23 =
+            object : Migration(22, 23) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "ALTER TABLE token_stats_models " +
+                            "ADD COLUMN `weekendOffPeakPricingEnabled` INTEGER"
+                    )
+                    db.execSQL(
+                        "ALTER TABLE token_stats_models " +
+                            "ADD COLUMN `holidayOffPeakPricingEnabled` INTEGER"
+                    )
                 }
             }
 
@@ -553,7 +568,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_18_19,
                     MIGRATION_19_20,
                     MIGRATION_20_21,
-                    MIGRATION_21_22
+                    MIGRATION_21_22,
+                    MIGRATION_22_23
                 )
                 .build()
 
