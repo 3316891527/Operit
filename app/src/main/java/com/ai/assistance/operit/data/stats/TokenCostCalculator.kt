@@ -110,7 +110,7 @@ object TokenCostCalculator {
             val inputPricesEqual =
                 inputPrice == cachedInputPrice && inputPrice == cacheWritePrice
             if (inputPricesEqual) {
-                val totalInput = contextTokens(record)
+                val totalInput = totalInputTokens(record)
                 if (inputPrice > 0.0 && totalInput == null) {
                     recordUnknown = true
                 } else if (totalInput != null) {
@@ -164,6 +164,15 @@ object TokenCostCalculator {
         }
         return knownTokens.toDouble() * price / 1_000_000.0
     }
+
+    private fun totalInputTokens(record: TokenUsageRecordEntity): Long? =
+        record.totalInputTokens?.takeIf { it >= 0L }
+            ?: listOf(
+                record.uncachedInputTokens,
+                record.cachedInputTokens,
+                record.cacheWriteTokens,
+            ).takeIf { values -> values.all { it != null && it >= 0L } }
+                ?.fold(0L) { total, value -> saturatedAdd(total, value ?: 0L) }
 
     // 长上下文阈值按未缓存输入、缓存输入和输出 Token 的总和判断。
     private fun longContextTokens(record: TokenUsageRecordEntity): Long? {
