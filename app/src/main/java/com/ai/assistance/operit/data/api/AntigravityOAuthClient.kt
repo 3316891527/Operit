@@ -76,7 +76,9 @@ object AntigravityOAuthProtocol {
         "gpt-oss-120b" to "GPT-OSS 120B",
     )
 
+    // 这是与 Antigravity 公共 OAuth 客户端配套的客户端凭据，APK 内嵌值不能视为机密。
     private val clientId = reversed("moc.tnetnocresuelgoog.sppa.pe304g4hjolotv532ercl12h2nisshmt-1950606001701")
+    private val clientSecret = reversed("fADq6z4CXs8BLm1JLdL684RWF85K-XPSCOG")
 
     fun generatePkce(random: SecureRandom = SecureRandom()): AntigravityPkceCodes {
         val verifier = encodeBase64Url(randomBytes(32, random))
@@ -129,6 +131,7 @@ object AntigravityOAuthProtocol {
     ): List<Pair<String, String>> {
         return listOf(
             "client_id" to clientId,
+            "client_secret" to clientSecret,
             "code" to code,
             "grant_type" to "authorization_code",
             "redirect_uri" to redirectUri,
@@ -139,6 +142,7 @@ object AntigravityOAuthProtocol {
     fun refreshTokenBody(refreshToken: String): List<Pair<String, String>> {
         return listOf(
             "client_id" to clientId,
+            "client_secret" to clientSecret,
             "refresh_token" to refreshToken,
             "grant_type" to "refresh_token",
         )
