@@ -7,6 +7,7 @@ import com.ai.assistance.operit.data.api.AntigravityOAuthClient
 import com.ai.assistance.operit.data.api.AntigravityOAuthProtocol
 import com.ai.assistance.operit.data.api.AntigravityPkceCodes
 import com.ai.assistance.operit.data.preferences.AntigravityAuthState
+import com.ai.assistance.operit.util.AppLogger
 import java.io.IOException
 
 internal data class AntigravityOAuthLoginSession(
@@ -32,20 +33,25 @@ internal class AntigravityOAuthCoordinator(context: Context) {
 
     suspend fun startLogin(): AntigravityOAuthLoginSession {
         val callbackServer = AntigravityOAuthLoopbackCallbackServer.open()
-        val pkce = AntigravityOAuthProtocol.generatePkce()
-        val state = AntigravityOAuthProtocol.generateState()
-        val expiresAt = System.currentTimeMillis() + AntigravityOAuthProtocol.OAUTH_TIMEOUT_MILLIS
-        return AntigravityOAuthLoginSession(
-            callbackServer = callbackServer,
-            pkce = pkce,
-            state = state,
-            authorizationUrl = AntigravityOAuthProtocol.buildAuthorizationUrl(
-                redirectUri = callbackServer.redirectUri,
+        try {
+            val pkce = AntigravityOAuthProtocol.generatePkce()
+            val state = AntigravityOAuthProtocol.generateState()
+            val expiresAt = System.currentTimeMillis() + AntigravityOAuthProtocol.OAUTH_TIMEOUT_MILLIS
+            return AntigravityOAuthLoginSession(
+                callbackServer = callbackServer,
                 pkce = pkce,
                 state = state,
-            ),
-            expiresAt = expiresAt,
-        )
+                authorizationUrl = AntigravityOAuthProtocol.buildAuthorizationUrl(
+                    redirectUri = callbackServer.redirectUri,
+                    pkce = pkce,
+                    state = state,
+                ),
+                expiresAt = expiresAt,
+            )
+        } catch (error: Exception) {
+            callbackServer.close()
+            throw error
+        }
     }
 
     suspend fun completeLogin(
@@ -63,11 +69,17 @@ internal class AntigravityOAuthCoordinator(context: Context) {
         }
         val code = callbackUri.getQueryParameter("code")
             ?: throw IOException("Antigravity OAuth callback has no authorization code")
+        AppLogger.d(TAG, "OAuth callback received; exchanging authorization code")
         val tokens = oauthClient.exchangeAuthorizationCode(
             code = code,
             redirectUri = session.redirectUri,
             verifier = session.pkce.verifier,
         )
+        AppLogger.d(TAG, "OAuth token exchange succeeded; loading account metadata")
         return authManager.saveLoginTokens(tokens)
+    }
+
+    companion object {
+        private const val TAG = "AntigravityOAuthCoordinator"
     }
 }

@@ -7848,4 +7848,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="vertex_direct_media_processing_desc">Send images directly to Vertex AI</string>
 
     <string name="google_oauth_experimental_notice">Función experimental: el inicio de sesión y la integración de modelos de Antigravity y Vertex AI siguen en validación y pueden ser inestables.</string>
+    <string name="antigravity_login_completing">Completando la autorización y cargando los datos de la cuenta…</string>
+    <string name="antigravity_login_timed_out">Se agotaron los 15 minutos de espera de la autorización de Google. Inicia sesión de nuevo.</string>
 </resources>

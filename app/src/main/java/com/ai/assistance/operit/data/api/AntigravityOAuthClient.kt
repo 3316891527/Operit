@@ -33,7 +33,7 @@ object AntigravityOAuthProtocol {
     const val SANDBOX_ENDPOINT = "https://daily-cloudcode-pa.sandbox.googleapis.com"
     const val CALLBACK_PORT = 51121
     const val CALLBACK_PATH = "/oauth-callback"
-    const val OAUTH_TIMEOUT_MILLIS = 5 * 60 * 1000L
+    const val OAUTH_TIMEOUT_MILLIS = 15 * 60 * 1000L
     const val EXPIRY_SKEW_MILLIS = 5 * 60 * 1000L
     const val USER_AGENT = "Operit"
 

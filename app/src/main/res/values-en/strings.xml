@@ -8564,4 +8564,6 @@
     <string name="vertex_direct_media_processing_desc">Send images directly to Vertex AI</string>
 
     <string name="google_oauth_experimental_notice">Experimental: Antigravity and Vertex AI account login and model integration are still being validated and may be unstable.</string>
+    <string name="antigravity_login_completing">Completing authorization and loading account details…</string>
+    <string name="antigravity_login_timed_out">Timed out after waiting 15 minutes for Google authorization. Please start sign-in again.</string>
 </resources>

@@ -8375,4 +8375,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="vertex_direct_media_processing_desc">Send images directly to Vertex AI</string>
 
     <string name="google_oauth_experimental_notice">Experimental: autentificarea și integrarea modelelor Antigravity și Vertex AI sunt încă în curs de validare și pot fi instabile.</string>
+    <string name="antigravity_login_completing">Se finalizează autorizarea și se încarcă detaliile contului…</string>
+    <string name="antigravity_login_timed_out">Au trecut 15 minute de așteptare pentru autorizarea Google. Reîncepe autentificarea.</string>
 </resources>

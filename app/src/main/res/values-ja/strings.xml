@@ -381,4 +381,6 @@
     <string name="vertex_direct_media_processing_desc">Send images directly to Vertex AI</string>
 
     <string name="google_oauth_experimental_notice">実験的機能：Antigravity と Vertex AI のアカウントログインおよびモデル連携は検証中のため、不安定な場合があります。</string>
+    <string name="antigravity_login_completing">認証を完了し、アカウント情報を読み込んでいます…</string>
+    <string name="antigravity_login_timed_out">Google 認証の待機が 15 分を超えました。ログインをやり直してください。</string>
 </resources>

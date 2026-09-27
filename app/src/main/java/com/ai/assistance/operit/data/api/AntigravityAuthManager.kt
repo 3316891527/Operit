@@ -10,6 +10,8 @@ import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -43,7 +45,9 @@ class AntigravityAuthManager private constructor(context: Context) {
             ?: throw IOException("Antigravity OAuth response has no refresh token")
         val expiresIn = tokens.expiresInSeconds
             ?: throw IOException("Antigravity OAuth response has no expiration")
+        AppLogger.d(TAG, "Fetching account email after token exchange")
         val email = fetchEmail(accessToken)
+        AppLogger.d(TAG, "Discovering project after account email lookup")
         val projectId = discoverProjectId(accessToken) ?: fallbackProjectId(email)
         val state = AntigravityAuthState(
             accessToken = accessToken,
@@ -53,7 +57,9 @@ class AntigravityAuthManager private constructor(context: Context) {
             projectId = projectId,
             email = email,
         )
+        currentCoroutineContext().ensureActive()
         preferences.save(state)
+        AppLogger.d(TAG, "Antigravity login credentials saved")
         return state
     }
 

@@ -52,24 +52,32 @@ fun AntigravityLoginDialog(
 
     LaunchedEffect(Unit) {
         var activeSession: AntigravityOAuthLoginSession? = null
+        var stage = "starting"
         try {
-            activeSession = withContext(Dispatchers.IO) { coordinator.startLogin() }
-            session = activeSession
+            val loginSession = withContext(Dispatchers.IO) {
+                // 创建阶段若发生取消，finally 仍需拿到并关闭刚打开的监听器。
+                coordinator.startLogin().also { activeSession = it }
+            }
+            session = loginSession
+            AppLogger.d(TAG, "Antigravity OAuth callback server ready; opening browser")
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(activeSession.authorizationUrl)).apply {
+                Intent(Intent.ACTION_VIEW, Uri.parse(loginSession.authorizationUrl)).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 },
             )
             isLaunching = false
-            val remainingMillis = activeSession.expiresAt - System.currentTimeMillis()
+            val remainingMillis = loginSession.expiresAt - System.currentTimeMillis()
             if (remainingMillis <= 0L) {
                 throw IllegalStateException("Antigravity OAuth session expired before browser launch")
             }
-            val callbackUri = withTimeout(remainingMillis) {
-                activeSession.callbackServer.awaitCallback()
+            stage = "waiting_for_callback"
+            AppLogger.d(TAG, "Waiting up to 15 minutes for browser authorization")
+            val callbackUrl = withTimeout(remainingMillis) {
+                loginSession.callbackServer.awaitCallback(loginSession.state)
             }
             isCompleting = true
-            val state = coordinator.completeLogin(activeSession, callbackUri)
+            stage = "exchanging_token_and_loading_account"
+            val state = coordinator.completeLogin(loginSession, Uri.parse(callbackUrl))
             Toast.makeText(
                 context,
                 context.getString(R.string.antigravity_login_success),
@@ -79,13 +87,13 @@ fun AntigravityLoginDialog(
             onDismissRequest()
         } catch (error: TimeoutCancellationException) {
             AppLogger.e(TAG, "Antigravity OAuth login timed out", error)
-            showLoginFailure(context, error)
+            Toast.makeText(context, R.string.antigravity_login_timed_out, Toast.LENGTH_LONG).show()
             onDismissRequest()
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
             if (!cancelRequested) {
-                AppLogger.e(TAG, "Antigravity OAuth login failed", error)
+                AppLogger.e(TAG, "Antigravity OAuth login failed at stage=$stage", error)
                 showLoginFailure(context, error)
                 onDismissRequest()
             }
@@ -119,6 +127,8 @@ fun AntigravityLoginDialog(
                         stringResource(
                             if (isLaunching) {
                                 R.string.antigravity_login_starting
+                            } else if (isCompleting) {
+                                R.string.antigravity_login_completing
                             } else {
                                 R.string.antigravity_login_waiting
                             },
