@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.workflow.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -15,11 +17,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
@@ -55,6 +61,9 @@ import com.ai.assistance.operit.ui.features.workflow.components.GridWorkflowCanv
 import com.ai.assistance.operit.ui.features.workflow.components.ConnectionMenuDialog
 import com.ai.assistance.operit.ui.features.workflow.components.NodeActionMenuDialog
 import com.ai.assistance.operit.ui.features.workflow.components.ScheduleConfigDialog
+import com.ai.assistance.operit.ui.main.LocalTopBarActions
+import com.ai.assistance.operit.ui.main.components.LocalAppBarContentColor
+import com.ai.assistance.operit.ui.main.components.LocalIsCurrentScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -140,6 +149,45 @@ fun WorkflowDetailScreen(
     val runningWorkflowIds by viewModel.runningWorkflowIds.collectAsState()
     val latestExecutionRecord = viewModel.latestExecutionRecord
     val isWorkflowRunning = runningWorkflowIds.contains(workflowId)
+    val setTopBarActions = LocalTopBarActions.current
+    val isCurrentScreen = LocalIsCurrentScreen.current
+    val appBarContentColor = LocalAppBarContentColor.current
+    val exportFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.exportWorkflowJson(workflowId, uri)
+        }
+    }
+
+    LaunchedEffect(isCurrentScreen, workflow?.id, appBarContentColor) {
+        if (!isCurrentScreen || workflow == null) {
+            setTopBarActions {}
+            return@LaunchedEffect
+        }
+        setTopBarActions {
+            IconButton(onClick = { showEditDialog = true }) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.workflow_settings),
+                    tint = appBarContentColor
+                )
+            }
+            IconButton(
+                onClick = {
+                    viewModel.loadLatestExecutionRecord(workflowId)
+                    showExecutionLogsForNodeId = null
+                    showExecutionLogDialog = true
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = stringResource(R.string.workflow_view_logs),
+                    tint = appBarContentColor
+                )
+            }
+        }
+    }
 
     CustomScaffold(
         snackbarHost = {
@@ -156,9 +204,8 @@ fun WorkflowDetailScreen(
             if (workflow != null) {
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Animated secondary actions
                     AnimatedVisibility(
                         visible = isFabMenuExpanded,
                         enter = fadeIn() + expandVertically(expandFrom = Alignment.Bottom),
@@ -166,7 +213,7 @@ fun WorkflowDetailScreen(
                     ) {
                         Column(
                             horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             if (workflow.enabled || isWorkflowRunning) {
                                 SpeedDialAction(
@@ -175,31 +222,21 @@ fun WorkflowDetailScreen(
                                     } else {
                                         stringResource(R.string.workflow_action_trigger)
                                     },
-                                    icon = if (isWorkflowRunning) {
-                                        Icons.Default.Close
-                                    } else {
-                                        Icons.Default.PlayArrow
-                                    },
+                                    icon = if (isWorkflowRunning) Icons.Default.Close else Icons.Default.PlayArrow,
                                     onClick = {
                                         if (isWorkflowRunning) {
-                                            viewModel.cancelWorkflow(workflowId) { result -> showTriggerResult = result }
+                                            viewModel.cancelWorkflow(workflowId) { result ->
+                                                showTriggerResult = result
+                                            }
                                         } else {
-                                            viewModel.triggerWorkflow(workflowId) { result -> showTriggerResult = result }
+                                            viewModel.triggerWorkflow(workflowId) { result ->
+                                                showTriggerResult = result
+                                            }
                                         }
                                         isFabMenuExpanded = false
                                     }
                                 )
                             }
-                            SpeedDialAction(
-                                text = stringResource(R.string.workflow_view_logs),
-                                icon = Icons.Default.Call,
-                                onClick = {
-                                    viewModel.loadLatestExecutionRecord(workflowId)
-                                    showExecutionLogsForNodeId = null
-                                    showExecutionLogDialog = true
-                                    isFabMenuExpanded = false
-                                }
-                            )
                             SpeedDialAction(
                                 text = stringResource(R.string.workflow_action_add_node),
                                 icon = Icons.Default.Add,
@@ -208,36 +245,26 @@ fun WorkflowDetailScreen(
                                     isFabMenuExpanded = false
                                 }
                             )
-                            SpeedDialAction(
-                                text = stringResource(R.string.workflow_action_edit_workflow),
-                                icon = Icons.Default.Edit,
-                                onClick = {
-                                    showEditDialog = true
-                                    isFabMenuExpanded = false
-                                }
-                            )
-                            SpeedDialAction(
-                                text = stringResource(R.string.workflow_delete),
-                                icon = Icons.Default.Delete,
-                                onClick = {
-                                    showDeleteDialog = true
-                                    isFabMenuExpanded = false
-                                },
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
                         }
                     }
 
-                    // Main FAB
                     FloatingActionButton(
-                        onClick = { isFabMenuExpanded = !isFabMenuExpanded },
+                        onClick = {
+                            if (workflow.nodes.isEmpty()) {
+                                showAddNodeDialog = true
+                            } else {
+                                isFabMenuExpanded = !isFabMenuExpanded
+                            }
+                        },
                         containerColor = MaterialTheme.colorScheme.primary
                     ) {
-                        val rotation by animateFloatAsState(targetValue = if (isFabMenuExpanded) 45f else 0f, label = "fab_icon_rotation")
+                        val rotation by animateFloatAsState(
+                            targetValue = if (isFabMenuExpanded) 45f else 0f,
+                            label = "fab_icon_rotation"
+                        )
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = stringResource(R.string.workflow_open_action_menu),
+                            contentDescription = stringResource(R.string.workflow_action_add_node),
                             modifier = Modifier.rotate(rotation)
                         )
                     }
@@ -263,6 +290,11 @@ fun WorkflowDetailScreen(
                     Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
+                        WorkflowEditorHeader(
+                            workflow = workflow,
+                            isWorkflowRunning = isWorkflowRunning
+                        )
+
                         // 网格画布
                         if (workflow.nodes.isEmpty()) {
                             Card(
@@ -330,6 +362,17 @@ fun WorkflowDetailScreen(
                 EditWorkflowDialog(
                     workflow = workflow,
                     onDismiss = { showEditDialog = false },
+                    onExport = {
+                        showEditDialog = false
+                        val safeName = workflow.name
+                            .ifBlank { "workflow" }
+                            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+                        exportFileLauncher.launch("$safeName.json")
+                    },
+                    onDelete = {
+                        showEditDialog = false
+                        showDeleteDialog = true
+                    },
                     onSave = { name, description, enabled ->
                         val contentChanged = workflow.name != name || workflow.description != description
                         if (contentChanged) {
@@ -551,6 +594,47 @@ fun WorkflowDetailScreen(
             }
         }
     }
+}
+
+@Composable
+private fun WorkflowEditorHeader(
+    workflow: Workflow,
+    isWorkflowRunning: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = workflow.name,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = if (isWorkflowRunning) {
+                    stringResource(R.string.workflow_execution_running)
+                } else {
+                    stringResource(R.string.workflow_saved)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isWorkflowRunning) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
+        Text(
+            text = stringResource(R.string.workflow_node_count_format, workflow.nodes.size),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
@@ -2239,7 +2323,9 @@ fun NodeDialog(
 fun EditWorkflowDialog(
     workflow: Workflow,
     onDismiss: () -> Unit,
-    onSave: (String, String, Boolean) -> Unit
+    onSave: (String, String, Boolean) -> Unit,
+    onExport: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf(workflow.name) }
     var description by remember { mutableStateOf(workflow.description) }
@@ -2269,6 +2355,35 @@ fun EditWorkflowDialog(
                     minLines = 3,
                     maxLines = 5
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(onClick = onExport) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.workflow_export_json))
+                    }
+                    TextButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.workflow_delete))
+                    }
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
