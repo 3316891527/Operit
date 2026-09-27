@@ -1857,8 +1857,8 @@ open class GeminiProvider(
             val responseText = responseBody.string()
             logDebug("收到完整响应，长度: ${responseText.length}")
             
-            // 解析JSON响应
-            val json = JSONObject(responseText)
+            // 解析JSON响应，并通过 unwrapStreamingPayload 解包外层 response（兼容 Antigravity 等提供商）
+            val json = unwrapStreamingPayload(JSONObject(responseText))
             
             // 提取内容
             val extraction = extractContentFromJson(

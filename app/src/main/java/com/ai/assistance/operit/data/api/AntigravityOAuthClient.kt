@@ -28,23 +28,36 @@ data class AntigravityOAuthTokenResponse(
 object AntigravityOAuthProtocol {
     const val AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     const val TOKEN_URL = "https://oauth2.googleapis.com/token"
-    const val USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo?alt=json"
-    const val DEFAULT_ENDPOINT = "https://cloudcode-pa.googleapis.com"
+    const val USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo?alt=json"
+    const val DEFAULT_ENDPOINT = "https://daily-cloudcode-pa.googleapis.com"
+    const val PROD_ENDPOINT = "https://cloudcode-pa.googleapis.com"
     const val SANDBOX_ENDPOINT = "https://daily-cloudcode-pa.sandbox.googleapis.com"
     const val CALLBACK_PORT = 51121
     const val CALLBACK_PATH = "/oauth-callback"
     const val OAUTH_TIMEOUT_MILLIS = 15 * 60 * 1000L
     const val EXPIRY_SKEW_MILLIS = 5 * 60 * 1000L
-    const val USER_AGENT = "Operit"
 
-    val apiEndpoints = listOf(DEFAULT_ENDPOINT, SANDBOX_ENDPOINT)
+    // 意图：伪装 Antigravity Hub 原生客户端版本与平台指纹。
+    // 不这么做后果：上游 Cloud Code 会拒绝低于 2.9.0 的客户端访问新模型并标记异常流量。
+    const val HUB_VERSION = "2.9.1"
+    const val HUB_PLATFORM = "darwin/arm64"
+    const val USER_AGENT = "antigravity/hub/$HUB_VERSION $HUB_PLATFORM"
+    const val NODE_API_CLIENT_UA = "google-api-nodejs-client/10.3.0"
+    const val ONBOARD_USER_AGENT = "$USER_AGENT $NODE_API_CLIENT_UA"
+    const val ONBOARD_GOOG_API_CLIENT = "gl-node/22.21.1"
+    const val OAUTH_TOKEN_USER_AGENT = "Go-http-client/2.0"
 
+    val apiEndpoints = listOf(DEFAULT_ENDPOINT, SANDBOX_ENDPOINT, PROD_ENDPOINT)
+    val quotaEndpoints = listOf(DEFAULT_ENDPOINT, SANDBOX_ENDPOINT, PROD_ENDPOINT)
+
+    // 意图：对齐 CLIProxyAPI 所需的完整权限范围，首位必须为 cloud-platform。
+    // 不这么做后果：生成的 Access Token 缺少对 cloudcode-pa 的访问权限，直接报错 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT。
     val scopes = listOf(
-        "https://www.googleapis.com/auth/aicode",
-        "https://www.googleapis.com/auth/cclog",
-        "https://www.googleapis.com/auth/experimentsandconfigs",
+        "https://www.googleapis.com/auth/cloud-platform",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/cclog",
+        "https://www.googleapis.com/auth/experimentsandconfigs",
     )
 
     // 公开模型名到 Cloud Code Assist 运行时模型名。来源是 dsh-antigravity 的静态路由。
@@ -116,14 +129,6 @@ object AntigravityOAuthProtocol {
         return runtimeModelIds[normalized] ?: normalized
     }
 
-    fun clientMetadata(): String {
-        return JSONObject()
-            .put("ideType", "ANTIGRAVITY")
-            .put("platform", "LINUX")
-            .put("pluginType", "GEMINI")
-            .toString()
-    }
-
     fun authorizationCodeBody(
         code: String,
         redirectUri: String,
@@ -191,11 +196,15 @@ class AntigravityOAuthClient(
         fields: List<Pair<String, String>>,
     ): AntigravityOAuthTokenResponse {
         val body = fields.toFormBody()
+        // 意图：对齐原生 Antigravity 在换取与刷新 OAuth Token 时发送 Host 和 Go-http-client/2.0 UA。
+        // 不这么做后果：上游网关可识别非官方调用者。
         val responseBody = executeRequest(
             Request.Builder()
                 .url(AntigravityOAuthProtocol.TOKEN_URL)
                 .post(body)
+                .header("Host", "oauth2.googleapis.com")
                 .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("User-Agent", AntigravityOAuthProtocol.OAUTH_TOKEN_USER_AGENT)
                 .build(),
         )
         val json = JSONObject(responseBody)

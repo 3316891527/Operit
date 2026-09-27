@@ -318,8 +318,6 @@ internal class ToolPkgJsAiProviderService(
             "apiProviderTypeId" to config.apiProviderTypeId,
             "apiKey" to config.apiKey,
             "apiEndpoint" to config.apiEndpoint,
-            "vertexProjectId" to config.vertexProjectId,
-            "vertexLocation" to config.vertexLocation,
             "modelName" to config.modelName,
             "customHeaders" to decodeJsonObjectString(config.customHeaders),
             "customParameters" to decodeJsonArrayString(config.customParameters),

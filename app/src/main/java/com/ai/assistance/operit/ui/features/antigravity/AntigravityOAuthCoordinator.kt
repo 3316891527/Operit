@@ -25,6 +25,8 @@ internal class AntigravityOAuthCoordinator(context: Context) {
     private val authManager = AntigravityAuthManager.getInstance(context)
     private val oauthClient = AntigravityOAuthClient(
         client = okhttp3.OkHttpClient.Builder()
+            .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+            .connectionPool(okhttp3.ConnectionPool(2, 30, java.util.concurrent.TimeUnit.SECONDS))
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)

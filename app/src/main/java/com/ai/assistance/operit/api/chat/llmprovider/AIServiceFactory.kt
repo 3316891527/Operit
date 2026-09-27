@@ -393,15 +393,7 @@ object AIServiceFactory {
                     enableToolCall = enableToolCall,
                     thinkingConfigurations = config.thinkingConfigurations,
                     thinkingOptionId = config.thinkingOptionId,
-                )
-
-            ApiProviderType.VERTEX_AI ->
-                VertexProvider(
-                    authManager = com.ai.assistance.operit.data.api.VertexAuthManager.getInstance(context),
-                    apiEndpoint = com.ai.assistance.operit.data.api.VertexOAuthProtocol.openAiRoot(
-                        project = config.vertexProjectId,
-                        location = config.vertexLocation,
-                    ),
+                ),
                     modelName = config.modelName,
                     client = httpClient,
                     customHeaders = customHeaders,

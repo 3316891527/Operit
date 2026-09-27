@@ -88,8 +88,7 @@ object EndpointCompleter {
             }
 
             ApiProviderType.OPENAI_CODEX,
-            ApiProviderType.ANTIGRAVITY,
-            ApiProviderType.VERTEX_AI -> {
+            ApiProviderType.ANTIGRAVITY, -> {
                 return endpoint
             }
 
