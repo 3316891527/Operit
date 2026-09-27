@@ -486,7 +486,7 @@ internal fun PriceSettingsDialog(
                                 if (peakPeriods.size > 1) {
                                     IconButton(
                                         onClick = {
-                                            peakPeriods = peakPeriods.filterIndexed { itemIndex ->
+                                            peakPeriods = peakPeriods.filterIndexed { itemIndex, _ ->
                                                 itemIndex != index
                                             }
                                         },
