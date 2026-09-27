@@ -89,7 +89,7 @@ internal class AntigravityOAuthLoopbackCallbackServer private constructor(
 
         fun open(): AntigravityOAuthLoopbackCallbackServer {
             val socket = ServerSocket(
-                0,
+                AntigravityOAuthProtocol.CALLBACK_PORT,
                 1,
                 InetAddress.getByName(LOOPBACK_HOST),
             )
