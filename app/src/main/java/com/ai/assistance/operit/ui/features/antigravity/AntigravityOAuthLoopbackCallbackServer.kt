@@ -138,7 +138,7 @@ internal class AntigravityOAuthLoopbackCallbackServer internal constructor(
             if (value < 0) return null
             header.append(value.toChar())
             if (header.endsWith("\r\n\r\n")) {
-                return header.substringBefore("\r\n")
+                return header.toString().substringBefore("\r\n")
             }
         }
         writeResponseSafely(socket, "431 Request Header Fields Too Large", "Callback request headers too large.")
