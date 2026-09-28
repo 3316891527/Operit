@@ -30,6 +30,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -50,37 +52,104 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityOption
 import kotlin.math.roundToInt
 import kotlinx.coroutines.isActive
+
+private data class ThinkingSliderStop(
+    val id: String?,
+    val displayLabel: String,
+    val isOff: Boolean = false,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ThinkingQualitySlider(
     label: String,
     mapping: ThinkingQualityMapping,
+    enabled: Boolean,
+    onEnabledChange: () -> Unit,
     value: String,
     onValueChange: (String) -> Unit,
     onInfoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val options = mapping.options
-    val selectedIndex = options.indexOfFirst { it.id == value }
-    val maxIndex = (options.size - 1).coerceAtLeast(1)
-    var sliderPosition by remember(options) { mutableFloatStateOf(selectedIndex.toFloat()) }
+    val stops = when (mapping.control) {
+        ThinkingQualityControl.LEVELS -> buildList {
+            if (!mapping.reasoningRequired) {
+                add(
+                    ThinkingSliderStop(
+                        id = null,
+                        displayLabel = stringResource(R.string.thinking_type_off),
+                        isOff = true,
+                    )
+                )
+            }
+            mapping.options.forEach { option ->
+                add(ThinkingSliderStop(id = option.id, displayLabel = option.displayLabel))
+            }
+        }
+        ThinkingQualityControl.TOGGLE_ONLY -> buildList {
+            if (!mapping.reasoningRequired) {
+                add(
+                    ThinkingSliderStop(
+                        id = null,
+                        displayLabel = stringResource(R.string.thinking_type_off),
+                        isOff = true,
+                    )
+                )
+            }
+            add(
+                ThinkingSliderStop(
+                    id = null,
+                    displayLabel = stringResource(R.string.thinking_type_mode),
+                )
+            )
+        }
+        ThinkingQualityControl.UNSUPPORTED -> emptyList()
+    }
+
+    if (stops.isEmpty() || (mapping.control == ThinkingQualityControl.LEVELS && mapping.options.isEmpty())) return
+
+    val selectedIndex = when {
+        !enabled && stops.firstOrNull()?.isOff == true -> 0
+        else -> {
+            val optionIndex = stops.indexOfFirst { !it.isOff && it.id == value }
+            if (optionIndex >= 0) optionIndex else stops.indexOfFirst { !it.isOff }.coerceAtLeast(0)
+        }
+    }
+    val hasSlider = stops.size > 1
+    val maxIndex = stops.lastIndex
+    var sliderPosition by remember(stops) { mutableFloatStateOf(selectedIndex.toFloat()) }
+    var lastAppliedIndex by remember(stops) { mutableIntStateOf(selectedIndex) }
+    var appliedEnabled by remember(stops) { mutableStateOf(enabled) }
     val interactionSource = remember { MutableInteractionSource() }
     val isDragging by interactionSource.collectIsDraggedAsState()
 
-    LaunchedEffect(selectedIndex) {
-        sliderPosition = selectedIndex.toFloat()
+    LaunchedEffect(selectedIndex, enabled, isDragging) {
+        if (!isDragging) {
+            sliderPosition = selectedIndex.toFloat()
+            lastAppliedIndex = selectedIndex
+            appliedEnabled = enabled
+        }
     }
 
-    if (mapping.control != ThinkingQualityControl.LEVELS || options.isEmpty() || selectedIndex < 0) {
-        return
+    fun applyStop(index: Int) {
+        if (index == lastAppliedIndex) return
+
+        val stop = stops[index]
+        val shouldBeEnabled = !stop.isOff
+        if (!mapping.reasoningRequired && shouldBeEnabled != appliedEnabled) {
+            onEnabledChange()
+            appliedEnabled = shouldBeEnabled
+        }
+        if (shouldBeEnabled && mapping.control == ThinkingQualityControl.LEVELS && stop.id != null && stop.id != value) {
+            onValueChange(stop.id)
+        }
+        lastAppliedIndex = index
     }
 
-    val currentIndex = sliderPosition.roundToInt().coerceIn(0, options.lastIndex)
-    val selectedOption = options[currentIndex]
+    val currentIndex = sliderPosition.roundToInt().coerceIn(0, stops.lastIndex)
+    val selectedStop = stops[currentIndex]
     val primary = MaterialTheme.colorScheme.primary
     val highlightColor = lerp(primary, MaterialTheme.colorScheme.onSurface, 0.62f)
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -134,8 +203,12 @@ internal fun ThinkingQualitySlider(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = selectedOption.displayLabel,
-                color = primary,
+                text = selectedStop.displayLabel,
+                color = if (selectedStop.isOff) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    primary
+                },
                 fontSize = MaterialTheme.typography.bodySmall.fontSize,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -143,56 +216,59 @@ internal fun ThinkingQualitySlider(
             )
         }
 
-        Slider(
-            value = sliderPosition,
-            onValueChange = { newValue ->
-                sliderPosition = newValue
-            },
-            onValueChangeFinished = {
-                onValueChange(options[sliderPosition.roundToInt().coerceIn(0, options.lastIndex)].id)
-            },
-            valueRange = 0f..maxIndex.toFloat(),
-            steps = (options.size - 2).coerceAtLeast(0),
-            interactionSource = interactionSource,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(36.dp),
-            colors = SliderDefaults.colors(
-                thumbColor = Color.Transparent,
-                activeTrackColor = Color.Transparent,
-                inactiveTrackColor = Color.Transparent,
-                activeTickColor = Color.Transparent,
-                inactiveTickColor = Color.Transparent,
-            ),
-            thumb = {
-                androidx.compose.foundation.layout.Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(20.dp),
-                ) {
+        if (hasSlider) {
+            Slider(
+                value = sliderPosition,
+                onValueChange = { newValue ->
+                    sliderPosition = newValue
+                    applyStop(newValue.roundToInt().coerceIn(0, stops.lastIndex))
+                },
+                onValueChangeFinished = {
+                    applyStop(sliderPosition.roundToInt().coerceIn(0, stops.lastIndex))
+                },
+                valueRange = 0f..maxIndex.toFloat(),
+                steps = (stops.size - 2).coerceAtLeast(0),
+                interactionSource = interactionSource,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(36.dp),
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.Transparent,
+                    activeTrackColor = Color.Transparent,
+                    inactiveTrackColor = Color.Transparent,
+                    activeTickColor = Color.Transparent,
+                    inactiveTickColor = Color.Transparent,
+                ),
+                thumb = {
                     androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(highlightColor, CircleShape),
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(20.dp),
+                    ) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(highlightColor, CircleShape),
+                        )
+                    }
+                },
+                track = {
+                    ThinkingQualityTrack(
+                        progress = sliderPosition / maxIndex.toFloat(),
+                        selectedIndex = currentIndex,
+                        stopCount = stops.size,
+                        shimmerPosition = shimmerPosition.value,
+                        showShimmer = isDragging,
+                        primary = primary,
+                        highlightColor = highlightColor,
+                        trackColor = trackColor,
+                        outlineColor = outlineColor,
                     )
-                }
-            },
-            track = {
-                ThinkingQualityTrack(
-                    progress = sliderPosition / maxIndex.toFloat(),
-                    selectedIndex = sliderPosition.roundToInt().coerceIn(0, options.lastIndex),
-                    stopCount = options.size,
-                    shimmerPosition = shimmerPosition.value,
-                    showShimmer = isDragging,
-                    primary = primary,
-                    highlightColor = highlightColor,
-                    trackColor = trackColor,
-                    outlineColor = outlineColor,
-                )
-            },
-        )
+                },
+            )
+        }
 
         ThinkingQualityLabels(
-            options = options,
+            options = stops,
             selectedIndex = currentIndex,
             primary = primary,
             modifier = Modifier.fillMaxWidth(),
@@ -202,7 +278,7 @@ internal fun ThinkingQualitySlider(
 
 @Composable
 private fun ThinkingQualityLabels(
-    options: List<ThinkingQualityOption>,
+    options: List<ThinkingSliderStop>,
     selectedIndex: Int,
     primary: Color,
     modifier: Modifier = Modifier,
@@ -213,7 +289,11 @@ private fun ThinkingQualityLabels(
             options.forEachIndexed { index, option ->
                 Text(
                     text = option.displayLabel,
-                    color = if (index == selectedIndex) primary else inactiveColor,
+                    color = when {
+                        index == selectedIndex && !option.isOff -> primary
+                        index == selectedIndex -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> inactiveColor
+                    },
                     fontSize = MaterialTheme.typography.labelSmall.fontSize,
                     fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal,
                     maxLines = 2,
@@ -327,7 +407,7 @@ private fun DrawScope.drawThinkingQualityTrack(
     val filledStart = if (isRtl) activeCenter - trackRadius else activeStart
     val filledEnd = if (isRtl) valueEnd + trackRadius else activeCenter + trackRadius
 
-    // The inactive side remains transparent; reveal the theme gradient only up to the thumb.
+    // 未选中的轨道保持透明，只显示滑块之前的主题渐变。
     if (filledEnd > filledStart) {
         val gradientColors = listOf(
             lerp(trackColor, primary, 0.18f),
