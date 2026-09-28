@@ -227,9 +227,7 @@ fun WorkflowListScreen(
                                     },
                                     onOpen = { onNavigateToDetail(workflow.id) },
                                     onDuplicate = {
-                                        viewModel.duplicateWorkflow(workflow.id) { copy ->
-                                            onNavigateToDetail(copy.id)
-                                        }
+                                        viewModel.duplicateWorkflow(workflow.id)
                                     }
                                 )
                             }

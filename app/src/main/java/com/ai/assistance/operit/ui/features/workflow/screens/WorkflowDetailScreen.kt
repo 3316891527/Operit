@@ -2,11 +2,6 @@ package com.ai.assistance.operit.ui.features.workflow.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,16 +9,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -31,9 +22,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -135,7 +123,6 @@ fun WorkflowDetailScreen(
     var showNodeActionMenu by remember { mutableStateOf<String?>(null) }
     var showConnectionMenu by remember { mutableStateOf<String?>(null) }
     var showEditNodeDialog by remember { mutableStateOf<WorkflowNode?>(null) }
-    var isFabMenuExpanded by remember { mutableStateOf(false) }
     var showExecutionLogDialog by remember { mutableStateOf(false) }
     var showExecutionLogsForNodeId by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -186,6 +173,40 @@ fun WorkflowDetailScreen(
                     tint = appBarContentColor
                 )
             }
+            if (workflow.enabled || isWorkflowRunning) {
+                FilledTonalButton(
+                    onClick = {
+                        if (isWorkflowRunning) {
+                            viewModel.cancelWorkflow(workflowId) { result ->
+                                showTriggerResult = result
+                            }
+                        } else {
+                            viewModel.triggerWorkflow(workflowId) { result ->
+                                showTriggerResult = result
+                            }
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isWorkflowRunning) Icons.Default.Close else Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (isWorkflowRunning) {
+                            stringResource(R.string.cancel)
+                        } else {
+                            stringResource(R.string.workflow_run)
+                        }
+                    )
+                }
+            }
         }
     }
 
@@ -202,73 +223,18 @@ fun WorkflowDetailScreen(
         },
         floatingActionButton = {
             if (workflow != null) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    AnimatedVisibility(
-                        visible = isFabMenuExpanded,
-                        enter = fadeIn() + expandVertically(expandFrom = Alignment.Bottom),
-                        exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Bottom)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            if (workflow.enabled || isWorkflowRunning) {
-                                SpeedDialAction(
-                                    text = if (isWorkflowRunning) {
-                                        stringResource(R.string.cancel)
-                                    } else {
-                                        stringResource(R.string.workflow_action_trigger)
-                                    },
-                                    icon = if (isWorkflowRunning) Icons.Default.Close else Icons.Default.PlayArrow,
-                                    onClick = {
-                                        if (isWorkflowRunning) {
-                                            viewModel.cancelWorkflow(workflowId) { result ->
-                                                showTriggerResult = result
-                                            }
-                                        } else {
-                                            viewModel.triggerWorkflow(workflowId) { result ->
-                                                showTriggerResult = result
-                                            }
-                                        }
-                                        isFabMenuExpanded = false
-                                    }
-                                )
-                            }
-                            SpeedDialAction(
-                                text = stringResource(R.string.workflow_action_add_node),
-                                icon = Icons.Default.Add,
-                                onClick = {
-                                    showAddNodeDialog = true
-                                    isFabMenuExpanded = false
-                                }
-                            )
-                        }
-                    }
-
-                    FloatingActionButton(
-                        onClick = {
-                            if (workflow.nodes.isEmpty()) {
-                                showAddNodeDialog = true
-                            } else {
-                                isFabMenuExpanded = !isFabMenuExpanded
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ) {
-                        val rotation by animateFloatAsState(
-                            targetValue = if (isFabMenuExpanded) 45f else 0f,
-                            label = "fab_icon_rotation"
-                        )
+                ExtendedFloatingActionButton(
+                    onClick = { showAddNodeDialog = true },
+                    icon = {
                         Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(R.string.workflow_action_add_node),
-                            modifier = Modifier.rotate(rotation)
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null
                         )
-                    }
-                }
+                    },
+                    text = { Text(stringResource(R.string.workflow_action_add_node)) },
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                )
             }
         }
     ) { paddingValues ->
@@ -295,64 +261,24 @@ fun WorkflowDetailScreen(
                             isWorkflowRunning = isWorkflowRunning
                         )
 
-                        // 网格画布
-                        if (workflow.nodes.isEmpty()) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(48.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "📋",
-                                        style = MaterialTheme.typography.displayMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text(
-                                        text = stringResource(R.string.workflow_nodes_empty),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = stringResource(R.string.workflow_nodes_empty_hint_add),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
-                        } else {
-                            GridWorkflowCanvas(
-                                nodes = workflow.nodes,
-                                connections = workflow.connections,
-                                nodeExecutionStates = nodeExecutionStates,
-                                onNodePositionChanged = { nodeId, x, y ->
-                                    viewModel.updateNodePosition(workflowId, nodeId, x, y)
-                                },
-                                onNodeLongPress = { nodeId ->
-                                    // 长按节点显示操作菜单
-                                    showNodeActionMenu = nodeId
-                                },
-                                onNodeClick = { nodeId ->
-                                    // 点击节点不做任何操作（避免拖动时误触发）
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
-                        }
+                        GridWorkflowCanvas(
+                            nodes = workflow.nodes,
+                            connections = workflow.connections,
+                            nodeExecutionStates = nodeExecutionStates,
+                            onNodePositionChanged = { nodeId, x, y ->
+                                viewModel.updateNodePosition(workflowId, nodeId, x, y)
+                            },
+                            onNodeLongPress = { nodeId ->
+                                // 长按节点显示操作菜单
+                                showNodeActionMenu = nodeId
+                            },
+                            onNodeClick = { nodeId ->
+                                // 点击节点不做任何操作，避免拖动时误触发
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        )
                     }
                 }
             }
@@ -635,39 +561,6 @@ private fun WorkflowEditorHeader(
         )
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-}
-
-@Composable
-private fun SpeedDialAction(
-    text: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    containerColor: Color = MaterialTheme.colorScheme.secondaryContainer,
-    contentColor: Color = MaterialTheme.colorScheme.onSecondaryContainer
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Card(
-            shape = MaterialTheme.shapes.small,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Text(
-                text = text,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                style = MaterialTheme.typography.labelLarge
-            )
-        }
-        SmallFloatingActionButton(
-            onClick = onClick,
-            containerColor = containerColor,
-            contentColor = contentColor
-        ) {
-            Icon(icon, contentDescription = text)
-        }
-    }
 }
 
 @Composable
