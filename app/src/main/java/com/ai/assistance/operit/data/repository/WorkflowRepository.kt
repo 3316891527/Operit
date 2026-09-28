@@ -332,6 +332,7 @@ class WorkflowRepository(private val context: Context) {
             }
             Result.success(workflow)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             AppLogger.e(TAG, "Failed to get workflow by id: $id", e)
             Result.failure(e)
         }
@@ -402,6 +403,7 @@ class WorkflowRepository(private val context: Context) {
             notifyWorkflowsChanged()
             Result.success(importedWorkflow)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             AppLogger.e(TAG, "Failed to import workflow JSON", e)
             Result.failure(e)
         }

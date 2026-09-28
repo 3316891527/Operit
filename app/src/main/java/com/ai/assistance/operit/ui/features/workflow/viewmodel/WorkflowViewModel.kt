@@ -1164,15 +1164,18 @@ class WorkflowViewModel(application: Application) : AndroidViewModel(application
      */
     fun readWorkflowJson(uri: Uri, onSuccess: (String) -> Unit = {}) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                runCatching {
+            val content = try {
+                withContext(Dispatchers.IO) {
                     app.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
                         ?: throw IllegalStateException(app.getString(R.string.workflow_import_file_unreadable))
                 }
-            }.fold(
-                onSuccess = onSuccess,
-                onFailure = { error = it.message ?: app.getString(R.string.workflow_import_file_unreadable) }
-            )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error = e.message ?: app.getString(R.string.workflow_import_file_unreadable)
+                return@launch
+            }
+            onSuccess(content)
         }
     }
 
@@ -1212,16 +1215,18 @@ class WorkflowViewModel(application: Application) : AndroidViewModel(application
             error = null
             repository.exportWorkflowJson(workflowId).fold(
                 onSuccess = { content ->
-                    withContext(Dispatchers.IO) {
-                        runCatching {
+                    try {
+                        withContext(Dispatchers.IO) {
                             app.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
                                 writer.write(content)
                             } ?: throw IllegalStateException(app.getString(R.string.workflow_export_file_unwritable))
                         }
-                    }.fold(
-                        onSuccess = { onSuccess() },
-                        onFailure = { error = it.message ?: app.getString(R.string.workflow_export_failed) }
-                    )
+                        onSuccess()
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        error = e.message ?: app.getString(R.string.workflow_export_failed)
+                    }
                 },
                 onFailure = { error = it.message ?: app.getString(R.string.workflow_export_failed) }
             )

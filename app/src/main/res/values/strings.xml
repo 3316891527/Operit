@@ -5495,7 +5495,7 @@
     <string name="workflow_automation_desc">自动化你的任务流程</string>
     <string name="workflow_new">新建工作流</string>
     <string name="workflow_import_title">导入工作流</string>
-    <string name="workflow_import_json_placeholder">Workflow JSON</string>
+    <string name="workflow_import_json_placeholder">工作流 JSON</string>
     <string name="workflow_select_json_file">选择 JSON 文件</string>
     <string name="workflow_import_hint">粘贴完整的工作流 JSON，或从文件导入</string>
     <string name="workflow_import_empty">请先粘贴或选择一个工作流 JSON 文件</string>
@@ -5507,6 +5507,7 @@
     <string name="workflow_import_invalid_connections">工作流包含无效的节点连接</string>
     <string name="workflow_import_disabled_notice">导入后的工作流默认关闭，请检查内容后再启用</string>
     <string name="workflow_export_json">导出 JSON</string>
+    <string name="workflow_export_sensitive_data_notice">导出文件可能包含节点参数中的密钥，分享前请检查</string>
     <string name="workflow_export_file_unwritable">无法写入目标文件</string>
     <string name="workflow_export_failed">导出工作流失败</string>
     <string name="workflow_copy">复制工作流</string>

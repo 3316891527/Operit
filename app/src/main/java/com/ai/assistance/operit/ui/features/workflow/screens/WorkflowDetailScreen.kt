@@ -58,6 +58,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private const val MAX_WORKFLOW_EXPORT_NAME_LENGTH = 100
+
+private fun createWorkflowExportFileName(name: String): String {
+    val sanitizedName = name
+        .trim()
+        .replace(Regex("""[\\/:*?"<>|]"""), "_")
+        .trim('.', ' ')
+        .take(MAX_WORKFLOW_EXPORT_NAME_LENGTH)
+        .trim('.', ' ')
+        .ifBlank { "workflow" }
+    return "$sanitizedName.json"
+}
+
 @Composable
 private fun ConditionOperator.toDisplayText(): String {
     return when (this) {
@@ -290,10 +303,7 @@ fun WorkflowDetailScreen(
                     onDismiss = { showEditDialog = false },
                     onExport = {
                         showEditDialog = false
-                        val safeName = workflow.name
-                            .ifBlank { "workflow" }
-                            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
-                        exportFileLauncher.launch("$safeName.json")
+                        exportFileLauncher.launch(createWorkflowExportFileName(workflow.name))
                     },
                     onDelete = {
                         showEditDialog = false
@@ -2247,6 +2257,12 @@ fun EditWorkflowDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     maxLines = 5
+                )
+
+                Text(
+                    text = stringResource(R.string.workflow_export_sensitive_data_notice),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Row(
