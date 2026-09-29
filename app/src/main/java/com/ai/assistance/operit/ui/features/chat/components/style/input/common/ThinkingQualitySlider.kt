@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalDensity
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
+import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import kotlin.math.roundToInt
 import kotlinx.coroutines.isActive
 
@@ -166,6 +167,11 @@ internal fun ThinkingQualitySlider(
 
     val primary = MaterialTheme.colorScheme.primary
     val isOn = !selectedStop.isOff
+    val activeLevelFraction = if (isOn && lastIndex > minIndex) {
+        ((currentIndex - minIndex).toFloat() / (lastIndex - minIndex).toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
 
     Row(
         modifier = modifier
@@ -212,6 +218,8 @@ internal fun ThinkingQualitySlider(
             stopCount = stops.size,
             isOn = isOn,
             isDragging = isDragging,
+            particleLevelFraction = activeLevelFraction,
+            particleColor = Color(LocalThemePreferenceSnapshot.current.thinkingParticleColor),
             onDraggingChange = { isDragging = it },
             onPositionChange = ::applyPosition,
             accessibilityDescription = "$label: ${selectedStop.displayLabel}",
@@ -227,6 +235,8 @@ private fun ThinkingQualityTrack(
     stopCount: Int,
     isOn: Boolean,
     isDragging: Boolean,
+    particleLevelFraction: Float,
+    particleColor: Color,
     onDraggingChange: (Boolean) -> Unit,
     onPositionChange: (Float, Float) -> Unit,
     accessibilityDescription: String,
@@ -237,6 +247,9 @@ private fun ThinkingQualityTrack(
     val colorScheme = MaterialTheme.colorScheme
     val highlightColor = lerp(colorScheme.primary, colorScheme.onSurface, 0.62f)
     val shimmerPosition = remember { Animatable(-0.24f) }
+    val particlePosition = remember { Animatable(-0.14f) }
+    val particleCycleDurationMillis =
+        (1800 - 1200 * particleLevelFraction).roundToInt().coerceIn(600, 1800)
 
     LaunchedEffect(isDragging) {
         if (!isDragging) {
@@ -249,6 +262,24 @@ private fun ThinkingQualityTrack(
             shimmerPosition.animateTo(
                 targetValue = 1.24f,
                 animationSpec = tween(durationMillis = 900, easing = LinearEasing),
+            )
+        }
+    }
+
+    LaunchedEffect(isDragging, isOn, particleCycleDurationMillis) {
+        if (isDragging || !isOn) {
+            particlePosition.snapTo(-0.14f)
+            return@LaunchedEffect
+        }
+
+        while (isActive) {
+            particlePosition.snapTo(-0.14f)
+            particlePosition.animateTo(
+                targetValue = 1.14f,
+                animationSpec = tween(
+                    durationMillis = particleCycleDurationMillis,
+                    easing = LinearEasing,
+                ),
             )
         }
     }
@@ -295,6 +326,9 @@ private fun ThinkingQualityTrack(
             progress = animatedProgress,
             shimmerPosition = shimmerPosition.value,
             showShimmer = isDragging,
+            particlePosition = particlePosition.value,
+            showParticle = !isDragging && isOn,
+            particleColor = particleColor,
             selectedIndex = selectedIndex,
             stopCount = stopCount,
             openProgress = openProgress,
@@ -310,6 +344,9 @@ private fun DrawScope.drawThinkingQualityTrack(
     progress: Float,
     shimmerPosition: Float,
     showShimmer: Boolean,
+    particlePosition: Float,
+    showParticle: Boolean,
+    particleColor: Color,
     selectedIndex: Int,
     stopCount: Int,
     openProgress: Float,
@@ -375,6 +412,38 @@ private fun DrawScope.drawThinkingQualityTrack(
                 topLeft = Offset(shimmerStart, 0f),
                 size = Size(shimmerEnd - shimmerStart, frameHeight),
                 cornerRadius = CornerRadius(frameRadius, frameRadius),
+            )
+        }
+    }
+
+    // 松手后用主题设置的粒子颜色持续流动，粒子速度由已选档位决定。
+    if (showParticle && fillWidth > 0f && activeAlpha > 0f) {
+        val particleWidth = 18.dp.toPx()
+        val particleCenter = fillWidth * particlePosition
+        val particleStart = (particleCenter - particleWidth).coerceIn(0f, fillWidth)
+        val particleEnd = (particleCenter + particleWidth).coerceIn(0f, fillWidth)
+        val particleAlpha = particleColor.alpha * 0.72f * activeAlpha
+        if (particleEnd > particleStart) {
+            drawRoundRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        particleColor.copy(alpha = 0f),
+                        particleColor.copy(alpha = particleAlpha),
+                        particleColor.copy(alpha = 0f),
+                    ),
+                    startX = particleCenter - particleWidth,
+                    endX = particleCenter + particleWidth,
+                ),
+                topLeft = Offset(particleStart, 0f),
+                size = Size(particleEnd - particleStart, frameHeight),
+                cornerRadius = CornerRadius(frameRadius, frameRadius),
+            )
+        }
+        if (particleCenter in 0f..fillWidth) {
+            drawCircle(
+                color = particleColor.copy(alpha = particleColor.alpha * activeAlpha),
+                radius = 2.5.dp.toPx(),
+                center = Offset(particleCenter, frameHeight / 2f),
             )
         }
     }
