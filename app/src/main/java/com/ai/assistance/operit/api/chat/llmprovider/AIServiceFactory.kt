@@ -393,13 +393,6 @@ object AIServiceFactory {
                     enableToolCall = enableToolCall,
                     thinkingConfigurations = config.thinkingConfigurations,
                     thinkingOptionId = config.thinkingOptionId,
-                ),
-                    modelName = config.modelName,
-                    client = httpClient,
-                    customHeaders = customHeaders,
-                    enableToolCall = enableToolCall,
-                    thinkingConfigurations = config.thinkingConfigurations,
-                    thinkingOptionId = config.thinkingOptionId,
                 )
 
             ApiProviderType.OPENAI_CODEX ->

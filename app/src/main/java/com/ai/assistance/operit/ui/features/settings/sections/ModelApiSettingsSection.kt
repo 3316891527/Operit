@@ -476,9 +476,12 @@ fun ModelApiSettingsSection(
         hasInitializedProviderEndpointSync = true
         if (!shouldSyncEndpointByProviderChange) {
             // 首次进入页面时保留持久化配置，避免把用户已选择的端点覆盖成默认值。
-            if (selectedApiProvider == ApiProviderType.OPENAI_CODEX ||
-                selectedApiProvider == ApiProviderType.ANTIGRAVITY ||) {
-                apiEndpointInput = getDefaultApiEndpoint(selectedApiProvider)
+            selectedApiProvider?.let { provider ->
+                if (provider == ApiProviderType.OPENAI_CODEX ||
+                    provider == ApiProviderType.ANTIGRAVITY
+                ) {
+                    apiEndpointInput = getDefaultApiEndpoint(provider)
+                }
             }
             return@LaunchedEffect
         }
@@ -530,7 +533,8 @@ fun ModelApiSettingsSection(
             (canUseKeylessModelUi || !isUsingDefaultApiKey)
     val canRequestModelList = when {
         isCodexProvider -> codexAuthState != null && apiEndpointInput.isNotBlank()
-        isAntigravityProvider -> antigravityAuthState != null && apiEndpointInput.isNotBlank()        isToolPkgProvider || isMnnProvider || isLlamaProvider -> true
+        isAntigravityProvider -> antigravityAuthState != null && apiEndpointInput.isNotBlank()
+        isToolPkgProvider || isMnnProvider || isLlamaProvider -> true
         else ->
             apiEndpointInput.isNotBlank() &&
                 (!providerRequiresApiKey || (!isUsingDefaultApiKey && apiKeyInput.isNotBlank()))
@@ -557,7 +561,8 @@ fun ModelApiSettingsSection(
                 com.ai.assistance.operit.data.api.AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
                     ModelOption(id = id, name = name)
                 },
-            )            isMnnProvider -> ModelListFetcher.getMnnLocalModels(context)
+            )
+            isMnnProvider -> ModelListFetcher.getMnnLocalModels(context)
             isLlamaProvider -> ModelListFetcher.getLlamaLocalModels(context)
             isToolPkgProvider -> runCatching {
                 val service =
@@ -684,7 +689,8 @@ fun ModelApiSettingsSection(
                             llamaGpuLayersInput = input
                         }
                     }
-                )            } else if (isAntigravityProvider) {
+                )
+            } else if (isAntigravityProvider) {
                 AntigravityAuthSettingsBlock(
                     authState = antigravityAuthState,
                     groups = antigravityQuota?.groups.orEmpty(),
@@ -1050,10 +1056,7 @@ fun ModelApiSettingsSection(
                 checked = enableToolCallInput,
                 onCheckedChange = { enableToolCallInput = it }
             )
-
         }
-    }            },
-        )
     }
 
     if (showAntigravityLoginDialog) {
@@ -1735,7 +1738,8 @@ private fun getBuiltInProviderDisplayName(provider: ApiProviderType, context: an
         ApiProviderType.XAI -> context.getString(R.string.provider_xai)
         ApiProviderType.OPENAI_RESPONSES -> context.getString(R.string.provider_openai_responses)
         ApiProviderType.OPENAI_CODEX -> context.getString(R.string.provider_openai_codex)
-        ApiProviderType.ANTIGRAVITY -> context.getString(R.string.provider_antigravity)        ApiProviderType.OPENAI_RESPONSES_GENERIC -> context.getString(R.string.provider_openai_responses_generic)
+        ApiProviderType.ANTIGRAVITY -> context.getString(R.string.provider_antigravity)
+        ApiProviderType.OPENAI_RESPONSES_GENERIC -> context.getString(R.string.provider_openai_responses_generic)
         ApiProviderType.OPENAI_GENERIC -> context.getString(R.string.provider_openai_generic)
         ApiProviderType.ANTHROPIC -> context.getString(R.string.provider_anthropic)
         ApiProviderType.ANTHROPIC_GENERIC -> context.getString(R.string.provider_anthropic_generic)
@@ -2474,7 +2478,8 @@ private fun getProviderColor(providerTypeId: String): androidx.compose.ui.graphi
         ApiProviderType.XAI -> MaterialTheme.colorScheme.primary.copy(alpha = 0.94f)
         ApiProviderType.OPENAI_RESPONSES -> MaterialTheme.colorScheme.primary.copy(alpha = 0.92f)
         ApiProviderType.OPENAI_CODEX -> MaterialTheme.colorScheme.primary.copy(alpha = 0.98f)
-        ApiProviderType.ANTIGRAVITY -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.95f)        ApiProviderType.OPENAI_RESPONSES_GENERIC -> MaterialTheme.colorScheme.primary.copy(alpha = 0.88f)
+        ApiProviderType.ANTIGRAVITY -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.95f)
+        ApiProviderType.OPENAI_RESPONSES_GENERIC -> MaterialTheme.colorScheme.primary.copy(alpha = 0.88f)
         ApiProviderType.OPENAI_GENERIC -> MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
         ApiProviderType.ANTHROPIC -> MaterialTheme.colorScheme.tertiary
         ApiProviderType.ANTHROPIC_GENERIC -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f)
