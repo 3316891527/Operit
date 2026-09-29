@@ -40,9 +40,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -249,7 +247,6 @@ private fun ThinkingQualityTrack(
             .clip(RoundedCornerShape(999.dp))
             .semantics {
                 contentDescription = accessibilityDescription
-                role = Role.Slider
             }
             .pointerInput(stopCount) {
                 detectTapGestures { offset ->
