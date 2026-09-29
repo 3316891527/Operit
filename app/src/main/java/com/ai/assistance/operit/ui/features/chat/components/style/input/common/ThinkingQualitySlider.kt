@@ -40,6 +40,10 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -207,6 +211,7 @@ internal fun ThinkingQualitySlider(
             isDragging = isDragging,
             onDraggingChange = { isDragging = it },
             onPositionChange = ::applyPosition,
+            accessibilityDescription = "$label: ${selectedStop.displayLabel}",
             modifier = Modifier.weight(1f),
         )
     }
@@ -221,10 +226,12 @@ private fun ThinkingQualityTrack(
     isDragging: Boolean,
     onDraggingChange: (Boolean) -> Unit,
     onPositionChange: (Float, Float) -> Unit,
+    accessibilityDescription: String,
     modifier: Modifier = Modifier,
 ) {
     val latestOnDraggingChange by rememberUpdatedState(onDraggingChange)
     val latestOnPositionChange by rememberUpdatedState(onPositionChange)
+    val colorScheme = MaterialTheme.colorScheme
     val openProgress by animateFloatAsState(
         targetValue = if (isOn) 1f else 0f,
         animationSpec = tween(durationMillis = 460),
@@ -240,6 +247,10 @@ private fun ThinkingQualityTrack(
         modifier = modifier
             .height(21.dp)
             .clip(RoundedCornerShape(999.dp))
+            .semantics {
+                contentDescription = accessibilityDescription
+                role = Role.Slider
+            }
             .pointerInput(stopCount) {
                 detectTapGestures { offset ->
                     latestOnPositionChange(offset.x, size.width.toFloat())
@@ -265,10 +276,10 @@ private fun ThinkingQualityTrack(
             selectedIndex = selectedIndex,
             stopCount = stopCount,
             openProgress = openProgress,
-            primary = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-            outlineColor = MaterialTheme.colorScheme.outline,
-            onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant,
+            primary = colorScheme.primary,
+            trackColor = colorScheme.surfaceVariant,
+            outlineColor = colorScheme.outline,
+            onSurfaceVariant = colorScheme.onSurfaceVariant,
         )
     }
 }

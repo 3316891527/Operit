@@ -196,8 +196,6 @@ fun AgentChatInputSection(
     onToggleThinkingMode: () -> Unit = {},
     thinkingOptionId: String = "",
     onThinkingOptionIdChange: (String) -> Unit = {},
-    enableMaxContextMode: Boolean = false,
-    onToggleEnableMaxContextMode: () -> Unit = {},
     currentChatId: String?,
     featureStates: Map<String, Boolean> = emptyMap(),
     onToggleFeature: (String) -> Unit = {},
@@ -403,8 +401,6 @@ fun AgentChatInputSection(
 
     val currentWindowSize by actualViewModel.currentWindowSize.collectAsState()
     val maxWindowSizeInK by actualViewModel.maxWindowSizeInK.collectAsState()
-    val baseContextLengthInK by actualViewModel.baseContextLengthInK.collectAsState()
-    val maxContextLengthInK by actualViewModel.maxContextLengthInK.collectAsState()
     val maxTokens = (maxWindowSizeInK * 1024).toLong().coerceAtLeast(0L)
     val userMessageTokens = remember(userMessage.text) { ChatUtils.estimateTokenCount(userMessage.text) }
     val projectedTokens = userMessageTokens.toLong() + currentWindowSize
@@ -1396,10 +1392,6 @@ fun AgentChatInputSection(
                 onToggleThinkingMode = onToggleThinkingMode,
                 thinkingOptionId = thinkingOptionId,
                 onThinkingOptionIdChange = onThinkingOptionIdChange,
-                enableMaxContextMode = enableMaxContextMode,
-                onToggleEnableMaxContextMode = onToggleEnableMaxContextMode,
-                baseContextLengthInK = baseContextLengthInK,
-                maxContextLengthInK = maxContextLengthInK,
                 currentChatId = currentChatId,
                 featureStates = featureStates,
                 onToggleFeature = onToggleFeature,
@@ -1483,10 +1475,6 @@ private fun AgentModelSelectorPopup(
     onToggleThinkingMode: () -> Unit,
     thinkingOptionId: String,
     onThinkingOptionIdChange: (String) -> Unit,
-    enableMaxContextMode: Boolean,
-    onToggleEnableMaxContextMode: () -> Unit,
-    baseContextLengthInK: Float,
-    maxContextLengthInK: Float,
     currentChatId: String?,
     featureStates: Map<String, Boolean>,
     onToggleFeature: (String) -> Unit,
