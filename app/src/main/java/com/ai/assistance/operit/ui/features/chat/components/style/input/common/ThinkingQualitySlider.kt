@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.chat.components.style.input.common
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -121,19 +122,16 @@ internal fun ThinkingQualitySlider(
     var lastAppliedIndex by remember(stops) { mutableIntStateOf(selectedIndex) }
     var appliedEnabled by remember(stops) { mutableStateOf(enabled || mapping.reasoningRequired) }
     var isDragging by remember { mutableStateOf(false) }
-
-    LaunchedEffect(selectedIndex, enabled, isDragging) {
+    LaunchedEffect(selectedIndex, enabled) {
         if (!isDragging) {
             sliderPosition = selectedIndex.toFloat()
             lastAppliedIndex = selectedIndex
             appliedEnabled = enabled || mapping.reasoningRequired
         }
     }
-
     fun applyStop(index: Int) {
         val safeIndex = index.coerceIn(minIndex, lastIndex)
         if (safeIndex == lastAppliedIndex) return
-
         val stop = stops[safeIndex]
         val shouldBeEnabled = !stop.isOff
         if (!mapping.reasoningRequired && shouldBeEnabled != appliedEnabled) {
@@ -150,21 +148,25 @@ internal fun ThinkingQualitySlider(
         }
         lastAppliedIndex = safeIndex
     }
-
     val currentIndex = sliderPosition.roundToInt().coerceIn(minIndex, lastIndex)
     val selectedStop = stops[currentIndex]
     val density = LocalDensity.current
-    val trackInsetPx = with(density) { 12.5.dp.toPx() }
+    val thumbStartPx = with(density) { 11.dp.toPx() }
     val trackTravelInsetPx = with(density) { 25.dp.toPx() }
-
-    fun applyPosition(x: Float, trackWidth: Float) {
+    fun updateSliderPosition(x: Float, trackWidth: Float) {
         val travel = (trackWidth - trackTravelInsetPx).coerceAtLeast(1f)
-        val fraction = ((x - trackInsetPx) / travel).coerceIn(0f, 1f)
+        val fraction = ((x - thumbStartPx) / travel).coerceIn(0f, 1f)
         val next = (fraction * lastIndex).roundToInt().coerceIn(minIndex, lastIndex)
         sliderPosition = next.toFloat()
-        applyStop(next)
     }
-
+    fun commitSliderPosition() {
+        applyStop(sliderPosition.roundToInt())
+    }
+    fun cancelSliderPosition() {
+        sliderPosition = selectedIndex.toFloat()
+        lastAppliedIndex = selectedIndex
+        appliedEnabled = enabled || mapping.reasoningRequired
+    }
     val primary = MaterialTheme.colorScheme.primary
     val isOn = !selectedStop.isOff
     val activeLevelFraction = if (isOn && lastIndex > minIndex) {
@@ -221,7 +223,9 @@ internal fun ThinkingQualitySlider(
             particleLevelFraction = activeLevelFraction,
             particleColor = Color(LocalThemePreferenceSnapshot.current.thinkingParticleColor),
             onDraggingChange = { isDragging = it },
-            onPositionChange = ::applyPosition,
+            onPositionChange = ::updateSliderPosition,
+            onPositionCommit = ::commitSliderPosition,
+            onPositionCancel = ::cancelSliderPosition,
             accessibilityDescription = "$label: ${selectedStop.displayLabel}",
             modifier = Modifier.weight(1f),
         )
@@ -239,11 +243,15 @@ private fun ThinkingQualityTrack(
     particleColor: Color,
     onDraggingChange: (Boolean) -> Unit,
     onPositionChange: (Float, Float) -> Unit,
+    onPositionCommit: () -> Unit,
+    onPositionCancel: () -> Unit,
     accessibilityDescription: String,
     modifier: Modifier = Modifier,
 ) {
     val latestOnDraggingChange by rememberUpdatedState(onDraggingChange)
     val latestOnPositionChange by rememberUpdatedState(onPositionChange)
+    val latestOnPositionCommit by rememberUpdatedState(onPositionCommit)
+    val latestOnPositionCancel by rememberUpdatedState(onPositionCancel)
     val colorScheme = MaterialTheme.colorScheme
     val highlightColor = lerp(colorScheme.primary, colorScheme.onSurface, 0.62f)
     val shimmerPosition = remember { Animatable(-0.24f) }
@@ -291,7 +299,7 @@ private fun ThinkingQualityTrack(
     )
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = if (isDragging) 60 else 300),
+        animationSpec = if (isDragging) snap() else tween(durationMillis = 300),
         label = "thinkingTrackProgress",
     )
 
@@ -305,6 +313,7 @@ private fun ThinkingQualityTrack(
             .pointerInput(stopCount) {
                 detectTapGestures { offset ->
                     latestOnPositionChange(offset.x, size.width.toFloat())
+                    latestOnPositionCommit()
                 }
             }
             .pointerInput(stopCount) {
@@ -317,8 +326,14 @@ private fun ThinkingQualityTrack(
                         change.consume()
                         latestOnPositionChange(change.position.x, size.width.toFloat())
                     },
-                    onDragEnd = { latestOnDraggingChange(false) },
-                    onDragCancel = { latestOnDraggingChange(false) },
+                    onDragEnd = {
+                        latestOnPositionCommit()
+                        latestOnDraggingChange(false)
+                    },
+                    onDragCancel = {
+                        latestOnPositionCancel()
+                        latestOnDraggingChange(false)
+                    },
                 )
             },
     ) {
@@ -418,32 +433,24 @@ private fun DrawScope.drawThinkingQualityTrack(
 
     // 松手后用主题设置的粒子颜色持续流动，粒子速度由已选档位决定。
     if (showParticle && fillWidth > 0f && activeAlpha > 0f) {
-        val particleWidth = 18.dp.toPx()
-        val particleCenter = fillWidth * particlePosition
-        val particleStart = (particleCenter - particleWidth).coerceIn(0f, fillWidth)
-        val particleEnd = (particleCenter + particleWidth).coerceIn(0f, fillWidth)
-        val particleAlpha = particleColor.alpha * 0.72f * activeAlpha
-        if (particleEnd > particleStart) {
-            drawRoundRect(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        particleColor.copy(alpha = 0f),
-                        particleColor.copy(alpha = particleAlpha),
-                        particleColor.copy(alpha = 0f),
-                    ),
-                    startX = particleCenter - particleWidth,
-                    endX = particleCenter + particleWidth,
-                ),
-                topLeft = Offset(particleStart, 0f),
-                size = Size(particleEnd - particleStart, frameHeight),
-                cornerRadius = CornerRadius(frameRadius, frameRadius),
-            )
-        }
-        if (particleCenter in 0f..fillWidth) {
+        val particleCount = (fillWidth / 4.dp.toPx()).roundToInt().coerceIn(5, 18)
+        val particleSpacing = 1f / particleCount.toFloat()
+        repeat(particleCount) { index ->
+            val normalizedPosition = particlePosition + index * particleSpacing
+            val wrappedPosition = normalizedPosition - kotlin.math.floor(normalizedPosition)
+            val particleX = fillWidth * wrappedPosition
+            val particleY = frameHeight / 2f + ((index % 5) - 2) * 0.7.dp.toPx()
+            val particleRadius = (0.75f + (index % 3) * 0.35f).dp.toPx()
+            val particleAlpha = particleColor.alpha * (0.34f + (index % 4) * 0.13f) * activeAlpha
             drawCircle(
-                color = particleColor.copy(alpha = particleColor.alpha * activeAlpha),
-                radius = 2.5.dp.toPx(),
-                center = Offset(particleCenter, frameHeight / 2f),
+                color = particleColor.copy(alpha = particleAlpha * 0.22f),
+                radius = particleRadius * 2.2f,
+                center = Offset(particleX, particleY),
+            )
+            drawCircle(
+                color = particleColor.copy(alpha = particleAlpha),
+                radius = particleRadius,
+                center = Offset(particleX, particleY),
             )
         }
     }
