@@ -1,59 +1,54 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.common
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
 import kotlin.math.roundToInt
-import kotlinx.coroutines.isActive
 
 private data class ThinkingSliderStop(
     val id: String?,
@@ -61,7 +56,6 @@ private data class ThinkingSliderStop(
     val isOff: Boolean = false,
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ThinkingQualitySlider(
     label: String,
@@ -73,273 +67,148 @@ internal fun ThinkingQualitySlider(
     onInfoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // 关闭是 UI 自己的 stop，厂商映射中的真实 option 仍保持原顺序和原 ID。
     val stops = when (mapping.control) {
         ThinkingQualityControl.LEVELS -> buildList {
-            if (!mapping.reasoningRequired) {
-                add(
-                    ThinkingSliderStop(
-                        id = null,
-                        displayLabel = stringResource(R.string.thinking_type_off),
-                        isOff = true,
-                    )
+            add(
+                ThinkingSliderStop(
+                    id = null,
+                    displayLabel = stringResource(R.string.thinking_type_off),
+                    isOff = true,
                 )
-            }
+            )
             mapping.options.forEach { option ->
                 add(ThinkingSliderStop(id = option.id, displayLabel = option.displayLabel))
             }
         }
-        ThinkingQualityControl.TOGGLE_ONLY -> buildList {
-            if (!mapping.reasoningRequired) {
-                add(
-                    ThinkingSliderStop(
-                        id = null,
-                        displayLabel = stringResource(R.string.thinking_type_off),
-                        isOff = true,
-                    )
-                )
-            }
-            add(
-                ThinkingSliderStop(
-                    id = null,
-                    displayLabel = stringResource(R.string.thinking_type_mode),
-                )
-            )
-        }
+        ThinkingQualityControl.TOGGLE_ONLY -> listOf(
+            ThinkingSliderStop(
+                id = null,
+                displayLabel = stringResource(R.string.thinking_type_off),
+                isOff = true,
+            ),
+            ThinkingSliderStop(
+                id = null,
+                displayLabel = stringResource(R.string.thinking_type_mode),
+            ),
+        )
         ThinkingQualityControl.UNSUPPORTED -> emptyList()
     }
 
-    if (stops.isEmpty() || (mapping.control == ThinkingQualityControl.LEVELS && mapping.options.isEmpty())) return
+    if (stops.size < 2 || (mapping.control == ThinkingQualityControl.LEVELS && mapping.options.isEmpty())) {
+        return
+    }
 
+    val minIndex = if (mapping.reasoningRequired) 1 else 0
     val selectedIndex = when {
-        !enabled && stops.firstOrNull()?.isOff == true -> 0
+        !enabled && !mapping.reasoningRequired -> 0
+        mapping.control == ThinkingQualityControl.TOGGLE_ONLY -> 1
         else -> {
             val optionIndex = stops.indexOfFirst { !it.isOff && it.id == value }
-            if (optionIndex >= 0) optionIndex else stops.indexOfFirst { !it.isOff }.coerceAtLeast(0)
+            (if (optionIndex >= 0) optionIndex else 1).coerceAtLeast(minIndex)
         }
     }
-    val hasSlider = stops.size > 1
-    val maxIndex = stops.lastIndex
+    val lastIndex = stops.lastIndex
     var sliderPosition by remember(stops) { mutableFloatStateOf(selectedIndex.toFloat()) }
     var lastAppliedIndex by remember(stops) { mutableIntStateOf(selectedIndex) }
-    var appliedEnabled by remember(stops) { mutableStateOf(enabled) }
-    val interactionSource = remember { MutableInteractionSource() }
-    val isDragging by interactionSource.collectIsDraggedAsState()
+    var appliedEnabled by remember(stops) { mutableStateOf(enabled || mapping.reasoningRequired) }
+    var isDragging by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedIndex, enabled, isDragging) {
         if (!isDragging) {
             sliderPosition = selectedIndex.toFloat()
             lastAppliedIndex = selectedIndex
-            appliedEnabled = enabled
+            appliedEnabled = enabled || mapping.reasoningRequired
         }
     }
 
     fun applyStop(index: Int) {
-        if (index == lastAppliedIndex) return
+        val safeIndex = index.coerceIn(minIndex, lastIndex)
+        if (safeIndex == lastAppliedIndex) return
 
-        val stop = stops[index]
+        val stop = stops[safeIndex]
         val shouldBeEnabled = !stop.isOff
         if (!mapping.reasoningRequired && shouldBeEnabled != appliedEnabled) {
             onEnabledChange()
             appliedEnabled = shouldBeEnabled
         }
-        if (shouldBeEnabled && mapping.control == ThinkingQualityControl.LEVELS && stop.id != null && stop.id != value) {
+        if (
+            shouldBeEnabled &&
+            mapping.control == ThinkingQualityControl.LEVELS &&
+            stop.id != null &&
+            stop.id != value
+        ) {
             onValueChange(stop.id)
         }
-        lastAppliedIndex = index
+        lastAppliedIndex = safeIndex
     }
 
-    val currentIndex = sliderPosition.roundToInt().coerceIn(0, stops.lastIndex)
+    val currentIndex = sliderPosition.roundToInt().coerceIn(minIndex, lastIndex)
     val selectedStop = stops[currentIndex]
-    val primary = MaterialTheme.colorScheme.primary
-    val highlightColor = lerp(primary, MaterialTheme.colorScheme.onSurface, 0.62f)
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
-    val shimmerPosition = remember { Animatable(-0.24f) }
+    val density = LocalDensity.current
+    val trackInsetPx = with(density) { 12.5.dp.toPx() }
+    val trackTravelInsetPx = with(density) { 25.dp.toPx() }
 
-    LaunchedEffect(isDragging) {
-        if (!isDragging) {
-            shimmerPosition.snapTo(-0.24f)
-            return@LaunchedEffect
-        }
-
-        while (isActive) {
-            shimmerPosition.snapTo(-0.24f)
-            shimmerPosition.animateTo(
-                targetValue = 1.24f,
-                animationSpec = tween(durationMillis = 900, easing = LinearEasing),
-            )
-        }
+    fun applyPosition(x: Float, trackWidth: Float) {
+        val travel = (trackWidth - trackTravelInsetPx).coerceAtLeast(1f)
+        val fraction = ((x - trackInsetPx) / travel).coerceIn(0f, 1f)
+        val next = (fraction * lastIndex).roundToInt().coerceIn(minIndex, lastIndex)
+        sliderPosition = next.toFloat()
+        applyStop(next)
     }
 
-    Column(
+    val primary = MaterialTheme.colorScheme.primary
+    val isOn = !selectedStop.isOff
+
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 28.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
+            .height(40.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clickable(onClick = onInfoClick),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Outlined.Speed,
+                imageVector = Icons.Rounded.Psychology,
                 contentDescription = label,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                tint = if (isOn) primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.size(16.dp),
             )
-            IconButton(onClick = onInfoClick, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    imageVector = Icons.Outlined.Info,
-                    contentDescription = stringResource(R.string.details),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-            Text(
-                text = label,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = selectedStop.displayLabel,
-                color = if (selectedStop.isOff) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    primary
-                },
-                fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
-
-        if (hasSlider) {
-            Slider(
-                value = sliderPosition,
-                onValueChange = { newValue ->
-                    sliderPosition = newValue
-                    applyStop(newValue.roundToInt().coerceIn(0, stops.lastIndex))
-                },
-                onValueChangeFinished = {
-                    applyStop(sliderPosition.roundToInt().coerceIn(0, stops.lastIndex))
-                },
-                valueRange = 0f..maxIndex.toFloat(),
-                steps = (stops.size - 2).coerceAtLeast(0),
-                interactionSource = interactionSource,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp),
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.Transparent,
-                    activeTrackColor = Color.Transparent,
-                    inactiveTrackColor = Color.Transparent,
-                    activeTickColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent,
-                ),
-                thumb = {
-                    androidx.compose.foundation.layout.Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(20.dp),
-                    ) {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .background(highlightColor, CircleShape),
-                        )
-                    }
-                },
-                track = {
-                    ThinkingQualityTrack(
-                        progress = sliderPosition / maxIndex.toFloat(),
-                        selectedIndex = currentIndex,
-                        stopCount = stops.size,
-                        shimmerPosition = shimmerPosition.value,
-                        showShimmer = isDragging,
-                        primary = primary,
-                        highlightColor = highlightColor,
-                        trackColor = trackColor,
-                        outlineColor = outlineColor,
-                    )
-                },
-            )
-        }
-
-        ThinkingQualityLabels(
-            options = stops,
-            selectedIndex = currentIndex,
-            primary = primary,
-            modifier = Modifier.fillMaxWidth(),
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "$label:",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-private fun ThinkingQualityLabels(
-    options: List<ThinkingSliderStop>,
-    selectedIndex: Int,
-    primary: Color,
-    modifier: Modifier = Modifier,
-) {
-    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
-    Layout(
-        content = {
-            options.forEachIndexed { index, option ->
-                Text(
-                    text = option.displayLabel,
-                    color = when {
-                        index == selectedIndex && !option.isOff -> primary
-                        index == selectedIndex -> MaterialTheme.colorScheme.onSurfaceVariant
-                        else -> inactiveColor
-                    },
-                    fontSize = MaterialTheme.typography.labelSmall.fontSize,
-                    fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    lineHeight = MaterialTheme.typography.labelSmall.lineHeight,
-                    modifier = Modifier.padding(horizontal = 2.dp),
-                )
-            }
-        },
-        modifier = modifier,
-    ) { measurables, constraints ->
-        val edgeInset = 10.dp.roundToPx()
-        val usableWidth = (constraints.maxWidth - edgeInset * 2).coerceAtLeast(0)
-        val anchors = IntArray(options.size) { index ->
-            if (options.size > 1) {
-                edgeInset + usableWidth * index / (options.size - 1)
-            } else {
-                edgeInset
-            }
-        }
-        val cellStarts = IntArray(options.size) { index ->
-            if (index == 0) 0 else (anchors[index - 1] + anchors[index]) / 2
-        }
-        val cellEnds = IntArray(options.size) { index ->
-            if (index == options.lastIndex) constraints.maxWidth else (anchors[index] + anchors[index + 1]) / 2
-        }
-        val placeables = measurables.mapIndexed { index, measurable ->
-            measurable.measure(
-                constraints.copy(
-                    minWidth = 0,
-                    maxWidth = (cellEnds[index] - cellStarts[index]).coerceAtLeast(1),
-                    minHeight = 0,
-                ),
-            )
-        }
-        val layoutHeight = placeables.maxOfOrNull { it.height } ?: 0
-
-        layout(constraints.maxWidth, layoutHeight) {
-            placeables.forEachIndexed { index, placeable ->
-                val minX = cellStarts[index]
-                val maxX = (cellEnds[index] - placeable.width).coerceAtLeast(minX)
-                val x = (anchors[index] - placeable.width / 2).coerceIn(minX, maxX)
-                placeable.placeRelative(x, 0)
-            }
-        }
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = selectedStop.displayLabel,
+            color = if (isOn) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+            fontWeight = if (isOn) FontWeight.Bold else FontWeight.Normal,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(48.dp),
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        ThinkingQualityTrack(
+            progress = sliderPosition / lastIndex.toFloat(),
+            selectedIndex = currentIndex,
+            stopCount = stops.size,
+            isOn = isOn,
+            isDragging = isDragging,
+            onDraggingChange = { isDragging = it },
+            onPositionChange = ::applyPosition,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -348,29 +217,58 @@ private fun ThinkingQualityTrack(
     progress: Float,
     selectedIndex: Int,
     stopCount: Int,
-    shimmerPosition: Float,
-    showShimmer: Boolean,
-    primary: Color,
-    highlightColor: Color,
-    trackColor: Color,
-    outlineColor: Color,
+    isOn: Boolean,
+    isDragging: Boolean,
+    onDraggingChange: (Boolean) -> Unit,
+    onPositionChange: (Float, Float) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    val latestOnDraggingChange by rememberUpdatedState(onDraggingChange)
+    val latestOnPositionChange by rememberUpdatedState(onPositionChange)
+    val openProgress by animateFloatAsState(
+        targetValue = if (isOn) 1f else 0f,
+        animationSpec = tween(durationMillis = 460),
+        label = "thinkingTrackOpenProgress",
+    )
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(durationMillis = if (isDragging) 60 else 300),
+        label = "thinkingTrackProgress",
+    )
+
     Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(36.dp)
-            .graphicsLayer { clip = false },
+        modifier = modifier
+            .height(21.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .pointerInput(stopCount) {
+                detectTapGestures { offset ->
+                    latestOnPositionChange(offset.x, size.width.toFloat())
+                }
+            }
+            .pointerInput(stopCount) {
+                detectHorizontalDragGestures(
+                    onDragStart = { offset ->
+                        latestOnDraggingChange(true)
+                        latestOnPositionChange(offset.x, size.width.toFloat())
+                    },
+                    onHorizontalDrag = { change, _ ->
+                        change.consume()
+                        latestOnPositionChange(change.position.x, size.width.toFloat())
+                    },
+                    onDragEnd = { latestOnDraggingChange(false) },
+                    onDragCancel = { latestOnDraggingChange(false) },
+                )
+            },
     ) {
         drawThinkingQualityTrack(
-            progress = progress,
+            progress = animatedProgress,
             selectedIndex = selectedIndex,
             stopCount = stopCount,
-            shimmerPosition = shimmerPosition,
-            showShimmer = showShimmer,
-            primary = primary,
-            highlightColor = highlightColor,
-            trackColor = trackColor,
-            outlineColor = outlineColor,
+            openProgress = openProgress,
+            primary = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            outlineColor = MaterialTheme.colorScheme.outline,
+            onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -379,102 +277,94 @@ private fun DrawScope.drawThinkingQualityTrack(
     progress: Float,
     selectedIndex: Int,
     stopCount: Int,
-    shimmerPosition: Float,
-    showShimmer: Boolean,
+    openProgress: Float,
     primary: Color,
-    highlightColor: Color,
     trackColor: Color,
     outlineColor: Color,
+    onSurfaceVariant: Color,
 ) {
-    val frameHeight = 20.dp.toPx()
-    val trackHeight = 16.dp.toPx()
-    val frameStrokeWidth = 1.dp.toPx()
+    val frameHeight = size.height
     val frameRadius = frameHeight / 2f
-    val trackRadius = trackHeight / 2f
-    val valueStart = 0f
-    val valueEnd = size.width
-    val valueWidth = (valueEnd - valueStart).coerceAtLeast(0f)
-    val frameStart = valueStart - frameRadius
-    val frameEnd = valueEnd + frameRadius
-    val activeStart = valueStart - trackRadius
-    val centerY = size.height / 2f
-    val isRtl = layoutDirection == LayoutDirection.Rtl
-    val activeCenter = if (isRtl) {
-        valueEnd - valueWidth * progress.coerceIn(0f, 1f)
-    } else {
-        valueStart + valueWidth * progress.coerceIn(0f, 1f)
-    }
-    val filledStart = if (isRtl) activeCenter - trackRadius else activeStart
-    val filledEnd = if (isRtl) valueEnd + trackRadius else activeCenter + trackRadius
+    val frameStrokeWidth = 1.5.dp.toPx()
+    val activeAlpha = openProgress.coerceIn(0f, 1f)
+    val closedAlpha = 1f - activeAlpha
+    val thumbTravel = (size.width - 25.dp.toPx()).coerceAtLeast(0f)
+    val thumbCenterX = 11.dp.toPx() + thumbTravel * progress.coerceIn(0f, 1f)
+    val fillWidth = (
+        19.dp.toPx() + progress.coerceIn(0f, 1f) * (thumbTravel + 3.dp.toPx())
+    ).coerceIn(0f, size.width)
 
-    // 未选中的轨道保持透明，只显示滑块之前的主题渐变。
-    if (filledEnd > filledStart) {
-        val gradientColors = listOf(
-            lerp(trackColor, primary, 0.18f),
-            lerp(trackColor, primary, 0.56f),
-            lerp(trackColor, primary, 0.84f),
-        ).let { if (isRtl) it.reversed() else it }
-        val activeTrackBrush = Brush.horizontalGradient(
-            colors = gradientColors,
-            startX = filledStart,
-            endX = filledEnd,
-        )
+    drawRoundRect(
+        color = trackColor,
+        topLeft = Offset.Zero,
+        size = Size(size.width, frameHeight),
+        cornerRadius = CornerRadius(frameRadius, frameRadius),
+    )
+
+    if (fillWidth > 0f && activeAlpha > 0f) {
         drawRoundRect(
-            brush = activeTrackBrush,
-            topLeft = Offset(filledStart, centerY - trackHeight / 2f),
-            size = Size(filledEnd - filledStart, trackHeight),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(trackRadius, trackRadius),
+            brush = Brush.horizontalGradient(
+                colors = listOf(
+                    primary.copy(alpha = 0.30f * activeAlpha),
+                    primary.copy(alpha = 0.92f * activeAlpha),
+                ),
+                startX = 0f,
+                endX = fillWidth.coerceAtLeast(1f),
+            ),
+            topLeft = Offset.Zero,
+            size = Size(fillWidth, frameHeight),
+            cornerRadius = CornerRadius(frameRadius, frameRadius),
         )
     }
 
-    if (showShimmer && filledEnd > filledStart) {
-        val shimmerWidth = 26.dp.toPx()
-        val shimmerCenter = if (isRtl) {
-            valueEnd - valueWidth * shimmerPosition
-        } else {
-            valueStart + valueWidth * shimmerPosition
-        }
-        val shimmerStart = (shimmerCenter - shimmerWidth).coerceIn(filledStart, filledEnd)
-        val shimmerEnd = (shimmerCenter + shimmerWidth).coerceIn(filledStart, filledEnd)
-        if (shimmerEnd > shimmerStart) {
-            drawRoundRect(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(Color.Transparent, highlightColor.copy(alpha = 0.42f), Color.Transparent),
-                    startX = shimmerCenter - shimmerWidth,
-                    endX = shimmerCenter + shimmerWidth,
-                ),
-                topLeft = Offset(shimmerStart, centerY - trackHeight / 2f),
-                size = Size(shimmerEnd - shimmerStart, trackHeight),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(trackRadius, trackRadius),
+    if (closedAlpha > 0f) {
+        val blockInset = 2.dp.toPx()
+        val blockHeight = (frameHeight - 6.dp.toPx()).coerceAtLeast(0f)
+        val blockWidth = ((size.width - blockInset * 2f) * 0.5f).coerceAtLeast(0f)
+        val blockLeft = blockInset + (size.width - blockInset * 2f - blockWidth) * activeAlpha
+        drawRoundRect(
+            color = primary.copy(alpha = 0.55f * closedAlpha),
+            topLeft = Offset(blockLeft, 3.dp.toPx()),
+            size = Size(blockWidth, blockHeight),
+            cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+        )
+    }
+
+    if (closedAlpha > 0f) {
+        drawRoundRect(
+            color = outlineColor.copy(alpha = closedAlpha),
+            topLeft = Offset(frameStrokeWidth / 2f, frameStrokeWidth / 2f),
+            size = Size(
+                (size.width - frameStrokeWidth).coerceAtLeast(0f),
+                (frameHeight - frameStrokeWidth).coerceAtLeast(0f),
+            ),
+            cornerRadius = CornerRadius(
+                frameRadius - frameStrokeWidth / 2f,
+                frameRadius - frameStrokeWidth / 2f,
+            ),
+            style = Stroke(width = frameStrokeWidth),
+        )
+    }
+
+    if (activeAlpha > 0f && stopCount > 1) {
+        val stopRadius = 2.dp.toPx()
+        repeat(stopCount) { index ->
+            val fraction = index.toFloat() / (stopCount - 1).toFloat()
+            val x = 11.dp.toPx() + thumbTravel * fraction
+            val dotColor = if (index <= selectedIndex) onSurfaceVariant else outlineColor
+            drawCircle(
+                color = dotColor.copy(alpha = activeAlpha),
+                radius = stopRadius,
+                center = Offset(x, frameHeight / 2f),
             )
         }
     }
 
-    drawRoundRect(
-        color = outlineColor.copy(alpha = 0.62f),
-        topLeft = Offset(frameStart + frameStrokeWidth / 2f, centerY - frameHeight / 2f + frameStrokeWidth / 2f),
-        size = Size(
-            width = (frameEnd - frameStart - frameStrokeWidth).coerceAtLeast(0f),
-            height = (frameHeight - frameStrokeWidth).coerceAtLeast(0f),
-        ),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(frameRadius, frameRadius),
-        style = Stroke(width = frameStrokeWidth),
-    )
-
-    val stopRadius = 2.dp.toPx()
-    repeat(stopCount) { index ->
-        val fraction = if (stopCount <= 1) 0f else index.toFloat() / (stopCount - 1).toFloat()
+    if (activeAlpha > 0f) {
         drawCircle(
-            color = if (index <= selectedIndex) {
-                highlightColor.copy(alpha = 0.62f)
-            } else {
-                outlineColor.copy(alpha = 0.78f)
-            },
-            radius = stopRadius,
-            center = Offset(
-                x = if (isRtl) valueEnd - valueWidth * fraction else valueStart + valueWidth * fraction,
-                y = centerY,
-            ),
+            color = onSurfaceVariant.copy(alpha = activeAlpha),
+            radius = 8.dp.toPx() * activeAlpha,
+            center = Offset(thumbCenterX, frameHeight / 2f),
         )
     }
 }
