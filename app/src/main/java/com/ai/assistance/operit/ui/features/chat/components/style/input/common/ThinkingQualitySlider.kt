@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Psychology
@@ -197,8 +198,8 @@ internal fun ThinkingQualitySlider(
             fontWeight = if (isOn) FontWeight.Bold else FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(48.dp),
+            textAlign = TextAlign.Start,
+            modifier = Modifier.widthIn(max = 64.dp),
         )
         Spacer(modifier = Modifier.width(6.dp))
         ThinkingQualityTrack(
