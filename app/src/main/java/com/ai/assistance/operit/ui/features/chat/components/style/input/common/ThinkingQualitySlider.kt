@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.common
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -39,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +55,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
 import kotlin.math.roundToInt
+import kotlinx.coroutines.isActive
 
 private data class ThinkingSliderStop(
     val id: String?,
@@ -231,6 +235,24 @@ private fun ThinkingQualityTrack(
     val latestOnDraggingChange by rememberUpdatedState(onDraggingChange)
     val latestOnPositionChange by rememberUpdatedState(onPositionChange)
     val colorScheme = MaterialTheme.colorScheme
+    val highlightColor = lerp(colorScheme.primary, colorScheme.onSurface, 0.62f)
+    val shimmerPosition = remember { Animatable(-0.24f) }
+
+    LaunchedEffect(isDragging) {
+        if (!isDragging) {
+            shimmerPosition.snapTo(-0.24f)
+            return@LaunchedEffect
+        }
+
+        while (isActive) {
+            shimmerPosition.snapTo(-0.24f)
+            shimmerPosition.animateTo(
+                targetValue = 1.24f,
+                animationSpec = tween(durationMillis = 900, easing = LinearEasing),
+            )
+        }
+    }
+
     val openProgress by animateFloatAsState(
         targetValue = if (isOn) 1f else 0f,
         animationSpec = tween(durationMillis = 460),
@@ -271,26 +293,30 @@ private fun ThinkingQualityTrack(
     ) {
         drawThinkingQualityTrack(
             progress = animatedProgress,
+            shimmerPosition = shimmerPosition.value,
+            showShimmer = isDragging,
             selectedIndex = selectedIndex,
             stopCount = stopCount,
             openProgress = openProgress,
             primary = colorScheme.primary,
+            highlightColor = highlightColor,
             trackColor = colorScheme.surfaceVariant,
             outlineColor = colorScheme.outline,
-            onSurfaceVariant = colorScheme.onSurfaceVariant,
         )
     }
 }
 
 private fun DrawScope.drawThinkingQualityTrack(
     progress: Float,
+    shimmerPosition: Float,
+    showShimmer: Boolean,
     selectedIndex: Int,
     stopCount: Int,
     openProgress: Float,
     primary: Color,
+    highlightColor: Color,
     trackColor: Color,
     outlineColor: Color,
-    onSurfaceVariant: Color,
 ) {
     val frameHeight = size.height
     val frameRadius = frameHeight / 2f
@@ -310,20 +336,47 @@ private fun DrawScope.drawThinkingQualityTrack(
         cornerRadius = CornerRadius(frameRadius, frameRadius),
     )
 
+    val activeTrackBrush = Brush.horizontalGradient(
+        colors = listOf(
+            lerp(trackColor, primary, 0.18f).copy(alpha = activeAlpha),
+            lerp(trackColor, primary, 0.56f).copy(alpha = activeAlpha),
+            lerp(trackColor, primary, 0.84f).copy(alpha = activeAlpha),
+        ),
+        startX = 0f,
+        endX = fillWidth.coerceAtLeast(1f),
+    )
+
     if (fillWidth > 0f && activeAlpha > 0f) {
         drawRoundRect(
-            brush = Brush.horizontalGradient(
-                colors = listOf(
-                    primary.copy(alpha = 0.30f * activeAlpha),
-                    primary.copy(alpha = 0.92f * activeAlpha),
-                ),
-                startX = 0f,
-                endX = fillWidth.coerceAtLeast(1f),
-            ),
+            brush = activeTrackBrush,
             topLeft = Offset.Zero,
             size = Size(fillWidth, frameHeight),
             cornerRadius = CornerRadius(frameRadius, frameRadius),
         )
+    }
+
+    // 拖动时让高光从左向当前已选轨道循环扫过。
+    if (showShimmer && fillWidth > 0f && activeAlpha > 0f) {
+        val shimmerWidth = 26.dp.toPx()
+        val shimmerCenter = fillWidth * shimmerPosition
+        val shimmerStart = (shimmerCenter - shimmerWidth).coerceIn(0f, fillWidth)
+        val shimmerEnd = (shimmerCenter + shimmerWidth).coerceIn(0f, fillWidth)
+        if (shimmerEnd > shimmerStart) {
+            drawRoundRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.46f * activeAlpha),
+                        Color.Transparent,
+                    ),
+                    startX = shimmerCenter - shimmerWidth,
+                    endX = shimmerCenter + shimmerWidth,
+                ),
+                topLeft = Offset(shimmerStart, 0f),
+                size = Size(shimmerEnd - shimmerStart, frameHeight),
+                cornerRadius = CornerRadius(frameRadius, frameRadius),
+            )
+        }
     }
 
     if (closedAlpha > 0f) {
@@ -360,7 +413,7 @@ private fun DrawScope.drawThinkingQualityTrack(
         repeat(stopCount) { index ->
             val fraction = index.toFloat() / (stopCount - 1).toFloat()
             val x = 11.dp.toPx() + thumbTravel * fraction
-            val dotColor = if (index <= selectedIndex) onSurfaceVariant else outlineColor
+            val dotColor = if (index <= selectedIndex) highlightColor else outlineColor
             drawCircle(
                 color = dotColor.copy(alpha = activeAlpha),
                 radius = stopRadius,
@@ -371,7 +424,7 @@ private fun DrawScope.drawThinkingQualityTrack(
 
     if (activeAlpha > 0f) {
         drawCircle(
-            color = onSurfaceVariant.copy(alpha = activeAlpha),
+            color = highlightColor.copy(alpha = activeAlpha),
             radius = 8.dp.toPx() * activeAlpha,
             center = Offset(thumbCenterX, frameHeight / 2f),
         )
