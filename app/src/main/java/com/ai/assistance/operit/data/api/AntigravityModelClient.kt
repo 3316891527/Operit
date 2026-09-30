@@ -37,7 +37,6 @@ class AntigravityModelClient(
                         .header("Accept", "application/json")
                         .header("User-Agent", AntigravityOAuthProtocol.USER_AGENT)
                         .header("X-Goog-Api-Client", "google-cloud-sdk vscode_cloudshelleditor/0.1")
-                        .header("Client-Metadata", AntigravityOAuthProtocol.clientMetadata())
                         .build()
 
                     client.newCall(request).execute().use { response ->
