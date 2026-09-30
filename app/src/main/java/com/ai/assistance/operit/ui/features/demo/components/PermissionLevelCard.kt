@@ -50,6 +50,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilities
 import com.ai.assistance.operit.core.tools.system.AndroidPermissionLevel
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
+import com.ai.assistance.operit.ui.features.demo.permissions.SystemPermission
+import com.ai.assistance.operit.ui.features.demo.permissions.SystemPermissionStatus
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.launch
 
@@ -59,6 +61,7 @@ fun PermissionLevelCard(
         hasStoragePermission: Boolean,
         hasOverlayPermission: Boolean,
         hasBatteryOptimizationExemption: Boolean,
+        systemPermissions: SystemPermissionStatus,
         hasAccessibilityServiceEnabled: Boolean,
         hasLocationPermission: Boolean,
         isShizukuInstalled: Boolean,
@@ -72,6 +75,7 @@ fun PermissionLevelCard(
         onStoragePermissionClick: () -> Unit,
         onOverlayPermissionClick: () -> Unit,
         onBatteryOptimizationClick: () -> Unit,
+        onSystemPermissionClick: (SystemPermission) -> Unit,
         onAccessibilityClick: () -> Unit,
         onInstallAccessibilityProviderClick: () -> Unit, // 新增：安装提供者App的回调
         onLocationPermissionClick: () -> Unit,
@@ -319,11 +323,13 @@ fun PermissionLevelCard(
                                             hasOverlayPermission = hasOverlayPermission,
                                             hasBatteryOptimizationExemption =
                                                     hasBatteryOptimizationExemption,
+                                            systemPermissions = systemPermissions,
                                             hasLocationPermission = hasLocationPermission,
                                             isOperitTerminalInstalled = isOperitTerminalInstalled,
                                             onStoragePermissionClick = onStoragePermissionClick,
                                             onOverlayPermissionClick = onOverlayPermissionClick,
                                             onBatteryOptimizationClick = onBatteryOptimizationClick,
+                                            onSystemPermissionClick = onSystemPermissionClick,
                                             onLocationPermissionClick = onLocationPermissionClick,
                                             onOperitTerminalClick = onOperitTerminalClick
                                     )
@@ -351,11 +357,13 @@ fun PermissionLevelCard(
                                             hasOverlayPermission = hasOverlayPermission,
                                             hasBatteryOptimizationExemption =
                                                     hasBatteryOptimizationExemption,
+                                            systemPermissions = systemPermissions,
                                             hasLocationPermission = hasLocationPermission,
                                             isOperitTerminalInstalled = isOperitTerminalInstalled,
                                             onStoragePermissionClick = onStoragePermissionClick,
                                             onOverlayPermissionClick = onOverlayPermissionClick,
                                             onBatteryOptimizationClick = onBatteryOptimizationClick,
+                                            onSystemPermissionClick = onSystemPermissionClick,
                                             onLocationPermissionClick = onLocationPermissionClick,
                                             onOperitTerminalClick = onOperitTerminalClick
                                     )
@@ -374,6 +382,7 @@ fun PermissionLevelCard(
                                             hasOverlayPermission = hasOverlayPermission,
                                             hasBatteryOptimizationExemption =
                                                     hasBatteryOptimizationExemption,
+                                            systemPermissions = systemPermissions,
                                             hasLocationPermission = hasLocationPermission,
                                             isOperitTerminalInstalled = isOperitTerminalInstalled,
                                             isDeviceRooted = isDeviceRooted,
@@ -381,6 +390,7 @@ fun PermissionLevelCard(
                                             onStoragePermissionClick = onStoragePermissionClick,
                                             onOverlayPermissionClick = onOverlayPermissionClick,
                                             onBatteryOptimizationClick = onBatteryOptimizationClick,
+                                            onSystemPermissionClick = onSystemPermissionClick,
                                             onLocationPermissionClick = onLocationPermissionClick,
                                             onOperitTerminalClick = onOperitTerminalClick,
                                             onRootClick = onRootClick
@@ -494,7 +504,7 @@ private fun PermissionSectionContainer(
 
 // 重新设计权限项，使其更现代和直观
 @Composable
-fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit) {
+fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit, statusLabel: String? = null) {
     val contentColor =
             if (isGranted) {
                 MaterialTheme.colorScheme.primary
@@ -514,7 +524,7 @@ fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit)
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             // 状态指示点
             Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(contentColor))
 
@@ -524,12 +534,45 @@ fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit)
             Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
             )
         }
 
         // 状态文本
-        Text(text = statusText, style = MaterialTheme.typography.bodySmall, color = contentColor)
+        Text(
+                text = statusLabel ?: statusText,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor,
+                modifier = Modifier.padding(start = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SystemPermissionRows(
+        status: SystemPermissionStatus,
+        onClick: (SystemPermission) -> Unit
+) {
+    val entries = listOf(
+        SystemPermission.NOTIFICATIONS to R.string.system_permission_notifications,
+        SystemPermission.APP_LIST to R.string.system_permission_app_list,
+        SystemPermission.USAGE_ACCESS to R.string.system_permission_usage_access,
+        SystemPermission.WRITE_SETTINGS to R.string.system_permission_write_settings
+    )
+    entries.forEach { (permission, title) ->
+        PermissionStatusItem(
+            title = stringResource(title),
+            isGranted = status.isAvailable(permission),
+            onClick = { onClick(permission) },
+            statusLabel = if (permission == SystemPermission.APP_LIST) {
+                stringResource(if (status.appList) R.string.status_available else R.string.status_unavailable)
+            } else null
+        )
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+        )
     }
 }
 
@@ -538,11 +581,13 @@ private fun StandardPermissionSection(
         hasStoragePermission: Boolean,
         hasOverlayPermission: Boolean,
         hasBatteryOptimizationExemption: Boolean,
+        systemPermissions: SystemPermissionStatus,
         hasLocationPermission: Boolean,
         isOperitTerminalInstalled: Boolean,
         onStoragePermissionClick: () -> Unit,
         onOverlayPermissionClick: () -> Unit,
         onBatteryOptimizationClick: () -> Unit,
+        onSystemPermissionClick: (SystemPermission) -> Unit,
         onLocationPermissionClick: () -> Unit,
         onOperitTerminalClick: () -> Unit
 ) {
@@ -595,6 +640,8 @@ private fun StandardPermissionSection(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                 )
 
+                SystemPermissionRows(systemPermissions, onSystemPermissionClick)
+
                 PermissionStatusItem(
                         title = stringResource(R.string.location_permission),
                         isGranted = hasLocationPermission,
@@ -621,6 +668,7 @@ private fun AdminPermissionSection(
         hasStoragePermission: Boolean,
         hasOverlayPermission: Boolean,
         hasBatteryOptimizationExemption: Boolean,
+        systemPermissions: SystemPermissionStatus,
         hasLocationPermission: Boolean,
         isAccessibilityProviderInstalled: Boolean, // 新增
         hasAccessibilityServiceEnabled: Boolean,
@@ -629,6 +677,7 @@ private fun AdminPermissionSection(
         onStoragePermissionClick: () -> Unit,
         onOverlayPermissionClick: () -> Unit,
         onBatteryOptimizationClick: () -> Unit,
+        onSystemPermissionClick: (SystemPermission) -> Unit,
         onLocationPermissionClick: () -> Unit,
         onAccessibilityClick: () -> Unit,
         onInstallAccessibilityProviderClick: () -> Unit, // 新增
@@ -685,6 +734,8 @@ private fun AdminPermissionSection(
                         thickness = 0.5.dp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                 )
+
+                SystemPermissionRows(systemPermissions, onSystemPermissionClick)
 
                 PermissionStatusItem(
                         title = stringResource(R.string.location_permission),
@@ -898,6 +949,7 @@ private fun RootPermissionSection(
         hasStoragePermission: Boolean,
         hasOverlayPermission: Boolean,
         hasBatteryOptimizationExemption: Boolean,
+        systemPermissions: SystemPermissionStatus,
         hasLocationPermission: Boolean,
         isOperitTerminalInstalled: Boolean,
         isDeviceRooted: Boolean,
@@ -905,6 +957,7 @@ private fun RootPermissionSection(
         onStoragePermissionClick: () -> Unit,
         onOverlayPermissionClick: () -> Unit,
         onBatteryOptimizationClick: () -> Unit,
+        onSystemPermissionClick: (SystemPermission) -> Unit,
         onLocationPermissionClick: () -> Unit,
         onOperitTerminalClick: () -> Unit,
         onRootClick: () -> Unit
@@ -956,6 +1009,8 @@ private fun RootPermissionSection(
                         thickness = 0.5.dp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                 )
+
+                SystemPermissionRows(systemPermissions, onSystemPermissionClick)
 
                 PermissionStatusItem(
                         title = stringResource(R.string.location_permission),

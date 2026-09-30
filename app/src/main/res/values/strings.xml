@@ -1419,6 +1419,12 @@
     <string name="storage_permission">存储权限</string>
     <string name="overlay_permission">悬浮窗权限</string>
     <string name="battery_optimization">电池优化豁免</string>
+    <string name="system_permission_notifications">通知</string>
+    <string name="system_permission_app_list">应用列表</string>
+    <string name="system_permission_usage_access">应用使用统计</string>
+    <string name="system_permission_write_settings">系统设置修改</string>
+    <string name="status_available">可用</string>
+    <string name="status_unavailable">不可用</string>
     <string name="location_permission">位置权限</string>
     <string name="operit_terminal">Operit终端</string>
     
