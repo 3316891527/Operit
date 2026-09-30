@@ -2350,7 +2350,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
         ).use { writer ->
             ChatHistoryCsv.writeHeader(writer)
             for (chatHistory in chatHistories) {
-                ChatHistoryCsv.writeChat(writer, chatHistory)
+                ChatHistoryCsv.writeChat(
+                    writer,
+                    OperitArchivedChat.fromChatHistory(chatHistory, emptyList()),
+                )
                 var offset = 0
                 while (true) {
                     val messagePage = chatContentDao.getMessagesForChatAscRange(
@@ -2386,7 +2389,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                                 writer = writer,
                                 chatId = chatHistory.id,
                                 messageTimestamp = message.timestamp,
-                                variant = variant,
+                                variant = OperitArchivedMessageVariant.fromEntity(variant),
                             )
                             progressReporter.add(variant.content.length.toLong())
                         }
