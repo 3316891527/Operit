@@ -25,7 +25,7 @@ import java.io.InputStream
 import java.io.IOException
 import kotlinx.coroutines.isActive
 
-/** 基于Shizuku的Shell命令执行器 实现DEBUGGER权限级别的命令执行 */
+/** 基于Shizuku的Shell命令执行器 作为管理员模式的 Shizuku 后端 */
 class DebuggerShellExecutor(private val context: Context) : ShellExecutor {
     companion object {
         private const val TAG = "DebuggerShellExecutor"
@@ -47,7 +47,7 @@ class DebuggerShellExecutor(private val context: Context) : ShellExecutor {
         }
     }
 
-    override fun getPermissionLevel(): AndroidPermissionLevel = AndroidPermissionLevel.DEBUGGER
+    override fun getPermissionLevel(): AndroidPermissionLevel = AndroidPermissionLevel.ADMIN
 
     override fun isAvailable(): Boolean {
         return ShizukuAuthorizer.isShizukuServiceRunning()

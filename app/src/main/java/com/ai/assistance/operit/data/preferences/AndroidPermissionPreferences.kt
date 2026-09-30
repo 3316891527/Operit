@@ -14,7 +14,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 
 private val Context.androidPermissionDataStore: DataStore<Preferences> by
-        preferencesDataStore(name = "android_permission_preferences")
+        preferencesDataStore(
+            name = "android_permission_preferences",
+            produceMigrations = { listOf(AndroidPermissionModeMigration()) }
+        )
 
 enum class RootCommandExecutionMode {
     AUTO,

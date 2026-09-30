@@ -133,13 +133,6 @@ class RootShellExecutor(private val context: Context) : ShellExecutor {
                 return checkExecSuAvailable()
             }
             
-            // 如果已经检查过，直接返回缓存结果，但不每次都输出日志
-            if (rootAvailable != null) {
-                // 使用更低级别的日志，减少输出量
-                AppLogger.v(TAG, "使用缓存的Root检查结果: $rootAvailable")
-                return rootAvailable!!
-            }
-
             // 使用 libsu 检查 root 权限
             val hasRoot = Shell.getShell().isRoot
             val previousValue = rootAvailable

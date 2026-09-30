@@ -283,7 +283,7 @@ fun ShizukuDemoScreen(
                 }
 
         val needShizukuSetupGuide =
-                currentDisplayedPermissionLevel == AndroidPermissionLevel.DEBUGGER &&
+                currentDisplayedPermissionLevel == AndroidPermissionLevel.ADMIN &&
                         ((!uiState.isShizukuInstalled.value ||
                                 !uiState.isShizukuRunning.value ||
                                 !uiState.hasShizukuPermission.value) ||
@@ -298,7 +298,7 @@ fun ShizukuDemoScreen(
                         (!uiState.hasRootAccess.value)
     
         val needAccessibilitySetupGuide =
-            currentDisplayedPermissionLevel == AndroidPermissionLevel.ACCESSIBILITY &&
+            currentDisplayedPermissionLevel == AndroidPermissionLevel.ADMIN &&
                     (!uiState.isAccessibilityProviderInstalled.value ||
                             !uiState.hasAccessibilityServiceEnabled.value ||
                             isAccessibilityUpdateNeeded)
@@ -396,7 +396,7 @@ fun ShizukuDemoScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Shizuku向导卡片 - 如果正在浏览DEBUGGER权限级别且Shizuku未完全设置则显示
+            // Shizuku向导卡片 - 在管理员模式下展示独立的 Shizuku 授权向导
             if (needShizukuSetupGuide) {
                 ShizukuWizardCard(
                         isShizukuInstalled = uiState.isShizukuInstalled.value,
