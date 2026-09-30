@@ -402,9 +402,10 @@ private fun PermissionLevelSelector(
 ) {
     val levels = AndroidPermissionLevel.values()
 
-    ScrollableTabRow(
+    // 使用固定等分的标签栏，让当前权限级别数量始终填满可用宽度。
+    TabRow(
+            modifier = Modifier.fillMaxWidth(),
             selectedTabIndex = currentLevel.ordinal,
-            edgePadding = 0.dp,
             divider = {},
             contentColor = MaterialTheme.colorScheme.primary,
             containerColor = Color.Transparent,
