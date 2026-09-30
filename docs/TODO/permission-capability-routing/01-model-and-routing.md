@@ -19,7 +19,7 @@ DataStore 的 preferred_permission_level 键不变。首次读取时将 ACCESSIB
 
 显式 display 参数不交给主屏幕无障碍后端。主屏幕全局按键使用无障碍；其他按键在 Shell 已授权时使用 Shell，避免无障碍已开启时屏蔽 Enter 等按键。ShellIdentity.APP 使用标准应用身份，显式 ROOT 身份要求 ROOT 模式和 Root 授权，显式 SHELL 身份要求已授权的 Shell 后端，两者都不改为应用身份执行。
 
-实例按 PermissionBackend 缓存，但授权快照在每次操作前重算。无障碍是否可用以 Provider 绑定和服务状态为准。Shell 工厂不再把 ADMIN 路由到 Device Admin，也不缓存用户模式。
+实例按 PermissionBackend 缓存。一次 sendMessage 创建独立的权限会话，首次需要能力路由时建立 Shell/UI 快照，同一轮的串行和并行工具调用复用该快照；未显式绑定会话的直接工具入口使用惰性 fallback 会话。权限模式、Root 执行模式或自定义 su 命令改变时让下一次未绑定工具调用重新建立快照，侧栏状态查询使用独立读取，不污染工具会话。无障碍是否可用以 Provider 绑定和服务状态为准。Shell 工厂不再把 ADMIN 路由到 Device Admin，也不缓存用户模式。会话中途授权撤销不重新探测或重放命令，由当前实际命令返回错误，下一轮再按最新授权路由。
 
 ## 文件操作
 

@@ -83,11 +83,6 @@ class DebuggerShellExecutor(private val context: Context) : ShellExecutor {
         identity: ShellIdentity
     ): ShellExecutor.CommandResult =
             withContext(Dispatchers.IO) {
-                val permStatus = hasPermission()
-                if (!permStatus.granted) {
-                    return@withContext ShellExecutor.CommandResult(false, "", permStatus.reason)
-                }
-
                 // 使用更精确的方法检测shell操作符
                 if (containsShellOperators(command)) {
                     AppLogger.d(TAG, "Executing command via shell: $command")
@@ -561,9 +556,6 @@ class DebuggerShellExecutor(private val context: Context) : ShellExecutor {
     }
 
     override suspend fun startProcess(command: String): ShellProcess {
-        if (!hasPermission().granted) {
-            throw SecurityException("Shizuku permission not granted.")
-        }
         val service = getShizukuService() ?: throw IOException("Shizuku service not available")
         return ShizukuShellProcess(service, command)
     }

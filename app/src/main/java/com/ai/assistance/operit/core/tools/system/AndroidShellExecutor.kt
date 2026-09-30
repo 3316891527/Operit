@@ -38,30 +38,14 @@ class AndroidShellExecutor {
             } catch (e: IllegalStateException) {
                 return CommandResult(false, "", e.message.orEmpty())
             }
-            val permission = executor.hasPermission()
-            val readyExecutor = if (executor.isAvailable() && permission.granted) {
-                executor
-            } else if (identity == ShellIdentity.DEFAULT) {
-                // 尚未提交任何命令，授权失效时可以改用应用身份执行。
-                ShellExecutorFactory.getBackendExecutor(ctx, PermissionBackend.STANDARD)
-            } else {
-                return CommandResult(false, "", permission.reason)
-            }
-            val result = readyExecutor.executeCommand(command, identity)
+            val result = executor.executeCommand(command, identity)
             return CommandResult(result.success, result.stdout, result.stderr, result.exitCode)
         }
 
         suspend fun startShellProcess(command: String): ShellProcess {
             val ctx = context ?: error("Context not initialized")
             val preferredExecutor = resolveExecutor(ctx, ShellIdentity.DEFAULT)
-            val executor = if (preferredExecutor.isAvailable() && preferredExecutor.hasPermission().granted) {
-                preferredExecutor
-            } else {
-                ShellExecutorFactory.getBackendExecutor(ctx, PermissionBackend.STANDARD)
-            }
-            val permission = executor.hasPermission()
-            if (!executor.isAvailable() || !permission.granted) throw SecurityException(permission.reason)
-            return executor.startProcess(command)
+            return preferredExecutor.startProcess(command)
         }
     }
 

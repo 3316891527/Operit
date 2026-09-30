@@ -354,11 +354,6 @@ class RootShellExecutor(private val context: Context) : ShellExecutor {
                 try {
                     applyExecutionModePreferenceOverride()
 
-                    val permStatus = hasPermission()
-                    if (!permStatus.granted) {
-                        return@withContext ShellExecutor.CommandResult(false, "", permStatus.reason)
-                    }
-
                     val actualCommand = extractActualCommand(command)
 
                     return@withContext when (identity) {
@@ -470,10 +465,6 @@ class RootShellExecutor(private val context: Context) : ShellExecutor {
     override suspend fun startProcess(command: String): ShellProcess {
         applyExecutionModePreferenceOverride()
 
-        if (!hasPermission().granted) {
-            throw SecurityException("Root permission not granted.")
-        }
-        
         return if (useExecMode) {
             ExecRootShellProcess(command, buildSuInteractiveCommand())
         } else {

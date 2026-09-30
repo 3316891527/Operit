@@ -82,14 +82,14 @@ private suspend fun resolveSidebarPermissionStatus(
                                 badgeTextResId = R.string.sidebar_status_normal
                         )
                 AndroidPermissionLevel.ADMIN -> {
-                        val capabilities = PermissionCapabilityResolver.uiSnapshot(context, preferredPermissionLevel)
+                        val capabilities = PermissionCapabilityResolver.statusUiSnapshot(context, preferredPermissionLevel)
                         SidebarPermissionStatus(
                                 badgeTextResId = if (capabilities.canUseAccessibility || capabilities.canUseShizuku)
                                         R.string.sidebar_status_normal else R.string.unauthorized
                         )
                 }
                 AndroidPermissionLevel.ROOT -> {
-                        val capabilities = PermissionCapabilityResolver.shellSnapshot(context, preferredPermissionLevel)
+                        val capabilities = PermissionCapabilityResolver.statusShellSnapshot(context, preferredPermissionLevel)
                         SidebarPermissionStatus(
                                 badgeTextResId = if (capabilities.canUseRoot)
                                         R.string.sidebar_status_normal else R.string.unauthorized
