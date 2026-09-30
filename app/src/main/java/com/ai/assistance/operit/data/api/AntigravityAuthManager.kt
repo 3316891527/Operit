@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.api
 
 import android.content.Context
+import com.ai.assistance.operit.data.model.ModelOption
 import com.ai.assistance.operit.data.preferences.AntigravityAuthPreferences
 import com.ai.assistance.operit.data.preferences.AntigravityAuthState
 import com.ai.assistance.operit.data.preferences.AntigravityQuotaPreferences
@@ -31,6 +32,7 @@ class AntigravityAuthManager private constructor(context: Context) {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
     private val oauthClient = AntigravityOAuthClient(client = httpClient)
+    private val modelClient = AntigravityModelClient(client = httpClient)
     private val quotaClient = AntigravityQuotaClient(client = httpClient)
     private val quotaPreferences = AntigravityQuotaPreferences.getInstance(context)
     private val refreshMutex = Mutex()
@@ -118,6 +120,18 @@ class AntigravityAuthManager private constructor(context: Context) {
             result
         } catch (error: Exception) {
             AppLogger.e(TAG, "Failed to prepare Antigravity quota request", error)
+            Result.failure(error)
+        }
+    }
+
+    suspend fun fetchModels(): Result<List<ModelOption>> {
+        return try {
+            val accessToken = getValidAccessToken()
+            val projectId = currentProjectId()
+                ?: throw IOException("Antigravity project id is unavailable")
+            modelClient.fetch(accessToken = accessToken, projectId = projectId)
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "Failed to prepare Antigravity model request", error)
             Result.failure(error)
         }
     }

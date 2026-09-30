@@ -78,11 +78,17 @@ class AntigravityProvider(
     }
 
     override suspend fun getModelsList(_context: Context): Result<List<ModelOption>> {
-        return Result.success(
+        return authManager.fetchModels().map { models ->
+            models.ifEmpty {
+                AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
+                    ModelOption(id = id, name = name)
+                }
+            }
+        }.recover {
             AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
                 ModelOption(id = id, name = name)
-            },
-        )
+            }
+        }
     }
 
     override fun unwrapStreamingPayload(json: JSONObject): JSONObject {

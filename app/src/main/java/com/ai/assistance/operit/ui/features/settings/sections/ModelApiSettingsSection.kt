@@ -581,11 +581,20 @@ fun ModelApiSettingsSection(
     suspend fun fetchAvailableModels(): Result<List<ModelOption>> {
         return when {
             isCodexProvider -> CodexModelListFetcher.getModelsList()
-            isAntigravityProvider -> Result.success(
-                com.ai.assistance.operit.data.api.AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
-                    ModelOption(id = id, name = name)
-                },
-            )
+            isAntigravityProvider -> antigravityAuthManager.fetchModels()
+                .map { models ->
+                    models.ifEmpty {
+                        com.ai.assistance.operit.data.api.AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
+                            ModelOption(id = id, name = name)
+                        }
+                    }
+                }
+                .recover { error ->
+                    AppLogger.e(TAG, "动态获取 Antigravity 模型失败，使用静态模型目录兜底", error)
+                    com.ai.assistance.operit.data.api.AntigravityOAuthProtocol.defaultModels.map { (id, name) ->
+                        ModelOption(id = id, name = name)
+                    }
+                }
             isVertexProvider -> Result.success(
                 VertexOAuthProtocol.defaultModels.map { (id, name) ->
                     ModelOption(id = id, name = name)
@@ -679,9 +688,6 @@ fun ModelApiSettingsSection(
                 )
             }
 
-            if (isAntigravityProvider || isVertexProvider) {
-                SettingsInfoBanner(text = stringResource(R.string.google_oauth_experimental_notice))
-            }
             regionWarningType?.let { warningType ->
                 SettingsInfoBanner(text = stringResource(warningType.messageResource()))
             }
@@ -906,7 +912,7 @@ fun ModelApiSettingsSection(
             val apiKeyInteractionSource = remember { MutableInteractionSource() }
             val isApiKeyFocused by apiKeyInteractionSource.collectIsFocusedAsState()
 
-            if (!isEmbeddedLocalProvider && !isVertexProvider) SettingsTextField(
+            if (!isEmbeddedLocalProvider && !isVertexProvider && !isAntigravityProvider) SettingsTextField(
                         title = stringResource(R.string.api_key),
                         subtitle =
                                 if (isOptionalApiKeyProvider)

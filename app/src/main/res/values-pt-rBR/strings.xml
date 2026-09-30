@@ -7536,7 +7536,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="vertex_location_desc">Defaults to global. A region such as us-central1 also works</string>
     <string name="vertex_direct_media_processing_desc">Send images directly to Vertex AI</string>
 
-    <string name="google_oauth_experimental_notice">Experimental: o login e a integração de modelos do Antigravity e do Vertex AI ainda estão em validação e podem apresentar instabilidade.</string>
     <string name="antigravity_login_completing">Concluindo a autorização e carregando os dados da conta…</string>
     <string name="antigravity_login_timed_out">O tempo de espera de 15 minutos pela autorização do Google terminou. Inicie o login novamente.</string>
 </resources>
