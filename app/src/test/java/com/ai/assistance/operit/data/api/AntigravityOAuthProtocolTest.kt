@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.api
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AntigravityOAuthProtocolTest {
@@ -22,6 +23,18 @@ class AntigravityOAuthProtocolTest {
 
         assertEquals(EXPECTED_CLIENT_SECRET, fields.value("client_secret"))
         assertEquals("refresh_token", fields.value("grant_type"))
+    }
+
+    @Test
+    fun scopes_includesCloudPlatformPrimaryScope() {
+        assertTrue(
+            "OAuth scopes must include https://www.googleapis.com/auth/cloud-platform for Cloud Code Assist access",
+            AntigravityOAuthProtocol.scopes.contains("https://www.googleapis.com/auth/cloud-platform"),
+        )
+        assertEquals(
+            "https://www.googleapis.com/auth/cloud-platform",
+            AntigravityOAuthProtocol.scopes.first(),
+        )
     }
 
     private fun List<Pair<String, String>>.value(name: String): String? {

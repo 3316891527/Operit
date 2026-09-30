@@ -175,8 +175,6 @@ fun ModelConfigScreen(
     val codexAuthState by codexAuthManager.authState.collectAsState()
     val antigravityAuthManager = remember { com.ai.assistance.operit.data.api.AntigravityAuthManager.getInstance(context) }
     val antigravityAuthState by antigravityAuthManager.authState.collectAsState()
-    val vertexAuthManager = remember { com.ai.assistance.operit.data.api.VertexAuthManager.getInstance(context) }
-    val vertexAuthState by vertexAuthManager.authState.collectAsState()
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val saveCoordinator = rememberModelConfigSaveCoordinator()
@@ -303,7 +301,6 @@ fun ModelConfigScreen(
                         registeredPluginProviderIds = registeredPluginProviderIds,
                         codexAuthenticated = codexAuthState != null,
                         antigravityAuthenticated = antigravityAuthState != null,
-                        vertexAuthenticated = vertexAuthState != null,
                     )
                 if (!readiness.isReady) {
                     val messageResId =
@@ -319,11 +316,7 @@ fun ModelConfigScreen(
                             ChatConfigReadinessIssue.CODEX_LOGIN_REQUIRED ->
                                 R.string.onboarding_config_codex_login_required
                             ChatConfigReadinessIssue.ANTIGRAVITY_LOGIN_REQUIRED ->
-                                R.string.onboarding_config_antigravity_login_required
-                            ChatConfigReadinessIssue.VERTEX_LOGIN_REQUIRED ->
-                                R.string.onboarding_config_vertex_login_required
-                            ChatConfigReadinessIssue.VERTEX_PROJECT_MISSING ->
-                                R.string.onboarding_config_vertex_project_missing
+                                R.string.onboarding_config_antigravity_login_required
                             ChatConfigReadinessIssue.API_KEY_MISSING ->
                                 R.string.onboarding_config_api_key_missing
                             ChatConfigReadinessIssue.API_KEY_INVALID ->

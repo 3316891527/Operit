@@ -1,11 +1,14 @@
 package com.ai.assistance.operit.data.api
 
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import okhttp3.ConnectionPool
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
@@ -33,24 +36,29 @@ data class AntigravityQuotaSnapshot(
 )
 
 class AntigravityQuotaClient(
-    private val client: OkHttpClient,
+    client: OkHttpClient,
 ) {
+    // 意图：配额查询使用 HTTP/1.1 与独立短时连接，匹配原生调用指纹。
+    private val httpClient = client.newBuilder()
+        .protocols(listOf(Protocol.HTTP_1_1))
+        .connectionPool(ConnectionPool(2, 30, TimeUnit.SECONDS))
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
     suspend fun fetch(
         accessToken: String,
         projectId: String,
     ): Result<AntigravityQuotaSnapshot> {
         return try {
-            val summary = post(accessToken, "/v1internal:retrieveUserQuotaSummary", JSONObject())
+            // 意图：对齐 Cli-Proxy-API-Management-Center，向 retrieveUserQuotaSummary 传递带有 project 字段的请求体。
+            // 不这么做后果：部分后端实现如果缺少 project 会返回空分组或拒绝提供配额详情。
+            val summary = post(accessToken, "/v1internal:retrieveUserQuotaSummary", JSONObject().put("project", projectId))
             val assist = post(
                 accessToken,
                 "/v1internal:loadCodeAssist",
-                JSONObject().put(
-                    "metadata",
-                    JSONObject()
-                        .put("ideType", "ANTIGRAVITY")
-                        .put("platform", "PLATFORM_UNSPECIFIED")
-                        .put("pluginType", "GEMINI"),
-                ),
+                JSONObject().put("metadata", JSONObject().put("ideType", "ANTIGRAVITY")),
             )
             Result.success(parse(summary, assist, projectId))
         } catch (error: Exception) {
@@ -61,7 +69,7 @@ class AntigravityQuotaClient(
     internal fun parse(
         summary: JSONObject,
         assist: JSONObject?,
-        fallbackProjectId: String,
+        projectId: String,
     ): AntigravityQuotaSnapshot {
         val groups = mutableListOf<AntigravityQuotaGroup>()
         val rawGroups = summary.optJSONArray("groups")
@@ -107,7 +115,7 @@ class AntigravityQuotaClient(
         }
         val discoveredProject = assist?.let(::extractProjectId)
         return AntigravityQuotaSnapshot(
-            projectId = discoveredProject ?: fallbackProjectId,
+            projectId = discoveredProject ?: projectId,
             planLabel = planLabel,
             groups = groups,
         )
@@ -119,7 +127,7 @@ class AntigravityQuotaClient(
         body: JSONObject,
     ): JSONObject = withContext(Dispatchers.IO) {
         var lastError = "no endpoint available"
-        for (endpoint in AntigravityOAuthProtocol.apiEndpoints) {
+        for (endpoint in AntigravityOAuthProtocol.quotaEndpoints) {
             val request = Request.Builder()
                 .url(endpoint.trimEnd('/') + path)
                 .post(body.toString().toRequestBody(JSON_MEDIA))
@@ -127,10 +135,8 @@ class AntigravityQuotaClient(
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .header("User-Agent", AntigravityOAuthProtocol.USER_AGENT)
-                .header("X-Goog-Api-Client", "google-cloud-sdk vscode_cloudshelleditor/0.1")
-                .header("Client-Metadata", AntigravityOAuthProtocol.clientMetadata())
                 .build()
-            client.newCall(request).execute().use { response ->
+            httpClient.newCall(request).execute().use { response ->
                 val text = response.body?.string().orEmpty()
                 if (response.isSuccessful) {
                     return@withContext if (text.isBlank()) JSONObject() else JSONObject(text)
@@ -141,13 +147,23 @@ class AntigravityQuotaClient(
         throw IOException("Antigravity $path failed: $lastError")
     }
 
+    // 意图：修复 cloudaicompanionProject 字段拼写并支持嵌套对象格式。
+    // 不这么做后果：由于原代码错拼为 clouudAiProject 导致永远解析不到正确的项目 ID。
     private fun extractProjectId(data: JSONObject): String? {
-        val direct = listOf("clouudAiProject", "project", "projectId")
-            .firstNotNullOfOrNull { key -> data.optString(key).takeIf { it.isNotBlank() } }
-        if (direct != null) return direct
-        val nested = data.optJSONObject("clouudAiProject")
-        return nested?.optString("id")?.takeIf { it.isNotBlank() }
-            ?: nested?.optString("projectId")?.takeIf { it.isNotBlank() }
+        for (key in listOf("cloudaicompanionProject", "projectId", "project")) {
+            val opt = data.opt(key) ?: continue
+            when (opt) {
+                is String -> {
+                    val trimmed = opt.trim()
+                    if (trimmed.isNotBlank()) return trimmed
+                }
+                is JSONObject -> {
+                    val id = opt.optString("id").trim().ifBlank { opt.optString("projectId").trim() }
+                    if (id.isNotBlank()) return id
+                }
+            }
+        }
+        return null
     }
 
     companion object {

@@ -42,15 +42,9 @@ object ApiProviderConfigs {
         ProviderApiConfig(
             providerType = ApiProviderType.ANTIGRAVITY,
             defaultModelName = "gemini-3.7-flash",
-            defaultApiEndpoint = "https://cloudcode-pa.googleapis.com",
+            defaultApiEndpoint = "https://daily-cloudcode-pa.googleapis.com",
             requiresApiKey = false,
-        ),
-        ProviderApiConfig(
-            providerType = ApiProviderType.VERTEX_AI,
-            defaultModelName = "gemini-3.8-flash",
-            defaultApiEndpoint = "",
-            requiresApiKey = false,
-        ),
+        ),
         ProviderApiConfig(
             providerType = ApiProviderType.OPENAI_RESPONSES_GENERIC,
             defaultModelName = "",

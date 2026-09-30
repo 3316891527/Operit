@@ -55,36 +55,6 @@ class ChatConfigReadinessTest {
     }
 
     @Test
-    fun vertexWithoutOAuthLogin_isRejected() {
-        assertIssue(
-            ChatConfigReadinessIssue.VERTEX_LOGIN_REQUIRED,
-            remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = "")
-                .copy(vertexProjectId = "my-project", vertexLocation = "global"),
-        )
-    }
-
-    @Test
-    fun vertexWithoutProject_isRejected() {
-        assertIssue(
-            ChatConfigReadinessIssue.VERTEX_PROJECT_MISSING,
-            remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = ""),
-            vertexAuthenticated = true,
-        )
-    }
-
-    @Test
-    fun vertexWithLoginAndProject_doesNotRequireApiKey() {
-        val result = ChatConfigReadiness.evaluate(
-            config = remoteConfig(ApiProviderType.VERTEX_AI, apiKey = "", endpoint = "")
-                .copy(vertexProjectId = "my-project", vertexLocation = "global"),
-            modelIndex = 0,
-            registeredPluginProviderIds = emptySet(),
-            vertexAuthenticated = true,
-        )
-        assertTrue(result.isReady)
-    }
-
-    @Test
     fun antigravityWithOAuthLogin_doesNotRequireApiKey() {
         val result = ChatConfigReadiness.evaluate(
             config = remoteConfig(
@@ -218,7 +188,6 @@ class ChatConfigReadinessTest {
     private fun assertIssue(
         expected: ChatConfigReadinessIssue,
         config: ModelConfigData,
-        vertexAuthenticated: Boolean = false,
     ) {
         assertEquals(
             expected,
@@ -226,7 +195,6 @@ class ChatConfigReadinessTest {
                 config = config,
                 modelIndex = 0,
                 registeredPluginProviderIds = emptySet(),
-                vertexAuthenticated = vertexAuthenticated,
             ).issue
         )
     }

@@ -59,8 +59,7 @@ fun AdvancedSettingsSection(
     val isCodexProvider =
         ApiProviderType.fromProviderTypeId(config.apiProviderTypeId) == ApiProviderType.OPENAI_CODEX
     val isOAuthProvider = isCodexProvider ||
-        ApiProviderType.fromProviderTypeId(config.apiProviderTypeId) == ApiProviderType.ANTIGRAVITY ||
-        ApiProviderType.fromProviderTypeId(config.apiProviderTypeId) == ApiProviderType.VERTEX_AI
+        ApiProviderType.fromProviderTypeId(config.apiProviderTypeId) == ApiProviderType.ANTIGRAVITY
 
     var useApiKeyPool by remember(config.id) { mutableStateOf(config.useMultipleApiKeys) }
     var apiKeyPool by remember(config.id) { mutableStateOf(config.apiKeyPool) }
