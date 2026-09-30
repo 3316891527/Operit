@@ -7744,11 +7744,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="token_stats_trends">Trend analysis</string>
     <string name="token_stats_settings">Statistics settings</string>
     <string name="token_stats_custom_range_confirm">OK</string>
-    <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
-    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
-    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
-    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
-    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
     <string name="package_market_origin_title">External package source notice</string>
     <string name="package_market_origin_message">This package comes from the Operit Market.\nPackage: %1$s\nVersion: %2$s\nAuthor: %3$s\nPlease support the original author and beware of resale.</string>
     <string name="backup_format_csv">CSV</string>
@@ -7785,11 +7780,9 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="data_recovery_restore_progress">Impor: %1$s</string>
     <string name="data_recovery_progress_percent"> %1$d%%</string>
     <string name="data_recovery_launch_failed">Tidak dapat menjalankan aplikasi utama</string>
-    <string name="language_follow_system">Ikuti sistem</string>
     <string name="thinking_config_rule_move_down">Pindahkan aturan ke bawah</string>
     <string name="thinking_config_rule_move_up">Pindahkan aturan ke atas</string>
     <string name="thinking_config_rule_order_hint">Aturan diperiksa dari atas ke bawah. Aturan aktif pertama yang cocok dengan model akan diterapkan. Gunakan panah pada setiap aturan untuk mengubah urutannya.</string>
     <string name="thinking_config_subtitle">Cocokkan parameter penalaran sesuai urutan aturan; aturan pertama yang cocok akan diterapkan</string>
     <string name="thinking_config_title">Konfigurasi penalaran</string>
-<string name="translation_retry_error_status">Permintaan terjemahan gagal (percobaan %1$d/%2$d): %3$s</string>
 </resources>

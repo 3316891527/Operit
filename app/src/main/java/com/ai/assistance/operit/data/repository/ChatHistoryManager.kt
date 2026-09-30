@@ -2372,7 +2372,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                                 messagePage.map { it.timestamp },
                             )
                             .groupBy { it.messageTimestamp }
-                    for (messageEntity in messagePage) {
+                    messagePage.forEachIndexed { pageIndex, messageEntity ->
                         val variants = variantsByTimestamp[messageEntity.timestamp].orEmpty()
                         val message = messageEntity.toChatMessage().copy(
                             variantCount = variants.size + 1,
@@ -2380,7 +2380,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         ChatHistoryCsv.writeMessage(
                             writer = writer,
                             chatId = chatHistory.id,
-                            orderIndex = messageEntity.orderIndex,
+                            orderIndex = offset + pageIndex,
                             message = message,
                         )
                         progressReporter.add(message.content.length.toLong())

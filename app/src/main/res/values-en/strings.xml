@@ -8518,13 +8518,8 @@
     <string name="market_version_too_low_message">Current client version %1$s is lower than the minimum required version %2$s for this resource. Please update the client before downloading.</string>
     <string name="market_version_too_high_message">Current client version %1$s is higher than the maximum supported version %2$s for this resource. Please use a supported client version.</string>
     <string name="thinking_config_invalid_json">Invalid Thinking Configuration</string>
-    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
-    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
-    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
-    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
     <string name="backup_format_csv">CSV</string>
     <string name="backup_format_csv_desc">Structured table format that preserves chat metadata, messages, and response variants and can be imported again</string>
-    <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
     <string name="data_recovery_raw_snapshot_section">Raw snapshot</string>
 
 
@@ -8557,6 +8552,4 @@
 
 
 
-    <string name="language_follow_system">Follow system</string>
-    <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
 </resources>

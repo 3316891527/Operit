@@ -8537,12 +8537,4 @@
 
 
 
-
-    <string name="language_follow_system">跟随系统</string>
-    <string name="theme_chat_header_opacity">聊天顶栏不透明度: %1$d%%</string>
-    <string name="theme_chat_input_opacity">输入框不透明度: %1$d%%</string>
-    <string name="theme_statusbar_opacity">状态栏不透明度: %1$d%%</string>
-    <string name="theme_toolbar_opacity">工具栏不透明度: %1$d%%</string>
-    <string name="toolreg_global_chat_runtime_state_desc">查询全局聊天运行状态</string>
-    <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
 </resources>

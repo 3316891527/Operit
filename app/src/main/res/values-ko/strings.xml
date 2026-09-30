@@ -7541,7 +7541,6 @@
     <string name="user_configuration_lock">Lock automatic profile updates</string>
     <string name="user_configuration_auto_update_desc">When enabled, long-term memory analysis updates user.md from conversations in the associated space. Locking blocks automatic updates only; manual editing remains available.</string>
     <string name="user_configuration_unlock_notice">This configuration was locked during migration from older settings. Saving removes the document-wide lock.</string>
-    <string name="language_follow_system">Follow system</string>
     <string name="market_agreement_title">Plugin Market Agreement and Community Rules</string>
     <string name="market_agreement_subtitle">Please read and agree to this agreement before entering the plugin market. The market is for sharing and discovering plugins; authors are encouraged to open source through a public GitHub repository.</string>
     <string name="market_agreement_version">Market agreement version: %1$s</string>
@@ -7592,11 +7591,6 @@
     <string name="token_stats_trends">Trend analysis</string>
     <string name="token_stats_settings">Statistics settings</string>
     <string name="token_stats_custom_range_confirm">OK</string>
-    <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
-    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
-    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
-    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
-    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
     <string name="package_market_origin_title">External package source notice</string>
     <string name="package_market_origin_message">This package comes from the Operit Market.\nPackage: %1$s\nVersion: %2$s\nAuthor: %3$s\nPlease support the original author and beware of resale.</string>
     <string name="backup_format_csv">CSV</string>
@@ -7638,5 +7632,4 @@
     <string name="thinking_config_rule_order_hint">규칙은 위에서 아래 순서로 확인됩니다. 모델과 일치하는 활성 규칙 중 첫 번째 규칙이 적용됩니다. 각 규칙 오른쪽의 화살표로 순서를 변경할 수 있습니다.</string>
     <string name="thinking_config_subtitle">규칙 순서에 따라 사고 매개변수를 일치시키며, 처음 일치한 규칙을 적용합니다</string>
     <string name="thinking_config_title">사고 설정</string>
-    <string name="translation_retry_error_status">번역 요청 실패(재시도 %1$d/%2$d): %3$s</string>
 </resources>

@@ -8347,12 +8347,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="token_stats_trends">Analiza tendințelor</string>
     <string name="token_stats_settings">Setări statistici</string>
     <string name="token_stats_custom_range_confirm">OK</string>
-    <string name="language_follow_system">Follow system</string>
-    <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
-    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
-    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
-    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
-    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
     <string name="backup_format_csv">CSV</string>
     <string name="backup_format_csv_desc">Structured table format that preserves chat metadata, messages, and response variants and can be imported again</string>
     <string name="data_recovery_raw_snapshot_section">Instantaneu brut</string>
@@ -8387,5 +8381,4 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="data_recovery_restore_progress">Import: %1$s</string>
     <string name="data_recovery_progress_percent"> %1$d%%</string>
     <string name="data_recovery_launch_failed">Aplicația principală nu poate fi pornită</string>
-    <string name="translation_retry_error_status">Solicitarea de traducere a eșuat (reîncercare %1$d/%2$d): %3$s</string>
 </resources>

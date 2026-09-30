@@ -7582,16 +7582,10 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="token_stats_trends">Trend analysis</string>
     <string name="token_stats_settings">Statistics settings</string>
     <string name="token_stats_custom_range_confirm">OK</string>
-    <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
-    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
-    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
-    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
-    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
     <string name="package_market_origin_title">External package source notice</string>
     <string name="package_market_origin_message">This package comes from the Operit Market.\nPackage: %1$s\nVersion: %2$s\nAuthor: %3$s\nPlease support the original author and beware of resale.</string>
     <string name="backup_format_csv">CSV</string>
     <string name="backup_format_csv_desc">Structured table format that preserves chat metadata, messages, and response variants and can be imported again</string>
-    <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
     <string name="data_recovery_raw_snapshot_section">Snapshot bruto</string>
     <string name="data_recovery_raw_snapshot_description">A exportação empacota os diretórios internos files, shared_prefs, datastore, databases e Android/data; a importação substitui os dados atuais.</string>
     <string name="data_recovery_export_snapshot">Exportar snapshot</string>
@@ -7624,7 +7618,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="data_recovery_restore_progress">Importação: %1$s</string>
     <string name="data_recovery_progress_percent"> %1$d%%</string>
     <string name="data_recovery_launch_failed">Não foi possível iniciar o aplicativo principal</string>
-    <string name="language_follow_system">Seguir o sistema</string>
     <string name="thinking_config_rule_move_down">Mover regra para baixo</string>
     <string name="thinking_config_rule_move_up">Mover regra para cima</string>
     <string name="thinking_config_rule_order_hint">As regras são verificadas de cima para baixo. A primeira regra ativada que corresponder ao modelo será aplicada. Use as setas de cada regra para alterar a ordem.</string>

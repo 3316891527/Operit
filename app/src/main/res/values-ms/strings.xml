@@ -7749,14 +7749,8 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="token_stats_trends">Analisis trend</string>
     <string name="token_stats_settings">Tetapan statistik</string>
     <string name="token_stats_custom_range_confirm">OK</string>
-    <string name="toolreg_global_chat_runtime_state_desc">Check global chat runtime state</string>
-    <string name="theme_toolbar_opacity">Toolbar opacity: %1$d%%</string>
-    <string name="theme_statusbar_opacity">Status bar opacity: %1$d%%</string>
-    <string name="theme_chat_header_opacity">Chat header opacity: %1$d%%</string>
-    <string name="theme_chat_input_opacity">Chat input opacity: %1$d%%</string>
     <string name="backup_format_csv">CSV</string>
     <string name="backup_format_csv_desc">Structured table format that preserves chat metadata, messages, and response variants and can be imported again</string>
-    <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
     <string name="data_recovery_raw_snapshot_section">Syot kilat mentah</string>
     <string name="data_recovery_raw_snapshot_description">Eksport akan membungkus direktori dalaman files, shared_prefs, datastore, databases dan Android/data; import akan menimpa data semasa.</string>
     <string name="data_recovery_export_snapshot">Eksport syot kilat</string>
@@ -7789,5 +7783,4 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="data_recovery_restore_progress">Import: %1$s</string>
     <string name="data_recovery_progress_percent"> %1$d%%</string>
     <string name="data_recovery_launch_failed">Tidak dapat melancarkan aplikasi utama</string>
-    <string name="language_follow_system">Ikut sistem</string>
 </resources>
