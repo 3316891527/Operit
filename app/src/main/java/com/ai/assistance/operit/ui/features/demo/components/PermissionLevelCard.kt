@@ -504,7 +504,12 @@ private fun PermissionSectionContainer(
 
 // 重新设计权限项，使其更现代和直观
 @Composable
-fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit, statusLabel: String? = null) {
+fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit) {
+    PermissionStatusItem(title, isGranted, onClick, statusLabel = null)
+}
+
+@Composable
+private fun PermissionStatusItem(title: String, isGranted: Boolean, onClick: () -> Unit, statusLabel: String?) {
     val contentColor =
             if (isGranted) {
                 MaterialTheme.colorScheme.primary
