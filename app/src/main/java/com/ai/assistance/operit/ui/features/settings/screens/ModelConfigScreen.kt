@@ -173,6 +173,8 @@ fun ModelConfigScreen(
     val functionalConfigManager = remember { FunctionalConfigManager(context) }
     val codexAuthManager = remember { CodexAuthManager.getInstance(context) }
     val codexAuthState by codexAuthManager.authState.collectAsState()
+    val antigravityAuthManager = remember { com.ai.assistance.operit.data.api.AntigravityAuthManager.getInstance(context) }
+    val antigravityAuthState by antigravityAuthManager.authState.collectAsState()
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val saveCoordinator = rememberModelConfigSaveCoordinator()
@@ -298,6 +300,7 @@ fun ModelConfigScreen(
                         modelIndex = targetModelIndex,
                         registeredPluginProviderIds = registeredPluginProviderIds,
                         codexAuthenticated = codexAuthState != null,
+                        antigravityAuthenticated = antigravityAuthState != null,
                     )
                 if (!readiness.isReady) {
                     val messageResId =
@@ -312,6 +315,8 @@ fun ModelConfigScreen(
                                 R.string.onboarding_config_model_missing
                             ChatConfigReadinessIssue.CODEX_LOGIN_REQUIRED ->
                                 R.string.onboarding_config_codex_login_required
+                            ChatConfigReadinessIssue.ANTIGRAVITY_LOGIN_REQUIRED ->
+                                R.string.onboarding_config_antigravity_login_required
                             ChatConfigReadinessIssue.API_KEY_MISSING ->
                                 R.string.onboarding_config_api_key_missing
                             ChatConfigReadinessIssue.API_KEY_INVALID ->
@@ -1725,7 +1730,6 @@ private fun serializeThinkingRuleEditors(rules: List<ThinkingRuleEditor>): Strin
         rule.parameterLabel.trim().takeIf { it.isNotEmpty() }?.let {
             ruleObject.put("parameterLabel", it)
         }
-        // 不再由编辑器写入始终开启字段。
         thinkingActionsArray(rule.enabledActions).takeIf { it.length() > 0 }?.let {
             ruleObject.put("enable", it)
         }
@@ -1786,7 +1790,6 @@ private fun JSONObject.toThinkingRuleEditor(index: Int): ThinkingRuleEditor {
             else -> "levels"
         },
         parameterLabel = optString("parameterLabel", optString("label", "")),
-        // 旧配置字段不再映射到编辑器状态，保存时会被移除。
         enabledActions = actionEditors("enable", "enabledActions", "on"),
         disabledActions = actionEditors("disable", "disabledActions", "off"),
         options = optionEditors()
