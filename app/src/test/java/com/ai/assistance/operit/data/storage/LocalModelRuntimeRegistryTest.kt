@@ -25,7 +25,7 @@ class LocalModelRuntimeRegistryTest {
     fun deleteIfUnusedRefusesPathHeldByAcquire() {
         val modelDir = temporaryFolder.newFolder("in-use-model")
         File(modelDir, "weights.bin").writeBytes(ByteArray(8))
-        val handle = LocalModelRuntimeRegistry.acquire(modelDir)
+        val handle = requireNotNull(LocalModelRuntimeRegistry.acquire(modelDir))
         try {
             assertEquals(
                 LocalModelDeleteOutcome.IN_USE,
