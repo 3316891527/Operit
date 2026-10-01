@@ -232,7 +232,7 @@ class DeepseekProviderMediaRoleTest {
         availableTools: List<ToolPrompt>
     ): JSONObject {
         val provider =
-            OpenAIResponsesProvider(
+            ExposedOpenAIResponsesProvider(
                 responsesApiEndpoint = "https://example.test/v1/responses",
                 apiKeyProvider = SingleApiKeyProvider("test-key"),
                 modelName = "openai-responses-test",
@@ -240,25 +240,54 @@ class DeepseekProviderMediaRoleTest {
                 supportsVision = true,
                 enableToolCall = true
             )
-        val method =
-            OpenAIResponsesProvider::class.java.declaredMethods.single {
-                it.name == "createRequestBody" && it.parameterCount == 7
-            }
-        method.isAccessible = true
         val body =
-            method.invoke(
-                provider,
-                mock<Context>(),
-                history,
-                emptyList<ModelParameter<*>>(),
-                false,
-                false,
-                availableTools,
-                false
-            ) as RequestBody
+            provider.createRequestBodyForTest(
+                context = mock<Context>(),
+                chatHistory = history,
+                modelParameters = emptyList<ModelParameter<*>>(),
+                enableThinking = false,
+                stream = false,
+                availableTools = availableTools,
+                preserveThinkInHistory = false
+            )
         val buffer = Buffer()
         body.writeTo(buffer)
         return JSONObject(buffer.readUtf8())
+    }
+
+    private class ExposedOpenAIResponsesProvider(
+        responsesApiEndpoint: String,
+        apiKeyProvider: ApiKeyProvider,
+        modelName: String,
+        client: OkHttpClient,
+        supportsVision: Boolean,
+        enableToolCall: Boolean
+    ) : OpenAIResponsesProvider(
+            responsesApiEndpoint = responsesApiEndpoint,
+            apiKeyProvider = apiKeyProvider,
+            modelName = modelName,
+            client = client,
+            supportsVision = supportsVision,
+            enableToolCall = enableToolCall
+        ) {
+        fun createRequestBodyForTest(
+            context: Context,
+            chatHistory: List<PromptTurn>,
+            modelParameters: List<ModelParameter<*>>,
+            enableThinking: Boolean,
+            stream: Boolean,
+            availableTools: List<ToolPrompt>?,
+            preserveThinkInHistory: Boolean
+        ): RequestBody =
+            createRequestBody(
+                context = context,
+                chatHistory = chatHistory,
+                modelParameters = modelParameters,
+                enableThinking = enableThinking,
+                stream = stream,
+                availableTools = availableTools,
+                preserveThinkInHistory = preserveThinkInHistory
+            )
     }
 
     private companion object {
