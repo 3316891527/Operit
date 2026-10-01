@@ -397,8 +397,8 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 49
-        versionName = "1.12.1+6"
+        versionCode = 51
+        versionName = "1.12.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

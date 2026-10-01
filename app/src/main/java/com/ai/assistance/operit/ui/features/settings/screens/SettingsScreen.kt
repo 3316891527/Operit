@@ -49,6 +49,7 @@ fun SettingsScreen(
         navigateToPersonaCardGeneration: () -> Unit,
         navigateToWaifuModeSettings: () -> Unit,
         navigateToTokenUsageStatistics: () -> Unit,
+        navigateToPerformanceMonitor: () -> Unit,
         navigateToContextSummarySettings: () -> Unit,
         navigateToLayoutAdjustmentSettings: () -> Unit
 ) {
@@ -271,6 +272,13 @@ fun SettingsScreen(
                                 subtitle = stringResource(id = R.string.settings_token_usage_subtitle),
                                 icon = Icons.Default.Analytics,
                                 onClick = navigateToTokenUsageStatistics
+                        )
+
+                        CompactSettingsItem(
+                                title = stringResource(id = R.string.settings_performance_monitor),
+                                subtitle = stringResource(id = R.string.settings_performance_monitor_subtitle),
+                                icon = Icons.Default.Speed,
+                                onClick = navigateToPerformanceMonitor
                         )
                 }
 
