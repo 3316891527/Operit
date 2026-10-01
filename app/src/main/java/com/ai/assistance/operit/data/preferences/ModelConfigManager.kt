@@ -12,6 +12,7 @@ import com.ai.assistance.operit.data.collects.ModelThinkingConfigDefaults
 import com.ai.assistance.operit.data.model.CustomParameterData
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigData
+import com.ai.assistance.operit.data.stats.TokenUsageRepository
 import com.ai.assistance.operit.data.model.ModelConfigDefaults
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.ModelParameter
@@ -55,6 +56,7 @@ class ModelConfigManager(
 ) {
 
     private val configDataStore = configDataStore
+    private val tokenUsageRepository = TokenUsageRepository.getInstance(context.applicationContext)
 
     // 提供context访问器
     val appContext: Context
@@ -645,6 +647,8 @@ class ModelConfigManager(
             // 更新配置列表
             preferences[CONFIG_LIST_KEY] = json.encodeToString(configList)
         }
+        // 配置身份被删除，但历史用量事实继续保留并归入未指定配置。
+        tokenUsageRepository.detachUsageFromConfig(configId)
         return mappingRepair.affectedFunctions
     }
 

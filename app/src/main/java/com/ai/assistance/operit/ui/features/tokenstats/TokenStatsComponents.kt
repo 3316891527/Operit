@@ -939,14 +939,6 @@ internal fun TokenStatsConfigurationCardsSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    if (orphanedConfigCount > 0) {
-                        TextButton(onClick = onClearInvalidConfigurations) {
-                            Text(
-                                text = stringResource(R.string.token_stats_clear_invalid_configurations),
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    }
                     Text(
                         text = stringResource(
                             R.string.token_stats_configuration_count,
@@ -1242,18 +1234,6 @@ private fun TokenStatsConfigurationRow(
                             text = stringResource(R.string.reset_to_default),
                             style = MaterialTheme.typography.labelSmall,
                         )
-                    }
-                    if (identity.configId.isNotBlank()) {
-                        TextButton(
-                            onClick = {
-                                onDeleteConfigurationUsage(identity.configId, configurationName)
-                            },
-                        ) {
-                            Text(
-                                text = stringResource(R.string.token_stats_delete_configuration),
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
                     }
                 }
             }

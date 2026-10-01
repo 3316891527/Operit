@@ -113,20 +113,16 @@ class TokenUsageRepository private constructor(context: Context) {
         }
     }
 
-    suspend fun deleteUsageForConfigIds(configIds: Collection<String>): Int {
-        val ids = configIds.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
-        if (ids.isEmpty()) return 0
+    suspend fun detachUsageFromConfig(configId: String) {
+        val trimmedId = configId.trim()
+        if (trimmedId.isEmpty()) return
         ensureInitialized()
-        return withDatabaseAccess {
+        withDatabaseAccess {
             val database = AppDatabase.getDatabase(appContext)
             database.withTransaction {
                 val dao = database.tokenUsageDao()
-                var deletedRecords = 0
-                ids.forEach { configId ->
-                    deletedRecords += dao.deleteRecordsByConfigId(configId)
-                    dao.deleteStatsModelsByConfigId(configId)
-                }
-                deletedRecords
+                dao.detachRecordsFromConfig(trimmedId)
+                dao.deleteStatsModelsByConfigId(trimmedId)
             }
         }
     }

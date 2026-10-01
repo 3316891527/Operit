@@ -310,9 +310,6 @@ private fun TokenStatsPageContent(
                     priceSettings = state.priceSettings,
                     onSavePrice = viewModel::savePrice,
                     onDeletePrice = viewModel::deletePrice,
-                    orphanedConfigCount = state.orphanedConfigCount,
-                    onDeleteConfigurationUsage = viewModel::deleteUsageForConfiguration,
-                    onClearInvalidConfigurations = viewModel::clearOrphanedConfigurations,
                 )
             }
         }
