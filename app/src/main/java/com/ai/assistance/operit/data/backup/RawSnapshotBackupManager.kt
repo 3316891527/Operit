@@ -67,7 +67,7 @@ object RawSnapshotBackupManager {
     internal fun isThemeMediaFlatFileName(name: String): Boolean =
         themeMediaFlatNamePattern.matches(name)
 
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
     @Serializable
     data class ResourceMapping(
