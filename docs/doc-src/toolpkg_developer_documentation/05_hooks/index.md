@@ -63,7 +63,7 @@ Hook 回调接收 `HookEventBase<TEventName, TPayload>`：
 
 - ToolPkg API `1.0.0` 是当前基线。
 - 消息长按菜单和聊天运行态 Hook 从 ToolPkg API `1.0.1` 开始，需要 Operit `1.12.1+4`。
-- 当前声明遗漏了运行时实际触发的 Tool Lifecycle 事件 `tool_call_intercept`。在声明修正前，类型检查无法把这个事件作为 `ToolLifecycleEventName` 成员识别；不要因此忽略其运行时阻断行为。
+- `ToolLifecycleEventName` 已声明 `tool_call_intercept`；运行时仍在权限检查前同步派发该事件，阻断语义见[工具调用生命周期](./tool_lifecycle.md)。
 - 各个版本化方法和数据类型应以其页面的逐项注记为准，集中策略见[API 版本与兼容](../09_compatibility/api_versions.md)。
 
 ## 权威来源

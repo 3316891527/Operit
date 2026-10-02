@@ -35,7 +35,7 @@ ToolPkg.registerToolLifecycleHook({
 - `block` 缺少字符串 reason 或 reason 去空白后为空时，宿主也会阻断，并以接口错误作为阻断原因。
 - 脚本执行异常、结果解码错误会 fail closed：宿主阻断工具调用并记录错误，而不是继续放行。
 
-该事件名在运行时 bridge 中已实现，但当前 `examples/types/toolpkg.d.ts` 的 `ToolLifecycleEventName` 联合类型缺少 `tool_call_intercept`，因此 TypeScript 用户无法从声明中直接得到完整事件名类型。这是声明与运行时的已确认差异，登记在[接口覆盖索引](../09_compatibility/coverage.md)；本页先按运行时行为记录，不把类型缺口隐藏掉。
+当前声明文件的 `ToolLifecycleEventName` 已包含 `tool_call_intercept`；本页按运行时 bridge 记录其同步拦截行为、返回值解释和失败路径。
 
 ### `tool_permission_checked`
 
@@ -99,7 +99,7 @@ ToolPkg.registerToolLifecycleHook({
 });
 ```
 
-此示例的 `'tool_call_intercept'` 在当前声明文件中尚未进入事件名联合类型；运行时行为有效，类型差异需在声明修正后消除。
+此示例使用的 `'tool_call_intercept'` 已包含在当前声明文件的事件名联合类型中；运行时仍需按本页的同步拦截规则处理返回值。
 
 ## 实现依据
 

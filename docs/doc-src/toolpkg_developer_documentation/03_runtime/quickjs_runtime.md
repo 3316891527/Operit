@@ -47,6 +47,10 @@ const timerId = setTimeout((name) => console.log(`ready: ${name}`), 250, "worker
 clearTimeout(timerId);
 ```
 
+## ToolPkg 工具参数边界
+
+包工具通过 `METADATA.tools[].parameters[]` 声明参数类型；在 ToolPkg 包工具调用路径中，Android 宿主会先按 metadata 转换参数，再调用 QuickJS 函数。类型转换不属于 `quickjs-runtime.d.ts` 的全局对象，也不是 QuickJS polyfill 的行为。直接脚本执行入口使用的参数路径不同。完整类型规则与失败行为见[包格式中的参数转换说明](../02_package_model/package_format.md#参数类型与工具调用转换)。
+
 ## Microtask
 
 `queueMicrotask(callback): void` 仅在全局尚无此函数时补为 `Promise.resolve().then(callback)`。它不创建 native timer；callback 异常遵循 Promise reaction 的 QuickJS 行为。

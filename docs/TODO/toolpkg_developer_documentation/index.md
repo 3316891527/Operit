@@ -50,4 +50,7 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 - 已按 `examples/types/*.d.ts` 补齐 QuickJS Runtime、Java Bridge、Pako、Compose DSL、Material 3、Material Icons 的新文档入口，并为 Compose/库分类建立索引。
 - 已根据源码更正 `dataUtils`、Pako、`useState`/`useMemo`、QuickJS console/timer 等运行时契约；差异记录在[覆盖索引](../../doc-src/toolpkg_developer_documentation/09_compatibility/coverage.md)。
 - 新文档树的相对 Markdown 文件链接检查已通过；本轮复核覆盖 45 篇 Markdown，断链为 0。NativeInterface 声明与 `JsEngine` 原生绑定均为 33 项，核心页逐项覆盖 33 项。
-- 整体任务仍未完成：覆盖索引列出 18 个需逐项审计的声明组和 1 项待核对字段；`results.d.ts` 的 162 个接口、742 个顶层字段中，本轮已逐字段核对 30 个接口/134 个字段，其余 132 个接口/608 个字段尚未完成同等核对。其他模块 API、ToolPkg 注册字段、Compose renderer 和示例也未完成；旧文档保持原样，未提交或推送。
+- `software_settings.d.ts` 的 26 个公开方法均已列出 TypeScript 签名；环境变量、沙箱/MCP、speech 更新、角色卡字段校验与工具访问解析、连接测试行为已有源码核对。本轮完成模型配置创建/更新/删除、字段归一、函数绑定/索引和连接探针行为审计，并记录 `ModelConfigUpdateOptions` 缺少 6 个运行时支持的 `llama_*` 字段这一声明差异。
+- `workflow.d.ts` 的 10 个 `Runtime` 方法均已列出签名；本轮完成 CRUD、patch、节点/连接解析、启停/错误结果及 `WorkflowExecutor` 的触发选择、依赖调度、边条件、失败分支、Condition/Logic/Extract/Execute 节点行为源码审计。
+- `quickjs-runtime.d.ts` 页面现在区分 QuickJS 全局兼容层与 metadata 驱动的包工具参数转换；后者按 `JsToolManager` 实现记录类型转换、缺参和错误路径。
+- 整体任务仍未完成：覆盖索引列出 18 个需逐项审计的声明组和 1 项待核对字段。`results.d.ts` 的 162 个接口名现均在参考页中出现，38 个 `BaseResult` 包装到 `data` 类型的映射已逐项核对；此前补入 22 个结果数据接口字段表，并记录 `DateResultData`、蓝牙字面量类型、模型配置 DTO、工作流节点及文件/网络/UI/终端结果差异。本轮完成系统/设备/应用结果 22 个接口/86 个字段，以及软件设置/沙箱/MCP/语音服务结果 13 个接口/104 个字段的运行时核对；并发现 `SpeechServicesUpdateResultData.sttApiKeySet` 当前取自 TTS API key。结果类型累计核对 136 个接口/671 个声明字段，另有 26 个接口/71 个字段尚未完成同等核对。`toolpkg.d.ts` 的注册、Hook、资源/持久配置、IPC 和 WASM API 已按源码核对；其他模块 API、Compose renderer 和示例仍需继续核对。旧文档保持原样。此前草稿已推送到个人仓库分支 `docs/toolpkg-developer-reference`；本轮修改已提交，尚未推送。

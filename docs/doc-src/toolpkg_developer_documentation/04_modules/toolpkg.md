@@ -176,6 +176,7 @@ interface PromptTurn {
 
 ### 工具生命周期事件：`ToolLifecycleEventName`
 
+- `tool_call_intercept`
 - `tool_call_requested`
 - `tool_permission_checked`
 - `tool_execution_started`
@@ -584,9 +585,13 @@ interface PromptTurn {
 - `registerPromptFinalizeHook(definition)`
 - `registerPromptEstimateFinalizeHook(definition)`
 - `registerSummaryGenerateHook(definition)`
-- `readResource(key, outputFileName?)`
+- `registerAiProvider(definition)`
+- `readResource(key, outputFileName?, internal?)`
+- `getConfigDir(pluginId?)`
+- `ipc.on(channel, handler)`, `ipc.off(channel, handler?)`, `ipc.call(channel, payload?, options?)`
+- `wasm.call(moduleId, exportName, args?)`
 
-### `ToolPkg.readResource(...)`
+注册方法、资源/配置、IPC 和 WASM 的完整参数约束、运行时路由、错误语义与返回解码见[ToolPkg 注册 API](../03_runtime/registry.md)。
 
 把当前 toolpkg `manifest.resources` 里声明的资源按 `key` 释放到宿主临时目录，并返回落盘后的绝对路径。
 
@@ -599,8 +604,10 @@ const jarPath = await ToolPkg.readResource('apktool_lib_jar', 'apktool-lib.jar')
 - 这个方法不依赖 `compose_dsl` 的 `ctx`，普通子包工具函数、主入口 hook、UI 模块都可以直接调用。
 - `key` 对应 `manifest.json` 里的 `resources[].key`。
 - `outputFileName` 可选；不传时会使用清单资源原始文件名。
+- `internal` 可选且只有严格为 `true` 时使用内部 clean-on-exit 目录。
 - 如果资源 `mime` 是目录类型（例如 `inode/directory`、`vnd.android.document/directory`），运行时会先把该目录压成 zip，再返回这个 zip 文件的绝对路径；默认文件名会自动补 `.zip`。
 - `registerToolPkg()` 执行期间不可调用；调用会立即抛出异常。
+- 资源 key、目标包解析、已启用容器和失败路径的完整规则见[ToolPkg 注册 API](../03_runtime/registry.md)。
 
 ## ToolPkg Logo
 
