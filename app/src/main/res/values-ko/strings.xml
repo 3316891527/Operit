@@ -4306,7 +4306,7 @@
     <string name="clear_api_key_pool">키 풀 지우기</string>
     <string name="clear_api_key_pool_confirm_message">모든 %1$d 키를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.</string>
     <string name="api_key_pool_cleared">키 풀이 비워졌습니다.</string>
-    <string name="api_key_pool_test_progress">사용 가능: %1$d, 사용 불가: %2$d, 테스트되지 않음: %3$d</string>
+    <string name="api_key_pool_test_progress">사용 가능: %1$d, 사용 불가: %2$d, 테스트되지 않음: %3$d, 비활성화됨: %4$d</string>
     <string name="api_key_pool_test_run_progress">테스트 진행: %1$d / %2$d</string>
     <string name="api_key_pool_test_start">테스트 시작</string>
     <string name="api_key_pool_test_continue">계속 테스트</string>

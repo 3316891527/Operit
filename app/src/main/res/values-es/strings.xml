@@ -4798,7 +4798,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="clear_api_key_pool">Vaciar el pool de claves</string>
     <string name="clear_api_key_pool_confirm_message">¿Está seguro de que desea eliminar todas las %1$d claves? Esta acción no se puede deshacer.</string>
     <string name="api_key_pool_cleared">El pool de claves se ha vaciado</string>
-    <string name="api_key_pool_test_progress">Disponibles: %1$d, no disponibles: %2$d, sin probar: %3$d</string>
+    <string name="api_key_pool_test_progress">Disponibles: %1$d, no disponibles: %2$d, sin probar: %3$d, deshabilitadas: %4$d</string>
     <string name="api_key_pool_test_run_progress">Progreso de la prueba: %1$d / %2$d</string>
     <string name="api_key_pool_test_start">Iniciar prueba</string>
     <string name="api_key_pool_test_continue">Continuar prueba</string>

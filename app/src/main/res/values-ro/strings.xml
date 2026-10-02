@@ -4966,7 +4966,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="clear_api_key_pool_confirm_message">Sunteți sigur că doriți să ștergeți totul? %1$d Vrei să confirmi? Această operațiune este ireversibilă.</string>
     <string name="api_key_pool_cleared">Rezerva de chei a fost golită</string>
 
-    <string name="api_key_pool_test_progress">Disponibil: %1$d, indisponibil: %2$d, netestat: %3$d</string>
+    <string name="api_key_pool_test_progress">Disponibil: %1$d, indisponibil: %2$d, netestat: %3$d, dezactivat: %4$d</string>
     <string name="api_key_pool_test_run_progress">Stadiul testării: %1$d / %2$d</string>
     <string name="api_key_pool_test_start">Începe testarea</string>
     <string name="api_key_pool_test_continue">Continuarea testării</string>

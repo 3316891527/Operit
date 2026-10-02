@@ -5268,7 +5268,7 @@
     <string name="clear_api_key_pool_confirm_message">确定要删除全部 %1$d 个密钥吗？此操作不可撤销。</string>
     <string name="api_key_pool_cleared">密钥池已清空</string>
 
-    <string name="api_key_pool_test_progress">可用: %1$d，不可用: %2$d，未测试: %3$d</string>
+    <string name="api_key_pool_test_progress">可用: %1$d，不可用: %2$d，未测试: %3$d，禁用: %4$d</string>
     <string name="api_key_pool_test_run_progress">测试进度: %1$d / %2$d</string>
     <string name="api_key_pool_test_start">开始测试</string>
     <string name="api_key_pool_test_continue">继续测试</string>

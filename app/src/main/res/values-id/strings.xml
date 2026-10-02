@@ -4222,7 +4222,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="clear_api_key_pool">Kosongkan Kumpulan Kunci</string>
     <string name="clear_api_key_pool_confirm_message">Yakin ingin menghapus semua %1$d kunci? Tindakan ini tidak dapat dibatalkan.</string>
     <string name="api_key_pool_cleared">Kumpulan kunci telah dikosongkan</string>
-    <string name="api_key_pool_test_progress">Tersedia: %1$d, Tidak Tersedia: %2$d, Belum Diuji: %3$d</string>
+    <string name="api_key_pool_test_progress">Tersedia: %1$d, Tidak Tersedia: %2$d, Belum Diuji: %3$d, Dinonaktifkan: %4$d</string>
     <string name="api_key_pool_test_run_progress">Progres Pengujian: %1$d / %2$d</string>
     <string name="api_key_pool_test_start">Mulai Pengujian</string>
     <string name="api_key_pool_test_continue">Lanjutkan Pengujian</string>
