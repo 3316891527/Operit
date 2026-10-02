@@ -5532,6 +5532,7 @@
     <string name="backup_raw_snapshot_restore_confirm_message">This will overwrite current app data with the following backup:\n%1$s\n\nThis action cannot be undone. It is recommended to perform a backup before restoring.</string>
     <string name="backup_raw_snapshot_restore_confirm_action">Confirm restore</string>
     <string name="backup_raw_snapshot_restore_cancel_action">Cancel</string>
+    <string name="backup_raw_snapshot_restore_result_message">Snapshot restored: %1$d resource(s) restored, %2$d skipped. Restart the app to apply the restored data.</string>
     <string name="backup_chat_history">Chat History</string>
     <string name="backup_select_chat_records">Select chat records</string>
     <string name="backup_select_chat_records_hint">Choose the chat records to export.</string>

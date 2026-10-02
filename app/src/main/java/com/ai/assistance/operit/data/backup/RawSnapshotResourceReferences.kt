@@ -101,6 +101,12 @@ class DefaultRawSnapshotResourceReferenceProvider(
             addReference(
                 references,
                 owner,
+                RawSnapshotResourceKind.USER_AVATAR,
+                themeSnapshot.customUserAvatarUri,
+            )
+            addReference(
+                references,
+                owner,
                 RawSnapshotResourceKind.AI_AVATAR,
                 userPreferences.getAiAvatarForCharacterGroupFlow(group.id).first(),
             )
@@ -218,7 +224,7 @@ object RawSnapshotResourceLayout {
         return "$ROOT$ownerDirectory/"
     }
 
-    fun fileName(reference: RawSnapshotResourceReference, extension: String): String {
+    fun fileName(reference: RawSnapshotResourceReference, extension: String, collisionIndex: Int? = null): String {
         val kindName = when (reference.kind) {
             RawSnapshotResourceKind.USER_AVATAR -> "user_avatar"
             RawSnapshotResourceKind.AI_AVATAR -> "ai_avatar"
@@ -238,8 +244,9 @@ object RawSnapshotResourceLayout {
             }
         }
         val stem = if (ownerSegment.isNullOrBlank()) kindName else "${kindName}_$ownerSegment"
+        val disambiguator = collisionIndex?.let { "_$it" }.orEmpty()
         val suffix = extension.trim().trimStart('.').lowercase().ifBlank { "bin" }
-        return "$stem.$suffix"
+        return "$stem$disambiguator.$suffix"
     }
 
     private fun ownerDirectoryName(reference: RawSnapshotResourceReference): String {

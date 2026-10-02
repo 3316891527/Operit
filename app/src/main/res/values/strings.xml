@@ -6010,6 +6010,7 @@
     <string name="backup_raw_snapshot_restore_confirm_message">将使用以下备份文件覆盖当前应用数据：\n%1$s\n\n此操作不可撤销。建议先执行一次备份再恢复。</string>
     <string name="backup_raw_snapshot_restore_confirm_action">确认恢复</string>
     <string name="backup_raw_snapshot_restore_cancel_action">取消</string>
+    <string name="backup_raw_snapshot_restore_result_message">快照已恢复：成功恢复资源 %1$d 个，跳过 %2$d 个。建议立即重启应用以使恢复的数据生效。</string>
     <string name="backup_chat_history">聊天记录</string>
     <string name="backup_select_chat_records">选择聊天记录</string>
     <string name="backup_select_chat_records_hint">请选择要导出的聊天记录。</string>

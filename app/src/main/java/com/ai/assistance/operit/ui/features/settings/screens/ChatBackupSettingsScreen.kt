@@ -136,6 +136,7 @@ enum class RawSnapshotOperation {
     BACKING_UP,
     BACKUP_SUCCESS,
     RESTORING,
+    RESTORE_SUCCESS,
     FAILED
 }
 
@@ -179,6 +180,7 @@ fun ChatBackupSettingsScreen() {
     var includeRawSnapshotLogs by remember { mutableStateOf(true) }
     var pendingRawSnapshotRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var showRawSnapshotRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showRawSnapshotRestoreResultDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showMemoryImportStrategyDialog by remember { mutableStateOf(false) }
     var pendingMemoryImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -1099,6 +1101,12 @@ fun ChatBackupSettingsScreen() {
                                         message = rawSnapshotOperationMessage,
                                         icon = Icons.Default.CloudDownload
                                     )
+                                RawSnapshotOperation.RESTORE_SUCCESS ->
+                                    OperationResultCard(
+                                        title = stringResource(R.string.backup_room_db_restore_success),
+                                        message = rawSnapshotOperationMessage,
+                                        icon = Icons.Default.Restore
+                                    )
                                 RawSnapshotOperation.FAILED ->
                                     OperationResultCard(
                                         title = stringResource(R.string.backup_operation_failed),
@@ -1512,7 +1520,7 @@ fun ChatBackupSettingsScreen() {
                                         )
                                     } catch (_: Exception) {
                                     }
-                                    RawSnapshotBackupManager.restoreFromBackupUri(
+                                    val restoreResult = RawSnapshotBackupManager.restoreFromBackupUri(
                                         context = context,
                                         uri = uri,
                                         onProgress = { progress ->
@@ -1546,13 +1554,13 @@ fun ChatBackupSettingsScreen() {
                                             }
                                         }
                                     )
-                                    // The open process may retain stale DataStore state. Do not
-                                    // allow it to keep running after raw files have been replaced.
-                                    val intent = Intent(context, MainActivity::class.java).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                    }
-                                    context.startActivity(intent)
-                                    exitProcess(0)
+                                    rawSnapshotOperationState = RawSnapshotOperation.RESTORE_SUCCESS
+                                    rawSnapshotOperationMessage = context.getString(
+                                        R.string.backup_raw_snapshot_restore_result_message,
+                                        restoreResult.restoredResourceCount,
+                                        restoreResult.skippedResourceCount,
+                                    )
+                                    showRawSnapshotRestoreResultDialog = true
                                 } catch (e: Exception) {
                                     rawSnapshotOperationState = RawSnapshotOperation.FAILED
                                     rawSnapshotOperationMessage = e.localizedMessage ?: e.toString()
@@ -1572,6 +1580,33 @@ fun ChatBackupSettingsScreen() {
                     }
                 ) {
                     Text(stringResource(R.string.backup_raw_snapshot_restore_cancel_action))
+                }
+            }
+        )
+    }
+
+    if (showRawSnapshotRestoreResultDialog) {
+        AlertDialog(
+            onDismissRequest = { showRawSnapshotRestoreResultDialog = false },
+            title = { Text(stringResource(R.string.backup_room_db_restore_success)) },
+            text = { Text(rawSnapshotOperationMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRawSnapshotRestoreResultDialog = false
+                        val intent = Intent(context, MainActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        }
+                        context.startActivity(intent)
+                        exitProcess(0)
+                    }
+                ) {
+                    Text(stringResource(R.string.backup_room_db_restart_now))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRawSnapshotRestoreResultDialog = false }) {
+                    Text(stringResource(R.string.backup_room_db_restart_later))
                 }
             }
         )

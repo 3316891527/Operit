@@ -104,6 +104,21 @@ object RawSnapshotBackupManager {
         val destinationUri: String,
     )
 
+    private data class ResourceRestorePlanResult(
+        val plans: List<ResourceRestorePlan>,
+        val skippedCount: Int,
+    )
+
+    private data class ResourceRestoreCopyResult(
+        val restoredCount: Int,
+        val skippedCount: Int,
+    )
+
+    data class RestoreResult(
+        val restoredResourceCount: Int,
+        val skippedResourceCount: Int,
+    )
+
     private data class RestoreLocation(
         val root: String,
         val relativePath: String,
@@ -371,6 +386,10 @@ object RawSnapshotBackupManager {
                 if (exists()) deleteRecursively()
                 mkdirs()
             }
+            var restoreResult = RestoreResult(
+                restoredResourceCount = 0,
+                skippedResourceCount = 0,
+            )
 
             try {
                 AppLogger.i(TAG, "restore start uri=$uri")
@@ -395,11 +414,12 @@ object RawSnapshotBackupManager {
                 val payloadDir = File(workDir, "payload")
                 val externalFilesPayloadDir = File(payloadDir, "external_files")
 
-                val resourceRestorePlans = buildResourceRestorePlans(
+                val resourcePlanResult = buildResourceRestorePlans(
                     context = context,
                     manifest = manifest,
                     workDir = workDir,
                 )
+                val resourceRestorePlans = resourcePlanResult.plans
                 rewriteResourceUrisInExtractedPreferences(
                     workDir = workDir,
                     resourceRestorePlans = resourceRestorePlans,
@@ -444,7 +464,11 @@ object RawSnapshotBackupManager {
                 withContext(Dispatchers.Main) { onProgress?.invoke(RestoreProgress.REPLACING_DATABASES) }
                 replaceDirContents(File(payloadDir, "databases"), File(context.dataDir, "databases"))
 
-                restoreSnapshotResources(resourceRestorePlans)
+                val resourceCopyResult = restoreSnapshotResources(resourceRestorePlans)
+                restoreResult = RestoreResult(
+                    restoredResourceCount = resourceCopyResult.restoredCount,
+                    skippedResourceCount = resourcePlanResult.skippedCount + resourceCopyResult.skippedCount,
+                )
 
                 withContext(Dispatchers.Main) { onProgress?.invoke(RestoreProgress.FINALIZING) }
                 AppLogger.i(TAG, "restore done: ${manifest.packageName}")
@@ -461,6 +485,7 @@ object RawSnapshotBackupManager {
                 } catch (_: Exception) {
                 }
             }
+            restoreResult
         }
     }
 
@@ -614,6 +639,7 @@ object RawSnapshotBackupManager {
         references: Set<RawSnapshotResourceReference>,
     ): List<PreparedImageResource> {
         val seenSourcePaths = HashSet<String>()
+        val usedSnapshotPaths = HashSet<String>()
         val result = ArrayList<PreparedImageResource>()
         references.forEach { reference ->
             val localPath = reference.localPath ?: return@forEach
@@ -622,8 +648,19 @@ object RawSnapshotBackupManager {
             val canonical = source.canonicalFile
             if (!seenSourcePaths.add(canonical.path)) return@forEach
             val extension = canonical.extension
-            val snapshotPath = RawSnapshotResourceLayout.directoryFor(reference) +
+            val resourceDirectory = RawSnapshotResourceLayout.directoryFor(reference)
+            val baseSnapshotPath = resourceDirectory +
                 RawSnapshotResourceLayout.fileName(reference, extension)
+            var snapshotPath = baseSnapshotPath
+            var collisionIndex = 2
+            while (!usedSnapshotPaths.add(snapshotPath)) {
+                snapshotPath = resourceDirectory +
+                    RawSnapshotResourceLayout.fileName(reference, extension, collisionIndex)
+                collisionIndex++
+            }
+            if (snapshotPath != baseSnapshotPath) {
+                AppLogger.w(TAG, "resource snapshot path collision; using $snapshotPath")
+            }
             val restoreLocation = restoreLocationFor(context, canonical)
             result += PreparedImageResource(
                 source = canonical,
@@ -647,32 +684,39 @@ object RawSnapshotBackupManager {
         context: Context,
         manifest: Manifest,
         workDir: File,
-    ): List<ResourceRestorePlan> {
-        if (manifest.resources.isEmpty()) return emptyList()
+    ): ResourceRestorePlanResult {
+        if (manifest.resources.isEmpty()) {
+            return ResourceRestorePlanResult(emptyList(), skippedCount = 0)
+        }
 
         val seenOriginalUris = HashSet<String>()
-        return manifest.resources.mapNotNull { mapping ->
-            if (!seenOriginalUris.add(mapping.originalUri)) return@mapNotNull null
+        val plans = mutableListOf<ResourceRestorePlan>()
+        var skippedCount = 0
+        manifest.resources.forEach { mapping ->
+            if (!seenOriginalUris.add(mapping.originalUri)) return@forEach
 
             val snapshotFile = snapshotFileFor(workDir, mapping)
             if (snapshotFile == null || !snapshotFile.isFile) {
                 AppLogger.w(TAG, "restore resource skip (snapshot file missing): ${mapping.snapshotPath}")
-                return@mapNotNull null
+                skippedCount++
+                return@forEach
             }
 
             val destination = restoreDestinationFor(mapping, context)
             if (destination == null) {
                 AppLogger.w(TAG, "restore resource skip (unsupported originalUri): ${mapping.originalUri}")
-                return@mapNotNull null
+                skippedCount++
+                return@forEach
             }
 
-            ResourceRestorePlan(
+            plans += ResourceRestorePlan(
                 mapping = mapping,
                 snapshotFile = snapshotFile,
                 destination = destination,
                 destinationUri = uriForDestination(mapping.originalUri, destination),
             )
         }
+        return ResourceRestorePlanResult(plans = plans, skippedCount = skippedCount)
     }
 
     private fun snapshotFileFor(workDir: File, mapping: ResourceMapping): File? {
@@ -707,10 +751,10 @@ object RawSnapshotBackupManager {
         return null
     }
 
-    private fun restoreSnapshotResources(resourceRestorePlans: List<ResourceRestorePlan>) {
+    private fun restoreSnapshotResources(resourceRestorePlans: List<ResourceRestorePlan>): ResourceRestoreCopyResult {
         if (resourceRestorePlans.isEmpty()) {
             AppLogger.i(TAG, "restore resources done (restored=0 skipped=0 total=0)")
-            return
+            return ResourceRestoreCopyResult(restoredCount = 0, skippedCount = 0)
         }
 
         var restored = 0
@@ -729,6 +773,7 @@ object RawSnapshotBackupManager {
             TAG,
             "restore resources done (restored=$restored skipped=$skipped total=${resourceRestorePlans.size})"
         )
+        return ResourceRestoreCopyResult(restoredCount = restored, skippedCount = skipped)
     }
 
     private fun restoreDestinationFor(
@@ -757,9 +802,23 @@ object RawSnapshotBackupManager {
             else -> null
         } ?: return null
         val normalizedPath = path.replace('\\', '/')
+        val candidate = runCatching { File(normalizedPath).canonicalFile }.getOrNull()
+        val knownRoots = listOfNotNull(
+            runCatching { context.filesDir.canonicalFile }.getOrNull(),
+            context.getExternalFilesDir(null)?.let { runCatching { it.canonicalFile }.getOrNull() },
+        )
+        candidate?.let { file ->
+            if (knownRoots.any { root -> isWithin(root, file) && file != root }) {
+                return file
+            }
+        }
+
         val filesMarker = "/files/"
         val markerIndex = normalizedPath.lastIndexOf(filesMarker)
-        if (markerIndex < 0) return null
+        if (markerIndex < 0) {
+            AppLogger.w(TAG, "restore legacy resource skip (path has no /files/ marker): $originalUri")
+            return null
+        }
 
         val relativePath = normalizedPath.substring(markerIndex + filesMarker.length)
         val isExternalFilesPath = normalizedPath.contains("/Android/data/") ||
@@ -844,10 +903,8 @@ object RawSnapshotBackupManager {
         val rewritten = if (file.name.endsWith(".preferences_pb")) {
             rewritePreferenceProto(original, replacements, depth = 0) ?: original
         } else {
-            val text = original.toString(Charsets.UTF_8)
-            replacements.entries.fold(text) { current, (source, destination) ->
-                current.replace(source, destination)
-            }.toByteArray(Charsets.UTF_8)
+            rewriteXmlPreferenceText(original.toString(Charsets.UTF_8), replacements)
+                .toByteArray(Charsets.UTF_8)
         }
         if (original.contentEquals(rewritten)) return false
         return runCatching {
@@ -856,12 +913,51 @@ object RawSnapshotBackupManager {
         }.getOrDefault(false)
     }
 
+    internal fun rewriteXmlPreferenceText(
+        text: String,
+        replacements: Map<String, String>,
+    ): String {
+        return replacements.entries
+            .sortedByDescending { it.key.length }
+            .fold(text) { current, (source, destination) ->
+                if (source.isEmpty()) {
+                    current
+                } else {
+                    val escapedSource = escapeXmlText(source)
+                    val escapedDestination = escapeXmlText(destination)
+                    current
+                        .replace(escapedSource, escapedDestination)
+                        .replace(source, escapedDestination)
+                }
+            }
+    }
+
+    private fun rewriteUriSubstrings(
+        text: String,
+        replacements: Map<String, String>,
+    ): String {
+        return replacements.entries
+            .sortedByDescending { it.key.length }
+            .fold(text) { current, (source, destination) ->
+                if (source.isEmpty()) current else current.replace(source, destination)
+            }
+    }
+
+    private fun escapeXmlText(value: String): String {
+        return value
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&" + "quot;")
+            .replace("'", "&" + "apos;")
+    }
+
     private data class ProtoVarint(
         val value: Long,
         val nextOffset: Int,
     )
 
-    private fun rewritePreferenceProto(
+    internal fun rewritePreferenceProto(
         bytes: ByteArray,
         replacements: Map<String, String>,
         depth: Int,
@@ -894,9 +990,9 @@ object RawSnapshotBackupManager {
                     if (payloadLength > bytes.size - payloadStart) return null
                     val payload = bytes.copyOfRange(payloadStart, payloadStart + payloadLength)
                     val payloadText = payload.toString(Charsets.UTF_8)
-                    val replacementText = replacements[payloadText]
-                    val rewrittenPayload = if (replacementText != null) {
-                        replacementText.toByteArray(Charsets.UTF_8)
+                    val rewrittenText = rewriteUriSubstrings(payloadText, replacements)
+                    val rewrittenPayload = if (rewrittenText != payloadText) {
+                        rewrittenText.toByteArray(Charsets.UTF_8)
                     } else {
                         rewritePreferenceProto(payload, replacements, depth + 1) ?: payload
                     }
