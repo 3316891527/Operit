@@ -979,7 +979,7 @@ ToolPkg.registerSummaryGenerateHook({
 - `toolpkg` 不适合这样调试，因为它需要读取 manifest、执行 `main` 注册入口，并重新安装注册信息
 - 调试 ToolPkg 时，应使用 `tools/toolpkg/debug_toolpkg.bat` / `tools/toolpkg/debug_toolpkg.sh` / `tools/toolpkg/debug_toolpkg.py`
 
-完整的打包、烧录、启用和刷新流程，见[包格式参考](../02_package_model/package_format.md)中的“开发调试安装”。
+完整的打包、烧录、启用和刷新流程，见[包格式参考](../02_package_model/package_format.md)第 10.3 节“使用调试安装脚本快速烧录到手机”。
 
 ## 相关文件
 
