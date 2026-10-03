@@ -44,7 +44,7 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 - 分支：`docs/toolpkg-developer-reference`
 - PR 目标：`dev`
 - 个人仓库：`https://github.com/3316891527/Operit`
-- 本分支文档实现已完成，目标分支为上游 `dev`；提交和 PR 记录在本轮交付中补充。
+- 本分支文档实现已完成，目标分支为上游 `dev`；PR：[AAswordman/Operit#1330](https://github.com/AAswordman/Operit/pull/1330)。
 
 ## 本轮进度
 
