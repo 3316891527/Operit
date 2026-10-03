@@ -35,7 +35,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -61,7 +60,6 @@ data class TokenStatsUiState(
     val knownModelNames: Map<String, String> = emptyMap(),
     val configurationNames: Map<String, String> = emptyMap(),
     val priceSettings: List<TokenStatsPriceSetting> = emptyList(),
-    val orphanedConfigCount: Int = 0,
     val activity: TokenActivityUiState = TokenActivityUiState(),
 )
 
@@ -260,7 +258,6 @@ class TokenUsageStatisticsViewModel(
                         knownModelNames = knownModelNames.toMap(),
                         configurationNames = result.configurationNames,
                         priceSettings = result.prices,
-                        orphanedConfigCount = 0,
                         activity = it.activity.copy(loading = false, rangeData = result.activity),
                         refreshVersion = it.refreshVersion + 1L,
                     )
@@ -426,7 +423,6 @@ private data class QueryLoadResult(
     val available: TokenStatsRangeData?,
     val prices: List<TokenStatsPriceSetting>,
     val configurationNames: Map<String, String>,
-    val orphanedConfigCount: Int = 0,
     val activity: TokenActivityRangeData,
 )
 

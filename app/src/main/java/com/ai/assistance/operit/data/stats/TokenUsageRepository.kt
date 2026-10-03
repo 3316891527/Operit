@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.withLock
 class TokenUsageRepository private constructor(context: Context) {
     companion object {
         private const val TAG = "TokenUsageRepository"
+        const val DETACHED_CONFIG_ID = "__operit_deleted_config__"
         @Volatile
         private var instance: TokenUsageRepository? = null
         private val databaseAccessMutex = Mutex()
@@ -103,16 +104,6 @@ class TokenUsageRepository private constructor(context: Context) {
     suspend fun record(record: TokenUsageRecordEntity) {
         withDao { dao -> dao.insertRecord(record) }
     }
-
-    suspend fun recordedConfigurationIds(): Set<String> {
-        return withDao { dao ->
-            (dao.getDistinctUsageConfigIds() + dao.getDistinctStatsModelConfigIds())
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .toSet()
-        }
-    }
-
     suspend fun detachUsageFromConfig(configId: String) {
         val trimmedId = configId.trim()
         if (trimmedId.isEmpty()) return
@@ -121,7 +112,10 @@ class TokenUsageRepository private constructor(context: Context) {
             val database = AppDatabase.getDatabase(appContext)
             database.withTransaction {
                 val dao = database.tokenUsageDao()
-                dao.detachRecordsFromConfig(trimmedId)
+                dao.detachRecordsFromConfig(
+                    configId = trimmedId,
+                    detachedConfigId = DETACHED_CONFIG_ID,
+                )
                 dao.deleteStatsModelsByConfigId(trimmedId)
             }
         }

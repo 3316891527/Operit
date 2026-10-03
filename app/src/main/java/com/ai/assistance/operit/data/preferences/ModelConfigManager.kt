@@ -647,8 +647,14 @@ class ModelConfigManager(
             // 更新配置列表
             preferences[CONFIG_LIST_KEY] = json.encodeToString(configList)
         }
-        // 配置身份被删除，但历史用量事实继续保留并归入未指定配置。
-        tokenUsageRepository.detachUsageFromConfig(configId)
+        // 统计库故障不能回滚模型配置删除；历史用量在下次修复后仍可处理。
+        try {
+            tokenUsageRepository.detachUsageFromConfig(configId)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLogger.e("ModelConfigManager", "Failed to detach token usage for deleted config", e)
+        }
         return mappingRepair.affectedFunctions
     }
 
