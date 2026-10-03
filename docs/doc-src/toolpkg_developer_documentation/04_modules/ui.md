@@ -265,4 +265,4 @@ await Tools.UI.clickElement({
 - `app/src/main/java/com/ai/assistance/operit/core/tools/ToolRegistration.kt`
 - `app/src/main/java/com/ai/assistance/operit/core/tools/defaultTool/standard/StandardUITools.kt`
 - `app/src/main/java/com/ai/assistance/operit/core/tools/defaultTool/accessbility/AccessibilityUITools.kt`
-- `docs/doc-src/package-dev/results.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/results.md`

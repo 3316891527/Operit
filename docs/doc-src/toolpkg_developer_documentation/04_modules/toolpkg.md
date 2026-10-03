@@ -985,5 +985,5 @@ ToolPkg.registerSummaryGenerateHook({
 
 - `examples/types/toolpkg.d.ts`
 - `examples/types/compose-dsl.d.ts`
-- `docs/doc-src/package-dev/core.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/core.md`
 - `docs/TOOLPKG_FORMAT_GUIDE.md`

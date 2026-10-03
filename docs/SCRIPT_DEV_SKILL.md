@@ -7,13 +7,15 @@ description: 用于 Operit Sandbox Package 开发。
 
 ## 第一部分：安装与更新
 
-这个 skill 不再要求 AI 一次性手动下载 `SKILL.md`、两份 guide 文档和整套 `types`。
+这个 skill 不再要求 AI 一次性手动下载旧 guide 和整套 `types`。
 
 安装与更新都走同一个脚本：
 
 - 先把安装脚本下载到本地
 - 再通过 `operit_editor` 这个 package 里的 `debug_run_sandbox_script` 工具运行它
-- 脚本会自动创建目录，并更新 `SKILL.md`、`references/SCRIPT_DEV_GUIDE.md`、`references/TOOLPKG_FORMAT_GUIDE.md`、`types/*.d.ts`
+- 脚本会自动创建目录，并更新 `SKILL.md`、旧版 references、完整 `references/toolpkg_developer_documentation/`、`types/*.d.ts` 和示例包
+
+完整开发文档现在来自独立仓库 `3316891527/OperitAI-Toolpkg-Dev-Docs`，以 `references/toolpkg_developer_documentation/index.md` 为入口；旧 guide 和 `types` 目录继续保留，供兼容旧流程和快速定位声明使用。
 
 这里说的“执行”，指的是：
 
@@ -36,6 +38,26 @@ description: 用于 Operit Sandbox Package 开发。
   references/
     SCRIPT_DEV_GUIDE.md
     TOOLPKG_FORMAT_GUIDE.md
+    toolpkg_developer_documentation/
+      index.md
+      01_getting_started/
+        quick_start.md
+      02_package_model/
+        ...
+      03_runtime/
+        ...
+      04_modules/
+        ...
+      05_hooks/
+        ...
+      06_ui_and_compose/
+        ...
+      07_types_and_libraries/
+        ...
+      08_examples/
+        ...
+      09_compatibility/
+        ...
   types/
     index.d.ts
     core.d.ts
@@ -62,6 +84,7 @@ description: 用于 Operit Sandbox Package 开发。
 - 同步并更新 `examples/packages/` 下的示范文件
 - 下载并更新 `references/SCRIPT_DEV_GUIDE.md`
 - 下载并更新 `references/TOOLPKG_FORMAT_GUIDE.md`
+- 下载并更新 `references/toolpkg_developer_documentation/` 下的完整开发文档（根目录 `index.md` 加 9 个章节目录，共 45 个 Markdown 文件）
 - 下载并更新 `types/` 下全部类型文件
 
 其中 `examples/packages/` 里的内容是 Operit 当前内置的包和脚本示范文件。
@@ -75,7 +98,7 @@ description: 用于 Operit Sandbox Package 开发。
 1. 每次正式开始新的 Sandbox Package 开发任务前，必须优先重新下载一次安装脚本，再重新运行本地脚本
    - 安装脚本下载地址：`https://cdn.jsdelivr.net/gh/AAswordman/Operit@main/tools/sandboxpackage_dev_install_or_update.js`
    - 安装脚本保存位置：`/sdcard/Download/Operit/skills/SandboxPackage_DEV/scripts/install_or_update.js`
-2. 如果怀疑两份 guide 文档、types 或 `SKILL.md` 已经过旧，也重新运行这个脚本
+2. 如果怀疑完整开发文档、两份旧 guide、types 或 `SKILL.md` 已经过旧，也重新运行这个脚本
 3. 如果本地 skill 目录缺文件、文件名不对、或者内容明显陈旧，不要手动零散修补，直接重跑安装脚本
 
 下载完以后，查资料时默认这样做：
@@ -84,7 +107,7 @@ description: 用于 Operit Sandbox Package 开发。
 2. 再用 `read_file_part` 读取命中的具体片段
 3. 只有片段不够时才扩大范围
 
-不要默认直接读取整个 `SCRIPT_DEV_GUIDE.md`、整个 `TOOLPKG_FORMAT_GUIDE.md` 或整个 `types` 文件，原因是：
+不要默认直接读取整个 `SCRIPT_DEV_GUIDE.md`、整个 `TOOLPKG_FORMAT_GUIDE.md`、整个 `types` 文件或完整文档目录，原因是：
 
 - 它们内容比较大，容易把上下文撑爆
 - 先更新本地 skill，再检索的方式更稳

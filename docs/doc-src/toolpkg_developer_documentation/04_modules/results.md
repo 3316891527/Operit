@@ -600,11 +600,11 @@ console.log(detail.connections.length);
 ## 相关文件
 
 - `examples/types/results.d.ts`
-- `docs/doc-src/package-dev/files.md`
-- `docs/doc-src/package-dev/network.md`
-- `docs/doc-src/package-dev/system.md`
-- `docs/doc-src/package-dev/ui.md`
-- `docs/doc-src/package-dev/workflow.md`
-- `docs/doc-src/package-dev/software_settings.md`
-- `docs/doc-src/package-dev/chat.md`
-- `docs/doc-src/package-dev/memory.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/files.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/network.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/system.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/ui.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/workflow.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/software_settings.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/chat.md`
+- `docs/doc-src/toolpkg_developer_documentation/04_modules/memory.md`

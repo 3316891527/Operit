@@ -6,7 +6,7 @@ status: in_progress
 
 ## 旧实现
 
-现有 `package-dev/` 以 API 模块文件平铺，ToolPkg 格式说明、开发教程、类型定义和 Hook 文档入口彼此分散。部分高级声明没有对应的独立说明；旧文件还存在固定 URL 和交叉链接引用。
+原 `package-dev/` 以 API 模块文件平铺，ToolPkg 格式说明、开发教程、类型定义和 Hook 文档入口彼此分散。部分高级声明没有对应的独立说明；旧文件还存在固定 URL 和交叉链接引用。新资料已集中到 `docs/doc-src/toolpkg_developer_documentation/`。
 
 ## 意图修正
 

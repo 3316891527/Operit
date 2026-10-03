@@ -11,10 +11,11 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 ## 当前情况
 
 - Discussion #1328 指出插件教程对 JavaScript 基础讲解过多，没有系统说明宿主提供的 API。
-- 当前文档分散在 `docs/doc-src/package-dev/`、`docs/TOOLPKG_FORMAT_GUIDE.md`、`docs/SCRIPT_DEV_GUIDE.md` 和 `docs/SCRIPT_DEV_SKILL.md`。
+- 当前文档入口主要位于 `docs/doc-src/toolpkg_developer_documentation/`，另有 `docs/TOOLPKG_FORMAT_GUIDE.md`、`docs/SCRIPT_DEV_GUIDE.md` 和 `docs/SCRIPT_DEV_SKILL.md` 作为格式、脚本和安装说明。
+- 原 `docs/doc-src/package-dev/` 的 API 页面已迁移并扩展到新文档的 `04_modules/`，本次完成引用迁移后删除旧目录。
 - `examples/types/*.d.ts` 描述静态类型；运行时实现位于 `app/src/main/java/.../core/tools/packTool/`、`core/tools/javascript/` 和 `plugins/toolpkg/`。
 - ToolPkg API 兼容性实现目前支持 `1.0.0`；`1.0.1` 从 Operit `1.12.1+4` 起支持。包版本、宿主 API 版本和归档格式版本是不同字段。
-- 旧文档仍被 README、安装脚本、应用提示和测试引用，本阶段不删除或改写旧文档。
+- 旧文档在新文档完整后再单独审阅兼容入口、引用迁移和删除范围；本次已将 `package-dev` 的引用迁移到新目录，并删除旧目录。
 
 ## 目标
 
@@ -35,8 +36,8 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 1. 完成 API、类型、版本和 Hook 的源码盘点。
 2. 建立分类目录、总索引、版本/兼容说明和开发者快速路径。
 3. 撰写格式、运行时、模块 API、Hook、UI、结果类型与库参考。
-4. 逐符号核对声明/实现/文档，检查链接、示例和旧文档引用；只记录待删除候选，不删除旧文档。
-5. 完成后再与维护者评估旧文档如何迁移或删除。
+4. 逐符号核对声明/实现/文档，检查链接、示例和旧文档引用；确认新文档覆盖旧 API 页面后，完成引用迁移并删除重复旧目录。
+5. 继续维护新文档的版本、兼容性和实现差异记录。
 
 ## 分支与 PR
 
@@ -62,4 +63,4 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 - `quickjs-runtime.d.ts` 页面现在区分 QuickJS 全局兼容层与 metadata 驱动的包工具参数转换；后者按 `JsToolManager` 实现记录类型转换、缺参和错误路径。
 - `tool-types.d.ts` 的 `ToolResultMap` 151 个键及返回类型已逐项列出，并按 `core.d.ts`、`JsTools.kt`、`ToolRegistration.kt` 和 `results.d.ts` 完成静态核对；已记录 `combined_operation`/`execute_terminal` 仅存在于声明文本、当前 facade/注册入口未进入映射、`read_file` 与 `read_file_full` 的兼容入口差异，以及包工具和代理工具的动态名称边界。
 - `system.d.ts` 的全部 System、Terminal、Bluetooth、Intent、Broadcast 和 Music 方法已按 `JsTools.kt`、`ToolRegistration.kt`、系统/蓝牙/终端/音乐/Intent 实现与结果 DTO 完成逐项核对；已记录权限门禁、系统设置命名空间、安装/卸载请求语义、Usage Access 默认值和筛选、位置超时/最近位置回退、蓝牙 UUID/会话/通知消费、Shell 危险命令过滤、Intent 实际字段、终端超时取消/流式事件、音乐输入校验及声明差异。
- - 当前已完成 `ui.d.ts`、`compose-dsl.d.ts`、`compose-dsl.material3.generated.d.ts` 和 `java-bridge.d.ts` 四个方法级声明组，以及 `results.d.ts` 的完整结果类型审计。`results.d.ts` 的 162 个 interface、742 个声明字段和 38 个 `BaseResult` 包装映射均已完成源码核对；此前剩余的 26 个接口/71 个字段已清零。`results.md` 同时记录了 `DateResultData`、Bluetooth/音乐开放字符串、终端会话、FFmpeg `mediaInfo`、`ConnectionResultData` 无当前构造路径，以及 `ToolResultDataClasses.kt` 中未进入声明文件的运行时数据类。旧文档保持原样。
+ - 当前已完成 `ui.d.ts`、`compose-dsl.d.ts`、`compose-dsl.material3.generated.d.ts` 和 `java-bridge.d.ts` 四个方法级声明组，以及 `results.d.ts` 的完整结果类型审计。`results.d.ts` 的 162 个 interface、742 个声明字段和 38 个 `BaseResult` 包装映射均已完成源码核对；此前剩余的 26 个接口/71 个字段已清零。`results.md` 同时记录了 `DateResultData`、Bluetooth/音乐开放字符串、终端会话、FFmpeg `mediaInfo`、`ConnectionResultData` 无当前构造路径，以及 `ToolResultDataClasses.kt` 中未进入声明文件的运行时数据类。`package-dev` 旧 API 页面已迁移到 `docs/doc-src/toolpkg_developer_documentation/04_modules/`，仓库内入口和新文档交叉引用已更新，旧目录可删除。
