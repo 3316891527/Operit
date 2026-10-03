@@ -101,18 +101,15 @@ const SandboxPackageDevInstaller = (function () {
     "index.md"
   ];
 
+  const LEGACY_DOCUMENT_FILES = [
+    "SCRIPT_DEV_GUIDE.md",
+    "TOOLPKG_FORMAT_GUIDE.md"
+  ];
+
   const DOWNLOADS = [
     {
       url: `${CDN_BASE}/docs/SCRIPT_DEV_SKILL.md`,
       destination: `${SKILL_ROOT}/SKILL.md`
-    },
-    {
-      url: `${CDN_BASE}/docs/SCRIPT_DEV_GUIDE.md`,
-      destination: `${REFERENCES_DIR}/SCRIPT_DEV_GUIDE.md`
-    },
-    {
-      url: `${CDN_BASE}/docs/TOOLPKG_FORMAT_GUIDE.md`,
-      destination: `${REFERENCES_DIR}/TOOLPKG_FORMAT_GUIDE.md`
     }
   ].concat(
     TYPE_FILES.map((fileName) => ({
@@ -156,6 +153,17 @@ const SandboxPackageDevInstaller = (function () {
       workers.push(worker());
     }
     await Promise.all(workers);
+  }
+
+  async function removeLegacyDocuments() {
+    for (const fileName of LEGACY_DOCUMENT_FILES) {
+      const destination = `${REFERENCES_DIR}/${fileName}`;
+      logStep(`Removing legacy documentation -> ${destination}`);
+      const result = await Tools.Files.deleteFile(destination, false, ENVIRONMENT);
+      if (result && result.success === false) {
+        logStep(`Legacy documentation cleanup skipped -> ${destination}`);
+      }
+    }
   }
 
   function collectRelativeFiles(directory, relativePrefix, collectedFiles) {
@@ -210,6 +218,7 @@ const SandboxPackageDevInstaller = (function () {
     }
     await makeDirectory(SCRIPTS_DIR);
     await makeDirectory(EXAMPLES_DIR);
+    await removeLegacyDocuments();
     await downloadAllFiles();
 
     logStep(`Syncing built-in package examples -> ${EXAMPLE_PACKAGES_DIR}`);

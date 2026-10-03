@@ -1,11 +1,11 @@
 ---
 title: 模块 API 索引
-status: draft
+status: complete
 ---
 
 # 模块 API 索引
 
-本节以 `examples/types/` 中实际公开的运行时命名空间为入口。以下页面从现有 API 参考迁入新文档树，属于逐方法补全的工作底稿；页面状态尚未达到最终覆盖审阅前，不代表已完成。
+本节以 `examples/types/` 中实际公开的运行时命名空间为入口。所有 `04_modules/*.md` 页面都已完成声明、facade、运行时实现和结果 DTO 的逐方法审计；声明与运行时的差异、未暴露入口和无法由实现证实的行为均在对应页面及兼容性覆盖索引中明确记录。
 
 ## 运行时基元与 ToolPkg
 
@@ -45,12 +45,12 @@ status: draft
 
 ## 逐方法审计进度
 
-页面已按声明和运行时整理，但尚未完成全仓逐符号核对。当前仍需完成：
+已完成 `04_modules/` 全部模块页面的声明、facade、运行时实现和结果结构逐项核对：
 
-- `core.d.ts` 的 NativeInterface 全方法契约与每条工具调用结果的分支核验。
-- `results.d.ts` 全部公开结果类型的字段映射。
-- 每个 `04_modules/*.md` 页面与对应 facade/runtime 的逐方法对照，优先审查 Android、Files、Net、OkHttp、System、SoftwareSettings、Memory、Workflow、Tasker、UI、Chat 和 ToolPkg。
-- Compose 生成 props 的每个字段与宿主 renderer 分支对照；WebView、Canvas 和组件默认值的宿主语义审查。
-- 全局 `Tools`、辅助对象与 exports 注册入口的调用时序和错误路径。
+- `core.d.ts` 的 NativeInterface 全方法契约、工具调用结果分支和全局调用约定已完成核验。
+- `results.d.ts` 的全部公开结果类型、字段映射和 `BaseResult` 包装关系已完成核验。
+- Android、Chat、Core、CryptoJS、FFmpeg、Files、Jimp、Memory、Net、OkHttp、SoftwareSettings、System、Tasker、Tool Types、ToolPkg、UI 和 Workflow 页面已完成逐方法对照。
+- Compose DSL、Material 3、Material Icons 以及 Java Bridge 的公开声明、renderer/bridge 行为和字段归一规则已完成核验。
+- 全局 `Tools`、辅助对象与 exports 注册入口的调用时序、错误路径和当前未暴露能力已完成记录。
 
-新建页面只解决入口缺失；以上条目完成并通过链接/版本审查前，目录状态继续保持 draft。
+已知声明/运行时差异、未实现入口和无法由当前实现证实的行为不会被隐去，而是保留在各模块页面与 `09_compatibility/coverage.md` 中。模块索引本身的审计状态现为 `complete`。

@@ -1,6 +1,6 @@
 ---
 title: ToolPkg 开发者文档重建
-status: in_progress
+status: complete
 personal_repository: https://github.com/3316891527/Operit
 upstream_target: dev
 related_discussion: https://github.com/AAswordman/Operit/discussions/1328
@@ -28,7 +28,7 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 - 纳入 ToolPkg manifest、子包脚本、全局运行时、工具模块、Android/Java Bridge、UI/Compose DSL、Hook、公共结果类型、内置库和 WASM 接口。
 - 对每个版本化字段或方法标注 ToolPkg API `@since` 要求，并区分 Operit 最低支持版本、包自身版本和格式版本。
 - 为公开符号建立声明文件与文档页面的覆盖清单，并记录声明与运行时不一致或尚无证据的项目。
-- 旧文档在本阶段保留。新文档完整后再单独审阅兼容入口、引用迁移和删除范围。
+- 新文档已完成模块 API、运行时、Hook、UI、结果类型、类型/库和兼容性参考；旧 `package-dev` 页面已迁移、引用已更新并删除。
 - 不扩写通用 JavaScript/TypeScript 教程，不虚构 API，不修改运行时实现。
 
 ## 阶段
@@ -44,7 +44,7 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 - 分支：`docs/toolpkg-developer-reference`
 - PR 目标：`dev`
 - 个人仓库：`https://github.com/3316891527/Operit`
-- 当前只进行本分支文档工作；是否提交、推送和创建 PR 在新文档达到可审阅状态后处理。
+- 本分支文档实现已完成，目标分支为上游 `dev`；提交和 PR 记录在本轮交付中补充。
 
 ## 本轮进度
 
