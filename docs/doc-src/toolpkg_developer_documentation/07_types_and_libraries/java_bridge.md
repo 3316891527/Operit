@@ -1,13 +1,13 @@
 ---
 title: Java 与 Kotlin Bridge
-status: draft
+status: complete
 ---
 
 # Java 与 Kotlin Bridge
 
 全局 `Java` 提供 QuickJS 到 Android JVM 的动态反射代理。它不是 JavaScript 的 `import`，也不自动把 JVM API 类型加入 TypeScript；包代码应只引用目标 Operit 运行时中存在且可访问的类。`Java` 与 `Kotlin` 的全局声明见 `examples/types/index.d.ts`。
 
-当前 `java-bridge.d.ts` 没有 ToolPkg API `@since` 标记；以下接口按当前基线记录。外部 DEX/JAR 加载和类代理实现分别位于 `JsExternalJavaCodeLoader`、`JsJavaBridge` 与 `JsJavaBridgeDelegates`。
+当前 `java-bridge.d.ts` 没有 ToolPkg API `@since` 标记；以下接口按当前基线记录。运行时同时把同一个 bridge 暴露为全局 `Java` 和 `Kotlin`，但声明文件只定义 `JavaBridgeApi`。外部 DEX/JAR 加载和类代理实现分别位于 `JsExternalJavaCodeLoader`、`JsJavaBridge` 与 `JsJavaBridgeDelegates`。
 
 ## 类与包解析
 
@@ -32,7 +32,9 @@ newInstance<T extends JavaBridgeInstance = JavaBridgeInstance>(
 ): T
 ```
 
-通过反射选择可匹配的构造函数并创建 JVM 对象。无匹配构造函数、参数不能转换、类无法解析或构造器本身抛错时，bridge 结果会变成 JS `Error`。返回的是带 native handle 的动态代理，不是复制到 JS 的普通对象。
+通过反射选择可匹配的 public 构造函数并创建 JVM 对象；重载选择按参数可转换性和匹配分数进行。无匹配构造函数、参数不能转换、类无法解析或构造器本身抛错时，bridge envelope 为 `{ success: false, message }`，JS wrapper 抛出 `Error`。返回的是带 native handle 的动态代理，不是复制到 JS 的普通对象。
+
+如果目标类是 interface，且只传入一个普通函数或对象，运行时在检测到 interface constructor 错误后会把该调用兼容转换为 `Java.implement(className, impl)`；显式调用 `Java.implement` 更可靠。抽象类没有 public constructor 时不会自动生成实现。
 
 ### `Java.callStatic(className, methodName, ...args)`
 
@@ -48,11 +50,13 @@ callSuspend(className: string, methodName: string, ...args: JavaBridgeArg[]): Pr
 
 ### `Java.getApplicationContext()` / `Java.getContext()`
 
-两者都返回宿主 Application Context 的 Java 代理；`getContext()` 直接委托给 `getApplicationContext()`。
+两者都返回宿主 Application Context 代理；`getContext()` 直接委托给 `getApplicationContext()`。
 
 ### `Java.getCurrentActivity()` / `Java.getActivity()`
 
-取得当前 Activity 的 Java 代理；`getActivity()` 是 `getCurrentActivity()` 的别名。当前没有可用 Activity 时，以 native bridge 返回的空值/错误为准，不要把 Activity 生命周期跨越页面切换保存为稳定引用。
+取得当前 Activity 的 Java 代理；`getActivity()` 是别名。当前没有 Activity 时通过失败 envelope 抛错，不能把 Activity 引用跨页面生命周期保存为稳定引用。
+
+`suspend` bridge 通过 callback ID 在 native 侧异步完成；没有独立 timeout、AbortSignal 或取消句柄。动态实例对 `java.lang.Thread` 的 `join()` 会在等待期间轮询并处理 pending JS callbacks；对 `java.util.concurrent.FutureTask` 的 `get()` 会轮询完成状态，并支持按 TimeUnit 字符串换算 timeout。
 
 ## 动态代理对象
 
@@ -72,11 +76,15 @@ callSuspend(className: string, methodName: string, ...args: JavaBridgeArg[]): Pr
 | `toJSON()` | 序列化为 `{ __javaHandle, __javaClass }` 句柄标记；不序列化实例内部字段。 |
 | `toString()` | 返回代理的字符串表示。 |
 
-未知属性读取优先生成实例方法调用代理，失败时尝试字段/property 读取；未知属性赋值执行字段/property 写入。通常使用 `obj.methodName(...)`；只有存在歧义时才调用 `obj.call("methodName", ...)`。
+未知属性读取优先探测实例方法，再回退到实例 field/property；如果探测失败，最后仍生成一个方法 callable，因此拼写错误通常会在实际调用时才失败。未知属性赋值执行 field/property 写入；只读 final field 或不存在 setter 会失败。实例 proxy 被 QuickJS GC 后，native 使用 phantom/finalization 跟踪释放句柄；`handle` 过期后再次调用会返回 `instance handle not found or expired`。
+
+通常使用 `obj.methodName(...)`；只有存在歧义时才调用 `obj.call("methodName", ...)`。`get()` 无参数实际调用 JVM 的 `get` 方法，`get(fieldName)` 才走 field/property 读取；同理，单参数 `set(value)` 调用 JVM 的 `set` 方法，双参数 `set(fieldName, value)` 执行 field/property 写入。
 
 ### `JavaBridgeClass`
 
-类代理支持直接函数调用、`new` 和 `newInstance(...)` 三种构造方式。`exists()` 查询类是否可解析；`callStatic()`、`callSuspend()`、`getStatic()`、`setStatic()` 分别执行静态方法、suspend 静态方法、静态字段读取和写入。未知属性优先读取静态字段，其次解析嵌套类，最后生成静态方法调用函数；未知属性写入会设置静态字段。
+类代理支持直接函数调用、`new` 和 `newInstance(...)` 三种构造方式。`exists()` 查询类是否可解析；`callStatic()`、`callSuspend()`、`getStatic()`、`setStatic()` 分别执行静态方法、suspend 静态方法、静态字段读取和写入。未知属性按静态 field/property、嵌套类、静态方法 callable 的顺序解析；未知属性写入会设置静态字段。静态方法/字段找不到时，运行时还会尝试 Kotlin `Companion` 实例和 `$Companion` 类。
+
+`JavaPackage` 的属性访问先用 `classExists` 判定是否为类，否则继续构造子包；空包路径不能调用或构造，最终把不存在的类当作实例化错误。根 `Java` Proxy 也会把未知属性解析为类或包，因此 `Java.java.lang.StringBuilder` 与 `Java.package("java.lang").StringBuilder` 都是动态路径。
 
 ### `JavaBridgePackage`
 
@@ -93,13 +101,15 @@ Java.proxy(interfaceName, implementation);
 
 `implementation` 必须是函数或对象。函数用于单方法/SAM 接口；对象按接口方法名提供回调。接口引用可用全限定类名字符串或 `Java.type(...)` 的类代理。`Java.proxy` 是 `Java.implement` 的别名。返回值是 bridge marker，供后续 Java 构造器或方法参数接收，不是可直接调用的 Java 实例。
 
-回调在 QuickJS runtime 线程执行。回调参数和返回值通过 bridge value 转换；JS 对象 ID 与 native proxy 有生命周期跟踪，代理被回收时会释放相应注册。不要在接口回调中假设自己处于 Android UI 线程。
+回调在 QuickJS runtime 线程执行。调用 Java 方法时，marker 会延迟注册 JS object ID；回调参数和返回值通过 bridge value 转换，JS 对象 ID 与 native proxy 有生命周期跟踪，代理被回收时会释放相应注册。对象 implementation 按 method name 查找函数；函数 implementation 作为 callable target。void/Unit 方法的 JS callback 失败会记录日志并返回 null，非 void 方法的 callback 失败会让 Java 调用失败。不要在接口回调中假设自己处于 Android UI 线程。
 
 ## 值传递与异常
 
-bridge 支持 primitive、数组、普通记录、Java 句柄和接口 marker。Java 返回对象会包装成代理句柄；普通结构化值按可传递字段转换。重载解析和参数转换失败会作为 bridge 错误抛出。
+bridge 支持 string、number、boolean、null、数组、普通记录、Java 句柄和接口 marker。native 返回的 primitive、Enum、Class、Map、Iterable 和数组会转成 JSON 值；其它 Java 对象会注册到 object registry，并返回 `{ __javaHandle, __javaClass }`。通过句柄传回 native 时会重新查找 registry；句柄不存在或已被 GC 释放时失败。
 
-同步调用要求 native 返回 JSON `{ "success": true, "data": ... }`；缺少 native 方法、返回 JSON 无效或 `success` 不为 `true` 时抛出 JS `Error`。suspend 调用则由 callback 的 error/value 参数分别 reject/resolve。Bridge 本身不承诺调用耗时上限。
+`java-bridge.d.ts` 把 `bigint` 列入 `JavaBridgePrimitive`，但当前 JS bridge 最终使用 `JSON.stringify(normalizeArgs(...))`，BigInt 会导致 JSON 序列化异常，因此不能把 bigint 当作已实现的可传递值。`undefined` 也会按 JSON 序列化规则被省略或变成 null，不应依赖其保留身份。
+
+同步 bridge 要求 native 返回 JSON `{ "success": true, "data": ... }`；返回 JSON 无效、缺少 `success`、`success` 不为 `true` 或只包含 `error` 而没有 `message` 时，JS wrapper 抛出 JS `Error`，错误文本来自 `message`。suspend 调用由 callback 的 error/value 参数分别 reject/resolve；bridge 本身不承诺调用耗时上限，也没有取消句柄。
 
 ## 加载外部 DEX/JAR
 
@@ -117,9 +127,9 @@ Java.listLoadedCodePaths(): JavaBridgeLoadedCodePath[];
 - `path` 必须是可读文件；`loadDex` 只接受 `.dex`，`loadJar` 只接受 `.jar` 且归档中必须有 `classes.dex`，普通 JVM bytecode JAR 不支持。
 - `options` 可省略、传 `JavaBridgeExternalCodeLoadOptions`，或传字符串。字符串兼容形式表示 `nativeLibraryDir`。
 - `nativeLibraryDir` 必须指向存在的目录。`childFirstPrefixes` 会去空白、移除空项并去重；匹配此前缀的类优先从该 DEX/JAR 加载，未命中时回退父加载器。
-- 加载源会复制到应用管理的只读缓存目录。相同文件类型、canonical path 和加载选项再次调用时复用已注册项，返回 `alreadyLoaded: true`。
-- 返回记录包含 `index`、`type`、`path`、`nativeLibraryDir`、`childFirstPrefixes` 和 `alreadyLoaded`。`listLoadedCodePaths()` 返回当前 loader 链的快照，尚无加载项时为空数组。
-- 路径、扩展名、归档内容、native 库目录或 class loader 初始化失败时同步抛错；此 API 不返回 Promise。
+- 加载源会复制到应用 code cache 的 `js-external-code-sources` 只读目录；返回记录中的 `path` 是这份 prepared copy 的绝对路径，不是调用方传入路径。相同 source type、canonical input path、native library dir 和 child-first prefixes 再次调用时复用已注册项，返回 `alreadyLoaded: true`。
+- 返回记录包含 `index`、`type`、`path`、`nativeLibraryDir`、`childFirstPrefixes` 和 `alreadyLoaded`。`listLoadedCodePaths()` 返回当前 loader 链快照，列表中的项都标为 `alreadyLoaded: true`；后加载的 loader 成为 effective parent chain 顶层。
+- 路径、扩展名、归档内容、native 库目录或 class loader 初始化失败时，native 返回失败 envelope，JS `invokeBridge` 同步抛错；此 API 不返回 Promise。
 
 加载入口不会验证 DEX/JAR 中每个类的可用性；实际解析仍受 Android class loader、依赖项和 ABI/native 库条件影响。
 
@@ -140,9 +150,19 @@ const Runnable = Java.implement("java.lang.Runnable", {
 complete({ text, hasRunnable: Runnable !== null });
 ```
 
-## 声明与实现
+## 声明与实现差异
+
+- `JavaBridgePrimitive` 声明包含 `bigint`，但当前 JSON bridge 不能序列化 BigInt。
+- `JavaBridgeInstance` 的 `[member: string]: any` 与 `JavaBridgeClass`/`JavaBridgePackage` 的动态 index signature 只是 TypeScript 放宽；运行时未知成员仍按反射、field/property、嵌套类或 fallback method 顺序解析。
+- `JavaBridgeInstance.get(fieldName?)` 和 `set(fieldName?, value?)` 的单参数重载对应 JVM `get`/`set` 方法，不是无条件的字段访问；字段访问应传 field name 形式。
+- `Java.implement`/`proxy` 的 marker 在创建时可能还没有 native object ID，第一次作为 Java 参数发送时才注册实现对象。
+- native failure 字段使用 `message`；部分 bridge envelope/历史注释使用 `error` 的地方不能据此得到错误文本。
+- `Java.loadDex`/`loadJar` 返回的 `path` 指向只读 prepared copy；它不是输入文件路径，也不代表其中每个类都已经加载成功。
+
+## 相关源码
 
 - 声明：`examples/types/java-bridge.d.ts`
 - JS facade：`app/src/main/java/com/ai/assistance/operit/core/tools/javascript/JsJavaBridge.kt`
-- 类型转换、反射与接口代理：`JsJavaBridgeDelegates.kt`
-- DEX/JAR loader：`JsExternalJavaCodeLoader.kt`
+- 类型转换、反射与接口代理：`app/src/main/java/com/ai/assistance/operit/core/tools/javascript/JsJavaBridgeDelegates.kt`
+- JavaScript bridge 注册：`app/src/main/java/com/ai/assistance/operit/core/tools/javascript/JsEngine.kt`
+- DEX/JAR loader：`app/src/main/java/com/ai/assistance/operit/core/tools/javascript/JsExternalJavaCodeLoader.kt`

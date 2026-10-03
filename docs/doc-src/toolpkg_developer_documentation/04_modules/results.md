@@ -2,6 +2,14 @@
 
 `results.d.ts` 是所有工具返回结构的集中定义。它本身不提供运行时方法，但几乎所有 `Tools.*`、`toolCall()` 和部分全局对象最终都会返回这里定义的数据类型。
 
+## 审计状态
+
+本页已按 `examples/types/results.d.ts` 的 162 个 interface 和 742 个顶层字段完成声明/运行时交叉核对；其中 38 个 `BaseResult` 包装接口的 `data` 映射也已逐项核对。字段说明优先以当前 Android/Kotlin 序列化 DTO 和工具构造路径为准，不能从 TypeScript 声明单独推断运行时形状。
+
+本轮补齐的结果类型证据来自 `ToolResultDataClasses.kt`、`StandardCalculator.kt`、`StandardSystemOperationTools.kt`、`BluetoothSessionManager.kt`、`StandardTerminalCommandExecutor.kt`、`StandardMusicPlaybackTools.kt` 和 `StandardFFmpegTool.kt`。其中包括计算/日期/连接、应用使用统计和 Bluetooth 嵌套类型、终端流与会话、音乐播放、FFmpeg 流信息及字符串包装等此前未闭环的接口/字段。
+
+本页还单独记录了当前运行时可见但未出现在 `results.d.ts` 的数据类；这些条目属于实现观察，不会被误报为稳定的 TypeScript 契约。所有结果消费都应先检查外层 `BaseResult`/`ToolResult` 的成功状态，再读取 `data`，并保留对可空、未知字符串和声明/运行时差异的兼容处理。
+
 ## 作用
 
 这份文件主要承担两类职责：

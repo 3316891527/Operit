@@ -1,13 +1,15 @@
 ---
 title: Material 3 组件参考
-status: draft
+status: complete
 ---
 
 # Material 3 组件参考
 
 ToolPkg 的 `ctx.UI` 类型由 `ComposeUiFactoryRegistry` 与生成的 `ComposeMaterial3GeneratedUiFactoryRegistry` 组成。所有工厂的运行时签名均为 `ComposeNodeFactory<Props>`，即 `(props?: Props, children?: ComposeChildren) => ComposeNode`；回调会按 [Compose DSL action 协议](./compose_dsl.md#节点与渲染周期)序列化。此页按组件族列出全部生成 registry key，精确字段、optional 标记和回调参数以各自 `ComposeGenerated<Name>Props` 声明为准。
 
-生成文件来自 Compose Material3/Foundation 源码签名，文件头标记为自动生成，不应手工修改。
+生成文件来自 Compose Material3/Foundation 源码签名，文件头标记为自动生成，不应手工修改。当前声明包含 84 个 generated props 接口和 84 个 registry key；Kotlin 自动生成 registry 包含 83 个 key，缺少的 `Canvas` 由 Compose DSL 专用 renderer 直接处理，因此最终运行时仍覆盖该声明 key。`ctx.UI` 本身是动态 Proxy，未登记名称也能构造节点，但未进入专用 renderer 或生成 registry 的节点会显示 `Unsupported node: <type>`，不会自动映射到任意 Compose composable。
+
+生成组件的函数 props 会被序列化为 Compose action ID，slot props 会进入节点的 `slots` 字段。`checked`、`selected`、`expanded`、`isRefreshing` 等状态由调用方控制；callback 只提交建议的新状态，不会替调用方更新下一次 render 的 props。完整运行时分发顺序和 action/state 语义见 [Compose DSL](./compose_dsl.md#节点与渲染周期)。
 
 ## 布局与列表
 
@@ -115,3 +117,11 @@ PrimaryTabRow PrimaryScrollableTabRow SecondaryTabRow SecondaryScrollableTabRow 
 ```
 
 生成 props 的完整字段类型与 optional 性见 [`compose-dsl.material3.generated.d.ts`](../../../../examples/types/compose-dsl.material3.generated.d.ts)。API `@since` 标注仅以声明中的注释为准；常规 Material 3 组件没有因该文件生成而自动变为 ToolPkg API `1.0.1`。基础 `UI.Dialog` 与 `UI.AlertDialog` 的版本要求见 [Compose DSL](./compose_dsl.md#api-版本)。
+
+## 相关源码
+
+- `examples/types/compose-dsl.material3.generated.d.ts`
+- `tools/compose_dsl/generate_compose_dsl_artifacts.py`
+- `app/src/main/java/com/ai/assistance/operit/ui/common/composedsl/ToolPkgComposeDslGeneratedRegistry.kt`
+- `app/src/main/java/com/ai/assistance/operit/ui/common/composedsl/ToolPkgComposeDslGeneratedRenderers.kt`
+- `app/src/main/java/com/ai/assistance/operit/ui/common/composedsl/ToolPkgComposeDslScreen.kt`
