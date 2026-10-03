@@ -14,7 +14,7 @@ const SandboxPackageDevInstaller = (function () {
   const EXAMPLE_PACKAGES_DIR = `${EXAMPLES_DIR}/packages`;
   const BUILTIN_PACKAGES_ASSET_DIR = "packages";
   const CDN_BASE = "https://cdn.jsdelivr.net/gh/AAswordman/Operit@main";
-  const DOCS_CDN_BASE = "https://cdn.jsdelivr.net/gh/3316891527/OperitAI-Toolpkg-Dev-Docs@main";
+  const DOCS_CDN_BASE = "https://cdn.jsdelivr.net/gh/3316891527/OperitAI-Toolpkg-Dev-Docs@ad275c63479bbd0dbf6ff374fb078a67d203e686";
   const MAX_DOWNLOAD_CONCURRENCY = 8;
   const TYPE_FILES = [
     "android.d.ts",
