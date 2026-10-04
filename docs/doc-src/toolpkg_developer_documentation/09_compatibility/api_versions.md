@@ -1,6 +1,6 @@
 ---
 title: ToolPkg API 版本与兼容
-status: draft
+status: complete
 ---
 
 # ToolPkg API 版本与兼容

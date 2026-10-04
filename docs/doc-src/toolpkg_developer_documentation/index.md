@@ -1,6 +1,6 @@
 ---
 title: ToolPkg 开发者文档
-status: draft
+status: complete
 ---
 
 # ToolPkg 开发者文档

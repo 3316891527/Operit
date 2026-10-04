@@ -1,6 +1,6 @@
 ---
 title: 生命周期与聊天 Hook
-status: draft
+status: complete
 ---
 
 # 生命周期与聊天 Hook

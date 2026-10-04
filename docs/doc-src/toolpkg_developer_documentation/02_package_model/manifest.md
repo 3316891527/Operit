@@ -1,6 +1,6 @@
 ---
 title: ToolPkg Manifest 字段
-status: draft
+status: complete
 ---
 
 # ToolPkg Manifest 字段

@@ -1,6 +1,6 @@
 ---
 title: 全局运行时 API
-status: draft
+status: complete
 ---
 
 # 全局运行时 API

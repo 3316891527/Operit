@@ -1,6 +1,6 @@
 ---
 title: 内置库与压缩接口
-status: draft
+status: complete
 ---
 
 # 内置库与压缩接口

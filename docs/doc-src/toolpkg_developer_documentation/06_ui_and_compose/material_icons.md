@@ -1,6 +1,6 @@
 ---
 title: Material Icons
-status: draft
+status: complete
 ---
 
 # Material Icons

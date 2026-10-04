@@ -1,6 +1,6 @@
 ---
 title: 插件示例
-status: draft
+status: complete
 ---
 
 # 插件示例

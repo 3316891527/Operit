@@ -1,6 +1,6 @@
 ---
 title: ToolPkg Hook 参考
-status: draft
+status: complete
 ---
 
 # ToolPkg Hook 参考

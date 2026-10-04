@@ -1,6 +1,6 @@
 ---
 title: 类型与内置库
-status: draft
+status: complete
 ---
 
 # 类型与内置库

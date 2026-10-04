@@ -1,6 +1,6 @@
 ---
 title: Prompt 与摘要 Hook
-status: draft
+status: complete
 ---
 
 # Prompt 与摘要 Hook

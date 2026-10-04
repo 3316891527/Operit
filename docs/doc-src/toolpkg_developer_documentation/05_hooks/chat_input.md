@@ -1,6 +1,6 @@
 ---
 title: 聊天输入 Hook
-status: draft
+status: complete
 ---
 
 # 聊天输入 Hook

@@ -1,6 +1,6 @@
 ---
 title: 工具调用生命周期 Hook
-status: draft
+status: complete
 ---
 
 # 工具调用生命周期 Hook

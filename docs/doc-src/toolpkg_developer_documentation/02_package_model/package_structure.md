@@ -1,6 +1,6 @@
 ---
 title: ToolPkg 包结构与运行入口
-status: draft
+status: complete
 ---
 
 # ToolPkg 包结构与运行入口

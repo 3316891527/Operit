@@ -1,6 +1,6 @@
 ---
 title: ToolPkg 快速开始
-status: draft
+status: complete
 ---
 
 # ToolPkg 快速开始

@@ -1,6 +1,6 @@
 ---
 title: 消息处理插件 Hook
-status: draft
+status: complete
 ---
 
 # 消息处理插件 Hook

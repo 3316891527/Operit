@@ -1,6 +1,6 @@
 ---
 title: XML 渲染与输入菜单 Hook
-status: draft
+status: complete
 ---
 
 # XML 渲染与输入菜单 Hook

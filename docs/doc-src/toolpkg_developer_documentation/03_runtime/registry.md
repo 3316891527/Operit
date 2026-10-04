@@ -1,6 +1,6 @@
 ---
 title: ToolPkg 注册 API
-status: draft
+status: complete
 ---
 
 # ToolPkg 注册 API

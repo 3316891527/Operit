@@ -1,6 +1,6 @@
 ---
 title: QuickJS 全局运行时
-status: draft
+status: complete
 ---
 
 # QuickJS 全局运行时
