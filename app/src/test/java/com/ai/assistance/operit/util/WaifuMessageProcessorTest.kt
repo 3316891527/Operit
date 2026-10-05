@@ -185,6 +185,46 @@ class WaifuMessageProcessorTest {
     }
 
     @Test
+    fun streamSegments_doesNotEmitPartialOrderedListMarkerAcrossChunks() = runBlocking {
+        requireNativeStreamSplitter()
+        val chunks = listOf(
+            "提示。\n1.",
+            " ",
+            "先检查完整内容",
+            "，再核对结果。",
+            "\n后续内容继续输出。"
+        )
+        val chunkStream: Stream<String> = stream {
+            chunks.forEach { emit(it) }
+        }
+        val collected = mutableListOf<String>()
+        WaifuMessageProcessor.streamSegments(chunkStream).collect { collected.add(it) }
+
+        assertTrue("流式分句不能单独提交列表序号：$collected", collected.none { it.trim() == "1." })
+        assertTrue("完整列表项应保留原始序号：$collected", collected.any { it.contains("1. 先检查完整内容") })
+        assertTrue("列表项之后的本轮回复不能丢失：$collected", collected.any { it.contains("后续内容继续输出。") })
+    }
+
+    @Test
+    fun splitMessageBySentences_preservesSupportedMarkdownAndInlineLatex() {
+        requireNativeStreamSplitter()
+        val content =
+            "# 清单\n" +
+                "1. **重点** [文档](https://example.com)\n" +
+                "- ![示意图](https://example.com/image.png)\n" +
+                "> 引用内容\n" +
+                "公式：\$x = 1.5\$。"
+
+        val renderedSegments = WaifuMessageProcessor.splitMessageBySentences(content)
+        val renderedContent = renderedSegments.joinToString("\n")
+
+        assertTrue("有序列表和行内格式应保留：$renderedSegments", renderedContent.contains("1. **重点** [文档](https://example.com)"))
+        assertTrue("无序列表和图片链接应保留：$renderedSegments", renderedContent.contains("- ![示意图](https://example.com/image.png)"))
+        assertTrue("引用标记应保留：$renderedSegments", renderedContent.contains("> 引用内容"))
+        assertTrue("行内 LaTeX 应保持完整：$renderedSegments", renderedContent.contains("\$x = 1.5\$"))
+    }
+
+    @Test
     fun streamSegments_preservesBracketBlockLatexAcrossChunks() = runBlocking {
         requireNativeStreamSplitter()
         val fullText = "开头：\\[a^2 + b^2 = c^2\\] 结尾。"
