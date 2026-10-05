@@ -3,6 +3,7 @@ package com.ai.assistance.operit.util
 import android.content.Context
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.repository.CustomEmojiRepository
+import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
@@ -124,7 +125,12 @@ object WaifuMessageProcessor {
             val blockType = blockGroup.tag ?: MarkdownProcessorType.PLAIN_TEXT
             when (blockType) {
                 MarkdownProcessorType.XML_BLOCK -> {
-                    blockGroup.stream.collect { }
+                    val blockBuilder = StringBuilder()
+                    blockGroup.stream.collect { blockBuilder.append(it) }
+                    val block = blockBuilder.toString()
+                    if (shouldPreserveXmlBlockForWaifu(block)) {
+                        appendRenderableText(block)
+                    }
                 }
                 MarkdownProcessorType.BLOCK_QUOTE,
                 MarkdownProcessorType.UNORDERED_LIST -> {
@@ -815,7 +821,11 @@ object WaifuMessageProcessor {
                     builder.append(block.rawContent)
                 }
 
-                StructuredAssistantContentParser.BlockKind.XML -> Unit
+                StructuredAssistantContentParser.BlockKind.XML -> {
+                    if (shouldPreserveXmlBlockForWaifu(block.rawContent)) {
+                        builder.append(block.rawContent)
+                    }
+                }
             }
         }
 
@@ -843,7 +853,7 @@ object WaifuMessageProcessor {
             .replace(ChatMarkupRegex.toolResultTag, "")
             .replace(ChatMarkupRegex.toolResultSelfClosingTag, "")
             .replace(ChatMarkupRegex.emotionTag, "")
-            .replace(ChatMarkupRegex.anyXmlTag, "")
+            .let(::removeUnsupportedXmlTags)
             .trim()
     }
     
@@ -857,6 +867,79 @@ object WaifuMessageProcessor {
         fun canUseBlockBoundaryAsStableEnding(hasFollowingStableBoundarySegment: Boolean): Boolean {
             return hasFollowingStableBoundarySegment || blockType.canCloseStableTextAtBlockBoundary()
         }
+    }
+
+    internal fun shouldPreserveXmlBlockForWaifu(rawContent: String): Boolean {
+        val trimmed = rawContent.trim()
+        val rawTagName = ChatMarkupRegex.extractOpeningTagName(trimmed) ?: return false
+        val tagName = ChatMarkupRegex.normalizeToolLikeTagName(rawTagName) ?: rawTagName
+        if (!isRenderablePluginXmlTag(tagName)) {
+            return false
+        }
+        return isXmlBlockFullyClosed(trimmed, rawTagName)
+    }
+
+    private fun isRenderablePluginXmlTag(tagName: String): Boolean {
+        val normalizedTagName = tagName.trim()
+        if (normalizedTagName.isBlank() || isInternalWaifuXmlTag(normalizedTagName)) {
+            return false
+        }
+        return XmlRenderPluginRegistry.supports(normalizedTagName)
+    }
+
+    private fun isInternalWaifuXmlTag(tagName: String): Boolean {
+        return when (tagName.lowercase()) {
+            "think",
+            "thinking",
+            "tool",
+            "tool_result",
+            "status",
+            "search",
+            "emotion",
+            "meta" -> true
+            else -> false
+        }
+    }
+
+    private fun isXmlBlockFullyClosed(content: String, rawTagName: String): Boolean {
+        return content.endsWith("/>") || content.contains("</$rawTagName>")
+    }
+
+    private fun removeUnsupportedXmlTags(content: String): String {
+        if (!content.contains('<')) {
+            return content
+        }
+        val preservedRanges = mutableListOf<IntRange>()
+        ChatMarkupRegex.anyXmlTag.findAll(content).forEach { match ->
+            val rawTagName = ChatMarkupRegex.extractOpeningTagName(match.value) ?: return@forEach
+            val tagName = ChatMarkupRegex.normalizeToolLikeTagName(rawTagName) ?: rawTagName
+            if (!isRenderablePluginXmlTag(tagName)) {
+                return@forEach
+            }
+            val blockEnd =
+                when {
+                    match.value.trimEnd().endsWith("/>") -> match.range.last
+                    else -> {
+                        val closeTag = "</$rawTagName>"
+                        val closeStart = content.indexOf(closeTag, match.range.last + 1)
+                        if (closeStart < 0) return@forEach
+                        closeStart + closeTag.length - 1
+                    }
+                }
+            preservedRanges += match.range.first..blockEnd
+        }
+
+        val builder = StringBuilder(content.length)
+        var index = 0
+        ChatMarkupRegex.anyXmlTag.findAll(content).forEach { match ->
+            if (preservedRanges.any { match.range.first in it }) {
+                return@forEach
+            }
+            builder.append(content, index, match.range.first)
+            index = match.range.last + 1
+        }
+        builder.append(content, index, content.length)
+        return builder.toString()
     }
 
     private fun MarkdownProcessorType.canCloseStableTextAtBlockBoundary(): Boolean =
@@ -914,6 +997,7 @@ object WaifuMessageProcessor {
                             MarkdownProcessorType.CODE_BLOCK,
                             MarkdownProcessorType.TABLE,
                             MarkdownProcessorType.BLOCK_LATEX -> true
+                            MarkdownProcessorType.XML_BLOCK -> shouldPreserveXmlBlockForWaifu(block)
                             else -> false
                         }
 

@@ -1,5 +1,10 @@
 package com.ai.assistance.operit.util
 
+import android.content.Context
+import androidx.compose.ui.graphics.Color
+import com.ai.assistance.operit.ui.common.markdown.XmlRenderPlugin
+import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
+import com.ai.assistance.operit.ui.common.markdown.XmlRenderResult
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import kotlinx.coroutines.runBlocking
@@ -222,6 +227,76 @@ class WaifuMessageProcessorTest {
         assertTrue("无序列表和图片链接应保留：$renderedSegments", renderedContent.contains("- ![示意图](https://example.com/image.png)"))
         assertTrue("引用标记应保留：$renderedSegments", renderedContent.contains("> 引用内容"))
         assertTrue("行内 LaTeX 应保持完整：$renderedSegments", renderedContent.contains("\$x = 1.5\$"))
+    }
+
+    @Test
+    fun splitMessageBySentences_preservesRegisteredPluginXmlAndRemovesOtherXml() {
+        requireNativeStreamSplitter()
+        registerPluginXmlTag("plan")
+        val content =
+            "开头。<plan id=\"1\">先检查 1. 内容</plan>结尾。" +
+                "<status type=\"completion\"/>" +
+                "<note>不应保留</note>"
+
+        val segments = WaifuMessageProcessor.splitMessageBySentences(content)
+        val renderedContent = segments.joinToString("")
+
+        assertTrue(
+            "已注册的插件 XML 应保持完整：$segments",
+            renderedContent.contains("<plan id=\"1\">先检查 1. 内容</plan>")
+        )
+        assertTrue("内部状态标签仍应过滤：$segments", renderedContent.contains("<status").not())
+        assertTrue("未注册 XML 仍应过滤：$segments", renderedContent.contains("<note").not())
+        assertTrue("XML 之后的文本不能丢失：$segments", renderedContent.contains("结尾。"))
+    }
+
+    @Test
+    fun streamSegments_waitsUntilRegisteredPluginXmlIsClosed() = runBlocking {
+        requireNativeStreamSplitter()
+        registerPluginXmlTag("plan")
+        val chunks = listOf(
+            "开头。<plan>",
+            "先检查",
+            "</plan>",
+            "结尾。"
+        )
+        val chunkStream: Stream<String> = stream {
+            chunks.forEach { emit(it) }
+        }
+        val collected = mutableListOf<String>()
+        WaifuMessageProcessor.streamSegments(chunkStream).collect { collected.add(it) }
+
+        assertTrue(
+            "未闭合的插件 XML 不能提前输出：$collected",
+            collected.none { it.contains("<plan>") && !it.contains("</plan>") }
+        )
+        assertTrue(
+            "闭合后应输出完整插件 XML：$collected",
+            collected.any { it.contains("<plan>先检查</plan>") }
+        )
+        assertTrue("插件 XML 后的文本不能丢失：$collected", collected.any { it.contains("结尾。") })
+    }
+
+    private fun registerPluginXmlTag(tagName: String) {
+        XmlRenderPluginRegistry.register(
+            object : XmlRenderPlugin {
+                override val id: String = "test.$tagName"
+
+                override fun supports(candidateTagName: String): Boolean {
+                    return candidateTagName.equals(tagName, ignoreCase = true)
+                }
+
+                override suspend fun resolve(
+                    context: Context,
+                    xmlContent: String,
+                    tagName: String,
+                    textColor: Color,
+                    xmlStream: Stream<String>?
+                ): XmlRenderResult {
+                    return XmlRenderResult.Text(xmlContent)
+                }
+            }
+        )
     }
 
     @Test
