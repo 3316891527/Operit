@@ -233,9 +233,11 @@ class WaifuMessageProcessorTest {
     fun splitMessageBySentences_preservesRegisteredPluginXmlAndRemovesOtherXml() {
         requireNativeStreamSplitter()
         registerPluginXmlTag("plan")
+        registerPluginXmlTag("emotion")
         val content =
             "开头。<plan id=\"1\">先检查 1. 内容</plan>结尾。" +
                 "<status type=\"completion\"/>" +
+                "<emotion>happy</emotion>" +
                 "<note>不应保留</note>"
 
         val segments = WaifuMessageProcessor.splitMessageBySentences(content)
@@ -244,6 +246,10 @@ class WaifuMessageProcessorTest {
         assertTrue(
             "已注册的插件 XML 应保持完整：$segments",
             renderedContent.contains("<plan id=\"1\">先检查 1. 内容</plan>")
+        )
+        assertTrue(
+            "Waifu 表情标签应保留：$segments",
+            renderedContent.contains("<emotion>happy</emotion>")
         )
         assertTrue("内部状态标签仍应过滤：$segments", renderedContent.contains("<status").not())
         assertTrue("未注册 XML 仍应过滤：$segments", renderedContent.contains("<note").not())

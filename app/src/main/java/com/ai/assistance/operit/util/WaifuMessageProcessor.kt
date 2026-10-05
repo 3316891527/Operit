@@ -895,7 +895,6 @@ object WaifuMessageProcessor {
             "tool_result",
             "status",
             "search",
-            "emotion",
             "meta" -> true
             else -> false
         }
