@@ -40,9 +40,9 @@ import kotlinx.coroutines.*
  * 用于初始绑定工作区
  */
 @Composable
-fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
+fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit, onFileOpen: (OpenFileInfo) -> Unit) {
     val context = LocalContext.current
-    var showFileBrowser by remember { mutableStateOf(false) }
+    var showFileBrowser by remember { mutableStateOf(true) }
     var showProjectTypeDialog by remember { mutableStateOf(false) }
     var projectTypeDialogError by remember { mutableStateOf<String?>(null) }
     var isImportingToolPkgTemplate by remember { mutableStateOf(false) }
@@ -240,11 +240,39 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
     }
 
     if (showFileBrowser) {
-        FileBrowser(
-            initialPath = context.filesDir.absolutePath, // 默认应用内部目录
-            onBindWorkspace = { path, env -> onBindWorkspace(path, env) },
-            onCancel = { showFileBrowser = false }
-        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = context.getString(R.string.setup_workspace),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = context.getString(R.string.select_folder_from_device),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick = { showFileBrowser = false }) {
+                    Icon(Icons.Default.CreateNewFolder, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(context.getString(R.string.create_default_workspace))
+                }
+            }
+            HorizontalDivider()
+            Box(modifier = Modifier.weight(1f)) {
+                FileBrowser(
+                    initialPath = context.filesDir.absolutePath,
+                    onBindWorkspace = { path, env -> onBindWorkspace(path, env) },
+                    onCancel = { showFileBrowser = false },
+                    showHeader = false,
+                    onFileOpen = onFileOpen
+                )
+            }
+        }
     } else {
         Column(
             modifier = Modifier
@@ -257,8 +285,8 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
                     onClick = {}
                 ) // 添加点击拦截
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.Start
         ) {
             if (showProjectTypeDialog) {
                 AlertDialog(
@@ -475,28 +503,14 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
             
             Spacer(modifier = Modifier.height(40.dp))
             
-            // VSCode风格的选项卡
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                WorkspaceOption(
-                    icon = Icons.Default.CreateNewFolder,
-                    title = context.getString(R.string.create_default_workspace),
-                    description = context.getString(R.string.create_new_workspace_in_app),
-                    onClick = {
-                        projectTypeDialogError = null
-                        showProjectTypeDialog = true
-                    }
-                )
-                
-                WorkspaceOption(
-                    icon = Icons.Default.FolderOpen,
-                    title = context.getString(R.string.select_existing_workspace),
-                    description = context.getString(R.string.select_folder_from_device),
-                    onClick = { showFileBrowser = true }
-                )
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ProjectTypeCard(Icons.Default.CreateNewFolder, context.getString(R.string.create_default_workspace),
+                    context.getString(R.string.create_new_workspace_in_app)) {
+                    projectTypeDialogError = null
+                    showProjectTypeDialog = true
+                }
+                ProjectTypeCard(Icons.Default.FolderOpen, context.getString(R.string.select_existing_workspace),
+                    context.getString(R.string.select_folder_from_device)) { showFileBrowser = true }
             }
         }
     }
@@ -564,7 +578,6 @@ fun ProjectTypeCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
             // 箭头指示
             Icon(
                 imageVector = Icons.Default.ChevronRight,
@@ -575,62 +588,3 @@ fun ProjectTypeCard(
         }
     }
 }
-
-/**
- * 工作区选项卡组件
- */
-@Composable
-fun WorkspaceOption(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    description: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .width(160.dp) // 调整大小
-            .height(160.dp)
-            .clip(RoundedCornerShape(12.dp)) // 更圆的角
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp, // 移除阴影
-            pressedElevation = 0.dp
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-} 

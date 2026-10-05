@@ -161,6 +161,9 @@ class CanvasCodeEditorView @JvmOverloads constructor(
     private var showLineNumbers = true
     private var completionEnabled = true
     private var readOnly = false
+    @Volatile private var searchRanges: List<IntRange> = emptyList()
+    @Volatile private var activeSearchMatch = -1
+    private val searchPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var scrollOffsetX = 0f
     private var scrollOffsetY = 0f
     private var viewportBottomPaddingPx = 0f
@@ -400,6 +403,23 @@ class CanvasCodeEditorView @JvmOverloads constructor(
     }
 
     fun getTextContent(): String = document.textString()
+
+    /** 搜索高亮不改变光标和选择范围，长按复制仍使用原始文本。 */
+    fun setSearchMatches(matches: List<IntRange>, active: Int) {
+        val valid = matches.filter { !it.isEmpty() && it.first >= 0 && it.last < document.length() }
+        if (valid == searchRanges && active == activeSearchMatch) return
+        searchRanges = valid
+        activeSearchMatch = active
+        valid.getOrNull(active)?.let { match ->
+            val line = document.getLineForOffset(match.first)
+            setScrollOffsets(
+                max(0f, xForOffsetInLine(match.first) - textViewportWidth() / 3f),
+                max(0f, line * metrics.lineHeight - height / 3f)
+            )
+        }
+        requestRender()
+    }
+
 
     fun undo() {
         if (document.undo()) {
@@ -1097,6 +1117,7 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         for (line in firstVisibleLine..lastVisibleLine) {
             val lineTop = verticalPaddingPx + line * metrics.lineHeight - scrollOffsetY
             drawIndentGuides(canvas, line, lineTop, textRegionLeft)
+            drawSearchForLine(canvas, line, lineTop, textRegionLeft)
             drawTextForLine(canvas, line, lineTop, textRegionLeft)
             drawSelectionForLine(canvas, line, lineTop, textRegionLeft)
             drawComposingUnderline(canvas, line, lineTop, textRegionLeft)
@@ -1166,6 +1187,26 @@ class CanvasCodeEditorView @JvmOverloads constructor(
                 lineTop + metrics.lineHeight - density * 2f,
                 indentGuidePaint
             )
+        }
+    }
+
+    private fun drawSearchForLine(canvas: Canvas, line: Int, top: Float, textLeft: Float) {
+        val ranges = searchRanges
+        if (ranges.isEmpty()) return
+        val start = document.getLineStart(line)
+        val end = document.getLineEnd(line)
+        val found = ranges.binarySearchBy(start) { it.first }
+        var index = if (found >= 0) found else max(0, -found - 2)
+        while (index < ranges.size && ranges[index].first < end) {
+            val match = ranges[index]
+            val from = max(start, match.first)
+            val to = min(end, match.last + 1)
+            if (to > from) {
+                searchPaint.color = if (index == activeSearchMatch) 0x99FF8A65.toInt() else 0x66FFC107
+                canvas.drawRect(textLeft + xForOffsetInLine(from) - scrollOffsetX, top,
+                    textLeft + xForOffsetInLine(to) - scrollOffsetX, top + metrics.lineHeight, searchPaint)
+            }
+            index++
         }
     }
 

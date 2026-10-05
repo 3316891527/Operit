@@ -68,11 +68,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlinx.serialization.Serializable
-
-/** 可序列化的位置数据类，用于持久化FAB位置 */
-@Serializable
-data class FabPosition(val x: Float = 0f, val y: Float = 0f)
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.search.*
 
 private fun WebView.installWorkspaceTouchInterceptor() {
     setOnTouchListener { view, event ->
@@ -167,8 +164,11 @@ fun WorkspaceManager(
         workspacePath: String,
         workspaceEnv: String? = null,
         isVisible: Boolean,
-        onExportClick: (workDir: File) -> Unit
+        onExportClick: (workDir: File) -> Unit,
+        initialFile: OpenFileInfo? = null,
+        onReturnToBrowser: (() -> Unit)? = null
 ) {
+    val standalone = onReturnToBrowser != null
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val webViewRefreshCounter by actualViewModel.webViewRefreshCounter.collectAsState()
@@ -183,17 +183,17 @@ fun WorkspaceManager(
 
     // 读取工作区配置：在重新进入预览界面时从磁盘刷新
     var workspaceConfig by remember(workspacePath, workspaceEnv) {
-        mutableStateOf(if (isSafEnv) WorkspaceConfig() else WorkspaceConfigReader.readConfig(workspacePath))
+        mutableStateOf(if (isSafEnv || standalone) WorkspaceConfig() else WorkspaceConfigReader.readConfig(workspacePath))
     }
 
     LaunchedEffect(isVisible, workspacePath, workspaceEnv) {
-        if (isVisible && !isSafEnv) {
+        if (isVisible && !isSafEnv && !standalone) {
             workspaceConfig = WorkspaceConfigReader.readConfig(workspacePath)
         }
     }
 
     LaunchedEffect(isVisible, workspacePath, workspaceEnv, workspaceServer, workspaceConfig.server.enabled) {
-        if (!isVisible) return@LaunchedEffect
+        if (!isVisible || standalone) return@LaunchedEffect
 
         runCatching {
             withContext(Dispatchers.IO) {
@@ -281,9 +281,9 @@ fun WorkspaceManager(
     }
 
     // 文件管理和标签状态 - 使用内存态，避免编辑大文件时频繁持久化整份内容
-    var showFileManager by remember { mutableStateOf(false) }
-    var openFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(emptyList<OpenFileInfo>()) }
-    var currentFileIndex by remember(workspacePath, workspaceEnv) { mutableStateOf(-1) }
+    var showWorkspaceMenu by remember { mutableStateOf(false) }
+    var openFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(initialFile?.let { listOf(it) } ?: emptyList()) }
+    var currentFileIndex by remember(workspacePath, workspaceEnv) { mutableStateOf(if (initialFile == null) -2 else 0) }
     var filePreviewStates by remember { mutableStateOf(mapOf<String, Boolean>()) }
     var unsavedFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(emptySet<String>()) }
     val isBrowserPreviewVisible =
@@ -313,8 +313,13 @@ fun WorkspaceManager(
             else -> false
         }
     
-    // 控制可展开FAB的菜单状态
-    var isFabMenuExpanded by remember { mutableStateOf(false) }
+    val browserStateHolder = rememberSaveableStateHolder()
+    var searchVisible by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchMatches by remember { mutableStateOf(emptyList<IntRange>()) }
+    var activeMatch by remember { mutableIntStateOf(-1) }
+    var saving by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
 
     var showRenameWorkspaceDialog by remember { mutableStateOf(false) }
     var renameWorkspaceInput by remember(workspacePath) { mutableStateOf(File(workspacePath).name) }
@@ -338,13 +343,12 @@ fun WorkspaceManager(
     
     // 当前活动的编辑器引用
     var activeEditor by remember { mutableStateOf<com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.NativeCodeEditor?>(null) }
-    val density = LocalDensity.current
-    val isImeVisible = WindowInsets.ime.getBottom(density) > 0
-
-    LaunchedEffect(isImeVisible) {
-        if (isImeVisible) {
-            isFabMenuExpanded = false
+    val searchableFile = openFiles.getOrNull(currentFileIndex)?.takeUnless { it.isReadOnlyPreview }
+    LaunchedEffect(searchableFile?.key, searchableFile?.content, searchQuery, searchVisible) {
+        searchMatches = withContext(Dispatchers.Default) {
+            if (searchVisible) findTextMatches(searchableFile?.content.orEmpty(), searchQuery) else emptyList()
         }
+        activeMatch = if (searchMatches.isEmpty()) -1 else 0
     }
 
     // 监听WebView刷新计数器变化并触发刷新
@@ -377,6 +381,7 @@ fun WorkspaceManager(
                 return@LaunchedEffect
             }
             val updatedFiles = openFiles.map { fileInfo ->
+                if (fileInfo.environment != "android" || fileInfo.key in unsavedFiles) return@map fileInfo
                 val currentFile = File(fileInfo.path)
                 if (currentFile.exists() && currentFile.lastModified() > fileInfo.lastModified) {
                     if (fileInfo.isReadOnlyPreview) {
@@ -386,14 +391,14 @@ fun WorkspaceManager(
                     // 文件已在外部被修改，重新加载内容
                     val tool = AITool(
                         "read_file_full",
-                        withWorkspaceEnvParams(listOf(ToolParameter("path", fileInfo.path)))
+                        listOf(ToolParameter("path", fileInfo.path), ToolParameter("environment", fileInfo.environment), ToolParameter("text_only", "true"))
                     )
                     val result = toolHandler.executeTool(tool)
                     if (result.success && result.result is FileContentData) {
                         val newContent = (result.result as FileContentData).content
                         
                         // 如果当前文件就是这个被修改的文件，则更新编辑器内容
-                        if (openFiles.getOrNull(currentFileIndex)?.path == fileInfo.path) {
+                        if (openFiles.getOrNull(currentFileIndex)?.key == fileInfo.key) {
                              activeEditor?.replaceAllText(newContent)
                         }
                         
@@ -449,28 +454,31 @@ fun WorkspaceManager(
     }
     
     // 保存文件函数
-    fun saveFile(fileInfo: OpenFileInfo) {
-        if (fileInfo.isReadOnlyPreview) return
-
+    fun saveFile(fileInfo: OpenFileInfo, afterSave: (() -> Unit)? = null) {
+        if (fileInfo.isReadOnlyPreview || saving) return
+        saving = true
         coroutineScope.launch {
-            val tool =
-                AITool(
-                    "write_file",
-                    withWorkspaceEnvParams(
-                        listOf(
-                            ToolParameter("path", fileInfo.path),
-                            ToolParameter("content", fileInfo.content)
-                        )
-                    )
-                )
-            
-            // 使用toolHandler代替actualViewModel.executeAITool
-            toolHandler.executeTool(tool)
-            
-            // 如果是HTML文件且正在预览，刷新WebView
-            if (fileInfo.isHtml && filePreviewStates[fileInfo.path] == true) {
-                actualViewModel.refreshWebView()
-            }
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    toolHandler.executeTool(AITool("write_file", listOf(
+                        ToolParameter("path", fileInfo.path), ToolParameter("content", fileInfo.content),
+                        ToolParameter("environment", fileInfo.environment)
+                    )))
+                }
+                check(result.success) { result.error.orEmpty() }
+                // 保存期间继续输入时，较新的内容仍保持未保存状态。
+                if (openFiles.firstOrNull { it.key == fileInfo.key }?.content == fileInfo.content) {
+                    unsavedFiles = unsavedFiles - fileInfo.key
+                    afterSave?.invoke()
+                }
+                saveError = null
+                if (fileInfo.isHtml && filePreviewStates[fileInfo.key] == true) actualViewModel.refreshWebView()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.e("WorkspaceManager", "保存文件失败", e)
+                saveError = e.message
+            } finally { saving = false }
         }
     }
 
@@ -483,16 +491,17 @@ fun WorkspaceManager(
             openFiles = updatedFiles
 
             // 从未保存集合中移除
-            unsavedFiles = unsavedFiles - fileToClose.path
+            unsavedFiles = unsavedFiles - fileToClose.key
             
             // 更新当前选中的标签
             currentFileIndex = when {
-                updatedFiles.isEmpty() -> -1
+                updatedFiles.isEmpty() -> -2
                 index >= updatedFiles.size -> updatedFiles.size - 1
                 else -> index
             }
         }
-        fileToCloseIndex = -1 // 重置待关闭文件索引
+        fileToCloseIndex = -1
+        if (openFiles.isEmpty()) onReturnToBrowser?.invoke()
     }
 
     // 关闭文件标签
@@ -500,7 +509,7 @@ fun WorkspaceManager(
         if (index >= 0 && index < openFiles.size) {
             val fileToClose = openFiles[index]
             // 如果文件有未保存的更改，显示确认对话框
-            if (unsavedFiles.contains(fileToClose.path)) {
+            if (unsavedFiles.contains(fileToClose.key)) {
                 fileToCloseIndex = index
             } else {
                 // 否则直接关闭
@@ -518,7 +527,7 @@ fun WorkspaceManager(
     // 打开文件
     fun openFile(fileInfo: OpenFileInfo) {
         // 检查文件是否已经打开
-        val existingIndex = openFiles.indexOfFirst { it.path == fileInfo.path }
+        val existingIndex = openFiles.indexOfFirst { it.key == fileInfo.key }
 
         if (existingIndex != -1) {
             // 如果文件已经打开，切换到该标签
@@ -531,8 +540,8 @@ fun WorkspaceManager(
             // 初始化预览状态
             filePreviewStates =
                     filePreviewStates.toMutableMap().apply {
-                        // HTML文件默认预览，Markdown保持默认编辑态，其他文件也默认编辑态
-                        this[fileInfo.path] = fileInfo.isHtml
+                        // 文本文件默认进入现有编辑器，预览由用户主动切换。
+                        this[fileInfo.key] = false
                     }
         }
     }
@@ -544,6 +553,10 @@ fun WorkspaceManager(
                 .fillMaxSize()
                 .imePadding()
     ) {
+        BackHandler(enabled = currentFileIndex != -2 && !activePreviewCanGoBack) {
+            if (standalone && currentFileIndex in openFiles.indices) closeFile(currentFileIndex)
+            else currentFileIndex = -2
+        }
         BackHandler(enabled = activePreviewCanGoBack) {
             if (activePreviewCanGoBack) {
                 try {
@@ -555,6 +568,25 @@ fun WorkspaceManager(
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
+            val currentTextFile = openFiles.getOrNull(currentFileIndex)?.takeUnless { it.isReadOnlyPreview }
+            if (currentTextFile != null) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { activeEditor?.undo() }) { Icon(Icons.Default.Undo, stringResource(R.string.undo)) }
+                    IconButton(onClick = { activeEditor?.redo() }) { Icon(Icons.Default.Redo, stringResource(R.string.redo)) }
+                    IconButton(onClick = { searchVisible = !searchVisible }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
+                    val language = LanguageDetector.detectLanguage(currentTextFile.name).lowercase()
+                    if (language in listOf("javascript", "js", "css", "html", "htm")) {
+                        IconButton(onClick = {
+                            val formatted = CodeFormatter.format(currentTextFile.content, language)
+                            val updated = openFiles.toMutableList()
+                            updated[currentFileIndex] = currentTextFile.copy(content = formatted)
+                            openFiles = updated
+                            activeEditor?.replaceAllText(formatted)
+                            unsavedFiles = unsavedFiles + currentTextFile.key
+                        }) { Icon(Icons.Default.AutoFixHigh, stringResource(R.string.format_code)) }
+                    }
+                }
+            }
             // 整合后的顶部栏：标签 + 动态操作
             Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
@@ -565,10 +597,67 @@ fun WorkspaceManager(
                         modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (standalone) {
+                        IconButton(onClick = { if (currentFileIndex in openFiles.indices) closeFile(currentFileIndex) else onReturnToBrowser?.invoke() }) {
+                            Icon(Icons.Default.ArrowBack, stringResource(R.string.file_manager_return))
+                        }
+                    }
+                    if (!standalone) Box {
+                        IconButton(onClick = { showWorkspaceMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more))
+                        }
+                        DropdownMenu(
+                            expanded = showWorkspaceMenu,
+                            onDismissRequest = { showWorkspaceMenu = false }
+                        ) {
+                            if (workspaceConfig.export.enabled && !isSafEnv) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.export)) },
+                                    leadingIcon = { Icon(Icons.Default.Upload, contentDescription = null) },
+                                    onClick = {
+                                        showWorkspaceMenu = false
+                                        onExportClick(File(workspacePath))
+                                    }
+                                )
+                            }
+                            if (canRenameWorkspace) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.workspace_rename_action)) },
+                                    leadingIcon = { Icon(Icons.Default.DriveFileRenameOutline, contentDescription = null) },
+                                    onClick = {
+                                        showWorkspaceMenu = false
+                                        if (unsavedFiles.isNotEmpty()) {
+                                            actualViewModel.showToast(context.getString(R.string.workspace_rename_save_first))
+                                        } else {
+                                            renameWorkspaceInput = File(workspacePath).name
+                                            renameWorkspaceError = null
+                                            showRenameWorkspaceDialog = true
+                                        }
+                                    }
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.unbind)) },
+                                leadingIcon = { Icon(Icons.Default.LinkOff, contentDescription = null) },
+                                onClick = {
+                                    showWorkspaceMenu = false
+                                    showUnbindConfirmDialog = true
+                                }
+                            )
+                        }
+                    }
                     // 文件标签栏
                     Row(modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
-                        // 预览标签
                         VSCodeTab(
+                            title = stringResource(R.string.files),
+                            icon = Icons.Default.Folder,
+                            isActive = currentFileIndex == -2,
+                            isUnsaved = false,
+                            onClose = null,
+                            onClick = { currentFileIndex = -2 }
+                        )
+                        // 临时打开文件不初始化项目预览和绑定状态。
+                        if (!standalone) VSCodeTab(
                                 title = stringResource(R.string.workspace_preview),
                                 icon = Icons.Default.Visibility,
                                 isActive = currentFileIndex == -1,
@@ -583,7 +672,7 @@ fun WorkspaceManager(
                                     title = fileInfo.name,
                                     icon = getFileIcon(fileInfo.name), // 使用统一的 getFileIcon
                                     isActive = currentFileIndex == index,
-                                    isUnsaved = unsavedFiles.contains(fileInfo.path),
+                                    isUnsaved = unsavedFiles.contains(fileInfo.key),
                                     onClose = { closeFile(index) },
                                     onClick = { currentFileIndex = index }
                             )
@@ -594,11 +683,10 @@ fun WorkspaceManager(
                     val currentFile = openFiles.getOrNull(currentFileIndex)
 
                     // 保存按钮
-                    if (currentFile != null && unsavedFiles.contains(currentFile.path)) {
+                    if (currentFile != null && unsavedFiles.contains(currentFile.key)) {
                         IconButton(
                             onClick = {
                                 saveFile(currentFile)
-                                unsavedFiles = unsavedFiles - currentFile.path
                             },
                             modifier = Modifier.size(40.dp)
                         ) {
@@ -610,9 +698,9 @@ fun WorkspaceManager(
                     }
 
                     if (currentFile != null && (currentFile.isHtml || currentFile.isMarkdown)) {
-                        val isPreview = filePreviewStates[currentFile.path] ?: false
+                        val isPreview = filePreviewStates[currentFile.key] ?: false
                         IconButton(
-                                onClick = { togglePreview(currentFile.path) },
+                                onClick = { togglePreview(currentFile.key) },
                                 // 限制按钮大小，使其与标签高度(40.dp)保持一致，防止撑开父布局
                                 modifier = Modifier.size(40.dp)
                         ) {
@@ -670,6 +758,13 @@ fun WorkspaceManager(
                 }
             }
 
+            if (searchVisible && searchableFile != null) {
+                FileSearchBar(searchQuery, { searchQuery = it }, searchMatches.size, activeMatch,
+                    onPrevious = { if (searchMatches.isNotEmpty()) activeMatch = (activeMatch - 1 + searchMatches.size) % searchMatches.size },
+                    onNext = { if (searchMatches.isNotEmpty()) activeMatch = (activeMatch + 1) % searchMatches.size },
+                    onClose = { searchVisible = false })
+            }
+            saveError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(12.dp)) }
             // 主内容区域
             Box(
                     modifier =
@@ -677,6 +772,16 @@ fun WorkspaceManager(
                                     .background(MaterialTheme.colorScheme.surface) // 添加背景色防止闪烁
             ) {
                 when {
+                    // 文件浏览是绑定工作区后的默认页面，项目预览通过顶部“预览”标签进入。
+                    currentFileIndex == -2 -> browserStateHolder.SaveableStateProvider("files") {
+                        FileBrowser(
+                            initialPath = workspacePath,
+                            environment = workspaceEnv,
+                            onCancel = {},
+                            showHeader = false,
+                            onFileOpen = { fileInfo -> openFile(fileInfo) }
+                        )
+                    }
                     // 显示WebView预览（仅当preview类型为browser时）
                     currentFileIndex == -1 && workspaceConfig.preview.type == "browser" -> {
                         key(workspacePath, workspaceEnv) {
@@ -786,14 +891,14 @@ fun WorkspaceManager(
                     // 显示打开的文件
                     currentFileIndex in openFiles.indices -> {
                         val fileInfo = openFiles[currentFileIndex]
-                        val isPreviewMode = filePreviewStates[fileInfo.path] ?: false
+                        val isPreviewMode = filePreviewStates[fileInfo.key] ?: false
 
                         when {
                             // 图片文件：显示图片预览
                             fileInfo.isImage -> {
                                 val previewFileState by rememberWorkspacePreviewFileState(
                                     fileInfo = fileInfo,
-                                    workspaceEnv = workspaceEnv,
+                                    workspaceEnv = fileInfo.environment.takeUnless { it == "android" },
                                     toolHandler = toolHandler
                                 )
                                 val previewUri = remember(previewFileState.file?.absolutePath) {
@@ -811,7 +916,7 @@ fun WorkspaceManager(
                             fileInfo.isAudio -> {
                                 val previewFileState by rememberWorkspacePreviewFileState(
                                     fileInfo = fileInfo,
-                                    workspaceEnv = workspaceEnv,
+                                    workspaceEnv = fileInfo.environment.takeUnless { it == "android" },
                                     toolHandler = toolHandler
                                 )
                                 val previewUri = remember(previewFileState.file?.absolutePath) {
@@ -845,7 +950,7 @@ fun WorkspaceManager(
                             fileInfo.isVideo -> {
                                 val previewFileState by rememberWorkspacePreviewFileState(
                                     fileInfo = fileInfo,
-                                    workspaceEnv = workspaceEnv,
+                                    workspaceEnv = fileInfo.environment.takeUnless { it == "android" },
                                     toolHandler = toolHandler
                                 )
                                 val previewUri = remember(previewFileState.file?.absolutePath) {
@@ -883,7 +988,7 @@ fun WorkspaceManager(
                             fileInfo.isReadOnlyDocumentPreviewable -> {
                                 WorkspaceReadOnlyDocumentPreview(
                                     fileInfo = fileInfo,
-                                    workspaceEnv = workspaceEnv,
+                                    workspaceEnv = fileInfo.environment.takeUnless { it == "android" },
                                     toolHandler = toolHandler,
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -921,7 +1026,7 @@ fun WorkspaceManager(
                             }
                             // 其他所有情况：使用CodeEditor
                             else -> {
-                                key(fileInfo.path) {
+                                key(fileInfo.key) {
                                     val fileLanguage = LanguageDetector.detectLanguage(fileInfo.name)
                                     CodeEditor(
                                             code = fileInfo.content,
@@ -934,10 +1039,12 @@ fun WorkspaceManager(
                                                     openFiles = updatedFiles
 
                                                     // 将文件标记为未保存
-                                                    unsavedFiles = unsavedFiles + updatedFile.path
+                                                    unsavedFiles = unsavedFiles + updatedFile.key
                                                 }
                                             },
                                             modifier = Modifier.fillMaxSize(),
+                                            searchMatches = searchMatches,
+                                            activeSearchMatch = activeMatch,
                                             editorRef = { editor -> activeEditor = editor } // 传递editor引用
                                     )
                                 }
@@ -948,112 +1055,6 @@ fun WorkspaceManager(
             }
         }
 
-        // 从底部弹出的文件管理器面板
-        if (showFileManager) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable { showFileManager = false }
-            )
-            
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.6f)
-                    .align(Alignment.BottomCenter),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-            ) {
-                Column {
-                    // 文件管理器标题栏
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(context.getString(R.string.file_browser), style = MaterialTheme.typography.titleMedium)
-                        IconButton(onClick = { showFileManager = false }) {
-                            Icon(Icons.Default.Close, contentDescription = context.getString(R.string.close))
-                        }
-                    }
-
-                    HorizontalDivider()
-
-                    // 嵌入文件浏览器组件
-                    FileBrowser(
-                        initialPath = workspacePath,
-                        environment = workspaceEnv,
-                        onCancel = { showFileManager = false },
-                        isManageMode = true,
-                        onFileOpen = { fileInfo ->
-                            openFile(fileInfo)
-                            showFileManager = false
-                        }
-                    )
-                }
-            }
-        }
-        
-        // 键盘弹起时隐藏工作区悬浮菜单，避免遮挡编辑区与输入区域
-        if (!isImeVisible) {
-            ExpandableFabMenu(
-                isExpanded = isFabMenuExpanded,
-                onToggle = { isFabMenuExpanded = !isFabMenuExpanded },
-                exportEnabled = workspaceConfig.export.enabled && !isSafEnv,
-                onExportClick = {
-                    if (!isSafEnv) {
-                        onExportClick(File(workspacePath))
-                    }
-                },
-                onFileManagerClick = { showFileManager = true },
-                onUndoClick = { activeEditor?.undo() },
-                onRedoClick = { activeEditor?.redo() },
-                onFormatClick = {
-                    // 格式化当前文件
-                    val currentFile = openFiles.getOrNull(currentFileIndex)
-                    if (currentFile != null) {
-                        val language = LanguageDetector.detectLanguage(currentFile.name)
-                        val formattedCode = CodeFormatter.format(currentFile.content, language)
-                        
-                        // 更新文件内容
-                        val updatedFiles = openFiles.toMutableList()
-                        updatedFiles[currentFileIndex] = currentFile.copy(content = formattedCode)
-                        openFiles = updatedFiles
-                        
-                        // 更新编辑器显示
-                        activeEditor?.replaceAllText(formattedCode)
-                        
-                        // 标记为未保存
-                        unsavedFiles = unsavedFiles + currentFile.path
-                    }
-                    isFabMenuExpanded = false
-                },
-                onUnbindClick = { 
-                    showUnbindConfirmDialog = true
-                    isFabMenuExpanded = false
-                },
-                renameEnabled = canRenameWorkspace,
-                onRenameWorkspaceClick = {
-                    if (unsavedFiles.isNotEmpty()) {
-                        actualViewModel.showToast(context.getString(R.string.workspace_rename_save_first))
-                    } else {
-                        renameWorkspaceInput = File(workspacePath).name
-                        renameWorkspaceError = null
-                        showRenameWorkspaceDialog = true
-                    }
-                    isFabMenuExpanded = false
-                },
-                canFormat = openFiles.getOrNull(currentFileIndex)?.let { file ->
-                    val language = LanguageDetector.detectLanguage(file.name).lowercase()
-                    language in listOf("javascript", "js", "css", "html", "htm")
-                } ?: false
-            )
-        }
-        
         // 解绑确认对话框
         if (showUnbindConfirmDialog) {
             AlertDialog(
@@ -1171,9 +1172,10 @@ fun WorkspaceManager(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                saveFile(file)
-                                unsavedFiles = unsavedFiles - file.path
-                                confirmCloseFile(fileToCloseIndex)
+                                val closingKey = file.key
+                                saveFile(file) {
+                                    confirmCloseFile(openFiles.indexOfFirst { it.key == closingKey })
+                                }
                             }
                         ) {
                             Text(context.getString(R.string.save))
@@ -1198,7 +1200,7 @@ fun WorkspaceManager(
         }
 
         val commandDialogState = workspaceCommandExecutionState
-        if (commandDialogState != null &&
+        if (!standalone && commandDialogState != null &&
             commandDialogState.workspacePath == workspacePath &&
             commandDialogState.isVisible
         ) {
@@ -1385,140 +1387,6 @@ private fun WorkspaceCommandExecutionDialog(
                     }
                 }
             }
-        }
-    }
-}
-
-@SuppressLint("UnusedBoxWithConstraintsScope")
-@Composable
-fun ExpandableFabMenu(
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    exportEnabled: Boolean = true,
-    onExportClick: () -> Unit,
-    onFileManagerClick: () -> Unit,
-    onUndoClick: () -> Unit,
-    onRedoClick: () -> Unit,
-    onFormatClick: () -> Unit,
-    onUnbindClick: () -> Unit,
-    renameEnabled: Boolean = false,
-    onRenameWorkspaceClick: () -> Unit,
-    canFormat: Boolean = false
-) {
-    val context = LocalContext.current
-    
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val density = LocalDensity.current
-        val maxWidthPx = with(density) { maxWidth.toPx() }
-        val maxHeightPx = with(density) { maxHeight.toPx() }
-        
-        // 使用 rememberLocal 持久化FAB位置，默认为null表示使用默认右下角位置
-        var fabPosition by rememberLocal<FabPosition?>("fab_menu_offset", null)
-        
-        // 计算实际的显示位置：如果没有自定义位置，使用右下角
-        val actualX = fabPosition?.x ?: 0f
-        val actualY = fabPosition?.y ?: 0f
-        
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset { IntOffset(actualX.roundToInt(), actualY.roundToInt()) }
-                    .pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            val currentPos = fabPosition ?: FabPosition(0f, 0f)
-                            val paddingPx = with(density) { 16.dp.toPx() }
-                            fabPosition = FabPosition(
-                                x = (currentPos.x + dragAmount.x).coerceIn(
-                                    -(maxWidthPx - paddingPx * 2 - 100f),
-                                    0f
-                                ),
-                                y = (currentPos.y + dragAmount.y).coerceIn(
-                                    -(maxHeightPx - paddingPx * 2 - 100f),
-                                    0f
-                                )
-                            )
-                        }
-                    },
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Bottom
-            ) {
-        // 展开的菜单项
-        if (isExpanded) {
-            FabMenuItem(icon = Icons.Default.Undo, text = context.getString(R.string.undo), onClick = onUndoClick)
-            Spacer(modifier = Modifier.height(12.dp))
-            FabMenuItem(icon = Icons.Default.Redo, text = context.getString(R.string.redo), onClick = onRedoClick)
-            Spacer(modifier = Modifier.height(12.dp))
-            if (canFormat) {
-                FabMenuItem(icon = Icons.Default.AutoFixHigh, text = context.getString(R.string.format_code), onClick = onFormatClick)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-            FabMenuItem(icon = Icons.Default.Folder, text = context.getString(R.string.files), onClick = onFileManagerClick)
-            Spacer(modifier = Modifier.height(12.dp))
-            if (exportEnabled) {
-                FabMenuItem(icon = Icons.Default.Upload, text = context.getString(R.string.export), onClick = onExportClick)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-            if (renameEnabled) {
-                FabMenuItem(
-                    icon = Icons.Default.Edit,
-                    text = context.getString(R.string.workspace_rename_action),
-                    onClick = onRenameWorkspaceClick
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-            FabMenuItem(icon = Icons.Default.LinkOff, text = context.getString(R.string.unbind), onClick = onUnbindClick)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // 主切换按钮
-        FloatingActionButton(
-            onClick = onToggle,
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        ) {
-            Icon(
-                imageVector = if (isExpanded) Icons.Default.Close else Icons.Default.MoreVert,
-                contentDescription = if (isExpanded) stringResource(R.string.workspace_close_menu) else stringResource(R.string.workspace_open_menu)
-            )
-        }
-            }
-        }
-    }
-}
-
-@Composable
-fun FabMenuItem(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shadowElevation = 2.dp,
-            modifier = Modifier.clickable(onClick = onClick)
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-            )
-        }
-        FloatingActionButton(
-            onClick = onClick,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp)
-        ) {
-            Icon(imageVector = icon, contentDescription = text)
         }
     }
 }

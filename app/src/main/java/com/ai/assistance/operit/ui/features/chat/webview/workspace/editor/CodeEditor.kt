@@ -56,7 +56,9 @@ fun CodeEditor(
     readOnly: Boolean = false,
     showLineNumbers: Boolean = true,
     enableCompletion: Boolean = true,
-    editorRef: ((NativeCodeEditor?) -> Unit)? = null
+    editorRef: ((NativeCodeEditor?) -> Unit)? = null,
+    searchMatches: List<IntRange> = emptyList(),
+    activeSearchMatch: Int = -1
 ) {
     val theme = getThemeForLanguage(language)
     val latestCode = rememberUpdatedState(code)
@@ -155,6 +157,7 @@ fun CodeEditor(
                         if (view.getText() != latestCode.value) {
                             view.setText(latestCode.value, fromUpdate = true)
                         }
+                        view.setSearchMatches(searchMatches, activeSearchMatch)
                     },
                     onRelease = { view ->
                         if (editorRefState.value === view) {
@@ -302,6 +305,11 @@ class NativeCodeEditor @JvmOverloads constructor(
     }
 
     fun getText(): String = if (isReleased) "" else canvasEditorView.getTextContent()
+
+    fun setSearchMatches(matches: List<IntRange>, active: Int) {
+        if (!isReleased) canvasEditorView.setSearchMatches(matches, active)
+    }
+
 
     fun setCompletionCallback(callback: EditorCompletionCallback?) {
         if (isReleased) {
