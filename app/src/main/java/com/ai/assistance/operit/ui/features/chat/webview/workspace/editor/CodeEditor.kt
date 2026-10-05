@@ -57,6 +57,7 @@ fun CodeEditor(
     showLineNumbers: Boolean = true,
     enableCompletion: Boolean = true,
     editorRef: ((NativeCodeEditor?) -> Unit)? = null,
+    onKeyCommand: ((EditorKeyCommand) -> Boolean)? = null,
     searchMatches: List<IntRange> = emptyList(),
     activeSearchMatch: Int = -1
 ) {
@@ -64,6 +65,7 @@ fun CodeEditor(
     val latestCode = rememberUpdatedState(code)
     val latestOnCodeChange = rememberUpdatedState(onCodeChange)
     val latestEditorRef = rememberUpdatedState(editorRef)
+    val latestOnKeyCommand = rememberUpdatedState(onKeyCommand)
     val density = LocalDensity.current
     val popupVerticalOffsetPx = with(density) { 6.dp.toPx().roundToInt() }
     val imeBottomInsetPx = WindowInsets.ime.getBottom(density)
@@ -113,11 +115,13 @@ fun CodeEditor(
                                 )
                             editorRefState.value = this
                             latestEditorRef.value?.invoke(this)
+                            setKeyCommandListener(latestOnKeyCommand.value)
                         }
                     },
                     update = { view ->
                         editorRefState.value = view
                         latestEditorRef.value?.invoke(view)
+                        view.setKeyCommandListener(latestOnKeyCommand.value)
                         view.setEditorTheme(theme)
                         view.setLanguage(language)
                         view.setReadOnly(readOnly)
@@ -316,6 +320,13 @@ class NativeCodeEditor @JvmOverloads constructor(
             return
         }
         canvasEditorView.setCompletionCallback(callback)
+    }
+
+    fun setKeyCommandListener(listener: ((EditorKeyCommand) -> Boolean)?) {
+        if (isReleased) {
+            return
+        }
+        canvasEditorView.setKeyCommandListener(listener)
     }
 
     fun applyCompletion(item: CompletionItem) {

@@ -52,6 +52,14 @@ interface EditorCompletionCallback {
     fun isCompletionVisible(): Boolean
 }
 
+enum class EditorKeyCommand {
+    SAVE,
+    SAVE_AS,
+    CLOSE,
+    FIND,
+    ESCAPE
+}
+
 class CanvasCodeEditorView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -156,6 +164,7 @@ class CanvasCodeEditorView @JvmOverloads constructor(
     private var highlightSnapshot = HighlightSnapshot(0, IntArray(0))
     private var completionProvider: CompletionProvider = CompletionProviderFactory.getProvider("text")
     private var completionCallback: EditorCompletionCallback? = null
+    private var keyCommandListener: ((EditorKeyCommand) -> Boolean)? = null
     private var currentLanguage = "text"
     private var currentScale = 1f
     private var showLineNumbers = true
@@ -387,6 +396,10 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         }
     }
 
+    fun setKeyCommandListener(listener: ((EditorKeyCommand) -> Boolean)?) {
+        keyCommandListener = listener
+    }
+
     fun setTextContent(text: String) {
         document.setText(text, clearHistory = true)
         highlightSnapshot = HighlightSnapshot(document.version, IntArray(text.length))
@@ -497,6 +510,17 @@ class CanvasCodeEditorView @JvmOverloads constructor(
     }
 
     override fun onCheckIsTextEditor(): Boolean = !readOnly
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (isReleased) {
+            return false
+        }
+        return if (handleKeyEvent(event)) {
+            true
+        } else {
+            super.onKeyDown(keyCode, event)
+        }
+    }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo?): InputConnection {
         outAttrs?.apply {
@@ -610,6 +634,19 @@ class CanvasCodeEditorView @JvmOverloads constructor(
 
     private fun handleKeyEvent(event: KeyEvent): Boolean {
         val ctrlPressed = event.isCtrlPressed
+        if (event.keyCode == KeyEvent.KEYCODE_ESCAPE && !ctrlPressed) {
+            if (keyCommandListener?.invoke(EditorKeyCommand.ESCAPE) == true) {
+                return true
+            }
+            hideCompletions()
+            actionMode?.finish()
+            if (document.hasSelection()) {
+                document.collapseSelection(document.selectionEnd)
+                notifySelectionChanged()
+                requestRender()
+            }
+            return true
+        }
         when (event.keyCode) {
             KeyEvent.KEYCODE_DEL -> {
                 if (readOnly) {
@@ -643,8 +680,14 @@ class CanvasCodeEditorView @JvmOverloads constructor(
                 if (readOnly) {
                     return true
                 }
-                document.replaceSelection(" ".repeat(TAB_SPACES), recordHistory = true)
-                onDocumentMutated()
+                if (event.isShiftPressed) {
+                    if (document.unindentSelection(TAB_SPACES)) {
+                        onDocumentMutated()
+                    }
+                } else {
+                    document.replaceSelection(" ".repeat(TAB_SPACES), recordHistory = true)
+                    onDocumentMutated()
+                }
                 return true
             }
 
@@ -670,7 +713,7 @@ class CanvasCodeEditorView @JvmOverloads constructor(
 
             KeyEvent.KEYCODE_MOVE_HOME -> {
                 val line = document.getLineForOffset(document.selectionEnd)
-                val target = document.getLineStart(line)
+                val target = if (ctrlPressed) 0 else document.getLineStart(line)
                 if (event.isShiftPressed) {
                     document.setSelection(document.selectionStart, target)
                 } else {
@@ -686,7 +729,7 @@ class CanvasCodeEditorView @JvmOverloads constructor(
 
             KeyEvent.KEYCODE_MOVE_END -> {
                 val line = document.getLineForOffset(document.selectionEnd)
-                val target = document.getLineEnd(line)
+                val target = if (ctrlPressed) document.length() else document.getLineEnd(line)
                 if (event.isShiftPressed) {
                     document.setSelection(document.selectionStart, target)
                 } else {
@@ -703,6 +746,42 @@ class CanvasCodeEditorView @JvmOverloads constructor(
 
         if (ctrlPressed) {
             when (event.keyCode) {
+                KeyEvent.KEYCODE_S -> {
+                    keyCommandListener?.invoke(
+                        if (event.isShiftPressed) EditorKeyCommand.SAVE_AS else EditorKeyCommand.SAVE
+                    )
+                    return true
+                }
+
+                KeyEvent.KEYCODE_W -> {
+                    keyCommandListener?.invoke(EditorKeyCommand.CLOSE)
+                    return true
+                }
+
+                KeyEvent.KEYCODE_F -> {
+                    keyCommandListener?.invoke(EditorKeyCommand.FIND)
+                    return true
+                }
+
+                KeyEvent.KEYCODE_SLASH,
+                KeyEvent.KEYCODE_NUMPAD_DIVIDE -> {
+                    if (!readOnly) {
+                        val syntax = CommentSyntaxRegistry.forLanguage(currentLanguage)
+                        val changed = when {
+                            syntax == null || !document.hasSelection() -> false
+                            syntax.hasBlockComment -> document.toggleBlockComment(
+                                syntax.blockStart.orEmpty(),
+                                syntax.blockEnd.orEmpty()
+                            )
+                            else -> commentPrefixForLanguage()?.let(document::toggleLineComment) == true
+                        }
+                        if (changed) {
+                            onDocumentMutated()
+                        }
+                    }
+                    return true
+                }
+
                 KeyEvent.KEYCODE_A -> {
                     document.selectAll()
                     showSelectionMenu()
@@ -748,6 +827,10 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         }
 
         return false
+    }
+
+    private fun commentPrefixForLanguage(): String? {
+        return CommentSyntaxRegistry.forLanguage(currentLanguage)?.preferredLinePrefix
     }
 
     private fun moveCursorHorizontal(delta: Int, extendSelection: Boolean) {

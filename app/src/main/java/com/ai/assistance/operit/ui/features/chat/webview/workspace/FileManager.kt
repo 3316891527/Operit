@@ -207,11 +207,47 @@ fun FileBrowser(
         )
     }
 
+    // 本机 Android 路径直接使用 File API，避免权限级文件工具的 shell 列表解析漏掉普通文件。
+    suspend fun listLocalDirectory(path: String): List<DirectoryEntry>? = withContext(Dispatchers.IO) {
+        val directory = File(path)
+        if (!directory.isDirectory) return@withContext null
+        val entries = directory.listFiles() ?: return@withContext null
+        entries
+            .filter { it.name != "." && it.name != ".." }
+            .map { file ->
+                DirectoryEntry(
+                    name = file.name,
+                    isDirectory = file.isDirectory,
+                    size = file.length(),
+                    lastModified = file.lastModified().toString(),
+                    permissions = ""
+                )
+            }
+    }
+
     fun loadDirectory(path: String, targetEnvironment: String? = currentEnvironment) {
         if (isLoading) return
         isLoading = true
         coroutineScope.launch {
             try {
+                val localEntries =
+                    if (targetEnvironment.isNullOrBlank() || targetEnvironment.equals("android", ignoreCase = true)) {
+                        listLocalDirectory(path)
+                    } else {
+                        null
+                    }
+                if (localEntries != null) {
+                    fileList = localEntries
+                    currentPath = path
+                    currentEnvironment = targetEnvironment
+                    errorMessage = null
+                    AppLogger.d(
+                        "WorkspaceFileBrowser",
+                        "listed local path=$path directories=${localEntries.count { it.isDirectory }} files=${localEntries.count { !it.isDirectory }}"
+                    )
+                    return@launch
+                }
+
                 val parameters = buildList {
                     add(ToolParameter("path", path))
                     targetEnvironment?.let { add(ToolParameter("environment", it)) }
@@ -970,6 +1006,10 @@ private fun formatSize(size: Long): String {
 
 @SuppressLint("SimpleDateFormat")
 private fun formatLastModified(dateString: String): String {
+    val millis = dateString.toLongOrNull()
+    if (millis != null) {
+        return SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()).format(Date(millis))
+    }
     return try {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.getDefault())
         inputFormat.timeZone = TimeZone.getTimeZone("UTC")

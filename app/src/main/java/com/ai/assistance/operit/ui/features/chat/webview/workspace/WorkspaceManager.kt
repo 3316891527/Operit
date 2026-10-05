@@ -63,6 +63,7 @@ import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.chat.webview.WebViewHandler
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.CodeEditor
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.CodeFormatter
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.EditorKeyCommand
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.LanguageDetector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -514,6 +515,48 @@ fun WorkspaceManager(
             } else {
                 // 否则直接关闭
                 confirmCloseFile(index)
+            }
+        }
+    }
+
+    // 键盘命令统一复用现有文件状态和未保存确认流程。
+    fun handleEditorKeyCommand(command: EditorKeyCommand): Boolean {
+        return when (command) {
+            EditorKeyCommand.SAVE -> {
+                val file = openFiles.getOrNull(currentFileIndex)
+                if (file == null || file.isReadOnlyPreview) false else {
+                    saveFile(file)
+                    true
+                }
+            }
+            EditorKeyCommand.SAVE_AS -> false
+            EditorKeyCommand.CLOSE -> {
+                if (currentFileIndex !in openFiles.indices) false else {
+                    closeFile(currentFileIndex)
+                    true
+                }
+            }
+            EditorKeyCommand.FIND -> {
+                if (searchableFile == null) false else {
+                    searchVisible = true
+                    true
+                }
+            }
+            EditorKeyCommand.ESCAPE -> when {
+                fileToCloseIndex != -1 -> {
+                    fileToCloseIndex = -1
+                    true
+                }
+                searchVisible -> {
+                    searchVisible = false
+                    searchQuery = ""
+                    true
+                }
+                currentFileIndex in openFiles.indices -> {
+                    closeFile(currentFileIndex)
+                    true
+                }
+                else -> false
             }
         }
     }
@@ -1045,7 +1088,8 @@ fun WorkspaceManager(
                                             modifier = Modifier.fillMaxSize(),
                                             searchMatches = searchMatches,
                                             activeSearchMatch = activeMatch,
-                                            editorRef = { editor -> activeEditor = editor } // 传递editor引用
+                                            editorRef = { editor -> activeEditor = editor },
+                                            onKeyCommand = ::handleEditorKeyCommand
                                     )
                                 }
                             }

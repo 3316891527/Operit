@@ -240,7 +240,11 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit, o
     }
 
     if (showFileBrowser) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
