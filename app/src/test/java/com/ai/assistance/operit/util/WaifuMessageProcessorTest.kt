@@ -8,12 +8,20 @@ import com.ai.assistance.operit.ui.common.markdown.XmlRenderResult
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeNoException
 import org.junit.Test
 
 class WaifuMessageProcessorTest {
+    private val registeredPluginIds = mutableListOf<String>()
+
+    @After
+    fun unregisterTestPlugins() {
+        registeredPluginIds.forEach(XmlRenderPluginRegistry::unregister)
+    }
+
     @Test
     fun calculateTypingDelayMs_firstSegmentIsImmediate() {
         assertEquals(
@@ -211,6 +219,30 @@ class WaifuMessageProcessorTest {
     }
 
     @Test
+    fun streamSegments_preservesInlineOrderedListAcrossChunks() = runBlocking {
+        requireNativeStreamSplitter()
+        val chunks = listOf("结束。1.", " ", "事项。", "后续回复。")
+        val collected = mutableListOf<String>()
+        WaifuMessageProcessor.streamSegments(stream { chunks.forEach { emit(it) } })
+            .collect { collected.add(it) }
+
+        assertTrue("不能单独输出行中的序号：$collected", collected.none { it.trim() == "1." })
+        assertTrue("行中的完整列表项保持原样：$collected", collected.any { it.contains("1. 事项。") })
+        assertTrue("列表项之后的回复继续输出：$collected", collected.any { it.contains("后续回复。") })
+    }
+
+    @Test
+    fun splitMessageBySentences_preservesUserWrittenEntityPlaceholder() {
+        requireNativeStreamSplitter()
+        val literal = "{WAIFUENTITY:99} {WAIFUENTITY:999999999999999999999}"
+        val rendered = WaifuMessageProcessor.splitMessageBySentences("$literal。https://example.com。")
+            .joinToString("")
+
+        assertTrue("用户的临时标记字面量保持原样：$rendered", rendered.contains(literal))
+        assertTrue("真实受保护链接保持原样：$rendered", rendered.contains("https://example.com"))
+    }
+
+    @Test
     fun splitMessageBySentences_preservesSupportedMarkdownAndInlineLatex() {
         requireNativeStreamSplitter()
         val content =
@@ -284,9 +316,11 @@ class WaifuMessageProcessorTest {
     }
 
     private fun registerPluginXmlTag(tagName: String) {
+        val pluginId = "test.waifu.processor.$tagName"
+        registeredPluginIds.add(pluginId)
         XmlRenderPluginRegistry.register(
             object : XmlRenderPlugin {
-                override val id: String = "test.$tagName"
+                override val id: String = pluginId
 
                 override fun supports(candidateTagName: String): Boolean {
                     return candidateTagName.equals(tagName, ignoreCase = true)
