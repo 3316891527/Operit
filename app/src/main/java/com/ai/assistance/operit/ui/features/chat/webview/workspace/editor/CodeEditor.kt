@@ -60,10 +60,12 @@ fun CodeEditor(
     onKeyCommand: ((EditorKeyCommand) -> Boolean)? = null,
     searchMatches: List<IntRange> = emptyList(),
     activeSearchMatch: Int = -1,
+    searchNavigationRequest: Int = 0,
     initialLine: Int? = null
 ) {
     val theme = getThemeForLanguage(language)
     var pendingInitialLine by remember(initialLine) { mutableStateOf(initialLine) }
+    var revealedSearchRequest by remember { mutableStateOf(searchNavigationRequest) }
     val latestCode = rememberUpdatedState(code)
     val latestOnCodeChange = rememberUpdatedState(onCodeChange)
     val latestEditorRef = rememberUpdatedState(editorRef)
@@ -164,6 +166,10 @@ fun CodeEditor(
                             view.setText(latestCode.value, fromUpdate = true)
                         }
                         view.setSearchMatches(searchMatches, activeSearchMatch)
+                        if (revealedSearchRequest != searchNavigationRequest) {
+                            view.revealActiveSearchMatch()
+                            revealedSearchRequest = searchNavigationRequest
+                        }
                         pendingInitialLine?.let { line ->
                             view.goToLine(line)
                             pendingInitialLine = null
@@ -318,6 +324,10 @@ class NativeCodeEditor @JvmOverloads constructor(
 
     fun goToLine(line: Int) {
         if (!isReleased) canvasEditorView.goToLine(line)
+    }
+
+    fun revealActiveSearchMatch() {
+        if (!isReleased) canvasEditorView.revealActiveSearchMatch()
     }
 
     fun setSearchMatches(matches: List<IntRange>, active: Int) {

@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.annotation.SuppressLint
 import android.os.Environment
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -50,10 +48,10 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.OpenFileInfo
@@ -96,10 +94,15 @@ fun FileBrowser(
     var currentPath by rememberSaveable(initialPath, environment) { mutableStateOf(initialPath) }
     var currentEnvironment by rememberSaveable(initialPath, environment) { mutableStateOf(environment) }
     var fileList by remember { mutableStateOf<List<DirectoryEntry>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
+    var isOperationLoading by remember { mutableStateOf(false) }
+    var isDirectoryLoading by remember { mutableStateOf(false) }
+    var directoryLoadJob by remember { mutableStateOf<Job?>(null) }
+    var directoryLoadVersion by remember { mutableIntStateOf(0) }
+    val isLoading = isOperationLoading || isDirectoryLoading
     val coroutineScope = rememberCoroutineScope()
     var showCreateFileDialog by remember { mutableStateOf(false) }
     var newFileName by remember { mutableStateOf("") }
+    var newFileNameError by remember { mutableStateOf(false) }
     var pendingRepoBookmarkUri by remember { mutableStateOf<Uri?>(null) }
     var repoBookmarkNameInput by remember { mutableStateOf("") }
     var showRepoBookmarkNameDialog by remember { mutableStateOf(false) }
@@ -124,29 +127,6 @@ fun FileBrowser(
     // 是否显示隐藏文件（以.开头）
     var showHiddenFiles by remember { mutableStateOf(false) }
 
-
-    fun querySafBookmarkDisplayName(uri: Uri): String {
-        return try {
-            val treeDocId = DocumentsContract.getTreeDocumentId(uri)
-            val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, treeDocId)
-            context.contentResolver.query(
-                docUri,
-                arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                val idx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                if (cursor.moveToFirst() && idx >= 0 && !cursor.isNull(idx)) {
-                    cursor.getString(idx)
-                } else {
-                    null
-                }
-            } ?: uri.toString()
-        } catch (_: Exception) {
-            uri.toString()
-        }
-    }
 
     fun queryRepoBookmarkName(uri: Uri): String {
         fun normalizeName(raw: String): String {
@@ -226,9 +206,11 @@ fun FileBrowser(
     }
 
     fun loadDirectory(path: String, targetEnvironment: String? = currentEnvironment) {
-        if (isLoading) return
-        isLoading = true
-        coroutineScope.launch {
+        // 新导航替换旧读取；旧任务的 finally 不得清除新任务的加载状态。
+        val requestVersion = ++directoryLoadVersion
+        directoryLoadJob?.cancel()
+        isDirectoryLoading = true
+        directoryLoadJob = coroutineScope.launch {
             try {
                 val localEntries =
                     if (targetEnvironment.isNullOrBlank() || targetEnvironment.equals("android", ignoreCase = true)) {
@@ -274,11 +256,13 @@ fun FileBrowser(
                 } else {
                     errorMessage = result.error
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e("WorkspaceFileBrowser", "读取目录失败", e)
                 errorMessage = e.message
             } finally {
-                isLoading = false
+                if (requestVersion == directoryLoadVersion) isDirectoryLoading = false
             }
         }
     }
@@ -367,40 +351,48 @@ fun FileBrowser(
     }
 
     fun createNewFile(fileName: String, isDirectory: Boolean) {
+        if (isLoading) return
+        if (!isValidWorkspaceEntryName(fileName)) {
+            newFileNameError = true
+            return
+        }
+        val createPath = currentPath
+        val createEnvironment = currentEnvironment
+        val createInRepository = isSafEnv
+        isOperationLoading = true
         coroutineScope.launch {
-            isLoading = true
             var succeeded = false
             try {
                 val filePath =
-                    if (isSafEnv) {
-                        joinPath(currentPath, fileName)
+                    if (createInRepository) {
+                        joinPath(createPath, fileName)
                     } else {
-                        File(currentPath, fileName).path
+                        File(createPath, fileName).path
                     }
                 val tool =
                     if (isDirectory) {
-                        AITool("make_directory", withEnvParams(listOf(ToolParameter("path", filePath))))
+                        AITool("make_directory", listOf(ToolParameter("path", filePath)) + listOfNotNull(createEnvironment?.let { ToolParameter("environment", it) }))
                     } else {
                         AITool(
                             "write_file",
-                            withEnvParams(
-                                listOf(
-                                    ToolParameter("path", filePath),
-                                    ToolParameter("content", "")
-                                )
-                            )
+                            listOf(
+                                ToolParameter("path", filePath),
+                                ToolParameter("content", "")
+                            ) + listOfNotNull(createEnvironment?.let { ToolParameter("environment", it) })
                         )
                     }
-                AppLogger.d("WorkspaceFileBrowser", "execute ${tool.name} path=$filePath env=$currentEnvironment")
+                AppLogger.d("WorkspaceFileBrowser", "execute ${tool.name} path=$filePath env=$createEnvironment")
                 val result = withContext(Dispatchers.IO) { toolHandler.executeTool(tool) }
                 check(result.success) { result.error.orEmpty() }
                 errorMessage = null
                 succeeded = true
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e("WorkspaceFileBrowser", "创建文件失败", e)
                 errorMessage = e.message
             } finally {
-                isLoading = false
+                isOperationLoading = false
             }
             if (succeeded) loadDirectory(currentPath)
         }
@@ -408,7 +400,7 @@ fun FileBrowser(
 
     fun runOperation(block: suspend () -> Unit) {
         if (isLoading) return
-        isLoading = true
+        isOperationLoading = true
         coroutineScope.launch {
             try {
                 block()
@@ -419,7 +411,7 @@ fun FileBrowser(
                 AppLogger.e("WorkspaceFileBrowser", "文件操作失败", e)
                 errorMessage = e.message
             } finally {
-                isLoading = false
+                isOperationLoading = false
             }
             loadDirectory(currentPath)
         }
@@ -428,7 +420,7 @@ fun FileBrowser(
     fun openFile(filePath: String, asText: Boolean = false) {
         if (isLoading) return
         val fileEnvironment = currentEnvironment ?: "android"
-        isLoading = true
+        isOperationLoading = true
         coroutineScope.launch {
             try {
                 val mimeType = if (asText) "text/plain" else workspaceMimeTypeForPath(filePath)
@@ -452,7 +444,7 @@ fun FileBrowser(
                 AppLogger.e("WorkspaceFileBrowser", "打开文件失败", e)
                 errorMessage = e.message
             } finally {
-                isLoading = false
+                isOperationLoading = false
             }
         }
     }
@@ -467,7 +459,11 @@ fun FileBrowser(
                     Column {
                         TextField(
                                 value = newFileName,
-                                onValueChange = { newFileName = it },
+                                onValueChange = { newFileName = it; newFileNameError = false },
+                                isError = newFileNameError,
+                                supportingText = {
+                                    if (newFileNameError) Text(stringResource(R.string.workspace_rename_name_invalid))
+                                },
                                 label = { Text(stringResource(R.string.file_manager_file_name)) },
                                 singleLine = true,
                                 colors =
@@ -484,20 +480,28 @@ fun FileBrowser(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(
                                 onClick = {
-                                    if (newFileName.isNotEmpty()) {
-                                        createNewFile(newFileName, false)
-                                        showCreateFileDialog = false
-                                        newFileName = ""
+                                    val name = newFileName.trim()
+                                    if (!isValidWorkspaceEntryName(name)) {
+                                        newFileNameError = true
+                                        return@TextButton
                                     }
+                                    createNewFile(name, false)
+                                    showCreateFileDialog = false
+                                    newFileName = ""
+                                    newFileNameError = false
                                 }
                         ) { Text(stringResource(R.string.file_manager_create_file)) }
                         TextButton(
                                 onClick = {
-                                    if (newFileName.isNotEmpty()) {
-                                        createNewFile(newFileName, true)
-                                        showCreateFileDialog = false
-                                        newFileName = ""
+                                    val name = newFileName.trim()
+                                    if (!isValidWorkspaceEntryName(name)) {
+                                        newFileNameError = true
+                                        return@TextButton
                                     }
+                                    createNewFile(name, true)
+                                    showCreateFileDialog = false
+                                    newFileName = ""
+                                    newFileNameError = false
                                 }
                         ) { Text(stringResource(R.string.file_manager_create_folder)) }
                     }
@@ -527,7 +531,11 @@ fun FileBrowser(
                 label = { Text(stringResource(R.string.file_dialog_new_name)) }) },
             confirmButton = { TextButton(onClick = {
                 val name = renameInput.trim()
-                if (name.isNotEmpty() && name !in listOf(".", "..") && '/' !in name && '\\' !in name) {
+                if (renameInput == target.name || name == target.name) {
+                    renameTarget = null
+                    return@TextButton
+                }
+                if (isValidWorkspaceEntryName(name)) {
                     renameTarget = null
                     runOperation { operations.rename(joinPath(currentPath, target.name), joinPath(currentPath, name), currentEnvironment) }
                 }
@@ -567,7 +575,7 @@ fun FileBrowser(
         FileBrowserContextMenu(target.name, target.isDirectory, clipboard != null,
             onDismiss = { contextMenuExpandedFor = null },
             onCopy = { cut ->
-                FileBrowserClipboard.set(FileBrowserClipboardItem(joinPath(currentPath, target.name), currentEnvironment, cut))
+                FileBrowserClipboard.set(FileBrowserClipboardItem(joinPath(currentPath, target.name), currentEnvironment, cut, target.isDirectory))
                 contextMenuExpandedFor = null
             },
             onPaste = {
@@ -928,8 +936,9 @@ private fun QuickPathChipWithLongPress(
     onLongPress: () -> Unit
 ) {
     var suppressClickOnce by remember(entry.name, entry.path) { mutableStateOf(false) }
+    val latestOnLongPress by rememberUpdatedState(onLongPress)
     Box(
-        modifier = Modifier.pointerInput(onLongPress) {
+        modifier = Modifier.pointerInput(entry.name, entry.path) {
             awaitEachGesture {
                 awaitFirstDown(requireUnconsumed = false)
                 val longPressed = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis.toLong()) {
@@ -939,7 +948,7 @@ private fun QuickPathChipWithLongPress(
 
                 if (longPressed) {
                     suppressClickOnce = true
-                    onLongPress()
+                    latestOnLongPress()
                     waitForUpOrCancellation()
                 }
             }
@@ -969,16 +978,17 @@ private fun FileListItem(
         detail: String = "",
         onLongPress: (() -> Unit)? = null
 ) {
+    val latestOnClick by rememberUpdatedState(onClick)
+    val latestOnLongPress by rememberUpdatedState(onLongPress)
     Row(
             modifier =
                     Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(4.dp))
-                            // 统一处理单击和长按手势，并使用 onClick 和 onLongPress 作为 key
-                            // 确保当 item 重用时，手势处理器能获取到最新的回调函数
-                            .pointerInput(onClick, onLongPress) {
+                            // 回调随重组更新，手势会话只在文件项身份改变时重启。
+                            .pointerInput(name, isDirectory) {
                                 detectTapGestures(
-                                        onTap = { onClick() },
-                                        onLongPress = { onLongPress?.invoke() }
+                                        onTap = { latestOnClick() },
+                                        onLongPress = { latestOnLongPress?.invoke() }
                                 )
                             }
                             .heightIn(min = 64.dp).padding(vertical = 12.dp, horizontal = 12.dp),

@@ -435,16 +435,20 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         if (valid == searchRanges && active == activeSearchMatch) return
         searchRanges = valid
         activeSearchMatch = active
-        valid.getOrNull(active)?.let { match ->
+        requestRender()
+    }
+
+    /** 只有用户明确选择上一处或下一处时才改变视口。 */
+    fun revealActiveSearchMatch() {
+        searchRanges.getOrNull(activeSearchMatch)?.let { match ->
             val line = document.getLineForOffset(match.first)
             setScrollOffsets(
                 max(0f, xForOffsetInLine(match.first) - textViewportWidth() / 3f),
                 max(0f, line * metrics.lineHeight - height / 3f)
             )
+            requestRender()
         }
-        requestRender()
     }
-
 
     fun undo() {
         if (document.undo()) {
@@ -780,7 +784,9 @@ class CanvasCodeEditorView @JvmOverloads constructor(
                     if (!readOnly) {
                         val syntax = CommentSyntaxRegistry.forLanguage(currentLanguage)
                         val changed = when {
-                            syntax == null || !document.hasSelection() -> false
+                            syntax == null -> false
+                            !document.hasSelection() && syntax.preferredLinePrefix != null ->
+                                document.toggleLineComment(syntax.preferredLinePrefix.orEmpty())
                             syntax.hasBlockComment -> document.toggleBlockComment(
                                 syntax.blockStart.orEmpty(),
                                 syntax.blockEnd.orEmpty()
@@ -1297,7 +1303,7 @@ class CanvasCodeEditorView @JvmOverloads constructor(
             val from = max(start, match.first)
             val to = min(end, match.last + 1)
             if (to > from) {
-                searchPaint.color = if (index == activeSearchMatch) 0x99FF8A65.toInt() else 0x66FFC107
+                searchPaint.color = (if (index == activeSearchMatch) theme.activeSearchMatchColor else theme.searchMatchColor).toArgb()
                 canvas.drawRect(textLeft + xForOffsetInLine(from) - scrollOffsetX, top,
                     textLeft + xForOffsetInLine(to) - scrollOffsetX, top + metrics.lineHeight, searchPaint)
             }

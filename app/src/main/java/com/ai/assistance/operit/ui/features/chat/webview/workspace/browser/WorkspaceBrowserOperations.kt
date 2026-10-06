@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
-internal data class FileBrowserClipboardItem(val path: String, val environment: String?, val cut: Boolean)
+internal data class FileBrowserClipboardItem(val path: String, val environment: String?, val cut: Boolean, val isDirectory: Boolean)
 
 /** 页面切换时保留剪贴板及源文件所在环境。 */
 internal object FileBrowserClipboard {
@@ -48,6 +48,7 @@ internal class FileBrowserOperations(context: Context) {
     }
 
     suspend fun rename(source: String, destination: String, environment: String?) = withContext(Dispatchers.IO) {
+        if (source == destination) return@withContext
         requireNewDestination(destination, environment)
         execute("move_file", parameters(environment, "source" to source, "destination" to destination))
         Unit
@@ -66,21 +67,26 @@ internal class FileBrowserOperations(context: Context) {
         check(sourceEnv != destinationEnv || (destination != item.path && !destination.startsWith(item.path.trimEnd('/') + "/"))) {
             context.getString(R.string.workspace_invalid_paste)
         }
+        val parent = execute("file_exists", parameters(environment, "path" to directory)).result
+        check(parent is FileExistsData && parent.exists && parent.isDirectory) {
+            context.getString(R.string.workspace_error_invalid_path, directory)
+        }
         requireNewDestination(destination, environment)
         if (item.cut && sourceEnv == destinationEnv) {
             execute("move_file", parameters(environment, "source" to item.path, "destination" to destination))
         } else {
             execute("copy_file", listOf(ToolParameter("source", item.path), ToolParameter("destination", destination),
                 ToolParameter("source_environment", sourceEnv), ToolParameter("dest_environment", destinationEnv),
-                ToolParameter("recursive", "true")))
+                ToolParameter("recursive", item.isDirectory.toString())))
             // 跨环境剪切在复制成功后才删除来源，失败时保留剪贴板和原文件。
-            if (item.cut) delete(item.path, item.environment, true)
+            if (item.cut) delete(item.path, item.environment, item.isDirectory)
         }
         if (item.cut) FileBrowserClipboard.clear(item)
     }
 
     suspend fun externalOpen(path: String, environment: String?, share: Boolean) {
         val file = withContext(Dispatchers.IO) {
+            pruneWorkspaceShareCache(File(context.cacheDir, "workspace_shared_files"))
             if (environment.isNullOrBlank() || environment == "android") File(path)
             else {
                 val result = execute("read_file_binary", parameters(environment, "path" to path))

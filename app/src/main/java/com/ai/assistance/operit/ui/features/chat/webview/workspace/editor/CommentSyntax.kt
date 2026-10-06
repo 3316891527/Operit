@@ -3,7 +3,7 @@ package com.ai.assistance.operit.ui.features.chat.webview.workspace.editor
 /**
  * 文件格式的注释规则。
  *
- * 行注释和块注释分别保存，调用方可以根据当前选区选择合适的方式。
+ * 行注释和块注释分别保存，调用方根据当前行或选区选择合适的方式。
  */
 data class CommentSyntax(
     val linePrefixes: List<String> = emptyList(),
@@ -63,6 +63,8 @@ object CommentSyntaxRegistry {
         "hlsl" to lineAndBlock("//", "/*", "*/"),
         "pascal" to lineAndBlock("//", "(*", "*)"),
         "fsharp" to lineAndBlock("//", "(*", "*)"),
+
+        "css" to block("/*", "*/"),
 
         // HTML/XML 风格块注释。
         "html" to block("<!--", "-->"),

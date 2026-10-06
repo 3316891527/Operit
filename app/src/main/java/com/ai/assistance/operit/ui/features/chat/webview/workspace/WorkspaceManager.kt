@@ -319,6 +319,8 @@ fun WorkspaceManager(
     var searchQuery by remember { mutableStateOf("") }
     var searchMatches by remember { mutableStateOf(emptyList<IntRange>()) }
     var activeMatch by remember { mutableIntStateOf(-1) }
+    var searchNavigationRequest by remember { mutableIntStateOf(0) }
+    var searchContext by remember { mutableStateOf<Pair<String?, String>?>(null) }
     var saving by remember { mutableStateOf(false) }
     var saveError by remember { mutableStateOf<String?>(null) }
 
@@ -346,10 +348,14 @@ fun WorkspaceManager(
     var activeEditor by remember { mutableStateOf<com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.NativeCodeEditor?>(null) }
     val searchableFile = openFiles.getOrNull(currentFileIndex)?.takeUnless { it.isReadOnlyPreview }
     LaunchedEffect(searchableFile?.key, searchableFile?.content, searchQuery, searchVisible) {
-        searchMatches = withContext(Dispatchers.Default) {
+        val nextContext = searchableFile?.key to searchQuery
+        val matches = withContext(Dispatchers.Default) {
             if (searchVisible) findTextMatches(searchableFile?.content.orEmpty(), searchQuery) else emptyList()
         }
-        activeMatch = if (searchMatches.isEmpty()) -1 else 0
+        // 同一文件和查询的编辑只更新高亮，不重置用户选中的匹配序号。
+        activeMatch = activeSearchMatchAfterUpdate(if (searchContext == nextContext) activeMatch else 0, matches.size)
+        searchMatches = matches
+        searchContext = nextContext
     }
 
     // 监听WebView刷新计数器变化并触发刷新
@@ -803,8 +809,18 @@ fun WorkspaceManager(
 
             if (searchVisible && searchableFile != null) {
                 FileSearchBar(searchQuery, { searchQuery = it }, searchMatches.size, activeMatch,
-                    onPrevious = { if (searchMatches.isNotEmpty()) activeMatch = (activeMatch - 1 + searchMatches.size) % searchMatches.size },
-                    onNext = { if (searchMatches.isNotEmpty()) activeMatch = (activeMatch + 1) % searchMatches.size },
+                    onPrevious = {
+                        if (searchMatches.isNotEmpty()) {
+                            activeMatch = (activeMatch - 1 + searchMatches.size) % searchMatches.size
+                            searchNavigationRequest++
+                        }
+                    },
+                    onNext = {
+                        if (searchMatches.isNotEmpty()) {
+                            activeMatch = (activeMatch + 1) % searchMatches.size
+                            searchNavigationRequest++
+                        }
+                    },
                     onClose = { searchVisible = false })
             }
             saveError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(12.dp)) }
@@ -1088,6 +1104,7 @@ fun WorkspaceManager(
                                             modifier = Modifier.fillMaxSize(),
                                             searchMatches = searchMatches,
                                             activeSearchMatch = activeMatch,
+                                            searchNavigationRequest = searchNavigationRequest,
                                             initialLine = fileInfo.initialLine,
                                             editorRef = { editor -> activeEditor = editor },
                                             onKeyCommand = ::handleEditorKeyCommand

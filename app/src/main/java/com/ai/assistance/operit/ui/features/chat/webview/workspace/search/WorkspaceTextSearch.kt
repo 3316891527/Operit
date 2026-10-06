@@ -31,6 +31,10 @@ internal fun findTextMatches(content: String, query: String): List<IntRange> {
     return matches
 }
 
+/** 重算匹配后保留当前序号；移除匹配时只调整到仍有效的范围。 */
+internal fun activeSearchMatchAfterUpdate(active: Int, count: Int): Int =
+    if (count == 0) -1 else active.coerceIn(0, count - 1)
+
 @Composable
 internal fun FileSearchBar(query: String, onQueryChange: (String) -> Unit, count: Int, active: Int,
     onPrevious: () -> Unit, onNext: () -> Unit, onClose: () -> Unit) {

@@ -5344,6 +5344,17 @@
     <string name="file_modified_save_prompt">File \'%1$s\' has been modified, save changes?</string>
     <string name="dont_save">Don\'t Save</string>
     <string name="format_code">Format Code</string>
+    <string name="workspace_open_with">Open with</string>
+    <string name="workspace_default_open">Default viewer</string>
+    <string name="workspace_open_as_text">Open as text</string>
+    <string name="workspace_open_external">Open in a system app</string>
+    <string name="workspace_invalid_paste">Cannot paste a file into itself or its own subdirectory</string>
+    <string name="workspace_search_content">Search content</string>
+    <string name="workspace_search_previous">Previous match</string>
+    <string name="workspace_search_next">Next match</string>
+    <string name="workspace_sort_descending">Descending order</string>
+    <string name="workspace_sort_ignore_case">Ignore case</string>
+    <string name="workspace_sort_folders_first">Folders first</string>
     <string name="create_default_workspace">Create Default</string>
     <string name="create_new_workspace_in_app">Create new workspace in app</string>
     <string name="select_existing_workspace">Select Existing</string>

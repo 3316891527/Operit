@@ -13,6 +13,9 @@ data class EditorTheme(
     val textColor: Color,
     val cursorColor: Color,
     val selectionColor: Color,
+    // 搜索颜色由编辑器主题提供，画布中不再固定颜色。
+    val searchMatchColor: Color,
+    val activeSearchMatchColor: Color,
 
     // 语法高亮颜色
     val keywordColor: Color,
@@ -47,6 +50,8 @@ val DarkTheme = EditorTheme(
     textColor = Color(0xFFD4D4D4),
     cursorColor = Color(0xFFAEAFAD),
     selectionColor = Color(0x80264F78),
+    searchMatchColor = Color(0x66FFC107),
+    activeSearchMatchColor = Color(0x99FF8A65),
 
     keywordColor = Color(0xFF6CB6FF),
     typeColor = Color(0xFF4EC9B0),
@@ -77,6 +82,8 @@ val LightTheme = EditorTheme(
     textColor = Color(0xFF1F2328),
     cursorColor = Color(0xFF1F2328),
     selectionColor = Color(0x66ADD6FF),
+    searchMatchColor = Color(0x66FFD54F),
+    activeSearchMatchColor = Color(0x88FFAB91),
 
     keywordColor = Color(0xFF0000FF),
     typeColor = Color(0xFF267F99),

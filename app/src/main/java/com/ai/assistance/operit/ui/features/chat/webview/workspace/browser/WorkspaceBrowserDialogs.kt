@@ -18,12 +18,13 @@ import com.ai.assistance.operit.ui.features.chat.webview.workspace.DirectoryEntr
 internal fun sortDirectoryEntries(entries: List<DirectoryEntry>, mode: Int, descending: Boolean,
     ignoreCase: Boolean, foldersFirst: Boolean): List<DirectoryEntry> {
     val names = Comparator<DirectoryEntry> { a, b -> a.name.compareTo(b.name, ignoreCase) }
+    val modifiedTimes = if (mode == 3) entries.associateWith { directoryModifiedTime(it.lastModified) } else emptyMap()
     val values = when (mode) {
         1 -> Comparator<DirectoryEntry> { a, b ->
             a.name.substringAfterLast('.', "").compareTo(b.name.substringAfterLast('.', ""), ignoreCase)
         }
         2 -> compareBy<DirectoryEntry> { it.size }
-        3 -> compareBy<DirectoryEntry> { it.lastModified }
+        3 -> compareBy<DirectoryEntry> { modifiedTimes[it] }
         else -> names
     }.then(names)
     val ordered = if (descending) values.reversed() else values

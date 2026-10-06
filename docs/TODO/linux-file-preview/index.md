@@ -19,7 +19,7 @@ branch: feat/linux-file-preview
 - 选择目录的“使用此文件夹”按钮与打开文件分开；临时打开文件不会替换当前聊天绑定的工作区。
 - 用户查看文件使用本地文件读取、解码和播放，不调用大模型。
 
-详细布局、按钮行为、验收标准及参考图片见 [01-interaction-design.md](01-interaction-design.md)。主题前景色与聊天文件入口见 [02-file-links-and-theme.md](02-file-links-and-theme.md)。
+详细布局、按钮行为、验收标准及参考图片见 [01-interaction-design.md](01-interaction-design.md)。主题前景色与聊天文件入口见 [02-file-links-and-theme.md](02-file-links-and-theme.md)。浏览与编辑的审阅修正及全量追加回归见 [03-review-fixes.md](03-review-fixes.md)。
 
 ## 实现范围与结构
 
@@ -40,3 +40,5 @@ branch: feat/linux-file-preview
 ## 当前状态
 
 已完成工作区浏览、临时编辑、长按操作、搜索、工具箱重复入口清理，以及聊天文件链接接入。文件页面通过 Surface 提供成对的主题背景和前景；聊天里的设备、Linux 和附加仓库文件保留来源进入共用查看器。构建和 JVM 回归由当前分支 Android Build、Android Tests 验证，主题可读性、实际链接打开与设备预览结果以真机记录为准。
+
+本轮已补齐取消处理、单个名称校验、连续导航、时间排序、分享缓存清理、英文文案、CSS 与三组语言扩展名，以及仅有光标时的当前行注释；搜索重算与视口定位已分离。新增九个 JVM 用例与四个 Android 仪器用例，运行结果分别记录。

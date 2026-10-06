@@ -589,16 +589,17 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun toggleLineComment(prefix: String): Boolean {
-        if (prefix.isEmpty() || !hasSelection()) return false
+        if (prefix.isEmpty()) return false
+        val commentCurrentLine = !hasSelection()
         val (firstLine, lastLine) = selectedLineBounds()
         val rangeStart = getLineStart(firstLine)
         val rangeEnd = getLineEnd(lastLine)
         val original = buffer.substring(rangeStart, rangeEnd)
         val lines = original.split('\n')
         val nonBlankLines = lines.filter { it.any { character -> !character.isWhitespace() } }
-        if (nonBlankLines.isEmpty()) return false
+        if (nonBlankLines.isEmpty() && !commentCurrentLine) return false
 
-        val allCommented = nonBlankLines.all { line ->
+        val allCommented = nonBlankLines.isNotEmpty() && nonBlankLines.all { line ->
             val firstNonWhitespace = line.indexOfFirst { !it.isWhitespace() }
             firstNonWhitespace >= 0 && line.startsWith(prefix, firstNonWhitespace)
         }
@@ -609,6 +610,11 @@ internal class EditorDocument(initialText: String = "") {
                 val firstNonWhitespace = line.indexOfFirst { !it.isWhitespace() }
                 if (firstNonWhitespace < 0) {
                     append(line)
+                    if (commentCurrentLine) {
+                        val inserted = "$prefix "
+                        edits += OffsetEdit(oldLineStart + line.length, 0, inserted.length)
+                        append(inserted)
+                    }
                 } else if (allCommented) {
                     val prefixEnd = firstNonWhitespace + prefix.length
                     val hasSpaceAfterPrefix =
@@ -649,11 +655,12 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun toggleBlockComment(startMarker: String, endMarker: String): Boolean {
-        if (startMarker.isEmpty() || endMarker.isEmpty() || !hasSelection()) return false
+        if (startMarker.isEmpty() || endMarker.isEmpty()) return false
 
-        val start = min(selectionStart, selectionEnd)
-        val end = max(selectionStart, selectionEnd)
-        if (start == end) return false
+        val hadSelection = hasSelection()
+        val line = getLineForOffset(selectionEnd)
+        val start = if (hadSelection) min(selectionStart, selectionEnd) else getLineStart(line)
+        val end = if (hadSelection) max(selectionStart, selectionEnd) else getLineEnd(line)
 
         val selected = buffer.substring(start, end)
         val alreadyCommented =
@@ -668,12 +675,14 @@ internal class EditorDocument(initialText: String = "") {
         val reversedSelection = selectionStart > selectionEnd
         val newStart = start
         val newEnd = start + replacement.length
+        val newCursor = if (alreadyCommented) (selectionEnd - startMarker.length).coerceIn(newStart, newEnd)
+            else selectionEnd + startMarker.length
         replaceRangeInternal(
             start = start,
             end = end,
             replacement = replacement,
-            afterSelectionStart = if (reversedSelection) newEnd else newStart,
-            afterSelectionEnd = if (reversedSelection) newStart else newEnd,
+            afterSelectionStart = if (!hadSelection) newCursor else if (reversedSelection) newEnd else newStart,
+            afterSelectionEnd = if (!hadSelection) newCursor else if (reversedSelection) newStart else newEnd,
             recordHistory = true
         )
         return true

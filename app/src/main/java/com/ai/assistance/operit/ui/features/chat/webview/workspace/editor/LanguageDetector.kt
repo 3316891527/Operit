@@ -20,6 +20,7 @@ object LanguageDetector {
             "java" -> "java"
             "groovy", "gradle" -> "groovy"
             "scala" -> "scala"
+            "pas", "pp" -> "pascal"
             "fs", "fsi", "fsx" -> "fsharp"
 
             // JavaScript 生态和 ActionScript。
@@ -73,6 +74,7 @@ object LanguageDetector {
             "tcl" -> "tcl"
             "awk" -> "awk"
             "raku", "rakumod" -> "raku"
+            "pl", "pm" -> "perl"
 
             // 双横线和其他语言。
             "sql" -> "sql"
@@ -92,6 +94,7 @@ object LanguageDetector {
             "rkt" -> "racket"
             "au3" -> "autoit"
             "prolog" -> "prolog"
+            "erl", "hrl" -> "erlang"
             "f", "for", "f90", "f95", "f03", "f08" -> "fortran"
             "vb" -> "vb"
             "vbs" -> "vbscript"
