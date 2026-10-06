@@ -40,6 +40,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.DirectoryListingData
 import com.ai.assistance.operit.core.tools.FileContentData
+import com.ai.assistance.operit.core.tools.FileExistsData
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
@@ -57,6 +58,8 @@ import kotlinx.coroutines.withContext
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.OpenFileInfo
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.workspaceMimeTypeForPath
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.workspaceShouldOpenAsDirectPreview
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.text.WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.text.readWorkspaceTextWithinLimit
 import com.ai.assistance.operit.util.FileUtils
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.browser.*
 
@@ -159,11 +162,6 @@ fun FileBrowser(
         if (normalized == "/") return null
         val parent = normalized.substringBeforeLast('/', missingDelimiterValue = "")
         return if (parent.isBlank()) "/" else parent
-    }
-
-    fun withEnvParams(base: List<ToolParameter>): List<ToolParameter> {
-        if (currentEnvironment.isNullOrBlank()) return base
-        return base + ToolParameter("environment", currentEnvironment!!)
     }
 
     // 快速路径定义
@@ -428,13 +426,24 @@ fun FileBrowser(
                     if (!asText && workspaceShouldOpenAsDirectPreview(filePath)) {
                         OpenFileInfo(filePath, "", System.currentTimeMillis(), mimeType = mimeType, environment = fileEnvironment)
                     } else {
-                        val tool = AITool("read_file_full", withEnvParams(listOf(
-                            ToolParameter("path", filePath), ToolParameter("text_only", "true")
-                        )))
-                        val read = toolHandler.executeTool(tool)
-                        check(read.success && read.result is FileContentData) { read.error.orEmpty() }
-                        OpenFileInfo(filePath, (read.result as FileContentData).content,
-                            System.currentTimeMillis(), mimeType = mimeType, environment = fileEnvironment)
+                        val parameters = listOf(ToolParameter("path", filePath),
+                            ToolParameter("environment", fileEnvironment))
+                        val exists = toolHandler.executeTool(AITool("file_exists", parameters))
+                        check(exists.success) { exists.error.orEmpty() }
+                        val info = exists.result
+                        check(info is FileExistsData && info.exists && !info.isDirectory) {
+                            context.getString(R.string.cannot_open_file, filePath)
+                        }
+                        checkNotNull(readWorkspaceTextWithinLimit(info.size) {
+                            val read = toolHandler.executeTool(AITool("read_file_full",
+                                parameters + ToolParameter("text_only", "true")))
+                            check(read.success && read.result is FileContentData) { read.error.orEmpty() }
+                            OpenFileInfo(filePath, (read.result as FileContentData).content,
+                                System.currentTimeMillis(), mimeType = mimeType, environment = fileEnvironment)
+                        }) {
+                            context.getString(R.string.workspace_text_preview_too_large,
+                                (WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES / (1024 * 1024)).toInt())
+                        }
                     }
                 }
                 onFileOpen(result)

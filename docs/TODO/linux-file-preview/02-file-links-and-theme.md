@@ -8,17 +8,17 @@
 
 | 链接形式 | 来源与打开行为 |
 | --- | --- |
-| `/sdcard/...`、`/storage/...`、`file:///sdcard/...` | Android 设备文件 |
+| `/sdcard/...`、`/storage/...`、`/mnt/...`、`file:///sdcard/...` | Android 设备文件 |
 | `/home/...`、`/tmp/...`、`linux:///path`、`file://linux/path` | Linux 文件 |
 | `android:///path` | 显式 Android 来源 |
 | `repo://名称/path`、`repo:名称:/path` | 指定附加仓库 |
 | `?environment=linux` 等显式来源 | 使用指定来源，不根据路径再次切换环境 |
-| `#L12`、`:12`、`?line=12` | 从路径分离一基行号，在编辑器初次打开时定位 |
+| `#L12`、`:12`、`?line=12` | 按 fragment、query、路径后缀优先级取一基行号；有有效行号时移除路径中的后缀，在每个文件初次打开时定位 |
 | HTTP、HTTPS 和其他应用协议 | 沿用原外部链接入口 |
 
-解析后使用对应环境的 file_exists 判断文件或目录，再按已有文件类型进入查看器。目录使用 FileBrowser；文本使用 read_file_full 和已有 CodeEditor；图片、音视频、PDF、Word、Excel 使用既有直接预览。ZIP 等格式显示路径、大小、打开方式和分享，可进入父目录；打开或分享实际文件继续使用已有缓存与 FileProvider URI。
+解析后使用对应环境的 file_exists 判断文件或目录，再按已有文件类型进入查看器。目录使用 FileBrowser；不超过 10 MiB 的文本使用 read_file_full 和已有 CodeEditor，超限文本停在信息页并提供明确说明、系统打开和分享，进入父目录后也受相同文本读取上限约束；图片、音视频、PDF、Word、Excel 使用既有直接预览。ZIP 等格式显示路径、大小、打开方式和分享，可进入父目录；打开或分享实际文件继续使用已有缓存与 FileProvider URI。
 
-文件链接窗口不会绑定或替换当前聊天的工作区。关闭编辑文件复用原保存、放弃、取消流程；只有关闭完成后才返回聊天或此前打开的目录。窗口的系统返回不直接销毁编辑内容。后台读取保留取消语义，并展示实际来源的错误。
+文件链接窗口不会绑定或替换当前聊天的工作区。关闭编辑文件复用原保存、放弃、取消流程；只有关闭完成后才返回聊天或此前打开的目录。CodeEditor 的初始定位状态同时使用文件标识与行号作为 key，两个不同文件即使行号相同也各自定位；同一文件编辑不重复定位。窗口的系统返回不直接销毁编辑内容。后台读取保留取消语义，并展示实际来源的错误。
 
 ## 回归范围
 
@@ -48,6 +48,8 @@
 | 9 |  |  |  |
 | 10 |  |  |  |
 
-WorkspaceFileLinkTest 包含八组 JVM 用例，覆盖设备与 Linux 来源、显式环境、仓库名称、中文与空格编码、行号、目录与 ZIP，以及普通外部和异常链接。由 Android Tests 工作流执行，构建由 Android Build 验证；本地未执行 Android 构建或测试。真机效果以以上实测表填写结果为准。
+WorkspaceFileLinkTest 现在包含十一组 JVM 用例，覆盖设备与 Linux 来源、显式环境、仓库名称、中文与空格编码、行号、目录与 ZIP，以及普通外部和异常链接。上一提交 a6ae432c 的 [Android Tests](https://github.com/3316891527/Operit/actions/runs/37437510135) 已成功完成。本轮追加三组解析用例和三组大小边界用例，更新后的 Android Tests 验证新增部分，构建由 Android Build 验证；本地未执行 Android 构建或测试。真机效果以以上实测表填写结果为准。
 
 [DONE] 入口、主题前景与行号接线已实现；构建、JVM 和真机结果分别记录。
+
+本轮七项追加回归及独立结果表见 [04-file-links-review.md](04-file-links-review.md)。

@@ -51,6 +51,7 @@ import kotlin.math.roundToInt
 fun CodeEditor(
     code: String,
     language: String,
+    fileKey: String,
     onCodeChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
@@ -64,7 +65,8 @@ fun CodeEditor(
     initialLine: Int? = null
 ) {
     val theme = getThemeForLanguage(language)
-    var pendingInitialLine by remember(initialLine) { mutableStateOf(initialLine) }
+    // 文件切换重新消费初始定位，同一文件编辑不会重复定位。
+    var pendingInitialLine by remember(fileKey, initialLine) { mutableStateOf(initialLine) }
     var revealedSearchRequest by remember { mutableStateOf(searchNavigationRequest) }
     val latestCode = rememberUpdatedState(code)
     val latestOnCodeChange = rememberUpdatedState(onCodeChange)

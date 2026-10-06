@@ -1090,6 +1090,7 @@ fun WorkspaceManager(
                                     CodeEditor(
                                             code = fileInfo.content,
                                             language = fileLanguage,
+                                            fileKey = fileInfo.key,
                                             onCodeChange = { newContent ->
                                                 val updatedFiles = openFiles.toMutableList()
                                                 if (currentFileIndex in updatedFiles.indices) {

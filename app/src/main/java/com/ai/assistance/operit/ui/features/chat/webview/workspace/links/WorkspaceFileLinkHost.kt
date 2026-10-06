@@ -30,6 +30,8 @@ import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceMana
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.browser.FileBrowserOperations
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.workspaceMimeTypeForPath
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.workspaceShouldOpenAsDirectPreview
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.text.WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.text.readWorkspaceTextWithinLimit
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.FileUtils
 import java.io.File
@@ -99,7 +101,7 @@ private fun WorkspaceFileLinkDialog(
                     workspaceShouldOpenAsDirectPreview(target.path) ->
                         OpenFileInfo(target.path, "", System.currentTimeMillis(),
                             mimeType = workspaceMimeTypeForPath(target.path), environment = target.environment)
-                    FileUtils.isTextBasedFileName(File(target.path).name) -> {
+                    FileUtils.isTextBasedFileName(File(target.path).name) -> readWorkspaceTextWithinLimit(info.size) {
                         val read = handler.executeTool(AITool("read_file_full", parameters + ToolParameter("text_only", "true")))
                         check(read.success) { read.error.orEmpty() }
                         val result = read.result
@@ -178,6 +180,11 @@ private fun WorkspaceFileLinkDialog(
                                 val info = fileInfo
                                 if (info != null) {
                                     Text("${stringResource(R.string.ffmpeg_file_size)}: ${info.size}")
+                                    if (FileUtils.isTextBasedFileName(File(target.path).name) &&
+                                        info.size > WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES) {
+                                        Text(stringResource(R.string.workspace_text_preview_too_large,
+                                            (WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES / (1024 * 1024)).toInt()))
+                                    }
                                     fun openExternal(share: Boolean) {
                                         loading = true
                                         scope.launch {

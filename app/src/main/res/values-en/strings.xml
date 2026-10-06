@@ -5345,6 +5345,7 @@
     <string name="dont_save">Don\'t Save</string>
     <string name="format_code">Format Code</string>
     <string name="workspace_open_with">Open with</string>
+    <string name="workspace_text_preview_too_large">Text exceeds %1$d MiB and will not be loaded in the app. Open it with a system app.</string>
     <string name="workspace_default_open">Default viewer</string>
     <string name="workspace_open_as_text">Open as text</string>
     <string name="workspace_open_external">Open in a system app</string>

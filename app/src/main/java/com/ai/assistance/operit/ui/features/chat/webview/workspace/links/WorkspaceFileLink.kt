@@ -62,6 +62,8 @@ internal fun parseWorkspaceFileLink(url: String): WorkspaceFileLink? {
             ?.groupValues?.get(1)?.toIntOrNull()
     }
     val suffix = Regex("^(.+):([0-9]+)$").matchEntire(path)
+    // 定位优先级为 fragment、query、路径后缀；后缀始终是定位语法，
+    // 即使行号取自更高优先级的来源，也要将后缀从真实文件路径中移除。
     val line = (fragmentLine ?: query["line"]?.toIntOrNull() ?: suffix?.groupValues?.get(2)?.toIntOrNull())
         ?.takeIf { it > 0 }
     if (suffix != null && line != null) path = suffix.groupValues[1]
@@ -69,6 +71,7 @@ internal fun parseWorkspaceFileLink(url: String): WorkspaceFileLink? {
 }
 
 private fun inferWorkspaceFileEnvironment(path: String): String {
-    val deviceRoots = listOf("/sdcard", "/storage", "/data", "/system", "/vendor", "/apex")
+    // Android 的外部存储与 OTG 挂载包含 /mnt；显式协议及 environment 参数仍优先。
+    val deviceRoots = listOf("/sdcard", "/storage", "/mnt", "/data", "/system", "/vendor", "/apex")
     return if (deviceRoots.any { path == it || path.startsWith("$it/") }) "android" else "linux"
 }

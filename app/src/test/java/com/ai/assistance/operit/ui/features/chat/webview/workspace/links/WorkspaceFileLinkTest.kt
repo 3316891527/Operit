@@ -47,6 +47,32 @@ class WorkspaceFileLinkTest {
     }
 
     @Test
+    fun explicitLineLocationsOverrideSuffixAndAlwaysStripItsPathSyntax() {
+        assertEquals(WorkspaceFileLink("/tmp/a.kt", "linux", 12),
+            parseWorkspaceFileLink("/tmp/a.kt:34?line=9#L12"))
+        assertEquals(WorkspaceFileLink("/tmp/a.kt", "linux", 9),
+            parseWorkspaceFileLink("/tmp/a.kt:34?line=9"))
+        assertEquals(WorkspaceFileLink("/tmp/a.kt", "linux", 34),
+            parseWorkspaceFileLink("/tmp/a.kt:34"))
+    }
+
+    @Test
+    fun androidMountRootsDoNotCaptureSimilarlyNamedLinuxDirectories() {
+        for (path in listOf("/mnt", "/mnt/media_rw/USB/中文 文档.txt", "/mnt/runtime/default/a.md")) {
+            assertEquals(WorkspaceFileLink(path, "android"), parseWorkspaceFileLink(path))
+            assertEquals(WorkspaceFileLink(path, "android"), parseWorkspaceFileLink("file://$path"))
+        }
+        assertEquals(WorkspaceFileLink("/mnt-other/a.txt", "linux"), parseWorkspaceFileLink("/mnt-other/a.txt"))
+    }
+
+    @Test
+    fun explicitLinuxEnvironmentStillWinsForMountPaths() {
+        assertEquals(WorkspaceFileLink("/mnt/a.txt", "linux"), parseWorkspaceFileLink("linux:///mnt/a.txt"))
+        assertEquals(WorkspaceFileLink("/mnt/a.txt", "linux"), parseWorkspaceFileLink("file://linux/mnt/a.txt"))
+        assertEquals(WorkspaceFileLink("/mnt/a.txt", "linux"), parseWorkspaceFileLink("/mnt/a.txt?environment=linux"))
+    }
+
+    @Test
     fun directoryAndArchiveLinksUseTheSameFileEntry() {
         assertEquals(WorkspaceFileLink("/sdcard/Download/", "android"), parseWorkspaceFileLink("/sdcard/Download/"))
         assertEquals(WorkspaceFileLink("/tmp/test.zip", "linux"), parseWorkspaceFileLink("/tmp/test.zip"))
