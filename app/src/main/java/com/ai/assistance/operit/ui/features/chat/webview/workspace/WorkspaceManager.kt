@@ -589,13 +589,11 @@ fun WorkspaceManager(
         }
     }
 
-    // 根容器绘制不透明背景，避免打开文件后的编辑操作栏透出聊天内容。
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 1f))
-                .imePadding()
+    // 不透明底色与主题前景色一起提供，避免编辑按钮沿用外层聊天颜色。
+    Surface(
+        modifier = Modifier.fillMaxSize().imePadding(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 1f),
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         BackHandler(enabled = currentFileIndex != -2 && !activePreviewCanGoBack) {
             if (standalone && currentFileIndex in openFiles.indices) closeFile(currentFileIndex)
@@ -634,6 +632,7 @@ fun WorkspaceManager(
             // 整合后的顶部栏：标签 + 动态操作
             Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     shadowElevation = 2.dp,
                     modifier = Modifier.zIndex(1f) // 强制将标签栏置于顶层，防止被WebView覆盖
             ) {
@@ -1089,6 +1088,7 @@ fun WorkspaceManager(
                                             modifier = Modifier.fillMaxSize(),
                                             searchMatches = searchMatches,
                                             activeSearchMatch = activeMatch,
+                                            initialLine = fileInfo.initialLine,
                                             editorRef = { editor -> activeEditor = editor },
                                             onKeyCommand = ::handleEditorKeyCommand
                                     )

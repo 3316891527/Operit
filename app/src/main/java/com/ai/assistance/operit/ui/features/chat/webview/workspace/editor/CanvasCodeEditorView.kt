@@ -417,6 +417,18 @@ class CanvasCodeEditorView @JvmOverloads constructor(
 
     fun getTextContent(): String = document.textString()
 
+    /** 行号链接按一基行号定位，等待布局完成后滚动到目标光标。 */
+    fun goToLine(line: Int) {
+        val targetLine = (line - 1).coerceIn(0, document.lineCount() - 1)
+        document.collapseSelection(document.getLineStart(targetLine))
+        preferredColumnCells = null
+        notifySelectionChanged()
+        post {
+            ensureCursorVisible()
+            requestRender()
+        }
+    }
+
     /** 搜索高亮不改变光标和选择范围，长按复制仍使用原始文本。 */
     fun setSearchMatches(matches: List<IntRange>, active: Int) {
         val valid = matches.filter { !it.isEmpty() && it.first >= 0 && it.last < document.length() }

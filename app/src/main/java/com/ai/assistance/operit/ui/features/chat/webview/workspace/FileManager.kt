@@ -583,10 +583,12 @@ fun FileBrowser(
             onDelete = { contextMenuExpandedFor = null; deleteTarget = target })
     }
 
-    Box(
+    // 浏览工具栏使用文件页面的主题前景，不继承聊天背景上的颜色。
+    Surface(
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 1f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
             modifier =
                     Modifier.fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface) // 设置不透明背景
                             .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null, // 移除点击时的涟漪效果

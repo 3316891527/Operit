@@ -11,7 +11,8 @@ data class OpenFileInfo(
     val lastModified: Long,
     val name: String = File(path).name,
     val mimeType: String = "",
-    val environment: String = "android"
+    val environment: String = "android",
+    val initialLine: Int? = null
 )
 
 internal val OpenFileInfo.key: String
