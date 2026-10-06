@@ -51,7 +51,8 @@ fun WorkspaceScreen(
                 isVisible = isVisible,
                 onExportClick = onExportClick,
                 initialFile = file,
-                onReturnToBrowser = { temporaryFile = null }
+                // 保留临时浏览器实例，关闭文件后回到打开文件所在目录。
+                onReturnToBrowser = {}
             )
         }
     } else if (currentChat != null) {
