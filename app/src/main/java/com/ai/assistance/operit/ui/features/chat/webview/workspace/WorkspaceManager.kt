@@ -589,11 +589,12 @@ fun WorkspaceManager(
         }
     }
 
-    // 新的布局根节点，使用Box来支持FAB和底部面板的覆盖
+    // 根容器绘制不透明背景，避免打开文件后的编辑操作栏透出聊天内容。
     Box(
         modifier =
             Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 1f))
                 .imePadding()
     ) {
         BackHandler(enabled = currentFileIndex != -2 && !activePreviewCanGoBack) {
@@ -632,7 +633,7 @@ fun WorkspaceManager(
             }
             // 整合后的顶部栏：标签 + 动态操作
             Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f),
                     shadowElevation = 2.dp,
                     modifier = Modifier.zIndex(1f) // 强制将标签栏置于顶层，防止被WebView覆盖
             ) {
@@ -1446,7 +1447,7 @@ fun VSCodeTab(
         onClick: () -> Unit
 ) {
     val backgroundColor =
-            if (isActive) MaterialTheme.colorScheme.surface else Color.Transparent // 非活动标签背景透明
+            if (isActive) MaterialTheme.colorScheme.surface.copy(alpha = 1f) else Color.Transparent // 非活动标签使用顶部栏底色
 
     val contentColor =
             if (isActive) MaterialTheme.colorScheme.primary
