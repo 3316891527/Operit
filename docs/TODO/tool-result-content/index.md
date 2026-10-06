@@ -17,3 +17,5 @@ status: implemented
 - 验证：补充 JVM 和 Android 原生用例；仓库 Android Tests、Android Build 在推送后派发，设备用例尚未执行
 
 实现位置、预期行为和全量回归清单见 [实现与验证](./01-implementation.md)。
+
+最新完整固定回归、可选实时检查和用户设备判定见[设备回归](./04-device-regression.md)，输入与可填写结果表位于 `fixtures/`。
