@@ -1,8 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.webview.workspace
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,26 +10,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.chat.webview.createAndGetDefaultWorkspace
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import android.content.Intent
-import android.net.Uri
-import android.provider.DocumentsContract
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
-import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.ui.features.chat.webview.createAndResetWorkspaceDirectory
 import kotlinx.coroutines.*
 
@@ -42,81 +29,17 @@ import kotlinx.coroutines.*
 @Composable
 fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit, onFileOpen: (OpenFileInfo) -> Unit) {
     val context = LocalContext.current
-    var showFileBrowser by remember { mutableStateOf(true) }
     var showProjectTypeDialog by remember { mutableStateOf(false) }
     var projectTypeDialogError by remember { mutableStateOf<String?>(null) }
     var isImportingToolPkgTemplate by remember { mutableStateOf(false) }
-
-    var pendingRepoBookmarkUri by remember { mutableStateOf<Uri?>(null) }
-    var repoBookmarkNameInput by remember { mutableStateOf("") }
-    var showRepoBookmarkNameDialog by remember { mutableStateOf(false) }
-    var repoBookmarkNameError by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
     val toolHandler = remember { AIToolHandler.getInstance(context) }
     val packageManager = remember { PackageManager.getInstance(context, toolHandler) }
     var toolPkgWorkspaceTemplates by remember { mutableStateOf<List<PackageManager.ToolPkgWorkspaceTemplate>>(emptyList()) }
 
-    val apiPreferences = remember { ApiPreferences.getInstance(context) }
-    val safBookmarks by apiPreferences.safBookmarksFlow.collectAsState(initial = emptyList())
-
     LaunchedEffect(Unit) {
         toolPkgWorkspaceTemplates = packageManager.getToolPkgWorkspaceTemplates(context)
-    }
-
-    fun querySafBookmarkDisplayName(uri: Uri): String {
-        return try {
-            val treeDocId = DocumentsContract.getTreeDocumentId(uri)
-            val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, treeDocId)
-
-            context.contentResolver.query(
-                docUri,
-                arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                val idx = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                if (cursor.moveToFirst() && idx >= 0 && !cursor.isNull(idx)) {
-                    cursor.getString(idx)
-                } else {
-                    null
-                }
-            } ?: uri.toString()
-        } catch (_: Exception) {
-            uri.toString()
-        }
-    }
-
-    fun queryRepoBookmarkName(uri: Uri): String {
-        fun normalizeName(raw: String): String {
-            return raw.trim()
-                .lowercase(java.util.Locale.ROOT)
-                .replace(Regex("\\s+"), "_")
-                .ifBlank { "repo" }
-        }
-
-        val providerLabel =
-            runCatching {
-                val authority = uri.authority ?: return@runCatching null
-                val provider = context.packageManager.resolveContentProvider(authority, 0)
-                provider?.applicationInfo?.loadLabel(context.packageManager)?.toString()?.trim()
-            }.getOrNull()
-
-        val raw = providerLabel?.takeIf { it.isNotBlank() } ?: uri.authority ?: "repo"
-        return normalizeName(raw)
-    }
-
-    val bindSafLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, flags) }
-            pendingRepoBookmarkUri = uri
-            repoBookmarkNameInput = queryRepoBookmarkName(uri)
-            showRepoBookmarkNameDialog = true
-        }
     }
 
     fun bindBuiltInWorkspace(projectType: String?) {
@@ -168,354 +91,231 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit, o
         }
     }
 
-    if (showRepoBookmarkNameDialog) {
+    if (showProjectTypeDialog) {
         AlertDialog(
             onDismissRequest = {
-                showRepoBookmarkNameDialog = false
-                pendingRepoBookmarkUri = null
-                repoBookmarkNameError = null
+                if (!isImportingToolPkgTemplate) {
+                    showProjectTypeDialog = false
+                    projectTypeDialogError = null
+                }
             },
-            title = { Text(context.getString(R.string.repo_bookmark_name)) },
-            text = {
-                TextField(
-                    value = repoBookmarkNameInput,
-                    onValueChange = {
-                        repoBookmarkNameInput = it
-                        repoBookmarkNameError = null
-                    },
-                    label = { Text(context.getString(R.string.repo_bookmark_name_label)) },
-                    singleLine = true,
-                    isError = repoBookmarkNameError != null,
-                    supportingText = {
-                        repoBookmarkNameError?.let { Text(it) }
-                    }
+            title = {
+                Text(
+                    text = context.getString(R.string.workspace_select_language_type_title),
+                    style = MaterialTheme.typography.headlineSmall
                 )
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val uri = pendingRepoBookmarkUri
-                        val name = repoBookmarkNameInput.trim()
-                        if (uri == null) {
-                            showRepoBookmarkNameDialog = false
-                            pendingRepoBookmarkUri = null
-                            repoBookmarkNameError = null
-                            return@TextButton
-                        }
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = context.getString(R.string.workspace_select_language_type_prompt),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                        if (name.isEmpty()) {
-                            repoBookmarkNameError = context.getString(R.string.repo_bookmark_name_empty)
-                            return@TextButton
-                        }
-
-                        val nameExists = safBookmarks.any {
-                            it.uri != uri.toString() && it.name.equals(name, ignoreCase = true)
-                        }
-                        if (nameExists) {
-                            repoBookmarkNameError = context.getString(R.string.repo_bookmark_name_exists)
-                            return@TextButton
-                        }
-
-                        scope.launch {
-                            apiPreferences.addSafBookmark(uri.toString(), name)
-                            onBindWorkspace("/", "repo:$name")
-                        }
-
-                        showRepoBookmarkNameDialog = false
-                        pendingRepoBookmarkUri = null
-                        repoBookmarkNameError = null
+                    projectTypeDialogError?.let { error ->
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
-                ) { Text(context.getString(android.R.string.ok)) }
+
+                    if (isImportingToolPkgTemplate) {
+                        Text(
+                            text = context.getString(R.string.workspace_template_importing),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ProjectTypeCard(
+                        icon = Icons.Default.CreateNewFolder,
+                        title = context.getString(R.string.workspace_project_type_blank_title),
+                        description = context.getString(R.string.workspace_project_type_blank_description),
+                        onClick = {
+                            bindBuiltInWorkspace("blank")
+                        }
+                    )
+
+                    // Office 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Description,
+                        title = context.getString(R.string.workspace_project_type_office_title),
+                        description = context.getString(R.string.workspace_project_type_office_description),
+                        onClick = {
+                            bindBuiltInWorkspace("office")
+                        }
+                    )
+
+                    // Web 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Language,
+                        title = context.getString(R.string.workspace_project_type_web_title),
+                        description = context.getString(R.string.workspace_project_type_web_description),
+                        onClick = {
+                            bindBuiltInWorkspace(null)
+                        }
+                    )
+
+                    // Android 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.PhoneAndroid,
+                        title = context.getString(R.string.workspace_project_type_android_title),
+                        description = context.getString(R.string.workspace_project_type_android_description),
+                        onClick = {
+                            bindBuiltInWorkspace("android")
+                        }
+                    )
+
+                    // Flutter 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Widgets,
+                        title = context.getString(R.string.workspace_project_type_flutter_title),
+                        description = context.getString(R.string.workspace_project_type_flutter_description),
+                        onClick = {
+                            bindBuiltInWorkspace("flutter")
+                        }
+                    )
+
+                    // Node.js 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Terminal,
+                        title = context.getString(R.string.workspace_project_type_node_title),
+                        description = context.getString(R.string.workspace_project_type_node_description),
+                        onClick = {
+                            bindBuiltInWorkspace("node")
+                        }
+                    )
+
+                    // TypeScript 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Code,
+                        title = context.getString(R.string.workspace_project_type_typescript_title),
+                        description = context.getString(R.string.workspace_project_type_typescript_description),
+                        onClick = {
+                            bindBuiltInWorkspace("typescript")
+                        }
+                    )
+
+                    // Python 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Code,
+                        title = context.getString(R.string.workspace_project_type_python_title),
+                        description = context.getString(R.string.workspace_project_type_python_description),
+                        onClick = {
+                            bindBuiltInWorkspace("python")
+                        }
+                    )
+
+                    // Java 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Settings,
+                        title = context.getString(R.string.workspace_project_type_java_title),
+                        description = context.getString(R.string.workspace_project_type_java_description),
+                        onClick = {
+                            bindBuiltInWorkspace("java")
+                        }
+                    )
+
+                    // Go 项目卡片
+                    ProjectTypeCard(
+                        icon = Icons.Default.Build,
+                        title = context.getString(R.string.workspace_project_type_go_title),
+                        description = context.getString(R.string.workspace_project_type_go_description),
+                        onClick = {
+                            bindBuiltInWorkspace("go")
+                        }
+                    )
+
+                    if (toolPkgWorkspaceTemplates.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = context.getString(R.string.workspace_project_type_toolpkg_section),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        toolPkgWorkspaceTemplates.forEach { template ->
+                            ProjectTypeCard(
+                                icon = Icons.Default.Extension,
+                                title = template.displayName,
+                                description =
+                                    buildString {
+                                        append(template.containerPackageName)
+                                        if (template.description.isNotBlank()) {
+                                            append(" · ")
+                                            append(template.description)
+                                        }
+                                    },
+                                onClick = {
+                                    importToolPkgWorkspaceTemplate(template)
+                                }
+                            )
+                        }
+                    }
+                }
             },
+            confirmButton = {},
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showRepoBookmarkNameDialog = false
-                        pendingRepoBookmarkUri = null
-                        repoBookmarkNameError = null
-                    }
-                ) { Text(context.getString(android.R.string.cancel)) }
+                        showProjectTypeDialog = false
+                        projectTypeDialogError = null
+                    },
+                    enabled = !isImportingToolPkgTemplate
+                ) {
+                    Text(context.getString(R.string.cancel))
+                }
             }
         )
     }
 
-    if (showFileBrowser) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = context.getString(R.string.setup_workspace),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = context.getString(R.string.select_folder_from_device),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                TextButton(onClick = { showFileBrowser = false }) {
-                    Icon(Icons.Default.CreateNewFolder, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(context.getString(R.string.create_default_workspace))
-                }
-            }
-            HorizontalDivider()
-            Box(modifier = Modifier.weight(1f)) {
-                FileBrowser(
-                    initialPath = context.filesDir.absolutePath,
-                    onBindWorkspace = { path, env -> onBindWorkspace(path, env) },
-                    onCancel = { showFileBrowser = false },
-                    showHeader = false,
-                    onFileOpen = onFileOpen
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = context.getString(R.string.setup_workspace),
+                    style = MaterialTheme.typography.titleLarge
                 )
+                Text(
+                    text = context.getString(R.string.select_folder_from_device),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = {
+                projectTypeDialogError = null
+                showProjectTypeDialog = true
+            }) {
+                Icon(Icons.Default.CreateNewFolder, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(context.getString(R.string.create_default_workspace))
             }
         }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null, // 移除点击时的涟漪效果
-                    enabled = true,
-                    onClick = {}
-                ) // 添加点击拦截
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            if (showProjectTypeDialog) {
-                AlertDialog(
-                    onDismissRequest = {
-                        if (!isImportingToolPkgTemplate) {
-                            showProjectTypeDialog = false
-                            projectTypeDialogError = null
-                        }
-                    },
-                    title = {
-                        Text(
-                            text = context.getString(R.string.workspace_select_language_type_title),
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                    },
-                    text = {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = context.getString(R.string.workspace_select_language_type_prompt),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            projectTypeDialogError?.let { error ->
-                                Text(
-                                    text = error,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-
-                            if (isImportingToolPkgTemplate) {
-                                Text(
-                                    text = context.getString(R.string.workspace_template_importing),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            ProjectTypeCard(
-                                icon = Icons.Default.CreateNewFolder,
-                                title = context.getString(R.string.workspace_project_type_blank_title),
-                                description = context.getString(R.string.workspace_project_type_blank_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("blank")
-                                }
-                            )
-                            
-                            // Office 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Description,
-                                title = context.getString(R.string.workspace_project_type_office_title),
-                                description = context.getString(R.string.workspace_project_type_office_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("office")
-                                }
-                            )
-                            
-                            // Web 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Language,
-                                title = context.getString(R.string.workspace_project_type_web_title),
-                                description = context.getString(R.string.workspace_project_type_web_description),
-                                onClick = {
-                                    bindBuiltInWorkspace(null)
-                                }
-                            )
-
-                            // Android 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.PhoneAndroid,
-                                title = context.getString(R.string.workspace_project_type_android_title),
-                                description = context.getString(R.string.workspace_project_type_android_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("android")
-                                }
-                            )
-
-                            // Flutter 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Widgets,
-                                title = context.getString(R.string.workspace_project_type_flutter_title),
-                                description = context.getString(R.string.workspace_project_type_flutter_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("flutter")
-                                }
-                            )
-                             
-                            // Node.js 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Terminal,
-                                title = context.getString(R.string.workspace_project_type_node_title),
-                                description = context.getString(R.string.workspace_project_type_node_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("node")
-                                }
-                            )
-                            
-                            // TypeScript 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Code,
-                                title = context.getString(R.string.workspace_project_type_typescript_title),
-                                description = context.getString(R.string.workspace_project_type_typescript_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("typescript")
-                                }
-                            )
-                            
-                            // Python 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Code,
-                                title = context.getString(R.string.workspace_project_type_python_title),
-                                description = context.getString(R.string.workspace_project_type_python_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("python")
-                                }
-                            )
-                            
-                            // Java 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Settings,
-                                title = context.getString(R.string.workspace_project_type_java_title),
-                                description = context.getString(R.string.workspace_project_type_java_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("java")
-                                }
-                            )
-                            
-                            // Go 项目卡片
-                            ProjectTypeCard(
-                                icon = Icons.Default.Build,
-                                title = context.getString(R.string.workspace_project_type_go_title),
-                                description = context.getString(R.string.workspace_project_type_go_description),
-                                onClick = {
-                                    bindBuiltInWorkspace("go")
-                                }
-                            )
-
-                            if (toolPkgWorkspaceTemplates.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = context.getString(R.string.workspace_project_type_toolpkg_section),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-
-                                toolPkgWorkspaceTemplates.forEach { template ->
-                                    ProjectTypeCard(
-                                        icon = Icons.Default.Extension,
-                                        title = template.displayName,
-                                        description =
-                                            buildString {
-                                                append(template.containerPackageName)
-                                                if (template.description.isNotBlank()) {
-                                                    append(" · ")
-                                                    append(template.description)
-                                                }
-                                            },
-                                        onClick = {
-                                            importToolPkgWorkspaceTemplate(template)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {},
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                showProjectTypeDialog = false
-                                projectTypeDialogError = null
-                            },
-                            enabled = !isImportingToolPkgTemplate
-                        ) {
-                            Text(context.getString(R.string.cancel))
-                        }
-                    }
-                )
-            }
-
-            // VSCode风格的图标
-            Icon(
-                imageVector = Icons.Default.Widgets, // 使用更通用的图标
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary
+        HorizontalDivider()
+        Box(modifier = Modifier.weight(1f)) {
+            FileBrowser(
+                initialPath = context.filesDir.absolutePath,
+                onBindWorkspace = { path, env -> onBindWorkspace(path, env) },
+                onCancel = {},
+                showHeader = false,
+                onFileOpen = onFileOpen
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Text(
-                text = context.getString(R.string.setup_workspace),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Text(
-                text = context.getString(R.string.workspace_description),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                ProjectTypeCard(Icons.Default.CreateNewFolder, context.getString(R.string.create_default_workspace),
-                    context.getString(R.string.create_new_workspace_in_app)) {
-                    projectTypeDialogError = null
-                    showProjectTypeDialog = true
-                }
-                ProjectTypeCard(Icons.Default.FolderOpen, context.getString(R.string.select_existing_workspace),
-                    context.getString(R.string.select_folder_from_device)) { showFileBrowser = true }
-            }
         }
     }
 }
@@ -565,7 +365,7 @@ fun ProjectTypeCard(
                     )
                 }
             }
-            
+
             // 文字内容
             Column(
                 modifier = Modifier.weight(1f),

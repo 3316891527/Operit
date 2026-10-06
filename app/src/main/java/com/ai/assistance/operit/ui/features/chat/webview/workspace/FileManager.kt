@@ -850,7 +850,11 @@ fun FileBrowser(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.file_manager_cancel)) }
+                    if (showHeader) {
+                        OutlinedButton(onClick = onCancel) { Text(stringResource(R.string.file_manager_cancel)) }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                     Button(
                         onClick = {
                             AppLogger.d(
