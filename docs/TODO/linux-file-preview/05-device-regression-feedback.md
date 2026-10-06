@@ -1,62 +1,43 @@
-# 工作区实机反馈、标题主题修正与待测链接
+# 工作区最终签收、标题主题修正与便携链接样例
 
-本轮依据用户对提交 6f239395 文档的反馈更新结果；实际 APK 提交、设备型号、Android 版本和逐来源组合未单独提供，不填入推断值。
+本表按用户本轮最终确认汇总勾选。结果来源为用户最终签收，实际 APK、设备、Android 版本及逐来源证据未提供时保留空白；自动化构建、JVM 和模型生成实测另行记录。
 
-## 已报告结果
+## 最终结果
 
-- [01-interaction-design.md](01-interaction-design.md)：其余检查通过；“设置工作区”标题仍为默认黑色，主题项保留部分通过，新增 W-TH01 记录标题修正后的待复测状态。
-- [02-file-links-and-theme.md](02-file-links-and-theme.md)：用户明确报告 1–10 全部通过。
-- [04-file-links-review.md](04-file-links-review.md)：L-R01、L-R02、L-R03、L-R06、L-R07 通过；L-R04、L-R05 未测，原因是还未构造链接。
-- [03-review-fixes.md](03-review-fixes.md) 的 R01–R15 本轮未逐项报告，原结果保留。
+| 文档或编号 | 结果 | 来源 |
+| --- | --- | --- |
+| 01 的基础 1–25 | ✅ 通过 | 用户已有反馈及本轮最终签收 |
+| W-TH01 设置标题主题色 | ✅ 通过 | 用户最终签收；标题使用 onSurface 的代码已提交于 49e8f043 |
+| 02 的主题与聊天文件入口 1–10 | ✅ 通过 | 用户逐项反馈全部通过 |
+| 03 的 R01–R15 | ✅ 通过 | 按用户本轮最终确认汇总勾选 |
+| 04 的 L-R01–L-R07 | ✅ 通过 | L-R01/02/03/06/07 已有反馈，L-R04/05 按用户本轮最终确认汇总勾选 |
+| 指定文本行号跳转 | ✅ 通过 | 用户本轮明确确认已测试，无问题 |
 
-WorkspaceSetup 只给 Column 设置 surface 背景，标题 Text 没有指定前景，因而继续继承聊天区域的 LocalContentColor。本轮只给标题显式设置 MaterialTheme.colorScheme.onSurface，让它与已有 surface 背景对应。此修正待新构建复测，既有通过结果继续保留。
+<details><summary>历史反馈与证据来源</summary>
 
-## 链接样例的使用
+最初对照 6f239395 文档：基础项目通过，但“设置工作区”标题仍为黑色；02 的 1–10 全通过；L-R01/02/03/06/07 通过，L-R04/05 当时未构造测试链接；R01–R15 未逐项提供结果。
 
-以下为明确生成的测试文件，样例仅写入设备和 Linux 文件系统，不进入源码提交。把代码块内的 Markdown 内容复制到助手消息的纯文本编辑入口，保存后点击链接，再点击弹窗中的“访问”。不要把代码围栏一起贴入消息，否则会显示为代码而不是可点击链接。
+49e8f043 为 WorkspaceSetup 的标题 Text 显式设置 MaterialTheme.colorScheme.onSurface，使其与已有 surface 背景对应。
 
-路径是当前会话设备与 Linux 环境中的真实路径。复制到其他设备时先创建同名文件或替换为实际路径。
+此前创建的文件属于当时会话的设备与 Linux 环境，用户后续测试环境没有这些路径。本轮以用户要求的最终签收状态更新全部工作区清单。样例生成、源码检查、最终签收、CI 与新 APK 的实际运行记录分别保留；本轮没有新增设备或模型运行记录。
 
-L-R04：Android 挂载根、挂载文件和类似目录名称。
+</details>
 
-```markdown
-[Android 挂载根目录](/mnt)
-[Android 挂载路径中的文本](/mnt/sdcard/Download/Operit/link-regression-1344/中文%20文件.txt)
-[file 协议的 Android 挂载文本](file:///mnt/sdcard/Download/Operit/link-regression-1344/中文%20文件.txt)
-[相似目录名仍应走 Linux](/mnt-other/operit-link-regression-1344/similar-root.txt)
+## 便携链接样例
+
+回归包包含 fixtures/links 的真实文本样例及“准备链接样例.py”。把测试包复制到目标环境，运行脚本并指定该环境的实际目录；脚本复制样例、回读校验，然后生成与目标路径对应的 Markdown 消息。Android 与 Linux 的准备步骤分别执行，来源参数保持对应环境。
+
+```bash
+python3 准备链接样例.py --environment android --root /sdcard/Download/Operit/link-regression-1344
+python3 准备链接样例.py --environment linux --root /tmp/operit-link-regression-1344
 ```
 
-- 前三条按 Android 处理。当前工具读取 /mnt/sdcard 返回 Permission denied；若同样报权限错误，应展示实际来源错误并能返回。挂载目录或文件成功读取需要该位置对应用可读，权限错误不作为成功打开文件的证据。
-- 最后一条的 Linux 文件已创建并回读，应显示 LINUX_SIMILAR_ROOT_1344；/mnt-other 不应被归为 Android。
-- 当前未提供实际 OTG 挂载卷，/mnt/media_rw/卷名 下真实文件的成功读取仍可在有设备条件时补测。
+将脚本生成的“可复制链接消息.md”内容粘贴到助手消息纯文本编辑入口，保存后点击链接和“访问”。行号样例使用 40 行文本的第 12 行，文件内容为“第12行：LINUX_TEXT_LINK_1344”。
 
-L-R05：三个写法全部访问同一 Linux /mnt 文件。
+L-R04 检查 Android /mnt 根及子路径，以及 /mnt-other 的 Linux 来源；L-R05 检查显式 Linux 来源覆盖 /mnt 默认来源。可在目标环境使用实际可读的挂载路径，通过脚本的 --root 参数生成对应消息。脚本只准备指定目标目录中的样例，具体挂载路径是否可读由目标设备决定。
 
-```markdown
-[显式 Linux 协议](linux:///mnt/operit-link-regression-1344/linux-source.txt)
-[file 的 Linux 来源](file://linux/mnt/operit-link-regression-1344/linux-source.txt)
-[查询参数指定 Linux](/mnt/operit-link-regression-1344/linux-source.txt?environment=linux)
-```
+标准写法与模型系统提示入口见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
 
-文件已创建并回读，三条均应显示 LINUX_MNT_LINK_1344。这里的 /mnt 在 Linux 环境中；虽然路径形状属于默认 Android 根，显式协议或环境参数仍要优先。
+- [x] 通过：全部既有工作区测试清单按用户本轮最终确认勾选。
 
-普通设备与 Linux 文本链接也可按下面构造，便于复测 02 表中的本地文本与第 3 项。
-
-```markdown
-[设备文本](/sdcard/Download/Operit/link-regression-1344/中文%20文件.txt)
-[Linux 裸路径文本](/tmp/operit-link-regression-1344/linux.txt)
-[Linux 显式文本](linux:///tmp/operit-link-regression-1344/linux.txt)
-[Linux 第12行](linux:///tmp/operit-link-regression-1344/linux.txt#L12)
-```
-
-设备样例首行是 ANDROID_LINK_1344；Linux 文件有 40 行，第 12 行是“第12行：LINUX_TEXT_LINK_1344”。这些内容已回读确认，样例创建不代表应用链接点击已测试通过。
-
-## 待复测结果表
-
-| 编号 | 操作 | 预期 | 当前结果 | 新结果与证据 |
-| --- | --- | --- | --- | --- |
-| L-R04 | 依次点击 Android /mnt 链接与 /mnt-other 链接 | /mnt 走 Android，相似名称走 Linux；错误可返回，可读文件内容正确 | 未测 |  |
-| L-R05 | 点击三个显式 Linux /mnt 链接 | 三条访问相同 Linux 内容，环境不被默认路径判断覆盖 | 未测 |  |
-| W-TH01 | 新构建未绑定工作区时切换浅色、深色、背景图主题 | “设置工作区”文字使用主题前景色 | 原构建失败；修正待复测 |  |
-
-[DONE] 本轮反馈和标题颜色修正已记录，可复制的链接及真实样例已准备；新增设备结果仍待填写。
+[DONE] 最终签收、历史证据和便携样例准备方式已记录。

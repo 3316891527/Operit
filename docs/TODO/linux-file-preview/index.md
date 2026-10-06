@@ -35,7 +35,8 @@ branch: feat/linux-file-preview
 2. 将绑定后的默认内容改为共用文件浏览器，保留原有预览、编辑和保存。
 3. 接通未绑定目录浏览、临时文件编辑、长按操作、排序和搜索高亮。
 4. 清理工具箱重复入口，把聊天文件链接接入共用查看页并配对主题背景与图标前景。
-5. 按项目协作要求完成回归检查清单，用户明确要求后再派发 Android Build 与 Android Tests。
+5. 更新完整回归清单与用户最终签收状态，提交后派发 Android Build 与 Android Tests。
+6. 在系统提示的共用入口补齐中英文文件引用约定，提供目标环境可生成的便携链接样例。
 
 ## 当前状态
 
@@ -45,4 +46,6 @@ branch: feat/linux-file-preview
 
 第二轮文件链接复审已增加 10 MiB 文本读取上限、/mnt 设备路径、行号优先级说明，以及按文件标识重置的初始定位；六个新增 JVM 用例和一个设备用例见 [04-file-links-review.md](04-file-links-review.md)。
 
-本轮设备反馈已填入基础、主题与第二轮链接表：基础检查除设置标题颜色外通过，主题与聊天文件入口 1–10 通过，L-R01/02/03/06/07 通过，L-R04/05 待测。“设置工作区”标题已显式使用 onSurface，修正待新构建复测；记录见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。
+既有工作区基础 1–25、标题 W-TH01、主题与文件入口 1–10、R01–R15 和 L-R01–L-R07 已按用户本轮最终确认全部勾选。“设置工作区”标题显式使用 onSurface，代码修正已提交于 49e8f043；最终签收与历史反馈见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。自动化和新 APK 运行状态另行记录。
+
+新增中英文模型文件引用约定，在各种工具模式及未绑定工作区时使用统一系统提示入口，避免模型输出文件路径时漏掉可点击链接、来源或行号；实现与新增源码验收见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
