@@ -44,3 +44,5 @@ branch: feat/linux-file-preview
 本轮已补齐取消处理、单个名称校验、连续导航、时间排序、分享缓存清理、英文文案、CSS 与三组语言扩展名，以及仅有光标时的当前行注释；搜索重算与视口定位已分离。新增九个 JVM 用例与四个 Android 仪器用例，运行结果分别记录。
 
 第二轮文件链接复审已增加 10 MiB 文本读取上限、/mnt 设备路径、行号优先级说明，以及按文件标识重置的初始定位；六个新增 JVM 用例和一个设备用例见 [04-file-links-review.md](04-file-links-review.md)。
+
+本轮设备反馈已填入基础、主题与第二轮链接表：基础检查除设置标题颜色外通过，主题与聊天文件入口 1–10 通过，L-R01/02/03/06/07 通过，L-R04/05 待测。“设置工作区”标题已显式使用 onSurface，修正待新构建复测；记录见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。

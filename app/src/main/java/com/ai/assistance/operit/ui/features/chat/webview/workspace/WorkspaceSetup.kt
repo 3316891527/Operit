@@ -290,6 +290,8 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit, o
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = context.getString(R.string.setup_workspace),
+                    // 设置页使用自己的主题前景，避免继承聊天区域的黑色文字。
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleLarge
                 )
                 Text(
