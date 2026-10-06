@@ -66,11 +66,12 @@ internal fun WorkspaceFileLinkHost(
 
 /** 共用工作区编辑与预览；二进制文件显示信息并提供实际文件的分享入口。 */
 @Composable
-private fun WorkspaceFileLinkDialog(
+internal fun WorkspaceFileLinkDialog(
     actualViewModel: ChatViewModel,
     currentChat: ChatHistory,
     target: WorkspaceFileLink,
     onDismiss: () -> Unit,
+    onFileOpen: ((OpenFileInfo) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val handler = remember(context) { AIToolHandler.getInstance(context) }
@@ -106,9 +107,14 @@ private fun WorkspaceFileLinkDialog(
                         check(read.success) { read.error.orEmpty() }
                         val result = read.result
                         check(result is FileContentData) { context.getString(R.string.file_error_open_failed) }
+                        val initialLine = if (target.anchor == null) target.line else {
+                            checkNotNull(findWorkspaceMarkdownAnchorLine(result.content, target.anchor)) {
+                                context.getString(R.string.workspace_markdown_anchor_not_found, target.anchor)
+                            }
+                        }
                         OpenFileInfo(target.path, result.content, System.currentTimeMillis(),
                             mimeType = workspaceMimeTypeForPath(target.path), environment = target.environment,
-                            initialLine = target.line)
+                            initialLine = initialLine)
                     }
                     else -> null
                 }
@@ -116,11 +122,16 @@ private fun WorkspaceFileLinkDialog(
             }
             fileInfo = info
             if (info.isDirectory) directory = target.path
-            file = openedFile
+            if (openedFile != null && onFileOpen != null) {
+                onFileOpen(openedFile)
+                onDismiss()
+            } else {
+                file = openedFile
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            AppLogger.e("WorkspaceFileLink", "打开文件链接失败", e)
+            AppLogger.w("WorkspaceFileLink", "打开文件链接失败", e)
             error = e.message ?: context.getString(R.string.file_error_open_failed)
         } finally {
             loading = false
@@ -156,7 +167,12 @@ private fun WorkspaceFileLinkDialog(
                         initialPath = openedDirectory,
                         environment = target.environment,
                         onCancel = onDismiss,
-                        onFileOpen = { file = it },
+                        onFileOpen = { opened ->
+                            if (onFileOpen == null) file = opened else {
+                                onFileOpen(opened)
+                                onDismiss()
+                            }
+                        },
                     )
                     BackHandler { onDismiss() }
                 }
@@ -194,7 +210,7 @@ private fun WorkspaceFileLinkDialog(
                                             } catch (e: CancellationException) {
                                                 throw e
                                             } catch (e: Exception) {
-                                                AppLogger.e("WorkspaceFileLink", "打开或分享文件失败", e)
+                                                AppLogger.w("WorkspaceFileLink", "打开或分享文件失败", e)
                                                 error = e.message ?: context.getString(R.string.file_error_open_failed)
                                             } finally {
                                                 loading = false

@@ -9,11 +9,13 @@ internal data class WorkspaceFileLink(
     val path: String,
     val environment: String,
     val line: Int? = null,
+    val anchor: String? = null,
 )
 
 /** 识别绝对路径及显式环境链接，普通网页和应用协议继续交给外部入口。 */
 internal fun parseWorkspaceFileLink(url: String): WorkspaceFileLink? {
     val source = url.trim()
+    if (source.isEmpty() || source.any { it.code < 32 }) return null
     val repositoryPath = Regex("^repo:([^/:]+):(/.*)$", RegexOption.IGNORE_CASE).matchEntire(source)
     val normalized = if (repositoryPath != null) {
         "repo://${repositoryPath.groupValues[1]}${repositoryPath.groupValues[2]}"
@@ -34,7 +36,7 @@ internal fun parseWorkspaceFileLink(url: String): WorkspaceFileLink? {
     var path = uri.path.orEmpty()
     val environment = when (scheme) {
         null -> {
-            if (!path.startsWith('/')) return null
+            if (uri.rawAuthority != null || !path.startsWith('/')) return null
             inferWorkspaceFileEnvironment(path)
         }
         "file" -> when (authority.lowercase()) {
@@ -52,22 +54,37 @@ internal fun parseWorkspaceFileLink(url: String): WorkspaceFileLink? {
         }
         else -> return null
     }
-    if (!path.startsWith('/')) return null
-    val explicitEnvironment = query["environment"]?.let { URLDecoder.decode(it, "UTF-8") }
+    if (!path.startsWith('/') || path.any { it.code < 32 }) return null
+    val explicitEnvironment = try {
+        query["environment"]?.let { URLDecoder.decode(it, "UTF-8") }
+    } catch (_: IllegalArgumentException) {
+        return null
+    }
+    if (explicitEnvironment?.any { it.code < 32 } == true) return null
     if (explicitEnvironment != null && explicitEnvironment != "android" &&
         explicitEnvironment != "linux" && !explicitEnvironment.matches(Regex("repo:.+"))) return null
 
-    val fragmentLine = uri.fragment?.let { fragment ->
-        Regex("(?:L|line=)([0-9]+)(?:-L?[0-9]+)?").matchEntire(fragment)
-            ?.groupValues?.get(1)?.toIntOrNull()
+    val lineFragment = uri.fragment?.let {
+        Regex("(?:L|line=)([0-9]+)(?:-L?[0-9]+)?").matchEntire(it)
     }
-    val suffix = Regex("^(.+):([0-9]+)$").matchEntire(path)
+    val fragmentLine = lineFragment?.groupValues?.get(1)?.toIntOrNull()
+    // 编码后的冒号属于真实文件名，只有原始路径中的冒号才作为行号后缀。
+    val suffix = if (Regex("^(.+):([0-9]+)$").matches(uri.rawPath.orEmpty())) {
+        Regex("^(.+):([0-9]+)$").matchEntire(path)
+    } else null
     // 定位优先级为 fragment、query、路径后缀；后缀始终是定位语法，
     // 即使行号取自更高优先级的来源，也要将后缀从真实文件路径中移除。
-    val line = (fragmentLine ?: query["line"]?.toIntOrNull() ?: suffix?.groupValues?.get(2)?.toIntOrNull())
+    val queryLine = try {
+        query["line"]?.let { URLDecoder.decode(it, "UTF-8").toIntOrNull() }
+    } catch (_: IllegalArgumentException) {
+        return null
+    }
+    val line = (fragmentLine ?: queryLine ?: suffix?.groupValues?.get(2)?.toIntOrNull())
         ?.takeIf { it > 0 }
     if (suffix != null && line != null) path = suffix.groupValues[1]
-    return WorkspaceFileLink(path, explicitEnvironment ?: environment, line)
+    val anchor = uri.fragment?.takeIf { it.isNotEmpty() && lineFragment == null }
+    if (anchor?.any { it.code < 32 } == true) return null
+    return WorkspaceFileLink(path, explicitEnvironment ?: environment, line, anchor)
 }
 
 private fun inferWorkspaceFileEnvironment(path: String): String {

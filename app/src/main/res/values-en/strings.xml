@@ -8486,7 +8486,7 @@
     <string name="token_stats_detail_tokens">Token breakdown</string>
     <string name="token_stats_detail_close">Close</string>
     <string name="token_stats_detail_open">Tap to view details</string>
-    <string name="markdown_link_not_openable">This link points to a reference inside the document and cannot be opened</string>
+    <string name="markdown_link_not_openable">Could not open this link. Check the address and whether an app is installed to handle it.</string>
     <string name="openai_file_omitted">File content omitted, current model does not support file processing</string>
 
     <string name="provider_openai_codex">Codex (OpenAI)</string>
@@ -8559,4 +8559,5 @@
 <!-- 已移除实验性提示 -->
     <string name="antigravity_login_completing">Completing authorization and loading account details…</string>
     <string name="antigravity_login_timed_out">Timed out after waiting 15 minutes for Google authorization. Please start sign-in again.</string>
+    <string name="workspace_markdown_anchor_not_found">Heading not found in the document: %1$s</string>
 </resources>

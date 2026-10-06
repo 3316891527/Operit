@@ -62,11 +62,12 @@ fun CodeEditor(
     searchMatches: List<IntRange> = emptyList(),
     activeSearchMatch: Int = -1,
     searchNavigationRequest: Int = 0,
-    initialLine: Int? = null
+    initialLine: Int? = null,
+    initialLineRequest: Int = 0
 ) {
     val theme = getThemeForLanguage(language)
-    // 文件切换重新消费初始定位，同一文件编辑不会重复定位。
-    var pendingInitialLine by remember(fileKey, initialLine) { mutableStateOf(initialLine) }
+    // 文件切换或显式链接请求重新定位，同一文件编辑不会重复消费行号。
+    var pendingInitialLine by remember(fileKey, initialLine, initialLineRequest) { mutableStateOf(initialLine) }
     var revealedSearchRequest by remember { mutableStateOf(searchNavigationRequest) }
     val latestCode = rememberUpdatedState(code)
     val latestOnCodeChange = rememberUpdatedState(onCodeChange)

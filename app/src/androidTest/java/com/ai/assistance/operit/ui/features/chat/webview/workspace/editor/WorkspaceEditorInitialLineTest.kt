@@ -47,4 +47,33 @@ class WorkspaceEditorInitialLineTest {
             assertEquals(original.replace("line-12", "SECOND-CONTINUEDline-12"), content.value)
         }
     }
+
+    @Test
+    fun aRepeatedLinkRequestRepositionsWithoutLosingTypedContent() {
+        val original = (1..24).joinToString("\n") { "line-$it" }
+        val content = mutableStateOf(original)
+        val request = mutableStateOf(0)
+        var editor: NativeCodeEditor? = null
+        compose.setContent {
+            MaterialTheme {
+                CodeEditor(code = content.value, language = "text", fileKey = "linux:/same.txt",
+                    onCodeChange = { content.value = it }, initialLine = 12,
+                    initialLineRequest = request.value, enableCompletion = false,
+                    editorRef = { editor = it })
+            }
+        }
+        compose.runOnIdle {
+            assertTrue(editor!!.getChildAt(0).onCreateInputConnection(EditorInfo())!!.commitText("FIRST", 1))
+            assertEquals(original.replace("line-12", "FIRSTline-12"), content.value)
+        }
+        compose.runOnIdle {
+            assertTrue(editor!!.getChildAt(0).onCreateInputConnection(EditorInfo())!!.commitText("-CONTINUED", 1))
+            assertEquals(original.replace("line-12", "FIRST-CONTINUEDline-12"), content.value)
+            request.value += 1
+        }
+        compose.runOnIdle {
+            assertTrue(editor!!.getChildAt(0).onCreateInputConnection(EditorInfo())!!.commitText("AGAIN", 1))
+            assertEquals(original.replace("line-12", "AGAINFIRST-CONTINUEDline-12"), content.value)
+        }
+    }
 }

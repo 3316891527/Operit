@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.chat.webview.workspace
 
 import android.annotation.SuppressLint
 import android.net.Uri
+import android.widget.Toast
 import com.ai.assistance.operit.util.AppLogger
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -34,7 +35,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -53,7 +53,6 @@ import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ToolParameter
-import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
 import com.ai.assistance.operit.ui.common.rememberLocal
 import com.ai.assistance.operit.ui.features.chat.components.rememberCompactDialogMetrics
 import com.ai.assistance.operit.ui.features.chat.components.attachments.AudioAttachmentPlayer
@@ -65,12 +64,18 @@ import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.CodeEd
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.CodeFormatter
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.EditorKeyCommand
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.LanguageDetector
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.search.*
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.links.WorkspaceFileLink
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.links.WorkspaceFileLinkDialog
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.links.findWorkspaceMarkdownAnchorLine
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.markdown.WorkspaceMarkdownPreview
 
 private fun WebView.installWorkspaceTouchInterceptor() {
     setOnTouchListener { view, event ->
@@ -111,48 +116,6 @@ private fun previewWebViewOptions(url: String): WebViewHandler.WebViewOptions {
         useWideViewPort = false,
         loadWithOverviewMode = false
     )
-}
-
-@Composable
-private fun WorkspaceMarkdownPreview(
-    content: String,
-    modifier: Modifier = Modifier
-) {
-    val uriHandler = LocalUriHandler.current
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 960.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp,
-                shadowElevation = 1.dp
-            ) {
-                StreamMarkdownRenderer(
-                    content = content,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 28.dp, vertical = 24.dp),
-                    textColor = MaterialTheme.colorScheme.onSurface,
-                    backgroundColor = MaterialTheme.colorScheme.surface,
-                    onLinkClick = { url -> uriHandler.openUri(url) }
-                )
-            }
-        }
-    }
 }
 
 /** VSCode风格的工作区管理器组件 集成了WebView预览和文件管理功能 */
@@ -286,6 +249,10 @@ fun WorkspaceManager(
     var openFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(initialFile?.let { listOf(it) } ?: emptyList()) }
     var currentFileIndex by remember(workspacePath, workspaceEnv) { mutableStateOf(if (initialFile == null) -2 else 0) }
     var filePreviewStates by remember { mutableStateOf(mapOf<String, Boolean>()) }
+    var fileLineNavigationRequests by remember(workspacePath, workspaceEnv) { mutableStateOf(mapOf<String, Int>()) }
+    var markdownLinkTarget by remember(workspacePath, workspaceEnv) { mutableStateOf<WorkspaceFileLink?>(null) }
+    var markdownNavigationJob by remember { mutableStateOf<Job?>(null) }
+    LaunchedEffect(workspacePath, workspaceEnv) { markdownNavigationJob?.cancel() }
     var unsavedFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(emptySet<String>()) }
     val isBrowserPreviewVisible =
         isVisible && currentFileIndex == -1 && workspaceConfig.preview.type == "browser"
@@ -579,7 +546,15 @@ fun WorkspaceManager(
         val existingIndex = openFiles.indexOfFirst { it.key == fileInfo.key }
 
         if (existingIndex != -1) {
-            // 如果文件已经打开，切换到该标签
+            // 已打开的文件保留内存内容，仅更新显式定位和活动标签。
+            if (fileInfo.initialLine != null) {
+                openFiles = openFiles.toMutableList().apply {
+                    this[existingIndex] = this[existingIndex].copy(initialLine = fileInfo.initialLine)
+                }
+                fileLineNavigationRequests = fileLineNavigationRequests +
+                    (fileInfo.key to ((fileLineNavigationRequests[fileInfo.key] ?: 0) + 1))
+                filePreviewStates = filePreviewStates + (fileInfo.key to false)
+            }
             currentFileIndex = existingIndex
         } else {
             // 否则添加到打开的文件列表
@@ -592,6 +567,46 @@ fun WorkspaceManager(
                         // 文本文件默认进入现有编辑器，预览由用户主动切换。
                         this[fileInfo.key] = false
                     }
+        }
+    }
+
+    fun openMarkdownFileLink(target: WorkspaceFileLink) {
+        markdownNavigationJob?.cancel()
+        val existing = openFiles.firstOrNull { it.environment == target.environment && it.path == target.path }
+        if (existing == null) {
+            markdownLinkTarget = target
+            return
+        }
+        // 标题扫描在后台进行；定位依据已打开文件的实际内容，包括未保存修改。
+        markdownNavigationJob = coroutineScope.launch {
+            try {
+                val line = withContext(Dispatchers.Default) {
+                    if (target.anchor == null) target.line else {
+                        checkNotNull(findWorkspaceMarkdownAnchorLine(existing.content, target.anchor)) {
+                            context.getString(R.string.workspace_markdown_anchor_not_found, target.anchor)
+                        }
+                    }
+                }
+                if (openFiles.any { it.key == existing.key }) openFile(existing.copy(initialLine = line))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.w("WorkspaceMarkdown", "定位文档链接失败", error)
+                Toast.makeText(context, error.message ?: context.getString(R.string.file_error_open_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val markdownTarget = markdownLinkTarget
+    if (markdownTarget != null) {
+        key(markdownTarget) {
+            WorkspaceFileLinkDialog(
+                actualViewModel = actualViewModel,
+                currentChat = currentChat,
+                target = markdownTarget,
+                onDismiss = { markdownLinkTarget = null },
+                onFileOpen = ::openFile,
+            )
         }
     }
 
@@ -1053,10 +1068,13 @@ fun WorkspaceManager(
                                 )
                             }
                             fileInfo.isMarkdown && isPreviewMode -> {
-                                WorkspaceMarkdownPreview(
-                                    content = fileInfo.content,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                browserStateHolder.SaveableStateProvider("markdown:${fileInfo.key}") {
+                                    WorkspaceMarkdownPreview(
+                                        fileInfo = fileInfo,
+                                        onFileLink = ::openMarkdownFileLink,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
                             }
                             // HTML文件的预览模式：使用WebView
                             fileInfo.isHtml && isPreviewMode -> {
@@ -1107,6 +1125,7 @@ fun WorkspaceManager(
                                             activeSearchMatch = activeMatch,
                                             searchNavigationRequest = searchNavigationRequest,
                                             initialLine = fileInfo.initialLine,
+                                            initialLineRequest = fileLineNavigationRequests[fileInfo.key] ?: 0,
                                             editorRef = { editor -> activeEditor = editor },
                                             onKeyCommand = ::handleEditorKeyCommand
                                     )

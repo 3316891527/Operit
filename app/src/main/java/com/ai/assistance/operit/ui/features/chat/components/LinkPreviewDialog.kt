@@ -1,7 +1,5 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
-import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.markdown.links.openMarkdownLink
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.links.LocalWorkspaceFileLinkOpener
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.links.parseWorkspaceFileLink
 
@@ -109,24 +108,8 @@ fun LinkPreviewDialog(
                         if (fileLink != null) {
                             openWorkspaceFile(fileLink)
                             onDismiss()
-                        } else {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                data = Uri.parse(url)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-
-                            // 检查是否有应用可以处理这个Intent
-                            val packageManager = context.packageManager
-                            if (intent.resolveActivity(packageManager) != null) {
-                                context.startActivity(intent)
-                                onDismiss()
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.no_app_found),
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
+                        } else if (openMarkdownLink(context, url)) {
+                            onDismiss()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(

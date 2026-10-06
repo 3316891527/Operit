@@ -49,3 +49,5 @@ branch: feat/linux-file-preview
 既有工作区基础 1–25、标题 W-TH01、主题与文件入口 1–10、R01–R15 和 L-R01–L-R07 已按用户本轮最终确认全部勾选。“设置工作区”标题显式使用 onSurface，代码修正已提交于 49e8f043；最终签收与历史反馈见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。自动化和新 APK 运行状态另行记录。
 
 新增中英文模型文件引用约定，在各种工具模式及未绑定工作区时使用统一系统提示入口，避免模型输出文件路径时漏掉可点击链接、来源或行号；实现与新增源码验收见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
+
+工作区 Markdown 预览链接已接入文档上下文解析和共用文件入口，外链使用受保护的共享打开方法，修复 Issue #1347 中无处理器链接导致的闪退。相对路径、来源、行号、标题源码定位和普通失败的完整回归见 [07-markdown-preview-links.md](07-markdown-preview-links.md)；本轮新增项目的设备与工作流结果独立记录。

@@ -91,4 +91,22 @@ class WorkspaceFileLinkTest {
             assertNull(parseWorkspaceFileLink(url))
         }
     }
+
+    @Test
+    fun headingAnchorsAndEncodedColonsKeepTheirMeaning() {
+        assertEquals(WorkspaceFileLink("/tmp/a.md", "linux", anchor = "页脚"),
+            parseWorkspaceFileLink("file:///tmp/a.md#页脚"))
+        assertEquals(WorkspaceFileLink("/tmp/a.md:12", "linux", 9),
+            parseWorkspaceFileLink("file:///tmp/a.md%3A12#L9"))
+        assertEquals(WorkspaceFileLink("/tmp/a.md", "linux", 12),
+            parseWorkspaceFileLink("file:///tmp/a.md?line=%31%32"))
+    }
+
+    @Test
+    fun malformedEncodingAndControlCharactersAreRejected() {
+        for (url in listOf("/tmp/a%00.md", "/tmp/a.md#%00", "/tmp/a.md?environment=repo%3A%00",
+            "/tmp/a.md?environment=%invalid", "//example.com/a.md")) {
+            assertNull(parseWorkspaceFileLink(url))
+        }
+    }
 }

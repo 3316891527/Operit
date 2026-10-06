@@ -8492,7 +8492,7 @@
     <string name="token_stats_detail_tokens">Token 明细</string>
     <string name="token_stats_detail_close">关闭</string>
     <string name="token_stats_detail_open">点击查看详细数据</string>
-    <string name="markdown_link_not_openable">该链接指向文档内部的引用，无法打开</string>
+    <string name="markdown_link_not_openable">无法打开该链接，请检查链接地址或是否已安装对应应用。</string>
 
     <string name="provider_openai_codex">Codex（OpenAI）</string>
     <string name="onboarding_config_codex_login_required">请先登录 Codex</string>
@@ -8546,4 +8546,5 @@
 <!-- 已移除实验性提示 -->
     <string name="antigravity_login_completing">正在完成授权并加载账号信息…</string>
     <string name="antigravity_login_timed_out">等待 Google 授权已超过 15 分钟，请重新发起登录。</string>
+    <string name="workspace_markdown_anchor_not_found">找不到文档标题：%1$s</string>
 </resources>
