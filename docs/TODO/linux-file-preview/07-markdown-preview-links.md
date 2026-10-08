@@ -18,7 +18,7 @@ WorkspaceMarkdownPreview 拆到 workspace/markdown，接收完整 OpenFileInfo �
 
 ## 完整回归范围
 
-既有基础、文件入口、主题、两轮审阅与文件引用约定全部保留，见 [01-interaction-design.md](01-interaction-design.md)、[02-file-links-and-theme.md](02-file-links-and-theme.md)、[03-review-fixes.md](03-review-fixes.md)、[04-file-links-review.md](04-file-links-review.md) 和 [06-file-reference-conventions.md](06-file-reference-conventions.md)。下表追加本轮操作与预期，结果表单独填写。
+既有基础、文件入口、主题、两轮审阅与文件引用格式说明全部保留，见 [01-interaction-design.md](01-interaction-design.md)、[02-file-links-and-theme.md](02-file-links-and-theme.md)、[03-review-fixes.md](03-review-fixes.md)、[04-file-links-review.md](04-file-links-review.md) 和 [06-file-reference-conventions.md](06-file-reference-conventions.md)。下表追加本轮操作与预期，结果表单独填写。
 
 | 编号 | 操作 | 预期 |
 | --- | --- | --- |

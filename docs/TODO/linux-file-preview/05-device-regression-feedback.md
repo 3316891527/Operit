@@ -36,7 +36,7 @@ python3 准备链接样例.py --environment linux --root /tmp/operit-link-regres
 
 L-R04 检查 Android /mnt 根及子路径，以及 /mnt-other 的 Linux 来源；L-R05 检查显式 Linux 来源覆盖 /mnt 默认来源。可在目标环境使用实际可读的挂载路径，通过脚本的 --root 参数生成对应消息。脚本只准备指定目标目录中的样例，具体挂载路径是否可读由目标设备决定。
 
-标准写法与模型系统提示入口见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
+标准写法与解析支持说明见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
 
 - [x] 通过：全部既有工作区测试清单按用户本轮最终确认勾选。
 

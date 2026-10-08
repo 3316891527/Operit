@@ -109,4 +109,20 @@ class WorkspaceFileLinkTest {
             assertNull(parseWorkspaceFileLink(url))
         }
     }
+
+    @Test
+    fun encodedCharactersAndRepositoryNamesPreserveTheActualFile() {
+        assertEquals(
+            WorkspaceFileLink("/mnt/中文 文件(1)#?%.kt", "linux", 12),
+            parseWorkspaceFileLink(
+                "file:///mnt/中文%20文件%281%29%23%3F%25.kt?environment=linux#L12"
+            )
+        )
+        assertEquals(
+            WorkspaceFileLink("/src/main.kt", "repo:文档 & 示例+仓库", 12),
+            parseWorkspaceFileLink(
+                "file:///src/main.kt?environment=repo%3A文档%20%26%20示例%2B仓库#L12"
+            )
+        )
+    }
 }

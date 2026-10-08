@@ -44,6 +44,6 @@
 
 [DONE] 第二条复审的代码项、英文资源和既有 CI 结果已对应记录，当前提交的构建与新增用例结果另行确认。
 
-L-R04/L-R05 和设置标题颜色已按用户最终签收勾选；历史反馈与便携链接样例见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。模型生成链接的约定见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
+L-R04/L-R05 和设置标题颜色已按用户最终签收勾选；历史反馈与便携链接样例见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。文件链接的使用格式见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
 
 - [x] 通过：第二轮 L-R01–L-R07 按用户本轮最终确认全部勾选。

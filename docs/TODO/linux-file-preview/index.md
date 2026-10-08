@@ -36,7 +36,7 @@ branch: feat/linux-file-preview
 3. 接通未绑定目录浏览、临时文件编辑、长按操作、排序和搜索高亮。
 4. 清理工具箱重复入口，把聊天文件链接接入共用查看页并配对主题背景与图标前景。
 5. 更新完整回归清单与用户最终签收状态，提交后派发 Android Build 与 Android Tests。
-6. 在系统提示的共用入口补齐中英文文件引用约定，提供目标环境可生成的便携链接样例。
+6. 保留文件引用格式与便携链接样例文档，移除默认系统提示追加，链接解析和定位能力继续保留。
 
 ## 当前状态
 
@@ -48,6 +48,6 @@ branch: feat/linux-file-preview
 
 既有工作区基础 1–25、标题 W-TH01、主题与文件入口 1–10、R01–R15 和 L-R01–L-R07 已按用户本轮最终确认全部勾选。“设置工作区”标题显式使用 onSurface，代码修正已提交于 49e8f043；最终签收与历史反馈见 [05-device-regression-feedback.md](05-device-regression-feedback.md)。自动化和新 APK 运行状态另行记录。
 
-新增中英文模型文件引用约定，在各种工具模式及未绑定工作区时使用统一系统提示入口，避免模型输出文件路径时漏掉可点击链接、来源或行号；实现与新增源码验收见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
+文件引用格式与便携链接样例保留为开发者使用说明，系统提示不再默认追加文件引用规则。文件来源、编码、行号与标题定位保持原行为；移除说明和验证范围见 [06-file-reference-conventions.md](06-file-reference-conventions.md)。
 
 工作区 Markdown 预览链接已接入文档上下文解析和共用文件入口，外链使用受保护的共享打开方法，修复 Issue #1347 中无处理器链接导致的闪退。相对路径、来源、行号、标题源码定位和普通失败的完整回归见 [07-markdown-preview-links.md](07-markdown-preview-links.md)；本轮新增项目的设备与工作流结果独立记录。

@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Environment
 import com.ai.assistance.operit.core.chat.hooks.PromptHookContext
 import com.ai.assistance.operit.core.chat.hooks.PromptHookRegistry
-import com.ai.assistance.operit.core.config.links.WorkspaceFileLinkGuidelines
 import com.ai.assistance.operit.core.tools.climode.CliToolModeSupport
 import com.ai.assistance.operit.core.tools.climode.ToolExposureMode
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
@@ -462,10 +461,6 @@ AVAILABLE_TOOLS_SECTION""".trimIndent()
             .replace("AVAILABLE_TOOLS_SECTION", "")
             .replace(workspaceGuidelines, "")
     }
-
-
-    // 文件引用约定独立于工具与工作区绑定，在所有模式处理完成后统一追加。
-    prompt += "\n\n" + WorkspaceFileLinkGuidelines.forLanguage(useEnglish)
 
     // Clean up multiple consecutive blank lines (replace 3+ newlines with 2)
     prompt = prompt.replace(Regex("\n{3,}"), "\n\n")
