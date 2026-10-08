@@ -148,6 +148,16 @@ class ChatRuntimeHolder private constructor(context: Context) {
     }
 
     private fun setupCrossSessionSync() {
+        // 同步清空所有运行时中的目标缓存，避免悬浮窗写回清空前的累计。
+        ChatRuntimeSlot.values().forEach { sourceSlot ->
+            getCore(sourceSlot).setAdditionalOnTokenStatisticsCleared { chatId ->
+                cores.forEach { (targetSlot, targetCore) ->
+                    if (targetSlot != sourceSlot) {
+                        targetCore.getTokenStatisticsDelegate().clearChatTokenStatistics(chatId)
+                    }
+                }
+            }
+        }
         registerChatSelectionSync(
             sourceSlot = ChatRuntimeSlot.MAIN,
             targetSlot = ChatRuntimeSlot.FLOATING
