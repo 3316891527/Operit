@@ -12,7 +12,9 @@ M05 的行内代码和波浪号围栏已经固定输入复现；M10 的聊天正
 
 `ui/common/markdown/FencedCodeBlockContent.kt` 为代码显示与纯文本复制提供同一正文提取入口。Canvas 代码组件和 `MarkdownPlainTextRenderer` 只去除匹配的外层标记，读取语言名，并保留正文的缩进、空白行及嵌套围栏。过去仅识别三反引号，波浪号会留在正文中，四反引号中的三反引号示例也会被误删。
 
-`ChatArea.kt` 的 `buildMessageCopyContent` 从 `displayContent()` 生成三个复制模式的内容，多选复制复用同一入口。XML 复制清理按 `MessageSection.Protocol` 分类过滤，而不是只匹配少量 provider 名称。因此固定输入中的 `provider="openai"` 和其他已分类协议片段均不会进入复制预览和剪贴板，协议负载仍保留在消息原文和 sections 中。代码范围内的 meta 标签示例在 XML 源复制中继续保留。
+`ChatArea.kt` 的 `buildMessageCopyContent` 直接读取 `displaySections()`，单条复制预览与多选复制复用这一入口。纯文本和 Markdown 源只提取 `Text` 片段，再处理正文中的附件、情绪与媒体内部标记；思考、工具调用、工具结果、搜索、状态和协议不进入正文复制。XML 源从已有片段重建，保留工具和思考原文，按 `MessageSection.Protocol` 分类隐藏协议负载。正文代码范围内的 XML 示例与既有 `Text` 分类保持原样，复制流程不再次解析结构化标记。
+
+工具返回源码或日志时，其中可能包含未配对的思考标签示例。旧复制入口先把 sections 拼回 XML，再扫描思考边界，会把工具结果结束标记和后续回答当成思考删除；工具结果因此变成残缺块，后续工具块清理无法匹配，纯文本转换便输出了内部 XML。复制改用已有分类后，工具结果正文不参与任何回答正文的标签清理。
 
 ## 验证
 
@@ -29,3 +31,10 @@ Android Build 和 Android Tests 使用 PR 的 fork 分支派发，构建与应�
 R14 六组正文未入图；会话重开、导出往返与 L01–L06 实时执行没有独立新增结果。用户决定跳过实时检查，本轮不消耗模型额度；完整操作、已通过项、未测项及可填写表见[设备回归](./04-device-regression.md)。
 
 [已完成源码修复与本轮静态 UI 回归记录；工作流和未测项单独登记]
+
+
+## 结构化复制追加回归
+
+`MessageCopyTextTest` 新增六个用例：工具结果内未配对的 think/thinking/token 示例、工具参数含思考标记、行内及两类围栏代码、已有 Text 分类、空工具与其余内部片段、多选复制的转换输入。已有协议隐藏、原始负载保留和消息顺序用例继续保留。新增用例执行交由 Android Tests；源码检查与工作流运行结果分别记录。
+
+设备复测复用[完整清单](./04-device-regression.md)，C01–C06 是本轮追加项，既有 B/M/R/L 清单与历史结果继续保留。
