@@ -60,7 +60,7 @@ class ChatServiceCore(
     private var onEnhancedAiServiceReady: ((EnhancedAIService) -> Unit)? = null
     
     // 额外的 onTurnComplete 回调（用于悬浮窗通知应用等场景）
-    private var additionalOnTurnComplete: ((String?, Long, Long, Long) -> Unit)? = null
+    private var additionalOnTurnComplete: ((String?, Triple<Long, Long, Long>?) -> Unit)? = null
     private var additionalOnTokenStatisticsCleared: ((String) -> Unit)? = null
 
     private var uiBridge: ChatServiceUiBridge = EmptyChatServiceUiBridge
@@ -191,8 +191,21 @@ class ChatServiceCore(
             },
             onTurnComplete = turnComplete@ { chatId, service, nextWindowSize, turnOptions ->
                 // 首轮累加前恢复持久化统计，后台会话同样需要已有的累计基数。
-                if (chatId != null && !chatHistoryDelegate.ensureTokenStatisticsLoaded(chatId)) {
+                val statisticsLoaded = if (chatId == null) {
+                    true
+                } else {
+                    try {
+                        chatHistoryDelegate.ensureTokenStatisticsLoaded(chatId)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "会话统计恢复失败: chatId=$chatId", e)
+                        false
+                    }
+                }
+                if (!statisticsLoaded) {
                     AppLogger.w(TAG, "会话统计尚未恢复，跳过本轮统计保存: chatId=$chatId")
+                    additionalOnTurnComplete?.invoke(chatId, null)
                     return@turnComplete
                 }
                 tokenStatisticsDelegate.updateCumulativeStatistics(chatId, service)
@@ -207,12 +220,7 @@ class ChatServiceCore(
                         chatIdOverride = chatId
                     )
                 }
-                additionalOnTurnComplete?.invoke(
-                    chatId,
-                    inputTokens,
-                    outputTokens,
-                    windowSize
-                )
+                additionalOnTurnComplete?.invoke(chatId, Triple(inputTokens, outputTokens, windowSize))
             },
             getIsAutoReadEnabled = {
                 apiConfigDelegate.enableAutoRead.value
@@ -526,7 +534,7 @@ class ChatServiceCore(
     }
     
     /** 设置额外的 onTurnComplete 回调（用于悬浮窗通知应用等场景） */
-    fun setAdditionalOnTurnComplete(callback: ((chatId: String?, inputTokens: Long, outputTokens: Long, windowSize: Long) -> Unit)?) {
+    fun setAdditionalOnTurnComplete(callback: ((chatId: String?, statistics: Triple<Long, Long, Long>?) -> Unit)?) {
         additionalOnTurnComplete = callback
     }
 

@@ -13,6 +13,7 @@ import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -628,8 +629,14 @@ class ChatHistoryDelegate(
     private suspend fun loadChatMessages(chatId: String) {
         try {
             // 直接读取当前会话的持久化统计，避免依赖聊天列表 Flow 的到达顺序。
-            check(tokenStatisticsLoader.ensureLoaded(chatId, forceReload = true)) {
-                "聊天 $chatId 不存在，统计恢复失败"
+            try {
+                if (!tokenStatisticsLoader.ensureLoaded(chatId, forceReload = true)) {
+                    AppLogger.w(TAG, "聊天 $chatId 统计未恢复，继续加载消息")
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "聊天 $chatId 统计恢复失败，继续加载消息", e)
             }
             val initialPageCount = latestDisplayPageCountByChatId[chatId] ?: 1
             val messages = loadLatestCurrentChatDisplayWindow(chatId, pageCount = initialPageCount)
@@ -638,6 +645,8 @@ class ChatHistoryDelegate(
             // 打开历史对话时也执行开场白同步：仅当当前会话还没有用户消息时
             syncOpeningStatementIfNoUserMessage(chatId)
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "加载聊天消息失败", e)
         } finally {
