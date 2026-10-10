@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.part
 
+import androidx.compose.runtime.CompositionLocalProvider
+import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -23,7 +25,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
-import com.ai.assistance.operit.ui.common.markdown.ViewportMarkdownNodeGrouper
+import com.ai.assistance.operit.ui.common.markdown.MarkdownNodeGrouper
+import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
 import com.ai.assistance.operit.ui.common.markdown.XmlContentRenderer
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
@@ -34,40 +37,13 @@ class ThinkToolsXmlNodeGrouper(
     private val showThinkingProcess: Boolean,
     private val forceExpandGroups: Boolean = false,
     private val toolCollapseMode: ToolCollapseMode = ToolCollapseMode.ALL,
-    private val enableBoundedViewport: Boolean = false,
-) : ViewportMarkdownNodeGrouper {
-    // 展开选择归属于消息分组，切换渲染方式或条目离屏时仍保留。
-    private val expansionOverrides = mutableStateMapOf<String, Boolean>()
-
-    override fun shouldUseViewport(nodes: List<MarkdownNodeStable>): Boolean {
-        if (!enableBoundedViewport || forceExpandGroups) return false
-        val xmlCount = nodes.count { it.type == MarkdownProcessorType.XML_BLOCK }
-        // 这是渲染方式的切换条件，不限制同时展开的分组数量。
-        return xmlCount >= 24 || (xmlCount > 0 && nodes.sumOf { it.content.length.toLong() } >= 32_000L)
-    }
-
-    @Composable
-    override fun RenderViewport(
-        groups: List<MarkdownGroupedItem>,
-        nodes: List<MarkdownNodeStable>,
-        modifier: Modifier,
-        textColor: Color,
-        xmlStreamResolver: (Int) -> Stream<String>?,
-        renderNode: @Composable (Int) -> Unit,
-    ) {
-        ThinkToolsViewport(
-            groups = groups,
-            nodes = nodes,
-            modifier = modifier,
-            textColor = textColor,
-            expansionOverrides = expansionOverrides,
-            describeGroup = { describeGroup(it, nodes, xmlStreamResolver) },
-            renderNode = renderNode,
-        )
-    }
+) : MarkdownNodeGrouper {
+    // 聊天列表可注入消息持有的展开选择，其他完整渲染入口自行持有状态。
+    internal var expansionOverrides = mutableStateMapOf<String, Boolean>()
 
     override fun group(nodes: List<MarkdownNodeStable>, rendererId: String): List<MarkdownGroupedItem> {
         val out = ArrayList<MarkdownGroupedItem>(nodes.size)
+        val nodeKeys = markdownNodeIdentityKeys(nodes)
         var i = 0
         while (i < nodes.size) {
             val node = nodes[i]
@@ -123,7 +99,7 @@ class ThinkToolsXmlNodeGrouper(
                         MarkdownGroupedItem.Group(
                             startIndex = i,
                             endIndexInclusive = j - 1,
-                            stableKey = "think-tools-$i"
+                            stableKey = "think-tools-${nodeKeys[i]}"
                         )
                     )
                     i = j
@@ -176,7 +152,7 @@ class ThinkToolsXmlNodeGrouper(
                         MarkdownGroupedItem.Group(
                             startIndex = i,
                             endIndexInclusive = j - 1,
-                            stableKey = "tools-only-$i"
+                            stableKey = "tools-only-${nodeKeys[i]}"
                         )
                     )
                     i = j
@@ -212,7 +188,7 @@ class ThinkToolsXmlNodeGrouper(
                     MarkdownGroupedItem.Group(
                         startIndex = i,
                         endIndexInclusive = j - 1,
-                        stableKey = "search-only-$i"
+                        stableKey = "search-only-${nodeKeys[i]}"
                     )
                 )
                 i = j
@@ -230,7 +206,7 @@ class ThinkToolsXmlNodeGrouper(
         group: MarkdownGroupedItem.Group,
         nodes: List<MarkdownNodeStable>,
         xmlStreamResolver: (Int) -> Stream<String>?,
-    ): ThinkToolsViewportGroup {
+    ): ThinkToolsGroupInfo {
         val end = (group.endIndexInclusive + 1).coerceAtMost(nodes.size)
         val slice = if (group.startIndex in 0 until end) nodes.subList(group.startIndex, end) else emptyList()
         val toolCount = slice.count { it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "tool" }
@@ -251,7 +227,7 @@ class ThinkToolsXmlNodeGrouper(
                 else -> true
             }
         }
-        return ThinkToolsViewportGroup(group, toolCount, searchCount, hasStream && !hasNonConformingTail)
+        return ThinkToolsGroupInfo(group, toolCount, searchCount, hasStream && !hasNonConformingTail)
     }
 
     @Composable
@@ -285,7 +261,7 @@ class ThinkToolsXmlNodeGrouper(
             emptyList()
         }
         val info = describeGroup(group, nodes, xmlStreamResolver)
-        val titleText = thinkToolsViewportTitle(info)
+        val titleText = thinkToolsGroupTitle(info)
         val shouldAutoExpand = info.autoExpand
 
         var expanded by remember(rendererId, group.stableKey, forceExpandGroups) {
@@ -347,6 +323,7 @@ class ThinkToolsXmlNodeGrouper(
                             val absoluteIndex = group.startIndex + idx
                             val innerKey = "think-tools-$rendererId-${group.stableKey}-$absoluteIndex"
                             androidx.compose.runtime.key(innerKey) {
+                                CompositionLocalProvider(LocalMarkdownCardNodeIndex provides absoluteIndex) {
                                 if (node.type == MarkdownProcessorType.XML_BLOCK) {
                                     if (forceExpandGroups) {
                                         xmlRenderer.RenderXmlContent(
@@ -384,7 +361,9 @@ class ThinkToolsXmlNodeGrouper(
                                         )
                                     }
                                 }
-                            }
+
+                                }
+}
                         }
                     }
                 }

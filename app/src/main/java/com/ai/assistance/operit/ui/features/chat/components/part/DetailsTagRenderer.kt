@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.part
 
+import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -35,7 +36,7 @@ object DetailsTagRenderer {
         val body = removeSummary(inner).trim()
 
         val defaultExpanded = hasOpenAttribute(xmlContent, tagName)
-        var expanded by rememberSaveable { mutableStateOf(defaultExpanded) }
+        var expanded by rememberMarkdownCardValue("details-expanded", defaultExpanded)
         val rotation by animateFloatAsState(
             targetValue = if (expanded) 90f else 0f,
             animationSpec = tween(durationMillis = 300),

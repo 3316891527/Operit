@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.part
 
+import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import android.webkit.WebView
 import android.webkit.WebSettings
 import androidx.compose.animation.*
@@ -332,7 +333,7 @@ class CustomXmlRenderer(
             return
         }
 
-        var expanded by rememberSaveable { mutableStateOf(false) }
+        var expanded by rememberMarkdownCardValue("tool-expanded", false)
 
         val rotation by
             animateFloatAsState(
@@ -763,11 +764,10 @@ class CustomXmlRenderer(
                 null
             }
 
-        var expanded by rememberSaveable { mutableStateOf(initialThinkingExpanded) }
-        var userExpansionOverride by rememberSaveable { mutableStateOf<Boolean?>(null) }
+        var expanded by rememberMarkdownCardValue("think-expanded", initialThinkingExpanded)
+        var userExpansionOverride by rememberMarkdownCardValue<Boolean?>("think-user-override", null)
         var thinkBodyFullHeight by
-            rememberSaveable { mutableStateOf(allowExpandedThinkingFullHeight && initialThinkingExpanded) }
-        val viewportHeight = LocalThinkToolsViewportHeight.current
+            rememberMarkdownCardValue("think-full-height", allowExpandedThinkingFullHeight && initialThinkingExpanded)
         var thinkExpandSession by remember { mutableIntStateOf(if (expanded) 1 else 0) }
         var skipCollapseAnimationOnce by remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
@@ -781,7 +781,7 @@ class CustomXmlRenderer(
 
         // 使用LaunchedEffect来初始化和同步状态，避免在快速重组时状态被意外重置
         LaunchedEffect(isThinkingInProgress, expandThinkingProcess, userExpansionOverride) {
-            val targetExpanded = if (viewportHeight > 0.dp && userExpansionOverride != null) {
+            val targetExpanded = if (userExpansionOverride != null) {
                 userExpansionOverride == true
             } else if (initialThinkingExpanded && !isThinkingInProgress) {
                 true
@@ -854,11 +854,11 @@ class CustomXmlRenderer(
             }
         val useStreamingThinkMarkdown = shouldComposeThinkBody && isThinkingInProgress && (thinkMarkdownStream != null)
         val renderExpandedThinkWithFullHeight =
-            (allowExpandedThinkingFullHeight || thinkBodyFullHeight) && expanded && viewportHeight == 0.dp
-        val thinkMaxHeight = if (viewportHeight > 0.dp && thinkBodyFullHeight) maxOf(viewportHeight, 300.dp) else 300.dp
+            (allowExpandedThinkingFullHeight || thinkBodyFullHeight) && expanded
+        val thinkMaxHeight = 300.dp
 
         LaunchedEffect(expanded, thinkText) {
-            if (shouldComposeThinkBody && autoScrollEnabled && (viewportHeight == 0.dp || isThinkingInProgress)) {
+            if (shouldComposeThinkBody && autoScrollEnabled) {
                 isProgrammaticScroll = true
                 try {
                     withFrameNanos { }
@@ -905,7 +905,7 @@ class CustomXmlRenderer(
                             thinkExpandSession += 1
                         }
                         expanded = newExpandedValue
-                        if (viewportHeight > 0.dp) userExpansionOverride = newExpandedValue
+                        userExpansionOverride = newExpandedValue
                         if (isThinkingInProgress) {
                             expandThinkingProcess = newExpandedValue
                         }

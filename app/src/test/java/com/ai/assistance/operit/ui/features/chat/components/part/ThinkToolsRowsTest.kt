@@ -7,8 +7,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.ai.assistance.operit.ui.features.chat.components.timeline.shouldSplitChatMessage
+import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
+import com.ai.assistance.operit.ui.common.markdown.lazy.splitPlainMarkdownNode
 
-class ThinkToolsViewportTest {
+class ThinkToolsRowsTest {
     private fun node(content: String, xml: Boolean = true) = MarkdownNodeStable(
         type = if (xml) MarkdownProcessorType.XML_BLOCK else MarkdownProcessorType.PLAIN_TEXT,
         content = content,
@@ -22,10 +25,8 @@ class ThinkToolsViewportTest {
         }
     }
 
-    private fun grouper(enabled: Boolean = true, export: Boolean = false) = ThinkToolsXmlNodeGrouper(
+    private fun grouper() = ThinkToolsXmlNodeGrouper(
         showThinkingProcess = true,
-        enableBoundedViewport = enabled,
-        forceExpandGroups = export,
     )
 
     @Test
@@ -34,11 +35,11 @@ class ThinkToolsViewportTest {
         val grouper = grouper()
         val groups = grouper.group(nodes, "test")
         val group = groups.single() as MarkdownGroupedItem.Group
-        val rows = buildThinkToolsViewportRows(groups, nodes, mapOf(group.stableKey to true)) {
+        val rows = buildThinkToolsRows(groups, nodes, mapOf(group.stableKey to true)) {
             grouper.describeGroup(it, nodes) { null }
         }
         assertEquals(201, rows.size)
-        assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsViewportRow.Content>().map { it.index })
+        assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
         assertEquals(rows.size, rows.map { it.key }.toSet().size)
     }
 
@@ -55,11 +56,11 @@ class ThinkToolsViewportTest {
         val groups = grouper.group(nodes, "test")
         val headers = groups.filterIsInstance<MarkdownGroupedItem.Group>()
         val overrides = headers.associate { it.stableKey to true }
-        val rows = buildThinkToolsViewportRows(groups, nodes, overrides) {
+        val rows = buildThinkToolsRows(groups, nodes, overrides) {
             grouper.describeGroup(it, nodes) { null }
         }
-        assertEquals(50, rows.filterIsInstance<ThinkToolsViewportRow.Header>().size)
-        assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsViewportRow.Content>().map { it.index })
+        assertEquals(50, rows.filterIsInstance<ThinkToolsRow.Header>().size)
+        assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
         assertEquals(rows.size, rows.map { it.key }.toSet().size)
     }
 
@@ -70,19 +71,19 @@ class ThinkToolsViewportTest {
             MarkdownGroupedItem.Group(0, 3, "first"),
             MarkdownGroupedItem.Group(4, 7, "second"),
         )
-        val rows = buildThinkToolsViewportRows(groups, nodes, mapOf("first" to false, "second" to true)) {
-            ThinkToolsViewportGroup(it, 2, 0, autoExpand = true)
+        val rows = buildThinkToolsRows(groups, nodes, mapOf("first" to false, "second" to true)) {
+            ThinkToolsGroupInfo(it, 2, 0, autoExpand = true)
         }
-        assertEquals(listOf(false, true), rows.filterIsInstance<ThinkToolsViewportRow.Header>().map { it.expanded })
-        assertEquals(listOf(4, 5, 6, 7), rows.filterIsInstance<ThinkToolsViewportRow.Content>().map { it.index })
+        assertEquals(listOf(false, true), rows.filterIsInstance<ThinkToolsRow.Header>().map { it.expanded })
+        assertEquals(listOf(4, 5, 6, 7), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
     }
 
     @Test
     fun appendToStreamingGroup_preservesExistingRowKeys() {
         val grouper = grouper()
-        fun rows(nodes: List<MarkdownNodeStable>): List<ThinkToolsViewportRow> {
+        fun rows(nodes: List<MarkdownNodeStable>): List<ThinkToolsRow> {
             val groups = grouper.group(nodes, "test")
-            return buildThinkToolsViewportRows(groups, nodes, groups.filterIsInstance<MarkdownGroupedItem.Group>().associate {
+            return buildThinkToolsRows(groups, nodes, groups.filterIsInstance<MarkdownGroupedItem.Group>().associate {
                 it.stableKey to true
             }) { grouper.describeGroup(it, nodes) { null } }
         }
@@ -92,12 +93,29 @@ class ThinkToolsViewportTest {
     }
 
     @Test
-    fun viewportSelection_preservesShortMessagesAndFullImageExport() {
-        assertFalse(grouper().shouldUseViewport(tools(11)))
-        assertTrue(grouper().shouldUseViewport(tools(12)))
-        assertFalse(grouper(enabled = false).shouldUseViewport(tools(100)))
-        assertFalse(grouper(export = true).shouldUseViewport(tools(100)))
-        assertTrue(grouper().shouldUseViewport(listOf(node("<think>${"思考".repeat(20_000)}</think>"))))
-        assertFalse(grouper().shouldUseViewport(listOf(node("正文".repeat(20_000), xml = false))))
+    fun messageSplitting_preservesShortMessagesAndIncludesLongPlainText() {
+        assertFalse(shouldSplitChatMessage(tools(11)))
+        assertTrue(shouldSplitChatMessage(tools(12)))
+        assertTrue(shouldSplitChatMessage(listOf(node("正文".repeat(20_000), xml = false))))
+    }
+
+    @Test
+    fun protocolMetadataRemoval_preservesGroupAndCardIdentities() {
+        val markup = listOf(node("<think token=\"sample\">思考</think>")) + tools(2)
+        val before = listOf(node("<meta>协议</meta>")) + markup
+        assertEquals(markdownNodeIdentityKeys(markup), markdownNodeIdentityKeys(before).drop(1))
+        val grouper = grouper()
+        val keyBefore = grouper.group(before, "stream").filterIsInstance<MarkdownGroupedItem.Group>().single().stableKey
+        val keyAfter = grouper.group(markup, "static").filterIsInstance<MarkdownGroupedItem.Group>().single().stableKey
+        assertEquals(keyBefore, keyAfter)
+    }
+
+    @Test
+    fun longPlainText_keepsAllContentWithoutSplittingEmojiSurrogates() {
+        val text = "123" + "😀" + "abcdef"
+        val chunks = splitPlainMarkdownNode(node(text, xml = false), maxChars = 4)
+        assertEquals(text, chunks.joinToString("") { it.content })
+        assertTrue(chunks.all { it.content.length <= 4 })
+        assertTrue(chunks.dropLast(1).none { it.content.last().isHighSurrogate() })
     }
 }
