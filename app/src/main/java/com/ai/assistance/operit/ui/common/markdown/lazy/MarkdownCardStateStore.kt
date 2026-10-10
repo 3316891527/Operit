@@ -25,7 +25,8 @@ internal fun <T> rememberMarkdownCardValue(slot: String, initial: T): MutableSta
     if (store == null || nodeKey == null) {
         return rememberSaveable { mutableStateOf(initial) }
     }
-    return remember(store, nodeKey, slot) {
+    // 存储被复用时也响应默认值变化，已经保存的手动选择仍优先读取。
+    return remember(store, nodeKey, slot, initial) {
         val key = "$nodeKey/$slot"
         object : MutableState<T> {
             @Suppress("UNCHECKED_CAST")

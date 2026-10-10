@@ -86,11 +86,6 @@ private const val LOCATOR_PREVIEW_CHAR_COUNT = 48
 private const val TAG = "ChatScrollNavigator"
 private const val NAVIGATOR_HIDE_DELAY_MS = 1200L
 
-internal data class ChatScrollMessageAnchor(
-    val absoluteTopPx: Float,
-    val heightPx: Int,
-)
-
 private data class ChatMessageLocatorEntry(
     val index: Int,
     val preview: ChatMessageLocatorPreview,

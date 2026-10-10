@@ -94,14 +94,14 @@ internal fun rememberChatTimelineEntries(
     toolCollapseMode: ToolCollapseMode,
 ): List<ChatTimelineEntry> {
     val occurrences = mutableMapOf<Long, Int>()
-    return buildList {
+    val entriesByMessage = buildList<List<ChatTimelineEntry>> {
         messages.forEachIndexed { index, message ->
             val occurrence = occurrences[message.timestamp] ?: 0
             occurrences[message.timestamp] = occurrence + 1
             val messageKey = "$chatId/${message.timestamp}/$occurrence/${message.selectedVariantIndex}"
             key(messageKey) {
                 if (message.sender != "ai") {
-                    add(ChatTimelineEntry(messageKey, index))
+                    add(remember(messageKey, index) { listOf(ChatTimelineEntry(messageKey, index)) })
                 } else {
                     val state = remember { StreamMarkdownRendererState() }
                     val appearance = remember { ChatMessageAppearance() }
@@ -118,27 +118,35 @@ internal fun rememberChatTimelineEntries(
                         StreamMarkdownRenderer(content = message.content, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
-                    val cardStore = MarkdownCardStateStore(markdownNodeIdentityKeys(nodes), cardValues)
+                    val nodeKeys = remember(nodes) { markdownNodeIdentityKeys(nodes) }
+                    val cardStore = remember(nodeKeys, cardValues) { MarkdownCardStateStore(nodeKeys, cardValues) }
                     var wasSplit by remember { mutableStateOf(false) }
                     val split = wasSplit || shouldSplitChatMessage(nodes)
                     SideEffect { wasSplit = split }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
                     val groups = remember(nodes, grouper) { grouper.group(nodes, messageKey) }
-                    val rows = if (split && nodes.isNotEmpty()) {
-                        buildThinkToolsRows(groups, nodes, overrides) { group ->
-                            grouper.describeGroup(group, nodes) { state.xmlNodeStreams[it] }
+                    // 展开选择和 XML 子流均作为缓存输入，收起、追加及流结束时仍立即重建行。
+                    val expansionSnapshot = overrides.toMap()
+                    val xmlStreamsSnapshot = state.xmlNodeStreams.toMap()
+                    val rows = remember(split, groups, nodes, grouper, expansionSnapshot, xmlStreamsSnapshot) {
+                        if (split && nodes.isNotEmpty()) {
+                            buildThinkToolsRows(groups, nodes, expansionSnapshot) { group ->
+                                grouper.describeGroup(group, nodes) { xmlStreamsSnapshot[it] }
+                            }
+                        } else {
+                            emptyList()
                         }
-                    } else {
-                        emptyList()
                     }
-                    val fragments = if (rows.isEmpty()) {
-                        listOf(ChatMarkdownFragment(state, nodes, grouper, mode, null, cardStore))
-                    } else {
-                        rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
+                    val fragments = remember(state, nodes, grouper, mode, rows, cardStore) {
+                        if (rows.isEmpty()) {
+                            listOf(ChatMarkdownFragment(state, nodes, grouper, mode, null, cardStore))
+                        } else {
+                            rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
+                        }
                     }
-                    fragments.forEachIndexed { blockIndex, fragment ->
-                        val blockKey = if (blockIndex == 0) "first" else fragment.row!!.key
-                        add(
+                    val entries = remember(messageKey, index, fragments, split, state, grouper, appearance) {
+                        fragments.mapIndexed { blockIndex, fragment ->
+                            val blockKey = if (blockIndex == 0) "first" else fragment.row!!.key
                             ChatTimelineEntry(
                                 key = "$messageKey/$blockKey",
                                 messageIndex = index,
@@ -151,13 +159,16 @@ internal fun rememberChatTimelineEntries(
                                     grouper = grouper,
                                     appearance = appearance,
                                 ),
-                            ),
-                        )
+                            )
+                        }
                     }
+                    add(entries)
                 }
             }
         }
     }
+    // 单条消息的节点更新时复用其他消息的条目，无关重组不重新拼接整条时间线。
+    return remember(entriesByMessage) { entriesByMessage.flatten() }
 }
 
 /** 阈值只决定内容块拆分，所有分组仍允许同时展开。 */
