@@ -45,7 +45,7 @@ class MemorySearchCandidatePolicyTest {
             0f
         )
         assertEquals(listOf("weak"), result.map { it.first })
-        assertTrue(MemorySearchCandidatePolicy.selectSemanticCandidates(emptySequence(), 0f).isEmpty())
+        assertTrue(MemorySearchCandidatePolicy.selectSemanticCandidates(emptySequence<Pair<String, Float>>(), 0f).isEmpty())
     }
 
     @Test
