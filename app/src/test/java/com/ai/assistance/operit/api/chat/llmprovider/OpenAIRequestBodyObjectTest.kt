@@ -4,12 +4,12 @@ import android.content.Context
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.util.AppLogger
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -53,7 +53,11 @@ class OpenAIRequestBodyObjectTest {
                 .put(JSONObject().put("role", "system").put("content", "系统提示原文"))
                 .put(JSONObject().put("role", "user").put("content", content)))
 
-        assertTrue(expected.similar(body))
+        // 按 JSON 结构比较完整请求，避免调用 Android JSONObject 未提供的 similar。
+        assertEquals(
+            Json.parseToJsonElement(expected.toString()),
+            Json.parseToJsonElement(body.toString()),
+        )
         assertEquals(content, body.getJSONArray("messages").getJSONObject(1).getString("content"))
     }
 }
