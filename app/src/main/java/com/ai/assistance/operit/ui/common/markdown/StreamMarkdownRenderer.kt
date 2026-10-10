@@ -1118,6 +1118,36 @@ private fun UnifiedMarkdownCanvas(
         remember(groupingKey, rendererId, nodeGrouper) {
             nodeGrouper.group(nodes, rendererId)
         }
+    val viewportGrouper = nodeGrouper as? ViewportMarkdownNodeGrouper
+    if (viewportGrouper != null && viewportGrouper.shouldUseViewport(nodes)) {
+        viewportGrouper.RenderViewport(
+            groups = groupedItems,
+            nodes = nodes,
+            modifier = modifier,
+            textColor = textColor,
+            xmlStreamResolver = { xmlStreamsByIndex[it] },
+        ) { index ->
+            nodes.getOrNull(index)?.let { node ->
+                val nodeKey = nodeKeyForIndex(index)
+                AnimatedNode(
+                    nodeKey = nodeKey,
+                    node = node,
+                    index = index,
+                    isVisible = nodeAnimationStates[nodeKey] ?: true,
+                    textColor = textColor,
+                    fontSize = fontSize,
+                    onLinkClick = onLinkClick,
+                    xmlRenderer = xmlRenderer,
+                    xmlStream = xmlStreamsByIndex[index],
+                    enableDialogs = enableDialogs,
+                    fillMaxWidth = true,
+                    isLastNode = index == lastRenderableIndex,
+                )
+            }
+        }
+        return
+    }
+
     Column(modifier = modifier) {
         groupedItems.forEach { item ->
             when (item) {

@@ -19,13 +19,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
-import com.ai.assistance.operit.ui.common.markdown.MarkdownNodeGrouper
+import com.ai.assistance.operit.ui.common.markdown.ViewportMarkdownNodeGrouper
 import com.ai.assistance.operit.ui.common.markdown.XmlContentRenderer
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.ThinkingMarkup
@@ -36,8 +34,38 @@ import com.ai.assistance.operit.util.stream.Stream
 class ThinkToolsXmlNodeGrouper(
     private val showThinkingProcess: Boolean,
     private val forceExpandGroups: Boolean = false,
-    private val toolCollapseMode: ToolCollapseMode = ToolCollapseMode.ALL
-) : MarkdownNodeGrouper {
+    private val toolCollapseMode: ToolCollapseMode = ToolCollapseMode.ALL,
+    private val enableBoundedViewport: Boolean = false,
+) : ViewportMarkdownNodeGrouper {
+    // 展开选择归属于消息分组，切换渲染方式或条目离屏时仍保留。
+    private val expansionOverrides = mutableStateMapOf<String, Boolean>()
+
+    override fun shouldUseViewport(nodes: List<MarkdownNodeStable>): Boolean {
+        if (!enableBoundedViewport || forceExpandGroups) return false
+        val xmlCount = nodes.count { it.type == MarkdownProcessorType.XML_BLOCK }
+        // 这是渲染方式的切换条件，不限制同时展开的分组数量。
+        return xmlCount >= 24 || (xmlCount > 0 && nodes.sumOf { it.content.length.toLong() } >= 32_000L)
+    }
+
+    @Composable
+    override fun RenderViewport(
+        groups: List<MarkdownGroupedItem>,
+        nodes: List<MarkdownNodeStable>,
+        modifier: Modifier,
+        textColor: Color,
+        xmlStreamResolver: (Int) -> Stream<String>?,
+        renderNode: @Composable (Int) -> Unit,
+    ) {
+        ThinkToolsViewport(
+            groups = groups,
+            nodes = nodes,
+            modifier = modifier,
+            textColor = textColor,
+            expansionOverrides = expansionOverrides,
+            describeGroup = { describeGroup(it, nodes, xmlStreamResolver) },
+            renderNode = renderNode,
+        )
+    }
 
     override fun group(nodes: List<MarkdownNodeStable>, rendererId: String): List<MarkdownGroupedItem> {
         val out = ArrayList<MarkdownGroupedItem>(nodes.size)
@@ -199,6 +227,34 @@ class ThinkToolsXmlNodeGrouper(
         return out
     }
 
+    internal fun describeGroup(
+        group: MarkdownGroupedItem.Group,
+        nodes: List<MarkdownNodeStable>,
+        xmlStreamResolver: (Int) -> Stream<String>?,
+    ): ThinkToolsViewportGroup {
+        val end = (group.endIndexInclusive + 1).coerceAtMost(nodes.size)
+        val slice = if (group.startIndex in 0 until end) nodes.subList(group.startIndex, end) else emptyList()
+        val toolCount = slice.count { it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "tool" }
+        val searchCount = slice.count { it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "search" }
+        val hasStream = slice.indices.any { xmlStreamResolver(group.startIndex + it) != null }
+        val hasNonConformingTail = hasStream && nodes.subList(end, nodes.size).any { node ->
+            when (node.type) {
+                MarkdownProcessorType.PLAIN_TEXT -> node.content.isNotBlank()
+                MarkdownProcessorType.XML_BLOCK -> when (extractXmlTagName(node.content)) {
+                    "think", "thinking", "search", "meta" -> false
+                    "tool", "tool_result" -> {
+                        val name = extractToolNameFromToolOrResult(node.content)
+                        !(name == null && !isXmlFullyClosed(node.content)) && !shouldGroupToolByName(name, toolCollapseMode)
+                    }
+                    null -> isXmlFullyClosed(node.content)
+                    else -> true
+                }
+                else -> true
+            }
+        }
+        return ThinkToolsViewportGroup(group, toolCount, searchCount, hasStream && !hasNonConformingTail)
+    }
+
     @Composable
     override fun RenderGroup(
         group: MarkdownGroupedItem.Group,
@@ -229,80 +285,21 @@ class ThinkToolsXmlNodeGrouper(
         } else {
             emptyList()
         }
-
-        val toolCount = slice.count {
-            it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "tool"
-        }
-        val searchCount = slice.count {
-            it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "search"
-        }
-        val titleText =
-            when {
-                group.stableKey.startsWith("tools-only-") ->
-                    stringResource(R.string.tools_group_title_with_count, toolCount)
-                group.stableKey.startsWith("search-only-") ->
-                    stringResource(R.string.search_group_title)
-                searchCount > 0 && toolCount > 0 ->
-                    stringResource(R.string.thinking_search_tools_group_title_with_count, toolCount)
-                searchCount > 0 ->
-                    stringResource(R.string.thinking_search_group_title)
-                else ->
-                    stringResource(R.string.thinking_tools_group_title_with_count, toolCount)
-            }
-
-        val hasLiveXmlStream = slice.indices.any { idx ->
-            val absoluteIndex = group.startIndex + idx
-            xmlStreamResolver(absoluteIndex) != null
-        }
-
-        fun isConformingTailNode(node: MarkdownNodeStable): Boolean {
-            return when (node.type) {
-                MarkdownProcessorType.PLAIN_TEXT -> node.content.isBlank()
-                MarkdownProcessorType.XML_BLOCK -> {
-                    val tag = extractXmlTagName(node.content)
-                    when (tag) {
-                        "think", "thinking" -> true
-                        "search" -> true
-                        "meta" -> true
-                        "tool", "tool_result" -> {
-                            val toolName = extractToolNameFromToolOrResult(node.content)
-                            if (toolName == null && !isXmlFullyClosed(node.content)) {
-                                true
-                            } else {
-                                shouldGroupToolByName(toolName, toolCollapseMode)
-                            }
-                        }
-                        null -> !isXmlFullyClosed(node.content)
-                        else -> false
-                    }
-                }
-                else -> false
-            }
-        }
-
-        val tailStartIndex = (group.endIndexInclusive + 1).coerceAtMost(nodes.size)
-        val hasNonConformingAfterGroup =
-            if (tailStartIndex >= nodes.size) {
-                false
-            } else {
-                nodes.subList(tailStartIndex, nodes.size).any { !isConformingTailNode(it) }
-        }
-        // 仅在该组仍处于流式阶段时自动展开；
-        // 流结束（包括用户取消后落为静态消息）默认自动收起。
-        val shouldAutoExpand = hasLiveXmlStream && !hasNonConformingAfterGroup
+        val info = describeGroup(group, nodes, xmlStreamResolver)
+        val titleText = thinkToolsViewportTitle(info)
+        val shouldAutoExpand = info.autoExpand
 
         var expanded by remember(rendererId, group.stableKey, forceExpandGroups) {
-            mutableStateOf(forceExpandGroups || shouldAutoExpand)
+            mutableStateOf(forceExpandGroups || (expansionOverrides[group.stableKey] ?: shouldAutoExpand))
         }
-        var userOverride by remember(rendererId, group.stableKey, forceExpandGroups) {
-            mutableStateOf<Boolean?>(null)
-        }
+        val userOverride = expansionOverrides[group.stableKey]
         val appearedKeys = remember(rendererId, group.stableKey) { mutableStateMapOf<String, Boolean>() }
 
         LaunchedEffect(forceExpandGroups, shouldAutoExpand, userOverride) {
             when {
                 forceExpandGroups -> expanded = true
                 userOverride == null -> expanded = shouldAutoExpand
+                else -> expanded = userOverride
             }
         }
 
@@ -332,7 +329,7 @@ class ThinkToolsXmlNodeGrouper(
                 onClick = {
                     val newExpanded = !expanded
                     expanded = newExpanded
-                    userOverride = newExpanded
+                    expansionOverrides[group.stableKey] = newExpanded
                 },
             )
 

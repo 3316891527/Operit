@@ -13,7 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,7 +35,7 @@ object DetailsTagRenderer {
         val body = removeSummary(inner).trim()
 
         val defaultExpanded = hasOpenAttribute(xmlContent, tagName)
-        var expanded by remember { mutableStateOf(defaultExpanded) }
+        var expanded by rememberSaveable { mutableStateOf(defaultExpanded) }
         val rotation by animateFloatAsState(
             targetValue = if (expanded) 90f else 0f,
             animationSpec = tween(durationMillis = 300),

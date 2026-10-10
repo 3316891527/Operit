@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -340,7 +341,7 @@ class CustomXmlRenderer(
             return
         }
 
-        var expanded by remember { mutableStateOf(false) }
+        var expanded by rememberSaveable { mutableStateOf(false) }
 
         val rotation by
             animateFloatAsState(
@@ -770,23 +771,27 @@ class CustomXmlRenderer(
                 null
             }
 
-        var expanded by remember { mutableStateOf(initialThinkingExpanded) }
+        var expanded by rememberSaveable { mutableStateOf(initialThinkingExpanded) }
+        var userExpansionOverride by rememberSaveable { mutableStateOf<Boolean?>(null) }
         var thinkBodyFullHeight by
-            remember { mutableStateOf(allowExpandedThinkingFullHeight && initialThinkingExpanded) }
-        var thinkExpandSession by remember { mutableIntStateOf(0) }
+            rememberSaveable { mutableStateOf(allowExpandedThinkingFullHeight && initialThinkingExpanded) }
+        val viewportHeight = LocalThinkToolsViewportHeight.current
+        var thinkExpandSession by remember { mutableIntStateOf(if (expanded) 1 else 0) }
         var skipCollapseAnimationOnce by remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
         var autoScrollEnabled by remember { mutableStateOf(true) }
         var userHasInteractedWithScroll by remember { mutableStateOf(false) }
         var isProgrammaticScroll by remember { mutableStateOf(false) }
-        val thinkVisibilityState = remember { MutableTransitionState(initialThinkingExpanded) }
+        val thinkVisibilityState = remember { MutableTransitionState(expanded) }
         val thinkBodyToggleInteractionSource = remember { MutableInteractionSource() }
 
         val accessibilityDesc = stringResource(R.string.thinking_process_block)
 
         // 使用LaunchedEffect来初始化和同步状态，避免在快速重组时状态被意外重置
-        LaunchedEffect(isThinkingInProgress, expandThinkingProcess) {
-            val targetExpanded = if (initialThinkingExpanded && !isThinkingInProgress) {
+        LaunchedEffect(isThinkingInProgress, expandThinkingProcess, userExpansionOverride) {
+            val targetExpanded = if (viewportHeight > 0.dp && userExpansionOverride != null) {
+                userExpansionOverride == true
+            } else if (initialThinkingExpanded && !isThinkingInProgress) {
                 true
             } else if (isThinkingInProgress) {
                 // 思考过程中，状态由用户偏好决定
@@ -857,10 +862,11 @@ class CustomXmlRenderer(
             }
         val useStreamingThinkMarkdown = shouldComposeThinkBody && isThinkingInProgress && (thinkMarkdownStream != null)
         val renderExpandedThinkWithFullHeight =
-            (allowExpandedThinkingFullHeight || thinkBodyFullHeight) && expanded
+            (allowExpandedThinkingFullHeight || thinkBodyFullHeight) && expanded && viewportHeight == 0.dp
+        val thinkMaxHeight = if (viewportHeight > 0.dp && thinkBodyFullHeight) maxOf(viewportHeight, 300.dp) else 300.dp
 
         LaunchedEffect(expanded, thinkText) {
-            if (shouldComposeThinkBody && autoScrollEnabled) {
+            if (shouldComposeThinkBody && autoScrollEnabled && (viewportHeight == 0.dp || isThinkingInProgress)) {
                 isProgrammaticScroll = true
                 try {
                     withFrameNanos { }
@@ -907,6 +913,7 @@ class CustomXmlRenderer(
                             thinkExpandSession += 1
                         }
                         expanded = newExpandedValue
+                        if (viewportHeight > 0.dp) userExpansionOverride = newExpandedValue
                         if (isThinkingInProgress) {
                             expandThinkingProcess = newExpandedValue
                         }
@@ -946,7 +953,7 @@ class CustomXmlRenderer(
                                         if (renderExpandedThinkWithFullHeight) {
                                             Modifier
                                         } else {
-                                            Modifier.heightIn(max = 300.dp)
+                                            Modifier.heightIn(max = thinkMaxHeight)
                                         }
                                     )
                             val thinkContentModifier =
