@@ -31,6 +31,8 @@ internal fun buildThinkToolsRows(
     groups: List<MarkdownGroupedItem>,
     nodes: List<MarkdownNodeStable>,
     overrides: Map<String, Boolean>,
+    showThinkingProcess: Boolean = true,
+    showStatusTags: Boolean = true,
     describeGroup: (MarkdownGroupedItem.Group) -> ThinkToolsGroupInfo,
 ): List<ThinkToolsRow> = buildList {
     val nodeKeys = markdownNodeIdentityKeys(nodes)
@@ -39,9 +41,12 @@ internal fun buildThinkToolsRows(
             is MarkdownGroupedItem.Single -> {
                 if (item.index in nodes.indices) {
                     val node = nodes[item.index]
+                    if (!isVisibleChatMarkdownNode(node, showThinkingProcess, showStatusTags)) continue
                     if (node.type == MarkdownProcessorType.PLAIN_TEXT) {
                         splitPlainMarkdownNode(node).forEachIndexed { piece, chunk ->
-                            add(ThinkToolsRow.Content(item.index, false, "${nodeKeys[item.index]}/part-$piece", chunk))
+                            if (isVisibleChatMarkdownNode(chunk, showThinkingProcess, showStatusTags)) {
+                                add(ThinkToolsRow.Content(item.index, false, "${nodeKeys[item.index]}/part-$piece", chunk))
+                            }
                         }
                     } else {
                         add(ThinkToolsRow.Content(item.index, false, nodeKeys[item.index]))
@@ -54,7 +59,10 @@ internal fun buildThinkToolsRows(
                 add(ThinkToolsRow.Header(info, expanded))
                 if (expanded) {
                     for (index in item.startIndex..item.endIndexInclusive.coerceAtMost(nodes.lastIndex)) {
-                        if (index in nodes.indices && nodes[index].type == MarkdownProcessorType.XML_BLOCK) {
+                        if (index in nodes.indices &&
+                            nodes[index].type == MarkdownProcessorType.XML_BLOCK &&
+                            isVisibleChatMarkdownNode(nodes[index], showThinkingProcess, showStatusTags)
+                        ) {
                             add(ThinkToolsRow.Content(index, true, nodeKeys[index]))
                         }
                     }

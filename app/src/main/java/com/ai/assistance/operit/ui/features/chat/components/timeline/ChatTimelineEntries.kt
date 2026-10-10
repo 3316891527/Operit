@@ -42,6 +42,7 @@ import com.ai.assistance.operit.ui.features.chat.components.part.CanvasExpandabl
 import com.ai.assistance.operit.ui.features.chat.components.part.ThinkToolsRow
 import com.ai.assistance.operit.ui.features.chat.components.part.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.chat.components.part.buildThinkToolsRows
+import com.ai.assistance.operit.ui.features.chat.components.part.isVisibleChatMarkdownNode
 import com.ai.assistance.operit.ui.features.chat.components.part.thinkToolsGroupTitle
 import com.ai.assistance.operit.ui.features.chat.components.rememberRevisableTextStream
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
@@ -91,6 +92,7 @@ internal fun rememberChatTimelineEntries(
     messages: List<ChatMessage>,
     chatId: String,
     showThinkingProcess: Boolean,
+    showStatusTags: Boolean,
     toolCollapseMode: ToolCollapseMode,
 ): List<ChatTimelineEntry> {
     val occurrences = mutableMapOf<Long, Int>()
@@ -118,30 +120,42 @@ internal fun rememberChatTimelineEntries(
                         StreamMarkdownRenderer(content = message.content, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
+                    // 隐藏协议不触发拆块；原始节点仍用于分组键和 XML 子流索引。
+                    val visibleNodes = remember(nodes, showThinkingProcess, showStatusTags) {
+                        nodes.filter { isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags) }
+                    }
                     val nodeKeys = remember(nodes) { markdownNodeIdentityKeys(nodes) }
                     val cardStore = remember(nodeKeys, cardValues) { MarkdownCardStateStore(nodeKeys, cardValues) }
                     var wasSplit by remember { mutableStateOf(false) }
-                    val split = wasSplit || shouldSplitChatMessage(nodes)
+                    val split = wasSplit || shouldSplitChatMessage(visibleNodes)
                     SideEffect { wasSplit = split }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
                     val groups = remember(nodes, grouper) { grouper.group(nodes, messageKey) }
                     // 展开选择和 XML 子流均作为缓存输入，收起、追加及流结束时仍立即重建行。
                     val expansionSnapshot = overrides.toMap()
                     val xmlStreamsSnapshot = state.xmlNodeStreams.toMap()
-                    val rows = remember(split, groups, nodes, grouper, expansionSnapshot, xmlStreamsSnapshot) {
+                    val rows = remember(
+                        split, groups, nodes, grouper, expansionSnapshot, xmlStreamsSnapshot,
+                        showThinkingProcess, showStatusTags,
+                    ) {
                         if (split && nodes.isNotEmpty()) {
-                            buildThinkToolsRows(groups, nodes, expansionSnapshot) { group ->
+                            buildThinkToolsRows(
+                                groups, nodes, expansionSnapshot,
+                                showThinkingProcess = showThinkingProcess,
+                                showStatusTags = showStatusTags,
+                            ) { group ->
                                 grouper.describeGroup(group, nodes) { xmlStreamsSnapshot[it] }
                             }
                         } else {
                             emptyList()
                         }
                     }
-                    val fragments = remember(state, nodes, grouper, mode, rows, cardStore) {
-                        if (rows.isEmpty()) {
-                            listOf(ChatMarkdownFragment(state, nodes, grouper, mode, null, cardStore))
-                        } else {
-                            rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
+                    val fragments = remember(state, nodes, visibleNodes, grouper, mode, rows, cardStore) {
+                        // 首尾只属于实际可见的块，纯隐藏消息不生成空气泡外壳。
+                        when {
+                            visibleNodes.isEmpty() -> emptyList()
+                            rows.isEmpty() -> listOf(ChatMarkdownFragment(state, nodes, grouper, mode, null, cardStore))
+                            else -> rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
                         }
                     }
                     val entries = remember(messageKey, index, fragments, split, state, grouper, appearance) {
@@ -171,7 +185,7 @@ internal fun rememberChatTimelineEntries(
     return remember(entriesByMessage) { entriesByMessage.flatten() }
 }
 
-/** 阈值只决定内容块拆分，所有分组仍允许同时展开。 */
+/** 按可见节点判定拆块阈值，所有分组仍允许同时展开。 */
 internal fun shouldSplitChatMessage(nodes: List<MarkdownNodeStable>): Boolean =
     nodes.size >= 24 || nodes.sumOf { it.content.length.toLong() } >= 32_000L
 

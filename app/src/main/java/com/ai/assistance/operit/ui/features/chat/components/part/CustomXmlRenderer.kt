@@ -117,7 +117,7 @@ class CustomXmlRenderer(
         val trimmedContent = xmlContent.trim()
         val tagName = extractTagName(trimmedContent)
 
-        if (shouldHideHiddenMeta(trimmedContent, tagName)) {
+        if (!isVisibleChatXmlContent(trimmedContent, showThinkingProcess, showStatusTags)) {
             return
         }
         
@@ -156,24 +156,6 @@ class CustomXmlRenderer(
         renderInstanceKey: Any?,
         modifier: Modifier
     ) {
-        val shouldSkipHiddenThink =
-            (tagName == "think" || tagName == "thinking") && !showThinkingProcess
-        if (shouldSkipHiddenThink) {
-            return
-        }
-
-        val shouldSkipHiddenStatus =
-            if (tagName != "status") {
-                false
-            } else {
-                val typeMatch = ChatMarkupRegex.typeAttr.find(trimmedContent)
-                val statusType = typeMatch?.groupValues?.get(1)
-                statusType in listOf("completion", "complete", "wait_for_user_need") && !showStatusTags
-            }
-        if (shouldSkipHiddenStatus) {
-            return
-        }
-
         // 如果无法识别为有效的XML标签，则交由默认渲染器处理
         if (tagName == null) {
             fallback.RenderXmlContent(trimmedContent, Modifier, textColor, xmlStream, renderInstanceKey)
@@ -231,15 +213,6 @@ class CustomXmlRenderer(
 
     private fun extractRawTagName(content: String): String? {
         return ChatMarkupRegex.extractOpeningTagName(content)
-    }
-
-    private fun shouldHideHiddenMeta(content: String, tagName: String?): Boolean {
-        return tagName == "meta" &&
-            Regex(
-                """\bprovider\s*=\s*["'](?:gemini:thought_signature|openai:responses_reasoning|openai:responses_output_item)["']""",
-                RegexOption.IGNORE_CASE
-            )
-                .containsMatchIn(content)
     }
 
     /** 检查XML标签是否完全闭合。 支持标准配对标签 (<tag>...</tag>) 和自闭合标签 (<tag/>)。 */

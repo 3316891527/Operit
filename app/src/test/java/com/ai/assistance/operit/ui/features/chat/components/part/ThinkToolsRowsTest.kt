@@ -111,6 +111,73 @@ class ThinkToolsRowsTest {
     }
 
     @Test
+    fun hiddenNodes_doNotReserveBubbleRowsAroundVisibleBody() {
+        val nodes = listOf(
+            node("\n\n", xml = false),
+            node("<think>隐藏思考</think>"),
+            node("<status type=\"completion\"/>"),
+            node("Plan of Action\n完整正文", xml = false),
+            node("<meta provider=\"openai:responses_reasoning\">协议</meta>"),
+            node("\n", xml = false),
+        )
+        val groups = nodes.indices.map { MarkdownGroupedItem.Single(it) }
+        val rows = buildThinkToolsRows(
+            groups, nodes, emptyMap(), showThinkingProcess = false, showStatusTags = false,
+        ) { error("正文没有工具分组") }
+
+        val content = rows.single() as ThinkToolsRow.Content
+        assertEquals(3, content.index)
+        assertEquals("${markdownNodeIdentityKeys(nodes)[3]}/part-0", content.key)
+        assertEquals(nodes[3], content.node)
+    }
+
+    @Test
+    fun largeHiddenProtocol_doesNotSplitShortVisibleReply() {
+        val nodes = listOf(
+            node("Plan of Action\n正文", xml = false),
+            node("<meta provider=\"openai:responses_reasoning\">${"x".repeat(40_000)}</meta>"),
+        )
+        val visibleNodes = nodes.filter {
+            isVisibleChatMarkdownNode(it, showThinkingProcess = true, showStatusTags = true)
+        }
+
+        assertEquals(listOf(nodes.first()), visibleNodes)
+        assertFalse(shouldSplitChatMessage(visibleNodes))
+        val rows = buildThinkToolsRows(nodes.indices.map { MarkdownGroupedItem.Single(it) }, nodes, emptyMap()) {
+            error("正文没有工具分组")
+        }
+        assertEquals(listOf(0), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
+    }
+
+    @Test
+    fun literalMetaExamplesAndUnknownXml_remainVisible() {
+        val example = "<meta provider=\"openai:responses_reasoning\">字面示例</meta>"
+        val nodes = listOf(
+            node(example, xml = false),
+            node(example, xml = false).copy(type = MarkdownProcessorType.CODE_BLOCK),
+            node("<meta provider=\"custom\">自定义内容</meta>"),
+        )
+        val rows = buildThinkToolsRows(nodes.indices.map { MarkdownGroupedItem.Single(it) }, nodes, emptyMap()) {
+            error("正文没有工具分组")
+        }
+
+        assertEquals(listOf(0, 1, 2), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
+    }
+
+    @Test
+    fun blankPlainTextChunks_doNotReserveTheFirstBubbleSlice() {
+        val nodes = listOf(node(" ".repeat(4096) + "Plan of Action", xml = false))
+        val rows = buildThinkToolsRows(listOf(MarkdownGroupedItem.Single(0)), nodes, emptyMap()) {
+            error("正文没有工具分组")
+        }
+
+        val content = rows.single() as ThinkToolsRow.Content
+        assertEquals(0, content.index)
+        assertEquals("${markdownNodeIdentityKeys(nodes)[0]}/part-1", content.key)
+        assertEquals("Plan of Action", content.node?.content)
+    }
+
+    @Test
     fun longPlainText_keepsAllContentWithoutSplittingEmojiSurrogates() {
         val text = "123" + "😀" + "abcdef"
         val chunks = splitPlainMarkdownNode(node(text, xml = false), maxChars = 4)

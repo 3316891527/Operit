@@ -287,7 +287,13 @@ fun ChatArea(
     val lastMessage = chatHistory.lastOrNull()
     val displayPreferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
     val toolCollapseMode by displayPreferences.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
-    val timelineEntries = rememberChatTimelineEntries(chatHistory, currentChatId, themeSnapshot.showThinkingProcess, toolCollapseMode)
+    val timelineEntries = rememberChatTimelineEntries(
+        messages = chatHistory,
+        chatId = currentChatId,
+        showThinkingProcess = themeSnapshot.showThinkingProcess,
+        showStatusTags = themeSnapshot.showStatusTags,
+        toolCollapseMode = toolCollapseMode,
+    )
     val historyHeaderCount = if (hasOlderDisplayHistory) 1 else 0
     val itemMessageIndices = List(historyHeaderCount) { -1 } + timelineEntries.map { it.messageIndex }
     val lastRenderNodes = timelineEntries.lastOrNull()?.slice?.state?.renderNodes
