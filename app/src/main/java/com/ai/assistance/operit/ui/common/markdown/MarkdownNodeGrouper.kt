@@ -37,6 +37,21 @@ interface MarkdownNodeGrouper {
     )
 }
 
+/** 允许长消息分组提供有边界的按需渲染，避免整个回复形成一个超高布局。 */
+interface ViewportMarkdownNodeGrouper : MarkdownNodeGrouper {
+    fun shouldUseViewport(nodes: List<MarkdownNodeStable>): Boolean
+
+    @Composable
+    fun RenderViewport(
+        groups: List<MarkdownGroupedItem>,
+        nodes: List<MarkdownNodeStable>,
+        modifier: Modifier,
+        textColor: Color,
+        xmlStreamResolver: (Int) -> Stream<String>?,
+        renderNode: @Composable (Int) -> Unit,
+    )
+}
+
 object NoopMarkdownNodeGrouper : MarkdownNodeGrouper {
     override fun group(nodes: List<MarkdownNodeStable>, rendererId: String): List<MarkdownGroupedItem> {
         return nodes.indices.map { MarkdownGroupedItem.Single(it) }

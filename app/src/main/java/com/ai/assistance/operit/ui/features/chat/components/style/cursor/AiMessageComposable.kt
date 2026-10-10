@@ -89,11 +89,12 @@ fun AiMessageComposable(
         )
     }
 
-    val nodeGrouper = remember(effectiveShowThinkingProcess, toolCollapseMode, expandThinkToolsGroups) {
+    val nodeGrouper = remember(effectiveShowThinkingProcess, toolCollapseMode, expandThinkToolsGroups, enableDialogs) {
         ThinkToolsXmlNodeGrouper(
             showThinkingProcess = effectiveShowThinkingProcess,
             forceExpandGroups = expandThinkToolsGroups,
-            toolCollapseMode = toolCollapseMode
+            toolCollapseMode = toolCollapseMode,
+            enableBoundedViewport = enableDialogs && !expandThinkToolsGroups,
         )
     }
     val rememberedOnLinkClick = remember(context, onLinkClick, enableDialogs) {
