@@ -68,6 +68,7 @@ fun MemorySearchSettingsDialog(
     var keywordWeight by remember(currentConfig) { mutableFloatStateOf(currentConfig.keywordWeight) }
     var tagWeight by remember(currentConfig) { mutableFloatStateOf(currentConfig.tagWeight) }
     var vectorWeight by remember(currentConfig) { mutableFloatStateOf(currentConfig.vectorWeight) }
+    var minSemanticSimilarity by remember(currentConfig) { mutableFloatStateOf(currentConfig.minSemanticSimilarity) }
     var edgeWeight by remember(currentConfig) { mutableFloatStateOf(currentConfig.edgeWeight) }
     var scoreMode by remember(currentConfig) { mutableStateOf(currentConfig.scoreMode) }
     var editedAutoSaveIntervalMinutes by remember(autoSaveIntervalMinutes) {
@@ -138,6 +139,13 @@ fun MemorySearchSettingsDialog(
                         valueText = String.format("%.2f", vectorWeight),
                         valueRange = 0.0f..2.0f,
                         onValueChange = { vectorWeight = it }
+                    )
+                    SliderSettingItem(
+                        title = stringResource(R.string.memory_search_min_semantic_similarity),
+                        value = minSemanticSimilarity,
+                        valueText = String.format("%.2f", minSemanticSimilarity),
+                        valueRange = 0.0f..1.0f,
+                        onValueChange = { minSemanticSimilarity = it }
                     )
                     SliderSettingItem(
                         title = stringResource(R.string.memory_search_edge_weight),
@@ -350,7 +358,8 @@ fun MemorySearchSettingsDialog(
                             keywordWeight = keywordWeight,
                             tagWeight = tagWeight,
                             vectorWeight = vectorWeight,
-                            edgeWeight = edgeWeight
+                            edgeWeight = edgeWeight,
+                            minSemanticSimilarity = minSemanticSimilarity
                         ).normalized(),
                         editedCloudConfig,
                         editedAutoSaveIntervalMinutes.roundToInt(),
@@ -370,6 +379,7 @@ fun MemorySearchSettingsDialog(
                         keywordWeight = 10.0f
                         tagWeight = 0.0f
                         vectorWeight = 0.0f
+                        minSemanticSimilarity = MemorySearchConfig.DEFAULT_MIN_SEMANTIC_SIMILARITY
                         edgeWeight = 0.4f
                         editedAutoSaveIntervalMinutes =
                             MemorySearchSettingsPreferences.DEFAULT_AUTO_SAVE_INTERVAL_MINUTES.toFloat()
