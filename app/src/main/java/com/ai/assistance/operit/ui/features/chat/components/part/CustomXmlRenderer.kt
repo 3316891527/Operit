@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.part
 
+import com.ai.assistance.operit.ui.common.markdown.lazy.rememberMarkdownCardValue
 import android.webkit.WebView
 import android.webkit.WebSettings
 import androidx.compose.animation.*
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -331,7 +333,7 @@ class CustomXmlRenderer(
             return
         }
 
-        var expanded by remember { mutableStateOf(false) }
+        var expanded by rememberMarkdownCardValue("tool-expanded", false)
 
         val rotation by
             animateFloatAsState(
@@ -762,23 +764,26 @@ class CustomXmlRenderer(
                 null
             }
 
-        var expanded by remember { mutableStateOf(initialThinkingExpanded) }
+        var expanded by rememberMarkdownCardValue("think-expanded", initialThinkingExpanded)
+        var userExpansionOverride by rememberMarkdownCardValue<Boolean?>("think-user-override", null)
         var thinkBodyFullHeight by
-            remember { mutableStateOf(allowExpandedThinkingFullHeight && initialThinkingExpanded) }
-        var thinkExpandSession by remember { mutableIntStateOf(0) }
+            rememberMarkdownCardValue("think-full-height", allowExpandedThinkingFullHeight && initialThinkingExpanded)
+        var thinkExpandSession by remember { mutableIntStateOf(if (expanded) 1 else 0) }
         var skipCollapseAnimationOnce by remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
         var autoScrollEnabled by remember { mutableStateOf(true) }
         var userHasInteractedWithScroll by remember { mutableStateOf(false) }
         var isProgrammaticScroll by remember { mutableStateOf(false) }
-        val thinkVisibilityState = remember { MutableTransitionState(initialThinkingExpanded) }
+        val thinkVisibilityState = remember { MutableTransitionState(expanded) }
         val thinkBodyToggleInteractionSource = remember { MutableInteractionSource() }
 
         val accessibilityDesc = stringResource(R.string.thinking_process_block)
 
         // 使用LaunchedEffect来初始化和同步状态，避免在快速重组时状态被意外重置
-        LaunchedEffect(isThinkingInProgress, expandThinkingProcess) {
-            val targetExpanded = if (initialThinkingExpanded && !isThinkingInProgress) {
+        LaunchedEffect(isThinkingInProgress, expandThinkingProcess, userExpansionOverride) {
+            val targetExpanded = if (userExpansionOverride != null) {
+                userExpansionOverride == true
+            } else if (initialThinkingExpanded && !isThinkingInProgress) {
                 true
             } else if (isThinkingInProgress) {
                 // 思考过程中，状态由用户偏好决定
@@ -850,6 +855,7 @@ class CustomXmlRenderer(
         val useStreamingThinkMarkdown = shouldComposeThinkBody && isThinkingInProgress && (thinkMarkdownStream != null)
         val renderExpandedThinkWithFullHeight =
             (allowExpandedThinkingFullHeight || thinkBodyFullHeight) && expanded
+        val thinkMaxHeight = 300.dp
 
         LaunchedEffect(expanded, thinkText) {
             if (shouldComposeThinkBody && autoScrollEnabled) {
@@ -899,6 +905,7 @@ class CustomXmlRenderer(
                             thinkExpandSession += 1
                         }
                         expanded = newExpandedValue
+                        userExpansionOverride = newExpandedValue
                         if (isThinkingInProgress) {
                             expandThinkingProcess = newExpandedValue
                         }
@@ -938,7 +945,7 @@ class CustomXmlRenderer(
                                         if (renderExpandedThinkWithFullHeight) {
                                             Modifier
                                         } else {
-                                            Modifier.heightIn(max = 300.dp)
+                                            Modifier.heightIn(max = thinkMaxHeight)
                                         }
                                     )
                             val thinkContentModifier =
