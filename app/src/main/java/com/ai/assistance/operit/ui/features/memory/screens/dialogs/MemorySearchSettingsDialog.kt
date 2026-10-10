@@ -140,11 +140,13 @@ fun MemorySearchSettingsDialog(
                         valueRange = 0.0f..2.0f,
                         onValueChange = { vectorWeight = it }
                     )
+                    // 未启用向量检索时保留已选阈值，控件置灰以避免误以为它会影响当前查询。
                     SliderSettingItem(
                         title = stringResource(R.string.memory_search_min_semantic_similarity),
                         value = minSemanticSimilarity,
                         valueText = String.format("%.2f", minSemanticSimilarity),
                         valueRange = 0.0f..1.0f,
+                        enabled = vectorWeight > 0f && editedCloudConfig.isReady(),
                         onValueChange = { minSemanticSimilarity = it }
                     )
                     SliderSettingItem(
@@ -467,6 +469,7 @@ private fun SliderSettingItem(
     valueText: String,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int = 0,
+    enabled: Boolean = true,
     onValueChange: (Float) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -475,18 +478,23 @@ private fun SliderSettingItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = title, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            )
             Text(
                 text = valueText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
+                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             )
         }
         Slider(
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
-            steps = steps
+            steps = steps,
+            enabled = enabled
         )
     }
 }

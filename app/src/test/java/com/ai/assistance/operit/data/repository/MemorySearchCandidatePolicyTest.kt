@@ -32,10 +32,10 @@ class MemorySearchCandidatePolicyTest {
     }
 
     @Test
-    fun folderQueriesRequestFullIndexBeforeScoping() {
-        assertEquals(50, MemorySearchCandidatePolicy.requestedNeighbors(500, false))
-        assertEquals(500, MemorySearchCandidatePolicy.requestedNeighbors(500, true))
-        assertEquals(4, MemorySearchCandidatePolicy.requestedNeighbors(4, false))
+    fun globalIndexQueriesRequestOnlyBoundedCandidates() {
+        assertEquals(50, MemorySearchCandidatePolicy.requestedNeighbors(500))
+        assertEquals(4, MemorySearchCandidatePolicy.requestedNeighbors(4))
+        assertEquals(0, MemorySearchCandidatePolicy.requestedNeighbors(0))
     }
 
     @Test

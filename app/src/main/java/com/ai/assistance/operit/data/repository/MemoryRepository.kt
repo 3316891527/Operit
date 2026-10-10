@@ -581,8 +581,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
     }
 
     private fun getSemanticMemoryCandidatesFromIndex(
-        queryEmbedding: Embedding,
-        folderScoped: Boolean
+        queryEmbedding: Embedding
     ): List<Pair<Memory, Float>> {
         val manager = ensureMemoryVectorIndex(queryEmbedding.vector.size) ?: return emptyList()
         val availableCount = manager.size()
@@ -592,7 +591,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         }
         val nearest = manager.findNearest(
             queryEmbedding.vector,
-            MemorySearchCandidatePolicy.requestedNeighbors(availableCount, folderScoped)
+            MemorySearchCandidatePolicy.requestedNeighbors(availableCount)
         )
         manager.close()
         if (nearest.isEmpty()) return emptyList()
@@ -1420,10 +1419,13 @@ class MemoryRepository(private val context: Context, profileId: String) {
         }
 
         // 3. Semantic search (for conceptual matches)
-        val allMemoriesWithEmbedding = memoriesToSearch.filter { it.embedding != null }
+        // 文件夹查询只准备一次范围内向量，每个关键词直接复用它们计算余弦相似度。
+        val scopedEmbeddings = memoriesToSearch.mapNotNull { memory ->
+            memory.embedding?.let { embedding -> memory to embedding }
+        }
         val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
         val semanticMatchedIds = mutableSetOf<Long>()
-        val semanticScopedIds = allMemoriesWithEmbedding.mapTo(hashSetOf()) { it.id }
+        val semanticScopedIds = scopedEmbeddings.mapTo(hashSetOf()) { (memory, _) -> memory.id }
 
         if (effectiveSemanticWeight > 0.0f && cloudConfig.isReady()) {
             com.ai.assistance.operit.util.AppLogger.d("MemoryRepo", "--- Starting Semantic Search for ${keywords.size} keywords ---")
@@ -1434,22 +1436,27 @@ class MemoryRepository(private val context: Context, profileId: String) {
                     return@forEach
                 }
 
+                val semanticCandidates = if (folderScoped) {
+                    scopedEmbeddings.asSequence()
+                        .filter { (_, embedding) -> embedding.vector.size == queryEmbedding.vector.size }
+                        .map { (memory, embedding) -> memory to cosineSimilarity(queryEmbedding, embedding) }
+                } else {
+                    getSemanticMemoryCandidatesFromIndex(queryEmbedding).asSequence()
+                }
                 val semanticResultsWithScores = MemorySearchCandidatePolicy.selectSemanticCandidates(
-                    getSemanticMemoryCandidatesFromIndex(queryEmbedding, folderScoped)
-                        .asSequence()
-                        .filter { (memory, _) -> memory.id in semanticScopedIds },
+                    semanticCandidates.filter { (memory, _) -> memory.id in semanticScopedIds },
                     minimumSemanticSimilarity
                 )
 
                 if (semanticResultsWithScores.isEmpty()) {
                     com.ai.assistance.operit.util.AppLogger.d(
                         "MemoryRepo",
-                        "Keyword '$keyword': semantic index returned no compatible memory candidates"
+                        "Keyword '$keyword': semantic search returned no compatible memory candidates"
                     )
                 } else {
                     com.ai.assistance.operit.util.AppLogger.d(
                         "MemoryRepo",
-                        "Keyword '$keyword': ${semanticResultsWithScores.size} indexed matches (top: ${String.format("%.2f", semanticResultsWithScores.first().second)})"
+                        "Keyword '$keyword': ${semanticResultsWithScores.size} semantic matches (top: ${String.format("%.2f", semanticResultsWithScores.first().second)})"
                     )
                 }
 

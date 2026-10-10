@@ -3,8 +3,8 @@ package com.ai.assistance.operit.data.repository
 internal object MemorySearchCandidatePolicy {
     const val MAX_SEMANTIC_CANDIDATES_PER_KEYWORD = 50
 
-    fun requestedNeighbors(indexSize: Int, folderScoped: Boolean): Int =
-        if (folderScoped) indexSize else minOf(indexSize, MAX_SEMANTIC_CANDIDATES_PER_KEYWORD)
+    fun requestedNeighbors(indexSize: Int): Int =
+        minOf(indexSize, MAX_SEMANTIC_CANDIDATES_PER_KEYWORD)
 
     fun <T> selectSemanticCandidates(
         candidates: Sequence<Pair<T, Float>>,
