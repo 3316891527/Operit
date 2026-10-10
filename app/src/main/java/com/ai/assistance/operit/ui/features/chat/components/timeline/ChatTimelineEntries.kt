@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
 import com.ai.assistance.operit.ui.common.markdown.AnimatedNode
 import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
@@ -67,6 +68,7 @@ internal data class ChatMessageSlice(
     val state: StreamMarkdownRendererState,
     val grouper: ThinkToolsXmlNodeGrouper,
     val appearance: ChatMessageAppearance,
+    val sections: List<MessageSection>,
 )
 
 internal val LocalChatMessageSlice = staticCompositionLocalOf<ChatMessageSlice?> { null }
@@ -111,11 +113,17 @@ internal fun rememberChatTimelineEntries(
                         ThinkToolsXmlNodeGrouper(showThinkingProcess, toolCollapseMode = toolCollapseMode).also { it.expansionOverrides = overrides }
                     }
                     val stream = rememberRevisableTextStream(message.contentStream)
+                    // 静态片段由消息统一解析，流式块继续复用正在收集的节点和 XML 子流。
+                    val sections = if (stream == null) {
+                        remember(message.content, message.sections) { message.displaySections() }
+                    } else {
+                        emptyList()
+                    }
                     if (stream != null) {
                         val charStream = remember(stream) { stream.toCharStream() }
                         StreamMarkdownRenderer(markdownStream = charStream, state = state, renderContent = false)
                     } else {
-                        StreamMarkdownRenderer(content = message.content, state = state, renderContent = false)
+                        StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
                     val cardStore = MarkdownCardStateStore(markdownNodeIdentityKeys(nodes), cardValues)
@@ -150,6 +158,7 @@ internal fun rememberChatTimelineEntries(
                                     state = state,
                                     grouper = grouper,
                                     appearance = appearance,
+                                    sections = sections,
                                 ),
                             ),
                         )

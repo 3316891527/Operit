@@ -408,7 +408,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    sections = if (slice == null) message.displaySections() else slice.sections,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -628,7 +628,7 @@ fun BubbleAiMessageComposable(
                                 // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    content = message.content,
+                                    sections = if (slice == null) message.displaySections() else slice.sections,
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
