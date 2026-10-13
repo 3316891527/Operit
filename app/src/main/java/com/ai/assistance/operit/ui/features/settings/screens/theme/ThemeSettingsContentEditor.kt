@@ -66,6 +66,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -182,7 +183,11 @@ internal fun ThemeSettingsContentEditor(
         if (activeThemeTarget == target) {
             editorState = ThemeEditorState(
                 target = target,
-                session = ThemeEditorSession(preferencesManager, snapshot.values),
+                session = ThemeEditorSession(
+                    preferencesManager,
+                    snapshot.values,
+                    displayPreferencesManager.globalUserName.first().orEmpty(),
+                ),
             )
         }
     }
@@ -283,17 +288,26 @@ internal fun ThemeSettingsContentEditor(
         if (isSaving) return
         val target = state.target
         val savedValues = draft.currentValues
+        val savedGlobalUserName = draft.currentGlobalUserName
+        val saveTheme = draft.hasThemeChanges
+        val saveGlobalUserName = draft.hasGlobalUserNameChanges
         val resetRequested = draft.isResetRequested
         isSaving = true
         draft.beginSave(savedValues)
         scope.launch {
             try {
-                if (resetRequested) {
-                    activePromptManager.resetThemeDraft(target, savedValues)
-                } else {
-                    activePromptManager.commitThemeDraft(target, savedValues)
+                // 只改全局名字时不创建或覆盖角色主题，统一保存完成后再清除草稿的变更标记。
+                if (saveTheme) {
+                    if (resetRequested) {
+                        activePromptManager.resetThemeDraft(target, savedValues)
+                    } else {
+                        activePromptManager.commitThemeDraft(target, savedValues)
+                    }
                 }
-                draft.markSaved(savedValues)
+                if (saveGlobalUserName) {
+                    displayPreferencesManager.saveDisplaySettings(globalUserName = savedGlobalUserName)
+                }
+                draft.markSaved(savedValues, savedGlobalUserName)
                 showSaveSuccessMessage = true
                 finishPendingAction(allowNavigation = true)
             } catch (e: CancellationException) {
