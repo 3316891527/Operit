@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.main.layout
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
@@ -82,6 +86,12 @@ fun PhoneLayout(
         /** 当前导航栈中仍存活的路由 screenKey（路由级 ViewModelStore 清理依据）。 */
         aliveScreenKeys: Set<String>
 ) {
+        val focus = LocalFocusManager.current
+        val keyboard = LocalSoftwareKeyboardController.current
+        fun dismissDrawerInput() {
+                focus.clearFocus()
+                keyboard?.hide()
+        }
         // 使用 updateTransition 来创建更复杂的动画
         val transition = updateTransition(drawerState.targetValue, label = "drawer_transition")
         val drawerTopInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -170,6 +180,7 @@ fun PhoneLayout(
                         }
 
                         if (isDrawerOpen && currentDrag < -dragThreshold) {
+                                 dismissDrawerInput()
                                 scope.launch {
                                         drawerState.close()
                                         currentDrag = 0f
@@ -185,6 +196,7 @@ fun PhoneLayout(
                         Modifier.fillMaxSize()
                                 .draggable(
                                         state = draggableState,
+                                        enabled = !isDrawerOpen,
                                         orientation = Orientation.Horizontal,
                                         onDragStarted = {
                                                 currentDrag = 0f
@@ -200,6 +212,7 @@ fun PhoneLayout(
                                                 rememberDraggableState { delta ->
                                                         verticalDrag += delta
                                                 },
+                                        enabled = !isDrawerOpen,
                                         orientation = Orientation.Vertical,
                                         onDragStarted = { /* 不需要额外操作 */},
                                         onDragStopped = { /* 不需要额外操作 */}
@@ -278,9 +291,8 @@ fun PhoneLayout(
                                                 containerColor = drawerAppearance.containerColor,
                                                 shadowElevation = sidebarElevation,
                                                 borderWidth = 0.7.dp,
-                                                overlayAlphaBoost =
-                                                        if (enableNavigationAnimation) 0.07f
-                                                        else 0.04f
+                                                overlayAlphaBoost = 0.20f,
+                                                frostScale = 3f
                                         )
                                         .zIndex(2f),
                         shape = drawerShape,
@@ -315,6 +327,18 @@ fun PhoneLayout(
                                                 Modifier.fillMaxSize()
                                                         .padding(start = drawerWidth)
                                                         .background(scrimColor)
+                                                        .draggable(
+                                                                state = draggableState,
+                                                                orientation = Orientation.Horizontal,
+                                                                onDragStarted = {
+                                                                        currentDrag = 0f
+                                                                        verticalDrag = 0f
+                                                                },
+                                                                onDragStopped = {
+                                                                        currentDrag = 0f
+                                                                        verticalDrag = 0f
+                                                                }
+                                                        )
                                                         .clickable(
                                                                 interactionSource =
                                                                         remember {
@@ -322,6 +346,7 @@ fun PhoneLayout(
                                                                         },
                                                                 indication = null,
                                                                 onClick = {
+                                                                        dismissDrawerInput()
                                                                         scope.launch {
                                                                                 drawerState.close()
                                                                         }
@@ -330,5 +355,9 @@ fun PhoneLayout(
                                 )
                         }
                 }
+        }
+        BackHandler(enabled = isDrawerOpen) {
+                dismissDrawerInput()
+                scope.launch { drawerState.close() }
         }
 }

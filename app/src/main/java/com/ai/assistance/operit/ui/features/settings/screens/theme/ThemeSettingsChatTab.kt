@@ -531,9 +531,8 @@ internal fun ThemeSettingsChatTab(
     val userAvatarUriInput = values.string("custom_user_avatar_uri")
     val aiAvatarUriInput = values.string("custom_ai_avatar_uri")
     val globalUserAvatarUri by displayPreferencesManager.globalUserAvatarUri.collectAsState(initial = null)
-    val globalUserName by displayPreferencesManager.globalUserName.collectAsState(initial = null)
     var globalUserAvatarUriInput by remember(globalUserAvatarUri) { mutableStateOf(globalUserAvatarUri) }
-    var globalUserNameInput by remember(globalUserName) { mutableStateOf(globalUserName) }
+    val globalUserNameInput by editorSession.globalUserNameFlow.collectAsState()
     val avatarShapeInput = values.requiredString("avatar_shape")
     val avatarCornerRadiusInput = values.requiredFloat("avatar_corner_radius")
     val showThinkingProcessInput = values.requiredBoolean("show_thinking_process")
@@ -644,7 +643,7 @@ internal fun ThemeSettingsChatTab(
         globalUserAvatarUriInput = globalUserAvatarUriInput,
         onGlobalUserAvatarUriInputChange = { globalUserAvatarUriInput = it },
         globalUserNameInput = globalUserNameInput,
-        onGlobalUserNameInputChange = { globalUserNameInput = it },
+        onGlobalUserNameInputChange = editorSession::setGlobalUserName,
         avatarShapeInput = avatarShapeInput,
         avatarCornerRadiusInput = avatarCornerRadiusInput,
         avatarImagePicker = runtime.avatarImagePicker,
@@ -674,19 +673,13 @@ internal fun ThemeSettingsChatTab(
             currentColorPickerMode = currentColorPickerMode,
             primaryColorInput = MaterialTheme.colorScheme.primary.toArgb(),
             secondaryColorInput = MaterialTheme.colorScheme.secondary.toArgb(),
-            statusBarColorInput = MaterialTheme.colorScheme.surface.toArgb(),
-            appBarColorInput = MaterialTheme.colorScheme.surface.toArgb(),
-            navigationDrawerBackgroundColorInput = MaterialTheme.colorScheme.surface.toArgb(),
-            navigationDrawerAccentColorInput = MaterialTheme.colorScheme.primary.toArgb(),
-            historyIconColorInput = Color.Gray.toArgb(),
-            pipIconColorInput = Color.Gray.toArgb(),
             cursorUserBubbleColorInput = cursorUserBubbleColorInput,
             bubbleUserBubbleColorInput = bubbleUserBubbleColorInput,
             bubbleAiBubbleColorInput = bubbleAiBubbleColorInput,
             bubbleUserTextColorInput = bubbleUserTextColorInput,
             bubbleAiTextColorInput = bubbleAiTextColorInput,
             recentColors = recentColors,
-            onColorSelected = { _, _, _, _, _, _, _, _, cursorUser, bubbleUser, bubbleAi, userText, aiText ->
+            onColorSelected = { _, _, cursorUser, bubbleUser, bubbleAi, userText, aiText ->
                 setSelectedChatColor(
                     shared = shared,
                     currentColorPickerMode = currentColorPickerMode,

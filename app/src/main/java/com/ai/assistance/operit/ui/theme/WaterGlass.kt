@@ -31,6 +31,7 @@ fun Modifier.waterGlass(
     shadowElevation: Dp = 14.dp,
     borderWidth: Dp = 1.dp,
     overlayAlphaBoost: Float = 0f,
+    frostScale: Float = 1f,
 ): Modifier {
     if (!enabled) {
         return this
@@ -94,7 +95,8 @@ fun Modifier.waterGlass(
         .border(width = borderWidth, color = borderColor, shape = shape)
         .liquid(liquidState) {
             this.shape = shape
-            this.frost = if (isLightGlass) 6.dp else 8.dp
+            // 侧栏单独提高磨砂强度，其余调用保留原有尺度。
+            this.frost = (if (isLightGlass) 6.dp else 8.dp) * frostScale
             this.curve = if (isLightGlass) 0.40f else 0.30f
             this.refraction = if (isLightGlass) 0.12f else 0.09f
             this.dispersion = if (isLightGlass) 0.18f else 0.13f
