@@ -214,7 +214,9 @@ fun OperitTheme(content: @Composable () -> Unit) {
                 // 根据状态栏背景色动态设置状态栏图标颜色
                 // isAppearanceLightStatusBars = true 表示图标为深色（适用于浅色背景）
                 // isAppearanceLightStatusBars = false 表示图标为浅色（适用于深色背景）
-                insetsController?.isAppearanceLightStatusBars = !isColorLight(Color(statusBarColor))
+                // 取反会让浅色状态栏配浅色图标、深色状态栏配深色图标，两种模式都看不清，
+                // 这里必须让 isAppearanceLightStatusBars 与状态栏背景亮度保持一致。
+                insetsController?.isAppearanceLightStatusBars = isColorLight(Color(statusBarColor))
             }
             
             // 设置导航栏颜色（底部小白条所在的区域）

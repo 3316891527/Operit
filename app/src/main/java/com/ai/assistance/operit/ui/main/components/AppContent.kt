@@ -190,7 +190,11 @@ fun AppContent(
     val appBarContentColorMode = themeSnapshot.appBarContentColorMode
 
     val appBarContentColor =
-            if (forceAppBarContentColor) {
+            if (toolbarTransparent) {
+                // 透明工具栏实际叠在页面背景上，标题和图标必须按背景色取值；
+                // 继续沿用主色上的 onPrimary 会让浅色页面出现白色标题，与状态栏判断正好相反。
+                MaterialTheme.colorScheme.onBackground
+            } else if (forceAppBarContentColor) {
                 when (appBarContentColorMode) {
                     UserPreferencesManager.APP_BAR_CONTENT_COLOR_MODE_LIGHT -> Color.White
                     UserPreferencesManager.APP_BAR_CONTENT_COLOR_MODE_DARK -> Color.Black
