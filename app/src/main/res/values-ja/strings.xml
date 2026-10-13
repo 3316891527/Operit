@@ -261,7 +261,6 @@
     <string name="token_stats_rate_edit">為替レートを編集</string>
     <string name="token_stats_cache_rate">キャッシュ率</string>
     <string name="message_info_token_hit_rate_short">ヒット率</string>
-    <string name="chat_message_token_stats_compact">token: %1$d ↑ %3$d (cache: %2$d) ↓ %4$d (hit: %5$s)</string>
     <string name="token_stats_period_overview">期間の概要</string>
     <string name="token_stats_composition">トークンの内訳</string>
     <string name="token_stats_trends">傾向分析</string>
@@ -364,4 +363,77 @@
 <!-- 已移除实验性提示 -->
     <string name="antigravity_login_completing">認証を完了し、アカウント情報を読み込んでいます…</string>
     <string name="antigravity_login_timed_out">Google 認証の待機が 15 分を超えました。ログインをやり直してください。</string>
+    <string name="chat_message_generation_details">生成の詳細</string>
+    <string name="chat_message_generation_summary">%1$s tokens</string>
+    <string name="chat_message_generation_total">合計 %1$s</string>
+    <string name="chat_message_generation_timing">初回応答 %1$s · 生成 %2$s</string>
+    <string name="message_info_token_speed">Speed</string>
+    <string name="message_info_token_speed_value">%1$s tokens/s</string>
+    <string name="message_info_completed_at">完了時刻</string>
+    <string name="message_info_token_cached_short">キャッシュ</string>
+    <string name="chat_message_token_speed_compact">Speed %1$s tokens/s</string>
+    <string name="show_message_token_stats_description">折りたたみ時は総使用量、展開時はトークンとキャッシュの詳細を表示します</string>
+    <string name="show_message_timing_stats_description">生成の詳細に初回応答の待機時間と生成時間を表示します</string>
+    <string name="show_message_token_speed_description">生成の詳細に平均出力速度（Speed、tokens/s）を表示します</string>
+    <string name="show_message_timestamp_description">生成の詳細の展開状態に関係なく、AI メッセージの右下に完了時刻を表示します</string>
+    <string name="settings_about_subtitle">バージョン、使用マニュアル、オープンソース情報</string>
+    <string name="folder_root">ルート</string>
+    <string name="folder_drop_root">ルートへ移動</string>
+    <string name="folder_actions">その他の操作</string>
+    <string name="folder_creation_location">作成先</string>
+    <string name="folder_move_to">移動先…</string>
+    <string name="folder_create">新しいフォルダ</string>
+    <string name="folder_rename">フォルダ名を変更</string>
+    <string name="folder_create_child">新しいサブフォルダ</string>
+    <string name="folder_delete">フォルダを削除</string>
+    <string name="folder_delete_keep_contents">フォルダ「%1$s」を削除しますか？中の会話とサブフォルダは親階層へ移動し、会話履歴は保持されます。</string>
+    <string name="folder_operation_failed">操作を完了できませんでした。もう一度お試しください。</string>
+    <string name="folder_drag_hint">右側のハンドルをドラッグして移動し、フォルダー上で止めると展開します</string>
+    <string name="folder_empty_history">会話やフォルダはまだありません</string>
+    <string name="folder_no_results">一致する会話やフォルダはありません</string>
+    <string name="folder_expand_all">すべて展開</string>
+    <string name="folder_collapse_all">すべて折りたたむ</string>
+    <string name="history_nested_role_desc">キャラクターやグループ別に分類し、完全な経路とフォルダの関連付けを保持します。</string>
+    <string name="history_nested_folder_desc">すべての会話とフォルダを全階層を保持して表示します。</string>
+    <string name="history_nested_current_desc">現在のキャラクターの会話とフォルダ経路、空のフォルダを表示します。</string>
+    <string name="history_sort">並び順</string>
+    <string name="history_sort_default">デフォルト</string>
+    <string name="history_sort_default_desc">手動の並び順を保持し、固定した会話を優先します。</string>
+    <string name="history_sort_recent">最近使用</string>
+    <string name="history_sort_recent_desc">最後に開いた時刻や送信時刻で並べます。フォルダは内容の最近の使用に従い、固定した会話を優先します。</string>
+    <string name="history_sort_drag_hint">同じ階層の並べ替えでデフォルト順に切り替わります。フォルダへの移動では並び順は変わりません。</string>
+
+    <!-- 工作区与终端统一入口 -->
+    <string name="workspace_hub_entry">ワークスペースとターミナル</string>
+    <string name="workspace_hub_home">ホーム</string>
+    <string name="workspace_hub_overview">ワークスペースの概要</string>
+    <string name="workspace_hub_unbound">このチャットにはワークスペースが設定されていません</string>
+    <string name="workspace_hub_usage">%1$d 件のチャット · %2$d 枚のキャラクターカード · %3$d 個のフォルダー</string>
+    <string name="workspace_hub_terminal_sessions">%1$d 件のターミナルセッション</string>
+    <string name="workspace_hub_create">ワークスペースを作成</string>
+    <string name="workspace_hub_select">ワークスペースを選択</string>
+    <string name="workspace_hub_terminal_description">コマンドラインを開き、既存のセッションを再開</string>
+    <string name="workspace_hub_open">ワークスペースを開く</string>
+    <string name="workspace_hub_open_description">ファイルの参照、コードの編集、プロジェクトのプレビュー</string>
+
+    <!-- 插件详情与工具运行弹窗 -->
+    <string name="pkg_declared_environment_variables">環境変数</string>
+    <string name="pkg_environment_required">必須</string>
+    <string name="pkg_environment_optional">任意</string>
+    <string name="pkg_run_environment_notice">このツールはパッケージの環境変数を使用します：%1$s。パッケージ管理の環境変数設定で指定してください。</string>
+    <string name="pkg_details_category">カテゴリ：%1$s</string>
+    <string name="pkg_details_source">提供元：%1$s</string>
+    <string name="pkg_details_default_state">初期状態：%1$s</string>
+    <string name="pkg_details_default_enabled">初期状態で有効</string>
+    <string name="pkg_details_default_disabled">初期状態で無効</string>
+    <string name="pkg_details_authors">作者：%1$s</string>
+    <string name="speech_services_test_stt">音声認識をテスト</string>
+    <string name="speech_services_test_stt_desc">現在の設定でテストします。録音を開始して話し、停止すると結果を確認できます。</string>
+    <string name="speech_services_test_stt_busy">音声認識は使用中です。現在の録音を終了してからテストしてください。</string>
+    <string name="function_type_memory_embedding">記憶ベクトル</string>
+    <string name="function_desc_memory_embedding">記憶、文書、意味検索、索引再構築に使用する OpenAI 互換の埋め込みモデルを選択します。</string>
+    <string name="memory_embedding_function_settings_desc">モデル設定で埋め込みモデルを作成し、機能モデル設定で記憶ベクトルに割り当てて接続をテストします。</string>
+    <string name="memory_embedding_function_probe">記憶ベクトル接続テスト</string>
+    <string name="memory_embedding_function_test_success">%1$s に接続しました。ベクトル次元数：%2$d</string>
+    <string name="memory_embedding_unbind">埋め込みモデルを使用しない</string>
 </resources>
