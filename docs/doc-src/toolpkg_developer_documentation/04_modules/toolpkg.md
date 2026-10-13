@@ -39,7 +39,7 @@ manifest 还可以声明：
 
 当前类型定义覆盖：
 
-- 工具箱 UI 模块注册。
+- 兼容旧版名称的 Compose DSL UI 模块注册，不再向工具箱发布入口。
 - 应用生命周期钩子。
 - 消息处理插件。
 - XML 渲染插件。
@@ -710,7 +710,9 @@ export async function run(params: { n: number }) {
 
 ## 示例
 
-### 注册工具箱 UI 模块
+### 注册兼容 UI 模块
+
+`registerToolboxUiModule` 沿用旧名称，只注册 Compose DSL 界面，不在工具箱生成卡片；插件详情仍能打开此界面。
 
 ```ts
 import toolboxUI from './index.ui.js';

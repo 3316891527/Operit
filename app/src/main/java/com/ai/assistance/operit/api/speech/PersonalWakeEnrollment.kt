@@ -7,6 +7,8 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 
 object PersonalWakeEnrollment {
 
@@ -55,6 +57,8 @@ object PersonalWakeEnrollment {
             audioRecord.startRecording()
 
             while (true) {
+                // 切换页签时中止采集，并由 finally 释放麦克风。
+                coroutineContext.ensureActive()
                 val now = System.currentTimeMillis()
                 if (now - startedAt > maxRecordMs) break
 

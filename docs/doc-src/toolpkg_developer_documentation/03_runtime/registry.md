@@ -30,9 +30,9 @@ status: complete
 
 | 注册项 | 桥接/宿主处理 |
 | --- | --- |
-| `ToolboxUiModuleRegistration` | `id`、`screen` 必填；`runtime` 缺省为 `compose_dsl`，`keepAlive` 缺省 `false`，标题缺省为 `id`。宿主从 `id` 生成包内 route，并生成 toolbox 导航项；ID 和 route ID 分别与显式 UI route 合并后做不区分大小写的重复检测。 |
+| `ToolboxUiModuleRegistration` | `id`、`screen` 必填；`runtime` 缺省为 `compose_dsl`，`keepAlive` 缺省 `false`，标题缺省为 `id`。宿主从 `id` 生成包内 route，但不自动创建 toolbox 导航项；插件详情仍提供打开 UI 的入口。ID 和 route ID 分别与显式 UI route 合并后做不区分大小写的重复检测。 |
 | `UiRouteRegistration` | `id`、`screen` 必填。`route` 非空时优先于 `routeId`；两者都空时按包 ID 和 `id` 生成 route。`runtime` 缺省为 `compose_dsl`，`keepAlive` 缺省 `false`，标题缺省为 `id`。route 与 screen 路径在宿主侧需唯一、合法且指向归档内文件。两个别名同时给出不同值时使用 `route`，不会因冲突单独报错。 |
-| `NavigationEntryRegistration` | `id` 与 `surface` 必填；`route` 优先于 `routeId`。必须至少提供一个已注册的 route 或 `action`；非空 route 必须能解析到该 ToolPkg 已注册 route。surface 只接受 `toolbox`、`main_sidebar_plugins`（忽略大小写）。标题缺省为 `id`，空 icon 变为缺省，`order` 缺省为 `0`。 |
+| `NavigationEntryRegistration` | `id` 与 `surface` 必填；`route` 优先于 `routeId`。必须至少提供一个已注册的 route 或 `action`；非空 route 必须能解析到该 ToolPkg 已注册 route。`main_sidebar_plugins` 会发布主侧边栏插件入口；旧值 `toolbox` 仍接受并校验，但不再生成导航项。标题缺省为 `id`，空 icon 变为缺省，`order` 缺省为 `0`。 |
 | `DesktopWidgetRegistration` | `id` 与 `route`（或 `routeId`）必填；render route 优先取 `render`，再取 `renderRouteId`，都未提供时回退为 route。宿主要求 route 和最终 render route 都引用已注册 route；因此声明中可选的 render 字段运行时可以省略，但独立 route 不能省略。标题缺省为 `id`，subtitle/description 缺省为空，空 icon 变为缺省，`order` 缺省 `0`。 |
 | `ChatMessageMenuItemRegistration` | `id`、`function` 必填；`senders` 去空白、忽略大小写并去重，只接受 `user`、`ai`。`dialog.screen` 必须是可序列化路径且存在于包归档。标题缺省为 `id`，`order` 缺省为 `0`。 |
 | `AiProviderRegistration` | `id` 必填且在 Provider 类别内不得重复；`listModels`、`sendMessage`、`testConnection`、`calculateInputTokens` 四个嵌套 `{ function }` 均必填。`displayName` trim 后为空时回退为 `id`，`description` trim 后可为空。 |
@@ -48,7 +48,7 @@ registerToolboxUiModule(definition: ToolboxUiModuleRegistration): void
 ```
 
 - **API 版本：** `1.0.0` 基线
-- **用途：** 注册可从工具箱打开的 UI 模块。
+- **用途：** 兼容旧版注册方式，只注册可打开的 Compose DSL UI route；不自动在工具箱创建入口。插件详情仍可打开该界面。
 - **`id`：** 包内稳定标识；宿主将其与容器包名组合用于解析注册项。
 - **`runtime?`：** 运行时标记；应与目标模块实现匹配。当前类型未限定字面量，具体支持值由 UI 运行时决定。
 - **`screen`：** Compose DSL screen 函数或包内模块路径。注册桥会把函数引用规范化为序列化路径。
@@ -79,7 +79,7 @@ registerNavigationEntry(definition: NavigationEntryRegistration): void
 
 - **API 版本：** `1.0.0` 基线
 - **`id`：** 导航项稳定 ID。
-- **`surface`：** 当前声明值为 `toolbox` 或 `main_sidebar_plugins`，决定导航项出现位置。
+- **`surface`：** 使用 `main_sidebar_plugins` 发布主侧边栏插件入口。旧值 `toolbox` 仍接受以保证旧插件可加载，但不再发布导航项。
 - **`route?`：** 点击后打开的已注册路由。
 - **`action?`：** 导航动作 Hook；若提供函数，必须可以解析为持久化模块函数引用。
 - **`title?`、`icon?`、`order?`：** 本地化标题、图标名和同 surface 内排序值。

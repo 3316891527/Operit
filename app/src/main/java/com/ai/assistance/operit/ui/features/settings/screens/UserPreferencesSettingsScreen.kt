@@ -86,7 +86,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun UserPreferencesSettingsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToMemory: () -> Unit
+    onNavigateToMemory: (String) -> Unit
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MemorySpaceProfileDocumentRepository.getInstance(context) }
@@ -229,14 +229,7 @@ fun UserPreferencesSettingsScreen(
 
     fun openSelectedMemory() {
         val profileId = selectedProfileId ?: return
-        scope.launch {
-            try {
-                preferencesManager.setActiveMemorySpace(profileId)
-                onNavigateToMemory()
-            } catch (error: Exception) {
-                snackbarHostState.showSnackbar(error.message ?: error.javaClass.simpleName)
-            }
-        }
+        onNavigateToMemory(profileId)
     }
 
     BackHandler(onBack = ::navigateBackSafely)

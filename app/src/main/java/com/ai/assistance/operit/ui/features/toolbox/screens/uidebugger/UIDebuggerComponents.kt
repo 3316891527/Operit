@@ -101,21 +101,37 @@ fun UIDebuggerOverlay(
     // }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // UI元素高亮层
-        if (isUIAnalysisActive) {
-            ElementHighlightOverlay(
-                elements = uiState.elements,
-                onElementClick = { element ->
-                    selectedElement = element
+        // 元素列表放在局部面板内，底层应用仍可接收普通触摸事件。
+        if (isUIAnalysisActive && selectedElement == null) {
+            Column(
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth()
+                    .heightIn(max = 220.dp).verticalScroll(rememberScrollState()).padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                uiState.elements.forEach { element ->
+                    Surface(onClick = {
+                        selectedElement = element
+                        showAnalysisPanel = false
+                    }) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(6.dp)) {
+                            Text(element.className, style = MaterialTheme.typography.labelSmall)
+                            if (element.text.isNotBlank()) {
+                                Text(element.text, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
                 }
-            )
+            }
         }
 
         // 选中元素信息面板
         if (selectedElement != null && isUIAnalysisActive) {
             ElementInfoPanel(
                 element = selectedElement!!,
-                onDismiss = { selectedElement = null },
+                onDismiss = {
+                    selectedElement = null
+                    showAnalysisPanel = true
+                },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)

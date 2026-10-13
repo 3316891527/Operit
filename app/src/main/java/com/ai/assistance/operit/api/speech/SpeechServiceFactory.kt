@@ -58,7 +58,8 @@ object SpeechServiceFactory {
         return createSpeechService(context, type, config)
     }
 
-    private fun createSpeechService(
+    /** 使用明确的配置创建实例，供识别测试区直接使用当前编辑值。 */
+    internal fun createSpeechService(
         context: Context,
         type: SpeechServiceType,
         httpConfig: SttHttpConfig,

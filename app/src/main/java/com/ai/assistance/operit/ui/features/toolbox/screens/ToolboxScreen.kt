@@ -25,7 +25,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.toolbox.screens.apppermissions.AppPermissionsScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.ffmpegtoolbox.FFmpegToolboxScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.filemanager.FileManagerScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.logcat.LogcatScreen
@@ -129,7 +128,10 @@ fun ToolCard(tool: Tool) {
                 },
                 modifier = Modifier.fillMaxWidth().height(156.dp).scale(scale),
                 colors =
-                        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
                 elevation =
                         CardDefaults.cardElevation(
                                 defaultElevation = 2.dp,
@@ -150,7 +152,7 @@ fun ToolCard(tool: Tool) {
                                         Modifier.size(48.dp)
                                                 .clip(CircleShape)
                                                 .background(
-                                                        color = MaterialTheme.colorScheme.primaryContainer
+                                                        color = MaterialTheme.colorScheme.surfaceContainerHigh
                                                 )
                                                 .padding(8.dp)
                         ) {
@@ -158,7 +160,7 @@ fun ToolCard(tool: Tool) {
                                         imageVector = tool.icon,
                                         contentDescription = tool.name,
                                         modifier = Modifier.size(24.dp),
-                                        tint = MaterialTheme.colorScheme.primary
+                                        tint = MaterialTheme.colorScheme.onSurface
                                 )
                         }
 
@@ -228,16 +230,6 @@ fun TerminalAutoConfigToolScreen(navController: NavController) {
         }
 }
 
-/** 显示应用权限管理工具屏幕 */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppPermissionsToolScreen(navController: NavController) {
-        CustomScaffold() { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) {
-                        AppPermissionsScreen(navController = navController)
-                }
-        }
-}
 
 /** 显示UI调试工具屏幕 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -281,24 +273,4 @@ fun LogcatToolScreen(navController: NavController) {
                         LogcatScreen(navController = navController)
                 }
         }
-}
-
-/** 显示工具测试屏幕 */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ToolTesterToolScreen(navController: NavController) {
-        CustomScaffold() { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) {
-                        com.ai.assistance.operit.ui.features.toolbox.screens.tooltester
-                                .ToolTesterScreen(navController = navController)
-                }
-        }
-}
-
-/** 显示默认助手设置引导屏幕 */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DefaultAssistantGuideToolScreen(navController: NavController) {
-        com.ai.assistance.operit.ui.features.toolbox.screens.defaultassistant
-                .DefaultAssistantGuideScreen(navController = navController)
 }
