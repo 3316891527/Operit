@@ -57,7 +57,8 @@ internal data class ToolPkgUiRouteRuntime(
     val runtime: String,
     val screen: String,
     val title: LocalizedText,
-    val keepAlive: Boolean = false
+    val keepAlive: Boolean = false,
+    val registeredAsToolboxUiModule: Boolean = false
 )
 
 internal data class ToolPkgNavigationEntryRuntime(
@@ -188,7 +189,8 @@ internal data class ToolPkgContainerRuntime(
     val summaryGenerateHooks: List<ToolPkgFunctionHookRuntime>,
     val aiProviders: List<ToolPkgAiProviderRuntime>,
     val logoResource: ToolPkgResourceRuntime? = null,
-    val marketOrigin: ToolPkgMarketOrigin? = null
+    val marketOrigin: ToolPkgMarketOrigin? = null,
+    val fileSizeBytes: Long = 0L
 )
 
 internal data class ToolPkgLoadResult(
@@ -260,7 +262,8 @@ internal data class ToolPkgRegisteredUiRoute(
     val runtime: String,
     val screen: String,
     val title: LocalizedText,
-    val keepAlive: Boolean = false
+    val keepAlive: Boolean = false,
+    val registeredAsToolboxUiModule: Boolean = false
 )
 
 internal data class ToolPkgRegisteredNavigationEntry(
@@ -717,28 +720,16 @@ internal object ToolPkgArchiveParser {
                             runtime = module.runtime,
                             screen = module.screen,
                             title = module.title,
-                            keepAlive = module.keepAlive
+                            keepAlive = module.keepAlive,
+                            registeredAsToolboxUiModule = true
                         )
                     )
                 }
                 addAll(mainRegistration.uiRoutes)
             }
 
-        val registeredNavigationEntries =
-            buildList {
-                mainRegistration.toolboxUiModules.forEachIndexed { index, module ->
-                    add(
-                        ToolPkgRegisteredNavigationEntry(
-                            id = "toolbox_${module.id}",
-                            routeId = buildToolPkgRouteId(manifest.toolpkgId, module.id),
-                            surface = TOOLPKG_NAV_SURFACE_TOOLBOX,
-                            title = module.title,
-                            order = index
-                        )
-                    )
-                }
-                addAll(mainRegistration.navigationEntries)
-            }
+        // 旧注册函数只生成 UI route；显式导航声明单独校验，但工具箱入口不再发布。
+        val registeredNavigationEntries = mainRegistration.navigationEntries
 
         val uiModules = mutableListOf<ToolPkgUiModuleRuntime>()
         val uiRoutes = mutableListOf<ToolPkgUiRouteRuntime>()
@@ -788,7 +779,8 @@ internal object ToolPkgArchiveParser {
                     runtime = runtimeName,
                     screen = normalizedScreenPath,
                     title = module.title,
-                    keepAlive = module.keepAlive
+                    keepAlive = module.keepAlive,
+                    registeredAsToolboxUiModule = module.registeredAsToolboxUiModule
                 )
             )
         }

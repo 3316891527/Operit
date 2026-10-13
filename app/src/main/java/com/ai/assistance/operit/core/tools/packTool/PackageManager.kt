@@ -130,6 +130,24 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val enabled: Boolean
     )
 
+    val pluginActivityStore = com.ai.assistance.operit.core.tools.packTool.metadata.PluginActivityStore.getInstance(context)
+
+    /** 子包执行记录统一归到父插件，沙盒包不写入插件使用记录。 */
+    internal fun recordPluginUse(packageName: String) {
+        val normalized = normalizePackageName(packageName)
+        val containerName = resolveToolPkgSubpackageRuntime(normalized)?.containerPackageName ?: normalized
+        if (toolPkgContainers.containsKey(containerName)) {
+            pluginActivityStore.recordUse(containerName)
+        }
+    }
+
+    fun recordPluginInstallation(packageName: String) {
+        val normalized = normalizePackageName(packageName)
+        if (toolPkgContainers.containsKey(normalized)) {
+            pluginActivityStore.recordInstallation(normalized)
+        }
+    }
+
     data class ToolPkgContainerDetails(
         val packageName: String,
         val displayName: String,
@@ -149,7 +167,8 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val logoResourceKey: String? = null,
         val logoMimeType: String? = null,
         val apiVersion: String = ToolPkgApiCompatibility.LEGACY_API_VERSION,
-        val requires: List<ToolPkgManifestRequirement> = emptyList()
+        val requires: List<ToolPkgManifestRequirement> = emptyList(),
+        val fileSizeBytes: Long = 0L
     )
 
     data class ToolPkgLogoBytes(
@@ -2521,6 +2540,11 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         return "Android/data/${context.packageName}/files/packages"
     }
 
+    /** 外部包真实目录，加号新建模板会写到这里。 */
+    fun getExternalPackagesDirectory(): File {
+        return externalPackagesDir
+    }
+
     fun getPluginConfigDirPath(pluginId: String): String {
         val candidate = pluginId.trim()
         if (candidate.isBlank()) {
@@ -2598,6 +2622,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                         "Failed to register toolpkg '$containerName' due to naming conflict"
                     )
                 }
+                pluginActivityStore.recordInstallation(containerName)
                 val marketOrigin = loadedFromDestination.containerRuntime.marketOrigin
                 return ExternalPackageImportResult(
                     message = buildToolPkgImportSuccessMessage(
@@ -3986,7 +4011,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * Deletes a package file from external storage and removes it from the in-memory cache.
      * This action is permanent and cannot be undone.
      */
-    fun deletePackage(packageName: String): Boolean {
+    fun deletePackage(packageName: String, preservePluginActivity: Boolean = false): Boolean {
         val normalizedPackageName = normalizePackageName(packageName)
         AppLogger.d(TAG, "Attempting to delete package: $normalizedPackageName")
         ensureInitialized()
@@ -4006,6 +4031,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             )
             disablePackage(normalizedPackageName)
             removeFromCachesAfterDelete(normalizedPackageName)
+            if (!preservePluginActivity) pluginActivityStore.remove(normalizedPackageName)
             return true
         }
 
@@ -4017,6 +4043,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             AppLogger.d(TAG, "Successfully deleted package file: ${packageFile.absolutePath}")
             disablePackage(normalizedPackageName)
             removeFromCachesAfterDelete(normalizedPackageName)
+            if (!preservePluginActivity) pluginActivityStore.remove(normalizedPackageName)
             AppLogger.d(TAG, "Package '$normalizedPackageName' fully deleted.")
             return true
         }

@@ -33,13 +33,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Store
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -73,10 +67,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import androidx.compose.material.icons.filled.MoreVert
+import com.ai.assistance.operit.ui.components.ActionSheet
+import com.ai.assistance.operit.ui.components.ActionSheetItem
+import com.ai.assistance.operit.ui.features.packages.management.PackageAcquisitionActions
 import com.ai.assistance.operit.core.tools.skill.SkillPackage
+import com.ai.assistance.operit.data.api.MarketV2Entry
 import com.ai.assistance.operit.data.preferences.SkillVisibilityPreferences
 import com.ai.assistance.operit.data.skill.SkillRepository
 import com.ai.assistance.operit.ui.common.displays.MarkdownTextComposable
+import com.ai.assistance.operit.ui.features.packages.market.MarketUpdateCheckButton
+import com.ai.assistance.operit.ui.features.packages.market.readMarketInstallMarkerForSkill
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -90,6 +91,7 @@ fun SkillConfigScreen(
     skillRepository: SkillRepository,
     snackbarHostState: SnackbarHostState,
     onNavigateToSkillMarket: () -> Unit = {},
+    onOpenSkillMarketDetail: (MarketV2Entry) -> Unit = {},
     searchQuery: String = "",
     skillOrder: List<String> = emptyList(),
     onSaveSkillOrder: (List<String>) -> Unit = {},
@@ -108,6 +110,7 @@ fun SkillConfigScreen(
     var skillLoadErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var showSkillLoadErrorsDialog by remember { mutableStateOf(false) }
 
+    var showActions by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var importTabIndex by remember { mutableStateOf(0) }
     var repoUrlInput by remember { mutableStateOf("") }
@@ -168,59 +171,21 @@ fun SkillConfigScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.skills),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        IconButton(
-                            modifier = Modifier.size(24.dp),
-                            onClick = {
-                                scope.launch {
-                                    refreshSkills()
-                                    snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_refreshed))
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = stringResource(R.string.refresh),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = skillRepository.getSkillsDirectoryPath(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 5,
-                        overflow = TextOverflow.Ellipsis
-                    )
+            PackageAcquisitionActions(
+                marketLabelRes = R.string.screen_title_skill_market,
+                importLabelRes = R.string.import_action,
+                onMarketClick = onNavigateToSkillMarket,
+                onImportClick = { showImportDialog = true },
+            )
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.skill_list_count, skills.size),
+                    style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                IconButton(onClick = { showActions = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.plugin_manage_more))
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             val displayedSkills =
                 remember(skills, searchQuery, skillOrder) {
@@ -261,9 +226,9 @@ fun SkillConfigScreen(
 
                 LazyColumn(
                     state = lazyListState,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 120.dp)
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     if (orderedSkills.isEmpty()) {
                         item(key = "empty_skill_search_state") {
@@ -343,54 +308,30 @@ fun SkillConfigScreen(
             }
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.End
-        ) {
-            if (skillLoadErrors.isNotEmpty()) {
-                SmallFloatingActionButton(
-                    onClick = { showSkillLoadErrorsDialog = true },
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Error,
-                        contentDescription = stringResource(R.string.error_occurred_simple)
-                    )
-                }
-            }
-
-            FloatingActionButton(
-                onClick = onNavigateToSkillMarket,
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Store,
-                    contentDescription = stringResource(R.string.screen_title_skill_market)
-                )
-            }
-
-            FloatingActionButton(
-                onClick = { showImportDialog = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = stringResource(R.string.import_action)
-                )
-            }
-        }
-
         if (skills.isEmpty() && (isLoading || isImporting)) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
+            }
+        }
+    }
+
+    if (showActions) {
+        ActionSheet(stringResource(R.string.plugin_manage_more), onDismissRequest = { showActions = false }) {
+            ActionSheetItem(stringResource(R.string.refresh), Icons.Filled.Refresh, enabled = !isLoading && !isImporting) {
+                showActions = false
+                scope.launch {
+                    refreshSkills()
+                    snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_refreshed))
+                }
+            }
+            if (skillLoadErrors.isNotEmpty()) {
+                ActionSheetItem(stringResource(R.string.plugin_manage_load_errors, skillLoadErrors.size), Icons.Filled.Error) {
+                    showActions = false
+                    showSkillLoadErrorsDialog = true
+                }
             }
         }
     }
@@ -748,6 +689,12 @@ fun SkillConfigScreen(
             skill = skill,
             detail = selectedSkillDetail,
             isLoading = isSkillDetailLoading,
+            onOpenMarketDetail = { entry ->
+                selectedSkill = null
+                selectedSkillDetail = null
+                isSkillDetailLoading = false
+                onOpenSkillMarketDetail(entry)
+            },
             onDismiss = {
                 selectedSkill = null
                 selectedSkillDetail = null
@@ -876,7 +823,8 @@ private fun SkillDetailDialog(
     detail: SkillDetailDialogData?,
     isLoading: Boolean,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onOpenMarketDetail: (MarketV2Entry) -> Unit
 ) {
     var showSkillMarkdown by remember(skill.directory.absolutePath) { mutableStateOf(false) }
 
@@ -993,8 +941,16 @@ private fun SkillDetailDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDelete) {
-                Text(text = stringResource(R.string.skillmgr_delete))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+            ) {
+                MarketUpdateCheckButton(
+                    markerProvider = { readMarketInstallMarkerForSkill(skill.directory) },
+                    onOpenMarketDetail = onOpenMarketDetail
+                )
+                TextButton(onClick = onDelete) {
+                    Text(text = stringResource(R.string.skillmgr_delete))
+                }
             }
         },
         dismissButton = {

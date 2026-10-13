@@ -1069,6 +1069,10 @@ class MessageProcessingDelegate(
                     }
 
                 requestSentAt = System.currentTimeMillis()
+                if (chatId != null) {
+                    com.ai.assistance.operit.data.repository.ChatHistoryManager.getInstance(context)
+                        .markChatUsed(chatId, requestSentAt)
+                }
                 requestStartElapsed = messageTimingNow()
                 chatRuntime.requestSentAt = requestSentAt
                 chatRuntime.requestStartElapsed = requestStartElapsed
@@ -1683,6 +1687,8 @@ class MessageProcessingDelegate(
 
             var firstResponseElapsed: Long? = null
             val requestSentAt = System.currentTimeMillis()
+            com.ai.assistance.operit.data.repository.ChatHistoryManager.getInstance(context)
+                .markChatUsed(chatId, requestSentAt)
             val requestStartElapsed = messageTimingNow()
             val effectiveRequestMessageContent =
                 if (groupOrchestrationMode &&

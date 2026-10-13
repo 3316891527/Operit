@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
 import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.data.api.MarketV2Entry
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -50,6 +51,9 @@ import com.ai.assistance.operit.core.tools.PackageTool
 import com.ai.assistance.operit.core.tools.ToolPackage
 import com.ai.assistance.operit.core.tools.EnvVar
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
+import com.ai.assistance.operit.core.tools.packTool.PackageTemplateCreateError
+import com.ai.assistance.operit.core.tools.packTool.PackageTemplateFactory
+import com.ai.assistance.operit.core.tools.packTool.PackageTemplateKind
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgMarketOrigin
 import com.ai.assistance.operit.data.mcp.MCPRepository
 import com.ai.assistance.operit.data.preferences.EnvPreferences
@@ -60,7 +64,9 @@ import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.ui.components.ErrorDialog
 import com.ai.assistance.operit.ui.features.packages.components.EmptyState
 import com.ai.assistance.operit.ui.features.packages.components.PackageTab
+import com.ai.assistance.operit.ui.features.packages.dialogs.PackageAddActionDialog
 import com.ai.assistance.operit.ui.features.packages.dialogs.PackageDetailsDialog
+import com.ai.assistance.operit.ui.features.packages.dialogs.PackageTemplateIdentityDialog
 import com.ai.assistance.operit.ui.features.packages.dialogs.QuickPluginCreatorDialog
 import com.ai.assistance.operit.ui.features.packages.dialogs.ScriptExecutionDialog
 import com.ai.assistance.operit.ui.features.packages.lists.PackagesList
@@ -72,6 +78,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.packages.management.PackageAcquisitionActions
+import com.ai.assistance.operit.ui.features.packages.management.PackageManagerMenu
+import com.ai.assistance.operit.ui.features.packages.management.PluginFilter
+import com.ai.assistance.operit.ui.features.packages.management.PluginListPreferences
+import com.ai.assistance.operit.ui.features.packages.management.PluginListToolbar
+import com.ai.assistance.operit.ui.features.packages.management.PluginSortSelection
+import com.ai.assistance.operit.ui.features.packages.management.mergeVisiblePluginOrder
 private data class ExternalPackageImportResult(
     val message: String,
     val marketOrigin: ToolPkgMarketOrigin?,
@@ -130,6 +143,7 @@ fun PackageManagerScreen(
     onNavigateToArtifactMarket: () -> Unit = {},
     onStartPluginCreation: (PluginCreationIntent) -> Unit = {},
     onOpenToolPkgPluginConfig: (String, String, String, Boolean) -> Unit = { _, _, _, _ -> },
+    onOpenMarketDetail: (MarketV2Entry) -> Unit = {},
 ) {
     val context = LocalContext.current
     val toolHandler = remember { AIToolHandler.getInstance(context) }
@@ -170,20 +184,24 @@ fun PackageManagerScreen(
     var selectedTab by rememberSaveable { mutableStateOf(PackageTab.PLUGINS) }
     var pluginSearchInput by rememberSaveable { mutableStateOf("") }
     var pluginSearchQuery by rememberSaveable { mutableStateOf("") }
-    val filteredPluginContainers by remember(pluginContainers.value, pluginSearchQuery) {
+    val pluginListPreferences = remember { PluginListPreferences(context) }
+    var pluginSort by remember { mutableStateOf(pluginListPreferences.readSort()) }
+    var pluginFilter by remember { mutableStateOf(pluginListPreferences.readFilter()) }
+    val pluginActivities by packageManager.pluginActivityStore.activities.collectAsState()
+    var refreshGeneration by remember { mutableStateOf(0) }
+    val filteredPluginContainers by remember(
+        pluginContainers.value, pluginSearchQuery, pluginFilter, visibleImportedPackages.value
+    ) {
         derivedStateOf {
-            val pluginsMap = pluginContainers.value
             val searchText = pluginSearchQuery.trim()
-            if (searchText.isEmpty()) {
-                pluginsMap
-            } else {
-                pluginsMap.filter { (packageName, details) ->
-                    pluginMatchesSearch(
-                        packageName = packageName,
-                        details = details,
-                        searchText = searchText
-                    )
+            pluginContainers.value.filter { (packageName, details) ->
+                val enabled = packageName in visibleImportedPackages.value
+                val matchesFilter = when (pluginFilter) {
+                    PluginFilter.ALL -> true
+                    PluginFilter.ENABLED -> enabled
+                    PluginFilter.DISABLED -> !enabled
                 }
+                matchesFilter && (searchText.isEmpty() || pluginMatchesSearch(packageName, details, searchText))
             }
         }
     }
@@ -212,8 +230,10 @@ fun PackageManagerScreen(
     var quickPluginRequirement by rememberSaveable { mutableStateOf("") }
     var quickPluginSetupRunning by remember { mutableStateOf(false) }
     var quickPluginSetupResult by remember { mutableStateOf<ToolResult?>(null) }
+    var showPackageAddActionDialog by remember { mutableStateOf(false) }
+    var pendingTemplateKind by remember { mutableStateOf<PackageTemplateKind?>(null) }
 
-    val requiredEnvByPackage by remember {
+    val environmentPackages by remember {
         derivedStateOf {
             val packagesMap = allAvailablePackages.value
             val imported = importedPackages.value.toSet()
@@ -222,18 +242,15 @@ fun PackageManagerScreen(
                 .mapNotNull { packageName ->
                     packagesMap[packageName]
                 }
+                .filter { toolPackage -> toolPackage.env.isNotEmpty() }
                 .sortedBy { it.name }
-                .associate { toolPackage ->
-                    toolPackage.name to toolPackage.env
-                }
-                .filterValues { envVars -> envVars.isNotEmpty() }
         }
     }
 
     val requiredEnvKeys by remember {
         derivedStateOf {
-            requiredEnvByPackage.values
-                .flatten()
+            environmentPackages
+                .flatMap { it.env }
                 .map { it.name }
                 .toSet()
                 .toList()
@@ -443,7 +460,7 @@ fun PackageManagerScreen(
         }
 
     // Load packages
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshGeneration) {
         isLoading = true
         try {
             val loadResult =
@@ -521,7 +538,22 @@ fun PackageManagerScreen(
             }
         },
         searchPlaceholderRes = activeSearchPlaceholderRes,
-        isSearching = activeSearchApplying
+        isSearching = activeSearchApplying,
+        additionalActions = {
+            if (selectedTab == PackageTab.PLUGINS || selectedTab == PackageTab.PACKAGES) {
+                PackageManagerMenu(
+                    isPluginTab = selectedTab == PackageTab.PLUGINS,
+                    isLoading = isLoading,
+                    errorCount = packageLoadErrors.value.size,
+                    onRefresh = { refreshGeneration++ },
+                    onEnvironmentVariables = {
+                        envVariables = requiredEnvKeys.associateWith { envPreferences.getEnv(it) ?: "" }
+                        showEnvDialog = true
+                    },
+                    onLoadErrors = { showPackageLoadErrorsDialog = true }
+                )
+            }
+        }
     )
 
     CustomScaffold(
@@ -535,82 +567,6 @@ fun PackageManagerScreen(
                 )
             }
         },
-        floatingActionButton = {
-            if (selectedTab == PackageTab.PLUGINS || selectedTab == PackageTab.PACKAGES) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    if (packageLoadErrors.value.isNotEmpty()) {
-                        SmallFloatingActionButton(
-                            onClick = { showPackageLoadErrorsDialog = true },
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Error,
-                                contentDescription = context.getString(R.string.error_occurred_simple)
-                            )
-                        }
-                    }
-
-                    // Environment variables management button
-                    SmallFloatingActionButton(
-                        onClick = {
-                            envVariables =
-                                requiredEnvKeys.associateWith { key ->
-                                    envPreferences.getEnv(key) ?: ""
-                                }
-                            showEnvDialog = true
-                        },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.pkg_manage_env_vars)
-                        )
-                    }
-
-                    FloatingActionButton(
-                        onClick = onNavigateToArtifactMarket,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier =
-                            Modifier.shadow(
-                                elevation = 6.dp,
-                                shape = FloatingActionButtonDefaults.shape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Store,
-                            contentDescription = "Artifact Market"
-                        )
-                    }
-
-                    // Existing import package button
-                    FloatingActionButton(
-                        onClick = { packageFilePicker.launch("*/*") },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier =
-                            Modifier.shadow(
-                                elevation = 6.dp,
-                                shape = FloatingActionButtonDefaults.shape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = when (selectedTab) {
-                                PackageTab.PLUGINS -> context.getString(R.string.import_external_plugin)
-                                PackageTab.PACKAGES -> context.getString(R.string.import_external_package)
-                                else -> context.getString(R.string.import_action)
-                            }
-                        )
-                    }
-                }
-            }
-        }
     ) { paddingValues ->
         Column(
             modifier =
@@ -770,10 +726,49 @@ fun PackageManagerScreen(
                 }
             }
 
-            // 内容区域添加水平padding
+            if (selectedTab == PackageTab.PLUGINS || selectedTab == PackageTab.PACKAGES) {
+                PackageAcquisitionActions(
+                    marketLabelRes = if (selectedTab == PackageTab.PLUGINS) R.string.plugin_market else R.string.package_market,
+                    importLabelRes = if (selectedTab == PackageTab.PLUGINS) R.string.package_add_dialog_title_plugin else R.string.package_add_dialog_title_package,
+                    onMarketClick = onNavigateToArtifactMarket,
+                    onImportClick = { showPackageAddActionDialog = true },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+            }
+            if (selectedTab == PackageTab.PLUGINS) {
+                Box(Modifier.padding(horizontal = 16.dp)) {
+                    PluginListToolbar(
+                        count = filteredPluginContainers.size,
+                        sort = pluginSort,
+                        filter = pluginFilter,
+                        onSortChanged = {
+                            pluginSort = it
+                            pluginListPreferences.saveSort(it)
+                        },
+                        onFilterChanged = {
+                            pluginFilter = it
+                            pluginListPreferences.saveFilter(it)
+                        }
+                    )
+                }
+            }
+            if ((selectedTab == PackageTab.PLUGINS || selectedTab == PackageTab.PACKAGES) && packageLoadErrors.value.isNotEmpty()) {
+                TextButton(
+                    onClick = { showPackageLoadErrorsDialog = true },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        context.getString(R.string.plugin_manage_load_errors, packageLoadErrors.value.size),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            // 列表占据剩余高度，工具栏固定在上方。
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
             ) {
                 when (selectedTab) {
                     PackageTab.PLUGINS -> {
@@ -837,11 +832,20 @@ fun PackageManagerScreen(
                                  packageManager.readToolPkgLogoBytes(packageName)
                              },
                              pluginOrder = pluginOrder,
+                             sort = pluginSort,
+                             activities = pluginActivities,
                             onSavePluginOrder = { newOrder ->
-                                pluginOrder = newOrder
-                                packageManager.updateToolPkgPluginOrder(newOrder)
+                                val completeOrder = mergeVisiblePluginOrder(
+                                    allPluginNames = pluginContainers.value.keys.toList(),
+                                    previousOrder = pluginOrder,
+                                    visibleOrder = newOrder
+                                )
+                                pluginOrder = completeOrder
+                                pluginSort = PluginSortSelection()
+                                pluginListPreferences.saveSort(pluginSort)
+                                packageManager.updateToolPkgPluginOrder(completeOrder)
                                 scope.launch {
-                                    apiPreferences.savePluginOrder(newOrder)
+                                    apiPreferences.savePluginOrder(completeOrder)
                                 }
                             },
                         )
@@ -912,6 +916,7 @@ fun PackageManagerScreen(
                             skillRepository = skillRepository,
                             snackbarHostState = snackbarHostState,
                             onNavigateToSkillMarket = onNavigateToSkillMarket,
+                            onOpenSkillMarketDetail = onOpenMarketDetail,
                             searchQuery = skillSearchQuery,
                             skillOrder = skillOrder,
                             onSaveSkillOrder = { newOrder ->
@@ -926,6 +931,7 @@ fun PackageManagerScreen(
                     PackageTab.MCP -> {
                         MCPConfigScreen(
                             onNavigateToMCPMarket = onNavigateToMCPMarket,
+                            onOpenMcpMarketDetail = onOpenMarketDetail,
                             searchQuery = mcpSearchQuery
                         )
                     }
@@ -940,6 +946,7 @@ fun PackageManagerScreen(
                         ?: "",
                     toolPackage = allAvailablePackages.value[selectedPackage],
                     packageManager = packageManager,
+                    isContainerEnabled = selectedPackage in importedPackages.value,
                     onRunScript = { toolPackageName, tool ->
                         selectedToolPackageName = toolPackageName
                         selectedTool = tool
@@ -948,6 +955,10 @@ fun PackageManagerScreen(
                     onOpenToolPkgPluginConfig = { containerPackageName, uiModuleId, title, keepAlive ->
                         showDetails = false
                         onOpenToolPkgPluginConfig(containerPackageName, uiModuleId, title, keepAlive)
+                    },
+                    onOpenMarketDetail = { entry ->
+                        showDetails = false
+                        onOpenMarketDetail(entry)
                     },
                     onDismiss = {
                         showDetails = false
@@ -1005,9 +1016,11 @@ fun PackageManagerScreen(
 
             // Script Execution Dialog
             if (showScriptExecution && selectedTool != null && selectedPackage != null) {
+                val executionPackageName = selectedToolPackageName ?: selectedPackage!!
                 ScriptExecutionDialog(
-                    packageName = selectedToolPackageName ?: selectedPackage!!,
+                    packageName = executionPackageName,
                     tool = selectedTool!!,
+                    environmentVariables = allAvailablePackages.value[executionPackageName]?.env.orEmpty(),
                     packageManager = packageManager,
                     initialResult = scriptExecutionResult,
                     onExecuted = { result -> scriptExecutionResult = result },
@@ -1022,7 +1035,7 @@ fun PackageManagerScreen(
             // Environment Variables Dialog for packages
             if (showEnvDialog) {
                 PackageEnvironmentVariablesDialog(
-                    requiredEnvByPackage = requiredEnvByPackage,
+                    toolPackages = environmentPackages,
                     currentValues = envVariables,
                     onDismiss = { showEnvDialog = false },
                     onConfirm = { updated ->
@@ -1118,6 +1131,130 @@ fun PackageManagerScreen(
                             Text(stringResource(R.string.confirm))
                         }
                     }
+                )
+            }
+
+            if (showPackageAddActionDialog) {
+                PackageAddActionDialog(
+                    isPluginTab = selectedTab == PackageTab.PLUGINS,
+                    onImport = {
+                        showPackageAddActionDialog = false
+                        packageFilePicker.launch("*/*")
+                    },
+                    onCreateTemplate = { kind ->
+                        showPackageAddActionDialog = false
+                        pendingTemplateKind = kind
+                    },
+                    onDismiss = { showPackageAddActionDialog = false }
+                )
+            }
+
+            pendingTemplateKind?.let { kind ->
+                PackageTemplateIdentityDialog(
+                    kind = kind,
+                    onConfirm = { displayName, packageId ->
+                        val creatingKind = kind
+                        pendingTemplateKind = null
+                        scope.launch {
+                            isLoading = true
+                            val created =
+                                withContext(Dispatchers.IO) {
+                                    PackageTemplateFactory.create(
+                                        packagesDir = packageManager.getExternalPackagesDirectory(),
+                                        kind = creatingKind,
+                                        displayName = displayName,
+                                        packageId = packageId
+                                    )
+                                }
+                            if (!created.success || created.file == null) {
+                                isLoading = false
+                                snackbarHostState.showSnackbar(
+                                    message =
+                                        when (created.error) {
+                                            PackageTemplateCreateError.INVALID_DISPLAY_NAME ->
+                                                context.getString(R.string.package_template_display_name_required)
+                                            PackageTemplateCreateError.INVALID_PACKAGE_ID ->
+                                                context.getString(
+                                                    if (PackageTemplateFactory.isToolPkgKind(creatingKind)) {
+                                                        R.string.package_template_toolpkg_id_invalid
+                                                    } else {
+                                                        R.string.package_template_package_id_invalid
+                                                    }
+                                                )
+                                            PackageTemplateCreateError.FILE_EXISTS ->
+                                                context.getString(
+                                                    R.string.package_template_file_exists,
+                                                    created.file?.name ?: packageId
+                                                )
+                                            else ->
+                                                context.getString(R.string.package_template_create_failed)
+                                        }
+                                )
+                                return@launch
+                            }
+
+                            val errorsBeforeCreate = packageManager.getPackageLoadErrors()
+                            val loadResult =
+                                withContext(Dispatchers.IO) {
+                                    val available =
+                                        packageManager.getExecutableAvailablePackages(forceRefresh = true)
+                                    val allAvailable = packageManager.getAvailablePackages()
+                                    val plugins =
+                                        packageManager
+                                            .getToolPkgPluginContainerDetails(context)
+                                            .associateBy { it.packageName }
+                                    val imported = packageManager.getEnabledPackageNames()
+                                    val errors = packageManager.getPackageLoadErrors()
+                                    val errorInfos = packageManager.getPackageLoadErrorInfos()
+                                    val newErrors =
+                                        errors.filter { (key, value) -> errorsBeforeCreate[key] != value }
+                                    if (PackageTemplateFactory.isToolPkgKind(creatingKind) && newErrors.isEmpty()) {
+                                        packageManager.recordPluginInstallation(created.packageId)
+                                    }
+                                    ExternalPackageImportResult(
+                                        message = "template created",
+                                        marketOrigin = null,
+                                        availablePackages = available,
+                                        allAvailablePackages = allAvailable,
+                                        pluginContainers = plugins,
+                                        importedPackages = imported,
+                                        packageLoadErrors = errors,
+                                        packageLoadErrorInfos = errorInfos,
+                                        newPackageLoadErrors = newErrors
+                                    )
+                                }
+
+                            availablePackages.value = loadResult.availablePackages
+                            allAvailablePackages.value = loadResult.allAvailablePackages
+                            pluginContainers.value = loadResult.pluginContainers
+                            importedPackages.value = loadResult.importedPackages
+                            packageLoadErrors.value = loadResult.packageLoadErrors
+                            packageLoadErrorInfos.value = loadResult.packageLoadErrorInfos
+                            visibleImportedPackages.value = importedPackages.value.toList()
+                            isLoading = false
+
+                            if (loadResult.newPackageLoadErrors.isNotEmpty()) {
+                                importErrorMessage =
+                                    buildString {
+                                        append(context.getString(R.string.package_template_create_failed))
+                                        append("\n\n")
+                                        append(
+                                            loadResult.newPackageLoadErrors
+                                                .toSortedMap()
+                                                .entries
+                                                .joinToString(separator = "\n\n") { (packageName, errorText) ->
+                                                    "$packageName:\n$errorText"
+                                                }
+                                        )
+                                    }
+                            } else {
+                                snackbarHostState.showSnackbar(
+                                    message = context.getString(R.string.package_template_created)
+                                )
+                            }
+                        }
+                    },
+                    onDismiss = { pendingTemplateKind = null }
                 )
             }
 

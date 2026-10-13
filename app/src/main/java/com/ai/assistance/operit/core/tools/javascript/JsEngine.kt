@@ -1455,6 +1455,7 @@ class JsEngine(private val context: Context) {
                 }
             """.trimIndent()
         return try {
+            packageManager.recordPluginUse(normalizedTarget)
             val result =
                 engine.executeScriptFunction(
                     script = script,
