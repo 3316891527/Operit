@@ -8454,4 +8454,39 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="plugin_import_format_help">Formate de import</string>
     <string name="plugin_import_format_description">Pluginurile acceptă fișiere .toolpkg cu manifest.json sau manifest.hjson și fișierele de intrare și resursele declarate.</string>
     <string name="sandbox_import_format_description">Pachetele sandbox acceptă .js, .ts și .hjson. Scripturile necesită METADATA; TypeScript trebuie compilat separat.</string>
+
+    <!-- 上下文窗口与当前对话累计用量 -->
+    <string name="context_panel_assistant_messages">Mesaje AI</string>
+    <string name="context_panel_auto_summary_buffer">Până la rezumatul automat</string>
+    <string name="context_panel_estimate_badge">Estimare</string>
+    <string name="context_panel_footer_auto_summary">Rezumat automat la %1$s</string>
+    <string name="context_panel_footer_summary_disabled">Rezumatul automat este dezactivat</string>
+    <string name="context_panel_last_request">Ultima cerere %1$s · %2$s</string>
+    <string name="context_panel_loading">Se estimează fereastra curentă…</string>
+    <string name="context_panel_mcp_tools">MCP / instrumente pachet</string>
+    <string name="context_panel_message_history">Istoricul mesajelor</string>
+    <string name="context_panel_no_conversation">Creează sau selectează mai întâi o conversație.</string>
+    <string name="context_panel_other">Altele</string>
+    <string name="context_panel_remaining_space">Spațiu rămas</string>
+    <string name="context_panel_resident_tools">Instrumente · rezidente</string>
+    <string name="context_panel_retry">Reîncearcă</string>
+    <string name="context_panel_skills">Abilități</string>
+    <string name="context_panel_summarize_now">Rezumă acum</string>
+    <string name="context_panel_summarizing">Se rezumă…</string>
+    <string name="context_panel_summary">Rezumat</string>
+    <string name="context_panel_system_prompt">Prompt de sistem</string>
+    <string name="context_panel_tool_results">Rezultate instrumente</string>
+    <string name="context_panel_unavailable">Defalcarea contextului nu este disponibilă acum</string>
+    <string name="context_panel_user_messages">Mesaje utilizator</string>
+    <string name="context_usage_cumulative_description">Totalul este suma intrării și ieșirii înregistrate pentru această conversație, separat de utilizarea ferestrei de context.</string>
+    <string name="context_usage_cumulative_input">Tokenuri de intrare</string>
+    <string name="context_usage_cumulative_output">Tokenuri de ieșire</string>
+    <string name="context_usage_cumulative_scope">Utilizarea înregistrată pentru această conversație</string>
+    <string name="context_usage_cumulative_tab">Utilizare cumulată</string>
+    <string name="context_usage_cumulative_total">Total tokenuri</string>
+    <string name="context_usage_dialog_title">Context și utilizare</string>
+    <string name="context_usage_entry_detail">%1$s / %2$s · Total %3$s</string>
+    <string name="context_usage_entry_title">Context</string>
+    <string name="context_usage_window_estimate">Fereastra actuală</string>
+    <string name="context_usage_window_tab">Fereastra de context</string>
 </resources>

@@ -20,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.chat.components.ChatContextUsageIndicator
 import com.ai.assistance.operit.ui.features.chat.components.useFloatingWindowLauncher
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubPage
 import com.ai.assistance.operit.ui.theme.getTextColorForBackground
@@ -87,7 +86,6 @@ fun MainChatControls(modifier: Modifier = Modifier) {
                 modifier = Modifier.size(20.dp),
             )
         }
-        ChatContextUsageIndicator(viewModel)
         IconButton(onClick = { dismissKeyboard(); viewModel.onWorkspaceHubButtonClick() }, modifier = Modifier.size(36.dp)) {
             if (isWorkspacePreparing) {
                 CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = contentColor)

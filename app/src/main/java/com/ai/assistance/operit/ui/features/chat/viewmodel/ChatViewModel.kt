@@ -20,6 +20,7 @@ import com.ai.assistance.operit.api.chat.ChatRuntimeHolder
 import com.ai.assistance.operit.api.chat.ChatRuntimeSlot
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
+import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.FileOperationData
 import com.ai.assistance.operit.data.collects.ApiProviderConfigs
@@ -3162,6 +3163,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     fun enqueueSelectedMessagesForMemoryAutoSave(messages: List<ChatMessage>) {
         messageCoordinationDelegate.enqueueSelectedMessagesForMemoryAutoSave(messages)
     }
+
+    suspend fun loadContextWindowBreakdown(chatId: String): ContextWindowBreakdown =
+        withContext(Dispatchers.IO) {
+            messageCoordinationDelegate.loadContextWindowBreakdown(chatId)
+        }
 
     fun manuallySummarizeConversation() {
         messageCoordinationDelegate.manuallySummarizeConversation()

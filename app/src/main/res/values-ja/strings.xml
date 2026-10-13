@@ -436,4 +436,40 @@
     <string name="memory_embedding_function_probe">記憶ベクトル接続テスト</string>
     <string name="memory_embedding_function_test_success">%1$s に接続しました。ベクトル次元数：%2$d</string>
     <string name="memory_embedding_unbind">埋め込みモデルを使用しない</string>
+
+    <!-- 上下文窗口与当前对话累计用量 -->
+    <string name="context_panel_assistant_messages">AI メッセージ</string>
+    <string name="context_panel_auto_summary_buffer">自動要約まで</string>
+    <string name="context_panel_estimate_badge">推定</string>
+    <string name="context_panel_footer_auto_summary">自動要約のしきい値 %1$s</string>
+    <string name="context_panel_footer_summary_disabled">自動要約はオフです</string>
+    <string name="context_panel_last_request">最新のリクエスト %1$s · %2$s</string>
+    <string name="context_panel_loading">現在のウィンドウを推定中…</string>
+    <string name="context_panel_mcp_tools">MCP / パッケージツール</string>
+    <string name="context_panel_message_history">メッセージ履歴</string>
+    <string name="context_panel_no_conversation">先に会話を作成または選択してください。</string>
+    <string name="context_panel_other">その他</string>
+    <string name="context_panel_remaining_space">残り容量</string>
+    <string name="context_panel_resident_tools">常駐ツール</string>
+    <string name="context_panel_retry">再試行</string>
+    <string name="context_panel_skills">スキル一覧</string>
+    <string name="context_panel_summarize_now">今すぐ要約</string>
+    <string name="context_panel_summarizing">要約中…</string>
+    <string name="context_panel_summary">圧縮要約</string>
+    <string name="context_panel_system_prompt">システムプロンプト</string>
+    <string name="context_panel_tool_results">ツール結果</string>
+    <string name="context_panel_unavailable">コンテキストの内訳を読み込めませんでした</string>
+    <string name="context_panel_user_messages">ユーザーメッセージ</string>
+    <string name="context_usage_cumulative_description">合計はこの会話に記録された入力と出力の合計で、コンテキストウィンドウの使用量とは別に集計します。</string>
+    <string name="context_usage_cumulative_input">入力トークン</string>
+    <string name="context_usage_cumulative_output">出力トークン</string>
+    <string name="context_usage_cumulative_scope">この会話に記録された累計使用量</string>
+    <string name="context_usage_cumulative_tab">累計使用量</string>
+    <string name="context_usage_cumulative_total">合計トークン</string>
+    <string name="context_usage_dialog_title">コンテキストと使用量</string>
+    <string name="context_usage_entry_detail">%1$s / %2$s · 累計 %3$s</string>
+    <string name="context_usage_entry_title">コンテキスト</string>
+    <string name="context_usage_window_estimate">現在のウィンドウ</string>
+    <string name="context_usage_window_tab">ウィンドウ使用量</string>
+    <string name="close">閉じる</string>
 </resources>

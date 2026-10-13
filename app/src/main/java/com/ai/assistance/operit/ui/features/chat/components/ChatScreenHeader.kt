@@ -146,8 +146,6 @@ fun ChatScreenHeader(
                 activeCharacterAvatarUri = activeCharacterAvatarUri,
                 onCharacterClick = onCharacterSwitcherClick
         )
-
-        ChatContextUsageIndicator(actualViewModel)
     }
 }
 

@@ -5,6 +5,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
+import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
+import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdownEstimator
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.config.FunctionalPrompts
@@ -199,6 +201,40 @@ class MessageCoordinationDelegate(
             chatModelIndexOverride = chatModelIndexOverride,
             memorySpaceIdOverride = memorySpaceIdOverride,
             publishEstimate = false
+        )
+    }
+
+    suspend fun loadContextWindowBreakdown(chatId: String): ContextWindowBreakdown {
+        val service = EnhancedAIService.getChatInstance(context, chatId)
+        val roleCardId = resolveRoleCardId(chatId, null, preferActiveRoleCard = true)
+        val currentChat = checkNotNull(
+            chatHistoryDelegate.chatHistories.value.firstOrNull { it.id == chatId }
+        ) { "无法读取对话的上下文配置" }
+        val currentRoleName = characterCardManager.getCharacterCardFlow(roleCardId).first().name
+        val (modelConfigId, modelIndex) = resolveRoleCardChatModelOverrides(roleCardId)
+        val snapshot = AIMessageManager.calculateStableContextWindowSnapshot(
+            enhancedAiService = service,
+            chatId = chatId,
+            chatHistory = chatHistoryDelegate.getRuntimeChatHistory(chatId),
+            workspacePath = currentChat.workspace,
+            workspaceEnv = currentChat.workspaceEnv,
+            promptFunctionType = currentPromptFunctionType,
+            roleCardId = roleCardId,
+            currentRoleName = currentRoleName,
+            splitHistoryByRole = true,
+            groupOrchestrationMode = isGroupChatSession(chatId),
+            groupParticipantNamesText = buildBoundGroupParticipantNamesText(chatId),
+            chatModelConfigIdOverride = modelConfigId,
+            chatModelIndexOverride = modelIndex,
+            memorySpaceIdOverride = resolveRoleCardMemoryProfileOverride(roleCardId),
+            publishEstimate = false
+        )
+        val settings = resolveChatContextSettingsForRequest(modelConfigId)
+        return ContextWindowBreakdownEstimator.fromSnapshot(
+            snapshot = snapshot,
+            maxWindowTokens = (settings.effectiveContextLength * 1024f).toLong(),
+            autoSummaryThreshold = settings.summaryTokenThreshold,
+            enableSummary = settings.enableSummary
         )
     }
 

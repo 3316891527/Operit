@@ -8671,4 +8671,39 @@
     <string name="mcp_start_services_failed">无法启动 MCP 服务初始化</string>
     <string name="mcp_services_ready_count">工具已就绪 %1$d/%2$d</string>
     <string name="theme_glass_requires_android13">玻璃效果需要 Android 13 或更高版本</string>
+
+    <!-- 上下文窗口与当前对话累计用量 -->
+    <string name="context_panel_assistant_messages">AI 消息</string>
+    <string name="context_panel_auto_summary_buffer">距自动总结</string>
+    <string name="context_panel_estimate_badge">估算</string>
+    <string name="context_panel_footer_auto_summary">自动总结阈值 %1$s</string>
+    <string name="context_panel_footer_summary_disabled">自动总结已关闭</string>
+    <string name="context_panel_last_request">最近请求 %1$s · %2$s</string>
+    <string name="context_panel_loading">正在估算当前窗口…</string>
+    <string name="context_panel_mcp_tools">MCP / 包工具</string>
+    <string name="context_panel_message_history">消息历史</string>
+    <string name="context_panel_no_conversation">请先创建或选择对话。</string>
+    <string name="context_panel_other">其他</string>
+    <string name="context_panel_remaining_space">剩余空间</string>
+    <string name="context_panel_resident_tools">常驻工具</string>
+    <string name="context_panel_retry">重试</string>
+    <string name="context_panel_skills">技能目录</string>
+    <string name="context_panel_summarize_now">立即总结</string>
+    <string name="context_panel_summarizing">正在总结…</string>
+    <string name="context_panel_summary">压缩摘要</string>
+    <string name="context_panel_system_prompt">系统提示词</string>
+    <string name="context_panel_tool_results">工具结果</string>
+    <string name="context_panel_unavailable">暂时没有可用的上下文拆分</string>
+    <string name="context_panel_user_messages">用户消息</string>
+    <string name="context_usage_cumulative_description">总用量为当前对话累计输入与输出之和，与窗口占用分别统计。</string>
+    <string name="context_usage_cumulative_input">累计输入</string>
+    <string name="context_usage_cumulative_output">累计输出</string>
+    <string name="context_usage_cumulative_scope">当前对话的历史累计用量</string>
+    <string name="context_usage_cumulative_tab">累计用量</string>
+    <string name="context_usage_cumulative_total">累计总用量</string>
+    <string name="context_usage_dialog_title">上下文与用量</string>
+    <string name="context_usage_entry_detail">%1$s / %2$s · 累计 %3$s</string>
+    <string name="context_usage_entry_title">上下文</string>
+    <string name="context_usage_window_estimate">当前窗口</string>
+    <string name="context_usage_window_tab">窗口占用</string>
 </resources>

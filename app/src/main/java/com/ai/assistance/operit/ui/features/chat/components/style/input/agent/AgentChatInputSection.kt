@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.agent
 
+import androidx.compose.material3.HorizontalDivider
+import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageEntry
+import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageDialog
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -238,6 +241,10 @@ fun AgentChatInputSection(
     val showFullscreenInput = remember { mutableStateOf(false) }
     val showModelSelectorPopup = remember { mutableStateOf(false) }
     val showExtraSettingsPopup = remember { mutableStateOf(false) }
+    var showContextUsageDialog by remember { mutableStateOf(false) }
+    if (showContextUsageDialog) {
+        ChatContextUsageDialog(actualViewModel, onDismiss = { showContextUsageDialog = false })
+    }
     var showCharacterCardBindingSwitchConfirm by remember { mutableStateOf(false) }
     var pendingCharacterCardModelSelection by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var showCharacterCardMemoryBindingSwitchConfirm by remember { mutableStateOf(false) }
@@ -1426,6 +1433,11 @@ fun AgentChatInputSection(
 
             AgentExtraSettingsPopup(
                 visible = showExtraSettingsPopup.value,
+                actualViewModel = actualViewModel,
+                onContextUsageClick = {
+                    showExtraSettingsPopup.value = false
+                    showContextUsageDialog = true
+                },
                 popupContainerColor = popupContainerColor,
                 preferenceProfiles = preferenceProfiles,
                 currentProfileId = effectiveProfileId,
@@ -2235,6 +2247,8 @@ private fun AgentModelSelectorItem(
 @Composable
 private fun AgentExtraSettingsPopup(
     visible: Boolean,
+    actualViewModel: ChatViewModel,
+    onContextUsageClick: () -> Unit,
     popupContainerColor: Color,
     preferenceProfiles: List<MemorySpace>,
     currentProfileId: String,
@@ -2349,6 +2363,11 @@ private fun AgentExtraSettingsPopup(
                             .padding(vertical = 4.dp)
                             .verticalScroll(rememberScrollState()),
                 ) {
+                    ChatContextUsageEntry(actualViewModel, onClick = onContextUsageClick)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
                     AgentMemorySelectorItem(
                         preferenceProfiles = preferenceProfiles,
                         currentProfileId = currentProfileId,

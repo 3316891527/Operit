@@ -7928,4 +7928,39 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="plugin_import_format_help">Formatos de importación</string>
     <string name="plugin_import_format_description">Los plugins admiten archivos .toolpkg con manifest.json o manifest.hjson y los archivos de entrada y recursos declarados.</string>
     <string name="sandbox_import_format_description">Los paquetes de sandbox admiten .js, .ts y .hjson. Los scripts requieren METADATA; TypeScript se debe compilar por separado.</string>
+
+    <!-- 上下文窗口与当前对话累计用量 -->
+    <string name="context_panel_assistant_messages">Mensajes de IA</string>
+    <string name="context_panel_auto_summary_buffer">Hasta el resumen automático</string>
+    <string name="context_panel_estimate_badge">Estimación</string>
+    <string name="context_panel_footer_auto_summary">Resumen automático al %1$s</string>
+    <string name="context_panel_footer_summary_disabled">El resumen automático está desactivado</string>
+    <string name="context_panel_last_request">Última solicitud %1$s · %2$s</string>
+    <string name="context_panel_loading">Estimando la ventana actual…</string>
+    <string name="context_panel_mcp_tools">MCP / herramientas de paquete</string>
+    <string name="context_panel_message_history">Historial de mensajes</string>
+    <string name="context_panel_no_conversation">Primero crea o selecciona una conversación.</string>
+    <string name="context_panel_other">Otros</string>
+    <string name="context_panel_remaining_space">Espacio restante</string>
+    <string name="context_panel_resident_tools">Herramientas · residentes</string>
+    <string name="context_panel_retry">Reintentar</string>
+    <string name="context_panel_skills">Habilidades</string>
+    <string name="context_panel_summarize_now">Resumir ahora</string>
+    <string name="context_panel_summarizing">Resumiendo…</string>
+    <string name="context_panel_summary">Resumen</string>
+    <string name="context_panel_system_prompt">Prompt del sistema</string>
+    <string name="context_panel_tool_results">Resultados de herramientas</string>
+    <string name="context_panel_unavailable">El desglose de contexto no está disponible ahora</string>
+    <string name="context_panel_user_messages">Mensajes del usuario</string>
+    <string name="context_usage_cumulative_description">El total es la suma de la entrada y la salida registradas de esta conversación, independiente del uso de la ventana de contexto.</string>
+    <string name="context_usage_cumulative_input">Tokens de entrada</string>
+    <string name="context_usage_cumulative_output">Tokens de salida</string>
+    <string name="context_usage_cumulative_scope">Uso registrado de esta conversación</string>
+    <string name="context_usage_cumulative_tab">Uso acumulado</string>
+    <string name="context_usage_cumulative_total">Tokens totales</string>
+    <string name="context_usage_dialog_title">Contexto y uso</string>
+    <string name="context_usage_entry_detail">%1$s / %2$s · Total %3$s</string>
+    <string name="context_usage_entry_title">Contexto</string>
+    <string name="context_usage_window_estimate">Ventana actual</string>
+    <string name="context_usage_window_tab">Ventana de contexto</string>
 </resources>

@@ -869,6 +869,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
                         if (inputStyle == UserPreferencesManager.INPUT_STYLE_CLASSIC) {
                             ClassicChatSettingsBar(
+                                    actualViewModel = actualViewModel,
                                     modifier =
                                             Modifier
                                                     .align(Alignment.BottomEnd)

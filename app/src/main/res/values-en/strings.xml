@@ -8685,4 +8685,39 @@
     <string name="mcp_start_services_failed">Unable to start MCP service initialization</string>
     <string name="mcp_services_ready_count">Tools ready %1$d/%2$d</string>
     <string name="theme_glass_requires_android13">Glass effects require Android 13 or later</string>
+
+    <!-- 上下文窗口与当前对话累计用量 -->
+    <string name="context_panel_assistant_messages">AI messages</string>
+    <string name="context_panel_auto_summary_buffer">Until auto-summary</string>
+    <string name="context_panel_estimate_badge">Estimate</string>
+    <string name="context_panel_footer_auto_summary">Auto-summary at %1$s</string>
+    <string name="context_panel_footer_summary_disabled">Auto-summary is off</string>
+    <string name="context_panel_last_request">Latest request %1$s · %2$s</string>
+    <string name="context_panel_loading">Estimating the current window…</string>
+    <string name="context_panel_mcp_tools">MCP / package tools</string>
+    <string name="context_panel_message_history">Message history</string>
+    <string name="context_panel_no_conversation">Create or select a conversation first.</string>
+    <string name="context_panel_other">Other</string>
+    <string name="context_panel_remaining_space">Remaining space</string>
+    <string name="context_panel_resident_tools">Tools · resident</string>
+    <string name="context_panel_retry">Retry</string>
+    <string name="context_panel_skills">Skills</string>
+    <string name="context_panel_summarize_now">Summarize now</string>
+    <string name="context_panel_summarizing">Summarizing…</string>
+    <string name="context_panel_summary">Summary</string>
+    <string name="context_panel_system_prompt">System prompt</string>
+    <string name="context_panel_tool_results">Tool results</string>
+    <string name="context_panel_unavailable">Context breakdown is unavailable right now</string>
+    <string name="context_panel_user_messages">User messages</string>
+    <string name="context_usage_cumulative_description">The total is the recorded input plus output for this conversation, separate from context window usage.</string>
+    <string name="context_usage_cumulative_input">Input tokens</string>
+    <string name="context_usage_cumulative_output">Output tokens</string>
+    <string name="context_usage_cumulative_scope">Recorded usage for this conversation</string>
+    <string name="context_usage_cumulative_tab">Cumulative usage</string>
+    <string name="context_usage_cumulative_total">Total tokens</string>
+    <string name="context_usage_dialog_title">Context and usage</string>
+    <string name="context_usage_entry_detail">%1$s / %2$s · Total %3$s</string>
+    <string name="context_usage_entry_title">Context</string>
+    <string name="context_usage_window_estimate">Current window</string>
+    <string name="context_usage_window_tab">Context window</string>
 </resources>

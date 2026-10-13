@@ -7857,4 +7857,39 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="plugin_import_format_help">Format import</string>
     <string name="plugin_import_format_description">Plugin menerima fail .toolpkg yang mengandungi manifest.json atau manifest.hjson serta fail utama dan sumber yang diisytiharkan.</string>
     <string name="sandbox_import_format_description">Pakej sandbox menerima .js, .ts dan .hjson. Skrip memerlukan METADATA; TypeScript mesti dikompil secara berasingan.</string>
+
+    <!-- 上下文窗口与当前对话累计用量 -->
+    <string name="context_panel_assistant_messages">Mesej AI</string>
+    <string name="context_panel_auto_summary_buffer">Sehingga rumusan automatik</string>
+    <string name="context_panel_estimate_badge">Anggaran</string>
+    <string name="context_panel_footer_auto_summary">Rumusan automatik pada %1$s</string>
+    <string name="context_panel_footer_summary_disabled">Rumusan automatik dimatikan</string>
+    <string name="context_panel_last_request">Permintaan terkini %1$s · %2$s</string>
+    <string name="context_panel_loading">Menganggar tetingkap semasa…</string>
+    <string name="context_panel_mcp_tools">MCP / alat pakej</string>
+    <string name="context_panel_message_history">Sejarah mesej</string>
+    <string name="context_panel_no_conversation">Cipta atau pilih perbualan dahulu.</string>
+    <string name="context_panel_other">Lain-lain</string>
+    <string name="context_panel_remaining_space">Ruang tinggal</string>
+    <string name="context_panel_resident_tools">Alat · tetap</string>
+    <string name="context_panel_retry">Cuba semula</string>
+    <string name="context_panel_skills">Kemahiran</string>
+    <string name="context_panel_summarize_now">Rumuskan sekarang</string>
+    <string name="context_panel_summarizing">Sedang meringkaskan…</string>
+    <string name="context_panel_summary">Ringkasan</string>
+    <string name="context_panel_system_prompt">Prompt sistem</string>
+    <string name="context_panel_tool_results">Hasil alat</string>
+    <string name="context_panel_unavailable">Pecahan konteks tidak tersedia sekarang</string>
+    <string name="context_panel_user_messages">Mesej pengguna</string>
+    <string name="context_usage_cumulative_description">Jumlah ialah input dan output yang direkodkan untuk perbualan ini, berasingan daripada penggunaan tetingkap konteks.</string>
+    <string name="context_usage_cumulative_input">Token input</string>
+    <string name="context_usage_cumulative_output">Token output</string>
+    <string name="context_usage_cumulative_scope">Penggunaan direkodkan untuk perbualan ini</string>
+    <string name="context_usage_cumulative_tab">Penggunaan terkumpul</string>
+    <string name="context_usage_cumulative_total">Jumlah token</string>
+    <string name="context_usage_dialog_title">Konteks dan penggunaan</string>
+    <string name="context_usage_entry_detail">%1$s / %2$s · Jumlah %3$s</string>
+    <string name="context_usage_entry_title">Konteks</string>
+    <string name="context_usage_window_estimate">Tetingkap semasa</string>
+    <string name="context_usage_window_tab">Tetingkap konteks</string>
 </resources>
