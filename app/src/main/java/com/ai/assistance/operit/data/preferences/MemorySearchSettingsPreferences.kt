@@ -1,18 +1,12 @@
 package com.ai.assistance.operit.data.preferences
 
 import android.content.Context
-import com.ai.assistance.operit.data.model.CloudEmbeddingConfig
 import com.ai.assistance.operit.data.model.MemoryScoreMode
 import com.ai.assistance.operit.data.model.MemorySearchConfig
 
 class MemorySearchSettingsPreferences(context: Context, profileId: String) {
-    private val profileId = profileId
     private val searchPrefs = context.applicationContext.getSharedPreferences(
         "memory_search_settings_$profileId",
-        Context.MODE_PRIVATE
-    )
-    private val cloudPrefs = context.applicationContext.getSharedPreferences(
-        "cloud_embedding_settings_$profileId",
         Context.MODE_PRIVATE
     )
 
@@ -84,30 +78,14 @@ class MemorySearchSettingsPreferences(context: Context, profileId: String) {
             .apply()
     }
 
-    fun loadCloudEmbedding(): CloudEmbeddingConfig {
-        return CloudEmbeddingConfig(
-            enabled = cloudPrefs.getBoolean(KEY_CLOUD_ENABLED, false),
-            endpoint = cloudPrefs.getString(KEY_CLOUD_ENDPOINT, "") ?: "",
-            apiKey = cloudPrefs.getString(KEY_CLOUD_API_KEY, "") ?: "",
-            model = cloudPrefs.getString(KEY_CLOUD_MODEL, "") ?: ""
-        ).normalized()
-    }
+    fun loadCloudEmbeddingEnabled(): Boolean = searchPrefs.getBoolean(KEY_CLOUD_EMBEDDING_ENABLED, true)
 
-    fun saveCloudEmbedding(config: CloudEmbeddingConfig) {
-        val normalized = config.normalized()
-        cloudPrefs.edit()
-            .putBoolean(KEY_CLOUD_ENABLED, normalized.enabled)
-            .putString(KEY_CLOUD_ENDPOINT, normalized.endpoint)
-            .putString(KEY_CLOUD_API_KEY, normalized.apiKey)
-            .putString(KEY_CLOUD_MODEL, normalized.model)
-            .apply()
-    }
-
-    fun resetCloudEmbedding() {
-        saveCloudEmbedding(CloudEmbeddingConfig())
+    fun saveCloudEmbeddingEnabled(enabled: Boolean) {
+        searchPrefs.edit().putBoolean(KEY_CLOUD_EMBEDDING_ENABLED, enabled).apply()
     }
 
     companion object {
+        private const val KEY_CLOUD_EMBEDDING_ENABLED = "cloud_embedding_enabled"
         private const val KEY_SCORE_MODE = "score_mode"
         private const val KEY_KEYWORD_WEIGHT = "keyword_weight"
         private const val KEY_TAG_WEIGHT = "tag_weight"
@@ -116,11 +94,6 @@ class MemorySearchSettingsPreferences(context: Context, profileId: String) {
         private const val KEY_AUTO_SAVE_INTERVAL_MINUTES = "auto_save_interval_minutes"
         private const val KEY_NEXT_AUTO_SAVE_RUN_AT_MS = "next_auto_save_run_at_ms"
         private const val KEY_MEMORY_EXTRACTION_CUSTOM_RULES = "memory_extraction_custom_rules"
-
-        private const val KEY_CLOUD_ENABLED = "enabled"
-        private const val KEY_CLOUD_ENDPOINT = "endpoint"
-        private const val KEY_CLOUD_API_KEY = "api_key"
-        private const val KEY_CLOUD_MODEL = "model"
 
         const val DEFAULT_AUTO_SAVE_INTERVAL_MINUTES = 5
         const val MIN_AUTO_SAVE_INTERVAL_MINUTES = 1

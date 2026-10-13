@@ -51,7 +51,7 @@ internal fun remapDeletedConfigReferences(
 
     affectedFunctions.forEach { functionType ->
         updatedMapping[functionType] = FunctionConfigMapping(
-            configId = FunctionalConfigManager.DEFAULT_CONFIG_ID,
+            configId = if (functionType == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID,
             modelIndex = 0,
         )
     }
@@ -130,7 +130,9 @@ class FunctionalConfigManager(private val context: Context) {
         }
 
         private fun defaultMapping(): Map<FunctionType, FunctionConfigMapping> {
-            return FunctionType.values().associateWith { FunctionConfigMapping(DEFAULT_CONFIG_ID, 0) }
+            return FunctionType.values().associateWith { functionType ->
+                FunctionConfigMapping(if (functionType == FunctionType.MEMORY_EMBEDDING) "" else DEFAULT_CONFIG_ID, 0)
+            }
         }
     }
 
@@ -164,13 +166,13 @@ class FunctionalConfigManager(private val context: Context) {
     // 获取指定功能的配置ID
     suspend fun getConfigIdForFunction(functionType: FunctionType): String {
         val mapping = functionConfigMappingFlow.first()
-        return mapping[functionType] ?: DEFAULT_CONFIG_ID
+        return mapping.getValue(functionType)
     }
 
     // 获取指定功能的完整配置（包含modelIndex）
     suspend fun getConfigMappingForFunction(functionType: FunctionType): FunctionConfigMapping {
         val mapping = functionConfigMappingWithIndexFlow.first()
-        return mapping[functionType] ?: FunctionConfigMapping(DEFAULT_CONFIG_ID, 0)
+        return mapping.getValue(functionType)
     }
 
     // 设置指定功能的配置ID
@@ -187,12 +189,12 @@ class FunctionalConfigManager(private val context: Context) {
 
     // 重置指定功能的配置为默认
     suspend fun resetFunctionConfig(functionType: FunctionType) {
-        setConfigForFunction(functionType, DEFAULT_CONFIG_ID)
+        setConfigForFunction(functionType, if (functionType == FunctionType.MEMORY_EMBEDDING) "" else DEFAULT_CONFIG_ID)
     }
 
     // 重置所有功能配置为默认
     suspend fun resetAllFunctionConfigs() {
-        val defaultMapping = FunctionType.values().associateWith { FunctionConfigMapping(DEFAULT_CONFIG_ID, 0) }
+        val defaultMapping = defaultMapping()
         saveFunctionConfigMappingWithIndex(defaultMapping)
     }
 }

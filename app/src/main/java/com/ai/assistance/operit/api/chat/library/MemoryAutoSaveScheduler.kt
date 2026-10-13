@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MemoryAutoSaveScheduler(
@@ -32,7 +31,7 @@ class MemoryAutoSaveScheduler(
             MemorySearchSettingsPreferences.DEFAULT_AUTO_SAVE_INTERVAL_MINUTES * 60 * 1000L
         private const val MAX_MESSAGES_PER_BATCH = 48
         private const val MAX_CANDIDATES_PER_RUN_PER_CHAT = 20
-        private const val MIN_TOTAL_CANDIDATES_TO_EXTRACT = 5
+        internal const val MIN_TOTAL_CANDIDATES_TO_EXTRACT = 5
 
         @Volatile
         private var instance: MemoryAutoSaveScheduler? = null
@@ -43,7 +42,6 @@ class MemoryAutoSaveScheduler(
     private val isRunning = AtomicBoolean(false)
     @Volatile
     private var loopJob: Job? = null
-    private val nextRunAtMsByProfileId = ConcurrentHashMap<String, Long>()
 
     fun start() {
         if (loopJob?.isActive == true) return
@@ -174,17 +172,17 @@ class MemoryAutoSaveScheduler(
         profileId: String,
         nowMs: Long = System.currentTimeMillis()
     ): Long {
-        nextRunAtMsByProfileId[profileId]?.takeIf { it > 0L }?.let { return it }
+        // 每次读取已保存的执行时间，修改检查间隔后立即使用新计划。
         val preferences = MemorySearchSettingsPreferences(context, profileId)
-        val persisted = preferences.loadNextAutoSaveRunAtMs().takeIf { it > 0L }
-        val target = persisted ?: (nowMs + intervalMsForProfile(profileId))
-        scheduleNextRun(profileId, target)
-        return target
+        val persisted = preferences.loadNextAutoSaveRunAtMs()
+        if (persisted > 0L) return persisted
+        val firstRunAt = nowMs + intervalMsForProfile(profileId)
+        scheduleNextRun(profileId, firstRunAt)
+        return firstRunAt
     }
 
     private fun scheduleNextRun(profileId: String, nextRunAtMs: Long) {
         val normalized = nextRunAtMs.coerceAtLeast(0L)
-        nextRunAtMsByProfileId[profileId] = normalized
         MemorySearchSettingsPreferences(context, profileId).saveNextAutoSaveRunAtMs(normalized)
     }
 

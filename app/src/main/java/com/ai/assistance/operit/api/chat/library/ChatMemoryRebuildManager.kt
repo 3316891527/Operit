@@ -2,10 +2,10 @@ package com.ai.assistance.operit.api.chat.library
 
 import android.content.Context
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.data.memory.resolveChatMemorySpaceId
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.model.ChatHistory
-import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.preferencesManager
@@ -13,6 +13,7 @@ import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -42,6 +43,7 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
 
     data class Progress(
         val status: Status = Status.IDLE,
+        val memorySpaceId: String? = null,
         val totalChats: Int = 0,
         val completedChats: Int = 0,
         val currentChatTitle: String = "",
@@ -80,17 +82,52 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
         windowMessageCount: Int,
         timeScope: ChatMemoryRebuildTimeScope
     ) {
-        if (runningJob?.isActive == true) return
+        startInternal(chatIds, windowMessageCount, timeScope, null)
+    }
+
+    /** 在图谱内重建时固定写入浏览中的空间，避免异步任务跟随全局空间变化。 */
+    fun startForMemorySpace(
+        memorySpaceId: String,
+        chatIds: List<String>,
+        windowMessageCount: Int,
+        timeScope: ChatMemoryRebuildTimeScope,
+    ) {
+        require(memorySpaceId.isNotBlank())
+        startInternal(chatIds, windowMessageCount, timeScope, memorySpaceId)
+    }
+
+    @Synchronized
+    private fun startInternal(
+        chatIds: List<String>,
+        windowMessageCount: Int,
+        timeScope: ChatMemoryRebuildTimeScope,
+        memorySpaceId: String?,
+    ) {
+        if (runningJob?.isCompleted == false) return
         val distinctChatIds = chatIds.filter(String::isNotBlank).distinct()
         if (distinctChatIds.isEmpty()) return
 
-        runningJob = scope.launch {
+        // 先发布任务与进度，再启动协程，避免重复点击产生多个重建请求。
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             operationMutex.withLock {
-                rebuild(distinctChatIds, windowMessageCount, timeScope)
+                rebuild(distinctChatIds, windowMessageCount, timeScope, memorySpaceId)
             }
         }
+        runningJob = job
+        job.invokeOnCompletion { cause ->
+            if (cause is CancellationException) {
+                synchronized(this) {
+                    if (runningJob === job && _progress.value.status in setOf(Status.PREPARING, Status.RUNNING)) {
+                        _progress.value = _progress.value.copy(status = Status.CANCELLED)
+                    }
+                }
+            }
+        }
+        _progress.value = Progress(status = Status.PREPARING, memorySpaceId = memorySpaceId, totalChats = distinctChatIds.size)
+        job.start()
     }
 
+    @Synchronized
     fun cancel() {
         runningJob?.cancel()
     }
@@ -98,22 +135,25 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
     private suspend fun rebuild(
         chatIds: List<String>,
         windowMessageCount: Int,
-        timeScope: ChatMemoryRebuildTimeScope
+        timeScope: ChatMemoryRebuildTimeScope,
+        memorySpaceId: String?,
     ) {
         try {
-            _progress.value = Progress(status = Status.PREPARING, totalChats = chatIds.size)
+            _progress.value = Progress(status = Status.PREPARING, memorySpaceId = memorySpaceId, totalChats = chatIds.size)
             val chatHistoryManager = ChatHistoryManager.getInstance(context)
             val selectedHistories =
                 chatHistoryManager.chatHistoriesFlow.first().filter { it.id in chatIds }
             require(selectedHistories.isNotEmpty()) { "No selected chat history found" }
             val activeProfileId = preferencesManager.activeMemorySpaceIdFlow.first()
+            val characterCards = CharacterCardManager.getInstance(context).getAllCharacterCards()
 
             val plannedChats = selectedHistories.map { history ->
                 val messages = chatHistoryManager.loadChatMessages(history.id)
                 PlannedChat(
                     history = history,
                     windows = ChatMemoryWindowPlanner.plan(messages, windowMessageCount, timeScope),
-                    memoryProfileId = resolveMemoryProfileId(history, activeProfileId)
+                    memoryProfileId = if (memorySpaceId != null) memorySpaceId
+                        else resolveChatMemorySpaceId(history, characterCards, activeProfileId)
                 )
             }
             val totalWindows = plannedChats.sumOf { it.windows.size }
@@ -136,7 +176,7 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
             var processedSourceMessages = 0
             var failedWindows = 0
             _progress.value = Progress(
-                status = Status.RUNNING,
+                status = Status.RUNNING, memorySpaceId = memorySpaceId,
                 totalChats = plannedChats.size,
                 totalWindows = totalWindows,
                 totalSourceMessages = totalSourceMessages
@@ -147,7 +187,7 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
                 plannedChat.windows.forEach { window ->
                     coroutineContext.ensureActive()
                     _progress.value = Progress(
-                        status = Status.RUNNING,
+                        status = Status.RUNNING, memorySpaceId = memorySpaceId,
                         totalChats = plannedChats.size,
                         completedChats = completedChats,
                         currentChatTitle = plannedChat.history.title,
@@ -194,7 +234,7 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
                 completedChats++
             }
             _progress.value = Progress(
-                status = Status.COMPLETED,
+                status = Status.COMPLETED, memorySpaceId = memorySpaceId,
                 totalChats = plannedChats.size,
                 completedChats = completedChats,
                 totalWindows = totalWindows,
@@ -212,28 +252,6 @@ class ChatMemoryRebuildManager private constructor(private val context: Context)
                 status = Status.FAILED,
                 errorMessage = error.localizedMessage ?: error.javaClass.simpleName
             )
-        }
-    }
-
-    private suspend fun resolveMemoryProfileId(
-        history: ChatHistory,
-        activeProfileId: String
-    ): String {
-        if (!history.characterGroupId.isNullOrBlank()) {
-            return activeProfileId
-        }
-        val cardName = history.characterCardName ?: return activeProfileId
-        val card = CharacterCardManager.getInstance(context).getAllCharacterCards()
-            .firstOrNull { it.name == cardName }
-        return if (
-            card != null &&
-                CharacterCardMemoryProfileBindingMode.normalize(card.memoryProfileBindingMode) ==
-                    CharacterCardMemoryProfileBindingMode.FIXED_PROFILE &&
-                !card.memoryProfileId.isNullOrBlank()
-        ) {
-            requireNotNull(card.memoryProfileId)
-        } else {
-            activeProfileId
         }
     }
 

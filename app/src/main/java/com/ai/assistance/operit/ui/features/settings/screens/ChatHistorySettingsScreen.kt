@@ -45,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.memory.settings.ChatMemoryRebuildDateRangeDialog
 import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
 import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
 import com.ai.assistance.operit.api.chat.library.ChatMemoryWindowPlanner
@@ -64,7 +65,6 @@ import com.ai.assistance.operit.ui.features.settings.components.CharacterCardAss
 import com.ai.assistance.operit.ui.features.settings.components.CharacterGroupAssignDialog
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
@@ -2104,120 +2104,6 @@ private enum class MemoryRebuildTimeScopeMode {
 }
 
 private val memoryWindowMessageCounts = listOf(16, 24, 32, 48)
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChatMemoryRebuildDateRangeDialog(
-    initialStart: LocalDate?,
-    initialEnd: LocalDate?,
-    onConfirm: (LocalDate, LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val pickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialStart
-            ?.atStartOfDay(ZoneOffset.UTC)
-            ?.toInstant()
-            ?.toEpochMilli(),
-        initialSelectedEndDateMillis = initialEnd
-            ?.atStartOfDay(ZoneOffset.UTC)
-            ?.toInstant()
-            ?.toEpochMilli()
-    )
-    val headlineFormatter = remember { DateTimeFormatter.ofPattern("yyyy/MM/dd") }
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .fillMaxHeight(0.85f)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                DateRangePicker(
-                    state = pickerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    title = {
-                        Text(
-                            text = stringResource(R.string.chat_memory_rebuild_date_range_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 24.dp, top = 16.dp, end = 24.dp)
-                        )
-                    },
-                    headline = {
-                        Text(
-                            text = formatMemoryDateRangeHeadline(
-                                pickerState.selectedStartDateMillis,
-                                pickerState.selectedEndDateMillis,
-                                headlineFormatter
-                            ),
-                            style = MaterialTheme.typography.headlineSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 24.dp, end = 24.dp, bottom = 12.dp)
-                        )
-                    },
-                    showModeToggle = false
-                )
-                HorizontalDivider()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    TextButton(
-                        enabled =
-                            pickerState.selectedStartDateMillis != null &&
-                                pickerState.selectedEndDateMillis != null,
-                        onClick = {
-                            val startMs = pickerState.selectedStartDateMillis ?: return@TextButton
-                            val endMs = pickerState.selectedEndDateMillis ?: return@TextButton
-                            val start =
-                                ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(startMs)
-                            val end =
-                                ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(endMs)
-                            if (end.isBefore(start)) {
-                                return@TextButton
-                            }
-                            onConfirm(start, end)
-                        }
-                    ) {
-                        Text(stringResource(R.string.chat_memory_rebuild_date_range_confirm))
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun formatMemoryDateRangeHeadline(
-    startMillis: Long?,
-    endMillis: Long?,
-    formatter: DateTimeFormatter
-): String {
-    if (startMillis == null) {
-        return ""
-    }
-    val start =
-        ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(startMillis).format(formatter)
-    if (endMillis == null) {
-        return start
-    }
-    val end = ChatMemoryRebuildTimeScope.utcMidnightMillisToLocalDate(endMillis).format(formatter)
-    return "$start – $end"
-}
 
 @Composable
 private fun ChatHistorySelectableRow(

@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -123,7 +125,7 @@ fun MemorySearchBar(
         IconButton(onClick = onSettingsClick) {
             Icon(
                 Icons.Default.Settings,
-                contentDescription = stringResource(R.string.memory_search_settings_title),
+                contentDescription = stringResource(R.string.memory_settings_title),
                 tint = MaterialTheme.colorScheme.secondary
             )
         }
@@ -132,39 +134,27 @@ fun MemorySearchBar(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun MemoryScreen() {
+fun MemoryScreen(spaceId: String, onConfigureEmbedding: () -> Unit) {
     val context = LocalContext.current
-    val profileList by preferencesManager.memorySpaceListFlow.collectAsState(initial = emptyList())
-    val activeProfileId by
-    preferencesManager.activeMemorySpaceIdFlow.collectAsState(initial = "default")
-
-    // 获取所有配置文件的名称映射(id -> name)
-    val profileNameMap = remember { mutableStateMapOf<String, String>() }
-
-    // 加载所有配置文件名称
-    LaunchedEffect(profileList) {
-        profileList.forEach { profileId ->
-            val profile = preferencesManager.getMemorySpaceFlow(profileId).first()
-            profileNameMap[profileId] = profile.name
-        }
+    var spaceName by remember(spaceId) { mutableStateOf("") }
+    var showFolderNavigator by remember(spaceId) { mutableStateOf(false) }
+    val isCurrentScreen = LocalIsCurrentScreen.current
+    LaunchedEffect(spaceId, isCurrentScreen) {
+        if (isCurrentScreen) spaceName = preferencesManager.getMemorySpaceFlow(spaceId).first().name
     }
-
-    var selectedProfileId by remember { mutableStateOf(activeProfileId) }
-    var showFolderNavigator by remember { mutableStateOf(false) }
-
-    LaunchedEffect(activeProfileId) { selectedProfileId = activeProfileId }
 
     val viewModel: MemoryViewModel =
         viewModel(
-            key = selectedProfileId, // Recreate ViewModel when profile changes
-            factory = MemoryViewModelFactory(context, selectedProfileId)
+            key = spaceId,
+            factory = MemoryViewModelFactory(context, spaceId)
         )
     val uiState by viewModel.uiState.collectAsState()
+    val historyProgress by viewModel.memoryHistoryRebuildProgress.collectAsState()
+    var actionsExpanded by remember(spaceId) { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
-    val isCurrentScreen = LocalIsCurrentScreen.current
 
-    LaunchedEffect(isCurrentScreen, selectedProfileId) {
+    LaunchedEffect(isCurrentScreen, spaceId) {
         if (isCurrentScreen) {
             viewModel.loadMemoryGraph()
             viewModel.loadFolderPaths()
@@ -255,76 +245,7 @@ fun MemoryScreen() {
         }
     )
 
-    CustomScaffold(
-        floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // 只有在框选模式下才显示"确认删除"按钮
-                if (uiState.isBoxSelectionMode) {
-                    FloatingActionButton(
-                        onClick = { viewModel.showBatchDeleteConfirm() },
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
-                    }
-                }
-
-                // 框选模式切换按钮
-                FloatingActionButton(
-                    onClick = {
-                        com.ai.assistance.operit.util.AppLogger.d(
-                            "MemoryScreen",
-                            "Box selection button clicked. Current mode: ${uiState.isBoxSelectionMode}, toggling to ${!uiState.isBoxSelectionMode}"
-                        )
-                        viewModel.toggleBoxSelectionMode(!uiState.isBoxSelectionMode)
-                    },
-                    containerColor = if (uiState.isBoxSelectionMode) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.Default.SelectAll, contentDescription = "Toggle Box Selection Mode")
-                }
-
-                FloatingActionButton(
-                    onClick = {
-                        com.ai.assistance.operit.util.AppLogger.d(
-                            "MemoryScreen",
-                            "Linking button clicked. Current mode: ${uiState.isLinkingMode}, toggling to ${!uiState.isLinkingMode}"
-                        )
-                        viewModel.toggleLinkingMode(!uiState.isLinkingMode)
-                    },
-                    containerColor = if (uiState.isLinkingMode) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.Default.Link, contentDescription = "Toggle Linking Mode")
-                }
-                FloatingActionButton(
-                    onClick = {
-                        filePickerLauncher.launch(
-                            arrayOf(
-                                "text/*",
-                                "application/pdf",
-                                "application/msword",
-                                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            )
-                        )
-                    },
-                    modifier = Modifier.size(48.dp),
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                ) {
-                    Icon(Icons.Default.UploadFile, contentDescription = "Import Document")
-                }
-                FloatingActionButton(
-                    onClick = { viewModel.startEditing(null) },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Create Memory")
-                }
-            }
-        }
-    ) { padding ->
+    CustomScaffold { padding ->
         Box(
             modifier = Modifier
                 .padding(padding)
@@ -335,6 +256,11 @@ fun MemoryScreen() {
                 modifier = Modifier
                     .fillMaxSize()
             ) {
+                Text(
+                    text = spaceName,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+                )
                 MemorySearchBar(
                     query = uiState.searchQuery,
                     onQueryChange = { viewModel.onSearchQueryChange(it) },
@@ -345,6 +271,59 @@ fun MemoryScreen() {
                     onSettingsClick = { viewModel.showSearchSettingsDialog(true) },
                     onMenuClick = { showFolderNavigator = !showFolderNavigator }
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { viewModel.toggleBoxSelectionMode(!uiState.isBoxSelectionMode) }) {
+                        Icon(
+                            Icons.Default.SelectAll,
+                            contentDescription = stringResource(R.string.memory_action_select),
+                            tint = if (uiState.isBoxSelectionMode) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (uiState.isBoxSelectionMode) {
+                        IconButton(onClick = { viewModel.showBatchDeleteConfirm() }) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.memory_action_delete_selected),
+                                tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    IconButton(onClick = { viewModel.toggleLinkingMode(!uiState.isLinkingMode) }) {
+                        Icon(
+                            Icons.Default.Link,
+                            contentDescription = stringResource(R.string.memory_action_link),
+                            tint = if (uiState.isLinkingMode) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Box {
+                        IconButton(onClick = { actionsExpanded = true }) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.memory_action_add))
+                        }
+                        DropdownMenu(
+                            expanded = actionsExpanded, onDismissRequest = { actionsExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.memory_action_create)) },
+                                onClick = { actionsExpanded = false; viewModel.startEditing(null) },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.memory_action_import)) },
+                                onClick = {
+                                    actionsExpanded = false
+                                    filePickerLauncher.launch(arrayOf(
+                                        "text/*", "application/pdf", "application/msword",
+                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                    ))
+                                },
+                                leadingIcon = { Icon(Icons.Default.UploadFile, contentDescription = null) }
+                            )
+                        }
+                    }
+                }
 
                 Box(
                     modifier = Modifier
@@ -389,15 +368,6 @@ fun MemoryScreen() {
                     onFolderDelete = { folderPath -> viewModel.deleteFolder(folderPath) },
                     onFolderCreate = { folderPath -> viewModel.createFolder(folderPath) },
                     onRefresh = { viewModel.refreshFolderList() },
-                    profileList = profileList,
-                    profileNameMap = profileNameMap,
-                    selectedProfileId = selectedProfileId,
-                    onProfileSelected = { id ->
-                        scope.launch {
-                            preferencesManager.setActiveMemorySpace(id)
-                            selectedProfileId = id
-                        }
-                    },
                     onDismissRequest = { showFolderNavigator = false }
                 )
             }
@@ -405,26 +375,34 @@ fun MemoryScreen() {
             // 对话框层
             if (uiState.isSearchSettingsDialogVisible) {
                 MemorySearchSettingsDialog(
+                    spaceId = spaceId,
                     currentConfig = uiState.searchConfig,
                     autoSaveIntervalMinutes = uiState.autoSaveIntervalMinutes,
                     memoryExtractionCustomRules = uiState.memoryExtractionCustomRules,
-                    cloudConfig = uiState.cloudEmbeddingConfig,
+                    details = uiState.memorySettingsDetails,
+                    embeddingModelName = uiState.memoryEmbeddingModelName,
+                    onConfigureEmbedding = {
+                        viewModel.showSearchSettingsDialog(false)
+                        onConfigureEmbedding()
+                    },
                     dimensionUsage = uiState.embeddingDimensionUsage,
                     rebuildProgress = uiState.embeddingRebuildProgress,
+                    historyProgress = historyProgress,
                     error = uiState.error,
                     isRebuilding = uiState.isEmbeddingRebuildRunning,
+                    isSaving = uiState.isSearchSettingsSaving,
+                    initialQuery = uiState.searchQuery,
                     onDismiss = { viewModel.showSearchSettingsDialog(false) },
-                    onSave = { config, cloudConfig, autoSaveIntervalMinutes, memoryExtractionCustomRules ->
-                        viewModel.saveSearchSettings(
-                            config,
-                            cloudConfig,
-                            autoSaveIntervalMinutes,
-                            memoryExtractionCustomRules
-                        )
-                        viewModel.searchMemories()
+                    onSave = { config, interval, rules, policy ->
+                        viewModel.saveSearchSettings(config, interval, rules, policy)
                     },
                     onRebuild = { viewModel.rebuildVectorIndex() },
-                    onSimulateSearch = { viewModel.openSearchSimulationDialog() }
+                    onSimulateSearch = { config, query, allowEmbedding, threshold ->
+                        viewModel.openSearchSimulationDialog(config, query, allowEmbedding, threshold)
+                    },
+                    onStartHistoryRebuild = viewModel::startMemoryHistoryRebuild,
+                    onCancelHistoryRebuild = viewModel::cancelMemoryHistoryRebuild,
+                    onRefresh = { viewModel.refreshMemorySettingsDetails(reloadSettings = !uiState.memorySettingsDetails.loaded) },
                 )
             }
 
