@@ -757,6 +757,10 @@ dependencies {
 
     // Test dependencies
     testImplementation(libs.junit)
+    // JVM 中文排序测试使用 ICU，匹配 Android 的 Collator，不打包进应用。
+    testImplementation("com.ibm.icu:icu4j:76.1")
+    // 目录迁移的 JVM 测试通过 JDBC 执行真实 SQLite SQL，需要在测试运行时提供驱动。
+    testRuntimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
     // JVM tests need a real implementation because Android's org.json methods are throwing stubs.
     testImplementation(libs.json.jvm)
     androidTestImplementation(libs.androidx.junit)

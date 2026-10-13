@@ -25,5 +25,7 @@ data class ChatHistory(
     val characterCardName: String? = null,
     val characterGroupId: String? = null,
     val locked: Boolean = false,
+    val folderId: String? = null,
+    val lastUsedAt: Long = 0L,
     val pinned: Boolean = false
 )

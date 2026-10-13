@@ -54,6 +54,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.filterNotNull
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubPage
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryAction
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryRequest
 import com.ai.assistance.operit.ui.floating.ui.pet.AvatarEmotionManager
 import com.ai.assistance.operit.api.voice.VoiceService
 import com.ai.assistance.operit.api.voice.VoiceServiceFactory
@@ -372,9 +381,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     private val _attachmentPanelState = MutableStateFlow(false)
     val attachmentPanelState: StateFlow<Boolean> = _attachmentPanelState
 
-    // 添加WebView显示状态的状态流
-    private val _showWebView = MutableStateFlow(false)
-    val showWebView: StateFlow<Boolean> = _showWebView.asStateFlow()
+    // 工作区主页、文件页面和终端统一导航，绑定状态仍独立保存。
+    private val _workspaceHubPage = MutableStateFlow(WorkspaceHubPage.CHAT)
+    val workspaceHubPage: StateFlow<WorkspaceHubPage> = _workspaceHubPage.asStateFlow()
+    private val _workspaceEntryRequest = MutableStateFlow(WorkspaceEntryRequest())
+    val workspaceEntryRequest: StateFlow<WorkspaceEntryRequest> = _workspaceEntryRequest.asStateFlow()
 
     private val _isWorkspacePreparing = MutableStateFlow(false)
     val isWorkspacePreparing: StateFlow<Boolean> = _isWorkspacePreparing.asStateFlow()
@@ -386,9 +397,6 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     }
 
-    // 添加AI电脑显示状态的状态流
-    private val _showAiComputer = MutableStateFlow(false)
-    val showAiComputer: StateFlow<Boolean> = _showAiComputer
 
     // 添加WebView刷新控制流 - 使用Int计数器避免重复刷新问题
     private val _webViewRefreshCounter = MutableStateFlow(0)
@@ -657,8 +665,14 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
     // 聊天历史相关方法
-    fun createNewChat(characterCardName: String? = null, characterGroupId: String? = null) {
-        chatHistoryDelegate.createNewChat(characterCardName = characterCardName, characterGroupId = characterGroupId)
+    fun createNewChat(
+        characterCardName: String? = null, characterGroupId: String? = null,
+        folderId: String? = null, inheritGroupFromCurrent: Boolean = true,
+    ) {
+        chatHistoryDelegate.createNewChat(
+            characterCardName = characterCardName, characterGroupId = characterGroupId,
+            folderId = folderId, inheritGroupFromCurrent = inheritGroupFromCurrent,
+        )
     }
 
     fun createNewChatWithDraft(draft: String) {
@@ -682,11 +696,13 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
     fun switchChat(chatId: String) {
+        // 切换对话后取消旧对话的页面打开任务，避免更新错误的工作区。
+        cancelWorkspaceOpen()
         chatHistoryDelegate.switchChat(chatId)
         chatRuntimeHolder.syncMainChatSelectionToFloating(chatId)
 
         // 如果当前WebView正在显示，则更新工作区并触发刷新
-        if (_showWebView.value) {
+        if (_workspaceHubPage.value == WorkspaceHubPage.WORKSPACE) {
             viewModelScope.launch {
                 try {
                     prepareWorkspaceServerForCurrentChat(chatId)
@@ -2183,42 +2199,66 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         _attachmentPanelState.value = isExpanded
     }
 
-    // WebView控制方法
-    fun toggleWebView() {
-        if (_showWebView.value) {
-            workspaceOpenJob?.cancel()
-            _isWorkspacePreparing.value = false
-            _showWebView.value = false
-            return
+    fun onWorkspaceHubButtonClick() {
+        val nextPage = if (_workspaceHubPage.value == WorkspaceHubPage.CHAT) {
+            WorkspaceHubPage.HOME
+        } else {
+            WorkspaceHubPage.CHAT
         }
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = nextPage
+    }
 
-        if (_isWorkspacePreparing.value) {
-            AppLogger.d(TAG, "工作区正在准备中，忽略重复打开请求")
-            return
+    /** 从侧栏选择对话时回到消息页，同时取消尚未完成的工作区打开。 */
+    fun showChatPage() {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = WorkspaceHubPage.CHAT
+    }
+
+    fun showWorkspaceHubHome() {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = WorkspaceHubPage.HOME
+    }
+
+    fun onWorkspaceHubBack() {
+        if (_isWorkspacePreparing.value || _workspaceHubPage.value != WorkspaceHubPage.HOME) {
+            showWorkspaceHubHome()
+        } else {
+            cancelWorkspaceOpen()
+            _workspaceHubPage.value = WorkspaceHubPage.CHAT
         }
+    }
 
+    private fun cancelWorkspaceOpen() {
         workspaceOpenJob?.cancel()
+        workspaceOpenJob = null
+        _isWorkspacePreparing.value = false
+    }
+
+    fun openWorkspaceFromHub(action: WorkspaceEntryAction = WorkspaceEntryAction.DEFAULT) {
+        if (_isWorkspacePreparing.value) return
+        if (_workspaceHubPage.value == WorkspaceHubPage.WORKSPACE && action == WorkspaceEntryAction.DEFAULT) return
+        cancelWorkspaceOpen()
         workspaceOpenJob = viewModelScope.launch {
             _isWorkspacePreparing.value = true
             try {
-                if (_showAiComputer.value) {
-                    _showAiComputer.value = false
-                    AppLogger.d(TAG, "AI电脑已关闭（由于打开工作区）")
-                }
-
                 val chatId = awaitWorkspaceChatId()
-                if (chatId != null) {
-                    prepareWorkspaceServerForCurrentChat(chatId)
-                } else {
-                    AppLogger.w(TAG, "打开工作区时未获取到聊天ID，将直接显示工作区页面")
-                }
-
-                _showWebView.value = true
+                prepareWorkspaceServerForCurrentChat(chatId)
+                currentCoroutineContext().ensureActive()
+                _workspaceEntryRequest.value = WorkspaceEntryRequest(
+                    action = action,
+                    sequence = _workspaceEntryRequest.value.sequence + 1,
+                )
+                _workspaceHubPage.value = WorkspaceHubPage.WORKSPACE
+            } catch (e: TimeoutCancellationException) {
+                AppLogger.e(TAG, "等待当前工作区对话超时", e)
+                uiStateDelegate.showErrorMessage(
+                    context.getString(R.string.chat_update_workspace_server_failed, e.message ?: "")
+                )
             } catch (e: CancellationException) {
-                AppLogger.d(TAG, "工作区打开流程已取消")
                 throw e
             } catch (e: IOException) {
-                AppLogger.e(TAG, "Failed to start workspace web server", e)
+                AppLogger.e(TAG, "启动工作区服务失败", e)
                 showErrorMessage(context.getString(R.string.chat_start_workspace_server_failed))
             } catch (e: Exception) {
                 AppLogger.e(TAG, "打开工作区失败", e)
@@ -2226,23 +2266,22 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                     context.getString(R.string.chat_update_workspace_server_failed, e.message ?: "")
                 )
             } finally {
-                _isWorkspacePreparing.value = false
+                // 取消时由导航立即清除准备状态，旧任务不再修改新任务的状态。
+                if (isActive) _isWorkspacePreparing.value = false
             }
         }
     }
 
-    private suspend fun awaitWorkspaceChatId(): String? {
-        currentChatId.value?.let { return it }
+    private suspend fun awaitWorkspaceChatId(): String = withTimeout(5_000) {
+        if (currentChatId.value == null) createNewChat()
+        val chatId = currentChatId.filterNotNull().first()
+        chatHistories.first { histories -> histories.any { it.id == chatId } }
+        chatId
+    }
 
-        createNewChat()
-
-        var waitCount = 0
-        while (currentChatId.value == null && waitCount < 10) {
-            delay(100)
-            waitCount++
-        }
-
-        return currentChatId.value
+    fun openTerminalFromHub() {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = WorkspaceHubPage.TERMINAL
     }
 
     private fun isWorkspaceServerEnabled(workspacePath: String, workspaceEnv: String?): Boolean {
@@ -2722,13 +2761,8 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
     private fun openAiComputerForTerminalSession() {
-        if (_showWebView.value) {
-            _showWebView.value = false
-            AppLogger.d(TAG, "工作区已关闭（由于打开后台命令终端）")
-        }
-        _showAiComputer.value = true
+        openTerminalFromHub()
     }
-
     fun dismissWorkspaceCommandExecutionDialog(workspacePath: String) {
         val currentState = _workspaceCommandExecutionState.value ?: return
         if (currentState.workspacePath != workspacePath) {
@@ -2828,69 +2862,6 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         val lowered = name.lowercase()
         return lowered.contains("path") || lowered.contains("file") || lowered.contains("dir")
     }
-
-    /** 更新聊天顺序和分组 */
-    fun updateChatOrderAndGroup(
-        reorderedHistories: List<ChatHistory>,
-        movedItem: ChatHistory,
-        targetGroup: String?
-    ) {
-        chatHistoryDelegate.updateChatOrderAndGroup(reorderedHistories, movedItem, targetGroup)
-    }
-
-    /** 创建新分组（通过创建新聊天实现） */
-    fun createGroup(groupName: String, characterCardName: String?, characterGroupId: String? = null) {
-        chatHistoryDelegate.createGroup(groupName, characterCardName, characterGroupId)
-    }
-
-    /** 重命名分组 */
-    fun updateGroupName(oldName: String, newName: String, characterCardName: String?) {
-        chatHistoryDelegate.updateGroupName(oldName, newName, characterCardName)
-    }
-
-    /** 删除分组 */
-    fun deleteGroup(groupName: String, deleteChats: Boolean, characterCardName: String?) {
-        chatHistoryDelegate.deleteGroup(groupName, deleteChats, characterCardName)
-    }
-
-    fun onWorkspaceButtonClick() {
-        toggleWebView()
-    }
-
-    fun onAiComputerButtonClick() {
-        toggleAiComputer()
-    }
-
-    // AI电脑控制方法
-    fun toggleAiComputer() {
-        viewModelScope.launch {
-            // 如果要显示AI电脑，先关闭工作区
-            if (!_showAiComputer.value && _showWebView.value) {
-                _showWebView.value = false
-                AppLogger.d(TAG, "工作区已关闭（由于打开AI电脑）")
-            }
-            
-            val newShowState = !_showAiComputer.value
-            _showAiComputer.value = newShowState
-            
-            if (newShowState) {
-                // 初始化AI电脑管理器
-                try {
-                    AppLogger.d(TAG, "AI电脑已启动")
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "启动AI电脑失败", e)
-                    _showAiComputer.value = false
-                    uiStateDelegate.showErrorMessage(
-                        context.getString(R.string.chat_start_ai_computer_failed, e.message ?: "")
-                    )
-                }
-            } else {
-                AppLogger.d(TAG, "AI电脑已关闭")
-            }
-        }
-    }
-
-
 
     /** 初始化语音服务 */
     private fun initializeVoiceService() {

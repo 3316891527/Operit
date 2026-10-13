@@ -56,7 +56,6 @@ class ChatHistoryDelegate(
     private var beforeDestructiveHistoryMutation: (suspend (String) -> Unit)? = null
     private var afterDestructiveHistoryMutation: (suspend (String) -> Unit)? = null
 
-    private var pendingPersistChatOrderJob: Job? = null
 
     // This is no longer needed here as summary logic is moved.
     // private val apiPreferences = ApiPreferences(context)
@@ -778,7 +777,8 @@ class ChatHistoryDelegate(
         group: String? = null,
         inheritGroupFromCurrent: Boolean = true,
         setAsCurrentChat: Boolean = true,
-        characterCardId: String? = null
+        characterCardId: String? = null,
+        folderId: String? = null
     ) {
         coroutineScope.launch {
             val (inputTokens, outputTokens, windowSize) = getChatStatistics()
@@ -821,6 +821,7 @@ class ChatHistoryDelegate(
                 inheritGroupFromChatId = inheritGroupFromChatId,
                 characterCardName = effectiveCharacterCardName,
                 characterGroupId = characterGroupId,
+                folderId = folderId,
                 setAsCurrentChat = shouldSyncCurrentChatToGlobal
             )
 
@@ -868,6 +869,7 @@ class ChatHistoryDelegate(
             AppLogger.d(TAG, "切换对话到 $chatId (syncToGlobal=$syncToGlobal)，已禁止添加消息")
 
             try {
+                chatHistoryManager.markChatUsed(chatId)
                 val (inputTokens, outputTokens, windowSize) = getChatStatistics()
                 saveCurrentChat(inputTokens, outputTokens, windowSize) // 切换前使用正确的窗口大小保存
 
@@ -1494,79 +1496,6 @@ class ChatHistoryDelegate(
                 reloadCurrentChatDisplayHistory(chatIdSnapshot)
             }
             true
-        }
-    }
-
-    /**
-     * 更新聊天记录的顺序和分组
-     * @param reorderedHistories 重新排序后的完整聊天历史列表
-     * @param movedItem 移动的聊天项
-     * @param targetGroup 目标分组的名称，如果拖拽到分组上
-     */
-    fun updateChatOrderAndGroup(
-        reorderedHistories: List<ChatHistory>,
-        movedItem: ChatHistory,
-        targetGroup: String?
-    ) {
-        coroutineScope.launch {
-            try {
-                // The list is already reordered. We just need to update displayOrder and group.
-                val updatedList = reorderedHistories.mapIndexed { index, history ->
-                    var newGroup = history.group
-                    if (history.id == movedItem.id && targetGroup != null) {
-                        newGroup = targetGroup
-                    }
-                    history.copy(displayOrder = index.toLong(), group = newGroup)
-                }
-
-                // Update UI immediately
-                _chatHistories.value = updatedList
-
-                // Persist changes (debounced) to avoid emitting intermediate ordering states.
-                // Drag-and-drop reordering can trigger many moves; persisting each move causes
-                // Room Flow to emit multiple intermediate lists, leading to visible jumping.
-                pendingPersistChatOrderJob?.cancel()
-                pendingPersistChatOrderJob = coroutineScope.launch {
-                    delay(350)
-                    chatHistoryManager.updateChatOrderAndGroup(updatedList)
-                }
-
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to update chat order and group", e)
-                // Optionally revert UI changes or show an error
-            }
-        }
-    }
-
-    /** 重命名分组 */
-    fun updateGroupName(oldName: String, newName: String, characterCardName: String?) {
-        coroutineScope.launch {
-            chatHistoryManager.updateGroupName(oldName, newName, characterCardName)
-        }
-    }
-
-    /** 删除分组 */
-    fun deleteGroup(groupName: String, deleteChats: Boolean, characterCardName: String?) {
-        coroutineScope.launch {
-            chatHistoryManager.deleteGroup(groupName, deleteChats, characterCardName)
-        }
-    }
-
-    /** 创建新分组（通过创建新聊天实现） */
-    fun createGroup(groupName: String, characterCardName: String?, characterGroupId: String? = null) {
-        coroutineScope.launch {
-            val (inputTokens, outputTokens, windowSize) = getChatStatistics()
-            saveCurrentChat(inputTokens, outputTokens, windowSize)
-
-            val newChat = chatHistoryManager.createNewChat(
-                group = groupName,
-                characterCardName = characterCardName,
-                characterGroupId = characterGroupId
-            )
-            _currentChatId.value = newChat.id
-            loadChatMessages(newChat.id)
-
-            onTokenStatisticsLoaded(newChat.id, 0, 0, 0)
         }
     }
 

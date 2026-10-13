@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ai.assistance.operit.ui.features.chat.sidebar.*
+import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -100,6 +103,13 @@ fun OperitApp(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val appContext = remember(context) { context.applicationContext }
+    val mainChatViewModel: ChatViewModel = viewModel { ChatViewModel(appContext) }
+    val chatSidebarState = rememberChatSidebarState(mainChatViewModel)
+    LaunchedEffect(mainChatViewModel, context) {
+        mainChatViewModel.moveTaskToBackEvents.collect {
+            (context as? android.app.Activity)?.moveTaskToBack(true)
+        }
+    }
     val packageManager = remember {
         PackageManager.getInstance(context, AIToolHandler.getInstance(context))
     }
@@ -270,6 +280,18 @@ fun OperitApp(
         }
     }
 
+    fun runMainChatAction(action: () -> Unit) {
+        requestRouteTransition {
+            action()
+            val nextEntry = AppRouteCatalog.toEntry(Screen.AiChat, RouteEntrySource.DRAWER)
+            if (routerState.currentEntry.routeId != nextEntry.routeId) {
+                isNavigatingBack = false
+                navigationTransitionSource = NavigationTransitionSource.DRAWER
+                routerState.resetTo(nextEntry)
+            }
+        }
+    }
+
     fun performGoBack() {
         if (routerState.canPop) {
             isNavigatingBack = true
@@ -366,15 +388,12 @@ fun OperitApp(
 
     val navItems = listOf(
         NavItem.AiChat,
-        NavItem.AssistantConfig,
+        // 助手配置暂不展示在侧边栏，路由与业务逻辑仍保留。
+        // NavItem.AssistantConfig,
         NavItem.Packages,
-        NavItem.MemoryBase,
-        NavItem.Toolbox,
         NavItem.ShizukuCommands,
         NavItem.Workflow,
-        NavItem.Settings,
-        NavItem.Help,
-        NavItem.About
+        NavItem.Settings
     )
 
     // Network state monitoring
@@ -432,7 +451,8 @@ fun OperitApp(
     }
 
     // Calculate drawer width for phone mode
-    val drawerWidth = (screenWidthDp * 0.75).dp // Drawer width is 3/4 of screen width
+    // 为嵌套对话目录留足宽度，同时保留可点击关闭的右侧区域。
+    val drawerWidth = (screenWidthDp * 0.86f).coerceAtMost(420f).dp
 
     // Main app container
     Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
@@ -496,6 +516,13 @@ fun OperitApp(
             }
         }
         CompositionLocalProvider(
+            LocalMainChatViewModel provides mainChatViewModel,
+            LocalMainChatSidebarState provides chatSidebarState,
+            LocalRunMainChatAction provides ::runMainChatAction,
+            LocalOpenMainChatSidebar provides {
+                if (useTabletLayout) isTabletSidebarExpanded = true
+                else scope.launch { drawerState.open() }
+            },
             LocalAppNavigationModel provides navigationModel,
             LocalRouteBackGuardRegistry provides routeBackGuardRegistry,
             LocalTopBarActions provides { actions: @Composable RowScope.() -> Unit ->

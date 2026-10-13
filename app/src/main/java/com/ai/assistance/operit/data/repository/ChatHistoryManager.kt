@@ -1,5 +1,10 @@
 package com.ai.assistance.operit.data.repository
 
+import androidx.room.withTransaction
+import com.ai.assistance.operit.data.chat.folders.ChatFolder
+import com.ai.assistance.operit.data.chat.folders.ChatFolderBinding
+import com.ai.assistance.operit.data.chat.folders.ChatFolderRepository
+import com.ai.assistance.operit.data.chat.folders.folderAncestors
 import android.content.Context
 import android.net.Uri
 import com.ai.assistance.operit.util.AppLogger
@@ -113,6 +118,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     // 使用Room数据库
     private val database = AppDatabase.getDatabase(context)
     private val chatDao = database.chatDao()
+    val chatFolders = ChatFolderRepository(database)
     private val messageDao = database.messageDao()
     private val messageVariantDao = database.messageVariantDao()
     private val chatContentDao = database.chatContentDao()
@@ -183,7 +189,9 @@ class ChatHistoryManager private constructor(private val context: Context) {
         return completeHistories
     }
 
-    private suspend fun buildOperitArchivedChat(chatHistory: ChatHistory): OperitArchivedChat {
+    private suspend fun buildOperitArchivedChat(
+        chatHistory: ChatHistory, foldersById: Map<String, ChatFolder>,
+    ): OperitArchivedChat {
         val messageEntities = chatContentDao.getMessagesForChat(chatHistory.id)
         val variantsByTimestamp =
             chatContentDao.getVariantsForChat(chatHistory.id).groupBy { it.messageTimestamp }
@@ -198,13 +206,17 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     variants = messageVariants.map(OperitArchivedMessageVariant::fromEntity),
                 )
             }
-        return OperitArchivedChat.fromChatHistory(chatHistory, archivedMessages)
+        return OperitArchivedChat.fromChatHistory(chatHistory, archivedMessages).copy(
+            folderPath = folderAncestors(chatHistory.folderId, foldersById),
+        )
     }
 
     private suspend fun exportOperitArchiveJsonStream(
         file: File,
         chatHistories: List<ChatHistory>,
     ) {
+        val exportedFolders = chatFolders.exportFolders(chatHistories.map { it.id }.toSet())
+        val foldersById = exportedFolders.associateBy { it.id }
         AppLogger.d(TAG, "开始流式导出 Operit 聊天记录，共 ${chatHistories.size} 个会话，目标=${file.absolutePath}")
         BufferedWriter(
             OutputStreamWriter(FileOutputStream(file), StandardCharsets.UTF_8),
@@ -215,10 +227,13 @@ class ChatHistoryManager private constructor(private val context: Context) {
             writer.append(",\n")
             writer.append("  \"formatVersion\": ${OperitChatArchive.CURRENT_FORMAT_VERSION},\n")
             writer.append("  \"exportedAt\": ${System.currentTimeMillis()},\n")
+            writer.append("  " + operitArchiveJson.encodeToString("folders") + ": ")
+            writer.append(operitArchiveJson.encodeToString(exportedFolders))
+            writer.appendLine(",")
             writer.append("  \"chats\": [")
 
             chatHistories.forEachIndexed { index, chatHistory ->
-                val archivedChat = buildOperitArchivedChat(chatHistory)
+                val archivedChat = buildOperitArchivedChat(chatHistory, foldersById)
                 if (index == 0) {
                     writer.append('\n')
                 } else {
@@ -247,13 +262,16 @@ class ChatHistoryManager private constructor(private val context: Context) {
         file: File,
         chatHistories: List<ChatHistory>,
     ) {
+        val exportedFolders = chatFolders.exportFolders(chatHistories.map { it.id }.toSet())
+        val foldersById = exportedFolders.associateBy { it.id }
         AppLogger.d(TAG, "开始导出 Operit CSV 聊天记录，共 ${chatHistories.size} 个会话，目标=${file.absolutePath}")
         BufferedWriter(
             OutputStreamWriter(FileOutputStream(file), StandardCharsets.UTF_8),
         ).use { writer ->
             ChatHistoryCsv.writeHeader(writer)
+            exportedFolders.forEach { ChatHistoryCsv.writeFolder(writer, it) }
             chatHistories.forEachIndexed { index, chatHistory ->
-                val archivedChat = buildOperitArchivedChat(chatHistory)
+                val archivedChat = buildOperitArchivedChat(chatHistory, foldersById)
                 ChatHistoryCsv.writeChat(writer, archivedChat)
                 archivedChat.messages.forEachIndexed { messageIndex, archivedMessage ->
                     ChatHistoryCsv.writeMessage(
@@ -300,6 +318,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
         when (imported) {
             is StreamImportedChat.Archive -> {
                 val archivedChat = imported.chat
+                chatFolders.importFolders(archivedChat.folderPath)
+                if (archivedChat.folderId == null && archivedChat.group != null) {
+                    chatFolders.ensureLegacyRoot(archivedChat.group, ChatFolderBinding(archivedChat.characterCardName, archivedChat.characterGroupId))
+                }
                 if (archivedChat.messages.isEmpty()) {
                     counters.skippedCount++
                     AppLogger.w(TAG, "流式导入跳过空归档会话: index=$importedIndex, chatId=${archivedChat.id}")
@@ -326,6 +348,9 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
             is StreamImportedChat.Legacy -> {
                 val chatHistory = imported.history
+                if (chatHistory.group != null) {
+                    chatFolders.ensureLegacyRoot(chatHistory.group, ChatFolderBinding(chatHistory.characterCardName, chatHistory.characterGroupId))
+                }
                 if (chatHistory.messages.isEmpty()) {
                     counters.skippedCount++
                     AppLogger.w(TAG, "流式导入跳过空会话: index=$importedIndex, chatId=${chatHistory.id}")
@@ -371,6 +396,12 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     reader.beginObject()
                     while (reader.hasNext()) {
                         when (reader.nextName()) {
+                            "folders" -> {
+                                val folders = decodeStreamElement(reader) {
+                                    operitArchiveJson.decodeFromString<List<ChatFolder>>(it)
+                                }
+                                chatFolders.importFolders(folders)
+                            }
                             "chats" -> {
                                 reader.beginArray()
                                 while (reader.hasNext()) {
@@ -482,6 +513,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
             characterCardName = this.characterCardName, // 映射characterCardName字段
             characterGroupId = this.characterGroupId, // 映射characterGroupId字段
             locked = this.locked,
+            folderId = this.folderId,
+            lastUsedAt = this.lastUsedAt,
             pinned = this.pinned
         )
     }
@@ -613,7 +646,25 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatMutex(history.id).withLock {
             try {
                 // 创建聊天实体
-                val chatEntity = ChatEntity.fromChatHistory(history)
+                val folder = when {
+                    history.folderId != null -> chatFolders.getFolder(history.folderId)
+                    history.group != null -> chatFolders.ensureLegacyRoot(
+                        history.group, ChatFolderBinding(history.characterCardName, history.characterGroupId),
+                    )
+                    else -> null
+                }
+                val original = chatDao.getChatById(history.id)
+                val importedUseTime = if (history.lastUsedAt == 0L) {
+                    maxOf(
+                        history.createdAt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                        history.messages.filter { it.sender == "user" }.maxOfOrNull { it.timestamp } ?: 0L,
+                    )
+                } else history.lastUsedAt
+                val chatEntity = ChatEntity.fromChatHistory(history).copy(
+                    folderId = folder?.id, group = folder?.name,
+                    displayOrder = history.displayOrder,
+                    lastUsedAt = maxOf(importedUseTime, original?.lastUsedAt ?: 0L),
+                )
 
                 // 保存聊天实体
                 chatDao.insertChat(chatEntity)
@@ -887,7 +938,9 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun addMessage(chatId: String, message: ChatMessage): ChatMessage {
         chatMutex(chatId).withLock {
             try {
-                return persistMessageLocked(chatId, message)
+                val persisted = persistMessageLocked(chatId, message)
+                if (message.sender == "user") markChatUsed(chatId)
+                return persisted
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Failed to add message for chat $chatId", e)
                 throw e
@@ -901,25 +954,19 @@ class ChatHistoryManager private constructor(private val context: Context) {
      */
     suspend fun updateChatOrderAndGroup(updatedHistories: List<ChatHistory>) {
         globalMutex.withLock {
-            try {
-                val timestamp = System.currentTimeMillis()
-                val entitiesToUpdate = updatedHistories.map { history ->
-                    // Find the original entity to keep other fields intact
-                    val originalEntity = chatDao.getChatById(history.id)
-                    originalEntity?.copy(
-                        displayOrder = history.displayOrder,
-                        group = history.group,
-                        updatedAt = timestamp
-                    ) ?: ChatEntity.fromChatHistory(history.copy(updatedAt = LocalDateTime.now()))
+            database.withTransaction {
+                updatedHistories.forEach { history ->
+                    val original = requireNotNull(chatDao.getChatById(history.id))
+                    val folder = if (history.group == original.group) {
+                        original.folderId?.let { chatFolders.getFolder(it) }
+                    } else {
+                        history.group?.let { chatFolders.ensureLegacyRoot(it, ChatFolderBinding(null, null)) }
+                    }
+                    chatDao.moveChatFolder(history.id, folder?.id, folder?.name, history.displayOrder)
                 }
-                chatDao.updateChats(entitiesToUpdate)
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to update chat order and group", e)
-                throw e
             }
         }
     }
-
     /**
      * 重命名分组
      * @param oldName 旧的分组名称
@@ -927,26 +974,19 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * @param characterCardName 角色卡名称，如果为null则更新所有同名分组
      */
     suspend fun updateGroupName(oldName: String, newName: String, characterCardName: String?) {
-        globalMutex.withLock {
-            try {
-                if (characterCardName != null) {
-                    // 只更新指定角色卡下的分组（使用 SQL 批量操作）
-                    chatDao.updateGroupNameForCharacter(oldName, newName, characterCardName)
-                } else {
-                    // 更新所有同名分组
-                    chatDao.updateGroupName(oldName, newName)
+        database.withTransaction {
+            if (characterCardName == null) {
+                chatFolders.getFolders().filter { it.parentId == null && it.name == oldName }.forEach {
+                    chatFolders.rename(it.id, newName)
                 }
-            } catch (e: Exception) {
-                AppLogger.e(
-                    TAG,
-                    "Failed to rename group from $oldName to $newName (character: $characterCardName)",
-                    e
-                )
-                throw e
+            } else {
+                val ids = chatDao.getAllChatsDirectly()
+                    .filter { it.group == oldName && it.characterCardName == characterCardName }.map { it.id }
+                val folder = chatFolders.ensureLegacyRoot(newName, ChatFolderBinding(characterCardName, null))
+                chatFolders.assignChats(ids, folder.id)
             }
         }
     }
-
     /**
      * 删除分组
      * @param groupName 要删除的分组名称
@@ -954,38 +994,21 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * @param characterCardName 角色卡名称，如果为null则删除所有同名分组
      */
     suspend fun deleteGroup(groupName: String, deleteChats: Boolean, characterCardName: String?) {
-        globalMutex.withLock {
-            try {
-                if (characterCardName != null) {
-                    // 只删除指定角色卡下的分组（使用 SQL 批量操作）
-                    if (deleteChats) {
-                        chatDao.deleteChatsInGroupForCharacter(groupName, characterCardName)
-                        // 保留被锁定的聊天：仅清除锁定聊天的分组
-                        chatDao.removeGroupFromLockedChatsForCharacter(groupName, characterCardName)
-                    } else {
-                        chatDao.removeGroupFromChatsForCharacter(groupName, characterCardName)
-                    }
-                } else {
-                    // 删除所有同名分组
-                    if (deleteChats) {
-                        chatDao.deleteChatsInGroup(groupName)
-                        // 保留被锁定的聊天：仅清除锁定聊天的分组
-                        chatDao.removeGroupFromLockedChats(groupName)
-                    } else {
-                        chatDao.removeGroupFromChats(groupName)
-                    }
+        database.withTransaction {
+            val targets = chatDao.getAllChatsDirectly().filter {
+                it.group == groupName && (characterCardName == null || it.characterCardName == characterCardName)
+            }
+            targets.forEach {
+                if (deleteChats && !it.locked) chatDao.deleteChat(it.id)
+                else chatFolders.assignChats(listOf(it.id), null)
+            }
+            if (characterCardName == null) {
+                chatFolders.getFolders().filter { it.parentId == null && it.name == groupName }.forEach {
+                    chatFolders.deleteKeepingContents(it.id)
                 }
-            } catch (e: Exception) {
-                AppLogger.e(
-                    TAG,
-                    "Failed to delete group $groupName (deleteChats: $deleteChats, character: $characterCardName)",
-                    e
-                )
-                throw e
             }
         }
     }
-
     /**
      * 删除单条消息.
      * @param chatId 聊天ID
@@ -1422,7 +1445,12 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     // 设置当前聊天ID
+    suspend fun markChatUsed(chatId: String, timestamp: Long = System.currentTimeMillis()) {
+        chatDao.markChatUsed(chatId, timestamp)
+    }
+
     suspend fun setCurrentChatId(chatId: String) {
+        markChatUsed(chatId)
         context.currentChatIdDataStore.edit { preferences ->
             preferences[PreferencesKeys.CURRENT_CHAT_ID] = chatId
         }
@@ -1494,7 +1522,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
         inheritGroupFromChatId: String? = null,
         characterCardName: String? = null,
         characterGroupId: String? = null,
-        setAsCurrentChat: Boolean = true
+        setAsCurrentChat: Boolean = true,
+        folderId: String? = null
     ): ChatHistory {
         val dateTime = LocalDateTime.now()
         val formattedTime =
@@ -1504,15 +1533,11 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
         val localizedContext = LocaleUtils.getLocalizedContext(context)
 
-        // 确定新对话的分组
-        val finalGroup = when {
-            // 如果显式指定了分组，使用指定的分组
-            group != null -> group
-            // 如果要继承分组，尝试从指定的对话获取分组
-            inheritGroupFromChatId != null -> {
-                chatDao.getChatById(inheritGroupFromChatId)?.group
-            }
-            // 默认为空分组（不分组）
+        val inherited = inheritGroupFromChatId?.let { chatDao.getChatById(it) }
+        val folder = when {
+            folderId != null -> chatFolders.getFolder(folderId)
+            group != null -> chatFolders.ensureLegacyRoot(group, ChatFolderBinding(characterCardName, characterGroupId))
+            inherited?.folderId != null -> chatFolders.getFolder(inherited.folderId)
             else -> null
         }
 
@@ -1522,7 +1547,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 messages = listOf<ChatMessage>(),
                 inputTokens = 0,
                 outputTokens = 0,
-                group = finalGroup,
+                group = folder?.name,
+                folderId = folder?.id,
+                lastUsedAt = System.currentTimeMillis(),
+                displayOrder = -System.currentTimeMillis(),
                 characterCardName = characterCardName, // 使用传入的角色卡名称，如果为null则不绑定
                 characterGroupId = characterGroupId // 绑定群组角色卡ID（可选）
             )
@@ -1621,7 +1649,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun updateChatGroup(chatId: String, group: String?) {
         chatMutex(chatId).withLock {
             try {
-                chatDao.updateChatGroup(chatId, group)
+                val folderId = group?.let { chatFolders.ensureLegacyRoot(it, ChatFolderBinding(null, null)).id }
+                chatFolders.assignChats(listOf(chatId), folderId)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Failed to update chat group for chat $chatId", e)
                 throw e
@@ -1761,6 +1790,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         outputTokens = parentChat.outputTokens,
                         currentWindowSize = parentChat.currentWindowSize,
                         group = parentChat.group,
+                        folderId = parentChat.folderId,
+                        lastUsedAt = System.currentTimeMillis(),
                         workspace = parentChat.workspace,
                         workspaceEnv = parentChat.workspaceEnv,
                         parentChatId = parentChatId,
@@ -1837,6 +1868,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         characterCardName = entity.characterCardName,
                         characterGroupId = entity.characterGroupId,
                         locked = entity.locked,
+                        folderId = entity.folderId,
+                        lastUsedAt = entity.lastUsedAt,
                         pinned = entity.pinned
                     )
                 }
@@ -1878,6 +1911,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     characterCardName = entity.characterCardName,
                     characterGroupId = entity.characterGroupId,
                     locked = entity.locked,
+                    folderId = entity.folderId,
+                    lastUsedAt = entity.lastUsedAt,
                     pinned = entity.pinned
                 )
             }
@@ -2326,7 +2361,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun clearCharacterCardBinding(characterCardName: String) {
         try {
             withContext(Dispatchers.IO) {
-                chatDao.clearCharacterCardBinding(characterCardName)
+                database.withTransaction {
+                    chatDao.clearCharacterCardBinding(characterCardName)
+                    chatFolders.rebindFolders(ChatFolderBinding(characterCardName, null), ChatFolderBinding(null, null))
+                }
                 AppLogger.d(TAG, "已清理绑定角色卡 '$characterCardName' 的对话")
             }
         } catch (e: Exception) {
@@ -2344,10 +2382,14 @@ class ChatHistoryManager private constructor(private val context: Context) {
     ): Int {
         return withContext(Dispatchers.IO) {
             try {
-                val updated = if (sourceCharacterCardName == null) {
-                    chatDao.assignCharacterCardToUnbound(targetCharacterCardName)
-                } else {
-                    chatDao.renameCharacterCardBinding(sourceCharacterCardName, targetCharacterCardName)
+                val updated = database.withTransaction {
+                    val count = if (sourceCharacterCardName == null) {
+                        chatDao.assignCharacterCardToUnbound(targetCharacterCardName)
+                    } else {
+                        chatDao.renameCharacterCardBinding(sourceCharacterCardName, targetCharacterCardName)
+                    }
+                    chatFolders.rebindFolders(ChatFolderBinding(sourceCharacterCardName, null), ChatFolderBinding(targetCharacterCardName, null))
+                    count
                 }
                 AppLogger.d(
                         TAG,
@@ -2654,10 +2696,14 @@ class ChatHistoryManager private constructor(private val context: Context) {
     ): Int {
         return withContext(Dispatchers.IO) {
             try {
-                val updated = if (sourceCharacterGroupId == null) {
-                    chatDao.assignCharacterGroupToUnbound(targetCharacterGroupId)
-                } else {
-                    chatDao.renameCharacterGroupBinding(sourceCharacterGroupId, targetCharacterGroupId)
+                val updated = database.withTransaction {
+                    val count = if (sourceCharacterGroupId == null) {
+                        chatDao.assignCharacterGroupToUnbound(targetCharacterGroupId)
+                    } else {
+                        chatDao.renameCharacterGroupBinding(sourceCharacterGroupId, targetCharacterGroupId)
+                    }
+                    chatFolders.rebindFolders(ChatFolderBinding(null, sourceCharacterGroupId), ChatFolderBinding(null, targetCharacterGroupId))
+                    count
                 }
                 AppLogger.d(
                     TAG,
@@ -2710,7 +2756,11 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun clearCharacterGroupBinding(characterGroupId: String): Int {
         return withContext(Dispatchers.IO) {
             try {
-                val updated = chatDao.clearCharacterGroupBinding(characterGroupId)
+                val updated = database.withTransaction {
+                    val count = chatDao.clearCharacterGroupBinding(characterGroupId)
+                    chatFolders.rebindFolders(ChatFolderBinding(null, characterGroupId), ChatFolderBinding(null, null))
+                    count
+                }
                 AppLogger.d(TAG, "已清理绑定角色群组 '$characterGroupId' 的对话: $updated")
                 updated
             } catch (e: Exception) {
@@ -2840,7 +2890,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
         }
         return withContext(Dispatchers.IO) {
             try {
-                chatDao.updateGroupForChats(chatIds, groupName)
+                val folderId = groupName?.let { chatFolders.ensureLegacyRoot(it, ChatFolderBinding(null, null)).id }
+                chatFolders.assignChats(chatIds, folderId)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "批量更新聊天分组失败: $groupName, chatIds=$chatIds", e)
                 throw e
@@ -2855,7 +2906,11 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun renameCharacterCardInChats(oldName: String, newName: String): Int {
         return withContext(Dispatchers.IO) {
             try {
-                chatDao.renameCharacterCardBinding(oldName, newName)
+                database.withTransaction {
+                    val count = chatDao.renameCharacterCardBinding(oldName, newName)
+                    chatFolders.rebindFolders(ChatFolderBinding(oldName, null), ChatFolderBinding(newName, null))
+                    count
+                }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "批量重命名对话绑定角色卡失败: $oldName -> $newName", e)
                 throw e
