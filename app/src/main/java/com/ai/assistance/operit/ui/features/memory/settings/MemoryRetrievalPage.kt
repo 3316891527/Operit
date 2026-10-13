@@ -61,6 +61,13 @@ internal fun MemoryRetrievalPage(
             onCheckedChange = { onPolicyChange(policy.copy(cloudEmbeddingEnabled = it)) },
         )
         Text(embeddingModelName ?: stringResource(R.string.not_configured), style = MaterialTheme.typography.bodyMedium)
+        if (policy.cloudEmbeddingEnabled && embeddingModelName == null) {
+            Text(
+                stringResource(R.string.memory_embedding_binding_required),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
         MemorySettingsHint(stringResource(R.string.memory_embedding_function_settings_desc))
         OutlinedButton(onClick = onConfigureEmbedding, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.functional_model_config_title)) }
     }

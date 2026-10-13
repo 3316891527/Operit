@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.ai.assistance.operit.data.chat.folders.ChatFolder
 import com.ai.assistance.operit.data.chat.folders.ChatFolderBinding
 import com.ai.assistance.operit.data.chat.folders.ChatFolderRepository
+import com.ai.assistance.operit.data.chat.folders.describe
 import com.ai.assistance.operit.data.chat.folders.folderAncestors
 import android.content.Context
 import android.net.Uri
@@ -318,7 +319,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         when (imported) {
             is StreamImportedChat.Archive -> {
                 val archivedChat = imported.chat
-                chatFolders.importFolders(archivedChat.folderPath)
+                chatFolders.importFolders(archivedChat.folderPath) { it.describe(context) }
                 if (archivedChat.folderId == null && archivedChat.group != null) {
                     chatFolders.ensureLegacyRoot(archivedChat.group, ChatFolderBinding(archivedChat.characterCardName, archivedChat.characterGroupId))
                 }
@@ -400,7 +401,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                                 val folders = decodeStreamElement(reader) {
                                     operitArchiveJson.decodeFromString<List<ChatFolder>>(it)
                                 }
-                                chatFolders.importFolders(folders)
+                                chatFolders.importFolders(folders) { it.describe(context) }
                             }
                             "chats" -> {
                                 reader.beginArray()

@@ -158,7 +158,7 @@ internal fun HistoryQuickScroller(
     val currentOnInteractionChange by rememberUpdatedState(onInteractionChange)
     DisposableEffect(Unit) {
         onDispose {
-            onInteractionChange(false)
+            currentOnInteractionChange(false)
         }
     }
 

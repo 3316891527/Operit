@@ -82,6 +82,7 @@ import com.ai.assistance.operit.ui.features.packages.management.PackageAcquisiti
 import com.ai.assistance.operit.ui.features.packages.management.PackageManagerMenu
 import com.ai.assistance.operit.ui.features.packages.management.PluginFilter
 import com.ai.assistance.operit.ui.features.packages.management.PluginListPreferences
+import com.ai.assistance.operit.ui.features.packages.management.PluginListPreferenceError
 import com.ai.assistance.operit.ui.features.packages.management.PluginListToolbar
 import com.ai.assistance.operit.ui.features.packages.management.PluginSortSelection
 import com.ai.assistance.operit.ui.features.packages.management.mergeVisiblePluginOrder
@@ -185,6 +186,14 @@ fun PackageManagerScreen(
     var pluginSearchInput by rememberSaveable { mutableStateOf("") }
     var pluginSearchQuery by rememberSaveable { mutableStateOf("") }
     val pluginListPreferences = remember { PluginListPreferences(context) }
+    var invalidPluginPreferences by remember { mutableStateOf(pluginListPreferences.hasInvalidValues()) }
+    if (invalidPluginPreferences) {
+        PluginListPreferenceError {
+            pluginListPreferences.resetPresentation()
+            invalidPluginPreferences = false
+        }
+        return
+    }
     var pluginSort by remember { mutableStateOf(pluginListPreferences.readSort()) }
     var pluginFilter by remember { mutableStateOf(pluginListPreferences.readFilter()) }
     val pluginActivities by packageManager.pluginActivityStore.activities.collectAsState()

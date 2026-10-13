@@ -8706,4 +8706,17 @@
     <string name="context_usage_entry_title">上下文</string>
     <string name="context_usage_window_estimate">当前窗口</string>
     <string name="context_usage_window_tab">窗口占用</string>
+
+    <!-- review 修复：升级提示、列表错误及缺失翻译 -->
+    <string name="memory_embedding_legacy_binding_required">检测到旧版独立向量配置，需要重新配置。请在模型配置中录入原端点、模型与密钥，再在功能模型中绑定“记忆向量”。完成前，向量生成和语义检索暂停；旧配置仍保留。</string>
+    <string name="memory_embedding_binding_required">已开启云端向量，但尚未绑定可用的记忆向量模型。请先完成配置，再使用向量生成和语义检索。</string>
+    <string name="plugin_list_preferences_invalid">插件列表偏好无效</string>
+    <string name="plugin_list_preferences_reset_hint">重置会清除列表的排序和筛选偏好。已安装插件、启用状态和手动排列会保留。</string>
+    <string name="plugin_list_preferences_reset">重置排序和筛选</string>
+    <string name="folder_import_empty_id">文件夹 ID 不能为空</string>
+    <string name="folder_import_duplicate_id">文件夹 ID 重复</string>
+    <string name="folder_import_empty_name">文件夹名称不能为空</string>
+    <string name="folder_import_missing_parent">父文件夹不存在：%1$s</string>
+    <string name="folder_import_cycle">父子关系包含循环：%1$s</string>
+    <string name="folder_import_record_error">归档第 %1$d 条文件夹记录（ID：%2$s）无效：%3$s。请修正后重新导入。</string>
 </resources>

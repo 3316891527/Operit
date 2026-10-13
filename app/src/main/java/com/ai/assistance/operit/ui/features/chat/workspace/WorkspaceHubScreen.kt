@@ -24,9 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -54,14 +56,39 @@ fun WorkspaceHubScreen(
     reserveChatControlsSpace: Boolean = false,
     onExportClick: (File) -> Unit,
 ) {
+    key(currentChat?.id) {
+        WorkspaceHubContent(
+            actualViewModel = actualViewModel,
+            currentChat = currentChat,
+            chatHistories = chatHistories,
+            isVisible = isVisible,
+            onOpenHtmlPackager = onOpenHtmlPackager,
+            reserveChatControlsSpace = reserveChatControlsSpace,
+            onExportClick = onExportClick,
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun WorkspaceHubContent(
+    actualViewModel: ChatViewModel,
+    currentChat: ChatHistory?,
+    chatHistories: List<ChatHistory>,
+    isVisible: Boolean,
+    onOpenHtmlPackager: () -> Unit,
+    reserveChatControlsSpace: Boolean = false,
+    onExportClick: (File) -> Unit,
+) {
     val page by actualViewModel.workspaceHubPage.collectAsState()
     val entryRequest by actualViewModel.workspaceEntryRequest.collectAsState()
     val context = LocalContext.current
     val terminalManager = remember(context) { TerminalManager.getInstance(context) }
     val terminalState by terminalManager.terminalState.collectAsState()
-    var hasOpenedWorkspace by remember { mutableStateOf(false) }
-    var hasOpenedTerminal by remember { mutableStateOf(false) }
-    LaunchedEffect(page) {
+    // 切换对话重置访问记录，同一对话的界面重建则保留已打开页签。
+    var hasOpenedWorkspace by rememberSaveable { mutableStateOf(false) }
+    var hasOpenedTerminal by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(currentChat?.id, page) {
         if (page == WorkspaceHubPage.WORKSPACE) hasOpenedWorkspace = true
         if (page == WorkspaceHubPage.TERMINAL) hasOpenedTerminal = true
     }

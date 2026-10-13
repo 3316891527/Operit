@@ -39,7 +39,6 @@ data class ChatSidebarState(
 fun rememberChatSidebarState(actualViewModel: ChatViewModel): ChatSidebarState {
     val context = LocalContext.current
     val chatHistories by actualViewModel.chatHistories.collectAsState()
-    val currentChatId by actualViewModel.currentChatId.collectAsState()
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
     val characterGroupCardManager = remember { CharacterGroupCardManager.getInstance(context) }
     val activePromptManager = remember { ActivePromptManager.getInstance(context) }
@@ -70,6 +69,7 @@ fun rememberChatSidebarState(actualViewModel: ChatViewModel): ChatSidebarState {
         "chat_history_auto_switch_chat_on_character_select",
         false
     )
+    // 筛选不触发导航，否则会绕过离页检查并重新打开用户刚清空的对话。
     val displayedChatHistories = remember(
         chatHistories,
         activePrompt,
@@ -107,30 +107,6 @@ fun rememberChatSidebarState(actualViewModel: ChatViewModel): ChatSidebarState {
     }
     LaunchedEffect(autoSwitchChatOnCharacterSelect) {
         actualViewModel.setAutoSwitchChatOnCharacterSelect(autoSwitchChatOnCharacterSelect)
-    }
-    LaunchedEffect(
-        activePrompt,
-        activeCharacterCard,
-        activeCharacterGroup,
-        displayedChatHistories,
-        currentChatId,
-        chatHistories,
-        historyDisplayMode
-    ) {
-        if (historyDisplayMode != ChatHistoryDisplayMode.CURRENT_CHARACTER_ONLY) {
-            return@LaunchedEffect
-        }
-        val hasActiveTarget = when (activePrompt) {
-            is ActivePrompt.CharacterGroup -> activeCharacterGroup != null
-            is ActivePrompt.CharacterCard -> activeCharacterCard != null
-        }
-        if (!hasActiveTarget || displayedChatHistories.isEmpty()) {
-            return@LaunchedEffect
-        }
-        val currentId = currentChatId ?: ""
-        if (currentId.isBlank()) {
-            actualViewModel.switchChat(displayedChatHistories.first().id)
-        }
     }
     return ChatSidebarState(
         activePrompt = activePrompt,

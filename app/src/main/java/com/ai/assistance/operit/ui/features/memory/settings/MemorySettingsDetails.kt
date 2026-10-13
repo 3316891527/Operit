@@ -16,6 +16,7 @@ data class MemorySettingsDetails(
     val error: String? = null,
     val spaceName: String = "",
     val policy: MemorySettingsPolicy = MemorySettingsPolicy(),
+    val hasLegacyEmbeddingConfiguration: Boolean = false,
     val queue: MemoryAutoSaveQueueStatus = MemoryAutoSaveQueueStatus(),
     val nextRunAtMs: Long = 0L,
     val chats: List<MemorySettingsChat> = emptyList(),

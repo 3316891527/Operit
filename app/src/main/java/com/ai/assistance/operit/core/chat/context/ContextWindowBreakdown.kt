@@ -45,6 +45,7 @@ data class ContextWindowBreakdown(
 }
 
 object ContextWindowBreakdownEstimator {
+    // 标记与系统提示词中的包系统模板耦合；调整模板时应同步这里及切分回归用例。
     private const val AVAILABLE_PACKAGES_MARKER = "Available packages:"
     private val catalogEndMarkers = listOf("To use a package:", "PACKAGE SYSTEM", "包系统：")
 
@@ -161,6 +162,7 @@ object ContextWindowBreakdownEstimator {
         var mcp = 0L
         for (tool in tools) {
             val tokens = ChatUtils.estimateTokenCount(tool.toString())
+            // 包和 MCP 工具使用命名空间冒号，常驻工具名按约定不含冒号。
             if (tool.name.contains(':')) {
                 mcp += tokens
             } else {

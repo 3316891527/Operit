@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -126,7 +127,7 @@ fun WorkspaceHubHome(
                 )
                 Row(
                     modifier = Modifier
-                        .clickable(onClick = onOpenTerminal)
+                        .clickable(role = Role.Button, onClick = onOpenTerminal)
                         .heightIn(min = 44.dp)
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -148,7 +149,7 @@ fun WorkspaceHubHome(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(onClick = onOpenWorkspace)
+                            .clickable(role = Role.Button, onClick = onOpenWorkspace)
                             .heightIn(min = 44.dp)
                             .padding(top = 4.dp, bottom = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,

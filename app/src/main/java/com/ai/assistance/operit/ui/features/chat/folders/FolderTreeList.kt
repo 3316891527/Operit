@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -66,7 +67,10 @@ internal fun FolderTreeList(
     var target by remember { mutableStateOf<ChatFolderRow?>(null) }
     var zone by remember { mutableStateOf(FolderDropZone.INSIDE) }
     var drop by remember { mutableStateOf<ChatFolderMove?>(null) }
-    val latestRows by rememberUpdatedState(rows)
+    // 指针移动和逐行重组共用索引，避免每帧扫描全部目录或对话。
+    val rowsByKey = remember(rows) { rows.associateBy { it.key } }
+    val chatsById = remember(allChats) { allChats.associateBy { it.id } }
+    val latestRowsByKey by rememberUpdatedState(rowsByKey)
     val latestFolders by rememberUpdatedState(folders)
     val latestManualSort by rememberUpdatedState(manualSort)
     val latestMove by rememberUpdatedState(onMove)
@@ -88,7 +92,7 @@ internal fun FolderTreeList(
         val info = listState.layoutInfo.visibleItemsInfo.firstOrNull {
             localY >= it.offset && localY < it.offset + it.size
         }
-        val row = latestRows.firstOrNull { it.key == info?.key }
+        val row = info?.let { latestRowsByKey[it.key as String] }
         if (row == null || info == null) { target = null; drop = null; return }
         val fraction = (localY - info.offset) / info.size.toFloat()
         target = row
@@ -193,7 +197,7 @@ internal fun FolderTreeList(
                                 }
                                 // 点击区不包含操作按钮和拖动柄，避免拖动时选中对话或触发菜单。
                                 Row(
-                                    modifier = Modifier.weight(1f).heightIn(min = 36.dp).clickable {
+                                    modifier = Modifier.weight(1f).heightIn(min = 36.dp).clickable(role = Role.Button) {
                                         when (row) {
                                             is ChatFolderRow.Chat -> onSelectChat(row.history.id)
                                             is ChatFolderRow.Folder -> onToggleFolder(row)
@@ -228,7 +232,7 @@ internal fun FolderTreeList(
                                                 style = MaterialTheme.typography.labelSmall, color = rowContentColor.copy(alpha = 0.75f))
                                         }
                                         if (row is ChatFolderRow.Chat && row.history.parentChatId != null) {
-                                            val parent = allChats.firstOrNull { it.id == row.history.parentChatId }
+                                            val parent = chatsById[row.history.parentChatId]
                                             if (parent != null) Text(parent.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                                 style = MaterialTheme.typography.labelSmall, color = rowContentColor.copy(alpha = 0.75f))
                                         }

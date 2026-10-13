@@ -10,6 +10,10 @@ class MemorySearchSettingsPreferences(context: Context, profileId: String) {
         Context.MODE_PRIVATE
     )
 
+    private val legacyCloudPrefs = context.applicationContext.getSharedPreferences(
+        "cloud_embedding_settings_$profileId", Context.MODE_PRIVATE
+    )
+
     fun load(): MemorySearchConfig {
         val config = MemorySearchConfig(
             scoreMode = MemoryScoreMode.entries[searchPrefs.getInt(KEY_SCORE_MODE, MemoryScoreMode.BALANCED.ordinal)],
@@ -76,6 +80,14 @@ class MemorySearchSettingsPreferences(context: Context, profileId: String) {
         searchPrefs.edit()
             .putLong(KEY_NEXT_AUTO_SAVE_RUN_AT_MS, timestampMs.coerceAtLeast(0L))
             .apply()
+    }
+
+    /** 只检测旧配置是否存在，保留原端点和密钥供用户在功能模型中重新配置。 */
+    fun hasLegacyCloudEmbeddingConfiguration(): Boolean {
+        val values = legacyCloudPrefs.all
+        return values.any { (key, value) ->
+            key in setOf("endpoint", "api_key", "model") && value is String && value.isNotBlank()
+        }
     }
 
     fun loadCloudEmbeddingEnabled(): Boolean = searchPrefs.getBoolean(KEY_CLOUD_EMBEDDING_ENABLED, true)

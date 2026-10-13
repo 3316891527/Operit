@@ -98,6 +98,16 @@ fun MemorySearchSettingsDialog(
         Text(stringResource(R.string.memory_settings_space, details.spaceName), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (details.loading || isSaving) LinearProgressIndicator()
         (details.error ?: error)?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        if (details.loaded && details.hasLegacyEmbeddingConfiguration && embeddingModelName == null) {
+            Text(
+                stringResource(R.string.memory_embedding_legacy_binding_required),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton(onClick = { leave(onConfigureEmbedding) }) {
+                Text(stringResource(R.string.functional_model_config_title))
+            }
+        }
         when (page) {
             0 -> MemoryAutoExtractionPage(
                 details = details, intervalMinutes = interval.toFloat(), extractionRules = rules, policy = policy,

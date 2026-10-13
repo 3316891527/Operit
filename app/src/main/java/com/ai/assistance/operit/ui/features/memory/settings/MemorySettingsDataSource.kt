@@ -26,6 +26,7 @@ class MemorySettingsDataSource(private val context: Context, private val spaceId
             loaded = true,
             spaceName = space.name,
             policy = MemorySettingsPolicy(space.profileAutoUpdateEnabled, space.profileAutoUpdateLocked, searchSettings.loadCloudEmbeddingEnabled()),
+            hasLegacyEmbeddingConfiguration = searchSettings.hasLegacyCloudEmbeddingConfiguration(),
             queue = MemoryAutoSaveCandidateRepository(context, spaceId).readQueueStatus(),
             nextRunAtMs = searchSettings.loadNextAutoSaveRunAtMs(),
             chats = histories.filter { resolveChatMemorySpaceId(it, cards, activeId) == spaceId }

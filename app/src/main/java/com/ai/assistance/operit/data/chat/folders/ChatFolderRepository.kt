@@ -125,12 +125,11 @@ class ChatFolderRepository(private val database: AppDatabase) {
         dao.delete(id)
     }
 
-    suspend fun importFolders(imported: List<ChatFolder>) = database.withTransaction {
-        require(imported.map { it.id }.distinct().size == imported.size)
-        val all = (dao.getFolders() + imported).associateBy { it.id }
-        imported.forEach {
-            require(it.name.isNotBlank())
-            folderAncestors(it.id, all)
+    suspend fun importFolders(
+        imported: List<ChatFolder>, describeIssue: (ChatFolderImportIssue) -> String,
+    ) = database.withTransaction {
+        validateImportedFolders(imported, dao.getFolders())?.let { issue ->
+            throw IllegalArgumentException(describeIssue(issue))
         }
         dao.upsert(imported)
         imported.forEach { chats.updateFolderName(it.id, it.name) }

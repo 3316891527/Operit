@@ -8720,4 +8720,17 @@
     <string name="context_usage_entry_title">Context</string>
     <string name="context_usage_window_estimate">Current window</string>
     <string name="context_usage_window_tab">Context window</string>
+
+    <!-- review 修复：升级提示、列表错误及缺失翻译 -->
+    <string name="memory_embedding_legacy_binding_required">An old standalone embedding configuration was found and needs to be configured again. Enter the original endpoint, model, and key in model settings, then bind it to Memory Embedding in functional models. Vector generation and semantic search are paused until then. The old configuration is retained.</string>
+    <string name="memory_embedding_binding_required">Cloud embeddings are enabled, but no usable memory embedding model is bound. Complete the configuration to use vector generation and semantic search.</string>
+    <string name="plugin_list_preferences_invalid">Invalid plugin list preferences</string>
+    <string name="plugin_list_preferences_reset_hint">Resetting clears the list sorting and filtering preferences. Installed plugins, enabled states, and manual ordering are retained.</string>
+    <string name="plugin_list_preferences_reset">Reset sorting and filtering</string>
+    <string name="folder_import_empty_id">Folder ID must not be empty</string>
+    <string name="folder_import_duplicate_id">Duplicate folder ID</string>
+    <string name="folder_import_empty_name">Folder name must not be empty</string>
+    <string name="folder_import_missing_parent">Parent folder does not exist: %1$s</string>
+    <string name="folder_import_cycle">Folder hierarchy contains a cycle: %1$s</string>
+    <string name="folder_import_record_error">Folder record %1$d (ID: %2$s) in the archive is invalid: %3$s. Correct it and import again.</string>
 </resources>

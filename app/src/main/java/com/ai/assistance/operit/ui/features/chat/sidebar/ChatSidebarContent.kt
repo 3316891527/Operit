@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -117,7 +118,7 @@ fun ChatSidebarContent(
         ) {
             Row(
                 modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                    .clickable { showCharacterSelector = true }.padding(horizontal = 4.dp, vertical = 6.dp),
+                    .clickable(role = Role.Button) { showCharacterSelector = true }.padding(horizontal = 4.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (avatar.isNullOrBlank()) {

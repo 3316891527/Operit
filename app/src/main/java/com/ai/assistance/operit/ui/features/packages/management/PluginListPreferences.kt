@@ -7,6 +7,23 @@ class PluginListPreferences(context: Context) {
         "plugin_list_presentation", Context.MODE_PRIVATE
     )
 
+    fun hasInvalidValues(): Boolean {
+        val saved = preferences.all
+        val mode = saved["mode"]
+        val filter = saved["filter"]
+        val invalid = (saved.containsKey("mode") && (mode !is String || PluginSortMode.entries.none { it.name == mode })) ||
+            (saved.containsKey("filter") && (filter !is String || PluginFilter.entries.none { it.name == filter })) ||
+            (saved.containsKey("descending") && saved["descending"] !is Boolean)
+        if (invalid) {
+            com.ai.assistance.operit.util.AppLogger.w("PluginListPreferences", "插件列表展示偏好无效，等待用户重置")
+        }
+        return invalid
+    }
+
+    fun resetPresentation() {
+        preferences.edit().remove("mode").remove("filter").remove("descending").apply()
+    }
+
     fun readSort(): PluginSortSelection = PluginSortSelection(
         mode = PluginSortMode.valueOf(preferences.getString("mode", PluginSortMode.CUSTOM.name)!!),
         descending = preferences.getBoolean("descending", false)
