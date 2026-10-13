@@ -76,7 +76,9 @@ fun ChatContextUsageEntry(
                     text = stringResource(R.string.context_usage_entry_title),
                     modifier = Modifier.weight(1f),
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    // 显式使用主题文字色，避免弹窗继承默认黑色而破坏深色主题对比。
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = formatUsagePercent(windowTokens, maxTokens, decimals = 0),
