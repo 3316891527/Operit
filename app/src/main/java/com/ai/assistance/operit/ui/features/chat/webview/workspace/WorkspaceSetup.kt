@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryAction
 import com.ai.assistance.operit.ui.features.chat.webview.createAndGetDefaultWorkspace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,10 +41,15 @@ import kotlinx.coroutines.*
  * 用于初始绑定工作区
  */
 @Composable
-fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
+fun WorkspaceSetup(
+    chatId: String,
+    initialAction: WorkspaceEntryAction = WorkspaceEntryAction.DEFAULT,
+    onCancelSetup: (() -> Unit)? = null,
+    onBindWorkspace: (String, String?) -> Unit,
+) {
     val context = LocalContext.current
-    var showFileBrowser by remember { mutableStateOf(false) }
-    var showProjectTypeDialog by remember { mutableStateOf(false) }
+    var showFileBrowser by remember { mutableStateOf(initialAction == WorkspaceEntryAction.SELECT) }
+    var showProjectTypeDialog by remember { mutableStateOf(initialAction == WorkspaceEntryAction.CREATE) }
     var projectTypeDialogError by remember { mutableStateOf<String?>(null) }
     var isImportingToolPkgTemplate by remember { mutableStateOf(false) }
 
@@ -243,7 +249,10 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
         FileBrowser(
             initialPath = context.filesDir.absolutePath, // 默认应用内部目录
             onBindWorkspace = { path, env -> onBindWorkspace(path, env) },
-            onCancel = { showFileBrowser = false }
+            onCancel = {
+                showFileBrowser = false
+                if (initialAction == WorkspaceEntryAction.SELECT) onCancelSetup?.invoke()
+            }
         )
     } else {
         Column(
@@ -266,6 +275,7 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
                         if (!isImportingToolPkgTemplate) {
                             showProjectTypeDialog = false
                             projectTypeDialogError = null
+                            if (initialAction == WorkspaceEntryAction.CREATE) onCancelSetup?.invoke()
                         }
                     },
                     title = {
@@ -438,6 +448,7 @@ fun WorkspaceSetup(chatId: String, onBindWorkspace: (String, String?) -> Unit) {
                             onClick = {
                                 showProjectTypeDialog = false
                                 projectTypeDialogError = null
+                                if (initialAction == WorkspaceEntryAction.CREATE) onCancelSetup?.invoke()
                             },
                             enabled = !isImportingToolPkgTemplate
                         ) {

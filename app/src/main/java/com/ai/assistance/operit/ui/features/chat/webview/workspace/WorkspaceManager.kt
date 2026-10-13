@@ -48,6 +48,8 @@ import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
 import androidx.compose.ui.zIndex
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryAction
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryRequest
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.data.model.AITool
@@ -167,6 +169,7 @@ fun WorkspaceManager(
         workspacePath: String,
         workspaceEnv: String? = null,
         isVisible: Boolean,
+        entryRequest: WorkspaceEntryRequest = WorkspaceEntryRequest(),
         onExportClick: (workDir: File) -> Unit
 ) {
     val context = LocalContext.current
@@ -282,6 +285,9 @@ fun WorkspaceManager(
 
     // 文件管理和标签状态 - 使用内存态，避免编辑大文件时频繁持久化整份内容
     var showFileManager by remember { mutableStateOf(false) }
+    LaunchedEffect(isVisible, workspacePath, workspaceEnv, entryRequest.sequence) {
+        if (isVisible && entryRequest.action == WorkspaceEntryAction.FILES) showFileManager = true
+    }
     var openFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(emptyList<OpenFileInfo>()) }
     var currentFileIndex by remember(workspacePath, workspaceEnv) { mutableStateOf(-1) }
     var filePreviewStates by remember { mutableStateOf(mapOf<String, Boolean>()) }
@@ -1055,7 +1061,7 @@ fun WorkspaceManager(
         }
         
         // 解绑确认对话框
-        if (showUnbindConfirmDialog) {
+        if (isVisible && showUnbindConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showUnbindConfirmDialog = false },
                 title = { Text(context.getString(R.string.unbind_workspace_title)) },
@@ -1078,7 +1084,7 @@ fun WorkspaceManager(
             )
         }
 
-        if (showRenameWorkspaceDialog) {
+        if (isVisible && showRenameWorkspaceDialog) {
             AlertDialog(
                 onDismissRequest = {
                     if (!isRenamingWorkspace) {
@@ -1161,7 +1167,7 @@ fun WorkspaceManager(
         }
         
         // 关闭文件确认对话框
-        if (fileToCloseIndex != -1) {
+        if (isVisible && fileToCloseIndex != -1) {
             val file = openFiles.getOrNull(fileToCloseIndex)
             if (file != null) {
                 AlertDialog(
@@ -1198,7 +1204,7 @@ fun WorkspaceManager(
         }
 
         val commandDialogState = workspaceCommandExecutionState
-        if (commandDialogState != null &&
+        if (isVisible && commandDialogState != null &&
             commandDialogState.workspacePath == workspacePath &&
             commandDialogState.isVisible
         ) {

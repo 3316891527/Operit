@@ -15,6 +15,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import java.io.File
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryRequest
 
 /**
  * 主工作区屏幕组件
@@ -25,6 +26,7 @@ fun WorkspaceScreen(
     actualViewModel: ChatViewModel,
     currentChat: ChatHistory?,
     isVisible: Boolean,
+    entryRequest: WorkspaceEntryRequest = WorkspaceEntryRequest(),
     onExportClick: (workDir: File) -> Unit
 ) {
     if (currentChat?.workspace != null) {
@@ -35,16 +37,21 @@ fun WorkspaceScreen(
                 workspacePath = workspacePath,
                 workspaceEnv = currentChat.workspaceEnv,
                 isVisible = isVisible,
+                entryRequest = entryRequest,
                 onExportClick = onExportClick
             )
         
     } else if (currentChat != null) {
-        WorkspaceSetup(
-            chatId = currentChat.id,
-            onBindWorkspace = { workspacePath, workspaceEnv ->
-                actualViewModel.bindChatToWorkspace(currentChat.id, workspacePath, workspaceEnv)
-            }
-        )
+        key(currentChat.id, entryRequest.sequence) {
+            WorkspaceSetup(
+                chatId = currentChat.id,
+                initialAction = entryRequest.action,
+                onCancelSetup = actualViewModel::showWorkspaceHubHome,
+                onBindWorkspace = { workspacePath, workspaceEnv ->
+                    actualViewModel.bindChatToWorkspace(currentChat.id, workspacePath, workspaceEnv)
+                }
+            )
+        }
     } else {
         val context = LocalContext.current
         Column(

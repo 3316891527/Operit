@@ -7,7 +7,6 @@ import android.net.Uri
 import android.widget.Toast
 import com.ai.assistance.operit.util.AppLogger
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -17,15 +16,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -46,7 +40,6 @@ import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ActivePrompt
 
-import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMode
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageStyleConfig
@@ -56,7 +49,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -64,18 +56,9 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.InputChip
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -99,6 +82,7 @@ fun ChatScreenContent(
         bottomInset: Dp = 0.dp,
         actualViewModel: ChatViewModel,
         enableMessageDialogs: Boolean = true,
+        showChatHeader: Boolean = true,
         showChatHistorySelector: Boolean,
         chatHistory: List<ChatMessage>,
         isLoading: Boolean,
@@ -126,10 +110,6 @@ fun ChatScreenContent(
         coroutineScope: CoroutineScope,
         chatHistories: List<ChatHistory>,
         currentChatId: String,
-        chatHeaderTransparent: Boolean,
-        chatHeaderHistoryIconColor: Int?,
-          chatHeaderPipIconColor: Int?,
-          chatHeaderOverlayMode: Boolean,
         chatStyle: ChatStyle,
         cursorUserBubbleLiquidGlass: Boolean = false,
         cursorUserBubbleWaterGlass: Boolean = false,
@@ -153,9 +133,6 @@ fun ChatScreenContent(
         bubbleAiContentPaddingRight: Float = 12f,
         showChatFloatingDotsAnimation: Boolean = true,
 ) {
-    val density = LocalDensity.current
-    var headerHeight by remember { mutableStateOf(0.dp) }
-
     // Multi-select mode state
     var isMultiSelectMode by remember { mutableStateOf(false) }
     var selectedMessageIndices by remember { mutableStateOf(setOf<Int>()) }
@@ -250,228 +227,112 @@ fun ChatScreenContent(
     }
 
     Box(modifier = modifier.fillMaxSize().padding(paddingValues)) {
-        if (chatHeaderOverlayMode && chatHeaderTransparent) {
-            // 覆盖模式：Header浮动在ChatArea之上
-            Box(modifier = Modifier.fillMaxSize()) {
-                ChatArea(
-                        chatHistory = chatHistory,
-                        currentChatId = currentChatId,
-                        scrollState = scrollState,
-                        isLoading = isLoading,
-                        enableDialogs = enableMessageDialogs,
-                        userMessageColor = userMessageColor,
-                        aiMessageColor = aiMessageColor,
-                        userTextColor = userTextColor,
-                        aiTextColor = aiTextColor,
-                        systemMessageColor = systemMessageColor,
-                        systemTextColor = systemTextColor,
-                        thinkingBackgroundColor = thinkingBackgroundColor,
-                        thinkingTextColor = thinkingTextColor,
-                        hasBackgroundImage = hasBackgroundImage,
-                        modifier = Modifier.fillMaxSize(),
-                        onSelectMessageToEdit = onSelectMessageToEditCallback,
-                        onDeleteMessage = { index -> actualViewModel.deleteMessage(index) },
-                        onDeleteCurrentMessageVariant = { index ->
-                            actualViewModel.deleteCurrentMessageVariant(index)
-                        },
-                        onDeleteMessagesFrom = { index -> actualViewModel.deleteMessagesFrom(index) },
-                        onRollbackToMessage = { index -> pendingRollbackIndex = index },
-                        onRegenerateMessage = { index -> actualViewModel.regenerateSingleAiMessage(index) },
-                        onSwitchMessageVariant = { index, targetVariantIndex ->
-                            actualViewModel.switchMessageVariant(index, targetVariantIndex)
-                        },
-                        onSpeakMessage = { content -> actualViewModel.speakMessage(content) },
-                        onAutoReadMessage = { content -> actualViewModel.enableAutoReadAndSpeak(content) },
-                        onReplyToMessage = { message -> actualViewModel.setReplyToMessage(message) },
-                        onToggleFavoriteMessage = { timestamp, isFavorite ->
-                            actualViewModel.setMessageFavorite(timestamp, isFavorite)
-                        },
-                        onCreateBranch = { timestamp -> actualViewModel.createBranch(timestamp) },
-                        onInsertSummary = { message -> actualViewModel.insertSummary(message) },
-                        onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
-                        autoScrollToBottom = autoScrollToBottom,
-                        onAutoScrollToBottomChange = onAutoScrollToBottomChange,
-                        hasOlderDisplayHistory = hasOlderDisplayHistory,
-                        hasNewerDisplayHistory = hasNewerDisplayHistory,
-                        isLoadingDisplayWindow = isLoadingDisplayWindow,
-                        onLoadOlderDisplayWindow = {
-                            actualViewModel.loadOlderMessagesForCurrentChat()
-                        },
-                        onLoadNewerDisplayWindow = {
-                            actualViewModel.loadNewerMessagesForCurrentChat()
-                        },
-                        onShowLatestDisplayWindow = {
-                            actualViewModel.showLatestMessagesForCurrentChat()
-                        },
-                        loadMessageLocatorEntries = { chatId, query ->
-                            actualViewModel.loadChatMessageLocatorPreviews(chatId, query)
-                        },
-                        onRevealMessageForLocator = { targetTimestamp ->
-                            actualViewModel.revealMessageForCurrentChat(targetTimestamp)
-                        },
-                        topPadding = headerHeight,
-                        bottomPadding = bottomInset,
-                        chatStyle = chatStyle,
-                        cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
-                        cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
-                        bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
-                        bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
-                        bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
-                        bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
-                        isMultiSelectMode = isMultiSelectMode,
-                        selectedMessageIndices = selectedMessageIndices,
-                        onToggleMultiSelectMode = { initialIndex ->
-                            isMultiSelectMode = !isMultiSelectMode
-                            if (!isMultiSelectMode) {
-                                selectedMessagesCopyJob?.cancel()
-                                selectedMessagesCopyJob = null
-                                isCopyingSelectedMessages = false
-                                selectedMessageIndices = emptySet()
-                                showMultiSelectActionsMenu = false
-                            } else if (initialIndex != null) {
-                                // 进入多选模式时，自动选中触发的消息
-                                selectedMessageIndices = setOf(initialIndex)
-                            }
-                        },
-                        onToggleMessageSelection = { index ->
-                            selectedMessageIndices = if (selectedMessageIndices.contains(index)) {
-                                selectedMessageIndices - index
-                            } else {
-                                selectedMessageIndices + index
-                            }
-                        },
-                        horizontalPadding = chatAreaHorizontalPadding.dp,
-                        bubbleUserImageStyle = bubbleUserImageStyle,
-                        bubbleAiImageStyle = bubbleAiImageStyle,
-                        bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
-                        bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
-                        bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
-                        bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
-                        bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
-                        bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
-                        showChatFloatingDotsAnimation = showChatFloatingDotsAnimation,
-                )
-                ChatScreenHeader(
-                        modifier =
-                                Modifier.onGloballyPositioned { coordinates ->
-                                    headerHeight = with(density) { coordinates.size.height.toDp() }
-                                },
-                        actualViewModel = actualViewModel,
-                        showChatHistorySelector = showChatHistorySelector,
-                        chatHeaderTransparent = chatHeaderTransparent,
-                        chatHeaderHistoryIconColor = chatHeaderHistoryIconColor,
-                        chatHeaderPipIconColor = chatHeaderPipIconColor,
-                        onCharacterSwitcherClick = { onShowCharacterSelectorChange(true) }
-                )
-            }
-        } else {
-            Column(modifier = Modifier.fillMaxSize()) {
+        // 主聊天透明控件行固定占用菜单高度，滚动消息也不会覆盖标题和操作。
+        Column(modifier = Modifier.fillMaxSize().padding(top = if (showChatHeader) 0.dp else 52.dp)) {
+            if (showChatHeader) {
                 ChatScreenHeader(
                         actualViewModel = actualViewModel,
                         showChatHistorySelector = showChatHistorySelector,
-                        chatHeaderTransparent = chatHeaderTransparent,
-                        chatHeaderHistoryIconColor = chatHeaderHistoryIconColor,
-                        chatHeaderPipIconColor = chatHeaderPipIconColor,
                         onCharacterSwitcherClick = { onShowCharacterSelectorChange(true) }
                 )
-                ChatArea(
-                        chatHistory = chatHistory,
-                        currentChatId = currentChatId,
-                        scrollState = scrollState,
-                        isLoading = isLoading,
-                        enableDialogs = enableMessageDialogs,
-                        userMessageColor = userMessageColor,
-                        aiMessageColor = aiMessageColor,
-                        userTextColor = userTextColor,
-                        aiTextColor = aiTextColor,
-                        systemMessageColor = systemMessageColor,
-                        systemTextColor = systemTextColor,
-                        thinkingBackgroundColor = thinkingBackgroundColor,
-                        thinkingTextColor = thinkingTextColor,
-                        hasBackgroundImage = hasBackgroundImage,
-                        modifier = Modifier.fillMaxSize(),
-                        onSelectMessageToEdit = onSelectMessageToEditCallback,
-                        onDeleteMessage = { index -> actualViewModel.deleteMessage(index) },
-                        onDeleteCurrentMessageVariant = { index ->
-                            actualViewModel.deleteCurrentMessageVariant(index)
-                        },
-                        onDeleteMessagesFrom = { index -> actualViewModel.deleteMessagesFrom(index) },
-                        onRollbackToMessage = { index -> pendingRollbackIndex = index },
-                        onRegenerateMessage = { index -> actualViewModel.regenerateSingleAiMessage(index) },
-                        onSwitchMessageVariant = { index, targetVariantIndex ->
-                            actualViewModel.switchMessageVariant(index, targetVariantIndex)
-                        },
-                        onSpeakMessage = { content -> actualViewModel.speakMessage(content) },
-                        onReplyToMessage = { message -> actualViewModel.setReplyToMessage(message) },
-                        onToggleFavoriteMessage = { timestamp, isFavorite ->
-                            actualViewModel.setMessageFavorite(timestamp, isFavorite)
-                        },
-                        onCreateBranch = { timestamp -> actualViewModel.createBranch(timestamp) },
-                        onInsertSummary = { message -> actualViewModel.insertSummary(message) },
-                        onAutoReadMessage = { content -> actualViewModel.enableAutoReadAndSpeak(content) },
-                        onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
-                        autoScrollToBottom = autoScrollToBottom,
-                        onAutoScrollToBottomChange = onAutoScrollToBottomChange,
-                        hasOlderDisplayHistory = hasOlderDisplayHistory,
-                        hasNewerDisplayHistory = hasNewerDisplayHistory,
-                        isLoadingDisplayWindow = isLoadingDisplayWindow,
-                        onLoadOlderDisplayWindow = {
-                            actualViewModel.loadOlderMessagesForCurrentChat()
-                        },
-                        onLoadNewerDisplayWindow = {
-                            actualViewModel.loadNewerMessagesForCurrentChat()
-                        },
-                        onShowLatestDisplayWindow = {
-                            actualViewModel.showLatestMessagesForCurrentChat()
-                        },
-                        loadMessageLocatorEntries = { chatId, query ->
-                            actualViewModel.loadChatMessageLocatorPreviews(chatId, query)
-                        },
-                        onRevealMessageForLocator = { targetTimestamp ->
-                            actualViewModel.revealMessageForCurrentChat(targetTimestamp)
-                        },
-                        bottomPadding = bottomInset,
-                        chatStyle = chatStyle,
-                        cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
-                        cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
-                        bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
-                        bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
-                        bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
-                        bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
-                        isMultiSelectMode = isMultiSelectMode,
-                        selectedMessageIndices = selectedMessageIndices,
-                        horizontalPadding = chatAreaHorizontalPadding.dp,
-                        onToggleMultiSelectMode = { initialIndex ->
-                            isMultiSelectMode = !isMultiSelectMode
-                            if (!isMultiSelectMode) {
-                                selectedMessagesCopyJob?.cancel()
-                                selectedMessagesCopyJob = null
-                                isCopyingSelectedMessages = false
-                                selectedMessageIndices = emptySet()
-                                showMultiSelectActionsMenu = false
-                            } else if (initialIndex != null) {
-                                // 进入多选模式时，自动选中触发的消息
-                                selectedMessageIndices = setOf(initialIndex)
-                            }
-                        },
-                        onToggleMessageSelection = { index ->
-                            selectedMessageIndices = if (selectedMessageIndices.contains(index)) {
-                                selectedMessageIndices - index
-                            } else {
-                                selectedMessageIndices + index
-                            }
-                        },
-                        showChatFloatingDotsAnimation = showChatFloatingDotsAnimation,
-                        bubbleUserImageStyle = bubbleUserImageStyle,
-                        bubbleAiImageStyle = bubbleAiImageStyle,
-                        bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
-                        bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
-                        bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
-                        bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
-                        bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
-                        bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
-                )
             }
+            ChatArea(
+                    chatHistory = chatHistory,
+                    currentChatId = currentChatId,
+                    scrollState = scrollState,
+                    isLoading = isLoading,
+                    enableDialogs = enableMessageDialogs,
+                    userMessageColor = userMessageColor,
+                    aiMessageColor = aiMessageColor,
+                    userTextColor = userTextColor,
+                    aiTextColor = aiTextColor,
+                    systemMessageColor = systemMessageColor,
+                    systemTextColor = systemTextColor,
+                    thinkingBackgroundColor = thinkingBackgroundColor,
+                    thinkingTextColor = thinkingTextColor,
+                    hasBackgroundImage = hasBackgroundImage,
+                    modifier = Modifier.fillMaxSize(),
+                    onSelectMessageToEdit = onSelectMessageToEditCallback,
+                    onDeleteMessage = { index -> actualViewModel.deleteMessage(index) },
+                    onDeleteCurrentMessageVariant = { index ->
+                        actualViewModel.deleteCurrentMessageVariant(index)
+                    },
+                    onDeleteMessagesFrom = { index -> actualViewModel.deleteMessagesFrom(index) },
+                    onRollbackToMessage = { index -> pendingRollbackIndex = index },
+                    onRegenerateMessage = { index -> actualViewModel.regenerateSingleAiMessage(index) },
+                    onSwitchMessageVariant = { index, targetVariantIndex ->
+                        actualViewModel.switchMessageVariant(index, targetVariantIndex)
+                    },
+                    onSpeakMessage = { content -> actualViewModel.speakMessage(content) },
+                    onReplyToMessage = { message -> actualViewModel.setReplyToMessage(message) },
+                    onToggleFavoriteMessage = { timestamp, isFavorite ->
+                        actualViewModel.setMessageFavorite(timestamp, isFavorite)
+                    },
+                    onCreateBranch = { timestamp -> actualViewModel.createBranch(timestamp) },
+                    onInsertSummary = { message -> actualViewModel.insertSummary(message) },
+                    onAutoReadMessage = { content -> actualViewModel.enableAutoReadAndSpeak(content) },
+                    onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
+                    autoScrollToBottom = autoScrollToBottom,
+                    onAutoScrollToBottomChange = onAutoScrollToBottomChange,
+                    hasOlderDisplayHistory = hasOlderDisplayHistory,
+                    hasNewerDisplayHistory = hasNewerDisplayHistory,
+                    isLoadingDisplayWindow = isLoadingDisplayWindow,
+                    onLoadOlderDisplayWindow = {
+                        actualViewModel.loadOlderMessagesForCurrentChat()
+                    },
+                    onLoadNewerDisplayWindow = {
+                        actualViewModel.loadNewerMessagesForCurrentChat()
+                    },
+                    onShowLatestDisplayWindow = {
+                        actualViewModel.showLatestMessagesForCurrentChat()
+                    },
+                    loadMessageLocatorEntries = { chatId, query ->
+                        actualViewModel.loadChatMessageLocatorPreviews(chatId, query)
+                    },
+                    onRevealMessageForLocator = { targetTimestamp ->
+                        actualViewModel.revealMessageForCurrentChat(targetTimestamp)
+                    },
+                    bottomPadding = bottomInset,
+                    chatStyle = chatStyle,
+                    cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
+                    cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
+                    bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
+                    bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
+                    bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
+                    bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
+                    isMultiSelectMode = isMultiSelectMode,
+                    selectedMessageIndices = selectedMessageIndices,
+                    horizontalPadding = chatAreaHorizontalPadding.dp,
+                    onToggleMultiSelectMode = { initialIndex ->
+                        isMultiSelectMode = !isMultiSelectMode
+                        if (!isMultiSelectMode) {
+                            selectedMessagesCopyJob?.cancel()
+                            selectedMessagesCopyJob = null
+                            isCopyingSelectedMessages = false
+                            selectedMessageIndices = emptySet()
+                            showMultiSelectActionsMenu = false
+                        } else if (initialIndex != null) {
+                            // 进入多选模式时，自动选中触发的消息
+                            selectedMessageIndices = setOf(initialIndex)
+                        }
+                    },
+                    onToggleMessageSelection = { index ->
+                        selectedMessageIndices = if (selectedMessageIndices.contains(index)) {
+                            selectedMessageIndices - index
+                        } else {
+                            selectedMessageIndices + index
+                        }
+                    },
+                    showChatFloatingDotsAnimation = showChatFloatingDotsAnimation,
+                    bubbleUserImageStyle = bubbleUserImageStyle,
+                    bubbleAiImageStyle = bubbleAiImageStyle,
+                    bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
+                    bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
+                    bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
+                    bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
+                    bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
+                    bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
+            )
         }
 
         // 多选模式底部操作栏
@@ -1223,8 +1084,8 @@ fun ChatHistorySelectorPanel(
         // 直接使用ChatHistorySelector
         ChatHistorySelector(
                 modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-                onNewChat = { characterCardName, characterGroupId ->
-                    actualViewModel.createNewChat(characterCardName, characterGroupId)
+                onNewChat = { characterCardName, characterGroupId, folderId ->
+                    actualViewModel.createNewChat(characterCardName, characterGroupId, folderId, inheritGroupFromCurrent = false)
                     // 创建新对话后自动收起侧边框
                     actualViewModel.showChatHistorySelector(false)
                 },
@@ -1239,22 +1100,6 @@ fun ChatHistorySelectorPanel(
                 },
                 onUpdateChatBinding = { chatId, characterCardName, characterGroupId ->
                     actualViewModel.updateChatCharacterBinding(chatId, characterCardName, characterGroupId)
-                },
-                onCreateGroup = { groupName, characterCardName, characterGroupId ->
-                    actualViewModel.createGroup(groupName, characterCardName, characterGroupId)
-                },
-                onUpdateChatOrderAndGroup = { reorderedHistories, movedItem, targetGroup ->
-                    actualViewModel.updateChatOrderAndGroup(
-                            reorderedHistories,
-                            movedItem,
-                            targetGroup
-                    )
-                },
-                onUpdateGroupName = { oldName, newName, characterCardName ->
-                    actualViewModel.updateGroupName(oldName, newName, characterCardName)
-                },
-                onDeleteGroup = { groupName, deleteChats, characterCardName ->
-                    actualViewModel.deleteGroup(groupName, deleteChats, characterCardName)
                 },
                 chatHistories = chatHistories,
                 currentId = currentChatId,
