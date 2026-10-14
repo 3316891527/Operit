@@ -101,12 +101,6 @@ class DefaultRawSnapshotResourceReferenceProvider(
             addReference(
                 references,
                 owner,
-                RawSnapshotResourceKind.USER_AVATAR,
-                themeSnapshot.customUserAvatarUri,
-            )
-            addReference(
-                references,
-                owner,
                 RawSnapshotResourceKind.AI_AVATAR,
                 userPreferences.getAiAvatarForCharacterGroupFlow(group.id).first(),
             )

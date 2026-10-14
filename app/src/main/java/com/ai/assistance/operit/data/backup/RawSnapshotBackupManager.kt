@@ -12,7 +12,6 @@ import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.OperitPaths
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -97,15 +96,8 @@ object RawSnapshotBackupManager {
         val mapping: ResourceMapping,
     )
 
-    private data class ResourceRestorePlan(
-        val mapping: ResourceMapping,
-        val snapshotFile: File,
-        val destination: File,
-        val destinationUri: String,
-    )
-
     private data class ResourceRestorePlanResult(
-        val plans: List<ResourceRestorePlan>,
+        val plans: List<RawSnapshotResourceRestorePlan>,
         val skippedCount: Int,
     )
 
@@ -685,12 +677,8 @@ object RawSnapshotBackupManager {
         manifest: Manifest,
         workDir: File,
     ): ResourceRestorePlanResult {
-        if (manifest.resources.isEmpty()) {
-            return ResourceRestorePlanResult(emptyList(), skippedCount = 0)
-        }
-
         val seenOriginalUris = HashSet<String>()
-        val plans = mutableListOf<ResourceRestorePlan>()
+        val plans = mutableListOf<RawSnapshotResourceRestorePlan>()
         var skippedCount = 0
         manifest.resources.forEach { mapping ->
             if (!seenOriginalUris.add(mapping.originalUri)) return@forEach
@@ -709,13 +697,23 @@ object RawSnapshotBackupManager {
                 return@forEach
             }
 
-            plans += ResourceRestorePlan(
-                mapping = mapping,
+            plans += RawSnapshotResourceRestorePlan(
+                originalUri = mapping.originalUri,
                 snapshotFile = snapshotFile,
                 destination = destination,
                 destinationUri = uriForDestination(mapping.originalUri, destination),
             )
         }
+        val rawResourceResult = RawSnapshotMediaRestore.collectPlans(
+            workDir = workDir,
+            sourcePackageName = manifest.packageName,
+            filesDir = context.filesDir,
+            externalFilesDir = context.getExternalFilesDir(null),
+            mappedPlans = plans,
+            mappedOriginalUris = seenOriginalUris,
+        )
+        plans += rawResourceResult.plans
+        skippedCount += rawResourceResult.skippedCount
         return ResourceRestorePlanResult(plans = plans, skippedCount = skippedCount)
     }
 
@@ -751,7 +749,7 @@ object RawSnapshotBackupManager {
         return null
     }
 
-    private fun restoreSnapshotResources(resourceRestorePlans: List<ResourceRestorePlan>): ResourceRestoreCopyResult {
+    private fun restoreSnapshotResources(resourceRestorePlans: List<RawSnapshotResourceRestorePlan>): ResourceRestoreCopyResult {
         if (resourceRestorePlans.isEmpty()) {
             AppLogger.i(TAG, "restore resources done (restored=0 skipped=0 total=0)")
             return ResourceRestoreCopyResult(restoredCount = 0, skippedCount = 0)
@@ -759,13 +757,17 @@ object RawSnapshotBackupManager {
 
         var restored = 0
         var skipped = 0
-        resourceRestorePlans.forEach { plan ->
+        resourceRestorePlans.distinctBy { it.destination.canonicalPath }.forEach { plan ->
             try {
-                plan.destination.parentFile?.mkdirs()
-                plan.snapshotFile.copyTo(plan.destination, overwrite = true)
+                // 旧快照媒体已随原始目录恢复，避免将大型图片和字体重复复制。
+                if (!plan.restoredWithPayload) {
+                    plan.destination.parentFile?.mkdirs()
+                    plan.snapshotFile.copyTo(plan.destination, overwrite = true)
+                }
+                check(plan.destination.isFile) { "Restored resource is missing: ${plan.destination.name}" }
                 restored++
             } catch (e: Exception) {
-                AppLogger.w(TAG, "restore resource failed: ${plan.mapping.snapshotPath}", e)
+                AppLogger.w(TAG, "restore resource failed: ${plan.snapshotFile.name}", e)
                 skipped++
             }
         }
@@ -861,33 +863,19 @@ object RawSnapshotBackupManager {
 
     private fun rewriteResourceUrisInExtractedPreferences(
         workDir: File,
-        resourceRestorePlans: List<ResourceRestorePlan>,
+        resourceRestorePlans: List<RawSnapshotResourceRestorePlan>,
     ) {
         if (resourceRestorePlans.isEmpty()) return
         val replacements = linkedMapOf<String, String>()
         resourceRestorePlans.forEach { plan ->
-            replacements.putIfAbsent(plan.mapping.originalUri, plan.destinationUri)
+            replacements.putIfAbsent(plan.originalUri, plan.destinationUri)
         }
         if (replacements.isEmpty()) return
 
-        val payloadRoot = File(workDir, "payload")
-        val preferenceDirs = listOf(
-            File(payloadRoot, "files/datastore"),
-            File(payloadRoot, "datastore"),
-            File(payloadRoot, "shared_prefs"),
-        )
         var changedFiles = 0
-        preferenceDirs
-            .filter { it.isDirectory }
-            .flatMap { dir ->
-                dir.walkTopDown()
-                    .filter { it.isFile && (it.name.endsWith(".preferences_pb") || it.name.endsWith(".xml")) }
-                    .toList()
-            }
-            .distinctBy { it.canonicalPath }
-            .forEach { file ->
-                if (rewritePreferenceFile(file, replacements)) changedFiles++
-            }
+        RawSnapshotMediaRestore.preferenceFiles(workDir).forEach { file ->
+            if (rewritePreferenceFile(file, replacements)) changedFiles++
+        }
 
         AppLogger.i(
             TAG,
@@ -899,48 +887,29 @@ object RawSnapshotBackupManager {
         file: File,
         replacements: Map<String, String>,
     ): Boolean {
-        val original = runCatching { file.readBytes() }.getOrNull() ?: return false
+        val original = file.readBytes()
         val rewritten = if (file.name.endsWith(".preferences_pb")) {
-            rewritePreferenceProto(original, replacements, depth = 0) ?: original
+            RawSnapshotMediaRestore.rewritePreferences(original, replacements)
         } else {
             rewriteXmlPreferenceText(original.toString(Charsets.UTF_8), replacements)
                 .toByteArray(Charsets.UTF_8)
         }
         if (original.contentEquals(rewritten)) return false
-        return runCatching {
-            file.writeBytes(rewritten)
-            true
-        }.getOrDefault(false)
+        file.writeBytes(rewritten)
+        return true
     }
 
     internal fun rewriteXmlPreferenceText(
         text: String,
         replacements: Map<String, String>,
     ): String {
-        return replacements.entries
-            .sortedByDescending { it.key.length }
-            .fold(text) { current, (source, destination) ->
-                if (source.isEmpty()) {
-                    current
-                } else {
-                    val escapedSource = escapeXmlText(source)
-                    val escapedDestination = escapeXmlText(destination)
-                    current
-                        .replace(escapedSource, escapedDestination)
-                        .replace(source, escapedDestination)
-                }
-            }
-    }
-
-    private fun rewriteUriSubstrings(
-        text: String,
-        replacements: Map<String, String>,
-    ): String {
-        return replacements.entries
-            .sortedByDescending { it.key.length }
-            .fold(text) { current, (source, destination) ->
-                if (source.isEmpty()) current else current.replace(source, destination)
-            }
+        val xmlReplacements = linkedMapOf<String, String>()
+        replacements.forEach { (source, destination) ->
+            val escapedDestination = escapeXmlText(destination)
+            xmlReplacements[escapeXmlText(source)] = escapedDestination
+            xmlReplacements[source] = escapedDestination
+        }
+        return RawSnapshotMediaRestore.rewriteStringReferences(text, xmlReplacements)
     }
 
     private fun escapeXmlText(value: String): String {
@@ -950,90 +919,6 @@ object RawSnapshotBackupManager {
             .replace(">", "&gt;")
             .replace("\"", "&" + "quot;")
             .replace("'", "&" + "apos;")
-    }
-
-    private data class ProtoVarint(
-        val value: Long,
-        val nextOffset: Int,
-    )
-
-    internal fun rewritePreferenceProto(
-        bytes: ByteArray,
-        replacements: Map<String, String>,
-        depth: Int,
-    ): ByteArray? {
-        if (depth > 12) return null
-        val output = ByteArrayOutputStream(bytes.size)
-        var offset = 0
-        while (offset < bytes.size) {
-            val tag = readProtoVarint(bytes, offset) ?: return null
-            if (tag.value == 0L) return null
-            output.write(bytes, offset, tag.nextOffset - offset)
-            offset = tag.nextOffset
-
-            when ((tag.value and 7L).toInt()) {
-                0 -> {
-                    val value = readProtoVarint(bytes, offset) ?: return null
-                    output.write(bytes, offset, value.nextOffset - offset)
-                    offset = value.nextOffset
-                }
-                1 -> {
-                    if (bytes.size - offset < 8) return null
-                    output.write(bytes, offset, 8)
-                    offset += 8
-                }
-                2 -> {
-                    val length = readProtoVarint(bytes, offset) ?: return null
-                    if (length.value < 0L || length.value > Int.MAX_VALUE) return null
-                    val payloadStart = length.nextOffset
-                    val payloadLength = length.value.toInt()
-                    if (payloadLength > bytes.size - payloadStart) return null
-                    val payload = bytes.copyOfRange(payloadStart, payloadStart + payloadLength)
-                    val payloadText = payload.toString(Charsets.UTF_8)
-                    val rewrittenText = rewriteUriSubstrings(payloadText, replacements)
-                    val rewrittenPayload = if (rewrittenText != payloadText) {
-                        rewrittenText.toByteArray(Charsets.UTF_8)
-                    } else {
-                        rewritePreferenceProto(payload, replacements, depth + 1) ?: payload
-                    }
-                    writeProtoVarint(output, rewrittenPayload.size.toLong())
-                    output.write(rewrittenPayload)
-                    offset = payloadStart + payloadLength
-                }
-                5 -> {
-                    if (bytes.size - offset < 4) return null
-                    output.write(bytes, offset, 4)
-                    offset += 4
-                }
-                else -> return null
-            }
-        }
-        return output.toByteArray()
-    }
-
-    private fun readProtoVarint(bytes: ByteArray, startOffset: Int): ProtoVarint? {
-        if (startOffset < 0 || startOffset >= bytes.size) return null
-        var offset = startOffset
-        var value = 0L
-        var shift = 0
-        while (offset < bytes.size && shift <= 63) {
-            val byte = bytes[offset].toInt() and 0xff
-            if (shift == 63 && byte > 1) return null
-            value = value or ((byte and 0x7f).toLong() shl shift)
-            offset++
-            if ((byte and 0x80) == 0) return ProtoVarint(value, offset)
-            shift += 7
-        }
-        return null
-    }
-
-    private fun writeProtoVarint(output: ByteArrayOutputStream, value: Long) {
-        var remaining = value
-        while ((remaining and -128L) != 0L) {
-            output.write(((remaining and 0x7fL) or 0x80L).toInt())
-            remaining = remaining ushr 7
-        }
-        output.write(remaining.toInt())
     }
 
     private fun isUnreferencedThemeMediaFlatFile(canonical: File, baseCanonical: File): Boolean {

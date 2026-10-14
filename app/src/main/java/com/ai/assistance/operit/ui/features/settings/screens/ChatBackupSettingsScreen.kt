@@ -180,7 +180,6 @@ fun ChatBackupSettingsScreen() {
     var includeRawSnapshotLogs by remember { mutableStateOf(true) }
     var pendingRawSnapshotRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var showRawSnapshotRestoreConfirmDialog by remember { mutableStateOf(false) }
-    var showRawSnapshotRestoreResultDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showMemoryImportStrategyDialog by remember { mutableStateOf(false) }
     var pendingMemoryImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -1560,7 +1559,15 @@ fun ChatBackupSettingsScreen() {
                                         restoreResult.restoredResourceCount,
                                         restoreResult.skippedResourceCount,
                                     )
-                                    showRawSnapshotRestoreResultDialog = true
+                                    android.widget.Toast.makeText(
+                                        context, rawSnapshotOperationMessage, android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                    // 原始快照替换了 DataStore 文件，立即重启以读取导入配置并阻止旧缓存回写。
+                                    val intent = Intent(context, MainActivity::class.java).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    }
+                                    context.startActivity(intent)
+                                    exitProcess(0)
                                 } catch (e: Exception) {
                                     rawSnapshotOperationState = RawSnapshotOperation.FAILED
                                     rawSnapshotOperationMessage = e.localizedMessage ?: e.toString()
@@ -1580,33 +1587,6 @@ fun ChatBackupSettingsScreen() {
                     }
                 ) {
                     Text(stringResource(R.string.backup_raw_snapshot_restore_cancel_action))
-                }
-            }
-        )
-    }
-
-    if (showRawSnapshotRestoreResultDialog) {
-        AlertDialog(
-            onDismissRequest = { showRawSnapshotRestoreResultDialog = false },
-            title = { Text(stringResource(R.string.backup_room_db_restore_success)) },
-            text = { Text(rawSnapshotOperationMessage) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showRawSnapshotRestoreResultDialog = false
-                        val intent = Intent(context, MainActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        }
-                        context.startActivity(intent)
-                        exitProcess(0)
-                    }
-                ) {
-                    Text(stringResource(R.string.backup_room_db_restart_now))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRawSnapshotRestoreResultDialog = false }) {
-                    Text(stringResource(R.string.backup_room_db_restart_later))
                 }
             }
         )

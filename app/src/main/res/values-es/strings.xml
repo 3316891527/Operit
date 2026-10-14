@@ -7831,4 +7831,9 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
 <!-- 已移除实验性提示 -->
     <string name="antigravity_login_completing">Completando la autorización y cargando los datos de la cuenta…</string>
     <string name="antigravity_login_timed_out">Se agotaron los 15 minutos de espera de la autorización de Google. Inicia sesión de nuevo.</string>
+    <string name="backup_raw_snapshot_include_logs">Incluir registros en la instantánea</string>
+    <string name="backup_raw_snapshot_include_logs_desc">Los registros ayudan a diagnosticar errores, pero pueden contener información sensible. Esta opción solo cambia la exportación y no elimina los registros del dispositivo.</string>
+    <string name="data_recovery_include_logs">Incluir registros en la instantánea</string>
+    <string name="data_recovery_include_logs_description">Los registros ayudan a diagnosticar errores, pero pueden contener información sensible. Esta opción solo cambia la exportación y no elimina los registros del dispositivo.</string>
+    <string name="backup_raw_snapshot_restore_result_message">Instantánea restaurada: %1$d recursos restaurados, %2$d omitidos.</string>
 </resources>

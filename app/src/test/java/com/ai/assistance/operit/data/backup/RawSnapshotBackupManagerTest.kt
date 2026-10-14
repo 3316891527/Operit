@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.backup
 
-import org.junit.Assert.assertArrayEquals
+import androidx.datastore.preferences.PreferencesProto.PreferenceMap
+import androidx.datastore.preferences.PreferencesProto.Value
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -68,21 +69,22 @@ class RawSnapshotBackupManagerTest {
     }
 
     @Test
-    fun preferenceProto_rewritesUriSubstringInsideLengthDelimitedField() {
+    fun preferenceProto_rewritesUriSubstringInsideStringValue() {
         val source = "file:///old/path/avatar.png"
-        val destination = "file:///new/path/avatar.png"
-        val payload = "json:{\"avatar\":\"$source\"}".toByteArray()
-        val original = byteArrayOf(0x0A, payload.size.toByte()) + payload
-        val expectedPayload = "json:{\"avatar\":\"$destination\"}".toByteArray()
-        val expected = byteArrayOf(0x0A, expectedPayload.size.toByte()) + expectedPayload
+        val destination = "file:///new-install/longer/path/avatar.png"
+        val original = PreferenceMap.newBuilder()
+            .putPreferences(
+                "json",
+                Value.newBuilder()
+                    .setString("{\"avatar\":\"$source\"}").build(),
+            ).build()
 
-        val rewritten = RawSnapshotBackupManager.rewritePreferenceProto(
-            original,
-            mapOf(source to destination),
-            depth = 0,
+        val rewritten = RawSnapshotMediaRestore.rewritePreferences(
+            original.toByteArray(), mapOf(source to destination)
         )
+        val restored = PreferenceMap.parseFrom(rewritten)
 
-        assertArrayEquals(expected, rewritten)
+        assertEquals("{\"avatar\":\"$destination\"}", restored.preferencesMap.getValue("json").string)
     }
 
     @Test

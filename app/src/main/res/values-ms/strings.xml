@@ -7760,4 +7760,9 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
 <!-- 已移除实验性提示 -->
     <string name="antigravity_login_completing">Melengkapkan kebenaran dan memuatkan butiran akaun…</string>
     <string name="antigravity_login_timed_out">Masa menunggu kebenaran Google telah melebihi 15 minit. Sila mulakan log masuk semula.</string>
+    <string name="backup_raw_snapshot_include_logs">Sertakan log dalam petikan</string>
+    <string name="backup_raw_snapshot_include_logs_desc">Log membantu mendiagnosis kegagalan, tetapi mungkin mengandungi maklumat sensitif. Pilihan ini hanya mengubah eksport dan tidak memadamkan log pada peranti.</string>
+    <string name="data_recovery_include_logs">Sertakan log dalam petikan</string>
+    <string name="data_recovery_include_logs_description">Log membantu mendiagnosis kegagalan, tetapi mungkin mengandungi maklumat sensitif. Pilihan ini hanya mengubah eksport dan tidak memadamkan log pada peranti.</string>
+    <string name="backup_raw_snapshot_restore_result_message">Petikan dipulihkan: %1$d sumber dipulihkan, %2$d dilangkau.</string>
 </resources>

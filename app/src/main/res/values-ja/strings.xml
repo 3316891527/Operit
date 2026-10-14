@@ -161,7 +161,7 @@
     <string name="backup_raw_snapshot_progress_zipping_databases">databasesをパッケージ化中...</string>
     <string name="backup_raw_snapshot_include_logs">スナップショットにログを含める</string>
     <string name="backup_raw_snapshot_include_logs_desc">ログは障害の調査に役立ちますが、機密情報を含む場合があります。オフにしても端末上のログは削除されず、書き出し内容だけが変わります。</string>
-    <string name="backup_raw_snapshot_restore_result_message">スナップショットを復元しました。復元したリソース：%1$d件、スキップ：%2$d件。復元したデータを反映するにはアプリを再起動してください。</string>
+    <string name="backup_raw_snapshot_restore_result_message">スナップショットを復元しました。復元したリソース：%1$d件、スキップ：%2$d件。</string>
     <string name="backup_raw_snapshot_progress_finalizing">仕上げ中...</string>
     <string name="backup_raw_snapshot_progress_reading_zip">バックアップファイルを読み込み中...</string>
     <string name="backup_raw_snapshot_progress_extracting">展開中...</string>

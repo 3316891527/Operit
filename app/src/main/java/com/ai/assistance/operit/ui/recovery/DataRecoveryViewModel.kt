@@ -149,13 +149,17 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
             _state.value.copy(isRunning = true, error = null, status = context.getString(R.string.data_recovery_restore_running), restoreCompleted = false)
         viewModelScope.launch {
             try {
-                RawSnapshotBackupManager.restoreFromBackupUri(context, uri) { progress ->
+                val restoreResult = RawSnapshotBackupManager.restoreFromBackupUri(context, uri) { progress ->
                     _state.value = _state.value.copy(status = restoreProgressText(progress))
                 }
                 _state.value =
                     _state.value.copy(
                         isRunning = false,
-                        status = context.getString(R.string.data_recovery_restore_completed),
+                        status = context.getString(
+                            R.string.backup_raw_snapshot_restore_result_message,
+                            restoreResult.restoredResourceCount,
+                            restoreResult.skippedResourceCount,
+                        ),
                         restoreCompleted = true,
                         configurationHealthReport = null,
                         databaseHealthReport = null

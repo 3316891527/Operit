@@ -7682,4 +7682,9 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
 <!-- 已移除实验性提示 -->
     <string name="antigravity_login_completing">Menyelesaikan otorisasi dan memuat detail akun…</string>
     <string name="antigravity_login_timed_out">Waktu tunggu otorisasi Google telah melebihi 15 menit. Silakan mulai login lagi.</string>
+    <string name="backup_raw_snapshot_include_logs">Sertakan log dalam snapshot</string>
+    <string name="backup_raw_snapshot_include_logs_desc">Log membantu mendiagnosis kegagalan, tetapi dapat berisi informasi sensitif. Opsi ini hanya mengubah ekspor dan tidak menghapus log di perangkat.</string>
+    <string name="data_recovery_include_logs">Sertakan log dalam snapshot</string>
+    <string name="data_recovery_include_logs_description">Log membantu mendiagnosis kegagalan, tetapi dapat berisi informasi sensitif. Opsi ini hanya mengubah ekspor dan tidak menghapus log di perangkat.</string>
+    <string name="backup_raw_snapshot_restore_result_message">Snapshot dipulihkan: %1$d sumber daya dipulihkan, %2$d dilewati.</string>
 </resources>
