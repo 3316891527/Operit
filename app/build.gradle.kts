@@ -21,6 +21,9 @@ plugins {
     id("kotlin-kapt")
 }
 
+// 此集成分支在 GitHub Actions 中构建预览产物，使用调试签名。
+val ciPreviewRelease = providers.environmentVariable("GITHUB_ACTIONS").orNull == "true"
+
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -422,13 +425,16 @@ android {
         val releaseSigningConfig = signingConfigs.findByName("release")
 
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (releaseSigningConfig != null) {
+            if (ciPreviewRelease) {
+                // CI 预览包使用明确指定的调试签名，可安装但无法覆盖正式版。
+                signingConfig = signingConfigs.getByName("debug")
+            } else if (releaseSigningConfig != null) {
                 signingConfig = releaseSigningConfig
             }
         }
@@ -552,12 +558,47 @@ val signRotatedNightlyApk by tasks.registering {
     }
 }
 
-tasks.matching { it.name == "assembleRelease" }.configureEach {
-    finalizedBy(signRotatedReleaseApk)
+if (!ciPreviewRelease) {
+    tasks.matching { it.name == "assembleRelease" }.configureEach {
+        finalizedBy(signRotatedReleaseApk)
+    }
 }
 
 tasks.matching { it.name == "assembleNightly" }.configureEach {
     finalizedBy(signRotatedNightlyApk)
+}
+
+if (ciPreviewRelease) {
+    val verifyCiPreviewRelease by tasks.registering {
+        group = "verification"
+        description = "Verifies the R8 mapping and signed preview Release APK."
+        dependsOn("assembleRelease")
+        doLast {
+            val mappingDirectory = layout.buildDirectory.dir("outputs/mapping/release").get().asFile
+            val mappingFile = mappingDirectory.resolve("mapping.txt")
+            require(mappingFile.isFile && mappingFile.length() > 0) {
+                "R8 Release mapping was not produced: ${mappingFile.path}"
+            }
+            val apkFile = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
+            require(apkFile.isFile && apkFile.length() > 0) {
+                "Preview Release APK was not produced: ${apkFile.path}"
+            }
+            val sdkDirectory = File(requiredLocalProperty("sdk.dir"))
+            val apksigner = sdkDirectory.resolve("build-tools/35.0.0/apksigner")
+            project.exec {
+                commandLine(apksigner.path, "verify", "--verbose", apkFile.path)
+            }
+            // 现有工作流会上传 reports，保留 R8 映射用于还原混淆后的崩溃堆栈。
+            project.copy {
+                from(mappingDirectory)
+                into(layout.buildDirectory.dir("reports/r8-release"))
+            }
+        }
+    }
+    // 使用已有 bundleRelease 入口，同时产出可安装 APK 和 AAB。
+    tasks.matching { it.name == "bundleRelease" }.configureEach {
+        dependsOn(verifyCiPreviewRelease)
+    }
 }
 
 tasks.named("preBuild") {
