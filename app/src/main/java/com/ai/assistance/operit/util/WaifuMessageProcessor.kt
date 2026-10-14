@@ -567,7 +567,8 @@ object WaifuMessageProcessor {
             ORDERED_LIST_DOT_REGEX.replace(cleanedContent) { match ->
                 "${match.groupValues[1]}$listDotPrefix${markerIndex++}}"
             }
-        val listDotPlaceholderRegex = Regex("${Regex.escape(listDotPrefix)}\\d+}")
+        // Android ICU 要求转义字面右花括号，否则普通非空消息也会在编译该正则时崩溃。
+        val listDotPlaceholderRegex = Regex("${Regex.escape(listDotPrefix)}\\d+\\}")
         var sentences =
             contentWithProtectedListDots.split(SENTENCE_SPLIT_REGEX)
                 .filter { it.isNotBlank() }
