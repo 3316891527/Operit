@@ -425,6 +425,7 @@ android {
         val releaseSigningConfig = signingConfigs.findByName("release")
 
         release {
+            isDebuggable = false
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
@@ -583,6 +584,27 @@ if (ciPreviewRelease) {
             project.exec {
                 commandLine(apksigner.path, "verify", "--verbose", apkFile.path)
             }
+            // 校验实际 APK 的包名和调试标记，避免把调试产物当作发行包上传。
+            val aapt2 = sdkDirectory.resolve("build-tools/35.0.0/aapt2")
+            val badgingOutput = java.io.ByteArrayOutputStream()
+            project.exec {
+                commandLine(aapt2.path, "dump", "badging", apkFile.path)
+                standardOutput = badgingOutput
+            }
+            val badging = badgingOutput.toString("UTF-8")
+            require(badging.lineSequence().any {
+                it.startsWith("package: name='com.ai.assistance.operit' ")
+            }) {
+                "Preview Release APK has an unexpected package name"
+            }
+            require(badging.lineSequence().none {
+                it.startsWith("application-debuggable")
+            }) {
+                "Preview Release APK must not be debuggable"
+            }
+            val badgingReport = layout.buildDirectory.file("reports/release-preview/apk-badging.txt").get().asFile
+            badgingReport.parentFile.mkdirs()
+            badgingReport.writeText(badging)
         }
     }
     // 使用已有 bundleRelease 入口，同时产出可安装 APK 和 AAB。
