@@ -12,6 +12,7 @@ import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.OperitPaths
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -1107,6 +1108,7 @@ object RawSnapshotBackupManager {
     }
 
     private fun ZipInputStream.readBytesSafely(maxBytes: Int): ByteArray {
+        // 此缓冲流用于有大小上限的 ZIP 文本读取，独立于偏好格式重写。
         val out = ByteArrayOutputStream()
         val buffer = ByteArray(16 * 1024)
         while (true) {
