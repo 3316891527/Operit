@@ -367,6 +367,12 @@ android {
         getByName("main") {
             assets.setSrcDirs(listOf(generatedMainAssetsDir.get().asFile))
         }
+        if (ciPreviewRelease) {
+            getByName("release") {
+                manifest.srcFile("src/kong/AndroidManifest.xml")
+                res.srcDir("src/kong/res")
+            }
+        }
     }
 
     signingConfigs {
@@ -433,7 +439,8 @@ android {
                 "proguard-rules.pro"
             )
             if (ciPreviewRelease) {
-                // CI 预览包使用明确指定的调试签名，可安装但无法覆盖正式版。
+                // 独立安装身份使共存版与正式版分别安装，预览签名用于共存包。
+                applicationIdSuffix = ".kong"
                 signingConfig = signingConfigs.getByName("debug")
             } else if (releaseSigningConfig != null) {
                 signingConfig = releaseSigningConfig
@@ -468,6 +475,12 @@ android {
         }
     }
     applicationVariants.all {
+        if (buildType.name == "release" && ciPreviewRelease) {
+            outputs.all {
+                val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+                output.outputFileName = "app-kong.apk"
+            }
+        }
         if (buildType.name == "nightly") {
             outputs.all {
                 val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
@@ -572,12 +585,12 @@ tasks.matching { it.name == "assembleNightly" }.configureEach {
 if (ciPreviewRelease) {
     val verifyCiPreviewRelease by tasks.registering {
         group = "verification"
-        description = "Verifies the signed preview Release APK."
+        description = "Verifies the signed Kong coexist APK."
         dependsOn("assembleRelease")
         doLast {
-            val apkFile = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
+            val apkFile = layout.buildDirectory.file("outputs/apk/release/app-kong.apk").get().asFile
             require(apkFile.isFile && apkFile.length() > 0) {
-                "Preview Release APK was not produced: ${apkFile.path}"
+                "Kong coexist APK was not produced: ${apkFile.path}"
             }
             val sdkDirectory = File(requiredLocalProperty("sdk.dir"))
             val apksigner = sdkDirectory.resolve("build-tools/35.0.0/apksigner")
@@ -593,21 +606,21 @@ if (ciPreviewRelease) {
             }
             val badging = badgingOutput.toString("UTF-8")
             require(badging.lineSequence().any {
-                it.startsWith("package: name='com.ai.assistance.operit' ")
+                it.startsWith("package: name='com.ai.assistance.operit.kong' ")
             }) {
-                "Preview Release APK has an unexpected package name"
+                "Kong coexist APK has an unexpected package name"
             }
             require(badging.lineSequence().none {
                 it.startsWith("application-debuggable")
             }) {
-                "Preview Release APK must not be debuggable"
+                "Kong coexist APK must not be debuggable"
             }
-            val badgingReport = layout.buildDirectory.file("reports/release-preview/apk-badging.txt").get().asFile
+            val badgingReport = layout.buildDirectory.file("reports/kong-preview/apk-badging.txt").get().asFile
             badgingReport.parentFile.mkdirs()
             badgingReport.writeText(badging)
         }
     }
-    // 使用已有 bundleRelease 入口，同时产出可安装 APK 和 AAB。
+    // 使用已有 bundleRelease 入口，产出使用独立包名的共存 APK 和 AAB。
     tasks.matching { it.name == "bundleRelease" }.configureEach {
         dependsOn(verifyCiPreviewRelease)
     }
