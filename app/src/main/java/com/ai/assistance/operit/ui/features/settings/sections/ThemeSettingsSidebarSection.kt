@@ -14,7 +14,7 @@ import com.ai.assistance.operit.ui.features.settings.screens.theme.ThemeEditorSe
 import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported
 import com.ai.assistance.operit.ui.theme.isWaterGlassSupported
 
-/** 侧栏使用主题默认配色，仅提供背景和导航按钮的玻璃开关。 */
+/** 侧栏背景与导航按钮可分别启用玻璃；外观参数与配色位于同一界面页。 */
 @Composable
 internal fun ThemeSettingsSidebarSection(
     cardColors: CardColors,

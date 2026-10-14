@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.data.preferences
 
+import com.ai.assistance.operit.data.preferences.glass.GlassThemePreferences
+
 data class ThemePreferenceValues(
     val strings: Map<String, String> = emptyMap(),
     val booleans: Map<String, Boolean> = emptyMap(),
@@ -110,7 +112,7 @@ data class ThemePreferenceValues(
                     "use_custom_font" to false,
                     "bubble_user_use_custom_font" to false,
                     "bubble_ai_use_custom_font" to false,
-                ),
+                ) + GlassThemePreferences.booleanDefaults,
                 floats = mapOf(
                     "background_image_opacity" to 0.3f,
                     "background_blur_radius" to 10f,
@@ -138,7 +140,7 @@ data class ThemePreferenceValues(
                     "bubble_content_padding_right" to 12f,
                     "bubble_ai_content_padding_left" to 12f,
                     "bubble_ai_content_padding_right" to 12f,
-                ),
+                ) + GlassThemePreferences.floatDefaults,
             )
     }
 }

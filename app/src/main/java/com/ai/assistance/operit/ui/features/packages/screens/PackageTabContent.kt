@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -241,6 +244,7 @@ private fun PackageListItemWithTag(
             ?.trim()
             ?.takeIf { it.isNotBlank() }
     val displayName = packageDisplayName ?: toolPackage?.name ?: packageName
+    val glassEnabled = rememberGlassAppearance().packageCards
 
     Column(modifier = Modifier.fillMaxWidth()) {
         if (categoryTag != null) {
@@ -271,11 +275,13 @@ private fun PackageListItemWithTag(
 
         Surface(
             onClick = onPackageClick,
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = if (glassEnabled) 8.dp else 0.dp, vertical = if (glassEnabled) 3.dp else 0.dp)
+                .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer),
+            color = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
-            shape = RoundedCornerShape(0.dp)
+            shape = RoundedCornerShape(if (glassEnabled) 12.dp else 0.dp)
         ) {
             Row(
                 modifier =

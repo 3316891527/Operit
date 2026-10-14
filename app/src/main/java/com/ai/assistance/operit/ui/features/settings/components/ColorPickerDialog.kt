@@ -114,7 +114,8 @@ fun ColorPickerDialog(
                     bubbleUserTextColor: Int?,
                     bubbleAiTextColor: Int?
             ) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    titleOverride: String? = null,
 ) {
     if (!showColorPicker) return
 
@@ -207,7 +208,7 @@ fun ColorPickerDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                    text =
+                    text = titleOverride ?:
                             when (currentColorPickerMode) {
                                 "primary" -> stringResource(R.string.colorpicker_select_primary)
                                 "secondary" -> stringResource(R.string.colorpicker_select_secondary)

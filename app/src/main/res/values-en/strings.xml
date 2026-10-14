@@ -8733,4 +8733,29 @@
     <string name="folder_import_missing_parent">Parent folder does not exist: %1$s</string>
     <string name="folder_import_cycle">Folder hierarchy contains a cycle: %1$s</string>
     <string name="folder_import_record_error">Folder record %1$d (ID: %2$s) in the archive is invalid: %3$s. Correct it and import again.</string>
+
+    <!-- 共存版实机反馈：玻璃与按钮外观设置。 -->
+    <string name="glass_appearance_title">Glass appearance</string>
+    <string name="glass_appearance_description">Adjust enabled glass effects and choose areas individually. Settings are saved with this theme.</string>
+    <string name="glass_preview">Glass preview</string>
+    <string name="glass_blur">Blur radius</string>
+    <string name="glass_edge">Edge width</string>
+    <string name="glass_highlight">Edge highlight</string>
+    <string name="glass_shadow">Shadow radius</string>
+    <string name="glass_opacity">Surface opacity</string>
+    <string name="glass_opacity_description" formatted="false">Translucent colors blend with the background. Set opacity to 100% to retain the selected surface color.</string>
+    <string name="glass_reset_parameters">Reset glass parameters</string>
+    <string name="glass_conversation_list">Glass conversation list</string>
+    <string name="glass_settings_cards">Glass settings groups and cards</string>
+    <string name="glass_package_cards">Glass package lists and buttons</string>
+    <string name="glass_button_colors">Sidebar and package colors</string>
+    <string name="glass_sidebar_background">Sidebar background</string>
+    <string name="glass_sidebar_accent">Selected sidebar background</string>
+    <string name="glass_market_button_color">Market button background</string>
+    <string name="glass_add_button_color">Add plugin button background</string>
+    <string name="glass_default_color">Default</string>
+    <string name="glass_choose_color">Color</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">Automations</string>
 </resources>

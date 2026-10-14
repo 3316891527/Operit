@@ -277,18 +277,11 @@ fun ClassicChatInputSection(
                     enabled = inputWaterGlassEnabled,
                     shape = containerShape,
                     containerColor = MaterialTheme.colorScheme.surface,
-                    shadowElevation = if (chatInputFloating) 10.dp else 14.dp,
-                    borderWidth = 0.7.dp,
-                    overlayAlphaBoost = if (chatInputFloating) 0.04f else 0.08f,
                 )
                 .liquidGlass(
                     enabled = inputLiquidGlassEnabled,
                     shape = containerShape,
                     containerColor = MaterialTheme.colorScheme.surface,
-                    shadowElevation = if (chatInputFloating) 10.dp else 14.dp,
-                    borderWidth = 0.42.dp,
-                    blurRadius = if (chatInputFloating) 16.dp else 20.dp,
-                    overlayAlphaBoost = if (chatInputFloating) 0.06f else 0.10f,
                 )
                 .clip(containerShape)
                 .background(

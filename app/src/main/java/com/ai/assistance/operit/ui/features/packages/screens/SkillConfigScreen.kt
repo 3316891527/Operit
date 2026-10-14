@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+import androidx.compose.ui.graphics.Color
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
@@ -1029,16 +1033,18 @@ private fun SkillListItem(
     modifier: Modifier = Modifier
 ) {
     val accentColor = MaterialTheme.colorScheme.primary
+    val glassEnabled = rememberGlassAppearance().packageCards
     var visibleToAi by remember(skill.name) {
         mutableStateOf(skillVisibilityPreferences.isSkillVisibleToAi(skill.name))
     }
 
     Surface(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
+            .liquidGlass(glassEnabled, RoundedCornerShape(14.dp), MaterialTheme.colorScheme.surfaceContainer),
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp
+        color = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface,
+        tonalElevation = if (glassEnabled) 0.dp else 1.dp
     ) {
         Row(
             modifier = Modifier

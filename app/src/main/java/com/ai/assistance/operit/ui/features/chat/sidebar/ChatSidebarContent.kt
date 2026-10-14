@@ -102,14 +102,14 @@ fun ChatSidebarContent(
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SidebarNavigationItem(Modifier.weight(1f), Icons.Default.AdminPanelSettings,
                     stringResource(R.string.sidebar_permission_short), appearance,
                     selected = selectedItem == NavItem.ShizukuCommands, detail = permissionBadgeText,
                     onClick = { onNavItemClick(NavItem.ShizukuCommands) })
                 SidebarNavigationItem(Modifier.weight(1f), NavItem.Workflow.icon,
                     stringResource(NavItem.Workflow.titleResId), appearance,
-                    selected = selectedItem == NavItem.Workflow,
+                    selected = selectedItem == NavItem.Workflow, detail = stringResource(R.string.sidebar_workflow_description),
                     onClick = { onNavItemClick(NavItem.Workflow) })
         }
         Row(
@@ -209,20 +209,22 @@ private fun SidebarNavigationItem(
     val color = if (selected) appearance.selectedContentColor else appearance.itemColor
     SidebarButtonSurface(
         onClick = onClick,
-        modifier = modifier.height(36.dp),
-        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.heightIn(min = 56.dp),
+        shape = RoundedCornerShape(12.dp),
         appearance = appearance,
         containerColor = if (selected) appearance.selectedContainerColor
             else if (appearance.buttonLiquidGlassEnabled) appearance.buttonContainerColor else Color.Transparent,
         contentColor = color,
     ) {
-        Row(Modifier.fillMaxSize().padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
-            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium,
-                color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (detail != null) Text(detail, Modifier.weight(0.7f), style = MaterialTheme.typography.labelSmall,
-                color = color.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = color,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (detail != null) Text(detail, style = MaterialTheme.typography.labelSmall,
+                    color = color.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }

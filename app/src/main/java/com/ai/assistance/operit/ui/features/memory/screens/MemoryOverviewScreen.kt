@@ -1,5 +1,11 @@
 package com.ai.assistance.operit.ui.features.memory.screens
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MenuDefaults
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -393,12 +399,31 @@ private fun MemorySpaceRow(
                 Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.rename))
             }
         } else {
-            IconButton(onClick = { expanded = true }, enabled = enabled) {
+            FilledTonalIconButton(
+                onClick = { expanded = true }, enabled = enabled,
+                modifier = Modifier.size(36.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
                 Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.memory_overview_space_actions))
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.rename)) }, onClick = { expanded = false; onRename() })
-                DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = { expanded = false; onDelete() })
+            DropdownMenu(
+                expanded = expanded, onDismissRequest = { expanded = false },
+                shape = RoundedCornerShape(16.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 0.dp, shadowElevation = 6.dp,
+            ) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.rename)) },
+                    leadingIcon = { Icon(Icons.Default.Edit, null) },
+                    onClick = { expanded = false; onRename() })
+                HorizontalDivider(Modifier.padding(horizontal = 12.dp))
+                DropdownMenuItem(text = { Text(stringResource(R.string.delete)) },
+                    leadingIcon = { Icon(Icons.Default.Delete, null) },
+                    colors = MenuDefaults.itemColors(textColor = MaterialTheme.colorScheme.error,
+                        leadingIconColor = MaterialTheme.colorScheme.error),
+                    onClick = { expanded = false; onDelete() })
             }
         }
         IconButton(onClick = onOpen, enabled = enabled) {

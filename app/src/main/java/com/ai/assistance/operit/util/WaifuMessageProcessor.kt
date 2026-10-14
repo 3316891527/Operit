@@ -567,7 +567,7 @@ object WaifuMessageProcessor {
             ORDERED_LIST_DOT_REGEX.replace(cleanedContent) { match ->
                 "${match.groupValues[1]}$listDotPrefix${markerIndex++}}"
             }
-        val listDotPlaceholderRegex = Regex("${Regex.escape(listDotPrefix)}\\d+}")
+        val listDotPlaceholderRegex = Regex("${Regex.escape(listDotPrefix)}\\d+\\}")
         var sentences =
             contentWithProtectedListDots.split(SENTENCE_SPLIT_REGEX)
                 .filter { it.isNotBlank() }

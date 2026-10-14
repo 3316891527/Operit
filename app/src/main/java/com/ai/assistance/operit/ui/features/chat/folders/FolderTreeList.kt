@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.folders
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -68,6 +71,7 @@ internal fun FolderTreeList(
     var zone by remember { mutableStateOf(FolderDropZone.INSIDE) }
     var drop by remember { mutableStateOf<ChatFolderMove?>(null) }
     // 指针移动和逐行重组共用索引，避免每帧扫描全部目录或对话。
+    val glassAppearance = rememberGlassAppearance()
     val rowsByKey = remember(rows) { rows.associateBy { it.key } }
     val chatsById = remember(allChats) { allChats.associateBy { it.id } }
     val latestRowsByKey by rememberUpdatedState(rowsByKey)
@@ -182,10 +186,15 @@ internal fun FolderTreeList(
                         }
                     }.alpha(if (dragSource?.key == row.key) 0.4f else 1f)) {
                         if (highlighted && zone == FolderDropZone.BEFORE) HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 2.dp)
+                        val glassEnabled = row is ChatFolderRow.Chat && glassAppearance.conversationList
+                        val glassColor = if (rowColor == Color.Transparent) MaterialTheme.colorScheme.surfaceContainer else rowColor
                         val content: @Composable () -> Unit = {
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(start = (8 + row.depth.coerceAtMost(4) * 12).dp)
-                                    .clip(RoundedCornerShape(8.dp)).background(rowColor)
+                                    .padding(vertical = if (glassEnabled) 3.dp else 0.dp)
+                                    .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), glassColor)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (glassEnabled) Color.Transparent else rowColor)
                                     .heightIn(min = 44.dp)
                                     .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,

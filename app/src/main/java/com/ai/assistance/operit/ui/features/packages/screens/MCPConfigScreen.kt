@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.background
@@ -1449,14 +1452,16 @@ private fun PluginListItem(
     isConfigValid: Boolean = true,
     invalidConfigReason: String? = null
 ) {
+    val glassEnabled = rememberGlassAppearance().packageCards
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, MaterialTheme.colorScheme.surfaceContainer)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (glassEnabled) 0.dp else 1.dp)
     ) {
         Column(
             modifier = Modifier

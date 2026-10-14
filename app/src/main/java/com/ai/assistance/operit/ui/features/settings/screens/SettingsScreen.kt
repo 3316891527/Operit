@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -364,11 +367,14 @@ private fun SettingsSection(
         containerColor: Color,
         content: @Composable ColumnScope.() -> Unit
 ) {
+        val glassEnabled = rememberGlassAppearance().settingsCards
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                 // 普通分组标题与图标使用正文色，深浅主题切换时保持中性配色。
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 6.dp)
+                            .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), containerColor)
+                            .padding(if (glassEnabled) 8.dp else 0.dp)
                 ) {
                         Icon(
                                 imageVector = icon,
@@ -387,9 +393,10 @@ private fun SettingsSection(
                 
                 // 内容区域
                 Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, containerColor),
                         colors = CardDefaults.cardColors(
-                                containerColor = containerColor,
+                                containerColor = if (glassEnabled) Color.Transparent else containerColor,
                                 contentColor = MaterialTheme.colorScheme.onSurface
                         )
                 ) {

@@ -725,6 +725,8 @@ class FloatingChatService : Service(), FloatingWindowCallback {
                 // 发送消息（包含总结逻辑）
                 chatCore.sendUserMessage(
                     promptFunctionType = promptType,
+                    // 与主界面一致，发送时使用当前选中的角色而非历史绑定的默认角色。
+                    preferActiveRoleCard = true,
                     messageTextOverride = message
                 )
                 

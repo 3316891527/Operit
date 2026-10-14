@@ -8719,4 +8719,29 @@
     <string name="folder_import_missing_parent">父文件夹不存在：%1$s</string>
     <string name="folder_import_cycle">父子关系包含循环：%1$s</string>
     <string name="folder_import_record_error">归档第 %1$d 条文件夹记录（ID：%2$s）无效：%3$s。请修正后重新导入。</string>
+
+    <!-- 共存版实机反馈：玻璃与按钮外观设置。 -->
+    <string name="glass_appearance_title">玻璃外观</string>
+    <string name="glass_appearance_description">统一调节已开启的玻璃效果，各区域可单独开启。参数随当前主题保存。</string>
+    <string name="glass_preview">玻璃效果预览</string>
+    <string name="glass_blur">模糊半径</string>
+    <string name="glass_edge">边缘宽度</string>
+    <string name="glass_highlight">边缘高光</string>
+    <string name="glass_shadow">阴影半径</string>
+    <string name="glass_opacity">表面不透明度</string>
+    <string name="glass_opacity_description" formatted="false">半透明颜色会与背景混合；调至 100% 可保留所选底色。</string>
+    <string name="glass_reset_parameters">恢复默认玻璃参数</string>
+    <string name="glass_conversation_list">对话列表磨砂</string>
+    <string name="glass_settings_cards">设置分组与卡片磨砂</string>
+    <string name="glass_package_cards">包管理列表与按钮磨砂</string>
+    <string name="glass_button_colors">侧栏与包管理配色</string>
+    <string name="glass_sidebar_background">侧栏背景</string>
+    <string name="glass_sidebar_accent">侧栏选中背景</string>
+    <string name="glass_market_button_color">插件市场按钮背景</string>
+    <string name="glass_add_button_color">添加插件按钮背景</string>
+    <string name="glass_default_color">默认</string>
+    <string name="glass_choose_color">选色</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">自动化任务</string>
 </resources>

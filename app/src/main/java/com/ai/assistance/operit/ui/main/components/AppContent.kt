@@ -75,6 +75,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.zIndex
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.graphicsLayer
@@ -162,8 +168,8 @@ fun AppContent(
     val hostActivity = remember(context) { context.findActivity() }
     val manifestSoftInputMode = remember(hostActivity) { hostActivity?.manifestSoftInputMode() }
     val density = LocalDensity.current
-    val pageTransitionDurationMillis = if (enableNavigationAnimation) 280 else 400
-    val drawerRelayTransitionDurationMillis = 320
+    val pageTransitionDurationMillis = if (enableNavigationAnimation) 280 else 0
+    val drawerRelayTransitionDurationMillis = if (enableNavigationAnimation) 320 else 0
     val pageTransitionOffsetPx =
         with(density) { if (useTabletLayout) 28.dp.toPx() else 20.dp.toPx() }
     val drawerNavigationOffsetPx =
@@ -420,7 +426,8 @@ fun AppContent(
                         val allowCrossfadeForActiveTransition =
                             when {
                                 currentScreenKey != lastObservedCurrentKey ->
-                                    lastObservedScreen.participatesInCrossfadeTransition &&
+                                    enableNavigationAnimation &&
+                                        lastObservedScreen.participatesInCrossfadeTransition &&
                                         currentScreen.participatesInCrossfadeTransition
                                 isTransitioning -> transitionAllowsCrossfade
                                 else -> true
@@ -446,7 +453,8 @@ fun AppContent(
                             if (currentScreenKey == fromKey) return@LaunchedEffect
 
                             val canCrossfade =
-                                lastObservedScreen.participatesInCrossfadeTransition &&
+                                enableNavigationAnimation &&
+                                    lastObservedScreen.participatesInCrossfadeTransition &&
                                     currentScreen.participatesInCrossfadeTransition
                             val removalKey = if (isNavigatingBack) fromKey else null
 
@@ -558,7 +566,7 @@ fun AppContent(
                                     label = "ScreenAlphaAnimation"
                                 ) { currentVisibility ->
                                     if (!allowCrossfadeForActiveTransition) {
-                                        1f
+                                        if (isCurrentScreen) 1f else 0f
                                     } else if (currentVisibility == ScreenVisibility.VISIBLE) {
                                         1f
                                     } else {
@@ -634,12 +642,37 @@ fun AppContent(
                                 Box(
                                     modifier =
                                         Modifier.fillMaxSize()
+                                            .clipToBounds()
+                                            // 保留页面组合状态，但隐藏页不放置，也不参与触摸命中。
+                                            .layout { measurable, constraints ->
+                                                val placeable = measurable.measure(constraints)
+                                                layout(placeable.width, placeable.height) {
+                                                    if (isCurrentScreen || screenKey == effectivePreviousKey) {
+                                                        placeable.placeRelative(0, 0)
+                                                    }
+                                                }
+                                            }
+                                            .then(
+                                                if (isCurrentScreen) Modifier else Modifier
+                                                    .clearAndSetSemantics {}
+                                                    .focusProperties { canFocus = false }
+                                                    .pointerInput(Unit) {
+                                                        awaitPointerEventScope {
+                                                            while (true) {
+                                                                awaitPointerEvent(PointerEventPass.Initial)
+                                                                    .changes.forEach { it.consume() }
+                                                            }
+                                                        }
+                                                    }
+                                            )
                                             .zIndex(if (isCurrentScreen) 1f else 0f)
                                             .graphicsLayer {
-                                                this.alpha = alpha
-                                                this.translationX = translationX
-                                                scaleX = scale
-                                                scaleY = scale
+                                                // 没有跨页转场时直接呈现当前页，避免复用页面沿用上次的透明度。
+                                                val crossfading = effectivePreviousKey != null
+                                                this.alpha = if (crossfading) alpha else if (isCurrentScreen) 1f else 0f
+                                                this.translationX = if (crossfading) translationX else 0f
+                                                scaleX = if (crossfading) scale else 1f
+                                                scaleY = if (crossfading) scale else 1f
                                             }
                                 ) {
                                     Box(modifier = Modifier.fillMaxSize()) {
