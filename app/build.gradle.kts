@@ -131,17 +131,18 @@ fun signApkWithRotation(apkFile: File) {
         "--key-pass", "env:OPERIT_NEW_KEY_PASSWORD",
     )
 
-    project.exec {
+    // 显式读取执行结果，签名命令失败时立即终止任务。
+    providers.exec {
         commandLine(listOf(config.apksigner.path) + signingArguments)
         environment("OPERIT_OLD_STORE_PASSWORD", config.oldStorePassword)
         environment("OPERIT_OLD_KEY_PASSWORD", config.oldKeyPassword)
         environment("OPERIT_NEW_STORE_PASSWORD", config.newStorePassword)
         environment("OPERIT_NEW_KEY_PASSWORD", config.newKeyPassword)
-    }
+    }.result.get().assertNormalExitValue()
 
-    project.exec {
+    providers.exec {
         commandLine(config.apksigner.path, "verify", "--verbose", "--print-certs", rotatedApk.path)
-    }
+    }.result.get().assertNormalExitValue()
 
     Files.move(
         rotatedApk.toPath(),
@@ -594,17 +595,15 @@ if (ciPreviewRelease) {
             }
             val sdkDirectory = File(requiredLocalProperty("sdk.dir"))
             val apksigner = sdkDirectory.resolve("build-tools/35.0.0/apksigner")
-            project.exec {
+            providers.exec {
                 commandLine(apksigner.path, "verify", "--verbose", apkFile.path)
-            }
+            }.result.get().assertNormalExitValue()
             // 校验实际 APK 的包名和调试标记，避免把调试产物当作发行包上传。
             val aapt2 = sdkDirectory.resolve("build-tools/35.0.0/aapt2")
-            val badgingOutput = java.io.ByteArrayOutputStream()
-            project.exec {
+            // 由 Gradle 读取标准输出，避免 java 扩展遮蔽同名包而使脚本编译失败。
+            val badging = providers.exec {
                 commandLine(aapt2.path, "dump", "badging", apkFile.path)
-                standardOutput = badgingOutput
-            }
-            val badging = badgingOutput.toString("UTF-8")
+            }.standardOutput.asText.get()
             require(badging.lineSequence().any {
                 it.startsWith("package: name='com.ai.assistance.operit.kong' ")
             }) {

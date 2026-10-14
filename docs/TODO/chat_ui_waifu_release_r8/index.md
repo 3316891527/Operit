@@ -21,6 +21,8 @@ CI 构建的 application ID 为 `com.ai.assistance.operit.kong`，后缀为 `.ko
 
 验证任务检查 `app-kong.apk` 存在且非空，通过 `apksigner verify` 检查签名，再使用 `aapt2 dump badging` 核对实际包名为 `com.ai.assistance.operit.kong` 且没有调试标记。核验输出写入 `app/build/reports/kong-preview/apk-badging.txt`，随现有工作流报告上传。
 
+签名与产物核验命令使用 Gradle `providers.exec` 执行，并在任务内读取执行结果或标准输出；命令非零退出会使任务失败。该方式避免已弃用的 `project.exec`，并直接读取 `aapt2` 输出，避免脚本的 `java` 扩展遮蔽 `java.io` 包而导致名称解析失败。
+
 成功构建的 APK 和 AAB 位于 `operit-android-<run_number>` 产物，报告位于 `operit-android-reports-<run_number>` 产物。
 
 ## 验证记录
