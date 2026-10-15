@@ -4,7 +4,15 @@ import android.content.Context
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
+import com.ai.assistance.operit.util.stream.MutableSharedStream
+import com.ai.assistance.operit.util.stream.RevisableTextStream
+import com.ai.assistance.operit.util.stream.SharedStream
 import com.ai.assistance.operit.util.stream.Stream
+import com.ai.assistance.operit.util.stream.StreamCollector
+import com.ai.assistance.operit.util.stream.TextStreamEvent
+import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
@@ -45,7 +53,12 @@ class RateLimitedAIService(
         onUsageFinalized: (suspend (attempt: Int?) -> Unit)?,
     ): Stream<String> {
         val requestEpoch = synchronized(cancellationLock) { cancellationEpoch }
-        return com.ai.assistance.operit.util.stream.stream {
+        // 保存点会在正文之前发出。消费端是后订阅的，必须重放，否则回滚没有起点。
+        val eventChannel = MutableSharedStream<TextStreamEvent>(
+            replay = Int.MAX_VALUE,
+            extraBufferCapacity = Int.MAX_VALUE,
+        )
+        val response = com.ai.assistance.operit.util.stream.stream {
             val cancelled = AtomicBoolean(false)
             // A cold stream can be cancelled before collection starts; register and compare atomically.
             synchronized(cancellationLock) {
@@ -90,7 +103,7 @@ class RateLimitedAIService(
                     acquireConcurrency(semaphore)
                 }
                 throwIfCancelled()
-                delegate.sendMessage(
+                val response = delegate.sendMessage(
                     context = context,
                     chatHistory = chatHistory,
                     modelParameters = modelParameters,
@@ -108,9 +121,27 @@ class RateLimitedAIService(
                         throwIfCancelled()
                         onUsageFinalized?.invoke(attempt)
                     },
-                ).collect { chunk ->
-                    throwIfCancelled()
-                    emit(chunk)
+                )
+                val carrier = response as? TextStreamEventCarrier
+                if (carrier == null) {
+                    response.collect { chunk ->
+                        throwIfCancelled()
+                        emit(chunk)
+                    }
+                } else {
+                    coroutineScope {
+                        val eventJob = launch {
+                            carrier.eventChannel.collect { event -> eventChannel.emit(event) }
+                        }
+                        try {
+                            response.collect { chunk ->
+                                throwIfCancelled()
+                                emit(chunk)
+                            }
+                        } finally {
+                            eventJob.cancel()
+                        }
+                    }
                 }
                 throwIfCancelled()
             } finally {
@@ -120,6 +151,19 @@ class RateLimitedAIService(
                 }
             }
         }
+        return RateLimitedRevisableStream(response, eventChannel)
+    }
+
+    private class RateLimitedRevisableStream(
+        private val delegate: Stream<String>,
+        override val eventChannel: SharedStream<TextStreamEvent>,
+    ) : RevisableTextStream {
+        override val isLocked: Boolean get() = delegate.isLocked
+        override val bufferedCount: Int get() = delegate.bufferedCount
+        override suspend fun lock() = delegate.lock()
+        override suspend fun unlock() = delegate.unlock()
+        override fun clearBuffer() = delegate.clearBuffer()
+        override suspend fun collect(collector: StreamCollector<String>) = delegate.collect(collector)
     }
 
     private companion object {
