@@ -19,8 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Android
-import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -40,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.data.resources.OfflineResources
+import com.ai.assistance.operit.ui.features.toolbox.screens.htmlpackager.PackagerPlatformDialog
 import com.ai.assistance.operit.core.subpack.ApkEditor
 import com.ai.assistance.operit.core.subpack.ExeEditor
 import com.ai.assistance.operit.core.subpack.KeyStoreHelper
@@ -53,107 +52,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 导出选择对话框，用于选择导出平台 */
+/** 在进入平台配置前校验对应的导出模板，缺失时提供明确的准备入口。 */
 @Composable
 fun ExportPlatformDialog(
-        onDismiss: () -> Unit,
-        onSelectAndroid: () -> Unit,
-        onSelectWindows: () -> Unit
+    onDismiss: () -> Unit,
+    onSelectAndroid: () -> Unit,
+    onSelectWindows: () -> Unit,
 ) {
-    val context = LocalContext.current
-    Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
-    ) {
-        Card(
-                modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                        context.getString(R.string.select_export_platform),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    PlatformButton(
-                            icon = Icons.Default.Android,
-                            text = "Android",
-                            onClick = {
-                                onSelectAndroid()
-                                onDismiss()
-                            }
-                    )
-
-                    PlatformButton(
-                            icon = Icons.Default.DesktopWindows,
-                            text = "Windows",
-                            onClick = {
-                                onSelectWindows()
-                                onDismiss()
-                            }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) { Text(context.getString(R.string.cancel)) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlatformButton(
-        icon: androidx.compose.ui.graphics.vector.ImageVector,
-        text: String,
-        onClick: () -> Unit
-) {
-    Column(
-            modifier = Modifier.width(100.dp).clickable(onClick = onClick).padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Card(
-                modifier = Modifier.size(60.dp).align(Alignment.CenterHorizontally),
-                shape = RoundedCornerShape(8.dp),
-                colors =
-                        CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-        ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                        imageVector = icon,
-                        contentDescription = text,
-                        modifier = Modifier.size(36.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
-        )
-    }
+    PackagerPlatformDialog(onDismiss, onSelectAndroid, onSelectWindows)
 }
 
 /** Android导出配置对话框 */

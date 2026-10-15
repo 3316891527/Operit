@@ -198,16 +198,9 @@ fun PhoneLayout(
                             Modifier.fillMaxSize()
                                     .graphicsLayer {
                                             val progress = drawerProgressState.value
-                                            translationX = drawerWidth.toPx() * progress * if (enableNavigationAnimation) 0.82f else 1f
-                                            translationY = if (enableNavigationAnimation) 12.dp.toPx() * progress else 0f
-                                            val scale = if (enableNavigationAnimation) 1f - 0.08f * progress else 1f
-                                            scaleX = scale
-                                            scaleY = scale
-                                            rotationY = if (enableNavigationAnimation) -7f * progress else 0f
-                                            shape = RoundedCornerShape(if (enableNavigationAnimation) (24f * progress).dp else 0.dp)
+                                            // 主页面平移让出侧栏空间，不再旋转、缩放或给自身投影。
+                                            translationX = drawerWidth.toPx() * progress
                                             clip = true
-                                            shadowElevation = if (enableNavigationAnimation) 18.dp.toPx() * progress else 0f
-                                            transformOrigin = TransformOrigin(0f, 0.5f)
                                     }
                                     .zIndex(1f),
                     color = Color.Transparent,

@@ -5,20 +5,14 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
@@ -44,6 +39,14 @@ import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.chat.webview.computer.ComputerScreen
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceScreen
 import java.io.File
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import com.ai.assistance.operit.terminal.data.TerminalSessionData
+import com.ai.assistance.operit.ui.features.terminal.EmbeddedTerminalPage
+import com.ai.assistance.operit.util.AppLogger
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -85,6 +88,35 @@ private fun WorkspaceHubContent(
     val context = LocalContext.current
     val terminalManager = remember(context) { TerminalManager.getInstance(context) }
     val terminalState by terminalManager.terminalState.collectAsState()
+    val keyboard = LocalSoftwareKeyboardController.current
+    val scope = rememberCoroutineScope()
+    var terminalPage by remember { mutableStateOf(EmbeddedTerminalPage.CONSOLE) }
+    var creatingSession by remember { mutableStateOf(false) }
+    var sessionError by remember { mutableStateOf<String?>(null) }
+    var sessionToClose by remember { mutableStateOf<TerminalSessionData?>(null) }
+    fun createTerminal() {
+        if (creatingSession) return
+        creatingSession = true
+        terminalPage = EmbeddedTerminalPage.CONSOLE
+        actualViewModel.openTerminalFromHub()
+        scope.launch {
+            try {
+                terminalManager.createNewSession(context.getString(
+                    R.string.workspace_terminal_session_title, terminalManager.terminalState.value.sessions.size + 1,
+                ))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e("WorkspaceTerminal", "Creating terminal session failed", error)
+                sessionError = error.message ?: context.getString(R.string.workspace_terminal_failed)
+            } finally { creatingSession = false }
+        }
+    }
+    val openTerminal: () -> Unit = {
+        terminalPage = EmbeddedTerminalPage.CONSOLE
+        if (terminalManager.terminalState.value.sessions.isEmpty()) createTerminal()
+        else actualViewModel.openTerminalFromHub()
+    }
     // 切换对话重置访问记录，同一对话的界面重建则保留已打开页签。
     var hasOpenedWorkspace by rememberSaveable { mutableStateOf(false) }
     var hasOpenedTerminal by rememberSaveable { mutableStateOf(false) }
@@ -94,7 +126,9 @@ private fun WorkspaceHubContent(
     }
 
     BackHandler(enabled = isVisible) {
-        actualViewModel.onWorkspaceHubBack()
+        if (page == WorkspaceHubPage.TERMINAL && terminalPage != EmbeddedTerminalPage.CONSOLE) {
+            terminalPage = EmbeddedTerminalPage.CONSOLE
+        } else actualViewModel.onWorkspaceHubBack()
     }
 
     Column(
@@ -107,35 +141,24 @@ private fun WorkspaceHubContent(
             .padding(top = if (reserveChatControlsSpace) 52.dp else 0.dp)
             .pointerInput(Unit) { detectTapGestures(onTap = {}) },
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 8.dp)
-                .horizontalScroll(rememberScrollState())
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            WorkspaceHubTab(
-                title = stringResource(R.string.workspace_hub_home),
-                selected = page == WorkspaceHubPage.HOME,
-                onClick = actualViewModel::showWorkspaceHubHome,
-            )
-            if (hasOpenedWorkspace) {
-                WorkspaceHubTab(
-                    title = stringResource(R.string.workspace),
-                    selected = page == WorkspaceHubPage.WORKSPACE,
-                    onClick = { actualViewModel.openWorkspaceFromHub() },
-                )
-            }
-            if (hasOpenedTerminal) {
-                WorkspaceHubTab(
-                    title = stringResource(R.string.terminal),
-                    selected = page == WorkspaceHubPage.TERMINAL,
-                    onClick = actualViewModel::openTerminalFromHub,
-                )
-            }
-        }
+        WorkspaceSessionTabs(
+            page = page,
+            hasWorkspace = hasOpenedWorkspace,
+            hasTerminal = hasOpenedTerminal || page == WorkspaceHubPage.TERMINAL,
+            sessions = terminalState.sessions,
+            currentSessionId = terminalState.currentSessionId,
+            creatingSession = creatingSession,
+            onHome = { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() },
+            onWorkspace = { keyboard?.hide(); actualViewModel.openWorkspaceFromHub() },
+            onTerminal = { id ->
+                terminalManager.switchToSession(id)
+                terminalPage = EmbeddedTerminalPage.CONSOLE
+                actualViewModel.openTerminalFromHub()
+            },
+            onCloseTerminal = { id -> sessionToClose = terminalManager.terminalState.value.sessions.firstOrNull { it.id == id } },
+            onNewTerminal = ::createTerminal,
+            onTerminalPage = { keyboard?.hide(); terminalPage = it },
+        )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f))
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (page == WorkspaceHubPage.HOME) {
@@ -146,7 +169,7 @@ private fun WorkspaceHubContent(
                     onOpenWorkspace = { actualViewModel.openWorkspaceFromHub(WorkspaceEntryAction.FILES) },
                     onCreateWorkspace = { actualViewModel.openWorkspaceFromHub(WorkspaceEntryAction.CREATE) },
                     onSelectWorkspace = { actualViewModel.openWorkspaceFromHub(WorkspaceEntryAction.SELECT) },
-                    onOpenTerminal = actualViewModel::openTerminalFromHub,
+                    onOpenTerminal = openTerminal,
                     onOpenHtmlPackager = onOpenHtmlPackager,
                 )
             }
@@ -177,28 +200,27 @@ private fun WorkspaceHubContent(
             }
             // 离开终端即释放显示层，会话仍由终端管理器持有。
             if (isVisible && page == WorkspaceHubPage.TERMINAL) {
-                ComputerScreen()
+                ComputerScreen(page = terminalPage, onPageChange = { terminalPage = it })
             }
         }
     }
-}
-
-@Composable
-private fun WorkspaceHubTab(title: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        color = if (selected) MaterialTheme.colorScheme.surfaceContainerHighest else {
-            MaterialTheme.colorScheme.surface
-        },
-        contentColor = if (selected) MaterialTheme.colorScheme.onSurface else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
-    ) {
-        Text(
-            text = title,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            style = MaterialTheme.typography.titleSmall,
+    sessionToClose?.let { session ->
+        AlertDialog(
+            onDismissRequest = { sessionToClose = null },
+            title = { Text(stringResource(R.string.workspace_terminal_close_title)) },
+            text = { Text(stringResource(R.string.workspace_terminal_close_message, session.title)) },
+            confirmButton = { TextButton(onClick = {
+                terminalManager.closeSession(session.id)
+                sessionToClose = null
+                if (terminalManager.terminalState.value.sessions.isEmpty()) { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() }
+            }) { Text(stringResource(R.string.close)) } },
+            dismissButton = { TextButton(onClick = { sessionToClose = null }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+    sessionError?.let { error ->
+        AlertDialog(onDismissRequest = { sessionError = null },
+            title = { Text(stringResource(R.string.workspace_terminal_failed)) },
+            text = { Text(error) },
+            confirmButton = { TextButton(onClick = { sessionError = null }) { Text(stringResource(android.R.string.ok)) } })
     }
 }

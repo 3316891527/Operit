@@ -10,14 +10,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.resources.OfflineResources
 import com.ai.assistance.operit.ui.theme.OperitTheme
@@ -46,22 +46,42 @@ class OfflineResourcesActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
         val groups = remember { OfflineResources.groups(context) }
         val ready = remember { mutableStateMapOf<String, Boolean>() }
+        val ubuntuInstalled = remember { OfflineResources.ubuntuInstalled(context) }
         var selected by rememberSaveable { mutableStateOf(intent.getStringExtra(EXTRA_GROUP) ?: OfflineResources.SPEECH) }
         var active by remember { mutableStateOf<String?>(null) }
+        var checking by remember { mutableStateOf(true) }
         val transferProgress = remember { MutableStateFlow(0f) }
         val fraction by transferProgress.collectAsState()
+        var operationLabel by remember { mutableStateOf("") }
         var message by remember { mutableStateOf("") }
+        var failed by remember { mutableStateOf(false) }
         var job by remember { mutableStateOf<Job?>(null) }
         var confirmDownload by remember { mutableStateOf<String?>(null) }
         val progress: (Long, Long) -> Unit = { done, total ->
-            val next = (done.toDouble() / total).toFloat().coerceIn(0f, 1f)
-            // StateFlow 合并后台线程的高频进度，避免为每个数据块创建主线程任务。
-            transferProgress.value = next
+            // 合并后台高频进度，不为每个数据块创建主线程任务。
+            transferProgress.value = if (total > 0) (done.toDouble() / total).toFloat().coerceIn(0f, 1f) else 0f
         }
-        fun perform(id: String, operation: suspend () -> Unit) {
+        fun refresh() {
+            checking = true
+            failed = false
+            message = ""
+            scope.launch {
+                try {
+                    groups.forEach { ready[it.id] = OfflineResources.isReady(context, it.id) }
+                } catch (error: CancellationException) { throw error }
+                catch (error: Exception) {
+                    AppLogger.e("OfflineResources", "Checking resources failed", error)
+                    failed = true
+                    message = getString(R.string.offline_resources_failed, error.message)
+                } finally { checking = false }
+            }
+        }
+        fun perform(id: String, label: Int, operation: suspend () -> Unit) {
             active = id
+            operationLabel = getString(label)
             transferProgress.value = 0f
             message = ""
+            failed = false
             job = scope.launch {
                 try {
                     operation()
@@ -72,18 +92,21 @@ class OfflineResourcesActivity : ComponentActivity() {
                     throw error
                 } catch (error: Exception) {
                     AppLogger.e("OfflineResources", "Resource operation failed: $id", error)
+                    failed = true
                     message = getString(R.string.offline_resources_failed, error.message)
                 } finally { active = null }
             }
         }
         val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            if (uri != null) perform(selected) { OfflineResources.importZip(context, selected, uri, progress) }
+            if (uri != null) perform(selected, R.string.offline_resources_import) {
+                OfflineResources.importZip(context, selected, uri, progress)
+            }
         }
         val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-            if (uri != null) perform(selected) {
+            if (uri != null) perform(selected, R.string.resource_save_backup) {
                 try { OfflineResources.exportZip(context, selected, uri, progress) }
                 catch (error: Exception) {
-                    // 失败或取消的备份不可复用，删除文件选择器刚创建的不完整文档。
+                    // 取消或失败时删除刚创建的不完整备份文档。
                     withContext(NonCancellable + Dispatchers.IO) {
                         try { DocumentsContract.deleteDocument(contentResolver, uri) }
                         catch (cleanup: Exception) { AppLogger.w("OfflineResources", "Cannot remove incomplete export", cleanup) }
@@ -92,55 +115,40 @@ class OfflineResourcesActivity : ComponentActivity() {
                 }
             }
         }
-        LaunchedEffect(Unit) {
-            try { groups.forEach { ready[it.id] = OfflineResources.isReady(context, it.id) } }
-            catch (error: CancellationException) { throw error }
-            catch (error: Exception) { message = getString(R.string.offline_resources_failed, error.message) }
-        }
+        LaunchedEffect(Unit) { refresh() }
         BackHandler(enabled = active != null) { job?.cancel() }
         Scaffold(topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.offline_resources_title)) }, navigationIcon = {
-                TextButton(onClick = { if (active != null) job?.cancel() else finish() }) {
-                    Text(stringResource(if (active != null) R.string.cancel else R.string.back))
-                }
-            })
-        }) { padding ->
-            Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.offline_resources_description))
-                TextButton(onClick = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(OfflineResources.RELEASE_URL))) }) {
-                    Text(stringResource(R.string.offline_resources_source))
-                }
-                if (intent.hasExtra(EXTRA_GROUP)) Text(stringResource(R.string.offline_resources_retry_feature))
-                if (message.isNotEmpty()) Text(message)
-                groups.sortedBy { it.id != intent.getStringExtra(EXTRA_GROUP) }.forEach { group ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(stringResource(group.label), style = MaterialTheme.typography.titleMedium)
-                            Text(String.format(Locale.getDefault(), "%.1f MiB", group.bytes / 1048576.0))
-                            Text(stringResource(if (ready[group.id] == true) R.string.offline_resources_ready else R.string.offline_resources_not_saved))
-                            if (group.id == OfflineResources.UBUNTU && OfflineResources.ubuntuInstalled(context)) {
-                                Text(stringResource(R.string.offline_resources_ubuntu_installed))
-                            }
-                            if (active == group.id) {
-                                LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
-                                Text("${(fraction * 100).toInt()}%")
-                                TextButton(onClick = { job?.cancel() }) { Text(stringResource(R.string.cancel)) }
-                            }
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                TextButton(enabled = active == null && ready[group.id] == false, onClick = { confirmDownload = group.id }) { Text(stringResource(R.string.offline_resources_download)) }
-                                TextButton(enabled = active == null && ready[group.id] == true, onClick = {
-                                    selected = group.id
-                                    exportLauncher.launch("operit-${group.id}-resources-v1.zip")
-                                }) { Text(stringResource(R.string.offline_resources_export)) }
-                                TextButton(enabled = active == null, onClick = {
-                                    selected = group.id
-                                    importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "application/x-zip-compressed"))
-                                }) { Text(stringResource(R.string.offline_resources_import)) }
-                            }
-                        }
+            TopAppBar(
+                title = { Text(stringResource(R.string.offline_resources_title)) },
+                navigationIcon = {
+                    IconButton(onClick = { if (active != null) job?.cancel() else finish() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(if (active != null) R.string.cancel else R.string.back))
                     }
-                }
-            }
+                },
+                actions = {
+                    IconButton(onClick = ::refresh, enabled = active == null && !checking) {
+                        Icon(Icons.Default.Refresh, stringResource(R.string.resource_refresh))
+                    }
+                },
+            )
+        }) { padding ->
+            OfflineResourcesContent(
+                groups = groups, ready = ready, requestedGroup = intent.getStringExtra(EXTRA_GROUP),
+                active = active, checking = checking, progress = fraction, operationLabel = operationLabel,
+                message = message, failed = failed, ubuntuInstalled = ubuntuInstalled,
+                modifier = Modifier.fillMaxSize().padding(padding),
+                onDownload = { confirmDownload = it },
+                onImport = { id ->
+                    selected = id
+                    importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "application/x-zip-compressed"))
+                },
+                onExport = { id ->
+                    selected = id
+                    exportLauncher.launch("operit-$id-resources-v1.zip")
+                },
+                onCancel = { job?.cancel() },
+                onOpenSource = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(OfflineResources.RELEASE_URL))) },
+            )
         }
         confirmDownload?.let { id ->
             val group = groups.first { it.id == id }
@@ -148,7 +156,7 @@ class OfflineResourcesActivity : ComponentActivity() {
                 text = { Text(getString(R.string.offline_resources_confirm, String.format(Locale.getDefault(), "%.1f", group.bytes / 1048576.0))) },
                 confirmButton = { TextButton(onClick = {
                     confirmDownload = null
-                    perform(id) { OfflineResources.download(context, id, progress) }
+                    perform(id, R.string.offline_resources_download) { OfflineResources.download(context, id, progress) }
                 }) { Text(stringResource(R.string.offline_resources_download)) } },
                 dismissButton = { TextButton(onClick = { confirmDownload = null }) { Text(stringResource(R.string.cancel)) } })
         }

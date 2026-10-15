@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Check
@@ -20,7 +22,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
-import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.ui.components.CustomScaffold
@@ -43,7 +44,7 @@ import java.io.IOException
 fun HtmlPackagerScreen(onGoBack: () -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val toolHandler = AIToolHandler.getInstance(context)
+    val resources = rememberPackagerResources()
 
     var webProjectUri by remember { mutableStateOf<Uri?>(null) }
     var htmlFiles by remember { mutableStateOf<List<DocumentFile>>(emptyList()) }
@@ -73,15 +74,25 @@ fun HtmlPackagerScreen(onGoBack: () -> Unit) {
         }
     }
 
+    // 进入工具时先确认模板可用，缺失时不展示可继续打包的表单。
+    if (!resources.hasReadyTemplate && !showProgressDialog && !showCompleteDialog) {
+        CustomScaffold { padding -> PackagerResourceGate(resources, Modifier.padding(padding)) }
+        return
+    }
+
     CustomScaffold {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {
 
-            // Step 1: Select Folder
+            PackagerResourceSummary(resources)
+            Spacer(Modifier.height(16.dp))
+
+            // 第一步：选择项目文件夹
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -148,7 +159,7 @@ fun HtmlPackagerScreen(onGoBack: () -> Unit) {
             // Step 3: Package
             Button(
                 onClick = { showExportPlatformDialog = true },
-                enabled = selectedIndexFile != null,
+                enabled = selectedIndexFile != null && !resources.checking,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Icon(Icons.Default.Build, contentDescription = "Package", modifier = Modifier.padding(end = 8.dp))
