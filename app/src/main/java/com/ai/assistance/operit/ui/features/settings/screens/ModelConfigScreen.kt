@@ -62,6 +62,7 @@ import com.ai.assistance.operit.ui.features.settings.DebouncedModelConfigAutoSav
 import com.ai.assistance.operit.ui.features.settings.ModelConfigSaveCoordinator
 import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveAction
 import com.ai.assistance.operit.ui.features.settings.rememberModelConfigSaveCoordinator
+import com.ai.assistance.operit.ui.features.settings.keypool.ApiKeyPoolSettingsSection
 import com.ai.assistance.operit.ui.features.settings.sections.AdvancedSettingsSection
 import com.ai.assistance.operit.ui.features.settings.sections.ModelApiSettingsSection
 import com.ai.assistance.operit.ui.features.settings.sections.ModelParametersSection
@@ -218,10 +219,8 @@ fun ModelConfigScreen(
     // UI状态
     var showRenameConfigDialog by remember { mutableStateOf(false) }
     var showConfigOrganizer by remember { mutableStateOf(false) }
-    var showSaveSuccessMessage by remember { mutableStateOf(false) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var renameConfigName by remember { mutableStateOf("") }
-    var confirmMessage by remember { mutableStateOf("") }
 
     // 连接测试状态
     var isTestingConnection by remember { mutableStateOf(false) }
@@ -233,7 +232,7 @@ fun ModelConfigScreen(
         onDispose { keyAvailabilityTester.close() }
     }
 
-    // Enter the screen with a configuration from the persisted group.
+    // 进入页面时使用已保存的分组，并在组内定位当前配置。
     LaunchedEffect(Unit) {
         val chatConfigId = functionalConfigManager.getConfigIdForFunction(FunctionType.CHAT)
         val restoredGroupId = configManager.selectedConfigGroupFlow.first()
@@ -254,7 +253,7 @@ fun ModelConfigScreen(
         configManager.selectedConfigGroupFlow.collectLatest { selectedGroupId = it }
     }
 
-    // Keep the selected configuration inside the active group after imports, moves, or deletions.
+    // 导入、移动或删除配置后，保持当前选择属于已选分组。
     LaunchedEffect(hasInitializedSelection, selectedGroupId, visibleConfigIds) {
         if (!hasInitializedSelection) return@LaunchedEffect
         when {
@@ -281,21 +280,16 @@ fun ModelConfigScreen(
         }
     }
 
-    // 显示通知消息
     fun showNotification(message: String) {
-        confirmMessage = message
-        showSaveSuccessMessage = true
-        scope.launch {
-            kotlinx.coroutines.delay(3000)
-            showSaveSuccessMessage = false
-        }
-    }
-
-    fun showOnboardingError(message: String) {
+        if (message.isBlank()) return
         scope.launch {
             snackbarHostState.currentSnackbarData?.dismiss()
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    fun showOnboardingError(message: String) {
+        showNotification(message)
     }
 
     if (entryMode == ModelConfigEntryMode.CHAT_ONBOARDING) {
@@ -887,7 +881,7 @@ fun ModelConfigScreen(
                 }
 
                 item {
-                    AdvancedSettingsSection(
+                    ApiKeyPoolSettingsSection(
                         config = config,
                         configManager = configManager,
                         saveCoordinator = saveCoordinator,
@@ -895,39 +889,13 @@ fun ModelConfigScreen(
                         showNotification = { message -> showNotification(message) }
                     )
                 }
-            }
 
-            if (showSaveSuccessMessage) {
                 item {
-                    AnimatedVisibility(
-                        visible = showSaveSuccessMessage,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors =
-                                CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                                )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = confirmMessage,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
+                    AdvancedSettingsSection(
+                        config = config,
+                        configManager = configManager,
+                        showNotification = { message -> showNotification(message) }
+                    )
                 }
             }
         }
@@ -1612,10 +1580,7 @@ private fun ConfigOrganizerDialog(
         val updated = rows.toMutableList().apply {
             removeAt(from.index)
             val targetPosition = indexOfFirst { it.key == target.key }
-            // The reorderable library reports the item whose center was crossed. When
-            // moving downward, the dragged row must be inserted after that target;
-            // otherwise it is placed back before the target and can never reach the
-            // end of the list.
+            // 拖动库报告越过中心的目标项，向下移动时插在目标之后，确保能移动到列表末尾。
             val insertionIndex = when {
                 target.config == null -> targetPosition + 1
                 from.index < to.index -> targetPosition + 1

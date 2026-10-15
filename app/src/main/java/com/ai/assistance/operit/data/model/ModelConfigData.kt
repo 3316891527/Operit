@@ -56,6 +56,45 @@ enum class ApiProviderType {
                         }
                 }
         }
+
+        private val apiKeyPoolSupportedProviders = setOf(
+                OPENAI,
+                XAI,
+                OPENAI_RESPONSES,
+                OPENAI_RESPONSES_GENERIC,
+                OPENAI_GENERIC,
+                ANTHROPIC,
+                ANTHROPIC_GENERIC,
+                GOOGLE,
+                GEMINI_GENERIC,
+                BAIDU,
+                ALIYUN,
+                XUNFEI,
+                ZHIPU,
+                BAICHUAN,
+                MOONSHOT,
+                MIMO,
+                DEEPSEEK,
+                MISTRAL,
+                SILICONFLOW,
+                IFLOW,
+                OPENROUTER,
+                OPENCODE,
+                FOUR_ROUTER,
+                NOUS_PORTAL,
+                INFINIAI,
+                ALIPAY_BAILING,
+                DOUBAO,
+                NVIDIA,
+                PPINFRA,
+                NOVITA,
+                MINIMAX,
+                OTHER,
+        )
+
+        fun supportsApiKeyPool(): Boolean {
+                return this in apiKeyPoolSupportedProviders
+        }
 }
 
 object ModelConfigDefaults {
