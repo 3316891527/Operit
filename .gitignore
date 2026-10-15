@@ -6,6 +6,7 @@
 .gradle
 .gradle-local
 /local.properties
+/.ci-signing/
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml

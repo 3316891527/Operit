@@ -21,8 +21,9 @@ plugins {
     id("kotlin-kapt")
 }
 
-// 此集成分支在 GitHub Actions 中构建预览产物，使用调试签名。
+// 此独立发行分支在 GitHub Actions 中生成固定签名的 Kong 共存包。
 val ciPreviewRelease = providers.environmentVariable("GITHUB_ACTIONS").orNull == "true"
+val ciDistributionCertificateSha256 = "5E01FFF4DD01A44BAB8318BE35107AE39C60A1261CFCE33003EA3528727EA799"
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -377,6 +378,15 @@ android {
     }
 
     signingConfigs {
+        if (ciPreviewRelease) {
+            create("ciDistribution") {
+                storeFile = rootProject.file(".ci-signing/operit-distribution.p12")
+                storeType = "PKCS12"
+                storePassword = providers.environmentVariable("OPERIT_DISTRIBUTION_STORE_PASSWORD").orNull
+                keyAlias = "operit-distribution"
+                keyPassword = providers.environmentVariable("OPERIT_DISTRIBUTION_STORE_PASSWORD").orNull
+            }
+        }
         val releaseKeystorePath = localProperties.getProperty("RELEASE_STORE_FILE")
         val releaseStorePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
         val releaseKeyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
@@ -407,8 +417,8 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 51
-        versionName = "1.12.2"
+        versionCode = 52
+        versionName = "1.12.2-personal.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -440,9 +450,9 @@ android {
                 "proguard-rules.pro"
             )
             if (ciPreviewRelease) {
-                // 独立安装身份使共存版与正式版分别安装，预览签名用于共存包。
+                // 包名和固定签名共同维持独立发行版后续覆盖安装的身份。
                 applicationIdSuffix = ".kong"
-                signingConfig = signingConfigs.getByName("debug")
+                signingConfig = signingConfigs.getByName("ciDistribution")
             } else if (releaseSigningConfig != null) {
                 signingConfig = releaseSigningConfig
             }
@@ -595,9 +605,16 @@ if (ciPreviewRelease) {
             }
             val sdkDirectory = File(requiredLocalProperty("sdk.dir"))
             val apksigner = sdkDirectory.resolve("build-tools/35.0.0/apksigner")
-            providers.exec {
-                commandLine(apksigner.path, "verify", "--verbose", apkFile.path)
-            }.result.get().assertNormalExitValue()
+            val signingVerification = providers.exec {
+                commandLine(apksigner.path, "verify", "--verbose", "--print-certs", apkFile.path)
+            }
+            signingVerification.result.get().assertNormalExitValue()
+            val signingReport = signingVerification.standardOutput.asText.get()
+            val certificateSha256 = Regex("""Signer #1 certificate SHA-256 digest: ([0-9a-fA-F]+)""")
+                .find(signingReport)?.groupValues?.get(1)
+            require(certificateSha256 != null && certificateSha256.equals(ciDistributionCertificateSha256, ignoreCase = true)) {
+                "Kong coexist APK has an unexpected signing certificate"
+            }
             // 校验实际 APK 的包名和调试标记，避免把调试产物当作发行包上传。
             val aapt2 = sdkDirectory.resolve("build-tools/35.0.0/aapt2")
             // 由 Gradle 读取标准输出，避免 java 扩展遮蔽同名包而使脚本编译失败。
@@ -617,6 +634,7 @@ if (ciPreviewRelease) {
             val badgingReport = layout.buildDirectory.file("reports/kong-preview/apk-badging.txt").get().asFile
             badgingReport.parentFile.mkdirs()
             badgingReport.writeText(badging)
+            badgingReport.resolveSibling("apk-signing.txt").writeText(signingReport)
         }
     }
     // 保留现有发布入口；下载产物只保留共存 APK，避免上传规则同时收集 AAB。
