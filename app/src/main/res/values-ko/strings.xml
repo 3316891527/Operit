@@ -7715,4 +7715,29 @@
     <string name="workflow_settings">워크플로 설정</string>
     <string name="workflow_status_enabled">활성화됨</string>
     <string name="workspace_html_export_desc">웹 프로젝트 폴더를 선택하고 Android 또는 Windows 패키지로 내보내세요</string>
+
+    <!-- 玻璃、按钮外观与侧栏工作流说明的本地化。 -->
+    <string name="glass_appearance_title">유리 모양</string>
+    <string name="glass_appearance_description">활성화된 유리 효과를 조정하고 적용할 영역을 개별적으로 선택합니다. 설정은 현재 테마에 저장됩니다.</string>
+    <string name="glass_preview">유리 효과 미리보기</string>
+    <string name="glass_blur">흐림 반경</string>
+    <string name="glass_edge">가장자리 너비</string>
+    <string name="glass_highlight">가장자리 강조</string>
+    <string name="glass_shadow">그림자 반경</string>
+    <string name="glass_opacity">표면 불투명도</string>
+    <string name="glass_opacity_description" formatted="false">반투명 색상은 배경과 혼합됩니다. 선택한 표면 색상을 유지하려면 불투명도를 100%로 설정하세요.</string>
+    <string name="glass_reset_parameters">유리 매개변수 초기화</string>
+    <string name="glass_conversation_list">대화 목록 반투명 유리</string>
+    <string name="glass_settings_cards">설정 그룹 및 카드 반투명 유리</string>
+    <string name="glass_package_cards">패키지 목록 및 버튼 반투명 유리</string>
+    <string name="glass_button_colors">사이드바 및 패키지 색상</string>
+    <string name="glass_sidebar_background">사이드바 배경</string>
+    <string name="glass_sidebar_accent">사이드바 선택 항목 배경</string>
+    <string name="glass_market_button_color">마켓 버튼 배경</string>
+    <string name="glass_add_button_color">플러그인 추가 버튼 배경</string>
+    <string name="glass_default_color">기본값</string>
+    <string name="glass_choose_color">색상</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">자동화 작업</string>
 </resources>

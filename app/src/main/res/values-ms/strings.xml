@@ -7946,4 +7946,29 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="workflow_settings">Tetapan Aliran Kerja</string>
     <string name="workflow_status_enabled">Didayakan</string>
     <string name="workspace_html_export_desc">Pilih folder projek web dan eksport pakej Android atau Windows</string>
+
+    <!-- 玻璃、按钮外观与侧栏工作流说明的本地化。 -->
+    <string name="glass_appearance_title">Rupa kaca</string>
+    <string name="glass_appearance_description">Laraskan kesan kaca yang diaktifkan dan pilih setiap kawasan secara berasingan. Tetapan disimpan bersama tema ini.</string>
+    <string name="glass_preview">Pratonton kaca</string>
+    <string name="glass_blur">Jejari kabur</string>
+    <string name="glass_edge">Lebar tepi</string>
+    <string name="glass_highlight">Sorotan tepi</string>
+    <string name="glass_shadow">Jejari bayang</string>
+    <string name="glass_opacity">Kelegapan permukaan</string>
+    <string name="glass_opacity_description" formatted="false">Warna lut sinar bercampur dengan latar belakang. Tetapkan kelegapan kepada 100% untuk mengekalkan warna permukaan yang dipilih.</string>
+    <string name="glass_reset_parameters">Tetapkan semula parameter kaca</string>
+    <string name="glass_conversation_list">Kaca kabur pada senarai perbualan</string>
+    <string name="glass_settings_cards">Kaca kabur pada kumpulan dan kad tetapan</string>
+    <string name="glass_package_cards">Kaca kabur pada senarai dan butang pakej</string>
+    <string name="glass_button_colors">Warna bar sisi dan pakej</string>
+    <string name="glass_sidebar_background">Latar belakang bar sisi</string>
+    <string name="glass_sidebar_accent">Latar belakang pilihan bar sisi</string>
+    <string name="glass_market_button_color">Latar belakang butang pasaran</string>
+    <string name="glass_add_button_color">Latar belakang butang tambah pemalam</string>
+    <string name="glass_default_color">Lalai</string>
+    <string name="glass_choose_color">Warna</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">Tugas automasi</string>
 </resources>

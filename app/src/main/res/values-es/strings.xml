@@ -8017,4 +8017,29 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="workflow_settings">Ajustes del flujo de trabajo</string>
     <string name="workflow_status_enabled">Activado</string>
     <string name="workspace_html_export_desc">Selecciona una carpeta de proyecto web y exporta un paquete para Android o Windows</string>
+
+    <!-- 玻璃、按钮外观与侧栏工作流说明的本地化。 -->
+    <string name="glass_appearance_title">Aspecto del cristal</string>
+    <string name="glass_appearance_description">Ajusta los efectos de cristal activados y elige cada área por separado. Los ajustes se guardan con este tema.</string>
+    <string name="glass_preview">Vista previa del cristal</string>
+    <string name="glass_blur">Radio de desenfoque</string>
+    <string name="glass_edge">Grosor del borde</string>
+    <string name="glass_highlight">Brillo del borde</string>
+    <string name="glass_shadow">Radio de la sombra</string>
+    <string name="glass_opacity">Opacidad de la superficie</string>
+    <string name="glass_opacity_description" formatted="false">Los colores translúcidos se mezclan con el fondo. Ajusta la opacidad al 100% para conservar el color de superficie seleccionado.</string>
+    <string name="glass_reset_parameters">Restablecer los parámetros del cristal</string>
+    <string name="glass_conversation_list">Lista de conversaciones con cristal esmerilado</string>
+    <string name="glass_settings_cards">Grupos y tarjetas de ajustes con cristal esmerilado</string>
+    <string name="glass_package_cards">Listas y botones de paquetes con cristal esmerilado</string>
+    <string name="glass_button_colors">Colores de la barra lateral y los paquetes</string>
+    <string name="glass_sidebar_background">Fondo de la barra lateral</string>
+    <string name="glass_sidebar_accent">Fondo de selección de la barra lateral</string>
+    <string name="glass_market_button_color">Fondo del botón del mercado</string>
+    <string name="glass_add_button_color">Fondo del botón para añadir plugins</string>
+    <string name="glass_default_color">Predeterminado</string>
+    <string name="glass_choose_color">Color</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">Tareas automatizadas</string>
 </resources>

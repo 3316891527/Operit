@@ -270,6 +270,8 @@ fun PhoneLayout(
                                                 enabled = drawerAppearance.waterGlassEnabled,
                                                 shape = drawerShape,
                                                 containerColor = drawerAppearance.containerColor,
+                                                // 侧栏保留已调整的低强度折射，聊天区域单独恢复原有效果。
+                                                subtleRefraction = true,
                                         )
                                         .zIndex(2f),
                         shape = drawerShape,

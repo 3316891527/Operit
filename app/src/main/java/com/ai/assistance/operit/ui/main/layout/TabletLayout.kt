@@ -125,6 +125,8 @@ fun TabletLayout(
                                                 enabled = drawerAppearance.waterGlassEnabled,
                                                 shape = MaterialTheme.shapes.medium,
                                                 containerColor = drawerAppearance.containerColor,
+                                                // 侧栏保留已调整的低强度折射，聊天区域单独恢复原有效果。
+                                                subtleRefraction = true,
                                         )
                                         .zIndex(2f), // 确保侧边栏在主内容之上
                         shadowElevation = if (drawerAppearance.waterGlassEnabled) 0.dp else 4.dp,

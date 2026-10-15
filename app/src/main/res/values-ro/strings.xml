@@ -8543,4 +8543,29 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="workflow_settings">Setările fluxului de lucru</string>
     <string name="workflow_status_enabled">Activat</string>
     <string name="workspace_html_export_desc">Selectează un folder de proiect web și exportă un pachet Android sau Windows</string>
+
+    <!-- 玻璃、按钮外观与侧栏工作流说明的本地化。 -->
+    <string name="glass_appearance_title">Aspectul sticlei</string>
+    <string name="glass_appearance_description">Ajustează efectele de sticlă activate și selectează separat fiecare zonă. Setările sunt salvate cu această temă.</string>
+    <string name="glass_preview">Previzualizarea sticlei</string>
+    <string name="glass_blur">Raza de estompare</string>
+    <string name="glass_edge">Lățimea marginii</string>
+    <string name="glass_highlight">Strălucirea marginii</string>
+    <string name="glass_shadow">Raza umbrei</string>
+    <string name="glass_opacity">Opacitatea suprafeței</string>
+    <string name="glass_opacity_description" formatted="false">Culorile translucide se amestecă cu fundalul. Setează opacitatea la 100% pentru a păstra culoarea de suprafață selectată.</string>
+    <string name="glass_reset_parameters">Resetează parametrii sticlei</string>
+    <string name="glass_conversation_list">Sticlă mată pentru lista de conversații</string>
+    <string name="glass_settings_cards">Sticlă mată pentru grupurile și cardurile de setări</string>
+    <string name="glass_package_cards">Sticlă mată pentru listele și butoanele pachetelor</string>
+    <string name="glass_button_colors">Culorile barei laterale și ale pachetelor</string>
+    <string name="glass_sidebar_background">Fundalul barei laterale</string>
+    <string name="glass_sidebar_accent">Fundalul selecției din bara laterală</string>
+    <string name="glass_market_button_color">Fundalul butonului magazinului</string>
+    <string name="glass_add_button_color">Fundalul butonului de adăugare a pluginurilor</string>
+    <string name="glass_default_color">Implicit</string>
+    <string name="glass_choose_color">Culoare</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">Sarcini de automatizare</string>
 </resources>

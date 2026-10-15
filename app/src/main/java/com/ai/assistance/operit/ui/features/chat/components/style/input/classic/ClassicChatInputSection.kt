@@ -282,6 +282,8 @@ fun ClassicChatInputSection(
                     enabled = inputLiquidGlassEnabled,
                     shape = containerShape,
                     containerColor = MaterialTheme.colorScheme.surface,
+                    // 保留输入框原有透镜，避免共享默认值变化移除折射。
+                    enableLens = true,
                 )
                 .clip(containerShape)
                 .background(

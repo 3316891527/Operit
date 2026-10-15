@@ -813,6 +813,8 @@ fun AgentChatInputSection(
                                 enabled = inputLiquidGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
+                                // 保留输入框原有透镜，避免共享默认值变化移除折射。
+                                enableLens = true,
                             )
                             .clip(inputCardShape)
                             .background(
@@ -1110,6 +1112,8 @@ fun AgentChatInputSection(
                                 enabled = inputLiquidGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
+                                // 保留输入框原有透镜，避免共享默认值变化移除折射。
+                                enableLens = true,
                             )
                             .clip(inputCardShape)
                             .background(

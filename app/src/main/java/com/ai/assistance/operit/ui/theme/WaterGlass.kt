@@ -27,6 +27,7 @@ fun Modifier.waterGlass(
     enabled: Boolean,
     shape: Shape = RoundedCornerShape(0.dp),
     containerColor: Color,
+    subtleRefraction: Boolean = false,
 ): Modifier {
     if (!enabled) {
         return this
@@ -77,10 +78,10 @@ fun Modifier.waterGlass(
         )
         .liquid(liquidState) {
             this.shape = shape
-            // 主题参数统一控制磨砂；保持中性饱和度与对比度，避免自定义颜色发灰发脏。
+            // 磨砂仍使用主题参数，恢复原有曲面与折射强度，保留水玻璃的视觉区分。
             this.frost = appearance.blurRadius.dp
-            this.curve = 0.08f
-            this.refraction = 0.02f
+            this.curve = if (subtleRefraction) 0.08f else if (isLightGlass) 0.40f else 0.30f
+            this.refraction = if (subtleRefraction) 0.02f else if (isLightGlass) 0.12f else 0.09f
             this.dispersion = 0.02f
             this.saturation = 1f
             this.contrast = 1f

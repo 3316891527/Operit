@@ -606,4 +606,29 @@
     <string name="workflow_settings">ワークフロー設定</string>
     <string name="workflow_status_enabled">有効</string>
     <string name="workspace_html_export_desc">Web プロジェクトのフォルダーを選択し、Android または Windows パッケージをエクスポートします</string>
+
+    <!-- 玻璃、按钮外观与侧栏工作流说明的本地化。 -->
+    <string name="glass_appearance_title">ガラスの外観</string>
+    <string name="glass_appearance_description">有効なガラス効果を調整し、適用する領域を個別に選択します。設定は現在のテーマに保存されます。</string>
+    <string name="glass_preview">ガラス効果のプレビュー</string>
+    <string name="glass_blur">ぼかし半径</string>
+    <string name="glass_edge">縁の幅</string>
+    <string name="glass_highlight">縁のハイライト</string>
+    <string name="glass_shadow">影の半径</string>
+    <string name="glass_opacity">表面の不透明度</string>
+    <string name="glass_opacity_description" formatted="false">半透明の色は背景と混ざります。不透明度を100%にすると、選択した表面の色を保てます。</string>
+    <string name="glass_reset_parameters">ガラスのパラメーターをリセット</string>
+    <string name="glass_conversation_list">会話一覧のすりガラス</string>
+    <string name="glass_settings_cards">設定グループとカードのすりガラス</string>
+    <string name="glass_package_cards">パッケージ一覧とボタンのすりガラス</string>
+    <string name="glass_button_colors">サイドバーとパッケージの配色</string>
+    <string name="glass_sidebar_background">サイドバーの背景</string>
+    <string name="glass_sidebar_accent">サイドバーの選択項目の背景</string>
+    <string name="glass_market_button_color">マーケットボタンの背景</string>
+    <string name="glass_add_button_color">プラグイン追加ボタンの背景</string>
+    <string name="glass_default_color">デフォルト</string>
+    <string name="glass_choose_color">色を選択</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">自動化タスク</string>
 </resources>

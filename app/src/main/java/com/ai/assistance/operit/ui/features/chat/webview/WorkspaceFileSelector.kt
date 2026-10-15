@@ -218,6 +218,8 @@ fun MentionSuggestionPanel(
                     enabled = panelLiquidGlassEnabled,
                     shape = panelShape,
                     containerColor = panelGlassTint,
+                    // 保留提及面板原有透镜，避免共享默认值变化移除折射。
+                    enableLens = true,
                 )
                 .clip(panelShape)
                 .background(

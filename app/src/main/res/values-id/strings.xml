@@ -7866,4 +7866,29 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="workflow_settings">Pengaturan Alur Kerja</string>
     <string name="workflow_status_enabled">Aktif</string>
     <string name="workspace_html_export_desc">Pilih folder proyek web dan ekspor paket Android atau Windows</string>
+
+    <!-- 玻璃、按钮外观与侧栏工作流说明的本地化。 -->
+    <string name="glass_appearance_title">Tampilan kaca</string>
+    <string name="glass_appearance_description">Sesuaikan efek kaca yang diaktifkan dan pilih setiap area secara terpisah. Pengaturan disimpan bersama tema ini.</string>
+    <string name="glass_preview">Pratinjau kaca</string>
+    <string name="glass_blur">Radius buram</string>
+    <string name="glass_edge">Lebar tepi</string>
+    <string name="glass_highlight">Sorotan tepi</string>
+    <string name="glass_shadow">Radius bayangan</string>
+    <string name="glass_opacity">Opasitas permukaan</string>
+    <string name="glass_opacity_description" formatted="false">Warna tembus cahaya menyatu dengan latar belakang. Atur opasitas ke 100% untuk mempertahankan warna permukaan yang dipilih.</string>
+    <string name="glass_reset_parameters">Reset parameter kaca</string>
+    <string name="glass_conversation_list">Kaca buram pada daftar percakapan</string>
+    <string name="glass_settings_cards">Kaca buram pada grup dan kartu pengaturan</string>
+    <string name="glass_package_cards">Kaca buram pada daftar dan tombol paket</string>
+    <string name="glass_button_colors">Warna bilah sisi dan paket</string>
+    <string name="glass_sidebar_background">Latar belakang bilah sisi</string>
+    <string name="glass_sidebar_accent">Latar belakang pilihan bilah sisi</string>
+    <string name="glass_market_button_color">Latar belakang tombol pasar</string>
+    <string name="glass_add_button_color">Latar belakang tombol tambah plugin</string>
+    <string name="glass_default_color">Default</string>
+    <string name="glass_choose_color">Warna</string>
+    <string name="glass_value_dp">%1$.1f dp</string>
+    <string name="glass_value_percent">%1$d%%</string>
+    <string name="sidebar_workflow_description">Tugas otomatis</string>
 </resources>
