@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.screens
 
+import com.ai.assistance.operit.ui.features.chat.components.animateScrollToEnd
 import android.content.ClipboardManager
 import android.os.Build
 import android.provider.Settings
@@ -393,7 +394,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val canDrawOverlays = remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
     // UI state
-    val scrollState = rememberScrollState()
+    val scrollState = rememberLazyListState()
     val historyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val historySidebarState = if (useMainSidebar) {
@@ -581,7 +582,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             ) {
                 try {
                     if (latestChatHistory.isNotEmpty()) {
-                        scrollState.animateScrollTo(scrollState.maxValue)
+                        scrollState.animateScrollToEnd()
                     }
                 } catch (e: Exception) {
                     // AppLogger.e("AIChatScreen", "自动滚动失败", e)
