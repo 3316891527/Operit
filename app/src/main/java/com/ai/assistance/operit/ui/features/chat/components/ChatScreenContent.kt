@@ -67,11 +67,17 @@ import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.markdownToPlainTextForCopy
 import com.ai.assistance.operit.ui.features.chat.components.MessageEditor
+import com.ai.assistance.operit.ui.features.chat.components.MessageTranslationDialog
 import com.ai.assistance.operit.ui.main.screens.GestureStateHolder
 import com.ai.assistance.operit.util.LatexMathMlConverter
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private data class MessageTranslationTarget(
+    val messageTimestamp: Long,
+    val text: String,
+)
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -181,6 +187,8 @@ fun ChatScreenContent(
     var exportErrorMessage by remember { mutableStateOf<String?>(null) }
     var webContentDir by remember { mutableStateOf<File?>(null) }
     var editingMessageType by remember { mutableStateOf<String?>(null) }
+    var translationTarget by remember { mutableStateOf<MessageTranslationTarget?>(null) }
+    val translationState by actualViewModel.translationState.collectAsState()
     var pendingRollbackIndex by remember { mutableStateOf<Int?>(null) }
     var pendingRewindIndex by remember { mutableStateOf<Int?>(null) }
     var pendingRewindContent by remember { mutableStateOf<String?>(null) }
@@ -224,6 +232,18 @@ fun ChatScreenContent(
             editingMessageContent.value = message.content
             editingMessageType = senderType
         }
+    }
+
+    val onTranslateMessageCallback = remember(actualViewModel, currentChatId) {
+        { messageTimestamp: Long, text: String ->
+            translationTarget = MessageTranslationTarget(messageTimestamp, text)
+            actualViewModel.clearTranslationState()
+        }
+    }
+    // 切换聊天或离开页面时取消翻译，防止译文写入新聊天的窗口。
+    DisposableEffect(actualViewModel, currentChatId) {
+        translationTarget = null
+        onDispose { actualViewModel.clearTranslationState() }
     }
 
     WorkspaceFileLinkHost(
@@ -274,6 +294,7 @@ fun ChatScreenContent(
                     },
                     onCreateBranch = { timestamp -> actualViewModel.createBranch(timestamp) },
                     onInsertSummary = { message -> actualViewModel.insertSummary(message) },
+                    onTranslateMessage = onTranslateMessageCallback,
                     onAutoReadMessage = { content -> actualViewModel.enableAutoReadAndSpeak(content) },
                     onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
                     autoScrollToBottom = autoScrollToBottom,
@@ -969,6 +990,34 @@ fun ChatScreenContent(
                             AppLogger.e("ChatScreenContent", "文件操作错误: ${e.message}", e)
                         }
                     }
+            )
+        }
+
+        translationTarget?.let { target ->
+            MessageTranslationDialog(
+                originalText = target.text,
+                translationState = translationState,
+                onTargetLanguageChanged = { targetLanguageCode ->
+                    actualViewModel.loadCachedTranslation(
+                        chatId = currentChatId,
+                        messageTimestamp = target.messageTimestamp,
+                        text = target.text,
+                        targetLanguageCode = targetLanguageCode,
+                    )
+                },
+                onTranslate = { targetLanguageCode, targetLanguagePromptName ->
+                    actualViewModel.translateMessage(
+                        chatId = currentChatId,
+                        messageTimestamp = target.messageTimestamp,
+                        text = target.text,
+                        targetLanguageCode = targetLanguageCode,
+                        targetLanguagePromptName = targetLanguagePromptName,
+                    )
+                },
+                onDismiss = {
+                    translationTarget = null
+                    actualViewModel.clearTranslationState()
+                },
             )
         }
 

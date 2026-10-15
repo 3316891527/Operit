@@ -12,7 +12,7 @@
 
 在个人仓库的 Android Build 工作流中选择 `feat/integrated-distribution` 分支，任务选择 `:app:verifyCiPreviewRelease`，勾选 `publish_release` 并填写 `release_notes`。`previous_tag` 留空时选择同一基础版本中版本号最高且早于目标的正式 Release；也可指定符合条件的标签。普通构建的 `publish_release` 默认为 false。
 
-发布前同时提高 `versionName` 中的 `+n` 和 Android `versionCode`，例如从 `1.12.2+1`、53 改为 `1.12.2+2`、54。应使用仓库工作流验证过的源码提交；Android Build 本身执行发布脚本回归和 APK 验证，Android Tests 另行覆盖应用 JVM 用例。
+此前已经分发 `1.12.2+2/+3/+4`，最高 versionCode 56；下一次正式更新使用 `1.12.2+5`，versionCode 至少 58，不再回到 `+2`。当前 11 项改动先以 `1.12.2+4`、57 运行 `assembleDebug` 和 Android Tests，调试包与 Kong 发行版并存；用户测试通过后再单独构建正式 `+5` 并发布。后续开发验证使用调试包，不发布测试 Release。Android versionCode 必须高于所有已经分发的同包名安装包；增量更新另需匹配已安装 APK 哈希及完整补丁链。应使用仓库工作流验证过的源码提交；Android Build 本身执行发布脚本回归和 APK 验证，Android Tests 另行覆盖应用 JVM 用例。
 
 工作流读取 APK 内的实际版本并创建对应 `v1.12.2+n` 标签，目标固定为本次构建提交。已有 Release 不会被覆盖。发布先创建草稿并上传全部文件，文件到齐后再公开。仓库的工作流 Token 需要 `contents: write`，由工作流配置声明。
 

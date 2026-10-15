@@ -30,6 +30,7 @@ class IntegratedDatabaseMigrationTest {
                 AppDatabase.MIGRATION_23_24,
                 AppDatabase.MIGRATION_24_25,
                 AppDatabase.MIGRATION_25_26,
+                AppDatabase.MIGRATION_26_27,
             )
             var version = startVersion
             for (migration in migrations.filter { it.startVersion >= startVersion }) {
@@ -38,7 +39,7 @@ class IntegratedDatabaseMigrationTest {
                 version = migration.endVersion
             }
             assertEquals(AppDatabase.DATABASE_VERSION, version)
-            assertEquals(26, version)
+            assertEquals(27, version)
 
             db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned FROM chats").use { cursor ->
                 assertTrue(cursor.moveToFirst())

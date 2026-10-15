@@ -4275,7 +4275,6 @@
     <string name="provider_deepseek">DeepSeek（深度求索）</string>
     <string name="provider_mistral">Mistral（Mistral AI）</string>
     <string name="provider_siliconflow">硅基流动（硅基流动）</string>
-    <string name="provider_iflow">心流（星辰千寻）</string>
     <string name="provider_openrouter">OpenRouter（OpenRouter）</string>
     <string name="provider_opencode">OpenCode（Anomaly Innovations）</string>
     <string name="provider_4router">4Router</string>
@@ -9206,4 +9205,49 @@
     <string name="packager_template_missing">未准备</string>
     <string name="packager_template_ready_detail">模板已就绪，可继续配置应用</string>
     <string name="packager_template_missing_detail">点击下载或导入此平台的模板</string>
+
+    <string name="function_thinking_title">思考模式</string>
+    <string name="function_thinking_required">此模型始终启用思考</string>
+    <string name="about_current_project">当前项目</string>
+    <string name="about_original_project">原项目</string>
+    <string name="about_original_developer">原项目开发者</string>
+    <string name="about_distribution_maintainer">当前发行版维护者</string>
+    <string name="about_distribution_feedback">当前发行版反馈</string>
+    <string name="resource_catalog_title">资源目录</string>
+    <string name="resource_catalog_speech">语音识别与合成</string>
+    <string name="resource_catalog_environment">运行环境</string>
+    <string name="resource_catalog_export">应用打包模板</string>
+    <string name="resource_source_distribution">当前发行版</string>
+
+    <!-- 原生消息翻译 -->
+    <string name="translate_message">翻译</string>
+    <string name="translation_dialog_title">翻译消息</string>
+    <string name="translation_target_language">目标语言</string>
+    <string name="translation_original">原文</string>
+    <string name="translation_result">译文</string>
+    <string name="translation_translate_action">开始翻译</string>
+    <string name="translation_retranslate_action">重新翻译</string>
+    <string name="translation_retry_action">重试</string>
+    <string name="translation_copy_original">复制原文</string>
+    <string name="translation_copy_result">复制译文</string>
+    <string name="translation_original_copied">原文已复制</string>
+    <string name="translation_result_copied">译文已复制</string>
+    <string name="translation_cached_result">已保存</string>
+    <string name="translation_model_not_configured">未配置可用的翻译模型，请先在功能模型配置中设置翻译模型。</string>
+    <string name="translation_waiting">选择目标语言后开始翻译</string>
+    <string name="translation_loading">正在翻译…</string>
+    <string name="translation_empty_result">翻译模型未返回内容</string>
+    <string name="translation_failed">翻译失败：%1$s</string>
+    <string name="translation_failed_unknown">未知错误</string>
+    <string name="translation_language_english">英语</string>
+    <string name="translation_language_korean">韩语</string>
+    <string name="translation_language_spanish">西班牙语</string>
+    <string name="translation_language_malay">马来语</string>
+    <string name="translation_language_indonesian">印度尼西亚语</string>
+    <string name="translation_language_portuguese">葡萄牙语（巴西）</string>
+    <string name="translation_language_romanian">罗马尼亚语</string>
+    <string name="translation_language_japanese">日语</string>
+    <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
+
+    <string name="chat_generated_at">生成于 %1$s</string>
 </resources>

@@ -1,5 +1,9 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.ai.assistance.operit.ui.features.resources
 
+import android.os.Build
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +16,9 @@ import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.SaveAlt
@@ -20,6 +27,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
@@ -44,17 +53,42 @@ internal fun OfflineResourcesContent(
     onExport: (String) -> Unit,
     onCancel: () -> Unit,
     onOpenSource: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
     LazyColumn(modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = RoundedCornerShape(24.dp)) {
-                Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.CloudDownload, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text(stringResource(R.string.resource_overview_title), style = MaterialTheme.typography.headlineSmall)
-                    Text(stringResource(R.string.resource_overview_description), style = MaterialTheme.typography.bodyMedium)
-                    Text(if (checking) stringResource(R.string.resource_checking) else {
-                        stringResource(R.string.resource_ready_count, groups.count { ready[it.id] == true }, groups.size)
-                    }, style = MaterialTheme.typography.labelLarge)
+            OutlinedCard(
+                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) {
+                            Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.CloudDownload, null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(stringResource(R.string.resource_overview_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.resource_overview_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        IconButton(onClick = onRefresh, enabled = active == null && !checking) {
+                            if (checking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                            else Icon(Icons.Default.Refresh, stringResource(R.string.resource_refresh))
+                        }
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ResourceMetadataTag(Icons.Default.Android, "Android")
+                        Build.SUPPORTED_ABIS.firstOrNull()?.let { ResourceMetadataTag(Icons.Default.Memory, it) }
+                        ResourceMetadataTag(Icons.Default.CheckCircle, stringResource(R.string.resource_ready_count, groups.count { ready[it.id] == true }, groups.size))
+                    }
+                    HorizontalDivider()
+                    TextButton(onClick = onOpenSource) {
+                        Icon(Icons.Default.OpenInNew, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.offline_resources_source))
+                    }
                 }
             }
         }
@@ -70,20 +104,32 @@ internal fun OfflineResourcesContent(
                 }
             }
         }
-        items(groups.sortedBy { it.id != requestedGroup }, key = { it.id }) { group ->
-            ResourceGroupCard(
-                group = group, ready = ready[group.id], busy = active != null || checking,
-                active = active == group.id, progress = progress, operationLabel = operationLabel,
-                ubuntuInstalled = group.id == OfflineResources.UBUNTU && ubuntuInstalled,
-                onDownload = { onDownload(group.id) }, onImport = { onImport(group.id) },
-                onExport = { onExport(group.id) }, onCancel = onCancel,
-            )
-        }
         item {
-            TextButton(onClick = onOpenSource, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.OpenInNew, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.offline_resources_source))
+            Text(stringResource(R.string.resource_catalog_title), Modifier.padding(top = 8.dp), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        }
+        val categories = listOf(
+            R.string.resource_catalog_speech to setOf(OfflineResources.SPEECH),
+            R.string.resource_catalog_environment to setOf(OfflineResources.UBUNTU),
+            R.string.resource_catalog_export to setOf(OfflineResources.ANDROID_EXPORT, OfflineResources.WINDOWS_EXPORT),
+        ).sortedBy { category -> category.second.none { it == requestedGroup } }
+        categories.forEach { (title, ids) ->
+            val entries = groups.filter { it.id in ids }.sortedBy { it.id != requestedGroup }
+            if (entries.isNotEmpty()) {
+                item(key = "section-$title") {
+                    Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        ResourceMetadataTag(null, entries.size.toString())
+                    }
+                }
+                items(entries, key = { it.id }) { group ->
+                    ResourceGroupCard(
+                        group = group, ready = ready[group.id], busy = active != null || checking,
+                        active = active == group.id, progress = progress, operationLabel = operationLabel,
+                        ubuntuInstalled = group.id == OfflineResources.UBUNTU && ubuntuInstalled,
+                        onDownload = { onDownload(group.id) }, onImport = { onImport(group.id) },
+                        onExport = { onExport(group.id) }, onCancel = onCancel,
+                    )
+                }
             }
         }
     }
@@ -109,8 +155,9 @@ private fun ResourceGroupCard(
         OfflineResources.WINDOWS_EXPORT -> R.string.resource_windows_description
         else -> error("Unknown resource group: ${group.id}")
     }
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+    OutlinedCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
@@ -118,11 +165,13 @@ private fun ResourceGroupCard(
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(group.label), style = MaterialTheme.typography.titleMedium)
-                    Text(String.format(Locale.getDefault(), "%.1f MiB", group.bytes / 1048576.0),
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Text(stringResource(description), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ResourceMetadataTag(Icons.Default.Storage, String.format(Locale.getDefault(), "%.1f MiB", group.bytes / 1048576.0))
+                ResourceMetadataTag(Icons.Default.CloudDownload, stringResource(R.string.resource_source_distribution))
+            }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (ready == null) CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
                 else Icon(if (ready) Icons.Default.CheckCircle else Icons.Default.CloudDownload, null,
@@ -141,20 +190,30 @@ private fun ResourceGroupCard(
                     Text(stringResource(R.string.resource_transfer_progress, operationLabel, (progress * 100).toInt()), style = MaterialTheme.typography.labelMedium)
                     TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
                 }
-            } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = if (ready == true) onExport else onDownload, enabled = !busy && ready != null,
-                    modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp)) {
-                    Icon(if (ready == true) Icons.Default.SaveAlt else Icons.Default.Download, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(if (ready == true) R.string.resource_save_backup else R.string.offline_resources_download))
-                }
-                OutlinedButton(onClick = onImport, enabled = !busy, modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp)) {
+            } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onImport, enabled = !busy) {
                     Icon(Icons.Default.FolderOpen, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.offline_resources_import))
                 }
+                Spacer(Modifier.weight(1f))
+                Button(onClick = if (ready == true) onExport else onDownload, enabled = !busy && ready != null) {
+                    Icon(if (ready == true) Icons.Default.SaveAlt else Icons.Default.Download, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(if (ready == true) R.string.resource_save_backup else R.string.offline_resources_download))
+                }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun ResourceMetadataTag(icon: ImageVector?, text: String) {
+    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)) {
+        Row(Modifier.padding(horizontal = 8.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            if (icon != null) Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

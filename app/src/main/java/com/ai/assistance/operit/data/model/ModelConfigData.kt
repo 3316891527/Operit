@@ -26,7 +26,6 @@ enum class ApiProviderType {
         DEEPSEEK, // DeepSeek（深度求索）
         MISTRAL, // Mistral（Mistral AI）
         SILICONFLOW, // 硅基流动（硅基流动）
-        IFLOW, // 心流（星辰千寻）
         OPENROUTER, // OpenRouter（OpenRouter）
         OPENCODE, // OpenCode（Anomaly Innovations）
         FOUR_ROUTER, // 4Router
@@ -78,7 +77,6 @@ enum class ApiProviderType {
                 DEEPSEEK,
                 MISTRAL,
                 SILICONFLOW,
-                IFLOW,
                 OPENROUTER,
                 OPENCODE,
                 FOUR_ROUTER,

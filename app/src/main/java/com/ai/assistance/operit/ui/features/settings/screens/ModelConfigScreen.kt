@@ -870,7 +870,6 @@ fun ModelConfigScreen(
                         configManager = configManager,
                         saveCoordinator = saveCoordinator,
                         keyAvailabilityTester = keyAvailabilityTester,
-                        showNotification = { message -> showNotification(message) }
                     )
                 }
 

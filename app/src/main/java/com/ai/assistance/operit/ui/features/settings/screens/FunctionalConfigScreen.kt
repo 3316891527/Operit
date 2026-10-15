@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.settings.functional.FunctionThinkingControls
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -832,8 +833,8 @@ fun FunctionConfigCard(
                     }
                 }
 
-                if (functionType == FunctionType.SUMMARY) {
-                    SummaryThinkingControls(
+                if (functionType != FunctionType.CHAT && functionType != FunctionType.MEMORY_EMBEDDING) {
+                    FunctionThinkingControls(
                             currentConfig = currentConfig,
                             currentModelIndex = currentModelIndex,
                             currentMapping = currentMapping,
@@ -1129,99 +1130,6 @@ private data class FunctionTestDisplay(
                     outcome = ModelConnectionTestOutcome.UNVERIFIED,
                     message = context.getString(unverifiedRes)
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryThinkingControls(
-        currentConfig: ModelConfigSummary?,
-        currentModelIndex: Int,
-        currentMapping: FunctionConfigMapping,
-        onThinkingChanged: (Boolean, String) -> Unit
-) {
-    val config = currentConfig ?: return
-    val modelName = getModelByIndex(config.modelName, currentModelIndex).ifBlank { config.modelName }
-    val mapping =
-            ThinkingQualityMappingRegistry.resolve(
-                    providerTypeId = config.apiProviderTypeId,
-                    modelName = modelName,
-                    apiEndpoint = config.apiEndpoint,
-                    thinkingConfigurations = config.thinkingConfigurations
-            )
-    if (mapping.control == ThinkingQualityControl.UNSUPPORTED) return
-
-    val selectedOptionId = mapping.resolveOptionId(currentMapping.thinkingOptionId, config.thinkingOptionId)
-    val thinkingEnabled = currentMapping.enableThinking || mapping.reasoningRequired
-    var menuExpanded by remember(config.id, modelName, mapping.control) { mutableStateOf(false) }
-    val selectedLabel =
-            mapping.optionFor(selectedOptionId)?.displayLabel
-                    ?: selectedOptionId.ifBlank { stringResource(id = R.string.function_summary_thinking_default_level) }
-
-    Spacer(modifier = Modifier.height(8.dp))
-    Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        OutlinedButton(
-                onClick = {
-                    if (!mapping.reasoningRequired) {
-                        onThinkingChanged(!thinkingEnabled, selectedOptionId)
-                    }
-                },
-                enabled = !mapping.reasoningRequired,
-                modifier = Modifier.height(32.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                shape = RoundedCornerShape(4.dp)
-        ) {
-            Text(
-                    text =
-                            if (thinkingEnabled) stringResource(id = R.string.function_summary_thinking_on)
-                            else stringResource(id = R.string.function_summary_thinking_off),
-                    style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        if (mapping.control == ThinkingQualityControl.LEVELS && mapping.options.isNotEmpty()) {
-            Box {
-                OutlinedButton(
-                        onClick = { menuExpanded = true },
-                        enabled = thinkingEnabled,
-                        modifier = Modifier.height(32.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                        shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(text = selectedLabel, style = MaterialTheme.typography.bodySmall)
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Icon(
-                            imageVector =
-                                    if (menuExpanded) Icons.Default.KeyboardArrowUp
-                                    else Icons.Default.KeyboardArrowDown,
-                            contentDescription = stringResource(id = R.string.function_summary_thinking_level),
-                            modifier = Modifier.size(14.dp)
-                    )
-                }
-                DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                ) {
-                    mapping.options.forEach { option ->
-                        DropdownMenuItem(
-                                text = {
-                                    Text(
-                                            text = option.displayLabel,
-                                            style = MaterialTheme.typography.bodySmall
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    onThinkingChanged(true, option.id)
-                                }
-                        )
-                    }
-                }
             }
         }
     }

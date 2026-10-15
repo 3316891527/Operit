@@ -147,7 +147,6 @@ private val genericCompatibleProviderOrder =
 private val modelAggregationProviderOrder =
     listOf(
         ApiProviderType.SILICONFLOW,
-        ApiProviderType.IFLOW,
         ApiProviderType.OPENROUTER,
         ApiProviderType.OPENCODE,
         ApiProviderType.FOUR_ROUTER,
@@ -1284,7 +1283,7 @@ fun ModelApiSettingsSection(
                             },
                             singleLine = true,
                             modifier =
-                                    Modifier.fillMaxWidth().padding(bottom = 12.dp).height(48.dp),
+                                    Modifier.fillMaxWidth().padding(bottom = 12.dp).heightIn(min = 56.dp),
                             colors =
                                     OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -1343,8 +1342,7 @@ fun ModelApiSettingsSection(
                                             modifier =
                                                 Modifier.fillMaxWidth()
                                                     .background(
-                                                        if (isDragging) MaterialTheme.colorScheme.surfaceVariant
-                                                        else MaterialTheme.colorScheme.surface
+                                                        Color.Transparent
                                                     )
                                                     .clickable {
                                                         val newSelection = selectedModels.value.toMutableSet()
@@ -1844,7 +1842,6 @@ internal fun getBuiltInProviderDisplayName(provider: ApiProviderType, context: a
         ApiProviderType.DEEPSEEK -> context.getString(R.string.provider_deepseek)
         ApiProviderType.MISTRAL -> context.getString(R.string.provider_mistral)
         ApiProviderType.SILICONFLOW -> context.getString(R.string.provider_siliconflow)
-        ApiProviderType.IFLOW -> context.getString(R.string.provider_iflow)
         ApiProviderType.OPENROUTER -> context.getString(R.string.provider_openrouter)
         ApiProviderType.OPENCODE -> context.getString(R.string.provider_opencode)
         ApiProviderType.FOUR_ROUTER -> context.getString(R.string.provider_4router)
@@ -2584,7 +2581,6 @@ private fun getProviderColor(providerTypeId: String): androidx.compose.ui.graphi
         ApiProviderType.DEEPSEEK -> MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
         ApiProviderType.MISTRAL -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.65f)
         ApiProviderType.SILICONFLOW -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
-        ApiProviderType.IFLOW -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.55f)
         ApiProviderType.OPENROUTER -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f)
         ApiProviderType.OPENCODE -> MaterialTheme.colorScheme.primary.copy(alpha = 0.68f)
         ApiProviderType.FOUR_ROUTER -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.56f)

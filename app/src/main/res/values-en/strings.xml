@@ -4282,7 +4282,6 @@
     <string name="provider_deepseek">DeepSeek (DeepSeek)</string>
     <string name="provider_mistral">Mistral (Mistral AI)</string>
     <string name="provider_siliconflow">SiliconFlow (SiliconFlow)</string>
-    <string name="provider_iflow">iFlow (Xingchen Qianxun)</string>
     <string name="provider_openrouter">OpenRouter (OpenRouter)</string>
     <string name="provider_opencode">OpenCode (Anomaly Innovations)</string>
     <string name="provider_4router">4Router</string>
@@ -9208,4 +9207,49 @@
     <string name="packager_template_missing">Not ready</string>
     <string name="packager_template_ready_detail">Template ready. Continue to app settings.</string>
     <string name="packager_template_missing_detail">Tap to download or import this template.</string>
+
+    <string name="function_thinking_title">Thinking</string>
+    <string name="function_thinking_required">This model always uses reasoning</string>
+    <string name="about_current_project">Current project</string>
+    <string name="about_original_project">Original project</string>
+    <string name="about_original_developer">Original developer</string>
+    <string name="about_distribution_maintainer">Distribution maintainer</string>
+    <string name="about_distribution_feedback">Distribution feedback</string>
+    <string name="resource_catalog_title">Resource catalog</string>
+    <string name="resource_catalog_speech">Speech recognition and synthesis</string>
+    <string name="resource_catalog_environment">Runtime environment</string>
+    <string name="resource_catalog_export">App packaging templates</string>
+    <string name="resource_source_distribution">Current distribution</string>
+
+    <!-- 原生消息翻译 -->
+    <string name="translate_message">Translate</string>
+    <string name="translation_dialog_title">Translate message</string>
+    <string name="translation_target_language">Target language</string>
+    <string name="translation_original">Original</string>
+    <string name="translation_result">Translation</string>
+    <string name="translation_translate_action">Translate</string>
+    <string name="translation_retranslate_action">Translate again</string>
+    <string name="translation_retry_action">Retry</string>
+    <string name="translation_copy_original">Copy original</string>
+    <string name="translation_copy_result">Copy translation</string>
+    <string name="translation_original_copied">Original copied</string>
+    <string name="translation_result_copied">Translation copied</string>
+    <string name="translation_cached_result">Saved</string>
+    <string name="translation_model_not_configured">Configure an available translation model in Functional Models first.</string>
+    <string name="translation_waiting">Select a target language to start translating</string>
+    <string name="translation_loading">Translating…</string>
+    <string name="translation_empty_result">The translation model returned no content</string>
+    <string name="translation_failed">Translation failed: %1$s</string>
+    <string name="translation_failed_unknown">Unknown error</string>
+    <string name="translation_language_english">English</string>
+    <string name="translation_language_korean">Korean</string>
+    <string name="translation_language_spanish">Spanish</string>
+    <string name="translation_language_malay">Malay</string>
+    <string name="translation_language_indonesian">Indonesian</string>
+    <string name="translation_language_portuguese">Portuguese (Brazil)</string>
+    <string name="translation_language_romanian">Romanian</string>
+    <string name="translation_language_japanese">Japanese</string>
+    <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
+
+    <string name="chat_generated_at">Generated at %1$s</string>
 </resources>

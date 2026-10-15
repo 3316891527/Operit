@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.enhance
 
 import android.content.Context
+import com.ai.assistance.operit.api.chat.enhance.thinking.FunctionalThinkingAIService
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.api.chat.llmprovider.AIService
 import com.ai.assistance.operit.api.chat.llmprovider.AIServiceFactory
@@ -156,7 +157,13 @@ class MultiServiceManager(private val context: Context) {
         val configMapping = functionalConfigManager.getConfigMappingForFunction(functionType)
         val config = modelConfigManager.getModelConfigFlow(configMapping.configId).first()
 
-        val service = createServiceFromConfig(config, configMapping.modelIndex)
+        val rawService = createServiceFromConfig(config, configMapping.modelIndex)
+        // 对话继续由输入栏逐次控制；其他生成类功能使用各自的思考映射。
+        val service = if (functionType == FunctionType.CHAT || functionType == FunctionType.MEMORY_EMBEDDING) {
+            rawService
+        } else {
+            FunctionalThinkingAIService(rawService) { getThinkingRequestForFunction(functionType) }
+        }
         val managedService = ManagedService(
             service = service,
             modelConfig = config

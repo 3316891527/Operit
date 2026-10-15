@@ -53,7 +53,6 @@ fun SettingsScreen(
         navigateToLanguageSettings: () -> Unit,
         navigateToSpeechServicesSettings: () -> Unit,
         navigateToExternalHttpChatSettings: () -> Unit,
-        navigateToPersonaCardGeneration: () -> Unit,
         navigateToWaifuModeSettings: () -> Unit,
         navigateToTokenUsageStatistics: () -> Unit,
         navigateToPerformanceMonitor: () -> Unit,
@@ -204,14 +203,6 @@ fun SettingsScreen(
                                 onClick = navigateToMemory
                         )
 
-                        // 新增：人设卡生成
-                        CompactSettingsItem(
-                                title = stringResource(R.string.persona_card_generation),
-                                subtitle = stringResource(R.string.persona_card_generation_desc),
-                                icon = Icons.Default.Face,
-                                onClick = navigateToPersonaCardGeneration
-                        )
-                        
                         // 新增：Waifu模式设置
                         CompactSettingsItem(
                                 title = stringResource(R.string.waifu_mode_settings),

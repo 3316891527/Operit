@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
+import androidx.compose.material.icons.filled.Translate
 import com.ai.assistance.operit.ui.features.chat.components.timeline.ChatMessageSlice
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -232,6 +233,7 @@ fun ChatArea(
     onToggleFavoriteMessage: ((Long, Boolean) -> Unit)? = null,
     onCreateBranch: ((Long) -> Unit)? = null, // 添加创建分支回调参数
     onInsertSummary: ((ChatMessage) -> Unit)? = null, // 添加插入总结回调参数
+    onTranslateMessage: ((Long, String) -> Unit)? = null,
     onMentionRoleFromAvatar: ((String) -> Unit)? = null, // 长按角色头像提及
     autoScrollToBottom: Boolean = true,
     onAutoScrollToBottomChange: ((Boolean) -> Unit)? = null,
@@ -430,6 +432,7 @@ fun ChatArea(
                     onToggleFavoriteMessage = onToggleFavoriteMessage,
                     onCreateBranch = onCreateBranch,
                     onInsertSummary = onInsertSummary,
+                    onTranslateMessage = onTranslateMessage,
                     onMentionRoleFromAvatar = onMentionRoleFromAvatar,
                     chatStyle = chatStyle,
                     showMessageTokenStats = showMessageTokenStats,
@@ -604,6 +607,7 @@ private fun MessageItem(
     onToggleFavoriteMessage: ((Long, Boolean) -> Unit)? = null,
     onCreateBranch: ((Long) -> Unit)? = null, // 添加创建分支回调
     onInsertSummary: ((ChatMessage) -> Unit)? = null, // 添加插入总结回调
+    onTranslateMessage: ((Long, String) -> Unit)? = null,
     onMentionRoleFromAvatar: ((String) -> Unit)? = null, // 长按角色头像提及
     chatStyle: ChatStyle, // 新增参数
     showMessageTokenStats: Boolean = false,
@@ -646,6 +650,10 @@ private fun MessageItem(
     // 只有用户和AI的消息才能被操作
     val isActionable = message.sender == "user" || message.sender == "ai"
     val isHiddenUserMessage = isHiddenUserPlaceholder(message)
+    val translatableText = remember(showContextMenu, message.content) {
+        // 长按后才提取现有消息片段，避免原生翻译增加首屏和滚动时的正文处理。
+        if (showContextMenu) cleanMessageContentForCopy(message.displaySections()) else ""
+    }
     var pluginMenuItems by remember(currentChatId, message.timestamp) {
         mutableStateOf<List<ChatMessageMenuItemDefinition>>(emptyList())
     }
@@ -1044,14 +1052,14 @@ private fun MessageItem(
             // 回复选项
             if (message.sender == "ai") {
                 DropdownMenuItem(
-                text = {
+                    text = {
                         Text(
                             stringResource(R.string.reply_message),
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = 13.sp
-                       )
-                },
-                onClick = {
+                        )
+                    },
+                    onClick = {
                         onReplyToMessage?.invoke(message)
                         showContextMenu = false
                     },
@@ -1059,6 +1067,31 @@ private fun MessageItem(
                         Icon(
                             imageVector = Icons.Default.Reply,
                             contentDescription = stringResource(R.string.reply_message),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    modifier = Modifier.height(36.dp)
+                )
+            }
+
+            if (onTranslateMessage != null && isActionable && !isHiddenUserMessage && translatableText.isNotBlank()) {
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(id = R.string.translate_message),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 13.sp
+                        )
+                    },
+                    onClick = {
+                        onTranslateMessage?.invoke(message.timestamp, translatableText)
+                        showContextMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Translate,
+                            contentDescription = stringResource(id = R.string.translate_message),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
@@ -1374,9 +1407,22 @@ private fun MessageFooterBar(
     val statsTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, end = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 4.dp, end = 12.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        // 时间紧接本条消息正文，明确标记生成时间，避免误读为下一条消息的信息。
+        if (showMessageTimestamp && hasDisplayableMessageTimestamp(message)) {
+            val completedAtText = remember(message.completedAt) {
+                formatMessageCompletionTime(message.completedAt)
+            }
+            Text(
+                text = stringResource(R.string.chat_generated_at, completedAtText),
+                modifier = Modifier.align(Alignment.Start),
+                style = MaterialTheme.typography.labelSmall,
+                color = statsTextColor,
+            )
+        }
+
         if (message.variantCount > 1) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -1434,18 +1480,7 @@ private fun MessageFooterBar(
             showMessageTokenSpeed = showMessageTokenSpeed,
         )
 
-        // 完成时间独立于详情的展开状态，显示开关继续沿用现有主题配置。
-        if (showMessageTimestamp && hasDisplayableMessageTimestamp(message)) {
-            val completedAtText = remember(message.completedAt) {
-                formatMessageCompletionTime(message.completedAt)
-            }
-            Text(
-                text = completedAtText,
-                modifier = Modifier.align(Alignment.End),
-                style = MaterialTheme.typography.labelSmall,
-                color = statsTextColor,
-            )
-        }
+
     }
 }
 

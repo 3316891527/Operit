@@ -168,6 +168,7 @@ fun DataStorageScreen(
             if (snapshot == null) {
                 item {
                     InitialScanState(
+                        modifier = Modifier.fillParentMaxSize(),
                         isScanning = state.isScanning,
                         errorMessage = state.errorMessage,
                         onRetry = storageViewModel::refresh,
@@ -280,15 +281,14 @@ fun DataStorageScreen(
 
 @Composable
 private fun InitialScanState(
+    modifier: Modifier = Modifier,
     isScanning: Boolean,
     errorMessage: String?,
     onRetry: () -> Unit,
 ) {
-    val containerColor = groupedContainerColor()
     Surface(
-        modifier = Modifier.fillMaxWidth().height(280.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = containerColor,
+        modifier = modifier,
+        color = Color.Transparent,
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),

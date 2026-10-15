@@ -40,7 +40,7 @@ import org.json.JSONObject
 private val Context.modelConfigDataStore: DataStore<Preferences> by
         versionedPreferencesDataStore(
                 name = "model_configs",
-                currentVersion = 4,
+                currentVersion = 5,
         ) { appContext ->
             preferenceSchemaMigration { version, preferences ->
                 when (version) {
@@ -48,6 +48,7 @@ private val Context.modelConfigDataStore: DataStore<Preferences> by
                     1 -> ModelConfigManager.migratePreferencesFromVersionOne(preferences)
                     2 -> ModelConfigManager.migratePreferencesFromVersionTwo(preferences)
                     3 -> ModelConfigManager.migratePreferencesFromVersionThree(preferences)
+                    4 -> ModelConfigManager.migratePreferencesFromVersionFour(preferences)
                     else -> missingPreferencesSchemaMigration(version)
                 }
             }
@@ -158,7 +159,7 @@ class ModelConfigManager(
             configIds.forEach { configId ->
                 val configKey = stringPreferencesKey("config_${configId}")
                 val configJson = preferences[configKey] ?: return@forEach
-                val config = json.decodeFromString<ModelConfigData>(configJson)
+                val config = json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(configJson))
                 val currentThinkingConfigurations = config.thinkingConfigurations.trim()
                 val thinkingConfigurations =
                         if (currentThinkingConfigurations.isNotEmpty() && currentThinkingConfigurations != "[]") {
@@ -193,7 +194,7 @@ class ModelConfigManager(
             configIds.forEach { configId ->
                 val configKey = stringPreferencesKey("config_${configId}")
                 val configJson = preferences[configKey] ?: return@forEach
-                val config = json.decodeFromString<ModelConfigData>(configJson)
+                val config = json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(configJson))
                 val providerTypeId = config.apiProviderTypeId.trim().uppercase(Locale.US)
                 if (providerTypeId !in OPENAI_CHAT_PROVIDER_TYPES) {
                     return@forEach
@@ -297,6 +298,17 @@ class ModelConfigManager(
             }
         }
 
+        internal fun migratePreferencesFromVersionFour(preferences: MutablePreferences) {
+            val configIds = preferences[CONFIG_LIST_KEY]?.let { json.decodeFromString<List<String>>(it) }
+                ?: emptyList()
+            configIds.forEach { configId ->
+                val key = stringPreferencesKey("config_${configId}")
+                val original = preferences[key] ?: return@forEach
+                val migrated = RetiredProviderMigration.rewriteConfig(original)
+                if (migrated != original) preferences[key] = migrated
+            }
+        }
+
         internal fun migratePreferencesFromVersionThree(preferences: MutablePreferences) {
             val configIds = preferences[CONFIG_LIST_KEY]?.let { json.decodeFromString<List<String>>(it) }
                     ?: emptyList()
@@ -304,7 +316,7 @@ class ModelConfigManager(
             configIds.forEach { configId ->
                 val configKey = stringPreferencesKey("config_${configId}")
                 val configJson = preferences[configKey] ?: return@forEach
-                val config = json.decodeFromString<ModelConfigData>(configJson)
+                val config = json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(configJson))
                 if (!isDeepSeekProvider(config.apiProviderTypeId)) {
                     return@forEach
                 }
@@ -500,7 +512,7 @@ class ModelConfigManager(
             val config =
                     if (configJson != null) {
                         try {
-                            normalizeConfig(json.decodeFromString<ModelConfigData>(configJson))
+                            normalizeConfig(json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(configJson)))
                         } catch (_: Exception) {
                             fallbackConfigFor(configId)
                         }
@@ -557,7 +569,7 @@ class ModelConfigManager(
             val configJson = preferences[configKey]
             if (configJson != null) {
                 try {
-                    normalizeConfig(json.decodeFromString<ModelConfigData>(configJson))
+                    normalizeConfig(json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(configJson)))
                 } catch (e: Exception) {
                     // 如果解析失败，回退到创建一个新配置
                     if (configId == DEFAULT_CONFIG_ID) {
@@ -588,7 +600,7 @@ class ModelConfigManager(
                         val configJson = preferences[configKey]
                         if (configJson != null) {
                             try {
-                                json.decodeFromString<ModelConfigData>(configJson)
+                                json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(configJson))
                             } catch (e: Exception) {
                                 if (configId == DEFAULT_CONFIG_ID) {
                                     createFreshDefaultConfig()
@@ -793,7 +805,7 @@ class ModelConfigManager(
     }
 
     private fun decodeImportedConfigs(jsonContent: String): ModelConfigExport {
-        val trimmed = jsonContent.trim()
+        val trimmed = RetiredProviderMigration.rewriteExport(jsonContent.trim())
         if (trimmed.startsWith("{")) {
             return json.decodeFromString<ModelConfigExport>(trimmed)
         }
@@ -828,7 +840,7 @@ class ModelConfigManager(
         return preferences[stringPreferencesKey("config_${configId}")]
                 ?.let {
                     runCatching {
-                        normalizeConfig(json.decodeFromString<ModelConfigData>(it))
+                        normalizeConfig(json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(it)))
                     }.getOrNull()
                 }
                 ?: fallbackConfigFor(configId)

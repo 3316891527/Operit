@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.data.db
 
+import com.ai.assistance.operit.data.dao.MessageTranslationDao
+import com.ai.assistance.operit.data.model.MessageTranslationEntity
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import com.ai.assistance.operit.data.chat.folders.ChatFolder
@@ -25,7 +27,7 @@ import com.ai.assistance.operit.util.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 26
+private const val APP_DATABASE_VERSION = 27
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
@@ -34,6 +36,7 @@ private const val APP_DATABASE_VERSION = 26
         ChatFolder::class,
         MessageEntity::class,
         MessageVariantEntity::class,
+        MessageTranslationEntity::class,
         TokenUsageRecordEntity::class,
         TokenStatsModelEntity::class,
         ApiKeyAttemptRecordEntity::class,
@@ -49,6 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
     /** 获取消息DAO */
     abstract fun messageDao(): MessageDao
     abstract fun messageVariantDao(): MessageVariantDao
+    abstract fun messageTranslationDao(): MessageTranslationDao
     abstract fun chatContentDao(): ChatContentDao
     abstract fun tokenUsageDao(): TokenUsageDao
     abstract fun apiKeyAttemptDao(): ApiKeyAttemptDao
@@ -58,6 +62,31 @@ abstract class AppDatabase : RoomDatabase() {
 
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        /** v26 → v27：新增消息翻译缓存，保留已有聊天及统计数据。 */
+        internal val MIGRATION_26_27 =
+            object : Migration(26, 27) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        """
+                            CREATE TABLE IF NOT EXISTS `message_translations` (
+                                `chatId` TEXT NOT NULL,
+                                `messageTimestamp` INTEGER NOT NULL,
+                                `targetLanguageCode` TEXT NOT NULL,
+                                `sourceTextHash` TEXT NOT NULL,
+                                `translatedText` TEXT NOT NULL,
+                                `updatedAt` INTEGER NOT NULL,
+                                PRIMARY KEY(`chatId`, `messageTimestamp`, `targetLanguageCode`),
+                                FOREIGN KEY(`chatId`) REFERENCES `chats`(`id`) ON DELETE CASCADE
+                            )
+                        """.trimIndent()
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_message_translations_chatId` " +
+                            "ON `message_translations` (`chatId`)"
+                    )
+                }
+            }
 
         // 定义从版本1到2的迁移
         private val MIGRATION_1_2 =
@@ -673,7 +702,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_22_23,
                     MIGRATION_23_24,
                     MIGRATION_24_25,
-                    MIGRATION_25_26
+                    MIGRATION_25_26,
+                    MIGRATION_26_27
                 )
                 .build()
 

@@ -3277,7 +3277,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="provider_deepseek">DeepSeek (DeepSeek)</string>
     <string name="provider_mistral">Mistral (Mistral AI)</string>
     <string name="provider_siliconflow">SiliconFlow (SiliconFlow)</string>
-    <string name="provider_iflow">iFlow (Xingchen Qianxun)</string>
     <string name="provider_openrouter">OpenRouter (OpenRouter)</string>
     <string name="provider_opencode">OpenCode (Anomaly Innovations)</string>
     <string name="provider_infiniai">Infini-AI (Infini-AI)</string>

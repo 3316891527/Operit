@@ -1,5 +1,10 @@
 package com.ai.assistance.operit.api.chat.enhance
 
+import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.cancelAndJoin
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
@@ -71,6 +76,7 @@ class ConversationService(
 
     companion object {
         private const val TAG = "ConversationService"
+        private const val TRANSLATION_STREAM_UPDATE_INTERVAL_MS = 500L
         private const val APPLY_FILE_TOOL_NAME = "apply_file"
         private val fileRequestContentRegex = Regex(
             """<file-request-content\b[^>]*><!\[CDATA\[(.*?)\]\]></file-request-content>""",
@@ -1135,6 +1141,8 @@ class ConversationService(
         text: String,
         multiServiceManager: MultiServiceManager,
         recordTokenUsage: Boolean = true,
+        onUpdate: suspend (String) -> Unit = {},
+        onRetryError: suspend (attempt: Int, maxAttempts: Int, error: String) -> Unit = { _, _, _ -> },
     ): String {
         val currentLanguage = LocaleUtils.getCurrentLanguage(context)
         
@@ -1152,48 +1160,175 @@ class ConversationService(
             else -> context.getString(R.string.conversation_language_chinese) // 默认翻译为中文
         }
         
-        val translationPrompt = """
-${FunctionalPrompts.translationUserPrompt(targetLanguage, text)}
-        """.trim()
-        
-        val chatHistory = listOf(
-            PromptTurn(
-                kind = PromptTurnKind.SYSTEM,
-                content = FunctionalPrompts.translationSystemPrompt()
-            )
+        return translateText(
+            text = text,
+            targetLanguage = targetLanguage,
+            multiServiceManager = multiServiceManager,
+            recordTokenUsage = recordTokenUsage,
+            onUpdate = onUpdate,
+            onRetryError = onRetryError,
         )
-        
-        val contentBuilder = StringBuilder()
-        
-        try {
-            // 获取翻译功能的AIService实例
-            val translationService = multiServiceManager.getServiceForFunction(FunctionType.TRANSLATION)
-            
-            // 获取模型参数
-            val modelParameters = multiServiceManager.getModelParametersForFunction(FunctionType.TRANSLATION)
-            
-            val stream = translationService.sendMessage(
-                context = context,
-                chatHistory = chatHistory + PromptTurn(kind = PromptTurnKind.USER, content = translationPrompt),
-                modelParameters = modelParameters,
-                recordTokenUsage = recordTokenUsage,
-            )
-            
-            collectRevisableContent(
-                stream = stream,
-                onChunk = { contentBuilder.append(it) },
-                onRollback = { content ->
-                    contentBuilder.setLength(0)
-                    contentBuilder.append(content)
-                },
-            )
-            
-            return contentBuilder.toString().trim()
-        } catch (e: Exception) {
-            throw e
-        }
     }
 
+    suspend fun translateText(
+        text: String,
+        targetLanguage: String,
+        multiServiceManager: MultiServiceManager,
+        recordTokenUsage: Boolean = true,
+        onUpdate: suspend (String) -> Unit = {},
+        onRetryError: suspend (attempt: Int, maxAttempts: Int, error: String) -> Unit = { _, _, _ -> },
+    ): String {
+        val translationConfig =
+            multiServiceManager.getModelConfigForFunction(FunctionType.TRANSLATION)
+        if (translationConfig.modelName.split(",").none { it.isNotBlank() }) {
+            throw TranslationModelNotConfiguredException()
+        }
+
+        val translationPrompt =
+            FunctionalPrompts.translationUserPrompt(targetLanguage, text)
+        val chatHistory =
+            listOf(
+                PromptTurn(
+                    kind = PromptTurnKind.SYSTEM,
+                    content = FunctionalPrompts.translationSystemPrompt()
+                )
+            )
+        // 租约保证更换模型配置时，正在收集的翻译流不会被提前释放。
+        val translationLease = multiServiceManager.acquireServiceForFunction(FunctionType.TRANSLATION)
+        val translationService = translationLease.service
+        val modelParameters = translationLease.modelParameters
+        val maxRetryAttempts = LlmRetryPolicy.MAX_RETRY_ATTEMPTS
+        var reportedRetryCount = 0
+
+        try {
+            val stream =
+                translationService.sendMessage(
+                    context = context,
+                    chatHistory =
+                        chatHistory +
+                            PromptTurn(kind = PromptTurnKind.USER, content = translationPrompt),
+                    modelParameters = modelParameters,
+                    enableRetry = true,
+                    recordTokenUsage = recordTokenUsage,
+                    onNonFatalError = { error ->
+                        // 密钥池静默换钥使用空提示，不将其误报为未知错误。
+                        if (error.isNotBlank()) {
+                            reportedRetryCount =
+                                (reportedRetryCount + 1).coerceAtMost(maxRetryAttempts)
+                            onRetryError(reportedRetryCount, maxRetryAttempts, error)
+                        }
+                    },
+                )
+
+            val revisableStream = stream as? TextStreamEventCarrier
+            val translatedContent =
+                if (revisableStream == null) {
+                    val contentBuilder = StringBuilder()
+                    var lastPublishedAt = 0L
+                    var lastPublishedContent = ""
+
+                    suspend fun publishCurrentContent(force: Boolean = false) {
+                        val now = System.currentTimeMillis()
+                        val snapshot = ChatUtils.removeThinkingContent(contentBuilder.toString())
+                        if (snapshot == lastPublishedContent) return
+                        if (!force &&
+                            lastPublishedAt != 0L &&
+                            now - lastPublishedAt < TRANSLATION_STREAM_UPDATE_INTERVAL_MS
+                        ) {
+                            return
+                        }
+                        lastPublishedAt = now
+                        lastPublishedContent = snapshot
+                        onUpdate(snapshot)
+                    }
+
+                    stream.collect { content ->
+                        contentBuilder.append(content)
+                        publishCurrentContent()
+                    }
+                    publishCurrentContent(force = true)
+                    contentBuilder.toString()
+                } else {
+                    val revisionTracker = TextStreamRevisionTracker()
+                    val revisionMutex = Mutex()
+                    var lastPublishedAt = 0L
+                    var lastPublishedContent = ""
+
+                    suspend fun publishCurrentContent(force: Boolean = false) {
+                        val snapshot = revisionMutex.withLock {
+                            val now = System.currentTimeMillis()
+                            val content = ChatUtils.removeThinkingContent(revisionTracker.currentContent().toString())
+                            if (content == lastPublishedContent) {
+                                null
+                            } else if (!force &&
+                                lastPublishedAt != 0L &&
+                                now - lastPublishedAt < TRANSLATION_STREAM_UPDATE_INTERVAL_MS
+                            ) {
+                                null
+                            } else {
+                                lastPublishedAt = now
+                                lastPublishedContent = content
+                                content
+                            }
+                        }
+                        snapshot?.let { onUpdate(it) }
+                    }
+
+                    coroutineScope {
+                        val revisionJob = launch {
+                            revisableStream.eventChannel.collect { event ->
+                                val shouldPublish = revisionMutex.withLock {
+                                    when (event.eventType) {
+                                        TextStreamEventType.SAVEPOINT -> {
+                                            revisionTracker.savepoint(event.id)
+                                            false
+                                        }
+                                        TextStreamEventType.ROLLBACK -> {
+                                            revisionTracker.rollback(event.id)
+                                            true
+                                        }
+                                    }
+                                }
+                                if (shouldPublish) {
+                                    // 重试撤销后立即移除失败尝试的译文，避免界面显示重复内容。
+                                    publishCurrentContent(force = true)
+                                }
+                            }
+                        }
+                        try {
+                            stream.collect { content ->
+                                revisionMutex.withLock {
+                                    revisionTracker.append(content)
+                                }
+                                publishCurrentContent()
+                            }
+                        } finally {
+                            revisionJob.cancelAndJoin()
+                        }
+                    }
+                    publishCurrentContent(force = true)
+                    revisionTracker.currentContent().toString()
+                }
+            return ChatUtils.removeThinkingContent(translatedContent).trim()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // 提供商通过 onNonFatalError 通知重试；最终失败也需向界面报告。
+            if (reportedRetryCount > 0) {
+                onRetryError(
+                    reportedRetryCount,
+                    maxRetryAttempts,
+                    e.message?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.translation_failed_unknown)
+                )
+            }
+            throw e
+        } finally {
+            withContext(NonCancellable) {
+                translationLease.close()
+            }
+        }
+    }
     /**
      * 自动生成工具包描述
      * @param pluginName 工具包名称

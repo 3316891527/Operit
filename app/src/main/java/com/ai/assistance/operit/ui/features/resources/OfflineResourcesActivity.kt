@@ -125,11 +125,6 @@ class OfflineResourcesActivity : ComponentActivity() {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(if (active != null) R.string.cancel else R.string.back))
                     }
                 },
-                actions = {
-                    IconButton(onClick = ::refresh, enabled = active == null && !checking) {
-                        Icon(Icons.Default.Refresh, stringResource(R.string.resource_refresh))
-                    }
-                },
             )
         }) { padding ->
             OfflineResourcesContent(
@@ -147,6 +142,7 @@ class OfflineResourcesActivity : ComponentActivity() {
                     exportLauncher.launch("operit-$id-resources-v1.zip")
                 },
                 onCancel = { job?.cancel() },
+                onRefresh = ::refresh,
                 onOpenSource = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(OfflineResources.RELEASE_URL))) },
             )
         }

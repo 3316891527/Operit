@@ -59,7 +59,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
-private const val GITHUB_PROJECT_URL = "https://github.com/AAswordman/Operit"
+private const val UPSTREAM_PROJECT_URL = "https://github.com/AAswordman/Operit"
+private const val CURRENT_PROJECT_URL = "https://github.com/3316891527/Operit"
 
 private enum class PatchUpdatePhase {
     SELECTING_MIRROR,
@@ -500,6 +501,7 @@ fun AboutScreen(
 
     // 添加开源许可对话框状态
     var showLicenseDialog by remember { mutableStateOf(false) }
+    var projectMenuExpanded by remember { mutableStateOf(false) }
 
     // 获取应用版本信息
     val appVersion = remember {
@@ -962,18 +964,37 @@ fun AboutScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(start = 66.dp))
 
-                    SettingsRow(
-                        icon = Icons.Default.Language,
-                        iconTint = MaterialTheme.colorScheme.secondary,
-                        title = stringResource(id = R.string.project_url),
-                        subtitleText = GITHUB_PROJECT_URL,
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_PROJECT_URL)).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    Box {
+                        SettingsRow(
+                            icon = Icons.Default.Language,
+                            iconTint = MaterialTheme.colorScheme.secondary,
+                            title = stringResource(R.string.project_url),
+                            subtitleText = "3316891527/Operit",
+                            trailing = {
+                                Icon(if (projectMenuExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, null)
+                            },
+                            onClick = { projectMenuExpanded = true },
+                        )
+                        DropdownMenu(expanded = projectMenuExpanded, onDismissRequest = { projectMenuExpanded = false }) {
+                            listOf(
+                                R.string.about_current_project to CURRENT_PROJECT_URL,
+                                R.string.about_original_project to UPSTREAM_PROJECT_URL,
+                            ).forEach { (label, url) ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(stringResource(label))
+                                            Text(url, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    },
+                                    onClick = {
+                                        projectMenuExpanded = false
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                    },
+                                )
                             }
-                            context.startActivity(intent)
                         }
-                    )
+                    }
 
                     HorizontalDivider(modifier = Modifier.padding(start = 66.dp))
 
@@ -982,7 +1003,7 @@ fun AboutScreen(
                         iconTint = MaterialTheme.colorScheme.secondary,
                         title = stringResource(id = R.string.star_on_github),
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_PROJECT_URL)).apply {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(CURRENT_PROJECT_URL)).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             context.startActivity(intent)
@@ -1023,8 +1044,9 @@ fun AboutScreen(
                     SettingsRow(
                         icon = Icons.Default.Email,
                         iconTint = MaterialTheme.colorScheme.primary,
-                        title = stringResource(id = R.string.contact),
-                        subtitleText = stringResource(id = R.string.about_contact)
+                        title = stringResource(R.string.about_distribution_feedback),
+                        subtitleText = "3316891527/Operit · GitHub Issues",
+                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("$CURRENT_PROJECT_URL/issues"))) }
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(start = 66.dp))
@@ -1032,7 +1054,7 @@ fun AboutScreen(
                     SettingsRow(
                         icon = Icons.Default.Person,
                         iconTint = MaterialTheme.colorScheme.primary,
-                        title = stringResource(id = R.string.developer),
+                        title = stringResource(R.string.about_original_developer),
                         subtitleContent = {
                             HtmlText(
                                 html = stringResource(id = R.string.about_developer),
@@ -1041,6 +1063,15 @@ fun AboutScreen(
                                 )
                             )
                         }
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(start = 66.dp))
+                    SettingsRow(
+                        icon = Icons.Default.Person,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        title = stringResource(R.string.about_distribution_maintainer),
+                        subtitleText = "3316891527",
+                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/3316891527"))) },
                     )
                 }
             }

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.keypool
 
+import android.widget.Toast
+
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -96,7 +98,6 @@ fun ApiKeyPoolSettingsSection(
     configManager: ModelConfigManager,
     saveCoordinator: ModelConfigSaveCoordinator,
     keyAvailabilityTester: ApiKeyPoolAvailabilityTester,
-    showNotification: (String) -> Unit
 ) {
     val hidesApiKeyPool =
         ApiProviderType.fromProviderTypeId(config.apiProviderTypeId)
@@ -104,6 +105,9 @@ fun ApiKeyPoolSettingsSection(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
 
     var useApiKeyPool by remember(config.id) { mutableStateOf(config.useMultipleApiKeys) }
     var apiKeyPool by remember(config.id) { mutableStateOf(config.apiKeyPool) }
@@ -146,13 +150,13 @@ fun ApiKeyPoolSettingsSection(
                 keyAvailabilityTester.pauseAndJoin()
                 persistApiKeyPool(state)
                 if (!successMessage.isNullOrBlank()) {
-                    showNotification(successMessage)
+                    showToast(successMessage)
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 AppLogger.e("ApiKeyPoolSettingsSection", "保存 API Key 池失败", e)
-                showNotification(context.getString(R.string.save_failed))
+                showToast(context.getString(R.string.save_failed))
             }
         }
     }
@@ -164,7 +168,7 @@ fun ApiKeyPoolSettingsSection(
         keyAvailabilityTester.pauseAndJoin()
         persistApiKeyPool(buildApiKeyPoolSaveState())
         if (showSuccess) {
-            showNotification(context.getString(R.string.api_key_pool_saved))
+            showToast(context.getString(R.string.api_key_pool_saved))
         }
     }
 
@@ -172,7 +176,7 @@ fun ApiKeyPoolSettingsSection(
         scope.launch {
             try {
                 if (keys.isEmpty()) {
-                    showNotification(context.getString(R.string.no_valid_keys_found))
+                    showToast(context.getString(R.string.no_valid_keys_found))
                     return@launch
                 }
                 val content = keys.joinToString("\n") { it.key }
@@ -180,9 +184,9 @@ fun ApiKeyPoolSettingsSection(
                     outputStream.write(content.toByteArray())
                 } ?: throw IllegalStateException("openOutputStream returned null")
 
-                showNotification(context.getString(R.string.exported_keys_count, keys.size))
+                showToast(context.getString(R.string.exported_keys_count, keys.size))
             } catch (e: Exception) {
-                showNotification(context.getString(R.string.export_keys_failed) + ": ${e.message}")
+                showToast(context.getString(R.string.export_keys_failed) + ": ${e.message}")
             }
         }
     }
@@ -201,7 +205,7 @@ fun ApiKeyPoolSettingsSection(
                         .filter { it.isNotBlank() }
 
                     if (keys.isEmpty()) {
-                        showNotification(context.getString(R.string.no_valid_keys_found))
+                        showToast(context.getString(R.string.no_valid_keys_found))
                         return@launch
                     }
 
@@ -216,9 +220,9 @@ fun ApiKeyPoolSettingsSection(
 
                     apiKeyPool = apiKeyPool + newKeys
                     saveChanges()
-                    showNotification(context.getString(R.string.imported_keys_count, keys.size))
+                    showToast(context.getString(R.string.imported_keys_count, keys.size))
                 } catch (e: Exception) {
-                    showNotification(context.getString(R.string.batch_import_failed) + ": ${e.message}")
+                    showToast(context.getString(R.string.batch_import_failed) + ": ${e.message}")
                 }
             }
         }
@@ -242,7 +246,7 @@ fun ApiKeyPoolSettingsSection(
 
     fun openExportSheet() {
         if (apiKeyPool.isEmpty()) {
-            showNotification(context.getString(R.string.no_valid_keys_found))
+            showToast(context.getString(R.string.no_valid_keys_found))
             return
         }
         selectionMode = ApiKeyPoolSelectionMode.EXPORT
@@ -250,7 +254,7 @@ fun ApiKeyPoolSettingsSection(
 
     fun openDeleteSheet() {
         if (apiKeyPool.isEmpty()) {
-            showNotification(context.getString(R.string.no_valid_keys_found))
+            showToast(context.getString(R.string.no_valid_keys_found))
             return
         }
         selectionMode = ApiKeyPoolSelectionMode.DELETE
