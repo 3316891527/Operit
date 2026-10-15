@@ -47,7 +47,6 @@ StreamMarkdownFencedCodeBlockPlugin::StreamMarkdownFencedCodeBlockPlugin(bool in
         : includeFences_(includeFences) {
     reset();
 }
-
 PluginState StreamMarkdownFencedCodeBlockPlugin::state() const { return state_; }
 
 bool StreamMarkdownFencedCodeBlockPlugin::initPlugin() {
@@ -60,10 +59,11 @@ void StreamMarkdownFencedCodeBlockPlugin::reset() {
     fenceLen_ = 0;
     openingFenceLen_ = 0;
     fenceChar_ = 0;
-    readingOpeningFence_ = false;
-    endFenceWhitespace_ = false;
+    fenceIndent_ = 0;
     isMatchingEndFence_ = false;
     hasStartedMatchingFence_ = false;
+    isReadingFenceInfo_ = false;
+    hasFenceTrailingWhitespace_ = false;
 }
 
 bool StreamMarkdownFencedCodeBlockPlugin::processChar(char16_t c, bool atStartOfLine) {
@@ -71,57 +71,103 @@ bool StreamMarkdownFencedCodeBlockPlugin::processChar(char16_t c, bool atStartOf
         if (atStartOfLine) {
             isMatchingEndFence_ = true;
             hasStartedMatchingFence_ = false;
-            endFenceWhitespace_ = false;
             fenceLen_ = 0;
+            fenceIndent_ = 0;
+            hasFenceTrailingWhitespace_ = false;
         }
-        if (!isMatchingEndFence_) return true;
-        if (!hasStartedMatchingFence_ && c == u' ') return includeFences_;
-        hasStartedMatchingFence_ = true;
-        if (c == fenceChar_ && !endFenceWhitespace_) {
-            ++fenceLen_;
-            return includeFences_;
-        }
-        if (c == u'\n') {
-            if (fenceLen_ >= openingFenceLen_) {
-                reset();
+
+        if (isMatchingEndFence_) {
+            if (!hasStartedMatchingFence_) {
+                if (c == u' ') {
+                    fenceIndent_ += 1;
+                    if (fenceIndent_ > 3) {
+                        isMatchingEndFence_ = false;
+                        return true;
+                    }
+                    return includeFences_;
+                }
+                hasStartedMatchingFence_ = true;
+            }
+
+            if (c == fenceChar_ && !hasFenceTrailingWhitespace_) {
+                fenceLen_ += 1;
                 return includeFences_;
             }
+
+            if (fenceLen_ >= openingFenceLen_ &&
+                (c == u' ' || c == u'\t' || c == u'\r')) {
+                hasFenceTrailingWhitespace_ = true;
+                return includeFences_;
+            }
+
+            if (c == u'\n') {
+                // 只在整行结束且同类围栏字符数量足够时闭合，避免代码正文提前退出。
+                if (fenceLen_ >= openingFenceLen_) {
+                    reset();
+                    return includeFences_;
+                }
+                // 当前行不是结束围栏
+                isMatchingEndFence_ = false;
+                fenceLen_ = 0;
+                return true;
+            }
+
+            // 非围栏字符使本行结束匹配失效
             isMatchingEndFence_ = false;
+            fenceLen_ = 0;
             return true;
         }
-        if ((c == u' ' || c == u'\t' || c == u'\r') && fenceLen_ >= openingFenceLen_) {
-            endFenceWhitespace_ = true;
-            return includeFences_;
-        }
-        isMatchingEndFence_ = false;
+
         return true;
     }
+
+    // 开始围栏必须位于行首，最多允许三个前导空格，与 Kotlin 解析保持一致。
     if (state_ == PluginState::IDLE) {
-        if (c == u'`' || c == u'~') {
-            state_ = PluginState::TRYING;
-            fenceChar_ = c;
-            fenceLen_ = 1;
-            readingOpeningFence_ = true;
+        if (!atStartOfLine) {
+            return true;
+        }
+        state_ = PluginState::TRYING;
+    }
+
+    if (state_ == PluginState::TRYING) {
+        if (fenceLen_ == 0 && c == u' ' && fenceIndent_ < 3) {
+            fenceIndent_ += 1;
             return includeFences_;
         }
-        return true;
-    }
-    if (readingOpeningFence_ && c == fenceChar_) {
-        ++fenceLen_;
+        if ((c == u'`' || c == u'~') && !isReadingFenceInfo_) {
+            if (fenceLen_ == 0) fenceChar_ = c;
+            if (c == fenceChar_) {
+                fenceLen_ += 1;
+                return includeFences_;
+            }
+        }
+
+        // 等到开始行结束后再确认代码块，保留流式输出中尚未闭合的合法围栏。
+        if (c == u'\n') {
+            if (fenceLen_ >= 3) {
+                state_ = PluginState::PROCESSING;
+                openingFenceLen_ = fenceLen_;
+                isMatchingEndFence_ = false;
+                hasStartedMatchingFence_ = false;
+                fenceLen_ = 0;
+                return includeFences_;
+            }
+            reset();
+            return true;
+        }
+
+        if (fenceLen_ < 3 || (fenceChar_ == u'`' && c == u'`')) {
+            // 开始标记不足三个反引号或语言说明含反引号时，整行按普通文本处理。
+            reset();
+            return true;
+        }
+
+        isReadingFenceInfo_ = true;
         return includeFences_;
     }
-    if (fenceLen_ < 3) {
-        reset();
-        return true;
-    }
-    readingOpeningFence_ = false;
-    if (c == u'\n') {
-        openingFenceLen_ = fenceLen_;
-        fenceLen_ = 0;
-        state_ = PluginState::PROCESSING;
-        isMatchingEndFence_ = false;
-    }
-    return includeFences_;
+
+    (void)atStartOfLine;
+    return true;
 }
 
 // --- Inline code ---
