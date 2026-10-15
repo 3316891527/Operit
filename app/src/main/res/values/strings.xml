@@ -8790,4 +8790,20 @@
 <string name="model_fetch_error_ssl">SSL安全连接失败，请检查网络环境或代理设置</string>
 <string name="model_fetch_error_timeout">获取模型列表超时，请检查网络连接或代理是否通畅</string>
 <string name="model_fetch_error_unauthorized">API密钥无效或未授权 (HTTP 401)</string>
+<string name="model_config_add_to_group">在组中新建配置</string>
+<string name="model_config_current_group">当前分组：%1$s</string>
+<string name="model_config_current_selection">当前选择：%1$s</string>
+<string name="model_config_delete_group">删除配置组</string>
+<string name="model_config_delete_group_confirmation">确定要删除配置组“%1$s”吗？组内配置会移到未分组，此操作无法撤销。</string>
+<string name="model_config_drag_config">长按拖拽配置</string>
+<string name="model_config_drag_group">长按拖拽分组</string>
+<string name="model_config_group_empty">“%1$s”中没有模型配置</string>
+<string name="model_config_group_item_count">%1$s（%2$d）</string>
+<string name="model_config_manage_organization">管理配置组和排序</string>
+<string name="model_config_name_with_group">%1$s（%2$s）</string>
+<string name="model_config_new_group">新建配置组</string>
+<string name="model_config_rename_group">重命名配置组</string>
+<string name="model_config_save_group_order_failed">保存分组顺序失败</string>
+<string name="model_config_save_order_failed">保存配置顺序失败</string>
+<string name="model_config_toggle_group">折叠或展开配置组</string>
 </resources>
