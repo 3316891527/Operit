@@ -7891,4 +7891,9 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="glass_value_dp">%1$.1f dp</string>
     <string name="glass_value_percent">%1$d%%</string>
     <string name="sidebar_workflow_description">Tugas otomatis</string>
+    <string name="backup_raw_snapshot_include_logs">Sertakan log dalam snapshot</string>
+    <string name="backup_raw_snapshot_include_logs_desc">Log membantu mendiagnosis kegagalan, tetapi dapat berisi informasi sensitif. Opsi ini hanya mengubah ekspor dan tidak menghapus log di perangkat.</string>
+    <string name="backup_raw_snapshot_restore_result_message">Snapshot dipulihkan: %1$d sumber daya dipulihkan, %2$d dilewati.</string>
+    <string name="data_recovery_include_logs">Sertakan log dalam snapshot</string>
+    <string name="data_recovery_include_logs_description">Log membantu mendiagnosis kegagalan, tetapi dapat berisi informasi sensitif. Opsi ini hanya mengubah ekspor dan tidak menghapus log di perangkat.</string>
 </resources>

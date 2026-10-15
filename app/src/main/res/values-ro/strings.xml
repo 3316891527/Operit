@@ -8568,4 +8568,9 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="glass_value_dp">%1$.1f dp</string>
     <string name="glass_value_percent">%1$d%%</string>
     <string name="sidebar_workflow_description">Sarcini de automatizare</string>
+<string name="backup_raw_snapshot_include_logs">Include jurnalele în instantaneu</string>
+<string name="backup_raw_snapshot_include_logs_desc">Jurnalele ajută la diagnosticarea erorilor, dar pot conține informații sensibile. Această opțiune modifică doar exportul și nu șterge jurnalele dispozitivului.</string>
+<string name="backup_raw_snapshot_restore_result_message">Instantaneu restaurat: %1$d resurse restaurate, %2$d omise.</string>
+<string name="data_recovery_include_logs">Include jurnalele în instantaneu</string>
+<string name="data_recovery_include_logs_description">Jurnalele ajută la diagnosticarea erorilor, dar pot conține informații sensibile. Această opțiune modifică doar exportul și nu șterge jurnalele dispozitivului.</string>
 </resources>

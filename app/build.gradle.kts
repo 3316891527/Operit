@@ -764,8 +764,7 @@ dependencies {
     implementation(libs.hnswlib.core)
     implementation(libs.hnswlib.utils)
     
-    // 用于向量嵌入的TF Lite (如果需要自定义嵌入)
-    implementation(libs.tensorflow.lite)
+    // MediaPipe 文本任务
     implementation(libs.mediapipe.tasks.text)
     
     // ONNX Runtime for Android - 支持更强大的多语言Embedding模型

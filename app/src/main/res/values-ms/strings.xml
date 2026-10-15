@@ -7971,4 +7971,9 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="glass_value_dp">%1$.1f dp</string>
     <string name="glass_value_percent">%1$d%%</string>
     <string name="sidebar_workflow_description">Tugas automasi</string>
+    <string name="backup_raw_snapshot_include_logs">Sertakan log dalam petikan</string>
+    <string name="backup_raw_snapshot_include_logs_desc">Log membantu mendiagnosis kegagalan, tetapi mungkin mengandungi maklumat sensitif. Pilihan ini hanya mengubah eksport dan tidak memadamkan log pada peranti.</string>
+    <string name="backup_raw_snapshot_restore_result_message">Petikan dipulihkan: %1$d sumber dipulihkan, %2$d dilangkau.</string>
+    <string name="data_recovery_include_logs">Sertakan log dalam petikan</string>
+    <string name="data_recovery_include_logs_description">Log membantu mendiagnosis kegagalan, tetapi mungkin mengandungi maklumat sensitif. Pilihan ini hanya mengubah eksport dan tidak memadamkan log pada peranti.</string>
 </resources>

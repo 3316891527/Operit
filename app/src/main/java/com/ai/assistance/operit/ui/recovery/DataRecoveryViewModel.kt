@@ -40,7 +40,8 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         val databaseHealthReport: RoomDatabaseHealthManager.Report? = null,
         val lastConfigurationRepairArchivePath: String? = null,
         val lastDatabaseRepairArchivePath: String? = null,
-        val healthRepairCompleted: Boolean = false
+        val healthRepairCompleted: Boolean = false,
+        val includeLogsInSnapshot: Boolean = true,
     )
 
     private val _state = MutableStateFlow(State())
@@ -48,6 +49,10 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
 
     fun setSqlText(sql: String) {
         _state.value = _state.value.copy(sqlText = sql)
+    }
+
+    fun setIncludeLogsInSnapshot(enabled: Boolean) {
+        _state.value = _state.value.copy(includeLogsInSnapshot = enabled)
     }
 
     fun runSql() {
@@ -110,7 +115,12 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 val outFile =
-                    RawSnapshotBackupManager.exportToBackupDir(context) { progress ->
+                    RawSnapshotBackupManager.exportToBackupDir(
+                        context = context,
+                        options = RawSnapshotBackupManager.SnapshotOptions(
+                            includeLogs = _state.value.includeLogsInSnapshot,
+                        ),
+                    ) { progress ->
                         _state.value =
                             _state.value.copy(
                                 status = exportProgressText(progress)
@@ -139,13 +149,17 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
             _state.value.copy(isRunning = true, error = null, status = context.getString(R.string.data_recovery_restore_running), restoreCompleted = false)
         viewModelScope.launch {
             try {
-                RawSnapshotBackupManager.restoreFromBackupUri(context, uri) { progress ->
+                val restoreResult = RawSnapshotBackupManager.restoreFromBackupUri(context, uri) { progress ->
                     _state.value = _state.value.copy(status = restoreProgressText(progress))
                 }
                 _state.value =
                     _state.value.copy(
                         isRunning = false,
-                        status = context.getString(R.string.data_recovery_restore_completed),
+                        status = context.getString(
+                            R.string.backup_raw_snapshot_restore_result_message,
+                            restoreResult.restoredResourceCount,
+                            restoreResult.skippedResourceCount,
+                        ),
                         restoreCompleted = true,
                         configurationHealthReport = null,
                         databaseHealthReport = null

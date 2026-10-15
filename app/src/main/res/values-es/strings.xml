@@ -8042,4 +8042,9 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="glass_value_dp">%1$.1f dp</string>
     <string name="glass_value_percent">%1$d%%</string>
     <string name="sidebar_workflow_description">Tareas automatizadas</string>
+    <string name="backup_raw_snapshot_include_logs">Incluir registros en la instantánea</string>
+    <string name="backup_raw_snapshot_include_logs_desc">Los registros ayudan a diagnosticar errores, pero pueden contener información sensible. Esta opción solo cambia la exportación y no elimina los registros del dispositivo.</string>
+    <string name="backup_raw_snapshot_restore_result_message">Instantánea restaurada: %1$d recursos restaurados, %2$d omitidos.</string>
+    <string name="data_recovery_include_logs">Incluir registros en la instantánea</string>
+    <string name="data_recovery_include_logs_description">Los registros ayudan a diagnosticar errores, pero pueden contener información sensible. Esta opción solo cambia la exportación y no elimina los registros del dispositivo.</string>
 </resources>

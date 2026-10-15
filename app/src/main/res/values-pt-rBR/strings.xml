@@ -7731,4 +7731,9 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="glass_value_dp">%1$.1f dp</string>
     <string name="glass_value_percent">%1$d%%</string>
     <string name="sidebar_workflow_description">Tarefas automatizadas</string>
+<string name="backup_raw_snapshot_include_logs">Incluir logs no snapshot</string>
+<string name="backup_raw_snapshot_include_logs_desc">Os logs ajudam a diagnosticar falhas, mas podem conter informações sensíveis. Esta opção altera apenas a exportação e não exclui os logs do dispositivo.</string>
+<string name="backup_raw_snapshot_restore_result_message">Snapshot restaurado: %1$d recursos restaurados, %2$d ignorados.</string>
+<string name="data_recovery_include_logs">Incluir logs no snapshot</string>
+<string name="data_recovery_include_logs_description">Os logs ajudam a diagnosticar falhas, mas podem conter informações sensíveis. Esta opção altera apenas a exportação e não exclui os logs do dispositivo.</string>
 </resources>

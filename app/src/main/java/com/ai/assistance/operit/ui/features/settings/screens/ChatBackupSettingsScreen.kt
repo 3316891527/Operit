@@ -136,6 +136,7 @@ enum class RawSnapshotOperation {
     BACKING_UP,
     BACKUP_SUCCESS,
     RESTORING,
+    RESTORE_SUCCESS,
     FAILED
 }
 
@@ -176,6 +177,7 @@ fun ChatBackupSettingsScreen() {
     var roomDbRestoreOperationMessage by remember { mutableStateOf("") }
     var rawSnapshotOperationState by remember { mutableStateOf(RawSnapshotOperation.IDLE) }
     var rawSnapshotOperationMessage by remember { mutableStateOf("") }
+    var includeRawSnapshotLogs by remember { mutableStateOf(true) }
     var pendingRawSnapshotRestoreUri by remember { mutableStateOf<Uri?>(null) }
     var showRawSnapshotRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -973,6 +975,30 @@ fun ChatBackupSettingsScreen() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.backup_raw_snapshot_include_logs),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Text(
+                                text = stringResource(R.string.backup_raw_snapshot_include_logs_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = includeRawSnapshotLogs,
+                            onCheckedChange = { includeRawSnapshotLogs = it },
+                            enabled = rawSnapshotOperationState != RawSnapshotOperation.BACKING_UP,
+                        )
+                    }
+
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -988,6 +1014,9 @@ fun ChatBackupSettingsScreen() {
                                     try {
                                         val outFile = RawSnapshotBackupManager.exportToBackupDir(
                                             context = context,
+                                            options = RawSnapshotBackupManager.SnapshotOptions(
+                                                includeLogs = includeRawSnapshotLogs,
+                                            ),
                                             onProgress = { progress ->
                                                 val suffix = progress.percent?.let { " ${it}%" } ?: ""
                                                 rawSnapshotOperationMessage = when (progress.stage) {
@@ -1070,6 +1099,12 @@ fun ChatBackupSettingsScreen() {
                                         title = stringResource(R.string.backup_export_success),
                                         message = rawSnapshotOperationMessage,
                                         icon = Icons.Default.CloudDownload
+                                    )
+                                RawSnapshotOperation.RESTORE_SUCCESS ->
+                                    OperationResultCard(
+                                        title = stringResource(R.string.backup_room_db_restore_success),
+                                        message = rawSnapshotOperationMessage,
+                                        icon = Icons.Default.Restore
                                     )
                                 RawSnapshotOperation.FAILED ->
                                     OperationResultCard(
@@ -1484,7 +1519,7 @@ fun ChatBackupSettingsScreen() {
                                         )
                                     } catch (_: Exception) {
                                     }
-                                    RawSnapshotBackupManager.restoreFromBackupUri(
+                                    val restoreResult = RawSnapshotBackupManager.restoreFromBackupUri(
                                         context = context,
                                         uri = uri,
                                         onProgress = { progress ->
@@ -1518,8 +1553,16 @@ fun ChatBackupSettingsScreen() {
                                             }
                                         }
                                     )
-                                    // The open process may retain stale DataStore state. Do not
-                                    // allow it to keep running after raw files have been replaced.
+                                    rawSnapshotOperationState = RawSnapshotOperation.RESTORE_SUCCESS
+                                    rawSnapshotOperationMessage = context.getString(
+                                        R.string.backup_raw_snapshot_restore_result_message,
+                                        restoreResult.restoredResourceCount,
+                                        restoreResult.skippedResourceCount,
+                                    )
+                                    android.widget.Toast.makeText(
+                                        context, rawSnapshotOperationMessage, android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                    // 原始快照替换了 DataStore 文件，立即重启以读取导入配置并阻止旧缓存回写。
                                     val intent = Intent(context, MainActivity::class.java).apply {
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     }
