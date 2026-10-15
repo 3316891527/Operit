@@ -10,6 +10,8 @@ import com.ai.assistance.operit.data.mcp.MCPRepository
 import com.ai.assistance.operit.core.tools.system.Terminal
 import com.google.gson.Gson
 import com.google.gson.JsonParser
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -369,8 +371,8 @@ class MCPStarter(private val context: Context) {
     /** Start all deployed plugins */
     fun startAllDeployedPlugins(
         progressListener: PluginStartProgressListener = object : PluginStartProgressListener {}
-    ) {
-        starterScope.launch {
+    ): Job {
+        return starterScope.launch {
             try {
                 val mcpRepository = MCPRepository(context)
                 val mcpLocalServer = MCPLocalServer.getInstance(context)
@@ -485,10 +487,6 @@ class MCPStarter(private val context: Context) {
                 jobs.awaitAll()
 
                 val successfulResults = allVerificationResults.filter { it.isResponding }
-                if (successfulResults.isNotEmpty()) {
-                    generateMissingDescriptions(successfulResults)
-                }
-
                 val successCount = successfulResults.size
                 AppLogger.i(TAG, "All plugin batches processed. Total successful: $successCount")
 
@@ -498,6 +496,13 @@ class MCPStarter(private val context: Context) {
                     PluginInitStatus.SUCCESS
                 )
 
+                // 描述生成依赖模型响应；插件验证完成即可结束启动界面。
+                if (successfulResults.isNotEmpty()) {
+                    generateMissingDescriptions(successfulResults)
+                }
+
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error starting plugins", e)
                 progressListener.onAllPluginsStarted(0, 0, PluginInitStatus.OTHER_ERROR)
@@ -789,10 +794,14 @@ class MCPStarter(private val context: Context) {
                             AppLogger.w(TAG, "插件 ${result.pluginId} 没有可用的工具描述")
                         }
                     }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
                 } catch (e: Exception) {
                     AppLogger.e(TAG, "为插件 ${result.pluginId} 生成描述时出错: ${e.message}", e)
                 }
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             AppLogger.e(TAG, "生成缺失描述时出错", e)
         }

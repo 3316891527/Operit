@@ -1139,7 +1139,7 @@ class JsEngine(private val context: Context) {
                 functionName = "__operit_render_compose_dsl",
                 params = runtimeOptions,
                 envOverrides = envOverrides,
-                timeoutSec = null
+                timeoutSec = JsTimeoutConfig.COMPOSE_DSL_LOAD_TIMEOUT_SECONDS
         )
     }
 
@@ -1148,7 +1148,8 @@ class JsEngine(private val context: Context) {
             payload: Any? = null,
             runtimeOptions: Map<String, Any?> = emptyMap(),
             envOverrides: Map<String, String> = emptyMap(),
-            onIntermediateResult: ((Any?) -> Unit)? = null
+            onIntermediateResult: ((Any?) -> Unit)? = null,
+            timeoutSec: Long? = null
     ): Any? {
         val normalizedActionId = actionId.trim()
         if (normalizedActionId.isBlank()) {
@@ -1165,7 +1166,7 @@ class JsEngine(private val context: Context) {
                 params = params,
                 envOverrides = envOverrides,
                 onIntermediateResult = onIntermediateResult,
-                timeoutSec = null
+                timeoutSec = timeoutSec
         )
     }
 
@@ -1178,7 +1179,7 @@ class JsEngine(private val context: Context) {
                 functionName = "__operit_rerender_compose_dsl",
                 params = runtimeOptions,
                 envOverrides = envOverrides,
-                timeoutSec = null
+                timeoutSec = JsTimeoutConfig.COMPOSE_DSL_LOAD_TIMEOUT_SECONDS
         )
     }
 
@@ -1190,7 +1191,8 @@ class JsEngine(private val context: Context) {
             onIntermediateResult: ((Any?) -> Unit)? = null,
             onFinalResult: ((Any?) -> Unit)? = null,
             onComplete: (() -> Unit)? = null,
-            onError: ((String) -> Unit)? = null
+            onError: ((String) -> Unit)? = null,
+            timeoutSec: Long? = null
     ): Boolean {
         val normalizedActionId = actionId.trim()
         if (normalizedActionId.isBlank()) {
@@ -1207,7 +1209,8 @@ class JsEngine(private val context: Context) {
                         payload = payload,
                         runtimeOptions = runtimeOptions,
                         envOverrides = envOverrides,
-                        onIntermediateResult = onIntermediateResult
+                        onIntermediateResult = onIntermediateResult,
+                        timeoutSec = timeoutSec
                     )
                 } catch (e: Exception) {
                     val errorText = e.message?.trim().orEmpty().ifBlank { "compose action dispatch failed" }

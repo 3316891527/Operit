@@ -13,6 +13,7 @@ import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.agent.PhoneAgentJobRegistry
 import com.ai.assistance.operit.data.model.*
+import com.ai.assistance.operit.data.repository.ChatDraftRepository
 import com.ai.assistance.operit.data.model.InputProcessingState as EnhancedInputProcessingState
 import com.ai.assistance.operit.data.model.PromptFunctionType
 import com.ai.assistance.operit.util.stream.SharedStream
@@ -153,7 +154,7 @@ class MessageProcessingDelegate(
 
     private val _userMessage = MutableStateFlow(TextFieldValue(""))
     val userMessage: StateFlow<TextFieldValue> = _userMessage.asStateFlow()
-    private val userMessageDraftsByChatId = ConcurrentHashMap<String, TextFieldValue>()
+    private val chatDraftRepository = ChatDraftRepository(context)
     @Volatile
     private var activeDraftChatId: String? = null
 
@@ -603,7 +604,7 @@ class MessageProcessingDelegate(
             return
         }
 
-        val savedDraft = userMessageDraftsByChatId[chatId]
+        val savedDraft = chatDraftRepository.loadDraft(chatId)
         if (savedDraft != null) {
             _userMessage.value = savedDraft
             return
@@ -635,16 +636,11 @@ class MessageProcessingDelegate(
     }
 
     private fun saveUserMessageDraft(chatId: String, value: TextFieldValue) {
-        if (value.text.isEmpty()) {
-            userMessageDraftsByChatId.remove(chatId)
-            return
-        }
-
-        userMessageDraftsByChatId[chatId] = value
+        chatDraftRepository.saveDraft(chatId, value)
     }
 
     private fun clearUserMessageDraft(chatId: String) {
-        userMessageDraftsByChatId.remove(chatId)
+        chatDraftRepository.removeDraft(chatId)
         if (activeDraftChatId == chatId) {
             _userMessage.value = TextFieldValue("")
         }

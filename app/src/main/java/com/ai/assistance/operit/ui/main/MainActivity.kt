@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var toolHandler: AIToolHandler
     private lateinit var agreementPreferences: AgreementPreferences
     private var updateCheckPerformed = false
+    private var isRestoringActivityState = false
     private lateinit var anrMonitor: AnrMonitor
     private lateinit var mcpRepository: MCPRepository
 
@@ -178,6 +179,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isRestoringActivityState = savedInstanceState != null
         lastOrientation = resources.configuration.orientation
         AppLogger.d(TAG, "onCreate: Android SDK version: ${Build.VERSION.SDK_INT}")
 
@@ -327,6 +329,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun prepareStartupChatIfNeeded() {
+        // Android 恢复原界面时继续原聊天，避免“启动新聊天”掩盖已保存的草稿。
+        if (isRestoringActivityState) return
         try {
             val displayPreferencesManager =
                 DisplayPreferencesManager.getInstance(this@MainActivity)

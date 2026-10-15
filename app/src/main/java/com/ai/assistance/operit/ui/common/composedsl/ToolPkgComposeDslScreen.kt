@@ -108,7 +108,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -189,6 +188,9 @@ import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.OperitPaths
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
+import com.ai.assistance.operit.core.tools.javascript.JsTimeoutConfig
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -884,9 +886,8 @@ fun ToolPkgComposeDslToolScreen(
     var isDispatching by remember(containerPackageName, uiModuleId) { mutableStateOf(false) }
     var dispatchingCount by remember(containerPackageName, uiModuleId) { mutableStateOf(0) }
     var hasDispatchedInitialOnLoad by
-        rememberSaveable(routeInstanceId, containerPackageName, uiModuleId) {
-            mutableStateOf(false)
-        }
+        // 新引擎必须重新触发 onLoad，不能恢复上一个已销毁页面的加载标记。
+        remember(jsEngine) { mutableStateOf(false) }
     var nextDispatchTicket by remember(containerPackageName, uiModuleId) { mutableStateOf(1L) }
     var pendingTreeRerenderJob by remember(containerPackageName, uiModuleId) { mutableStateOf<Job?>(null) }
     val settledDispatchTickets = remember(containerPackageName, uiModuleId) { mutableSetOf<Long>() }
@@ -1065,7 +1066,8 @@ fun ToolPkgComposeDslToolScreen(
         actionId: String,
         payload: Any? = null,
         onSettled: (() -> Unit)? = null,
-        flushPendingTextInputs: Boolean = true
+        flushPendingTextInputs: Boolean = true,
+        timeoutSec: Long? = null
     ): Boolean {
         val normalizedActionId = actionId.trim()
         if (normalizedActionId.isBlank()) {
@@ -1079,7 +1081,8 @@ fun ToolPkgComposeDslToolScreen(
                     actionId = normalizedActionId,
                     payload = payload,
                     onSettled = onSettled,
-                    flushPendingTextInputs = false
+                    flushPendingTextInputs = false,
+                    timeoutSec = timeoutSec
                 )
             }
             return true
@@ -1101,6 +1104,7 @@ fun ToolPkgComposeDslToolScreen(
                 actionId = normalizedActionId,
                 payload = payload,
                 runtimeOptions = buildActionRuntimeOptions(),
+                timeoutSec = timeoutSec,
                 onIntermediateResult = { intermediateResult ->
                     if (settledDispatchTickets.contains(dispatchTicket)) {
                         return@dispatchComposeDslActionAsync
@@ -1306,7 +1310,7 @@ fun ToolPkgComposeDslToolScreen(
                 }
 
                 val rawResult =
-                    withContext(Dispatchers.IO) {
+                    runInterruptible(Dispatchers.IO) {
                         jsEngine.executeComposeDslScript(
                             script = scriptText,
                             runtimeOptions = buildActionRuntimeOptions()
@@ -1338,6 +1342,8 @@ fun ToolPkgComposeDslToolScreen(
                 snapshotPhase = "render_success"
                 snapshotParsedResult = parsed
                 snapshotError = null
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
                 renderResult = null
                 errorMessage = "compose_dsl runtime error: ${e.message}"
@@ -1358,9 +1364,8 @@ fun ToolPkgComposeDslToolScreen(
     }
 
     LaunchedEffect(routeInstanceId, containerPackageName, uiModuleId) {
-        scope.launch {
-            render()
-        }
+        // 加载随页面一起取消，避免离页后旧任务继续占用执行器。
+        render()
     }
 
     DisposableEffect(executionContextKey) {
@@ -1497,7 +1502,10 @@ fun ToolPkgComposeDslToolScreen(
                 return@LaunchedEffect
             }
             hasDispatchedInitialOnLoad = true
-            dispatchAction(actionId = rootOnLoadActionId, payload = null)
+            dispatchActionInternal(
+                actionId = rootOnLoadActionId,
+                timeoutSec = JsTimeoutConfig.COMPOSE_DSL_LOAD_TIMEOUT_SECONDS
+            )
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -1733,7 +1741,8 @@ fun ToolPkgComposeDslDialogHost(
         actionId: String,
         payload: Any? = null,
         onSettled: (() -> Unit)? = null,
-        flushPendingTextInputs: Boolean = true
+        flushPendingTextInputs: Boolean = true,
+        timeoutSec: Long? = null
     ): Boolean {
         val normalizedActionId = actionId.trim()
         if (normalizedActionId.isBlank()) {
@@ -1747,7 +1756,8 @@ fun ToolPkgComposeDslDialogHost(
                     actionId = normalizedActionId,
                     payload = payload,
                     onSettled = onSettled,
-                    flushPendingTextInputs = false
+                    flushPendingTextInputs = false,
+                    timeoutSec = timeoutSec
                 )
             }
             return true
@@ -1764,6 +1774,7 @@ fun ToolPkgComposeDslDialogHost(
                 actionId = normalizedActionId,
                 payload = payload,
                 runtimeOptions = buildActionRuntimeOptions(),
+                timeoutSec = timeoutSec,
                 onIntermediateResult = { intermediateResult ->
                     if (settledDispatchTickets.contains(dispatchTicket)) {
                         return@dispatchComposeDslActionAsync
@@ -1878,7 +1889,7 @@ fun ToolPkgComposeDslDialogHost(
                 }
 
                 val rawResult =
-                    withContext(Dispatchers.IO) {
+                    runInterruptible(Dispatchers.IO) {
                         jsEngine.executeComposeDslScript(
                             script = scriptText,
                             runtimeOptions = buildActionRuntimeOptions()
@@ -1902,6 +1913,8 @@ fun ToolPkgComposeDslDialogHost(
 
                 renderResult = parsed
                 errorMessage = null
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (error: Exception) {
                 renderResult = null
                 errorMessage = "compose_dsl dialog runtime error: ${error.message}"
@@ -1943,7 +1956,10 @@ fun ToolPkgComposeDslDialogHost(
             return@LaunchedEffect
         }
         hasDispatchedInitialOnLoad = true
-        dispatchAction(actionId = rootOnLoadActionId, payload = null)
+        dispatchActionInternal(
+            actionId = rootOnLoadActionId,
+            timeoutSec = JsTimeoutConfig.COMPOSE_DSL_LOAD_TIMEOUT_SECONDS
+        )
     }
 
     when {

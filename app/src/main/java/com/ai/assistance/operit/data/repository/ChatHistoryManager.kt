@@ -213,6 +213,17 @@ private class CsvChatAccumulator(
 }
 
 class ChatHistoryManager private constructor(private val context: Context) {
+    private val chatDraftRepository by lazy { ChatDraftRepository(context) }
+
+    private suspend fun clearDeletedChatDrafts() {
+        // 批量删除后只检查有草稿的聊天，避免额外扫描整段历史。
+        chatDraftRepository.chatIdsWithDrafts().forEach { chatId ->
+            if (chatDao.getChatById(chatId) == null) {
+                chatDraftRepository.removeDraft(chatId)
+            }
+        }
+    }
+
     companion object {
         private const val TAG = "ChatHistoryManager"
         private const val LOCATOR_PREVIEW_CHAR_COUNT = 48
@@ -1140,6 +1151,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 }
             }
         }
+        clearDeletedChatDrafts()
     }
     /**
      * 删除单条消息.
@@ -1646,6 +1658,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 }
                 // 删除聊天实体（级联删除所有消息）
                 chatDao.deleteChat(chatId)
+                chatDraftRepository.removeDraft(chatId)
                 return true
             } catch (e: Exception) {
                 throw e
@@ -3364,6 +3377,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         preferences.remove(PreferencesKeys.CURRENT_CHAT_ID)
                     }
                 }
+
+                clearDeletedChatDrafts()
 
                 AppLogger.d(
                     TAG,

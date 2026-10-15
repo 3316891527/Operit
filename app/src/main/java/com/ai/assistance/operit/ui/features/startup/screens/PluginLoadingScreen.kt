@@ -63,6 +63,7 @@ import com.ai.assistance.operit.data.mcp.MCPLocalServer
 import com.ai.assistance.operit.data.mcp.MCPRepository
 import com.ai.assistance.operit.data.mcp.plugins.MCPStarter
 import com.ai.assistance.operit.ui.features.startup.components.SmoothLinearProgressIndicator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -693,6 +694,12 @@ class PluginLoadingState {
                 }
     }
 
+    private fun finishTimeoutCheck() {
+        timeoutJob?.cancel()
+        timeoutJob = null
+        _hasTimedOut.value = false
+    }
+
     /** 显示加载屏幕 */
     fun show() {
         _isVisible.value = true
@@ -824,8 +831,18 @@ class PluginLoadingState {
                             )
 
                     // 启动所有插件 - MCPStarter会处理各种检查逻辑
-                    mcpStarter.startAllDeployedPlugins(progressListener)
+                    // 等待实际批次结束，生命周期取消时同步停止批次，避免重复启动争抢资源。
+                    val startupJob = mcpStarter.startAllDeployedPlugins(progressListener)
+                    try {
+                        startupJob.join()
+                    } catch (cancelled: CancellationException) {
+                        startupJob.cancel()
+                        throw cancelled
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
                 } catch (e: Exception) {
+                    finishTimeoutCheck()
                     // 处理插件加载过程中的异常
                     AppLogger.e("PluginLoadingState", "加载插件过程中出错", e)
                     updateMessage(e.message ?: context.getString(R.string.plugin_loading_failed))
@@ -833,7 +850,10 @@ class PluginLoadingState {
 
                     forceExpanded()
                 }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
+                finishTimeoutCheck()
                 AppLogger.e("PluginLoadingState", "启动MCP服务器和插件时出错", e)
                 updateMessage(e.message ?: context.getString(R.string.plugin_other_error))
                 updateProgress(1.0f)
@@ -913,6 +933,8 @@ class PluginLoadingState {
                     totalCount: Int,
                     status: MCPStarter.PluginInitStatus
             ) {
+                // 完成或失败均停止计时，避免真实错误随后被超时提示覆盖。
+                finishTimeoutCheck()
                 // 根据初始化状态显示不同的消息
                 when (status) {
                     MCPStarter.PluginInitStatus.NODEJS_MISSING -> {
