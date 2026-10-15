@@ -89,7 +89,7 @@ data class MemoryUiState(
         val searchSimulationQuery: String = "",
         val searchSimulationConfig: MemorySearchConfig = MemorySearchConfig(),
         val searchSimulationAllowCloudEmbedding: Boolean = true,
-        val searchSimulationThreshold: Double = MemoryRepository.SEARCH_RELEVANCE_THRESHOLD,
+        val searchSimulationThreshold: Double = MemoryRepository.DEFAULT_RELEVANCE_THRESHOLD,
         val isSearchSimulationRunning: Boolean = false,
         val searchSimulationResult: MemorySearchDebugInfo? = null,
         val searchSimulationError: String? = null,

@@ -68,7 +68,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         private const val DANGLING_LINK_CLEANUP_INTERVAL_MS = 30_000L
         private const val SEARCH_RRF_K = 60.0
         private const val SEARCH_KEYWORD_COVERAGE_BONUS = 0.6
-        internal const val SEARCH_RELEVANCE_THRESHOLD = 0.025
+        const val DEFAULT_RELEVANCE_THRESHOLD = 0.025
         private val INDEX_KEY_SANITIZE_REGEX = Regex("[^a-zA-Z0-9._-]")
 
         fun normalizeFolderPath(folderPath: String?): String? {
@@ -182,7 +182,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         var edgeScore: Double = 0.0
     )
 
-    private data class SearchComputationResult(
+    internal data class SearchComputationResult(
         val memories: List<Memory>,
         val debug: MemorySearchDebugInfo
     )
@@ -590,7 +590,9 @@ class MemoryRepository(private val context: Context, profileId: String) {
         )
     }
 
-    private fun getSemanticMemoryCandidatesFromIndex(queryEmbedding: Embedding): List<Pair<Memory, Float>> {
+    private fun getSemanticMemoryCandidatesFromIndex(
+        queryEmbedding: Embedding
+    ): List<Pair<Memory, Float>> {
         val manager = ensureMemoryVectorIndex(queryEmbedding.vector.size) ?: return emptyList()
         val availableCount = manager.size()
         if (availableCount <= 0) {
@@ -599,7 +601,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         }
         val nearest = manager.findNearest(
             queryEmbedding.vector,
-            availableCount
+            MemorySearchCandidatePolicy.requestedNeighbors(availableCount)
         )
         manager.close()
         if (nearest.isEmpty()) return emptyList()
@@ -1146,7 +1148,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         tagWeight: Float = 0.0f,
         semanticWeight: Float = 0.5f,
         edgeWeight: Float = 0.4f,
-        relevanceThreshold: Double = SEARCH_RELEVANCE_THRESHOLD,
+        relevanceThreshold: Double = DEFAULT_RELEVANCE_THRESHOLD,
         createdAtStartMs: Long? = null,
         createdAtEndMs: Long? = null
     ): List<Memory> {
@@ -1172,7 +1174,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         tagWeight: Float = 0.0f,
         semanticWeight: Float = 0.5f,
         edgeWeight: Float = 0.4f,
-        relevanceThreshold: Double = SEARCH_RELEVANCE_THRESHOLD,
+        relevanceThreshold: Double = DEFAULT_RELEVANCE_THRESHOLD,
         createdAtStartMs: Long? = null,
         createdAtEndMs: Long? = null,
         allowCloudEmbedding: Boolean = searchSettingsPreferences.loadCloudEmbeddingEnabled(),
@@ -1192,7 +1194,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         ).debug
     }
 
-    private suspend fun runSearchMemoriesWithDebug(
+    internal suspend fun runSearchMemoriesWithDebug(
         query: String,
         folderPath: String? = null,
         scoreMode: MemoryScoreMode = MemoryScoreMode.BALANCED,
@@ -1200,12 +1202,15 @@ class MemoryRepository(private val context: Context, profileId: String) {
         tagWeight: Float = 0.0f,
         semanticWeight: Float = 0.5f,
         edgeWeight: Float = 0.4f,
-        relevanceThreshold: Double = SEARCH_RELEVANCE_THRESHOLD,
+        relevanceThreshold: Double = DEFAULT_RELEVANCE_THRESHOLD,
         createdAtStartMs: Long? = null,
         createdAtEndMs: Long? = null,
         allowCloudEmbedding: Boolean = searchSettingsPreferences.loadCloudEmbeddingEnabled(),
     ): SearchComputationResult = withContext(Dispatchers.IO) {
         val normalizedFolderPath = normalizeFolderPath(folderPath)
+        val folderScoped = normalizedFolderPath != null ||
+            folderPath == context.getString(R.string.memory_uncategorized)
+        val minimumSemanticSimilarity = searchSettingsPreferences.load().minSemanticSimilarity
 
         val memoriesInScope = if (normalizedFolderPath == null) {
             if (folderPath == context.getString(R.string.memory_uncategorized)) {
@@ -1335,6 +1340,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         // If a folder path is provided, all subsequent searches will be performed on this subset.
         // Otherwise, search all memories.
         val memoriesToSearch = timeFilteredMemoriesInScope
+        val scopedMemoryIds = memoriesToSearch.mapTo(hashSetOf()) { it.id }
 
         if (memoriesToSearch.isEmpty()) {
             com.ai.assistance.operit.util.AppLogger.d("MemoryRepo", "No memories found in folder '$folderPath' to search.")
@@ -1426,10 +1432,13 @@ class MemoryRepository(private val context: Context, profileId: String) {
         }
 
         // 3. Semantic search (for conceptual matches)
-        val allMemoriesWithEmbedding = memoriesToSearch.filter { it.embedding != null }
+        // 文件夹查询只准备一次范围内向量，每个关键词直接复用它们计算余弦相似度。
+        val scopedEmbeddings = memoriesToSearch.mapNotNull { memory ->
+            memory.embedding?.let { embedding -> memory to embedding }
+        }
         val cloudConfig = loadActiveEmbeddingModel(allowCloudEmbedding)
         val semanticMatchedIds = mutableSetOf<Long>()
-        val scopedMemoryIds = allMemoriesWithEmbedding.map { it.id }.toHashSet()
+        val semanticScopedIds = scopedEmbeddings.mapTo(hashSetOf()) { (memory, _) -> memory.id }
 
         if (effectiveSemanticWeight > 0.0f && cloudConfig.isEmbeddingReady()) {
             com.ai.assistance.operit.util.AppLogger.d("MemoryRepo", "--- Starting Semantic Search for ${keywords.size} keywords ---")
@@ -1440,21 +1449,27 @@ class MemoryRepository(private val context: Context, profileId: String) {
                     return@forEach
                 }
 
-                val semanticResultsWithScores = getSemanticMemoryCandidatesFromIndex(queryEmbedding)
-                    .asSequence()
-                    .filter { (memory, _) -> scopedMemoryIds.contains(memory.id) }
-                    .sortedByDescending { it.second }
-                    .toList()
+                val semanticCandidates = if (folderScoped) {
+                    scopedEmbeddings.asSequence()
+                        .filter { (_, embedding) -> embedding.vector.size == queryEmbedding.vector.size }
+                        .map { (memory, embedding) -> memory to cosineSimilarity(queryEmbedding, embedding) }
+                } else {
+                    getSemanticMemoryCandidatesFromIndex(queryEmbedding).asSequence()
+                }
+                val semanticResultsWithScores = MemorySearchCandidatePolicy.selectSemanticCandidates(
+                    semanticCandidates.filter { (memory, _) -> memory.id in semanticScopedIds },
+                    minimumSemanticSimilarity
+                )
 
                 if (semanticResultsWithScores.isEmpty()) {
                     com.ai.assistance.operit.util.AppLogger.d(
                         "MemoryRepo",
-                        "Keyword '$keyword': semantic index returned no compatible memory candidates"
+                        "Keyword '$keyword': semantic search returned no compatible memory candidates"
                     )
                 } else {
                     com.ai.assistance.operit.util.AppLogger.d(
                         "MemoryRepo",
-                        "Keyword '$keyword': ${semanticResultsWithScores.size} indexed matches (top: ${String.format("%.2f", semanticResultsWithScores.first().second)})"
+                        "Keyword '$keyword': ${semanticResultsWithScores.size} semantic matches (top: ${String.format("%.2f", semanticResultsWithScores.first().second)})"
                     )
                 }
 
@@ -1497,7 +1512,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
             // Propagate score through outgoing links
             sourceMemory.links.forEach { link ->
                 val targetMemory = link.target.target
-                if (targetMemory != null) {
+                if (targetMemory != null && targetMemory.id in scopedMemoryIds) {
                     // 边权重越高，传播的分数越多
                     val propagatedScore = (sourceScore * link.weight * graphPropagationWeight) + basePropagationScore
                     scores[targetMemory.id] = scores.getOrDefault(targetMemory.id, 0.0) + propagatedScore
@@ -1509,7 +1524,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
             // Propagate score through incoming links (backlinks)
             sourceMemory.backlinks.forEach { link ->
                 val targetMemory = link.source.target
-                if (targetMemory != null) {
+                if (targetMemory != null && targetMemory.id in scopedMemoryIds) {
                     // 边权重越高，传播的分数越多
                     val propagatedScore = (sourceScore * link.weight * graphPropagationWeight) + basePropagationScore
                     scores[targetMemory.id] = scores.getOrDefault(targetMemory.id, 0.0) + propagatedScore
@@ -1540,7 +1555,9 @@ class MemoryRepository(private val context: Context, profileId: String) {
         }
 
         // 添加相关性阈值过滤，避免返回不相关的记忆
-        val filteredScores = scores.entries.filter { it.value >= effectiveRelevanceThreshold }
+        val filteredScores = MemorySearchCandidatePolicy.scopedScores(
+            scores, scopedMemoryIds, effectiveRelevanceThreshold
+        )
 
         com.ai.assistance.operit.util.AppLogger.d("MemoryRepo", "Final results: ${filteredScores.size}/${scores.size} above threshold")
 

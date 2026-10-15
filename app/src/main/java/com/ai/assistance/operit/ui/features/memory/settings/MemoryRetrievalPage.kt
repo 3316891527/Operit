@@ -49,6 +49,13 @@ internal fun MemoryRetrievalPage(
         MemorySettingsSlider(stringResource(R.string.memory_search_vector_weight), config.vectorWeight, "%.2f".format(config.vectorWeight), 0f..2f) {
             onConfigChange(config.copy(vectorWeight = it))
         }
+        MemorySettingsSlider(
+            stringResource(R.string.memory_search_min_semantic_similarity),
+            config.minSemanticSimilarity,
+            "%.2f".format(config.minSemanticSimilarity),
+            0f..1f,
+            enabled = config.vectorWeight > 0f && policy.cloudEmbeddingEnabled && embeddingModelName != null,
+        ) { onConfigChange(config.copy(minSemanticSimilarity = it)) }
         MemorySettingsSlider(stringResource(R.string.memory_search_edge_weight), config.edgeWeight, "%.2f".format(config.edgeWeight), 0f..2f) {
             onConfigChange(config.copy(edgeWeight = it))
         }

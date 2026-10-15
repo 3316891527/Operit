@@ -62,7 +62,7 @@ fun MemorySearchSettingsDialog(
     var rules by remember(spaceId) { mutableStateOf(memoryExtractionCustomRules) }
     var policy by remember(spaceId) { mutableStateOf(details.policy) }
     var query by remember(spaceId) { mutableStateOf(initialQuery) }
-    var threshold by remember(spaceId) { mutableFloatStateOf(MemoryRepository.SEARCH_RELEVANCE_THRESHOLD.toFloat()) }
+    var threshold by remember(spaceId) { mutableFloatStateOf(MemoryRepository.DEFAULT_RELEVANCE_THRESHOLD.toFloat()) }
     var pendingLeave by remember { mutableStateOf<(() -> Unit)?>(null) }
     val pagerState = rememberPagerState(pageCount = { 3 })
     val dirty = config != currentConfig || interval != autoSaveIntervalMinutes || rules != memoryExtractionCustomRules || policy != details.policy
@@ -86,7 +86,7 @@ fun MemorySearchSettingsDialog(
                 interval = MemorySearchSettingsPreferences.DEFAULT_AUTO_SAVE_INTERVAL_MINUTES
                 rules = MemorySearchSettingsPreferences.DEFAULT_MEMORY_EXTRACTION_CUSTOM_RULES
                 policy = MemorySettingsPolicy()
-                threshold = MemoryRepository.SEARCH_RELEVANCE_THRESHOLD.toFloat()
+                threshold = MemoryRepository.DEFAULT_RELEVANCE_THRESHOLD.toFloat()
             }) { Icon(Icons.Default.Restore, contentDescription = stringResource(R.string.memory_search_reset_default)) }
             TextButton(onClick = { leave(onDismiss) }, enabled = !isSaving) { Text(stringResource(R.string.cancel)) }
             Button(
