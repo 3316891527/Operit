@@ -120,4 +120,8 @@ class TokenUsageRepository private constructor(context: Context) {
             }
         }
     }
+
+    suspend fun clearUsageRecords() {
+        withDao { dao -> dao.clearUsageRecords() }
+    }
 }
