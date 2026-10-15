@@ -8054,4 +8054,15 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="backup_raw_snapshot_restore_result_message">Instantánea restaurada: %1$d recursos restaurados, %2$d omitidos.</string>
     <string name="data_recovery_include_logs">Incluir registros en la instantánea</string>
     <string name="data_recovery_include_logs_description">Los registros ayudan a diagnosticar errores, pero pueden contener información sensible. Esta opción solo cambia la exportación y no elimina los registros del dispositivo.</string>
+<string name="model_fetch_error_dns">Error de resolución de dominio. Verifique la ortografía de la dirección API o la red.</string>
+<string name="model_fetch_error_forbidden">Acceso denegado (HTTP 403). Posible restricción regional o proxy requerido.</string>
+<string name="model_fetch_error_format">Error al analizar modelos: formato de respuesta inesperado del punto final.</string>
+<string name="model_fetch_error_http">Error al obtener modelos (HTTP %1$d): %2$s</string>
+<string name="model_fetch_error_network">No se puede conectar al servidor. Verifique la red, el puerto o el proxy.</string>
+<string name="model_fetch_error_not_found">Punto final no encontrado (HTTP 404). Verifique la dirección de la API.</string>
+<string name="model_fetch_error_rate_limit">Límite de solicitudes alcanzado o cuota agotada (HTTP 429)</string>
+<string name="model_fetch_error_server">Error del servidor del proveedor (HTTP %d). Inténtelo de nuevo más tarde.</string>
+<string name="model_fetch_error_ssl">Error de conexión SSL. Verifique el entorno de red o configuración de proxy.</string>
+<string name="model_fetch_error_timeout">Tiempo de espera agotado al obtener modelos. Verifique la conexión o proxy.</string>
+<string name="model_fetch_error_unauthorized">Clave de API no válida o no autorizada (HTTP 401)</string>
 </resources>

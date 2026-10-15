@@ -7752,4 +7752,15 @@
     <string name="backup_raw_snapshot_restore_result_message">스냅샷 복원 완료: 리소스 %1$d개 복원, %2$d개 건너뜀.</string>
     <string name="data_recovery_include_logs">스냅샷에 로그 포함</string>
     <string name="data_recovery_include_logs_description">로그는 오류 진단에 도움이 되지만 민감한 정보가 포함될 수 있습니다. 이 옵션은 내보내기 내용만 변경하며 기기의 로그를 삭제하지 않습니다.</string>
+<string name="model_fetch_error_dns">도메인 이름을 확인할 수 없습니다. API 주소 철자(도메인 접미사 등)나 네트워크를 확인하세요.</string>
+<string name="model_fetch_error_forbidden">접근 거부됨 (HTTP 403). 지역 제한이 있거나 프록시가 필요할 수 있습니다.</string>
+<string name="model_fetch_error_format">모델 구문 분석 실패: 엔드포인트에서 예기치 않은 응답 형식을 반환했습니다.</string>
+<string name="model_fetch_error_http">모델 가져오기 실패 (HTTP %1$d): %2$s</string>
+<string name="model_fetch_error_network">서버에 연결할 수 없습니다. 네트워크 연결, 포트 또는 프록시 설정을 확인하세요.</string>
+<string name="model_fetch_error_not_found">엔드포인트를 찾을 수 없음 (HTTP 404). API 주소를 확인하세요.</string>
+<string name="model_fetch_error_rate_limit">요청 한도 초과 또는 사용량 소진 (HTTP 429)</string>
+<string name="model_fetch_error_server">모델 제공업체 서버 오류 (HTTP %d). 나중에 다시 시도하세요.</string>
+<string name="model_fetch_error_ssl">SSL 보안 연결 실패. 네트워크 환경 또는 프록시 설정을 확인하세요.</string>
+<string name="model_fetch_error_timeout">모델 목록 가져오기 시간 초과. 네트워크 또는 프록시 연결을 확인하세요.</string>
+<string name="model_fetch_error_unauthorized">유효하지 않거나 권한이 없는 API 키 (HTTP 401)</string>
 </resources>
