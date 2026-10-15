@@ -100,6 +100,7 @@ class MessageProcessingDelegate(
                 } ?: streamingMessage
             return messageWithMetrics.copy(
                 content = finalContent,
+                sections = MessageSectionCodec.parse(finalContent),
                 contentStream = null,
                 completedAt = completedAt,
             )
@@ -361,7 +362,6 @@ class MessageProcessingDelegate(
         val sharedStream = aiMessage.contentStream as? SharedStream<String>
         val replayChunks = sharedStream?.replayCache
         val eventCarrier = aiMessage.contentStream as? TextStreamEventCarrier
-
         return if (eventCarrier?.eventChannel?.replayCache?.isNotEmpty() == true) {
             aiMessage.content
         } else if (!replayChunks.isNullOrEmpty()) {
@@ -369,6 +369,11 @@ class MessageProcessingDelegate(
         } else {
             aiMessage.content
         }
+    }
+
+    private fun syncSections(aiMessage: ChatMessage, content: String) {
+        aiMessage.content = content
+        aiMessage.sections = MessageSectionCodec.parse(content)
     }
 
     private fun ChatMessage.withTurnMetrics(
@@ -440,7 +445,7 @@ class MessageProcessingDelegate(
     ) {
         val streamingMessage = activeTurn.message
         val finalContent = resolveFinalContent(streamingMessage)
-        streamingMessage.content = finalContent
+        syncSections(streamingMessage, finalContent)
         val completedAt = System.currentTimeMillis()
         val finalMessage =
             completeInterruptedMessage(
@@ -1899,7 +1904,7 @@ class MessageProcessingDelegate(
             val aiMessage = aiMessageProvider()
             // 优先使用共享流的全量重放缓存重建最终文本，避免完成信号早于收集协程处理尾部字符时丢字。
             val finalContent = resolveFinalContent(aiMessage)
-            aiMessage.content = finalContent
+            syncSections(aiMessage, finalContent)
             val completedAt = System.currentTimeMillis()
 
             withContext(Dispatchers.IO) {
@@ -1911,6 +1916,7 @@ class MessageProcessingDelegate(
                     val finalMessage =
                         aiMessage.copy(
                             content = finalContent,
+                            sections = MessageSectionCodec.parse(finalContent),
                             contentStream = null,
                             completedAt = completedAt,
                         )
@@ -1943,6 +1949,7 @@ class MessageProcessingDelegate(
                 val finalMessage =
                     aiMessage.copy(
                         content = finalContent,
+                        sections = MessageSectionCodec.parse(finalContent),
                         contentStream = null,
                         completedAt = System.currentTimeMillis(),
                     )

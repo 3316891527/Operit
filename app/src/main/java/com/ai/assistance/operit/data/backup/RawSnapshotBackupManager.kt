@@ -7,6 +7,7 @@ import android.os.Looper
 import android.util.AtomicFile
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.db.ObjectBoxManager
+import com.ai.assistance.operit.data.recovery.MainProcessController
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.OperitPaths
@@ -371,6 +372,7 @@ object RawSnapshotBackupManager {
     suspend fun restoreFromBackupUri(
         context: Context,
         uri: Uri,
+        ensureMainProcessStopped: Boolean = false,
         onProgress: ((RestoreProgress) -> Unit)? = null
     ) = withContext(Dispatchers.IO) {
         TokenUsageRepository.withDatabaseRestore {
@@ -396,6 +398,9 @@ object RawSnapshotBackupManager {
 
                 AppLogger.i(TAG, "restore cached zip: ${cacheZip.absolutePath} (${cacheZip.length()} bytes)")
 
+                if (ensureMainProcessStopped && !MainProcessController.stopAndWait(context)) {
+                    throw IllegalStateException("Main application process did not stop")
+                }
                 AppDatabase.closeDatabase()
                 ObjectBoxManager.closeAll()
 

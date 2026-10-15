@@ -3,6 +3,7 @@ package com.ai.assistance.operit.data.converter
 import com.ai.assistance.operit.data.chat.folders.ChatFolder
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.ai.assistance.operit.data.model.MessageSectionStorage
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.OperitArchivedChat
 import com.ai.assistance.operit.data.model.OperitArchivedMessageVariant
@@ -44,7 +45,7 @@ object ChatHistoryCsv {
         "message_timestamp",
         "message_order_index",
         "sender",
-        "message_content",
+        "message_sections",
         "role_name",
         "selected_variant_index",
         "variant_count",
@@ -60,7 +61,7 @@ object ChatHistoryCsv {
         "display_mode",
         "is_favorite",
         "variant_index",
-        "variant_content",
+        "variant_sections",
         "variant_role_name",
         "variant_provider",
         "variant_model_name",
@@ -131,7 +132,7 @@ object ChatHistoryCsv {
         put(row, "message_timestamp", message.timestamp.toString())
         put(row, "message_order_index", orderIndex.toString())
         put(row, "sender", message.sender)
-        put(row, "message_content", message.content)
+        put(row, "message_sections", MessageSectionStorage.encode(message.resolvedSections()))
         put(row, "role_name", message.roleName)
         put(row, "selected_variant_index", message.selectedVariantIndex.toString())
         put(row, "variant_count", message.variantCount.toString())
@@ -161,7 +162,7 @@ object ChatHistoryCsv {
         put(row, "chat_id", chatId)
         put(row, "message_timestamp", messageTimestamp.toString())
         put(row, "variant_index", variant.variantIndex.toString())
-        put(row, "variant_content", variant.content)
+        put(row, "variant_sections", MessageSectionStorage.encode(variant.sections))
         put(row, "variant_role_name", variant.roleName)
         put(row, "variant_provider", variant.provider)
         put(row, "variant_model_name", variant.modelName)

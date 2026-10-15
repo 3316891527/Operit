@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.api.chat.keypool.*
+import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
@@ -15,6 +16,7 @@ import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.api.chat.llmprovider.EndpointCompleter
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.util.ThinkingMarkup
 import com.ai.assistance.operit.util.ChatUtils
 import com.ai.assistance.operit.util.HttpLogSanitizer
 import com.ai.assistance.operit.util.LocaleUtils
@@ -578,7 +580,7 @@ open class OpenAIProvider(
     }
 
     /**
-     * 解析服务器返回的内容，不再需要处理<think>标签
+     * 解析服务器返回的内容，思考字段由适配层包裹为带 token 的 think 块
      */
     private fun parseResponse(content: String): String {
         return content
@@ -1583,10 +1585,10 @@ open class OpenAIProvider(
             }
         }
 
-        suspend fun emitThinkContent(thinkContent: String, tag: String = "think") {
+        suspend fun emitThinkContent(thinkContent: String) {
             if (thinkContent.isNotNullOrEmpty()) {
                 markFirstOutputIfNeeded()
-                val wrapped = "<$tag>$thinkContent</$tag>"
+                val wrapped = ThinkingMarkup.wrap(thinkContent)
                 emit(wrapped)
                 receivedContent.append(wrapped)
                 tokenCacheManager.addOutputTokens(ChatUtils.estimateTokenCount(thinkContent))
@@ -1833,12 +1835,7 @@ open class OpenAIProvider(
         matches.forEach { match ->
             // 提取<content>标签内的内容，如果有的话
             val fullContent = match.groupValues[2].trim()
-            val contentMatch = ChatMarkupRegex.contentTag.find(fullContent)
-            val resultContent = if (contentMatch != null) {
-                contentMatch.groupValues[1].trim()
-            } else {
-                fullContent
-            }
+            val resultContent = ToolResultMarkup.contentFromBody(fullContent).trim()
 
             // 保留 name 属性，让结果能配回同名的 tool_call 而不是只按位置对齐
             val openingTag = match.value.substringBefore('>')
@@ -1901,6 +1898,7 @@ open class OpenAIProvider(
         var chunkCount: Int = 0,
         var lastLogTime: Long = System.currentTimeMillis(),
         var isInReasoningMode: Boolean = false,
+        var thinkingToken: String? = null,
         var hasEmittedThinkStart: Boolean = false,
         var hasEmittedRegularContent: Boolean = false,
         var reasoningObserved: Boolean = false,
@@ -2053,11 +2051,7 @@ open class OpenAIProvider(
         emitter: StreamEmitter
     ) {
         // 如果正在思考模式，收到工具调用时应先关闭思考标签
-        if (state.isInReasoningMode) {
-            state.isInReasoningMode = false
-            emitter.emitTag("</think>")
-            state.hasEmittedThinkStart = false
-        }
+        closeReasoningModeIfOpen(state, emitter)
 
         for (i in 0 until toolCallsDeltas.length()) {
             val deltaCall = toolCallsDeltas.getJSONObject(i)
@@ -2959,7 +2953,9 @@ open class OpenAIProvider(
             if (!state.isInReasoningMode) {
                 state.isInReasoningMode = true
                 if (!state.hasEmittedThinkStart) {
-                    emitter.emitTag("<think>")
+                    val token = ThinkingMarkup.newToken()
+                    state.thinkingToken = token
+                    emitter.emitTag(ThinkingMarkup.openTag(token))
                     state.hasEmittedThinkStart = true
                 }
             }
@@ -2968,11 +2964,7 @@ open class OpenAIProvider(
         // 处理常规内容
         if (hasRegular) {
             // 如果之前在思考模式，现在切换到了常规内容，需要关闭思考标签
-            if (state.isInReasoningMode) {
-                state.isInReasoningMode = false
-                emitter.emitTag("</think>")
-                state.hasEmittedThinkStart = false
-            }
+            closeReasoningModeIfOpen(state, emitter)
 
             // 硬切策略：正文一旦开始输出，后续到达的推理内容全部忽略
             state.hasEmittedRegularContent = true
@@ -2994,8 +2986,10 @@ open class OpenAIProvider(
         if (!state.isInReasoningMode) {
             return
         }
+        val token = requireNotNull(state.thinkingToken)
+        emitter.emitTag(ThinkingMarkup.closeTag(token))
+        state.thinkingToken = null
         state.isInReasoningMode = false
-        emitter.emitTag("</think>")
         state.hasEmittedThinkStart = false
     }
 
@@ -3205,11 +3199,7 @@ open class OpenAIProvider(
                 if (data == "[DONE]") {
                     flushImageBuffers(state, emitter)
                     closeAllOpenToolCalls(state, emitter)
-                    if (state.isInReasoningMode) {
-                        state.isInReasoningMode = false
-                        emitter.emitTag("</think>")
-                        state.hasEmittedThinkStart = false
-                    }
+                    closeReasoningModeIfOpen(state, emitter)
                     state.streamCompletionConfirmed = true
                     AppLogger.d("AIService", "【发送消息】收到流结束标记[DONE]")
                     break
@@ -3349,7 +3339,7 @@ open class OpenAIProvider(
                     "AIService",
                     "【发送消息】准备构建请求体，模型参数数量: ${modelParameters.size}，已启用参数: ${modelParameters.count { it.isEnabled }}"
                 )
-                // 直接传递原始历史记录给createRequestBody，让具体的Provider决定如何处理（例如Deepseek需要保留<think>标签）
+                // 直接传递原始历史记录给createRequestBody，让具体的Provider决定如何处理（例如 DeepSeek 需要独立的 reasoning_content）
                 val requestBody = createRequestBody(
                     context,
                     currentHistory,

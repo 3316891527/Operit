@@ -282,6 +282,8 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /** v20 -> v21: token statistics schema and Room-declared message indexes. */
+        internal val MIGRATION_21_22 = MessageSectionsMigration
+
         internal val MIGRATION_20_21 =
             object : Migration(20, 21) {
                 override fun migrate(db: SupportSQLiteDatabase) {

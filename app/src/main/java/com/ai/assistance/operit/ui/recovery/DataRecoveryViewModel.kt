@@ -13,6 +13,7 @@ import com.ai.assistance.operit.data.recovery.PreferencesHealthManager
 import com.ai.assistance.operit.data.recovery.RoomDatabaseHealthManager
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.LocaleUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,7 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         val lastDatabaseRepairArchivePath: String? = null,
         val healthRepairCompleted: Boolean = false,
         val includeLogsInSnapshot: Boolean = true,
+        val databaseUpgradeCompleted: Boolean = false
     )
 
     private val _state = MutableStateFlow(State())
@@ -149,9 +151,15 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
             _state.value.copy(isRunning = true, error = null, status = context.getString(R.string.data_recovery_restore_running), restoreCompleted = false)
         viewModelScope.launch {
             try {
-                val restoreResult = RawSnapshotBackupManager.restoreFromBackupUri(context, uri) { progress ->
-                    _state.value = _state.value.copy(status = restoreProgressText(progress))
-                }
+                val restoreResult = RawSnapshotBackupManager.restoreFromBackupUri(
+                    context = context,
+                    uri = uri,
+                    ensureMainProcessStopped = true,
+                    onProgress = { progress ->
+                        _state.value = _state.value.copy(status = restoreProgressText(progress))
+                    }
+                )
+                val databaseReport = RoomDatabaseHealthManager.inspect(context)
                 _state.value =
                     _state.value.copy(
                         isRunning = false,
@@ -162,7 +170,8 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
                         ),
                         restoreCompleted = true,
                         configurationHealthReport = null,
-                        databaseHealthReport = null
+                        databaseHealthReport = databaseReport,
+                        databaseUpgradeCompleted = false
                     )
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Raw snapshot restore failed", e)
@@ -187,7 +196,8 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
                 databaseHealthReport = null,
                 lastConfigurationRepairArchivePath = null,
                 lastDatabaseRepairArchivePath = null,
-                healthRepairCompleted = false
+                healthRepairCompleted = false,
+                databaseUpgradeCompleted = false
             )
         viewModelScope.launch {
             try {
@@ -202,6 +212,63 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
                     )
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Configuration and database health inspection failed", e)
+                _state.value =
+                    _state.value.copy(
+                        isRunning = false,
+                        error = e.message ?: e.javaClass.name,
+                        status = null
+                    )
+            }
+        }
+    }
+
+    fun migrateDatabase() {
+        val report = _state.value.databaseHealthReport
+        if (report?.canRunRoomMigrations != true) {
+            _state.value =
+                _state.value.copy(
+                    error = context.getString(R.string.data_recovery_database_no_supported_repair),
+                    status = null
+                )
+            return
+        }
+
+        _state.value =
+            _state.value.copy(
+                isRunning = true,
+                error = null,
+                status = context.getString(R.string.data_recovery_database_upgrade_running),
+                lastDatabaseRepairArchivePath = null,
+                databaseUpgradeCompleted = false
+            )
+        viewModelScope.launch {
+            try {
+                val result = RoomDatabaseHealthManager.migrateDatabase(context)
+                _state.value =
+                    _state.value.copy(
+                        isRunning = false,
+                        status = context.getString(R.string.data_recovery_database_upgrade_completed),
+                        databaseHealthReport = result.report,
+                        lastDatabaseRepairArchivePath = result.sourceArchive.absolutePath,
+                        databaseUpgradeCompleted = true
+                    )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: RoomDatabaseHealthManager.RepairFailedException) {
+                AppLogger.e(TAG, "Room database migration failed after source preservation", e)
+                _state.value =
+                    _state.value.copy(
+                        isRunning = false,
+                        error =
+                            context.getString(
+                                R.string.data_recovery_database_repair_failed_preserved,
+                                e.sourceArchive.absolutePath
+                            ),
+                        status = null,
+                        lastDatabaseRepairArchivePath = e.sourceArchive.absolutePath
+                    )
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Room database migration failed", e)
                 _state.value =
                     _state.value.copy(
                         isRunning = false,
@@ -232,7 +299,8 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
                 affectedRows = null,
                 lastConfigurationRepairArchivePath = null,
                 lastDatabaseRepairArchivePath = null,
-                healthRepairCompleted = false
+                healthRepairCompleted = false,
+                databaseUpgradeCompleted = false
             )
         viewModelScope.launch {
             var configurationArchivePath: String? = null
@@ -441,9 +509,9 @@ class DataRecoveryViewModel(private val context: Context) : ViewModel() {
         private const val TAG = "DataRecoveryViewModel"
 
         const val SAFE_MESSAGES_QUERY =
-            "SELECT messageId, chatId, timestamp, sender, length(CAST(content AS BLOB)) AS bytes FROM messages ORDER BY bytes DESC LIMIT 50"
+            "SELECT messageId, chatId, timestamp, sender, length(CAST(sections AS BLOB)) AS bytes FROM messages ORDER BY bytes DESC LIMIT 50"
         const val SAFE_VARIANTS_QUERY =
-            "SELECT variantId, chatId, messageTimestamp, variantIndex, length(CAST(content AS BLOB)) AS bytes FROM message_variants ORDER BY bytes DESC LIMIT 50"
+            "SELECT variantId, chatId, messageTimestamp, variantIndex, length(CAST(sections AS BLOB)) AS bytes FROM message_variants ORDER BY bytes DESC LIMIT 50"
         const val SAFE_CHATS_QUERY =
             "SELECT id, length(CAST(title AS BLOB)) AS titleBytes, length(CAST(ifnull(workspace, '') AS BLOB)) AS workspaceBytes, length(CAST(ifnull(workspaceEnv, '') AS BLOB)) AS workspaceEnvBytes FROM chats ORDER BY max(length(CAST(title AS BLOB)), length(CAST(ifnull(workspace, '') AS BLOB)), length(CAST(ifnull(workspaceEnv, '') AS BLOB))) DESC LIMIT 50"
     }
