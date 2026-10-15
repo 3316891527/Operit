@@ -42,7 +42,6 @@ import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAll
@@ -2996,7 +2995,8 @@ public class A2uiBasicCatalogV1(
             if (value.isEmpty()) return true
             val valueMillis = parseIsoDateTimeToUtcMillis(value)
             if (valueMillis == null) {
-                SideEffect(value) {
+                // 当前 Compose 用带键协程在提交后报告错误，避免重组重复发送。
+                LaunchedEffect(value) {
                     reportError(
                         A2uiException.A2uiRuntimeException("Invalid date-time format: $value")
                     )

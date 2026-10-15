@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.workspace
 
+import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -24,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +35,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ChatHistory
+import com.ai.assistance.operit.data.resources.OfflineResources
+import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
 import com.ai.assistance.operit.terminal.TerminalManager
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.chat.webview.computer.ComputerScreen
@@ -46,6 +49,8 @@ import com.ai.assistance.operit.terminal.data.TerminalSessionData
 import com.ai.assistance.operit.ui.features.terminal.EmbeddedTerminalPage
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -83,7 +88,11 @@ private fun WorkspaceHubContent(
     reserveChatControlsSpace: Boolean = false,
     onExportClick: (File) -> Unit,
 ) {
-    val page by actualViewModel.workspaceHubPage.collectAsState()
+    val requestedPage by actualViewModel.workspaceHubPage.collectAsState()
+    var lastOpenPage by remember { mutableStateOf(WorkspaceHubPage.HOME) }
+    // 关闭时继续绘制离开前的页面，使退出动画保留完整内容。
+    val page = if (requestedPage == WorkspaceHubPage.CHAT) lastOpenPage else requestedPage
+    SideEffect { if (requestedPage != WorkspaceHubPage.CHAT) lastOpenPage = requestedPage }
     val entryRequest by actualViewModel.workspaceEntryRequest.collectAsState()
     val context = LocalContext.current
     val terminalManager = remember(context) { TerminalManager.getInstance(context) }
@@ -94,28 +103,39 @@ private fun WorkspaceHubContent(
     var creatingSession by remember { mutableStateOf(false) }
     var sessionError by remember { mutableStateOf<String?>(null) }
     var sessionToClose by remember { mutableStateOf<TerminalSessionData?>(null) }
-    fun createTerminal() {
+    fun enterTerminal(createNewSession: Boolean = false, sessionId: String? = null) {
         if (creatingSession) return
         creatingSession = true
-        terminalPage = EmbeddedTerminalPage.CONSOLE
-        actualViewModel.openTerminalFromHub()
+        keyboard?.hide()
         scope.launch {
             try {
-                terminalManager.createNewSession(context.getString(
-                    R.string.workspace_terminal_session_title, terminalManager.terminalState.value.sessions.size + 1,
-                ))
+                // 先检查实际安装环境；归档可用时由终端完成安装，缺失时直接引导下载。
+                val installed = withContext(Dispatchers.IO) { OfflineResources.ubuntuInstalled(context) }
+                val resourcesReady = installed || OfflineResources.isReady(context, OfflineResources.UBUNTU)
+                // 资源校验期间已返回聊天时，不再打开资源页或终端。
+                if (actualViewModel.workspaceHubPage.value == WorkspaceHubPage.CHAT) return@launch
+                if (!resourcesReady) {
+                    context.startActivity(
+                        Intent(context, OfflineResourcesActivity::class.java)
+                            .putExtra(OfflineResourcesActivity.EXTRA_GROUP, OfflineResources.UBUNTU)
+                    )
+                    return@launch
+                }
+                terminalPage = EmbeddedTerminalPage.CONSOLE
+                if (sessionId != null) terminalManager.switchToSession(sessionId)
+                actualViewModel.openTerminalFromHub()
+                if (createNewSession || terminalManager.terminalState.value.sessions.isEmpty()) {
+                    terminalManager.createNewSession(context.getString(
+                        R.string.workspace_terminal_session_title, terminalManager.terminalState.value.sessions.size + 1,
+                    ))
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                AppLogger.e("WorkspaceTerminal", "Creating terminal session failed", error)
+                AppLogger.e("WorkspaceTerminal", "Opening terminal session failed", error)
                 sessionError = error.message ?: context.getString(R.string.workspace_terminal_failed)
             } finally { creatingSession = false }
         }
-    }
-    val openTerminal: () -> Unit = {
-        terminalPage = EmbeddedTerminalPage.CONSOLE
-        if (terminalManager.terminalState.value.sessions.isEmpty()) createTerminal()
-        else actualViewModel.openTerminalFromHub()
     }
     // 切换对话重置访问记录，同一对话的界面重建则保留已打开页签。
     var hasOpenedWorkspace by rememberSaveable { mutableStateOf(false) }
@@ -125,7 +145,7 @@ private fun WorkspaceHubContent(
         if (page == WorkspaceHubPage.TERMINAL) hasOpenedTerminal = true
     }
 
-    BackHandler(enabled = isVisible) {
+    BackHandler(enabled = isVisible && requestedPage != WorkspaceHubPage.CHAT) {
         if (page == WorkspaceHubPage.TERMINAL && terminalPage != EmbeddedTerminalPage.CONSOLE) {
             terminalPage = EmbeddedTerminalPage.CONSOLE
         } else actualViewModel.onWorkspaceHubBack()
@@ -134,10 +154,7 @@ private fun WorkspaceHubContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                // 终端保持透明父容器，避免覆盖原生显示层。
-                if (page == WorkspaceHubPage.TERMINAL) Color.Transparent else MaterialTheme.colorScheme.surface
-            )
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 1f))
             .padding(top = if (reserveChatControlsSpace) 52.dp else 0.dp)
             .pointerInput(Unit) { detectTapGestures(onTap = {}) },
     ) {
@@ -150,13 +167,9 @@ private fun WorkspaceHubContent(
             creatingSession = creatingSession,
             onHome = { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() },
             onWorkspace = { keyboard?.hide(); actualViewModel.openWorkspaceFromHub() },
-            onTerminal = { id ->
-                terminalManager.switchToSession(id)
-                terminalPage = EmbeddedTerminalPage.CONSOLE
-                actualViewModel.openTerminalFromHub()
-            },
+            onTerminal = { id -> enterTerminal(sessionId = id) },
             onCloseTerminal = { id -> sessionToClose = terminalManager.terminalState.value.sessions.firstOrNull { it.id == id } },
-            onNewTerminal = ::createTerminal,
+            onNewTerminal = { enterTerminal(createNewSession = true) },
             onTerminalPage = { keyboard?.hide(); terminalPage = it },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f))
@@ -169,7 +182,7 @@ private fun WorkspaceHubContent(
                     onOpenWorkspace = { actualViewModel.openWorkspaceFromHub(WorkspaceEntryAction.FILES) },
                     onCreateWorkspace = { actualViewModel.openWorkspaceFromHub(WorkspaceEntryAction.CREATE) },
                     onSelectWorkspace = { actualViewModel.openWorkspaceFromHub(WorkspaceEntryAction.SELECT) },
-                    onOpenTerminal = openTerminal,
+                    onOpenTerminal = { enterTerminal() },
                     onOpenHtmlPackager = onOpenHtmlPackager,
                 )
             }

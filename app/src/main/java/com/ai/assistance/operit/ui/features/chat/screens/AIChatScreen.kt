@@ -35,9 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -71,6 +69,7 @@ import com.ai.assistance.operit.ui.features.chat.components.ExportProgressDialog
 import com.ai.assistance.operit.ui.features.chat.components.WindowsExportDialog
 import com.ai.assistance.operit.ui.features.chat.webview.MentionSuggestionPanelStyle
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubScreen
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubOverlay
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubPage
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.ai.assistance.operit.ui.features.chat.webview.MentionSuggestionPanel
@@ -1081,35 +1080,20 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         )
 
         val isWorkspaceHubVisible = isCurrentScreen && !embedded && isWorkspaceHubOpen
-        // 保留工作区编辑状态，隐藏入口页面时不测量或放置其内容。
-        Layout(
-            modifier = if (isWorkspaceHubVisible) {
-                Modifier.fillMaxSize().clipToBounds()
-            } else {
-                Modifier.size(0.dp).clearAndSetSemantics {}
-            },
-            content = {
-                if (!embedded && hasEverShownWorkspaceHub) {
-                    WorkspaceHubScreen(
-                        actualViewModel = actualViewModel,
-                        currentChat = currentChatView,
-                        chatHistories = chatHistories,
-                        isVisible = isWorkspaceHubVisible,
-                        onOpenHtmlPackager = onNavigateToHtmlPackager,
-                        reserveChatControlsSpace = useMainSidebar,
-                        onExportClick = { workDir ->
-                            webContentDir = workDir
-                            showExportPlatformDialog = true
-                        },
-                    )
-                }
-            },
-        ) { measurables, constraints ->
-            if (!isWorkspaceHubVisible || measurables.isEmpty()) {
-                layout(0, 0) {}
-            } else {
-                val placeable = measurables.first().measure(constraints)
-                layout(placeable.width, placeable.height) { placeable.placeRelative(0, 0) }
+        WorkspaceHubOverlay(visible = isWorkspaceHubVisible) { overlayVisible ->
+            if (!embedded && (hasEverShownWorkspaceHub || isWorkspaceHubVisible)) {
+                WorkspaceHubScreen(
+                    actualViewModel = actualViewModel,
+                    currentChat = currentChatView,
+                    chatHistories = chatHistories,
+                    isVisible = overlayVisible,
+                    onOpenHtmlPackager = onNavigateToHtmlPackager,
+                    reserveChatControlsSpace = useMainSidebar,
+                    onExportClick = { workDir ->
+                        webContentDir = workDir
+                        showExportPlatformDialog = true
+                    },
+                )
             }
         }
         AnimatedVisibility(

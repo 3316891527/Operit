@@ -22,7 +22,7 @@ import androidx.a2ui.model.protocol.A2uiDataPath
 import androidx.a2ui.model.protocol.A2uiException
 import androidx.a2ui.model.protocol.A2uiException.A2uiRuntimeException
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
@@ -80,7 +80,8 @@ internal class A2uiComponentScopeImpl(
         val castedValue = property.safeCast(evaluatedValue)
         if (castedValue == null) {
             // Type mismatch detected, report the error to the agent for self-correction.
-            SideEffect(evaluatedValue, property.key) {
+            // 当前 Compose 用带键协程在提交后报告错误，避免重组重复发送。
+            LaunchedEffect(evaluatedValue, property.key) {
                 reportError(
                     A2uiRuntimeException(
                         "Type mismatch for key '${property.key}' in component '${id}'. " +
@@ -134,7 +135,7 @@ internal class A2uiComponentScopeImpl(
                 val resolvedList = surface.dataModel[absolutePath]
 
                 if (resolvedList != null && resolvedList !is List<*>) {
-                    SideEffect(resolvedList, property.key) {
+                    LaunchedEffect(resolvedList, property.key) {
                         reportError(
                             A2uiRuntimeException(
                                 "Type mismatch for child template '${property.key}' in component " +
@@ -207,7 +208,7 @@ internal class A2uiComponentScopeImpl(
         val resultPair = evaluationState.value
         val error = resultPair.second
 
-        SideEffect(error) {
+        LaunchedEffect(error) {
             if (error != null) {
                 reportError(error)
             }

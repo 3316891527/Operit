@@ -1328,8 +1328,13 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                 PackageScanCandidate(
                     fileName = fileName,
                     sourcePath = assetPath,
-                    loadJs = { onError -> loadPackageFromJsAsset(assetPath, onError)?.copy(isBuiltIn = true) },
-                    loadToolPkg = { onError -> loadToolPkgFromAsset(assetPath, onError) }
+                    // 只改内置资产的首次默认值，不重写持久化开关或外部导入包。
+                    loadJs = { onError ->
+                        loadPackageFromJsAsset(assetPath, onError)?.let(BuiltInPackageDefaults::sandbox)
+                    },
+                    loadToolPkg = { onError ->
+                        loadToolPkgFromAsset(assetPath, onError)?.let(BuiltInPackageDefaults::plugin)
+                    }
                 )
             }
         return scanPackageCandidates(phase = "asset", candidates = candidates)

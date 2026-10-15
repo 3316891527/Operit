@@ -464,7 +464,9 @@
     {
       "artifact": "compose-runtime",
       "path": "androidx/a2ui/compose/runtime/A2uiComponentScopeImpl.kt",
-      "sha256": "32c3ec54cbc895cf94728febad151a2990c41ec64510c689ae527c2301d1179c"
+      "sha256": "32c3ec54cbc895cf94728febad151a2990c41ec64510c689ae527c2301d1179c",
+      "adapted_sha256": "57c340d22537f6469809e1fb91ad4866ed687d9429e8c27e67fc4ed88724c20e",
+      "adaptation": "将带键 SideEffect 改为当前 Compose 支持的 LaunchedEffect，按键变化报告错误。"
     },
     {
       "artifact": "compose-runtime",
@@ -524,7 +526,9 @@
     {
       "artifact": "compose-ui",
       "path": "androidx/a2ui/compose/ui/catalog/A2uiBasicCatalogV1.kt",
-      "sha256": "9ab8919202bca65293758e209ce711ae6e1f5503be24a1d4f27022f4799d160c"
+      "sha256": "9ab8919202bca65293758e209ce711ae6e1f5503be24a1d4f27022f4799d160c",
+      "adapted_sha256": "563d3c44cfeaccf635bcecb8331a358f8bcdb2b861f2c175c8a692962e0912e9",
+      "adaptation": "将带键 SideEffect 改为当前 Compose 支持的 LaunchedEffect，按键变化报告错误。"
     }
   ]
 }

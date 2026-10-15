@@ -74,7 +74,9 @@ fun FunctionalConfigScreen(
     // Keep candidates live when the selected group changes or a configuration moves between groups.
     val configSelection: ModelConfigSelection? by
             modelConfigManager.configSelectionFlow.collectAsState(initial = null)
-    var showSaveSuccess by remember { mutableStateOf(false) }
+    fun showSavedToast() {
+        Toast.makeText(context, R.string.config_saved, Toast.LENGTH_SHORT).show()
+    }
 
     CustomScaffold() { paddingValues ->
         val selection = configSelection
@@ -198,7 +200,7 @@ fun FunctionalConfigScreen(
                                     if (functionType != FunctionType.MEMORY_EMBEDDING) {
                                         EnhancedAIService.refreshServiceForFunction(context, functionType)
                                     }
-                                    showSaveSuccess = true
+                                    showSavedToast()
                                 }
                             },
                             onThinkingChanged = { enableThinking, optionId ->
@@ -208,7 +210,7 @@ fun FunctionalConfigScreen(
                                             enableThinking,
                                             optionId
                                     )
-                                    showSaveSuccess = true
+                                    showSavedToast()
                                 }
                             }
                     )
@@ -224,7 +226,7 @@ fun FunctionalConfigScreen(
                                     functionalConfigManager.resetAllFunctionConfigs()
                                     // 刷新所有服务实例
                                     EnhancedAIService.refreshAllServices(context)
-                                    showSaveSuccess = true
+                                    showSavedToast()
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
@@ -238,45 +240,6 @@ fun FunctionalConfigScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(id = R.string.reset_all_functions_to_default))
-                    }
-
-                    // 成功提示
-                    androidx.compose.animation.AnimatedVisibility(
-                            visible = showSaveSuccess,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                    ) {
-                        Card(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors =
-                                        CardDefaults.cardColors(
-                                                containerColor =
-                                                        MaterialTheme.colorScheme.primaryContainer
-                                        )
-                        ) {
-                            Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                        text = stringResource(id = R.string.config_saved),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        LaunchedEffect(showSaveSuccess) {
-                            kotlinx.coroutines.delay(2000)
-                            showSaveSuccess = false
-                        }
                     }
                 }
             }
