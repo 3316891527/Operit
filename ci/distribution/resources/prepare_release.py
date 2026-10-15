@@ -31,7 +31,11 @@ def prepare(sources: Path, output: Path) -> None:
     for group, files in groups.items():
         with zipfile.ZipFile(output / f"operit-{group}-resources-v1.zip", "w", compression=zipfile.ZIP_STORED) as archive:
             for resource in files:
-                archive.write(resource, resource.name)
+                info = zipfile.ZipInfo(resource.name, date_time=(2026, 1, 1, 0, 0, 0))
+                info.external_attr = 0o100644 << 16
+                info.file_size = resource.stat().st_size
+                with resource.open("rb") as source, archive.open(info, "w") as target:
+                    shutil.copyfileobj(source, target)
     shutil.copyfile(catalog, output / catalog.name)
     lines = []
     for resource in sorted(output.iterdir()):

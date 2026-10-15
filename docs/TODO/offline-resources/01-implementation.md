@@ -43,3 +43,9 @@ Build 在产出 APK 后执行 ci/distribution/resources/verify_packaged_resource
 JVM 回归覆盖资源 ZIP 往返、错误哈希、截断、超长、缺失、越界、未知、重复与取消。未执行本地 Gradle 构建和本地测试；构建和测试由仓库工作流执行。手动回归见 [完整回归清单](02-regression.md)。
 
 [DONE] 客户端、固定资源清单、离线备份与导入、终端接口及打包调整已实现；构建、JVM 回归与设备结果待确认。
+
+## 云端发布资源
+
+Android Build 的 publishOfflineResources 选项只运行资源发布作业，跳过 Android 构建。作业读取固定的旧版 APK artifact，提取并校验模型和模板，按固定提交取得 Ubuntu，生成确定性的 ZIP 和校验清单，再上传至本轮准备的 resources-v1 草稿。全部附件通过大小与 GitHub SHA-256 核对后自动发布，且不标记为应用 latest。
+
+草稿内未完成的传输及与清单不符的旧附件可在发布前清理。正式资源 Release 不允许此脚本覆盖。APK artifact 仅作为本轮准备资源的来源；应用下载与重装复用依赖发布后的固定资源附件和用户保存的本地 ZIP。
