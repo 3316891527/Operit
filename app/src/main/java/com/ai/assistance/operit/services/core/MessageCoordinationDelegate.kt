@@ -499,7 +499,7 @@ class MessageCoordinationDelegate(
 
     /** 卡片提交沿用正常请求管线，同时保留聊天框草稿、附件与回复目标。 */
     fun trySendDynamicUi(
-        owner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner,
+        owner: com.ai.assistance.operit.ui.common.a2ui.DynamicUiOwner,
         text: String,
     ): Boolean {
         if (text.isBlank() || text.length > 40_000 || !canSubmitDynamicUi(owner)) return false
@@ -522,14 +522,14 @@ class MessageCoordinationDelegate(
         return true
     }
 
-    private fun canSubmitDynamicUi(owner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner): Boolean {
+    private fun canSubmitDynamicUi(owner: com.ai.assistance.operit.ui.common.a2ui.DynamicUiOwner): Boolean {
         if (chatHistoryDelegate.currentChatId.value != owner.chatId ||
             messageProcessingDelegate.isChatLoading(owner.chatId) ||
             (isSummarizing.value && summarizingChatId.value == owner.chatId) ||
             (isSendTriggeredSummarizing.value && sendTriggeredSummarizingChatId.value == owner.chatId)) return false
         val message = chatHistoryDelegate.chatHistory.value.firstOrNull { it.timestamp == owner.timestamp }
             ?: return false
-        return com.ai.assistance.operit.ui.common.dynamicui.matchesDynamicUiOwner(
+        return com.ai.assistance.operit.ui.common.a2ui.matchesDynamicUiOwner(
             chatHistoryDelegate.currentChatId.value, message, owner,
         )
     }
@@ -680,7 +680,7 @@ class MessageCoordinationDelegate(
         groupParticipantNamesText: String? = null,
         turnOptions: ChatTurnOptions = ChatTurnOptions(),
         consumeComposerState: Boolean = true,
-        dynamicUiOwner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner? = null,
+        dynamicUiOwner: com.ai.assistance.operit.ui.common.a2ui.DynamicUiOwner? = null,
     ) {
         // 如果不是自动续写，更新当前的 promptFunctionType
         if (!isAutoContinuation) {

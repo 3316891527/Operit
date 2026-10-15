@@ -5,6 +5,7 @@ import com.ai.assistance.operit.core.chat.hooks.PromptHookRegistry
 import com.ai.assistance.operit.data.model.SystemToolPromptCategory
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ToolParameterSchema
+import com.ai.assistance.operit.core.tools.defaultTool.a2ui.A2uiToolDefinitions
 
 /**
  * 系统工具提示词管理器
@@ -538,6 +539,7 @@ object SystemToolPrompts {
 
         return listOf(
             basicTools,
+            A2uiToolDefinitions.category(useEnglish = true),
             adjustedFileSystemTools,
             httpTools,
             memoryTools
@@ -613,6 +615,7 @@ object SystemToolPrompts {
 
         return listOf(
             basicToolsCn,
+            A2uiToolDefinitions.category(useEnglish = false),
             adjustedFileSystemTools,
             httpToolsCn,
             memoryToolsCn
@@ -681,9 +684,9 @@ object SystemToolPrompts {
         toolOrder: List<String> = emptyList()
     ): List<ManageableToolPrompt> {
         val baseCategories = if (useEnglish) {
-            listOf(basicTools, fileSystemTools, httpTools, memoryTools)
+            listOf(basicTools, A2uiToolDefinitions.category(useEnglish = true), fileSystemTools, httpTools, memoryTools)
         } else {
-            listOf(basicToolsCn, fileSystemToolsCn, httpToolsCn, memoryToolsCn)
+            listOf(basicToolsCn, A2uiToolDefinitions.category(useEnglish = false), fileSystemToolsCn, httpToolsCn, memoryToolsCn)
         }
 
         val result = baseCategories

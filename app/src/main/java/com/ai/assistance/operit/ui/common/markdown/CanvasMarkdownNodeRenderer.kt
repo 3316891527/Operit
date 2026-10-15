@@ -1,8 +1,8 @@
 package com.ai.assistance.operit.ui.common.markdown
 
 import androidx.compose.runtime.CompositionLocalProvider
-import com.ai.assistance.operit.ui.common.dynamicui.DynamicUiCard
-import com.ai.assistance.operit.ui.common.dynamicui.LocalDynamicUiOwner
+import com.ai.assistance.operit.ui.common.a2ui.DynamicUiCard
+import com.ai.assistance.operit.ui.common.a2ui.LocalDynamicUiOwner
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import android.text.SpannableStringBuilder
 import android.text.Spanned

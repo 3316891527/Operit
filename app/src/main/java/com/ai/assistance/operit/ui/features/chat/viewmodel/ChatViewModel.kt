@@ -1624,7 +1624,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     fun submitDynamicUi(
-        owner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner,
+        owner: com.ai.assistance.operit.ui.common.a2ui.DynamicUiOwner,
         text: String,
     ): Boolean = messageCoordinationDelegate.trySendDynamicUi(owner, text)
 

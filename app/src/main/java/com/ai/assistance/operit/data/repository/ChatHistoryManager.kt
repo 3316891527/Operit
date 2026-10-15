@@ -6,7 +6,7 @@ import com.ai.assistance.operit.data.chat.folders.ChatFolderBinding
 import com.ai.assistance.operit.data.chat.folders.ChatFolderRepository
 import com.ai.assistance.operit.data.chat.folders.describe
 import com.ai.assistance.operit.data.chat.folders.folderAncestors
-import com.ai.assistance.operit.ui.common.dynamicui.DynamicUiStateStore
+import com.ai.assistance.operit.ui.common.a2ui.DynamicUiStateStore
 import android.content.Context
 import android.net.Uri
 import com.ai.assistance.operit.util.AppLogger

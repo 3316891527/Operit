@@ -2,7 +2,7 @@
 
 参考发行版的聊天渲染与本分支不同。这里沿用本分支的 MessageSection、ChatTimelineEntries、LocalChatMessageSlice 和 MarkdownRenderFragment，在原有消息节点路径解释明确的 `a2ui` 围栏，不拼接全部片段另做一套渲染。
 
-`ToolExecutionManager.ToolRuntimeContext` 增加真实聊天 ID 和请求运行 ID；`JsEngine.ExecutionSession` 捕获实际调用包名和该上下文，NativeInterface 编译、修改及 live 更新只接受活动请求中的 `dynamic_ui` 包调用。卡片引用以每轮 `card-1` 等短名称返回，不能跨请求复用；请求取消或结束时撤销临时生成能力。
+`ToolExecutionManager.ToolRuntimeContext` 提供真实聊天 ID 和请求运行 ID；原生 `A2uiTools` 执行器从该可信上下文完成编译、修订和 live 更新，不从模型参数读取聊天身份，也不依赖 JsEngine 或引导包。卡片引用以每轮 `card-1` 等短名称返回，不能跨请求复用；请求取消或结束时撤销临时生成能力。
 
 EnhancedAIService 的首次模型流和工具后续流均在写入缓冲、轮次和 UI 前展开引用。CardReferenceExpander 随 SAVEPOINT/ROLLBACK 一起保存及恢复解析状态，解码、文本快照和事件使用同一互斥区。完整卡片保存为自包含的 A2UI 文本；普通代码、思考和工具输出里的短引用不展开。
 

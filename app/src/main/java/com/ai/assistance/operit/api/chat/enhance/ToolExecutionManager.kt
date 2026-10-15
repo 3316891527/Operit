@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.chat.enhance
 
-import com.ai.assistance.operit.ui.common.dynamicui.CardFences
+import com.ai.assistance.operit.ui.common.a2ui.CardFences
 import android.content.Context
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger

@@ -261,7 +261,7 @@ fun ChatScreenContent(
                 )
             }
             androidx.compose.runtime.CompositionLocalProvider(
-                com.ai.assistance.operit.ui.common.dynamicui.LocalDynamicUiSubmit provides
+                com.ai.assistance.operit.ui.common.a2ui.LocalDynamicUiSubmit provides
                     if (enableMessageDialogs && !isMultiSelectMode) actualViewModel::submitDynamicUi else null,
             ) {
             ChatArea(

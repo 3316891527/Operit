@@ -1,19 +1,15 @@
-# 动态界面工具
+# 原生 A2UI
 
-本个人发行版的 `dynamic_ui` 沙盒包默认关闭，需要在包管理页手动启用。界面协议、Express 编译、Compose 渲染和交互由原生 Kotlin 实现，脚本包提供模型工具入口。
+A2UI 的生成、校验、修订、数据更新和 Compose 渲染由 Kotlin 提供，不需要导入或激活任何脚本包。
 
-加载 `dynamic_ui` 后先调用 `read_guide`，按需要用原生展示块或交互块补充正常回答。模型用受限 Express 描述界面，`prepare_card` 返回短引用；将 `a2ui-ref` 围栏放在正文相应位置，宿主在同一请求中展开为自包含 A2UI v0.9 卡片。不要手写或重复抄写卡片 JSON。
+原生工具包括 `a2ui_catalog`、`a2ui_icons`、`a2ui_prepare`、`a2ui_revise`、`a2ui_patch_data`，沿用内置工具的权限、角色卡可见性和真实请求上下文。基础工具定义只描述接口，不要求模型优先生成卡片或每次先读取引导。
 
-适合步骤、流程、数据对比、表格、多项指标，以及用户需要输入、选择或本地试算的内容。短事实、简短回答和普通代码继续使用 Markdown。纯展示内容无需按钮、表单或未使用的数据。
+`a2ui_catalog` 返回当前 Express 组件、函数和参数定义。`a2ui_prepare(source, live=false)` 将 Express 编译为原生 A2UI v0.9 文档并返回本轮短引用；将引用放在回答正文的 `a2ui-ref` 围栏内，原生消息管线会展开为自包含 `a2ui` 卡片。直接输出符合当前协议和组件目录的完整 `a2ui` 围栏也可被原生渲染器识别。
 
-`read_example` 默认编译展示示例；设置 `source_only=true` 只学习源码。购物清单、出行费用和筛选图表示例使用演示数据，不应当作查到的事实。修改后使用 `prepare_card` 编译。组件参数和当前合同由 `read_guide` 及原生目录生成，编译失败按返回位置修正。
+示例源码 `root=Column(children=[Heading(text="标题"),Text(text="内容")])` 可直接交给 `a2ui_prepare`。修订使用 `a2ui_revise`，生成新的引用并保留旧卡片；实时数据通过 `a2ui_patch_data` 按当前版本更新。引用不能跨请求使用，已结束请求不能继续生成或更新卡片。
 
-控件与本地计算在设备内处理。AI 提交及工具请求经确认后进入普通对话管线，仍受当前聊天、角色卡和权限约束。不要添加无实际用途的提交按钮。流式未完成的卡片不可交互，临时引用不能跨请求复用。
+可选的 `examples/a2ui_guide.js` 仅提供 `read_guide` 和 `read_example`，只返回说明与 Express 示例源码，不调用原生接口、不生成卡片、不随 APK 内置。需要详细说明时可手动导入或读取该文件；不使用引导包不会关闭原生能力。
 
-`live=true` 只允许本轮修改初始化的 `/agent` 数据，`patch_card_data` 必须使用最近版本号；用户输入与 Agent 数据分开。`update_card` 返回独立新修订，不修改旧卡片的用户状态。
+网络中的 A2UI 示例可能采用不同协议版本、组件目录和交互合同，需要对照本应用的原生目录。示例数据不能当作已查询到的事实。
 
-图标通过 `list_icons` 按名称查询；卡片支持固定版本的 Lucide 数据。当前接入不提供段落内的徽章或图标 Markdown 扩展。
-
-仅当用户明确要求 HTML/CSS 或高级视觉效果时使用 `prepare_html`。这类块在用户点击后加载，不能执行作者脚本、联网或直接调用工具；需要持久输入、权限操作或 AI 提交时使用原生组件。
-
-宿主实现位于 `app/src/main/java/com/ai/assistance/operit/ui/common/dynamicui/`；AndroidX 兼容层位于 `a2ui-compat/`，来源和许可证随源码保留。当前实现与验证边界见 [开发记录](../TODO/distribution-a2ui/index.md)。
+宿主包为 `ui.common.a2ui`，工具入口位于独立的 `core.tools.defaultTool.a2ui`。历史卡片的存储目录保留，包路径重命名不清空用户已填写的数据。

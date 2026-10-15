@@ -18,10 +18,10 @@ import com.ai.assistance.operit.core.chat.context.RequestWindowSnapshot
 import com.ai.assistance.operit.core.chat.hooks.PromptHookContext
 import com.ai.assistance.operit.core.chat.hooks.PromptHookRegistry
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
-import com.ai.assistance.operit.ui.common.dynamicui.CardFences
-import com.ai.assistance.operit.ui.common.dynamicui.CardDelivery
-import com.ai.assistance.operit.ui.common.dynamicui.CardReferenceExpander
-import com.ai.assistance.operit.ui.common.dynamicui.CardTranscript
+import com.ai.assistance.operit.ui.common.a2ui.CardFences
+import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
+import com.ai.assistance.operit.ui.common.a2ui.CardReferenceExpander
+import com.ai.assistance.operit.ui.common.a2ui.CardTranscript
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.chat.hooks.appendUserTurnIfMissing
 import com.ai.assistance.operit.core.chat.hooks.buildActivePromptHookMetadata
