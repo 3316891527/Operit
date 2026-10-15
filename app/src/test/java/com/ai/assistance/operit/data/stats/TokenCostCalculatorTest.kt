@@ -246,7 +246,8 @@ class TokenCostCalculatorTest {
             usdToCnyRate = 7.0,
         )
 
-        assertEquals(4.5, result.knownAmount, 1e-12)
+        // 输入 2 + 缓存输入 0.5 + 缓存写入 10 + 输出 2；缓存写入仍需单独计费。
+        assertEquals(14.5, result.knownAmount, 1e-12)
     }
 
     @Test

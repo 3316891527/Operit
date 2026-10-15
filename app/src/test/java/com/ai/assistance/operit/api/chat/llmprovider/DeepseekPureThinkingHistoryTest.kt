@@ -105,7 +105,7 @@ class DeepseekPureThinkingHistoryTest {
             )
         val method =
             DeepseekProvider::class.java.declaredMethods.single {
-                it.name == "createRequestBody" && it.parameterCount == 7
+                it.name == "createRequestBody" && it.parameterCount == 8
             }
         method.isAccessible = true
         val body =
@@ -115,6 +115,7 @@ class DeepseekPureThinkingHistoryTest {
                 history,
                 emptyList<ModelParameter<*>>(),
                 true,
+                null, // 使用模型默认的思考选项。
                 false,
                 listOf(ToolPrompt(name = "read_file", description = "Read a file")),
                 true

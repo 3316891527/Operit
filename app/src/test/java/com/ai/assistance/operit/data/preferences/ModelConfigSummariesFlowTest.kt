@@ -49,8 +49,7 @@ class ModelConfigSummariesFlowTest {
             }
         }
 
-        val context = Mockito.mock(Context::class.java)
-        Mockito.`when`(context.applicationContext).thenReturn(context)
+        val context = testContext()
         val manager = ModelConfigManager(context, dataStore)
         val emissions = Channel<List<ModelConfigSummary>>(Channel.UNLIMITED)
         val collector = launch {
@@ -99,7 +98,7 @@ class ModelConfigSummariesFlowTest {
             }
         }
 
-        val context = Mockito.mock(Context::class.java)
+        val context = testContext()
         val manager = ModelConfigManager(context, dataStore)
         val updatesBeforeImport = dataStore.updateCount
         val legacyPayload =
@@ -133,7 +132,7 @@ class ModelConfigSummariesFlowTest {
     @Test
     fun `export includes groups and import recreates missing groups`() = runBlocking {
         val sourceStore = TestPreferencesDataStore(MutableStateFlow<Preferences>(mutablePreferencesOf()))
-        val context = Mockito.mock(Context::class.java)
+        val context = testContext()
         val source = ModelConfigManager(context, sourceStore)
         val groupId = source.createConfigGroup("Remote")
         val configId = source.createConfig("Remote model", groupId)
@@ -172,7 +171,7 @@ class ModelConfigSummariesFlowTest {
                     }
                 }
             }
-            val manager = ModelConfigManager(Mockito.mock(Context::class.java), dataStore)
+            val manager = ModelConfigManager(testContext(), dataStore)
             manager.setSelectedConfigGroup(groupA.id)
             val emissions = Channel<ModelConfigSelection>(Channel.UNLIMITED)
             val collector = launch {
@@ -227,6 +226,11 @@ class ModelConfigSummariesFlowTest {
             collector.join()
         }
     }
+
+    private fun testContext(): Context =
+        Mockito.mock(Context::class.java).also { context ->
+            Mockito.`when`(context.applicationContext).thenReturn(context)
+        }
 
     private class TestPreferencesDataStore(
         private val preferences: MutableStateFlow<Preferences>

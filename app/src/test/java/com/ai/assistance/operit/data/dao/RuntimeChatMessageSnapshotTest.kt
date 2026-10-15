@@ -3,6 +3,7 @@ package com.ai.assistance.operit.data.dao
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.MessageEntity
+import com.ai.assistance.operit.data.model.MessageSectionCodec
 import com.ai.assistance.operit.data.model.MessageVariantEntity
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -28,11 +29,15 @@ class RuntimeChatMessageSnapshotTest {
             variantCounts = listOf(MessageVariantCount(300, 3), MessageVariantCount(400, 4)),
         ).toChatMessages()
 
-        assertEquals(
-            listOf(summary.toChatMessage(), user.toChatMessage(),
-                original.toChatMessage().copy(variantCount = 4), selected.applyTo(regenerated.toChatMessage(), 5)),
-            actual,
+        val expected = listOf(
+            summary.toChatMessage(), user.toChatMessage(),
+            original.toChatMessage().copy(variantCount = 4), selected.applyTo(regenerated.toChatMessage(), 5),
         )
+        // 渲染思考片段会生成随机标记，完整比较结构化正文和其他所有消息字段。
+        assertEquals(expected.map { it.copy(content = "") }, actual.map { it.copy(content = "") })
+        expected.zip(actual).forEach { (expectedMessage, actualMessage) ->
+            assertEquals(expectedMessage.sections, MessageSectionCodec.parse(actualMessage.content))
+        }
     }
 
     @Test

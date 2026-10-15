@@ -208,7 +208,7 @@ class DeepseekProviderMediaRoleTest {
             )
         val method =
             DeepseekProvider::class.java.declaredMethods.single {
-                it.name == "createRequestBody" && it.parameterCount == 7
+                it.name == "createRequestBody" && it.parameterCount == 8
             }
         method.isAccessible = true
         val body =
@@ -218,6 +218,7 @@ class DeepseekProviderMediaRoleTest {
                 history,
                 emptyList<ModelParameter<*>>(),
                 false,
+                null, // 使用模型默认的思考选项。
                 false,
                 availableTools,
                 false
