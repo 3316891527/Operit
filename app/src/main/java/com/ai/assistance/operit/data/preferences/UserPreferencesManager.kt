@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.data.preferences
 
+import com.ai.assistance.operit.data.preferences.glass.GlassThemePreferences
+
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
@@ -812,7 +814,7 @@ class UserPreferencesManager private constructor(private val context: Context) {
             KEY_SHOW_MODEL_NAME, KEY_SHOW_ROLE_NAME, KEY_SHOW_USER_NAME,
             KEY_SHOW_MESSAGE_TOKEN_STATS, KEY_SHOW_MESSAGE_TIMING_STATS, KEY_SHOW_MESSAGE_TOKEN_SPEED,
             KEY_SHOW_MESSAGE_TIMESTAMP
-        )
+        ) + GlassThemePreferences.booleanKeys
     }
 
     private fun getAllIntThemeKeys(): List<Preferences.Key<Int>> {
@@ -821,7 +823,7 @@ class UserPreferencesManager private constructor(private val context: Context) {
             CUSTOM_NAVIGATION_DRAWER_ACCENT_COLOR,
             CURSOR_USER_BUBBLE_COLOR, BUBBLE_USER_BUBBLE_COLOR, BUBBLE_AI_BUBBLE_COLOR,
             BUBBLE_USER_TEXT_COLOR, BUBBLE_AI_TEXT_COLOR
-        )
+        ) + GlassThemePreferences.intKeys
     }
 
     private fun getAllFloatThemeKeys(): List<Preferences.Key<Float>> {
@@ -835,7 +837,7 @@ class UserPreferencesManager private constructor(private val context: Context) {
             BUBBLE_AI_IMAGE_REPEAT_Y_START, BUBBLE_AI_IMAGE_REPEAT_Y_END, BUBBLE_AI_IMAGE_SCALE,
             BUBBLE_USER_CONTENT_PADDING_LEFT, BUBBLE_USER_CONTENT_PADDING_RIGHT,
             BUBBLE_AI_CONTENT_PADDING_LEFT, BUBBLE_AI_CONTENT_PADDING_RIGHT
-        )
+        ) + GlassThemePreferences.floatKeys
     }
 
     private fun copyThemeValues(

@@ -125,10 +125,6 @@ fun TabletLayout(
                                                 enabled = drawerAppearance.waterGlassEnabled,
                                                 shape = MaterialTheme.shapes.medium,
                                                 containerColor = drawerAppearance.containerColor,
-                                                shadowElevation = 4.dp,
-                                                borderWidth = 0.7.dp,
-                                                overlayAlphaBoost = 0.20f,
-                                                frostScale = 3f
                                         )
                                         .zIndex(2f), // 确保侧边栏在主内容之上
                         shadowElevation = if (drawerAppearance.waterGlassEnabled) 0.dp else 4.dp,

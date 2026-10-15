@@ -61,10 +61,6 @@ fun CompactNavigationDrawerItem(
                                     enabled = appearance.buttonLiquidGlassEnabled,
                                     shape = itemShape,
                                     containerColor = glassBaseColor,
-                                    shadowElevation = if (selected) 6.dp else 4.dp,
-                                    borderWidth = 0.5.dp,
-                                    blurRadius = 12.dp,
-                                    overlayAlphaBoost = 0.04f,
                                     enableLens = false
                             )
                             .clip(itemShape)

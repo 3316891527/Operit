@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -33,6 +36,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
@@ -68,6 +72,7 @@ fun PluginTabContent(
     sort: PluginSortSelection = PluginSortSelection(),
     activities: Map<String, PluginActivity> = emptyMap()
 ) {
+    val glassEnabled = rememberGlassAppearance().packageCards
     val orderedPluginList = remember(plugins, pluginOrder, sort, activities, enabledPackageNames) {
         sortPluginEntries(
             entries = plugins.map { (name, details) ->
@@ -134,12 +139,15 @@ fun PluginTabContent(
                 ) { isDragging ->
                     Surface(
                         onClick = { onPluginClick(packageName) },
-                        modifier = Modifier.fillMaxWidth().longPressDraggableHandle().then(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(vertical = if (glassEnabled) 3.dp else 0.dp)
+                            .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer)
+                            .longPressDraggableHandle().then(
                             if (isDragging) Modifier.shadow(8.dp, RoundedCornerShape(12.dp)) else Modifier
                         ),
-                        shape = RoundedCornerShape(if (isDragging) 12.dp else 0.dp),
+                        shape = RoundedCornerShape(if (isDragging || glassEnabled) 12.dp else 0.dp),
                         // 普通行延续页面底色，拖动中的行使用实色表面承载阴影。
-                        color = if (isDragging) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.background
+                        color = if (glassEnabled) Color.Transparent else if (isDragging) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.background
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 4.dp),

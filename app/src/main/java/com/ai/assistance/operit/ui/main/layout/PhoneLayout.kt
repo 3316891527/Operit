@@ -96,7 +96,7 @@ fun PhoneLayout(
         val transition = updateTransition(drawerState.targetValue, label = "drawer_transition")
         val drawerTopInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
-        val drawerProgress by
+        val drawerProgressState =
                 transition.animateFloat(
                         label = "drawerProgress",
                         transitionSpec = {
@@ -119,33 +119,6 @@ fun PhoneLayout(
                 drawerState.currentValue == DrawerValue.Open ||
                         drawerState.targetValue == DrawerValue.Open
 
-        val contentTranslationX =
-                if (enableNavigationAnimation) {
-                        drawerWidth * (0.82f * drawerProgress)
-                } else {
-                        drawerWidth * drawerProgress
-                }
-        val contentTranslationY =
-                if (enableNavigationAnimation) 12.dp * drawerProgress else 0.dp
-        val contentScale =
-                if (enableNavigationAnimation) 1f - (0.08f * drawerProgress) else 1f
-        val contentRotationY =
-                if (enableNavigationAnimation) -7f * drawerProgress else 0f
-        val contentCornerRadius =
-                if (enableNavigationAnimation) 24.dp * drawerProgress else 0.dp
-        val contentShadowElevation =
-                if (enableNavigationAnimation) 18.dp * drawerProgress else 0.dp
-
-        val drawerOffset = -drawerWidth * (1f - drawerProgress)
-        val sidebarElevation =
-                if (enableNavigationAnimation) 16.dp * drawerProgress
-                else 3.dp * drawerProgress
-        val drawerScale =
-                if (enableNavigationAnimation) 0.92f + (0.08f * drawerProgress)
-                else 1f
-        val drawerContentAlpha =
-                if (enableNavigationAnimation) 0.72f + (0.28f * drawerProgress)
-                else 0.8f + (0.2f * drawerProgress)
         val scrimColor = Color.Transparent
 
         // 侧边栏相关拖拽状态
@@ -224,17 +197,20 @@ fun PhoneLayout(
                     modifier =
                             Modifier.fillMaxSize()
                                     .graphicsLayer {
-                                            translationX = contentTranslationX.toPx()
-                                            translationY = contentTranslationY.toPx()
-                                            scaleX = contentScale
-                                            scaleY = contentScale
-                                            rotationY = contentRotationY
+                                            val progress = drawerProgressState.value
+                                            translationX = drawerWidth.toPx() * progress * if (enableNavigationAnimation) 0.82f else 1f
+                                            translationY = if (enableNavigationAnimation) 12.dp.toPx() * progress else 0f
+                                            val scale = if (enableNavigationAnimation) 1f - 0.08f * progress else 1f
+                                            scaleX = scale
+                                            scaleY = scale
+                                            rotationY = if (enableNavigationAnimation) -7f * progress else 0f
+                                            shape = RoundedCornerShape(if (enableNavigationAnimation) (24f * progress).dp else 0.dp)
+                                            clip = true
+                                            shadowElevation = if (enableNavigationAnimation) 18.dp.toPx() * progress else 0f
                                             transformOrigin = TransformOrigin(0f, 0.5f)
                                     }
                                     .zIndex(1f),
-                    shape = RoundedCornerShape(contentCornerRadius),
                     color = Color.Transparent,
-                    shadowElevation = contentShadowElevation
                 ) {
                     // 普通调用AppContent，但由于我们的优化，它不会在动画时重组
                     AppContent(
@@ -279,27 +255,28 @@ fun PhoneLayout(
                                         .padding(top = drawerTopInset)
                                         .fillMaxHeight()
                                         .graphicsLayer {
-                                                translationX = drawerOffset.toPx()
-                                                scaleX = drawerScale
-                                                scaleY = drawerScale
-                                                alpha = drawerContentAlpha
+                                                val progress = drawerProgressState.value
+                                                translationX = -drawerWidth.toPx() * (1f - progress)
+                                                val scale = if (enableNavigationAnimation) 0.92f + 0.08f * progress else 1f
+                                                scaleX = scale
+                                                scaleY = scale
+                                                alpha = if (enableNavigationAnimation) 0.72f + 0.28f * progress else 0.8f + 0.2f * progress
+                                                shape = drawerShape
+                                                shadowElevation = if (drawerAppearance.waterGlassEnabled) 0f
+                                                    else (if (enableNavigationAnimation) 16.dp else 3.dp).toPx() * progress
                                                 transformOrigin = TransformOrigin(0f, 0.5f)
                                         }
                                         .waterGlass(
                                                 enabled = drawerAppearance.waterGlassEnabled,
                                                 shape = drawerShape,
                                                 containerColor = drawerAppearance.containerColor,
-                                                shadowElevation = sidebarElevation,
-                                                borderWidth = 0.7.dp,
-                                                overlayAlphaBoost = 0.20f,
-                                                frostScale = 3f
                                         )
                                         .zIndex(2f),
                         shape = drawerShape,
                         color =
                                 if (drawerAppearance.waterGlassEnabled) Color.Transparent
                                 else drawerAppearance.containerColor,
-                        shadowElevation = if (drawerAppearance.waterGlassEnabled) 0.dp else sidebarElevation
+                        shadowElevation = 0.dp
                 ) {
                         DrawerContent(
                                 navItems = navItems,

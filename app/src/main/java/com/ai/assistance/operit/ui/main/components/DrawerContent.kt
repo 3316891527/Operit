@@ -196,11 +196,10 @@ fun DrawerContent(
                         drawerState.currentValue == DrawerValue.Open ||
                                 drawerState.targetValue == DrawerValue.Open
 
-                scope.launch {
-                        if (shouldCloseBeforeNavigate) {
-                                drawerState.close()
-                        }
-                        onScreenSelected(screen)
+                // 页面切换与收起并行，避免等待抽屉关闭后才开始响应导航。
+                onScreenSelected(screen)
+                if (shouldCloseBeforeNavigate) {
+                        scope.launch { drawerState.close() }
                 }
         }
         val handleNavItemClick: (NavItem) -> Unit = { item ->
@@ -211,11 +210,10 @@ fun DrawerContent(
                 val shouldCloseBeforeNavigate =
                         drawerState.currentValue == DrawerValue.Open ||
                                 drawerState.targetValue == DrawerValue.Open
-                scope.launch {
-                        if (shouldCloseBeforeNavigate) {
-                                drawerState.close()
-                        }
-                        onNavigationEntrySelected(entry)
+                // 页面切换与收起并行，避免等待抽屉关闭后才开始响应导航。
+                onNavigationEntrySelected(entry)
+                if (shouldCloseBeforeNavigate) {
+                        scope.launch { drawerState.close() }
                 }
         }
 
@@ -290,10 +288,6 @@ fun CollapsedDrawerContent(
                                                 enabled = appearance.buttonLiquidGlassEnabled,
                                                 shape = CircleShape,
                                                 containerColor = appearance.buttonContainerColor,
-                                                shadowElevation = 5.dp,
-                                                borderWidth = 0.5.dp,
-                                                blurRadius = 14.dp,
-                                                overlayAlphaBoost = 0.05f,
                                                 enableLens = false
                                         )
                                         .clip(CircleShape),
@@ -334,11 +328,6 @@ fun CollapsedDrawerContent(
                                                         shape = CircleShape,
                                                         containerColor =
                                                                 appearance.buttonContainerColor,
-                                                        shadowElevation =
-                                                                if (selectedItem == item) 6.dp else 5.dp,
-                                                        borderWidth = 0.5.dp,
-                                                        blurRadius = 14.dp,
-                                                        overlayAlphaBoost = 0.05f,
                                                         enableLens = false
                                                 )
                                                 .clip(CircleShape)
@@ -395,11 +384,6 @@ fun CollapsedDrawerContent(
                                                                 enabled = appearance.buttonLiquidGlassEnabled,
                                                                 shape = CircleShape,
                                                                 containerColor = appearance.buttonContainerColor,
-                                                                shadowElevation =
-                                                                        if (selectedRouteId == entry.routeId) 6.dp else 5.dp,
-                                                                borderWidth = 0.5.dp,
-                                                                blurRadius = 14.dp,
-                                                                overlayAlphaBoost = 0.05f,
                                                                 enableLens = false
                                                         )
                                                         .clip(CircleShape)

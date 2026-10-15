@@ -140,7 +140,11 @@ sealed class Screen(
     }
 
     // Main screens (primary)
-    data object AiChat : Screen(navItem = NavItem.AiChat) {
+    // 聊天内容离页立即退出绘制，避免透明设置页和插件页透出聊天记录。
+    data object AiChat : Screen(
+        navItem = NavItem.AiChat,
+        participatesInCrossfadeTransition = false,
+    ) {
         @Composable
         override fun Content(
                 navController: NavController,

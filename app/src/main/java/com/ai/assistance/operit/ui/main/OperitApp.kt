@@ -452,7 +452,7 @@ fun OperitApp(
 
     // Calculate drawer width for phone mode
     // 为嵌套对话目录留足宽度，同时保留可点击关闭的右侧区域。
-    val drawerWidth = (screenWidthDp * 0.86f).coerceAtMost(420f).dp
+    val drawerWidth = (screenWidthDp * 0.66f).dp
 
     // Main app container
     Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {

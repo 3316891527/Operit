@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsSidebarSection
+import com.ai.assistance.operit.ui.features.settings.sections.glass.GlassSettingsSection
 
 @Composable
 internal fun ThemeSettingsInterfaceTab(
@@ -18,4 +19,5 @@ internal fun ThemeSettingsInterfaceTab(
         waterGlass = values.requiredBoolean("navigation_drawer_water_glass"),
         buttonGlass = values.requiredBoolean("navigation_drawer_button_liquid_glass"),
     )
+    GlassSettingsSection(editorSession = shared.editorSession, cardColors = cardColors)
 }
