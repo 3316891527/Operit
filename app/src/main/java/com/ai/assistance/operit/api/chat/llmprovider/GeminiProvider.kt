@@ -243,6 +243,12 @@ open class GeminiProvider(
         tokenCacheManager.resetTokenCounts()
     }
 
+    @Volatile
+    private var outputStoppedByLimit = false
+
+    override val outputTruncatedByLimit: Boolean
+        get() = outputStoppedByLimit
+
     override suspend fun calculateInputTokens(
             chatHistory: List<PromptTurn>,
             availableTools: List<ToolPrompt>?
@@ -1187,6 +1193,7 @@ open class GeminiProvider(
         val responseStream = stream {
         val streamScope = this
         isManuallyCancelled = false
+        outputStoppedByLimit = false
         val requestId = System.currentTimeMillis().toString()
         // 重置输出token计数（保留输入历史缓存）
         tokenCacheManager.addOutputTokens(-tokenCacheManager.outputTokenCount)
@@ -1246,6 +1253,7 @@ open class GeminiProvider(
             }
             
             try {
+                outputStoppedByLimit = false
                 if (retryCount > 0) {
                     AppLogger.d(
                         TAG,
@@ -2081,6 +2089,9 @@ open class GeminiProvider(
             }
 
             // 检查finish_reason
+            if (finishReason.equals("MAX_TOKENS", ignoreCase = true)) {
+                outputStoppedByLimit = true
+            }
             if (finishReason.isNotEmpty() && finishReason != "STOP") {
                 logDebug("收到完成原因: $finishReason")
             }

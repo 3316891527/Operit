@@ -2137,10 +2137,16 @@ class EnhancedAIService private constructor(private val context: Context) {
         disableWarning: Boolean
     ) {
         val assistantTurnContent = context.roundManager.getCurrentRoundContent()
+        val outputStoppedByLimit =
+            context.modelExecutionSnapshot?.service?.outputTruncatedByLimit == true
         val pureThinkingWarning =
             ConversationMarkupManager.createWarningStatus(
                 this@EnhancedAIService.context.getString(
-                    R.string.enhanced_pure_thinking_only_warning
+                    if (outputStoppedByLimit) {
+                        R.string.enhanced_pure_thinking_output_limit_warning
+                    } else {
+                        R.string.enhanced_pure_thinking_only_warning
+                    }
                 )
             )
         val pureThinkingWarningDisplayContent = "\n$pureThinkingWarning"

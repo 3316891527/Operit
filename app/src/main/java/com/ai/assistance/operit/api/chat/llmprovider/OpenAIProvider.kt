@@ -118,6 +118,12 @@ open class OpenAIProvider(
     @Volatile
     private var isManuallyCancelled = false
 
+    @Volatile
+    private var outputStoppedByLimit = false
+
+    override val outputTruncatedByLimit: Boolean
+        get() = outputStoppedByLimit
+
     /**
      * 带 HTTP 状态码的 API 异常，供统一重试日志和最终错误展示使用。
      */
@@ -2836,6 +2842,11 @@ open class OpenAIProvider(
 
             "response.completed", "response.incomplete" -> {
                 val responseObj = jsonResponse.optJSONObject("response")
+                if (eventType == "response.incomplete" &&
+                    isResponsesOutputLimit(responseObj, jsonResponse)
+                ) {
+                    outputStoppedByLimit = true
+                }
                 val usage = responseObj?.optJSONObject("usage")
                 val reasoningTokens =
                     usage
@@ -2875,6 +2886,25 @@ open class OpenAIProvider(
         }
     }
 
+    private fun isResponsesOutputLimit(
+        responseObj: JSONObject?,
+        eventObj: JSONObject?
+    ): Boolean {
+        val response = responseObj ?: eventObj
+        val status = response?.optString("status", "")?.trim().orEmpty()
+        if (!status.equals("incomplete", ignoreCase = true) &&
+            eventObj?.optString("type", "") != "response.incomplete"
+        ) {
+            return false
+        }
+        val reason = response
+            ?.optJSONObject("incomplete_details")
+            ?.optString("reason", "")
+            ?.trim()
+            .orEmpty()
+        return reason.equals("max_output_tokens", ignoreCase = true)
+    }
+
     /**
      * 处理完成原因
      */
@@ -2892,6 +2922,9 @@ open class OpenAIProvider(
             return
         }
         state.streamCompletionConfirmed = true
+        if (normalizedFinishReason.equals("length", ignoreCase = true)) {
+            outputStoppedByLimit = true
+        }
 
         if (hasOpenToolCalls(state)) {
             closeAllOpenToolCalls(state, emitter)
@@ -3115,6 +3148,15 @@ open class OpenAIProvider(
         }
         // 处理message格式（非流式响应）
         else {
+            val finishReason =
+                if (choice.has("finish_reason") && !choice.isNull("finish_reason")) {
+                    choice.optString("finish_reason", "").trim()
+                } else {
+                    ""
+                }
+            if (finishReason.equals("length", ignoreCase = true)) {
+                outputStoppedByLimit = true
+            }
             val message = choice.optJSONObject("message")
             if (message != null) {
                 val reasoningContent = message.optString("reasoning_content", "").ifBlank {
@@ -3259,6 +3301,7 @@ open class OpenAIProvider(
         val eventChannel = MutableSharedStream<TextStreamEvent>(replay = Int.MAX_VALUE)
         val responseStream = stream {
             isManuallyCancelled = false
+            outputStoppedByLimit = false
             // 重置输出token计数（输入token由TokenCacheManager管理）
             tokenCacheManager.addOutputTokens(-tokenCacheManager.outputTokenCount)
             onTokensUpdated(
@@ -3292,6 +3335,7 @@ open class OpenAIProvider(
                 checkCancellation(context)
 
                 try {
+                    outputStoppedByLimit = false
                     if (retryCount > 0) {
                         AppLogger.d(
                             "AIService",
@@ -3398,6 +3442,9 @@ open class OpenAIProvider(
                                 val handledImages = tryHandleOpenAiImageResponse(jsonResponse, emitter, null)
 
                                 if (useResponsesApi) {
+                                    if (isResponsesOutputLimit(jsonResponse, null)) {
+                                        outputStoppedByLimit = true
+                                    }
                                     val parsed = parseResponsesNonStreamingResponse(jsonResponse)
                                     val responseDisplayState = StreamingState()
 
