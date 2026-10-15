@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.dao
 
+import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.MessageEntity
 import com.ai.assistance.operit.data.model.MessageVariantEntity
@@ -55,12 +56,14 @@ class RuntimeChatMessageSnapshotTest {
         ).toChatMessages()
     }
 
-    private fun message(timestamp: Long, sender: String, content: String) = MessageEntity(
-        chatId = "chat", sender = sender, content = content, timestamp = timestamp,
-        orderIndex = timestamp.toInt(), roleName = "原始角色",
+    private fun message(timestamp: Long, sender: String, content: String) = MessageEntity.fromChatMessage(
+        chatId = "chat",
+        message = ChatMessage(sender = sender, content = content, timestamp = timestamp, roleName = "原始角色"),
+        orderIndex = timestamp.toInt(),
     )
 
-    private fun variant(timestamp: Long, index: Int, content: String) = MessageVariantEntity(
-        chatId = "chat", messageTimestamp = timestamp, variantIndex = index, content = content,
+    private fun variant(timestamp: Long, index: Int, content: String) = MessageVariantEntity.fromChatMessage(
+        chatId = "chat", messageTimestamp = timestamp, variantIndex = index,
+        message = ChatMessage(sender = "ai", content = content, timestamp = timestamp),
     )
 }

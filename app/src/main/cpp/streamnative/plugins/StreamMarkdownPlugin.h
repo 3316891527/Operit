@@ -30,7 +30,8 @@ private:
 
 class StreamMarkdownInlineCodePlugin final : public StreamPlugin {
 public:
-    explicit StreamMarkdownInlineCodePlugin(bool includeTicks = true);
+    // 块级解析可将围栏留给围栏插件，行内解析保持默认行为。
+    explicit StreamMarkdownInlineCodePlugin(bool includeTicks = true, bool deferFences = false);
 
     PluginState state() const override;
     bool processChar(char16_t c, bool atStartOfLine) override;
@@ -39,6 +40,7 @@ public:
 
 private:
     bool includeTicks_;
+    bool deferFences_;
     PluginState state_;
     int tickLen_;
     int endMatch_; // number matched at end
