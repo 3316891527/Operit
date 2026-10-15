@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
+import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.ui.components.CustomScaffold
@@ -331,7 +332,8 @@ fun HtmlPackagerScreen(onGoBack: () -> Unit) {
                     name = "open_file",
                     parameters = listOf(ToolParameter("path", filePath))
                 )
-                toolHandler.executeTool(openFileTool)
+                // 仅在打开导出文件时获取工具处理器，保留资源预检入口的轻量初始化。
+                AIToolHandler.getInstance(context).executeTool(openFileTool)
             }
         )
     }
