@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
 
@@ -368,8 +369,13 @@ private fun SettingsSection(
         content: @Composable ColumnScope.() -> Unit
 ) {
         val glassEnabled = rememberGlassAppearance().settingsCards
+        // 开启颜色定制后让分组标题与图标跟随主色，默认主题继续使用黑白正文色。
+        val sectionTitleColor = if (LocalThemePreferenceSnapshot.current.useCustomColors) {
+                MaterialTheme.colorScheme.primary
+        } else {
+                MaterialTheme.colorScheme.onSurface
+        }
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                // 普通分组标题与图标使用正文色，深浅主题切换时保持中性配色。
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 6.dp)
@@ -379,7 +385,7 @@ private fun SettingsSection(
                         Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface,
+                                tint = sectionTitleColor,
                                 modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -387,7 +393,7 @@ private fun SettingsSection(
                                 text = title,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = sectionTitleColor
                         )
                 }
                 

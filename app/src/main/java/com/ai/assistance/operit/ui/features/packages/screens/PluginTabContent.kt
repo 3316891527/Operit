@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
 
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -73,6 +75,7 @@ fun PluginTabContent(
     activities: Map<String, PluginActivity> = emptyMap()
 ) {
     val glassEnabled = rememberGlassAppearance().packageCards
+    val useCustomColors = LocalThemePreferenceSnapshot.current.useCustomColors
     val orderedPluginList = remember(plugins, pluginOrder, sort, activities, enabledPackageNames) {
         sortPluginEntries(
             entries = plugins.map { (name, details) ->
@@ -165,7 +168,13 @@ fun PluginTabContent(
                                         modifier = Modifier.size(32.dp)
                                     )
                                 } else {
-                                    Icon(Icons.Default.Apps, contentDescription = null, modifier = Modifier.size(28.dp))
+                                    // 默认图标跟随已启用的定制主色，自带 Logo 与禁用透明度沿用原样。
+                                    Icon(
+                                        imageVector = Icons.Default.Apps,
+                                        contentDescription = null,
+                                        tint = if (useCustomColors) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                                        modifier = Modifier.size(28.dp)
+                                    )
                                 }
                             }
                             Spacer(Modifier.width(14.dp))
