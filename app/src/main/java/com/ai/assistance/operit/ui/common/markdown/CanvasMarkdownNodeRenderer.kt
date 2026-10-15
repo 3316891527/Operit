@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.ui.common.markdown
 
 import androidx.compose.runtime.CompositionLocalProvider
+import com.ai.assistance.operit.ui.common.dynamicui.DynamicUiCard
+import com.ai.assistance.operit.ui.common.dynamicui.LocalDynamicUiOwner
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -29,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -589,13 +592,26 @@ private fun renderNodeContent(
         MarkdownProcessorType.CODE_BLOCK -> {
             val codeBlock = extractFencedCodeBlockContent(content)
 
-            // 不使用 key()，让 Compose 根据位置自然识别组件
-            // 这样可以保留内部状态（如"已复制"提示、Mermaid 渲染状态）
-            EnhancedCodeBlock(
-                code = codeBlock.code,
-                language = codeBlock.language,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // 只在 AI 正文中解释卡片，使用整条消息的节点索引区分长消息分片。
+            when {
+                LocalDynamicUiOwner.current != null && codeBlock.language == "a2ui" -> DynamicUiCard(
+                    source = codeBlock.code,
+                    closed = codeBlock.closed,
+                    streaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING,
+                    blockIndex = index,
+                    ink = textColor,
+                )
+                LocalDynamicUiOwner.current != null && codeBlock.language == "a2ui-ref" -> Text(
+                    text = stringResource(com.ai.assistance.operit.R.string.dynamic_ui_reference_unavailable),
+                    color = textColor.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                else -> EnhancedCodeBlock(
+                    code = codeBlock.code,
+                    language = codeBlock.language,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         
         // ========== 表格：保留原组件 ==========
@@ -653,7 +669,10 @@ private fun renderNodeContent(
         
         // ========== XML块：保留原组件 ==========
         MarkdownProcessorType.XML_BLOCK -> {
-            CompositionLocalProvider(LocalMarkdownCardNodeIndex provides index) {
+            CompositionLocalProvider(
+                LocalMarkdownCardNodeIndex provides index,
+                LocalDynamicUiOwner provides null,
+            ) {
             xmlRenderer.RenderXmlContent(
                 xmlContent = content,
                 modifier = Modifier.fillMaxWidth(),

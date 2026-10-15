@@ -18,6 +18,10 @@ import com.ai.assistance.operit.core.chat.context.RequestWindowSnapshot
 import com.ai.assistance.operit.core.chat.hooks.PromptHookContext
 import com.ai.assistance.operit.core.chat.hooks.PromptHookRegistry
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
+import com.ai.assistance.operit.ui.common.dynamicui.CardFences
+import com.ai.assistance.operit.ui.common.dynamicui.CardDelivery
+import com.ai.assistance.operit.ui.common.dynamicui.CardReferenceExpander
+import com.ai.assistance.operit.ui.common.dynamicui.CardTranscript
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.chat.hooks.appendUserTurnIfMissing
 import com.ai.assistance.operit.core.chat.hooks.buildActivePromptHookMetadata
@@ -428,6 +432,7 @@ class EnhancedAIService private constructor(context: Context) {
 
     private data class MessageExecutionContext(
         val executionId: Int,
+        val dynamicUiRunId: String = java.util.UUID.randomUUID().toString(),
         val streamBuffer: StringBuilder = StringBuilder(),
         val roundManager: ConversationRoundManager = ConversationRoundManager(),
         val isConversationActive: AtomicBoolean = AtomicBoolean(true),
@@ -441,15 +446,18 @@ class EnhancedAIService private constructor(context: Context) {
     private val nextExecutionContextId = AtomicInteger(0)
 
     private fun registerExecutionContext(context: MessageExecutionContext) {
+        CardDelivery.begin(context.dynamicUiRunId)
         activeExecutionContexts[context.executionId] = context
     }
 
     private fun unregisterExecutionContext(context: MessageExecutionContext) {
         activeExecutionContexts.remove(context.executionId, context)
+        CardDelivery.end(context.dynamicUiRunId)
     }
 
     private fun invalidateExecutionContext(context: MessageExecutionContext, reason: String) {
         if (context.isConversationActive.compareAndSet(true, false)) {
+            CardDelivery.end(context.dynamicUiRunId)
             AppLogger.d(TAG, "执行上下文已失效: id=${context.executionId}, reason=$reason")
         }
     }
@@ -1212,6 +1220,7 @@ class EnhancedAIService private constructor(context: Context) {
 
                     // 创建一个新的轮次来管理内容
                     startAssistantResponseRound(execContext)
+                    val cardExpander = CardReferenceExpander { CardDelivery.resolve(execContext.dynamicUiRunId, it) }
                     val revisionTracker = TextStreamRevisionTracker()
                     val revisionMutex = Mutex()
 
@@ -1226,30 +1235,30 @@ class EnhancedAIService private constructor(context: Context) {
                             revisableStream?.let { carrier ->
                                 launch {
                                     carrier.eventChannel.collect { event ->
-                                        execContext.eventChannel.emit(event)
-                                        when (event.eventType) {
-                                            TextStreamEventType.SAVEPOINT -> {
-                                                revisionMutex.withLock {
+                                        revisionMutex.withLock {
+                                            when (event.eventType) {
+                                                TextStreamEventType.SAVEPOINT -> {
                                                     revisionTracker.savepoint(event.id)
+                                                    cardExpander.savepoint(event.id)
+                                                }
+                                                TextStreamEventType.ROLLBACK -> {
+                                                    cardExpander.rollback(event.id)
+                                                    revisionTracker.rollback(event.id)?.toString()?.let { snapshot ->
+                                                        execContext.streamBuffer.clear()
+                                                        execContext.streamBuffer.append(snapshot)
+                                                        execContext.roundManager.updateContent(snapshot)
+                                                    }
                                                 }
                                             }
-
-                                            TextStreamEventType.ROLLBACK -> {
-                                                val snapshot =
-                                                    revisionMutex.withLock {
-                                                        revisionTracker.rollback(event.id)?.toString()
-                                                    } ?: return@collect
-                                                execContext.streamBuffer.clear()
-                                                execContext.streamBuffer.append(snapshot)
-                                                execContext.roundManager.updateContent(snapshot)
-                                            }
+                                            // 解码状态、文本快照和 UI 事件共用同一把锁，避免回滚落在半个引用上。
+                                            execContext.eventChannel.emit(event)
                                         }
                                     }
                                 }
                             }
  
                         try {
-                            responseStream.collect { content ->
+                            responseStream.collect { rawContent ->
                                 // 第一次收到响应，更新状态
                                 if (isFirstChunk) {
                                     if (!isSubTask) {
@@ -1270,7 +1279,7 @@ class EnhancedAIService private constructor(context: Context) {
 
                                 // 累计统计
                                 chunkCount++
-                                totalChars += content.length
+                                totalChars += rawContent.length
 
                                 // 周期性日志
                                 val currentTime = messageTimingNow()
@@ -1280,16 +1289,26 @@ class EnhancedAIService private constructor(context: Context) {
                                 }
 
                                 revisionMutex.withLock {
+                                    val content = cardExpander.push(rawContent)
                                     revisionTracker.append(content)
+                                    execContext.streamBuffer.append(content)
+                                    execContext.roundManager.appendChunk(content)
+                                    if (content.isNotEmpty()) emit(content)
                                 }
 
                                 // Keep both mutable accumulators synchronized without rebuilding
                                 // the complete response for every streamed chunk.
-                                execContext.streamBuffer.append(content)
-                                execContext.roundManager.appendChunk(content)
 
                                 // 发射当前内容片段
-                                emit(content)
+                            }
+                            revisionMutex.withLock {
+                                val tail = cardExpander.finish()
+                                if (tail.isNotEmpty()) {
+                                    revisionTracker.append(tail)
+                                    execContext.streamBuffer.append(tail)
+                                    execContext.roundManager.appendChunk(tail)
+                                    emit(tail)
+                                }
                             }
                         } finally {
                             revisionJob?.cancelAndJoin()
@@ -1406,6 +1425,8 @@ class EnhancedAIService private constructor(context: Context) {
      * @return 经过增强检测的内容，可能会修复格式问题
      */
     private suspend fun enhanceToolDetection(content: String): String {
+        val protectedCardContent = CardFences.protect(content)
+        if (protectedCardContent.text != content) return protectedCardContent.restore(enhanceToolDetection(protectedCardContent.text))
         try {
             // 检查内容是否包含可能的工具调用标记
             if (!ChatMarkupRegex.containsToolTag(content)) {
@@ -1890,7 +1911,8 @@ class EnhancedAIService private constructor(context: Context) {
 
             // 使用增强的工具检测功能处理内容
             val enhancedContent = enhanceToolDetection(content)
-            val truncatedToolRecovery = detectAndRepairTruncatedToolRound(content)
+            val truncatedToolRecovery = detectAndRepairTruncatedToolRound(CardFences.forTools(content))
+                ?.let { it.copy(repairedContent = content + it.appendedSuffix) }
             val finalContent = truncatedToolRecovery?.repairedContent ?: enhancedContent
 
             // 截断修复仅追加缺失后缀，不撤回已经发出的内容
@@ -1925,7 +1947,7 @@ class EnhancedAIService private constructor(context: Context) {
                 context.conversationHistory.add(
                     PromptTurn(
                         kind = PromptTurnKind.ASSISTANT,
-                        content = context.roundManager.getCurrentRoundContent()
+                        content = CardTranscript.forModel(context.roundManager.getCurrentRoundContent())
                     )
                 )
             } catch (e: Exception) {
@@ -2169,7 +2191,7 @@ class EnhancedAIService private constructor(context: Context) {
                 context.conversationHistory.add(
                     PromptTurn(
                         kind = PromptTurnKind.ASSISTANT,
-                        content = assistantTurnContent
+                        content = CardTranscript.forModel(assistantTurnContent)
                     )
                 )
             }
@@ -2266,7 +2288,8 @@ class EnhancedAIService private constructor(context: Context) {
                 toolExposureMode = ToolExposureMode.resolve(config.apiProviderType),
                 callerName = characterName,
                 callerChatId = chatId,
-                callerCardId = roleCardId
+                callerCardId = roleCardId,
+                dynamicUiRunId = context.dynamicUiRunId
             )
 
             if (toolBatch.results.isNotEmpty()) {
@@ -2524,6 +2547,7 @@ class EnhancedAIService private constructor(context: Context) {
                 var lastLogTime = messageTimingNow()
                 var isFirstChunk = true
                 val revisableStream = responseStream as? TextStreamEventCarrier
+                val cardExpander = CardReferenceExpander { CardDelivery.resolve(context.dynamicUiRunId, it) }
                 val revisionTracker = TextStreamRevisionTracker()
                 val revisionMutex = Mutex()
 
@@ -2532,30 +2556,30 @@ class EnhancedAIService private constructor(context: Context) {
                         revisableStream?.let { carrier ->
                             launch {
                                 carrier.eventChannel.collect { event ->
-                                    context.eventChannel.emit(event)
-                                    when (event.eventType) {
-                                        TextStreamEventType.SAVEPOINT -> {
-                                            revisionMutex.withLock {
+                                    revisionMutex.withLock {
+                                        when (event.eventType) {
+                                            TextStreamEventType.SAVEPOINT -> {
                                                 revisionTracker.savepoint(event.id)
+                                                cardExpander.savepoint(event.id)
+                                            }
+                                            TextStreamEventType.ROLLBACK -> {
+                                                cardExpander.rollback(event.id)
+                                                revisionTracker.rollback(event.id)?.toString()?.let { snapshot ->
+                                                    context.streamBuffer.clear()
+                                                    context.streamBuffer.append(snapshot)
+                                                    context.roundManager.updateContent(snapshot)
+                                                }
                                             }
                                         }
-
-                                        TextStreamEventType.ROLLBACK -> {
-                                            val snapshot =
-                                                revisionMutex.withLock {
-                                                    revisionTracker.rollback(event.id)?.toString()
-                                                } ?: return@collect
-                                            context.streamBuffer.clear()
-                                            context.streamBuffer.append(snapshot)
-                                            context.roundManager.updateContent(snapshot)
-                                        }
+                                        // 解码状态、文本快照和 UI 事件共用同一把锁，避免回滚落在半个引用上。
+                                        context.eventChannel.emit(event)
                                     }
                                 }
                             }
                         }
 
                     try {
-                        responseStream.collect { content ->
+                        responseStream.collect { rawContent ->
                             if (isFirstChunk) {
                                 isFirstChunk = false
                                 logMessageTiming(
@@ -2566,16 +2590,16 @@ class EnhancedAIService private constructor(context: Context) {
                             }
 
                             revisionMutex.withLock {
+                                val content = cardExpander.push(rawContent)
                                 revisionTracker.append(content)
+                                context.streamBuffer.append(content)
+                                context.roundManager.appendChunk(content)
+                                if (content.isNotEmpty()) collector.emit(content)
                             }
-
-                            // 更新streamBuffer
-                            context.streamBuffer.append(content)
-                            context.roundManager.appendChunk(content)
 
                             // 累计统计
                             chunkCount++
-                            totalChars += content.length
+                            totalChars += rawContent.length
 
                             // 定期记录日志
                             val currentTime = messageTimingNow()
@@ -2583,14 +2607,20 @@ class EnhancedAIService private constructor(context: Context) {
                                 lastLogTime = currentTime
                             }
 
-                            // 通过收集器将内容发射出去，让UI可以接收到
-                            collector.emit(content)
+                        }
+                        revisionMutex.withLock {
+                            val tail = cardExpander.finish()
+                            if (tail.isNotEmpty()) {
+                                revisionTracker.append(tail)
+                                context.streamBuffer.append(tail)
+                                context.roundManager.appendChunk(tail)
+                                collector.emit(tail)
+                            }
                         }
                     } finally {
                         revisionJob?.cancelAndJoin()
                     }
                 }
-
                 // Update accumulated token counts and persist them
                 val inputTokens = serviceForFunction.inputTokenCount
                 val cachedInputTokens = serviceForFunction.cachedInputTokenCount
@@ -2855,7 +2885,10 @@ class EnhancedAIService private constructor(context: Context) {
         val toolExposureMode = ToolExposureMode.resolve(config.apiProviderType)
 
         return conversationService.prepareConversationHistory(
-                chatHistory,
+                chatHistory.map { turn ->
+                    if (turn.kind == PromptTurnKind.ASSISTANT) turn.copy(content = CardTranscript.forModel(turn.content))
+                    else turn
+                },
                 processedInput,
                 chatId,
                 workspacePath,

@@ -6,6 +6,7 @@ import com.ai.assistance.operit.data.chat.folders.ChatFolderBinding
 import com.ai.assistance.operit.data.chat.folders.ChatFolderRepository
 import com.ai.assistance.operit.data.chat.folders.describe
 import com.ai.assistance.operit.data.chat.folders.folderAncestors
+import com.ai.assistance.operit.ui.common.dynamicui.DynamicUiStateStore
 import android.content.Context
 import android.net.Uri
 import com.ai.assistance.operit.util.AppLogger
@@ -216,6 +217,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     private val chatDraftRepository by lazy { ChatDraftRepository(context) }
 
     private suspend fun clearDeletedChatDrafts() {
+        DynamicUiStateStore.deleteMissingChats(context, chatDao.getAllChatsDirectly().mapTo(mutableSetOf()) { it.id })
         // 批量删除后只检查有草稿的聊天，避免额外扫描整段历史。
         chatDraftRepository.chatIdsWithDrafts().forEach { chatId ->
             if (chatDao.getChatById(chatId) == null) {
@@ -814,6 +816,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
                 // 先删除该聊天的所有现有消息
                 messageDao.deleteAllMessagesForChat(chatEntity.id)
+                DynamicUiStateStore.clearChat(context, chatEntity.id)
                 messageVariantDao.deleteAllVariantsForChat(chatEntity.id)
 
                 // 批量插入所有消息
@@ -1164,6 +1167,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 AppLogger.d(TAG, "正在从数据库删除消息. ChatId: $chatId, Timestamp: $timestamp")
                 messageVariantDao.deleteVariantsForMessage(chatId, timestamp)
                 messageDao.deleteMessageByTimestamp(chatId, timestamp)
+                DynamicUiStateStore.deleteMessages(context, chatId, timestamp)
                 AppLogger.d(TAG, "消息从数据库删除成功.")
 
                 // Update chat metadata
@@ -1274,6 +1278,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     )
                 }
 
+                DynamicUiStateStore.deleteMessages(context, chatId, messageTimestamp)
                 chatDao.getChatById(chatId)?.let { chat ->
                     chatDao.updateChatMetadata(
                         chatId = chatId,
@@ -1490,6 +1495,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 AppLogger.d(TAG, "正在从数据库删除消息. ChatId: $chatId, Timestamp >=: $timestamp")
                 messageVariantDao.deleteVariantsFrom(chatId, timestamp)
                 messageDao.deleteMessagesFrom(chatId, timestamp)
+                DynamicUiStateStore.deleteMessages(context, chatId, timestamp, from = true)
                 AppLogger.d(TAG, "后续消息从数据库删除成功.")
                 // 更新聊天元数据时间戳
                 chatDao.getChatById(chatId)?.let { chat ->
@@ -1523,6 +1529,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             try {
                 messageVariantDao.deleteAllVariantsForChat(chatId)
                 messageDao.deleteAllMessagesForChat(chatId)
+                DynamicUiStateStore.clearChat(context, chatId)
                 // 更新聊天元数据
                 chatDao.getChatById(chatId)?.let { chat ->
                     chatDao.updateChatMetadata(
@@ -1659,6 +1666,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 // 删除聊天实体（级联删除所有消息）
                 chatDao.deleteChat(chatId)
                 chatDraftRepository.removeDraft(chatId)
+                DynamicUiStateStore.deleteChat(context, chatId)
                 return true
             } catch (e: Exception) {
                 throw e
@@ -1968,6 +1976,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     )
                 }
 
+                DynamicUiStateStore.copyChat(context, parentChatId, branchEntity.id, upToMessageTimestamp)
                 val branchHistory = branchEntity.toChatHistory(emptyList())
 
                 // 设置为当前聊天

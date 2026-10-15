@@ -38,3 +38,4 @@ remote_operit
 worldbook
 qqbot
 plan_mode
+dynamic_ui.js

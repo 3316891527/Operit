@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 import zipfile
@@ -21,6 +22,25 @@ def main() -> None:
     summaries = []
     for apk in apks:
         with zipfile.ZipFile(apk) as package:
+            categories = {name: {"compressed": 0, "uncompressed": 0, "entries": 0}
+                          for name in ("dex", "native", "assets", "resources", "other")}
+            for entry in package.infolist():
+                name = entry.filename
+                category = ("dex" if name.endswith(".dex") else "native" if name.startswith("lib/")
+                            else "assets" if name.startswith("assets/") else "resources"
+                            if name.startswith("res/") or name == "resources.arsc" else "other")
+                categories[category]["compressed"] += entry.compress_size
+                categories[category]["uncompressed"] += entry.file_size
+                categories[category]["entries"] += 1
+            report_dir = ROOT / "app/build/reports/apk-size"
+            report_dir.mkdir(parents=True, exist_ok=True)
+            report = {"apk": str(apk.relative_to(ROOT)), "bytes": apk.stat().st_size,
+                      "categories": categories,
+                      "largest_entries": [{"name": item.filename, "compressed": item.compress_size,
+                                           "uncompressed": item.file_size}
+                                          for item in sorted(package.infolist(), key=lambda item: item.compress_size, reverse=True)[:20]]}
+            (report_dir / (apk.parent.name + "-" + apk.name + ".json")).write_text(
+                json.dumps(report, ensure_ascii=False, indent=2) + "\n")
             forbidden = [
                 name for name in package.namelist()
                 if name.startswith(("assets/subpack/", "assets/models/sherpa-ncnn-"))
@@ -35,7 +55,8 @@ def main() -> None:
                 raise ValueError("Shared Silero VAD is missing or failed verification")
         summary = f"{apk.relative_to(ROOT)}: {apk.stat().st_size:,} bytes ({apk.stat().st_size / 1048576:.2f} MiB); 外置资源未打包，共用 VAD 校验通过。"
         print(summary)
-        summaries.append(summary)
+        breakdown = "；".join(f"{key} {value['compressed'] / 1048576:.2f} MiB" for key, value in categories.items())
+        summaries.append(summary + "\n\n压缩条目分项：" + breakdown)
     if step_summary := os.environ.get("GITHUB_STEP_SUMMARY"):
         with Path(step_summary).open("a") as output:
             output.write("\n" + "\n\n".join(summaries) + "\n")

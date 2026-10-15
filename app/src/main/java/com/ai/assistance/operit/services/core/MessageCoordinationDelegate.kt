@@ -495,6 +495,45 @@ class MessageCoordinationDelegate(
         }
     }
 
+    private val pendingDynamicUiChats = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    /** 卡片提交沿用正常请求管线，同时保留聊天框草稿、附件与回复目标。 */
+    fun trySendDynamicUi(
+        owner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner,
+        text: String,
+    ): Boolean {
+        if (text.isBlank() || text.length > 40_000 || !canSubmitDynamicUi(owner)) return false
+        if (!pendingDynamicUiChats.add(owner.chatId)) return false
+        launchMessageSend {
+            try {
+                // 配置读取前再次检查，防止切换聊天或修改候选回复后提交旧卡片。
+                if (!canSubmitDynamicUi(owner)) return@launchMessageSend
+                sendMessageInternal(
+                    promptFunctionType = PromptFunctionType.CHAT,
+                    chatIdOverride = owner.chatId,
+                    messageTextOverride = text,
+                    consumeComposerState = false,
+                    dynamicUiOwner = owner,
+                )
+            } finally {
+                pendingDynamicUiChats.remove(owner.chatId)
+            }
+        }
+        return true
+    }
+
+    private fun canSubmitDynamicUi(owner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner): Boolean {
+        if (chatHistoryDelegate.currentChatId.value != owner.chatId ||
+            messageProcessingDelegate.isChatLoading(owner.chatId) ||
+            (isSummarizing.value && summarizingChatId.value == owner.chatId) ||
+            (isSendTriggeredSummarizing.value && sendTriggeredSummarizingChatId.value == owner.chatId)) return false
+        val message = chatHistoryDelegate.chatHistory.value.firstOrNull { it.timestamp == owner.timestamp }
+            ?: return false
+        return com.ai.assistance.operit.ui.common.dynamicui.matchesDynamicUiOwner(
+            chatHistoryDelegate.currentChatId.value, message, owner,
+        )
+    }
+
     suspend fun regenerateSingleAiMessage(index: Int) {
         val chatId =
             chatHistoryDelegate.currentChatId.value
@@ -639,7 +678,9 @@ class MessageCoordinationDelegate(
         enableGroupOrchestration: Boolean = true,
         isGroupOrchestrationTurn: Boolean = false,
         groupParticipantNamesText: String? = null,
-        turnOptions: ChatTurnOptions = ChatTurnOptions()
+        turnOptions: ChatTurnOptions = ChatTurnOptions(),
+        consumeComposerState: Boolean = true,
+        dynamicUiOwner: com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner? = null,
     ) {
         // 如果不是自动续写，更新当前的 promptFunctionType
         if (!isAutoContinuation) {
@@ -648,7 +689,7 @@ class MessageCoordinationDelegate(
         val isBackgroundSend =
             !chatIdOverride.isNullOrBlank() && chatIdOverride != chatHistoryDelegate.currentChatId.value
         // 自动续聊由总结消息中的续接指令驱动，不能消费用户尚未提交的编辑器状态。
-        val shouldReadComposerState = !isBackgroundSend && !isAutoContinuation
+        val shouldReadComposerState = consumeComposerState && !isBackgroundSend && !isAutoContinuation
         val effectiveMessageTextOverride = if (isAutoContinuation) "" else messageTextOverride
         // 获取当前聊天ID和工作区路径
         val chatId = chatIdOverride ?: chatHistoryDelegate.currentChatId.value
@@ -840,6 +881,9 @@ class MessageCoordinationDelegate(
             false
         }
 
+        // 异步读取配置期间可能发生聊天切换、删除或新请求，提交前核对原卡片身份。
+        if (dynamicUiOwner != null && !canSubmitDynamicUi(dynamicUiOwner)) return
+
         // 调用messageProcessingDelegate发送消息，并传递附件信息和工作区路径
         messageProcessingDelegate.sendUserMessage(
             attachments = currentAttachments,
@@ -868,7 +912,7 @@ class MessageCoordinationDelegate(
         )
 
         // 只有在非续写（即用户主动发送）时才清空附件和UI状态
-        if (!isBackgroundSend && !isContinuation) {
+        if (shouldReadComposerState && !isContinuation) {
             if (currentAttachments.isNotEmpty()) {
                 attachmentDelegate.clearAttachments()
             }

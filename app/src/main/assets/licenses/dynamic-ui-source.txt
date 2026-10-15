@@ -1,0 +1,11 @@
+原生动态界面来源说明
+
+本发行版的 ui/common/dynamicui、dynamic_ui.js、相关示例与 Lucide 图标生成资料，
+移植自 Rainy / CATMIAOZHI 维护的 Operit Ry：
+https://github.com/CATMIAOZHI/Operit
+固定参考提交：9902726bec086d2950e6472c14f6acb9cca85413
+
+保留 Operit 原项目与贡献者的著作权和仓库 LICENSE，遵守对应许可证。
+本分支另行适配消息片段、流式传输、交互发送、历史与生命周期。
+AndroidX A2UI 使用各自随库提供的开源许可证。
+Lucide 0.456.0 使用 ISC，包含 Feather MIT 许可部分；完整文本随 assets/licenses 分发。

@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat.enhance
 
+import com.ai.assistance.operit.ui.common.dynamicui.CardFences
 import android.content.Context
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger
@@ -47,7 +48,9 @@ object ToolExecutionManager {
 
     data class ToolRuntimeContext(
         val callerCardId: String? = null,
-        val toolExposureMode: ToolExposureMode = ToolExposureMode.FULL
+        val toolExposureMode: ToolExposureMode = ToolExposureMode.FULL,
+        val callerChatId: String? = null,
+        val dynamicUiRunId: String? = null
     )
 
     private data class ResolvedToolTarget(
@@ -307,7 +310,7 @@ object ToolExecutionManager {
      */
     suspend fun extractToolInvocations(response: String): List<ToolInvocation> {
         val invocations = mutableListOf<ToolInvocation>()
-        val content = response
+        val content = CardFences.forTools(response)
 
         val charStream = content.stream()
         val plugins = listOf(StreamXmlPlugin())
@@ -501,7 +504,8 @@ object ToolExecutionManager {
         toolExposureMode: ToolExposureMode = ToolExposureMode.FULL,
         callerName: String? = null,
         callerChatId: String? = null,
-        callerCardId: String? = null
+        callerCardId: String? = null,
+        dynamicUiRunId: String? = null
     ): ToolExecutionBatch = PermissionCapabilityResolver.withSession(permissionSession) {
         coroutineScope {
         val orderedResults = OrderedToolResults(invocations.size) { markup ->
@@ -527,7 +531,9 @@ object ToolExecutionManager {
         val toolRuntimeContext =
             ToolRuntimeContext(
                 callerCardId = callerCardId,
-                toolExposureMode = toolExposureMode
+                toolExposureMode = toolExposureMode,
+                callerChatId = callerChatId,
+                dynamicUiRunId = dynamicUiRunId
             )
 
         // 1. 顶层工具暴露模式拦截

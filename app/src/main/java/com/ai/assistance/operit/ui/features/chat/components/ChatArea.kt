@@ -704,6 +704,12 @@ private fun MessageItem(
             ),
     ) {
         CompositionLocalProvider(
+            com.ai.assistance.operit.ui.common.dynamicui.LocalDynamicUiOwner provides
+                if (message.sender == "ai" && !message.isVariantPreview && currentChatId.isNotBlank()) {
+                    com.ai.assistance.operit.ui.common.dynamicui.DynamicUiOwner(
+                        currentChatId, message.timestamp, message.selectedVariantIndex, message.content,
+                    )
+                } else null,
             LocalChatMessageSlice provides messageSlice,
             LocalMarkdownRenderFragment provides messageSlice?.fragment,
         ) {

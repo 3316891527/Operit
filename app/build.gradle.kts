@@ -671,6 +671,8 @@ dependencies {
     implementation(project(":mmd"))
     implementation(project(":fbx"))
     implementation(project(":showerclient"))
+    // 原生动态界面兼容层使用当前 SDK 和 Compose 版本编译。
+    implementation(project(":a2ui-compat"))
     implementation(project(":quickjs"))
 
     // glTF runtime rendering (Filament)
@@ -811,7 +813,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.activity.compose)
     // Use BOM version for all Compose dependencies
-    implementation(libs.compose.material.icons.extended)
+    implementation(project(":material-icons-subset"))
     implementation(libs.compose.animation)
     implementation(libs.compose.animation.core)
 

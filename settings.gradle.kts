@@ -32,3 +32,7 @@ include(":fbx")
 project(":fbx").projectDir = file("avator/fbx")
 include(":showerclient")
 include(":quickjs")
+
+include(":a2ui-compat")
+
+include(":material-icons-subset")

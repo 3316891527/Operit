@@ -58,6 +58,8 @@ ANDROID_FULL_PATTERNS = (
     "tools/native_ripgrep/**",
 )
 ANDROID_MODULE_ROOTS = (
+    "a2ui-compat",
+    "material-icons-subset",
     "avator/dragonbones",
     "avator/fbx",
     "avator/mmd",

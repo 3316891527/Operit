@@ -260,6 +260,10 @@ fun ChatScreenContent(
                         onCharacterSwitcherClick = { onShowCharacterSelectorChange(true) }
                 )
             }
+            androidx.compose.runtime.CompositionLocalProvider(
+                com.ai.assistance.operit.ui.common.dynamicui.LocalDynamicUiSubmit provides
+                    if (enableMessageDialogs && !isMultiSelectMode) actualViewModel::submitDynamicUi else null,
+            ) {
             ChatArea(
                     chatHistory = chatHistory,
                     currentChatId = currentChatId,
@@ -358,6 +362,7 @@ fun ChatScreenContent(
                     bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
                     bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
             )
+            }
         }
 
         // 多选模式底部操作栏

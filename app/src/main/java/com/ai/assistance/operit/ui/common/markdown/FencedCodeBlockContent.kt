@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.common.markdown
 
-internal data class FencedCodeBlockContent(val language: String, val code: String)
+internal data class FencedCodeBlockContent(val language: String, val code: String, val closed: Boolean = false)
 
 private val openingCodeFence = Regex("^[ \\t]{0,3}(`{3,}|~{3,})([^\\r\\n]*)\\r?$")
 
@@ -18,5 +18,5 @@ internal fun extractFencedCodeBlockContent(content: String): FencedCodeBlockCont
     val bodyEnd = closingFence?.range?.first ?: content.length
     val code = content.substring(bodyStart, bodyEnd)
         .let { if (closingFence == null) it else it.removeSuffix("\n").removeSuffix("\r") }
-    return FencedCodeBlockContent(opening.groupValues[2].trim(), code)
+    return FencedCodeBlockContent(opening.groupValues[2].trim(), code, closingFence != null)
 }
