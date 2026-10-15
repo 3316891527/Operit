@@ -305,7 +305,7 @@ val syncSttModelAssets by tasks.registering {
 
     doLast {
         val manifestFile = sttModelAssetsManifestFile.asFile
-        val assets = parseSttModelAssetManifest(manifestFile)
+        val assets = parseSttModelAssetManifest(manifestFile).filter { it.targetPath == "models/silero_vad.onnx" }
         val outputRoot = generatedSttModelAssetsDir.get().asFile
         outputRoot.mkdirs()
 
@@ -355,9 +355,10 @@ val syncMainAssets by tasks.registering(Sync::class) {
     dependsOn(syncSttModelAssets)
 
     from("src/main/assets") {
-        exclude("models/**")
+        exclude("models/**", "subpack/**")
     }
     from(generatedSttModelAssetsDir)
+    from("config/offline-resources.properties")
     into(generatedMainAssetsDir)
 }
 
@@ -417,8 +418,8 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 53
-        versionName = "1.12.2+1"
+        versionCode = 54
+        versionName = "1.12.2+2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

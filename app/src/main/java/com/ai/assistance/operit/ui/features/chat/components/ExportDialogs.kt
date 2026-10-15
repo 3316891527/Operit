@@ -39,6 +39,7 @@ import com.ai.assistance.operit.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ai.assistance.operit.data.resources.OfflineResources
 import com.ai.assistance.operit.core.subpack.ApkEditor
 import com.ai.assistance.operit.core.subpack.ExeEditor
 import com.ai.assistance.operit.core.subpack.KeyStoreHelper
@@ -779,7 +780,8 @@ suspend fun exportAndroidApp(
             onProgress(0.1f, context.getString(R.string.export_prepare_base_apk))
 
             // 1. 初始化APK编辑器
-            val apkEditor = ApkEditor.fromAsset(context, "subpack/android.apk")
+            val template = OfflineResources.copyExportTemplate(context, true, File(context.cacheDir, "apk_editor_android.apk"))
+            val apkEditor = ApkEditor.fromFile(context, template)
 
             // 2. 修改包名和应用名
             onProgress(0.3f, context.getString(R.string.export_modify_app_info))
@@ -887,12 +889,9 @@ suspend fun exportWindowsApp(
             tempDir.mkdirs()
 
             try {
-                // 1. 从assets复制windows.zip模板到临时目录
+                // 先取得已校验模板的工作副本，再执行解压和修改。
                 onProgress(0.2f, context.getString(R.string.export_copy_template))
-                val templateZip = File(tempDir, "windows.zip")
-                context.assets.open("subpack/windows.zip").use { input ->
-                    FileOutputStream(templateZip).use { output -> input.copyTo(output) }
-                }
+                val templateZip = OfflineResources.copyExportTemplate(context, false, File(tempDir, "windows.zip"))
 
                 // 2. 解压windows.zip
                 onProgress(0.3f, context.getString(R.string.export_extract_template))

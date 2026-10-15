@@ -120,6 +120,9 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
         val startTime = System.currentTimeMillis()
         appStartupTimeMs = startTime
         instance = this
+        com.ai.assistance.operit.terminal.TerminalManager.setUbuntuArchivePreparer { context, destination ->
+            com.ai.assistance.operit.data.resources.OfflineResources.prepareUbuntuArchive(context, destination)
+        }
 
         // Workers and receivers can cold-start the process without creating an Activity.
         // Initialize process-wide preference dependencies before those entry points can run.

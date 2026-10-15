@@ -9153,4 +9153,28 @@
 <string name="workspace_sort_folders_first">文件夹置顶</string>
 <string name="workspace_sort_ignore_case">忽略大小写</string>
 <string name="workspace_text_preview_too_large">文本超过 %1$d MiB，已停止应用内读取。可选择系统应用打开。</string>
+
+    <!-- 离线大资源下载及备份 -->
+    <string name="offline_resources_title">离线资源</string>
+    <string name="offline_resources_subtitle">下载、导出备份和本地导入语音、终端与导出模板</string>
+    <string name="offline_resources_description">大资源按需下载。删除安装 APK 不影响已下载资源；卸载应用会清除应用内资源。请将 ZIP 导出到“下载”等共享目录，重装后可离线导入。</string>
+    <string name="offline_resources_source">下载来源：个人仓库 GitHub Releases</string>
+    <string name="offline_resources_speech">本地语音识别 · Sherpa-NCNN</string>
+    <string name="offline_resources_ubuntu">终端 · Ubuntu 安装归档</string>
+    <string name="offline_resources_android">网页项目 · Android 导出模板</string>
+    <string name="offline_resources_windows">网页项目 · Windows 导出模板</string>
+    <string name="offline_resources_ready">已保存并通过校验，可离线使用或导出 ZIP</string>
+    <string name="offline_resources_not_saved">尚未保存完整资源，请下载或导入对应 ZIP</string>
+    <string name="offline_resources_ubuntu_installed">Ubuntu 环境已安装，现有终端无需再次下载；安装归档可单独保存。</string>
+    <string name="offline_resources_download">下载</string>
+    <string name="offline_resources_export">导出 ZIP</string>
+    <string name="offline_resources_import">导入 ZIP</string>
+    <string name="offline_resources_confirm">将从个人仓库的 GitHub Release 下载约 %1$s MiB。GitHub 直连需要网络可达；也可在浏览器取得对应资源 ZIP 后导入。是否开始下载？</string>
+    <string name="offline_resources_done">操作完成，资源已通过校验。</string>
+    <string name="offline_resources_cancelled">已取消，已完成校验的下载文件会保留。</string>
+    <string name="offline_resources_failed">操作失败：%1$s。可检查网络后重试，或导入对应的资源 ZIP。</string>
+    <string name="offline_resources_missing">所需资源尚未准备好，请在“设置 → 离线资源”下载或导入，完成后重试原功能。</string>
+    <string name="offline_resources_retry_feature">当前功能缺少资源。下载或导入完成后，返回并重新执行原操作。</string>
+    <string name="offline_resources_in_use">语音模型正在使用或清理中，请停止语音服务后重试。</string>
+    <string name="offline_resources_no_space">手机存储空间不足，请释放空间后重试。</string>
 </resources>

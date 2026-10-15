@@ -9155,4 +9155,28 @@
 <string name="workspace_sort_folders_first">Folders first</string>
 <string name="workspace_sort_ignore_case">Ignore case</string>
 <string name="workspace_text_preview_too_large">Text exceeds %1$d MiB and will not be loaded in the app. Open it with a system app.</string>
+
+    <!-- 离线大资源下载及备份 -->
+    <string name="offline_resources_title">Offline resources</string>
+    <string name="offline_resources_subtitle">Download, back up and import speech, terminal and export resources</string>
+    <string name="offline_resources_description">Large resources are downloaded when needed. Deleting the installer APK keeps downloaded resources; uninstalling the app removes its private resources. Export a ZIP to shared storage such as Downloads, then import it offline after reinstalling.</string>
+    <string name="offline_resources_source">Download source: personal GitHub Releases</string>
+    <string name="offline_resources_speech">Offline speech recognition · Sherpa-NCNN</string>
+    <string name="offline_resources_ubuntu">Terminal · Ubuntu installation archive</string>
+    <string name="offline_resources_android">Web projects · Android export template</string>
+    <string name="offline_resources_windows">Web projects · Windows export template</string>
+    <string name="offline_resources_ready">Saved and verified; available offline or for ZIP export</string>
+    <string name="offline_resources_not_saved">Complete resources are not saved; download or import the matching ZIP</string>
+    <string name="offline_resources_ubuntu_installed">Ubuntu is installed. The existing terminal needs no new download; its installation archive can be saved separately.</string>
+    <string name="offline_resources_download">Download</string>
+    <string name="offline_resources_export">Export ZIP</string>
+    <string name="offline_resources_import">Import ZIP</string>
+    <string name="offline_resources_confirm">Download about %1$s MiB from the personal GitHub Release? GitHub must be reachable. You can also obtain the matching resource ZIP in a browser and import it.</string>
+    <string name="offline_resources_done">Completed. Resources passed verification.</string>
+    <string name="offline_resources_cancelled">Cancelled. Completed and verified downloads are kept.</string>
+    <string name="offline_resources_failed">Operation failed: %1$s. Check the network and retry, or import the matching resource ZIP.</string>
+    <string name="offline_resources_missing">Required resources are not ready. Download or import them in Settings → Offline resources, then retry the feature.</string>
+    <string name="offline_resources_retry_feature">This feature needs resources. Download or import them, then return and retry the original operation.</string>
+    <string name="offline_resources_in_use">The speech model is in use or being removed. Stop speech services and retry.</string>
+    <string name="offline_resources_no_space">Insufficient device storage. Free some space and retry.</string>
 </resources>

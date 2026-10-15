@@ -291,6 +291,14 @@ fun SettingsScreen(
                         containerColor = cardContainerColor
                 ) {
                         CompactSettingsItem(
+                                title = stringResource(R.string.offline_resources_title),
+                                subtitle = stringResource(R.string.offline_resources_subtitle),
+                                icon = Icons.Default.Download,
+                                onClick = {
+                                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java))
+                                }
+                        )
+                        CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_data_storage),
                                 subtitle = stringResource(id = R.string.settings_data_storage_subtitle),
                                 icon = Icons.Default.Storage,
