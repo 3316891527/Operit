@@ -165,15 +165,6 @@ object ScreenRouteRegistry {
                 order = 30
             ),
             hostEntryDefinition(
-                entryId = "toolbox.file_manager",
-                screen = Screen.FileManager,
-                surface = NavigationSurface.TOOLBOX,
-                titleResId = R.string.tool_file_manager,
-                descriptionResId = R.string.tool_file_manager_desc,
-                icon = Icons.Default.Folder,
-                order = 20
-            ),
-            hostEntryDefinition(
                 entryId = "toolbox.agreement",
                 screen = Screen.Agreement,
                 launchNavItem = NavItem.Agreement,

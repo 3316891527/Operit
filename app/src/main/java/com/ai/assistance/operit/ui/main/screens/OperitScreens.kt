@@ -80,7 +80,7 @@ import com.ai.assistance.operit.ui.features.storage.MemoryLibraryStorageScreen
 import com.ai.assistance.operit.ui.features.storage.WorkspaceMediaStorageScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.FileManagerToolScreen
+import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.LogcatToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.ShellExecutorToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoScreen
@@ -1451,24 +1451,6 @@ sealed class Screen(
 
         @Composable
         override fun getTitle(): String = title
-    }
-
-    // Toolbox secondary screens
-
-    data object FileManager :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_file_manager) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            FileManagerToolScreen(navController = navController)
-        }
     }
 
     data object Terminal :

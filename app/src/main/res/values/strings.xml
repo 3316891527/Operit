@@ -8604,7 +8604,7 @@
     <string name="token_stats_detail_tokens">Token 明细</string>
     <string name="token_stats_detail_close">关闭</string>
     <string name="token_stats_detail_open">点击查看详细数据</string>
-    <string name="markdown_link_not_openable">该链接指向文档内部的引用，无法打开</string>
+    <string name="markdown_link_not_openable">无法打开该链接，请检查链接地址或是否已安装对应应用。</string>
 
     <string name="provider_openai_codex">Codex（OpenAI）</string>
     <string name="onboarding_config_codex_login_required">请先登录 Codex</string>
@@ -9139,4 +9139,17 @@
 <string name="theme_thinking_particle_color">粒子颜色</string>
 <string name="theme_thinking_particle_color_desc">自定义开启思考时滑块粒子流动的颜色，默认使用白色</string>
 <string name="theme_thinking_particle_color_title">思考粒子颜色</string>
+<string name="workspace_default_open">默认打开</string>
+<string name="workspace_invalid_paste">不能将文件粘贴到自身目录中</string>
+<string name="workspace_markdown_anchor_not_found">找不到文档标题：%1$s</string>
+<string name="workspace_open_as_text">作为文本打开</string>
+<string name="workspace_open_external">使用系统应用打开</string>
+<string name="workspace_open_with">打开方式</string>
+<string name="workspace_search_content">搜索内容</string>
+<string name="workspace_search_next">下一个匹配</string>
+<string name="workspace_search_previous">上一个匹配</string>
+<string name="workspace_sort_descending">降序排列</string>
+<string name="workspace_sort_folders_first">文件夹置顶</string>
+<string name="workspace_sort_ignore_case">忽略大小写</string>
+<string name="workspace_text_preview_too_large">文本超过 %1$d MiB，已停止应用内读取。可选择系统应用打开。</string>
 </resources>

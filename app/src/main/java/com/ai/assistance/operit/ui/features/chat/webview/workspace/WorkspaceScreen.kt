@@ -16,6 +16,7 @@ import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import java.io.File
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryRequest
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 
 /**
  * 主工作区屏幕组件
@@ -29,28 +30,48 @@ fun WorkspaceScreen(
     entryRequest: WorkspaceEntryRequest = WorkspaceEntryRequest(),
     onExportClick: (workDir: File) -> Unit
 ) {
-    if (currentChat?.workspace != null) {
-        val workspacePath = currentChat.workspace
+    var temporaryFile by remember(currentChat?.id, currentChat?.workspace) { mutableStateOf<OpenFileInfo?>(null) }
+    val setupState = rememberSaveableStateHolder()
+    val file = temporaryFile
+    val boundWorkspace = currentChat?.workspace
+    if (currentChat != null && boundWorkspace != null) {
         WorkspaceManager(
+            actualViewModel = actualViewModel,
+            currentChat = currentChat,
+            workspacePath = boundWorkspace,
+            workspaceEnv = currentChat.workspaceEnv,
+            isVisible = isVisible,
+            entryRequest = entryRequest,
+            onExportClick = onExportClick
+        )
+    } else if (currentChat != null && file != null) {
+        key(file.key) {
+            WorkspaceManager(
                 actualViewModel = actualViewModel,
                 currentChat = currentChat,
-                workspacePath = workspacePath,
-                workspaceEnv = currentChat.workspaceEnv,
+                workspacePath = File(file.path).parent.orEmpty(),
+                workspaceEnv = file.environment.takeUnless { it == "android" },
                 isVisible = isVisible,
                 entryRequest = entryRequest,
-                onExportClick = onExportClick
+                onExportClick = onExportClick,
+                initialFile = file,
+                // 保留临时浏览器实例，关闭文件后回到打开文件所在目录。
+                onReturnToBrowser = {}
             )
-        
+        }
     } else if (currentChat != null) {
         key(currentChat.id, entryRequest.sequence) {
-            WorkspaceSetup(
-                chatId = currentChat.id,
-                initialAction = entryRequest.action,
-                onCancelSetup = actualViewModel::showWorkspaceHubHome,
-                onBindWorkspace = { workspacePath, workspaceEnv ->
-                    actualViewModel.bindChatToWorkspace(currentChat.id, workspacePath, workspaceEnv)
-                }
-            )
+            setupState.SaveableStateProvider("setup") {
+                WorkspaceSetup(
+                    chatId = currentChat.id,
+                    initialAction = entryRequest.action,
+                    onCancelSetup = actualViewModel::showWorkspaceHubHome,
+                    onBindWorkspace = { workspacePath, workspaceEnv ->
+                        actualViewModel.bindChatToWorkspace(currentChat.id, workspacePath, workspaceEnv)
+                    },
+                    onFileOpen = { temporaryFile = it }
+                )
+            }
         }
     } else {
         val context = LocalContext.current

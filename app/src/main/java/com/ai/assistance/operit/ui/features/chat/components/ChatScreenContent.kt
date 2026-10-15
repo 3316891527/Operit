@@ -41,6 +41,7 @@ import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ActivePrompt
 
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
+import com.ai.assistance.operit.ui.features.chat.webview.workspace.links.WorkspaceFileLinkHost
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMode
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageStyleConfig
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceBackupManager
@@ -226,7 +227,11 @@ fun ChatScreenContent(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize().padding(paddingValues)) {
+    WorkspaceFileLinkHost(
+        actualViewModel = actualViewModel,
+        currentChat = chatHistories.find { it.id == currentChatId },
+        modifier = modifier.fillMaxSize().padding(paddingValues),
+    ) {
         // 主聊天透明控件行固定占用菜单高度，滚动消息也不会覆盖标题和操作。
         Column(modifier = Modifier.fillMaxSize().padding(top = if (showChatHeader) 0.dp else 52.dp)) {
             if (showChatHeader) {
