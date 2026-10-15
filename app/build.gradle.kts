@@ -21,6 +21,9 @@ plugins {
     id("kotlin-kapt")
 }
 
+// 此集成分支在 GitHub Actions 中构建预览产物，使用调试签名。
+val ciPreviewRelease = providers.environmentVariable("GITHUB_ACTIONS").orNull == "true"
+
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -128,17 +131,18 @@ fun signApkWithRotation(apkFile: File) {
         "--key-pass", "env:OPERIT_NEW_KEY_PASSWORD",
     )
 
-    project.exec {
+    // 显式读取执行结果，签名命令失败时立即终止任务。
+    providers.exec {
         commandLine(listOf(config.apksigner.path) + signingArguments)
         environment("OPERIT_OLD_STORE_PASSWORD", config.oldStorePassword)
         environment("OPERIT_OLD_KEY_PASSWORD", config.oldKeyPassword)
         environment("OPERIT_NEW_STORE_PASSWORD", config.newStorePassword)
         environment("OPERIT_NEW_KEY_PASSWORD", config.newKeyPassword)
-    }
+    }.result.get().assertNormalExitValue()
 
-    project.exec {
+    providers.exec {
         commandLine(config.apksigner.path, "verify", "--verbose", "--print-certs", rotatedApk.path)
-    }
+    }.result.get().assertNormalExitValue()
 
     Files.move(
         rotatedApk.toPath(),
@@ -364,6 +368,12 @@ android {
         getByName("main") {
             assets.setSrcDirs(listOf(generatedMainAssetsDir.get().asFile))
         }
+        if (ciPreviewRelease) {
+            getByName("release") {
+                manifest.srcFile("src/kong/AndroidManifest.xml")
+                res.srcDir("src/kong/res")
+            }
+        }
     }
 
     signingConfigs {
@@ -422,13 +432,18 @@ android {
         val releaseSigningConfig = signingConfigs.findByName("release")
 
         release {
+            isDebuggable = false
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (releaseSigningConfig != null) {
+            if (ciPreviewRelease) {
+                // 独立安装身份使共存版与正式版分别安装，预览签名用于共存包。
+                applicationIdSuffix = ".kong"
+                signingConfig = signingConfigs.getByName("debug")
+            } else if (releaseSigningConfig != null) {
                 signingConfig = releaseSigningConfig
             }
         }
@@ -461,6 +476,12 @@ android {
         }
     }
     applicationVariants.all {
+        if (buildType.name == "release" && ciPreviewRelease) {
+            outputs.all {
+                val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+                output.outputFileName = "app-kong.apk"
+            }
+        }
         if (buildType.name == "nightly") {
             outputs.all {
                 val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
@@ -552,12 +573,56 @@ val signRotatedNightlyApk by tasks.registering {
     }
 }
 
-tasks.matching { it.name == "assembleRelease" }.configureEach {
-    finalizedBy(signRotatedReleaseApk)
+if (!ciPreviewRelease) {
+    tasks.matching { it.name == "assembleRelease" }.configureEach {
+        finalizedBy(signRotatedReleaseApk)
+    }
 }
 
 tasks.matching { it.name == "assembleNightly" }.configureEach {
     finalizedBy(signRotatedNightlyApk)
+}
+
+if (ciPreviewRelease) {
+    val verifyCiPreviewRelease by tasks.registering {
+        group = "verification"
+        description = "Verifies the signed Kong coexist APK."
+        dependsOn("assembleRelease")
+        doLast {
+            val apkFile = layout.buildDirectory.file("outputs/apk/release/app-kong.apk").get().asFile
+            require(apkFile.isFile && apkFile.length() > 0) {
+                "Kong coexist APK was not produced: ${apkFile.path}"
+            }
+            val sdkDirectory = File(requiredLocalProperty("sdk.dir"))
+            val apksigner = sdkDirectory.resolve("build-tools/35.0.0/apksigner")
+            providers.exec {
+                commandLine(apksigner.path, "verify", "--verbose", apkFile.path)
+            }.result.get().assertNormalExitValue()
+            // 校验实际 APK 的包名和调试标记，避免把调试产物当作发行包上传。
+            val aapt2 = sdkDirectory.resolve("build-tools/35.0.0/aapt2")
+            // 由 Gradle 读取标准输出，避免 java 扩展遮蔽同名包而使脚本编译失败。
+            val badging = providers.exec {
+                commandLine(aapt2.path, "dump", "badging", apkFile.path)
+            }.standardOutput.asText.get()
+            require(badging.lineSequence().any {
+                it.startsWith("package: name='com.ai.assistance.operit.kong' ")
+            }) {
+                "Kong coexist APK has an unexpected package name"
+            }
+            require(badging.lineSequence().none {
+                it.startsWith("application-debuggable")
+            }) {
+                "Kong coexist APK must not be debuggable"
+            }
+            val badgingReport = layout.buildDirectory.file("reports/kong-preview/apk-badging.txt").get().asFile
+            badgingReport.parentFile.mkdirs()
+            badgingReport.writeText(badging)
+        }
+    }
+    // 使用已有 bundleRelease 入口，产出使用独立包名的共存 APK 和 AAB。
+    tasks.matching { it.name == "bundleRelease" }.configureEach {
+        dependsOn(verifyCiPreviewRelease)
+    }
 }
 
 tasks.named("preBuild") {
@@ -757,6 +822,10 @@ dependencies {
 
     // Test dependencies
     testImplementation(libs.junit)
+    // JVM 中文排序测试使用 ICU，匹配 Android 的 Collator，不打包进应用。
+    testImplementation("com.ibm.icu:icu4j:76.1")
+    // 目录迁移的 JVM 测试通过 JDBC 执行真实 SQLite SQL，需要在测试运行时提供驱动。
+    testRuntimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
     // JVM tests need a real implementation because Android's org.json methods are throwing stubs.
     testImplementation(libs.json.jvm)
     androidTestImplementation(libs.androidx.junit)

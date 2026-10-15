@@ -12,24 +12,44 @@ import kotlinx.coroutines.flow.asStateFlow
 internal class ThemeEditorSession(
     private val persistentPreferences: UserPreferencesManager,
     initialValues: ThemePreferenceValues,
+    initialGlobalUserName: String,
 ) {
     private val _values = MutableStateFlow(initialValues)
     private val _hasUnsavedChanges = MutableStateFlow(false)
     private var baselineValues = initialValues
+    private val _globalUserName = MutableStateFlow(initialGlobalUserName)
+    private var baselineGlobalUserName = initialGlobalUserName
     private var resetRequested = false
     private val stagedAssetUris = mutableSetOf<String>()
     private var inFlightSavedValues: ThemePreferenceValues? = null
     private var disposed = false
 
     val values: StateFlow<ThemePreferenceValues> = _values.asStateFlow()
+    val globalUserNameFlow: StateFlow<String> = _globalUserName.asStateFlow()
     val hasUnsavedChangesFlow: StateFlow<Boolean> = _hasUnsavedChanges.asStateFlow()
     val recentColorsFlow: Flow<List<Int>> = persistentPreferences.recentColorsFlow
 
     val currentValues: ThemePreferenceValues
         get() = _values.value
 
-    val hasUnsavedChanges: Boolean
+    val currentGlobalUserName: String
+        get() = _globalUserName.value
+
+    val hasThemeChanges: Boolean
         get() = resetRequested || currentValues != baselineValues
+
+    val hasGlobalUserNameChanges: Boolean
+        get() = currentGlobalUserName != baselineGlobalUserName
+
+    val hasUnsavedChanges: Boolean
+        get() = hasThemeChanges || hasGlobalUserNameChanges
+
+    // 全局名字参与编辑会话的保存和放弃，但不进入角色主题字段。
+    fun setGlobalUserName(value: String) {
+        if (disposed || value == currentGlobalUserName) return
+        _globalUserName.value = value
+        updateDirtyState()
+    }
 
     val isResetRequested: Boolean
         get() = resetRequested
@@ -118,6 +138,7 @@ internal class ThemeEditorSession(
     fun discard() {
         deleteStagedAssets(stagedAssetUris.toSet())
         _values.value = baselineValues
+        _globalUserName.value = baselineGlobalUserName
         resetRequested = false
         updateDirtyState()
     }
@@ -126,10 +147,12 @@ internal class ThemeEditorSession(
         inFlightSavedValues = savedValues
     }
 
-    fun markSaved(savedValues: ThemePreferenceValues) {
+    fun markSaved(savedValues: ThemePreferenceValues, savedGlobalUserName: String) {
         stagedAssetUris.removeAll(savedValues.strings.values)
         inFlightSavedValues = null
         baselineValues = savedValues
+        // 保存期间继续输入的名字保留为草稿，只更新本次保存的基线。
+        baselineGlobalUserName = savedGlobalUserName
         resetRequested = false
         if (disposed) {
             deleteStagedAssets(stagedAssetUris.toSet())

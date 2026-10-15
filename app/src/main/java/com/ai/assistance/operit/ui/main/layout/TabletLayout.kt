@@ -125,9 +125,8 @@ fun TabletLayout(
                                                 enabled = drawerAppearance.waterGlassEnabled,
                                                 shape = MaterialTheme.shapes.medium,
                                                 containerColor = drawerAppearance.containerColor,
-                                                shadowElevation = 4.dp,
-                                                borderWidth = 0.7.dp,
-                                                overlayAlphaBoost = 0.04f
+                                                // 侧栏保留已调整的低强度折射，聊天区域单独恢复原有效果。
+                                                subtleRefraction = true,
                                         )
                                         .zIndex(2f), // 确保侧边栏在主内容之上
                         shadowElevation = if (drawerAppearance.waterGlassEnabled) 0.dp else 4.dp,
@@ -152,7 +151,8 @@ fun TabletLayout(
                                                 scope = scope,
                                                 drawerState = drawerState,
                                                 onScreenSelected = onDrawerItemSelected,
-                                                onNavigationEntrySelected = onNavigationEntrySelected
+                                                onNavigationEntrySelected = onNavigationEntrySelected,
+                                                onCollapseSidebar = onToggleSidebar
                                         )
                                 } else {
                                         CollapsedDrawerContent(
@@ -163,6 +163,7 @@ fun TabletLayout(
                                                 isNetworkAvailable = isNetworkAvailable,
                                                 appearance = drawerAppearance,
                                                 onScreenSelected = onDrawerItemSelected,
+                                                onExpandSidebar = onToggleSidebar,
                                                 onNavigationEntrySelected = onNavigationEntrySelected
                                         )
                                 }

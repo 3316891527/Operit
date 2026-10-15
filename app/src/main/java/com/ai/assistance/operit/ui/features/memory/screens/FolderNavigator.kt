@@ -38,50 +38,6 @@ data class FolderExpandedState(
 )
 
 /**
- * Memory-space selector and metadata controls. Memory contents stay in the existing ObjectBox
- * database keyed by the stable space id.
- */
-@Composable
-private fun ProfileSelector(
-    profileList: List<String>,
-    profileNameMap: Map<String, String>,
-    selectedProfileId: String,
-    onProfileSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedProfileName = profileNameMap[selectedProfileId] ?: selectedProfileId
-
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Box {
-            OutlinedButton(
-                onClick = { expanded = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(selectedProfileName, modifier = Modifier.weight(1f))
-                Icon(Icons.Default.ArrowDropDown, contentDescription = stringResource(R.string.memory_space_select))
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.width(218.dp)
-            ) {
-                profileList.forEach { profileId ->
-                    val profileName = profileNameMap[profileId] ?: profileId
-                    DropdownMenuItem(
-                        text = { Text(profileName) },
-                        onClick = {
-                            onProfileSelected(profileId)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
  * 文件夹树节点数据结构
  */
 data class FolderNode(
@@ -109,11 +65,6 @@ fun FolderNavigator(
     onFolderDelete: ((String) -> Unit)? = null,
     onFolderCreate: ((String) -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
-    // New parameters for profile selection
-    profileList: List<String>,
-    profileNameMap: Map<String, String>,
-    selectedProfileId: String,
-    onProfileSelected: (String) -> Unit,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -180,13 +131,6 @@ fun FolderNavigator(
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                ProfileSelector(
-                    profileList = profileList,
-                    profileNameMap = profileNameMap,
-                    selectedProfileId = selectedProfileId,
-                    onProfileSelected = onProfileSelected
-                )
                 
                 // 新建文件夹按钮和刷新按钮
                 Row(

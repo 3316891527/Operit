@@ -1273,9 +1273,8 @@ const directory = await ctx.openFilePicker({
 
 兼容说明：
 
-- `ToolPkg.registerToolboxUiModule(...)` 仍然保留。
-- 调用后会注册一个 `compose_dsl` UI route，并挂载到 `toolbox` 导航入口。
-- 旧接口不会自动创建主侧边栏插件入口；若需要主侧边栏插件入口，请额外调用 `ToolPkg.registerNavigationEntry(...)` 并使用 `surface: "main_sidebar_plugins"`。
+- `ToolPkg.registerToolboxUiModule(...)` 作为兼容注册函数继续保留，注册 UI route（默认 `compose_dsl`），但不自动创建工具箱卡片。插件详情仍可打开该 UI。
+- 旧插件显式声明的 `surface: "toolbox"` 导航项仍可通过注册校验，但宿主不再将其发布到工具箱；需要主侧边栏插件入口时使用 `surface: "main_sidebar_plugins"`。
 
 #### 其他
 ```javascript
@@ -1595,4 +1594,4 @@ ls -lh app/src/main/assets/packages/windows_control.toolpkg
 ## 12. 参考资料
 
 - [脚本开发指南](./SCRIPT_DEV_GUIDE.md)：了解如何编写子包脚本
-- [ToolPkg API 文档](./doc-src/package-dev/toolpkg.md)：了解注册 API
+- [ToolPkg API 文档](./doc-src/toolpkg_developer_documentation/04_modules/toolpkg.md)：了解注册 API

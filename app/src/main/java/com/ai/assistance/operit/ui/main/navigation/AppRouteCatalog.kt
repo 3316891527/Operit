@@ -6,7 +6,6 @@ import androidx.compose.material.icons.filled.Extension
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_NAV_SURFACE_MAIN_SIDEBAR_PLUGINS
-import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_NAV_SURFACE_TOOLBOX
 import com.ai.assistance.operit.ui.common.icons.MaterialIconNameResolver
 import com.ai.assistance.operit.ui.main.screens.Screen
 import com.ai.assistance.operit.ui.main.screens.ScreenRouteRegistry
@@ -32,7 +31,6 @@ object AppRouteCatalog {
             packageManager.getToolPkgNavigationEntries(resolveContext = context).mapNotNull { entry ->
                 val surface =
                     when (entry.surface.trim().lowercase()) {
-                        TOOLPKG_NAV_SURFACE_TOOLBOX -> NavigationSurface.TOOLBOX
                         TOOLPKG_NAV_SURFACE_MAIN_SIDEBAR_PLUGINS ->
                             NavigationSurface.MAIN_SIDEBAR_PLUGINS
                         else -> null

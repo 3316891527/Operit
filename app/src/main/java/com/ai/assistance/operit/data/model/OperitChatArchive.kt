@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.model
 
+import com.ai.assistance.operit.data.chat.folders.ChatFolder
 import com.ai.assistance.operit.util.LocalDateTimeSerializer
 import java.time.LocalDateTime
 import kotlinx.serialization.Serializable
@@ -10,10 +11,11 @@ data class OperitChatArchive(
     val formatVersion: Int = CURRENT_FORMAT_VERSION,
     val exportedAt: Long = System.currentTimeMillis(),
     val chats: List<OperitArchivedChat>,
+    val folders: List<ChatFolder> = emptyList(),
 ) {
     companion object {
         const val ARCHIVE_TYPE = "operit_chat_archive"
-        const val CURRENT_FORMAT_VERSION = 2
+        const val CURRENT_FORMAT_VERSION = 3
     }
 }
 
@@ -38,6 +40,9 @@ data class OperitArchivedChat(
     val characterGroupId: String? = null,
     val locked: Boolean = false,
     val pinned: Boolean = false,
+    val folderId: String? = null,
+    val lastUsedAt: Long = 0L,
+    val folderPath: List<ChatFolder> = emptyList(),
 ) {
     fun toChatHistory(): ChatHistory {
         return ChatHistory(
@@ -58,6 +63,8 @@ data class OperitArchivedChat(
             characterGroupId = characterGroupId,
             locked = locked,
             pinned = pinned,
+            folderId = folderId,
+            lastUsedAt = lastUsedAt,
         )
     }
 
@@ -84,6 +91,8 @@ data class OperitArchivedChat(
                 characterGroupId = history.characterGroupId,
                 locked = history.locked,
                 pinned = history.pinned,
+                folderId = history.folderId,
+                lastUsedAt = history.lastUsedAt,
             )
         }
     }

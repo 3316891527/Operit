@@ -329,6 +329,7 @@ class JsToolManager private constructor(
             params = params.mapValues { it.value as Any? }
         )
         return withExecutionEngineForPackageBlocking(packageName) { engine ->
+            packageManager.recordPluginUse(packageName)
             try {
                 engine.executeScriptFunction(
                     script = script,
@@ -391,6 +392,7 @@ class JsToolManager private constructor(
                 }
             try {
                 withTimeout(JsTimeoutConfig.SCRIPT_TIMEOUT_MS) {
+                    packageManager.recordPluginUse(packageName)
                     val result = engine.executeScriptFunction(
                         script = script,
                         functionName = functionName,

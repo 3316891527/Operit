@@ -39,7 +39,7 @@ internal class PackageManagerToolPkgFacade(
         return container.uiRoutes
             .filter { route ->
                 route.runtime.equals(runtime, ignoreCase = true) &&
-                    toolboxRouteIds.contains(route.routeId.lowercase())
+                    (route.registeredAsToolboxUiModule || toolboxRouteIds.contains(route.routeId.lowercase()))
             }
             .map { route ->
                 val moduleTitle =
@@ -125,6 +125,8 @@ internal class PackageManagerToolPkgFacade(
     ): List<PackageManager.ToolPkgNavigationEntry> {
         val containerDescription = container.description.resolve(localizationContext)
         return container.navigationEntries
+            // 接受旧插件声明，但不再向导航目录发布工具箱入口。
+            .filterNot { entry -> entry.surface.equals(TOOLPKG_NAV_SURFACE_TOOLBOX, ignoreCase = true) }
             .map { entry ->
                 PackageManager.ToolPkgNavigationEntry(
                     containerPackageName = container.packageName,
@@ -314,6 +316,7 @@ internal class PackageManagerToolPkgFacade(
             logoMimeType = container.logoResource?.mime,
             apiVersion = container.apiVersion,
             requires = container.requires,
+            fileSizeBytes = container.fileSizeBytes,
             resourceCount = container.resources.size,
             wasmModuleCount = wasmModules.size,
             workflowTemplateCount = workflowTemplates.size,
@@ -991,6 +994,7 @@ internal class PackageManagerToolPkgFacade(
             }
 
             val executeScriptFunctionStartTime = if (shouldLogTiming) messageTimingNow() else 0L
+            packageManager.recordPluginUse(runtime.packageName)
             val executionResult = executionEngine.executeScriptFunction(
                 script = script,
                 functionName = functionName,

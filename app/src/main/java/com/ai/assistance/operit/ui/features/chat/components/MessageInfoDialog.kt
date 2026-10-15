@@ -21,6 +21,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.ui.features.chat.components.details.calculateMessageTokenSpeed
+import com.ai.assistance.operit.ui.features.chat.components.details.formatMessageDuration
+import com.ai.assistance.operit.ui.features.chat.components.details.formatMessageNumber
+import com.ai.assistance.operit.ui.features.chat.components.details.formatMessageTokenSpeed
+import com.ai.assistance.operit.ui.features.chat.components.details.messageTokenBreakdownText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -50,15 +55,15 @@ fun MessageInfoDialog(
     }
 
     fun formatDuration(value: Long): String {
-        return if (value > 0L) {
-            if (value >= 1000L) {
-                String.format(Locale.getDefault(), "%.2f s (%d ms)", value / 1000.0, value)
-            } else {
-                "$value ms"
-            }
+        val duration = formatMessageDuration(value)
+        return if (value >= 1_000L) {
+            "$duration (${formatMessageNumber(value)} ms)"
         } else {
-            "0 ms"
+            duration
         }
+    }
+    val tokenSpeed = remember(message.outputTokens, message.outputDurationMs) {
+        calculateMessageTokenSpeed(message.outputTokens, message.outputDurationMs)
     }
 
     AlertDialog(
@@ -96,6 +101,19 @@ fun MessageInfoDialog(
                         leftValue = formatDuration(message.waitDurationMs),
                         rightLabel = stringResource(R.string.message_info_output_duration),
                         rightValue = formatDuration(message.outputDurationMs)
+                    )
+                    MessageInfoTwoColumnRow(
+                        leftLabel = stringResource(R.string.message_info_token_speed),
+                        leftValue = if (tokenSpeed != null) {
+                            stringResource(
+                                R.string.message_info_token_speed_value,
+                                formatMessageTokenSpeed(tokenSpeed),
+                            )
+                        } else {
+                            unavailable
+                        },
+                        rightLabel = stringResource(R.string.message_info_completed_at),
+                        rightValue = formatTimestamp(message.completedAt),
                     )
                 }
 
@@ -191,24 +209,15 @@ private fun MessageInfoTokenRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text =
-                buildString {
-                    append(stringResource(R.string.message_info_token_input_short))
-                    append(" ")
-                    append(inputTokens)
-                    append("  ")
-                    append(stringResource(R.string.message_info_token_output_short))
-                    append(" ")
-                    append(outputTokens)
-                    append("  ")
-                    append(stringResource(R.string.message_info_token_cached_short))
-                    append(" ")
-                    append(cachedInputTokens)
-                    append("  ")
-                    append(stringResource(R.string.message_info_token_hit_rate_short))
-                    append(" ")
-                    append(formatCacheHitRate(cachedInputTokens, inputTokens))
-                },
+            text = stringResource(
+                R.string.chat_message_generation_total,
+                formatMessageNumber(inputTokens + outputTokens),
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = messageTokenBreakdownText(inputTokens, outputTokens, cachedInputTokens),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )

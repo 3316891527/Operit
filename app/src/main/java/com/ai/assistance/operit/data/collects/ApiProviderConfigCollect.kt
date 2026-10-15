@@ -112,7 +112,7 @@ object ApiProviderConfigs {
             endpointOptions = listOf(
                 ProviderEndpointOption(
                     endpoint = "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-                    label = "CN standard"
+                    label = "CN standard / AutoGLM-Phone"
                 ),
                 ProviderEndpointOption(
                     endpoint = "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions",

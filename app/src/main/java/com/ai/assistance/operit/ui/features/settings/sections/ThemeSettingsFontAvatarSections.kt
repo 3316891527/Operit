@@ -263,8 +263,8 @@ internal fun ThemeSettingsAvatarSection(
     userAvatarUriInput: String?,
     globalUserAvatarUriInput: String?,
     onGlobalUserAvatarUriInputChange: (String?) -> Unit,
-    globalUserNameInput: String?,
-    onGlobalUserNameInputChange: (String?) -> Unit,
+    globalUserNameInput: String,
+    onGlobalUserNameInputChange: (String) -> Unit,
     avatarShapeInput: String,
     avatarCornerRadiusInput: Float,
     avatarImagePicker: ManagedActivityResultLauncher<String, Uri?>,
@@ -325,45 +325,13 @@ internal fun ThemeSettingsAvatarSection(
             )
 
             OutlinedTextField(
-                value = globalUserNameInput ?: "",
+                value = globalUserNameInput,
                 onValueChange = { onGlobalUserNameInputChange(it) },
                 label = { Text(stringResource(id = R.string.global_user_name_label)) },
                 placeholder = { Text(stringResource(id = R.string.global_user_name_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
-                trailingIcon = {
-                    if (globalUserNameInput.isNullOrEmpty()) {
-                        IconButton(
-                            onClick = {
-                                onGlobalUserNameInputChange("")
-                                scope.launch {
-                                    displayPreferencesManager.saveDisplaySettings(globalUserName = "")
-                                }
-                            },
-                        ) {
-                            Icon(
-                                Icons.Default.Clear,
-                                contentDescription = stringResource(id = R.string.clear_action),
-                            )
-                        }
-                    } else {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    displayPreferencesManager.saveDisplaySettings(
-                                        globalUserName = globalUserNameInput,
-                                    )
-                                }
-                            },
-                        ) {
-                            Icon(
-                                Icons.Default.Save,
-                                contentDescription = stringResource(id = R.string.save_action),
-                            )
-                        }
-                    }
-                },
             )
 
             Text(

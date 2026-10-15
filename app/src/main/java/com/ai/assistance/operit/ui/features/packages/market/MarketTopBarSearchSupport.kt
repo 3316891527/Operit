@@ -47,7 +47,8 @@ fun BindMarketSearchToTopBar(
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
     @StringRes searchPlaceholderRes: Int,
-    isSearching: Boolean = false
+    isSearching: Boolean = false,
+    additionalActions: @Composable () -> Unit = {}
 ) {
     val setTopBarActions = LocalTopBarActions.current
     val setTopBarTitleContent = LocalTopBarTitleContent.current
@@ -58,6 +59,7 @@ fun BindMarketSearchToTopBar(
     val latestIsSearching = rememberUpdatedState(isSearching)
     val latestAppBarContentColor = rememberUpdatedState(appBarContentColor)
     val latestOnSearchQueryChanged = rememberUpdatedState(onSearchQueryChanged)
+    val latestAdditionalActions = rememberUpdatedState(additionalActions)
     var isSearchExpanded by rememberSaveable { mutableStateOf(false) }
     val isSearchActive = enabled && (isSearchExpanded || searchQuery.isNotBlank())
 
@@ -102,6 +104,7 @@ fun BindMarketSearchToTopBar(
                     )
                 }
             }
+            latestAdditionalActions.value()
         }
 
         setTopBarTitleContent(

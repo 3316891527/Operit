@@ -165,7 +165,7 @@ class UIDebuggerViewModel : ViewModel() {
                             throw Exception(context.getString(R.string.uidebugger_error_wrong_result_type))
                         }
                     } else {
-                        throw Exception(context.getString(R.string.uidebugger_error_fetch_ui_failed))
+                        throw IllegalStateException("${context.getString(R.string.uidebugger_error_fetch_ui_failed)}: ${result.error}")
                     }
                 }
 
@@ -179,7 +179,7 @@ class UIDebuggerViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "刷新UI元素失败", e)
-                _uiState.update { it.copy(errorMessage = context.getString(R.string.uidebugger_error_refresh_failed)) }
+                _uiState.update { it.copy(errorMessage = "${context.getString(R.string.uidebugger_error_refresh_failed)}: $e") }
             } finally {
                 windowInteractionController?.invoke(true)
             }

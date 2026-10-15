@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.data.converter
 
+import com.ai.assistance.operit.data.chat.folders.ChatFolder
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.OperitArchivedChat
 import com.ai.assistance.operit.data.model.OperitArchivedMessageVariant
@@ -12,7 +15,7 @@ import java.time.format.DateTimeFormatter
  * A chat is represented by one chat row, followed by its message rows and optional variant rows.
  */
 object ChatHistoryCsv {
-    const val FORMAT_VERSION = "1"
+    const val FORMAT_VERSION = "2"
     const val RECORD_CHAT = "chat"
     const val RECORD_MESSAGE = "message"
     const val RECORD_VARIANT = "variant"
@@ -68,12 +71,25 @@ object ChatHistoryCsv {
         "variant_output_duration_ms",
         "variant_wait_duration_ms",
         "variant_completed_at",
+        "folder_id",
+        "last_used_at",
+        "folder_path",
     )
 
     private val columnIndex = HEADER.withIndex().associate { it.value to it.index }
 
     fun writeHeader(writer: Writer) {
         writeRow(writer, HEADER)
+    }
+
+    /** 独立记录空文件夹及父子关系，避免只从对话行重建目录。 */
+    fun writeFolder(writer: Writer, folder: ChatFolder) {
+        val row = emptyRow()
+        put(row, "format_version", FORMAT_VERSION)
+        put(row, "record_type", "folder")
+        put(row, "folder_id", folder.id)
+        put(row, "folder_path", Json.encodeToString(folder))
+        writeRow(writer, row)
     }
 
     fun writeChat(writer: Writer, history: OperitArchivedChat) {
@@ -96,6 +112,9 @@ object ChatHistoryCsv {
         put(row, "character_group_id", history.characterGroupId)
         put(row, "locked", history.locked.toString())
         put(row, "pinned", history.pinned.toString())
+        put(row, "folder_id", history.folderId)
+        put(row, "last_used_at", history.lastUsedAt.toString())
+        put(row, "folder_path", Json.encodeToString(history.folderPath))
         writeRow(writer, row)
     }
 

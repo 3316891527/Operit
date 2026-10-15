@@ -32,6 +32,8 @@ import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
+import com.ai.assistance.operit.data.embedding.MemoryEmbeddingModelResolver
+import com.ai.assistance.operit.services.CloudEmbeddingService
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.getModelByIndex
@@ -165,7 +167,7 @@ fun FunctionalConfigScreen(
                 items(FunctionType.values()) { functionType ->
                     val currentConfigMapping =
                             configMappingWithIndex.value[functionType]
-                                    ?: FunctionConfigMapping(FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
+                                    ?: FunctionConfigMapping(if (functionType == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
                     val currentConfig = configSummaries.find { it.id == currentConfigMapping.configId }
 
                     FunctionConfigCard(
@@ -181,10 +183,9 @@ fun FunctionalConfigScreen(
                                             modelIndex
                                     )
                                     // 刷新服务实例
-                                    EnhancedAIService.refreshServiceForFunction(
-                                            context,
-                                            functionType
-                                    )
+                                    if (functionType != FunctionType.MEMORY_EMBEDDING) {
+                                        EnhancedAIService.refreshServiceForFunction(context, functionType)
+                                    }
                                     showSaveSuccess = true
                                 }
                             }
@@ -372,7 +373,7 @@ fun FunctionConfigCard(
                             Text(
                                     text = stringResource(
                                         id = R.string.current_config_label,
-                                        currentConfig?.name ?: stringResource(id = R.string.default_config)
+                                        currentConfig?.name ?: stringResource(if (functionType == FunctionType.MEMORY_EMBEDDING) R.string.not_configured else R.string.default_config)
                                     ),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium
@@ -380,7 +381,9 @@ fun FunctionConfigCard(
 
                             if (currentConfig != null) {
                                 val modelList = getModelList(currentConfig.modelName)
-                                val displayModel = if (modelList.size > 1) {
+                                val displayModel = if (functionType == FunctionType.MEMORY_EMBEDDING) {
+                                    modelList.getOrNull(currentModelIndex) ?: stringResource(R.string.not_configured)
+                                } else if (modelList.size > 1) {
                                     getModelByIndex(currentConfig.modelName, currentModelIndex)
                                 } else {
                                     currentConfig.modelName
@@ -485,15 +488,24 @@ fun FunctionConfigCard(
                                             val selectedModelName = getModelByIndex(fullConfig.modelName, actualIndex)
                                             val configWithSelectedModel = fullConfig.copy(modelName = selectedModelName)
 
-                                            val service =
+                                            val service by lazy {
                                                     AIServiceFactory.createService(
                                                             config = configWithSelectedModel,
                                                             modelConfigManager = modelConfigManager,
                                                             context = context
                                                     )
+                                            }
 
                                             val useEnglish = !LocaleUtils.usesChineseContent(context)
                                             val result = when (functionType) {
+                                                FunctionType.MEMORY_EMBEDDING -> {
+                                                    val model = MemoryEmbeddingModelResolver(context).resolve()
+                                                    val vector = CloudEmbeddingService(context).generateEmbeddingOrThrow(
+                                                        model, context.getString(R.string.memory_embedding_function_probe)
+                                                    )
+                                                    context.getString(R.string.memory_embedding_function_test_success,
+                                                        requireNotNull(model).modelName, vector.vector.size)
+                                                }
                                                 FunctionType.SUMMARY -> {
                                                     val enhancedService = EnhancedAIService.getInstance(context)
                                                     val sampleMessages =
@@ -735,7 +747,10 @@ fun FunctionConfigCard(
                                                     functionType = functionType,
                                                     response = result
                                                 )
+                                        } catch (e: kotlinx.coroutines.CancellationException) {
+                                            throw e
                                         } catch (e: Exception) {
+                                            com.ai.assistance.operit.util.AppLogger.e("FunctionalConfig", "功能模型连接测试失败：$functionType", e)
                                             testResult =
                                                 FunctionTestDisplay(
                                                     outcome = ModelConnectionTestOutcome.FAILED,
@@ -747,10 +762,11 @@ fun FunctionConfigCard(
                                                 )
                                         } finally {
                                             cleanupTasks.forEach { task -> runCatching { task() } }
+                                            isTestingConnection = false
                                         }
-                                        isTestingConnection = false
                                     }
                                 },
+                                enabled = !isTestingConnection && (functionType != FunctionType.MEMORY_EMBEDDING || currentConfig != null),
                                 modifier = Modifier.height(32.dp),
                                 contentPadding = PaddingValues(horizontal = 8.dp),
                                 shape = RoundedCornerShape(4.dp)
@@ -796,11 +812,17 @@ fun FunctionConfigCard(
                                 modifier = Modifier.padding(bottom = 8.dp)
                         )
 
+                        if (functionType == FunctionType.MEMORY_EMBEDDING) {
+                            TextButton(onClick = { onConfigSelected("", 0); expanded = false }) {
+                                Text(stringResource(R.string.memory_embedding_unbind))
+                            }
+                        }
                         availableConfigs.forEach { config ->
                             val isSelected =
                                     config.id ==
                                             (currentConfig?.id
-                                                    ?: FunctionalConfigManager.DEFAULT_CONFIG_ID)
+                                                    ?: if (functionType == FunctionType.MEMORY_EMBEDDING) ""
+                                                    else FunctionalConfigManager.DEFAULT_CONFIG_ID)
                             val modelList = getModelList(config.modelName)
                             val hasMultipleModels = modelList.size > 1
                             val isExpanded = expandedConfigId == config.id
@@ -977,6 +999,7 @@ fun getFunctionDisplayName(functionType: FunctionType): String {
         FunctionType.SUMMARY -> stringResource(id = R.string.function_type_summary)
         FunctionType.TITLE_GENERATION -> stringResource(id = R.string.function_type_title_generation)
         FunctionType.MEMORY -> stringResource(id = R.string.function_type_memory)
+        FunctionType.MEMORY_EMBEDDING -> stringResource(R.string.function_type_memory_embedding)
         FunctionType.UI_CONTROLLER -> stringResource(id = R.string.function_type_ui_controller)
         FunctionType.TRANSLATION -> stringResource(id = R.string.function_type_translation)
         FunctionType.GREP -> stringResource(id = R.string.function_type_grep)
@@ -995,6 +1018,7 @@ fun getFunctionDescription(functionType: FunctionType): String {
         FunctionType.SUMMARY -> stringResource(id = R.string.function_desc_summary)
         FunctionType.TITLE_GENERATION -> stringResource(id = R.string.function_desc_title_generation)
         FunctionType.MEMORY -> stringResource(id = R.string.function_desc_memory)
+        FunctionType.MEMORY_EMBEDDING -> stringResource(R.string.function_desc_memory_embedding)
         FunctionType.UI_CONTROLLER -> stringResource(id = R.string.function_desc_ui_controller)
         FunctionType.TRANSLATION -> stringResource(id = R.string.function_desc_translation)
         FunctionType.GREP -> stringResource(id = R.string.function_desc_grep)

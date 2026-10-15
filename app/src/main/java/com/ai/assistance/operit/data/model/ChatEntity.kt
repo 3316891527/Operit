@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.Instant
@@ -24,6 +25,8 @@ data class ChatEntity(
         val characterCardName: String? = null,
         val characterGroupId: String? = null,
         val locked: Boolean = false,
+        val folderId: String? = null,
+        @ColumnInfo(defaultValue = "0") val lastUsedAt: Long = 0L,
         val pinned: Boolean = false
 ) {
     /** 转换为ChatHistory对象（供UI层使用） */
@@ -53,6 +56,8 @@ data class ChatEntity(
                 characterCardName = characterCardName,
                 characterGroupId = characterGroupId,
                 locked = locked,
+                folderId = folderId,
+                lastUsedAt = lastUsedAt,
                 pinned = pinned
         )
     }
@@ -87,6 +92,8 @@ data class ChatEntity(
                     characterCardName = chatHistory.characterCardName,
                     characterGroupId = chatHistory.characterGroupId,
                     locked = chatHistory.locked,
+                    folderId = chatHistory.folderId,
+                    lastUsedAt = chatHistory.lastUsedAt,
                     pinned = chatHistory.pinned
             )
         }

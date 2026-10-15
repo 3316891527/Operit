@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ai.assistance.operit.data.model.Memory
 import com.ai.assistance.operit.data.model.DocumentChunk
-import com.ai.assistance.operit.data.model.CloudEmbeddingConfig
+import com.ai.assistance.operit.data.embedding.isEmbeddingReady
 import com.ai.assistance.operit.data.model.EmbeddingDimensionUsage
 import com.ai.assistance.operit.data.model.EmbeddingRebuildProgress
 import com.ai.assistance.operit.data.model.MemorySearchConfig
@@ -21,12 +21,20 @@ import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
+import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
+import com.ai.assistance.operit.ui.features.memory.settings.MemorySettingsDetails
+import com.ai.assistance.operit.ui.features.memory.settings.MemorySettingsDataSource
+import com.ai.assistance.operit.ui.features.memory.settings.MemorySettingsPolicy
+import kotlinx.coroutines.CancellationException
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /** Memory UI State Represents the current state of the Memory screen. */
@@ -65,11 +73,13 @@ data class MemoryUiState(
 
         // --- 新增：搜索设置 ---
         val isSearchSettingsDialogVisible: Boolean = false,
+        val isSearchSettingsSaving: Boolean = false,
+        val memorySettingsDetails: MemorySettingsDetails = MemorySettingsDetails(),
         val searchConfig: MemorySearchConfig = MemorySearchConfig(),
         val autoSaveIntervalMinutes: Int = MemorySearchSettingsPreferences.DEFAULT_AUTO_SAVE_INTERVAL_MINUTES,
         val memoryExtractionCustomRules: String =
             MemorySearchSettingsPreferences.DEFAULT_MEMORY_EXTRACTION_CUSTOM_RULES,
-        val cloudEmbeddingConfig: CloudEmbeddingConfig = CloudEmbeddingConfig(),
+        val memoryEmbeddingModelName: String? = null,
         val embeddingDimensionUsage: EmbeddingDimensionUsage = EmbeddingDimensionUsage(),
         val isEmbeddingRebuildRunning: Boolean = false,
         val embeddingRebuildProgress: EmbeddingRebuildProgress = EmbeddingRebuildProgress(),
@@ -77,6 +87,9 @@ data class MemoryUiState(
         // --- 搜索模拟 ---
         val isSearchSimulationDialogVisible: Boolean = false,
         val searchSimulationQuery: String = "",
+        val searchSimulationConfig: MemorySearchConfig = MemorySearchConfig(),
+        val searchSimulationAllowCloudEmbedding: Boolean = true,
+        val searchSimulationThreshold: Double = MemoryRepository.SEARCH_RELEVANCE_THRESHOLD,
         val isSearchSimulationRunning: Boolean = false,
         val searchSimulationResult: MemorySearchDebugInfo? = null,
         val searchSimulationError: String? = null,
@@ -100,14 +113,32 @@ class MemoryViewModel(
     private val _uiState = MutableStateFlow(MemoryUiState())
     val uiState: StateFlow<MemoryUiState> = _uiState.asStateFlow()
     private val searchSettingsPreferences = MemorySearchSettingsPreferences(context, profileId)
+    private val memorySettingsDataSource = MemorySettingsDataSource(context, profileId)
+    private val historyRebuildManager = ChatMemoryRebuildManager.getInstance(context)
+    val memoryHistoryRebuildProgress = historyRebuildManager.progress
+    private var settingsLoadJob: Job? = null
+    private var simulationJob: Job? = null
 
     init {
         loadSearchSettings()
-        loadCloudEmbeddingSettings()
+        loadMemoryEmbeddingSettings()
         refreshEmbeddingDimensionUsage()
         // Initially load the graph
         loadMemoryGraph()
         loadFolderPaths()
+        viewModelScope.launch {
+            historyRebuildManager.progress.collect { progress ->
+                if (progress.memorySpaceId == profileId && progress.status in setOf(
+                    ChatMemoryRebuildManager.Status.COMPLETED,
+                    ChatMemoryRebuildManager.Status.CANCELLED,
+                )) {
+                    loadMemoryGraph()
+                    loadFolderPaths()
+                    refreshEmbeddingDimensionUsage()
+                    if (_uiState.value.isSearchSettingsDialogVisible) refreshMemorySettingsDetails()
+                }
+            }
+        }
     }
 
     private suspend fun refreshGraph(): Graph {
@@ -180,20 +211,23 @@ class MemoryViewModel(
     }
 
     fun showSearchSettingsDialog(visible: Boolean) {
-        _uiState.update { it.copy(isSearchSettingsDialogVisible = visible) }
-        if (visible) {
-            loadSearchSettings()
-            loadCloudEmbeddingSettings()
-            refreshEmbeddingDimensionUsage()
-        }
+        if (_uiState.value.isSearchSettingsSaving) return
+        _uiState.update { it.copy(
+            isSearchSettingsDialogVisible = visible,
+            error = null,
+            memorySettingsDetails = if (visible) MemorySettingsDetails() else it.memorySettingsDetails,
+        ) }
+        if (visible) refreshMemorySettingsDetails(reloadSettings = true)
     }
 
-    fun openSearchSimulationDialog() {
+    fun openSearchSimulationDialog(config: MemorySearchConfig, query: String, allowCloudEmbedding: Boolean, relevanceThreshold: Double) {
         _uiState.update {
             it.copy(
-                isSearchSettingsDialogVisible = false,
                 isSearchSimulationDialogVisible = true,
-                searchSimulationQuery = it.searchQuery,
+                searchSimulationQuery = query,
+                searchSimulationConfig = config.normalized(),
+                searchSimulationAllowCloudEmbedding = allowCloudEmbedding,
+                searchSimulationThreshold = relevanceThreshold.coerceIn(0.0, 1.0),
                 searchSimulationResult = null,
                 searchSimulationError = null
             )
@@ -201,6 +235,7 @@ class MemoryViewModel(
     }
 
     fun showSearchSimulationDialog(visible: Boolean) {
+        if (!visible) simulationJob?.cancel()
         _uiState.update {
             it.copy(
                 isSearchSimulationDialogVisible = visible,
@@ -212,14 +247,15 @@ class MemoryViewModel(
     }
 
     fun onSearchSimulationQueryChange(newQuery: String) {
-        _uiState.update { it.copy(searchSimulationQuery = newQuery) }
+        _uiState.update { it.copy(searchSimulationQuery = newQuery, searchSimulationResult = null, searchSimulationError = null) }
     }
 
     fun runSearchSimulation() {
-        viewModelScope.launch {
+        if (simulationJob?.isActive == true) return
+        simulationJob = viewModelScope.launch {
             val currentState = _uiState.value
             val query = currentState.searchSimulationQuery
-            val config = currentState.searchConfig
+            val config = currentState.searchSimulationConfig
             val folderPath = currentState.selectedFolderPath.takeIf { it.isNotBlank() }
 
             _uiState.update {
@@ -237,7 +273,9 @@ class MemoryViewModel(
                     keywordWeight = config.keywordWeight,
                     tagWeight = config.tagWeight,
                     semanticWeight = config.vectorWeight,
-                    edgeWeight = config.edgeWeight
+                    edgeWeight = config.edgeWeight,
+                    allowCloudEmbedding = currentState.searchSimulationAllowCloudEmbedding,
+                    relevanceThreshold = currentState.searchSimulationThreshold,
                 )
                 _uiState.update {
                     it.copy(
@@ -246,6 +284,8 @@ class MemoryViewModel(
                         searchSimulationError = null
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -262,31 +302,88 @@ class MemoryViewModel(
 
     fun saveSearchSettings(
         newConfig: MemorySearchConfig,
-        newCloudConfig: CloudEmbeddingConfig,
         autoSaveIntervalMinutes: Int,
-        memoryExtractionCustomRules: String
+        memoryExtractionCustomRules: String,
+        policy: MemorySettingsPolicy,
     ) {
+        if (_uiState.value.isSearchSettingsSaving) return
         val normalizedSearchConfig = newConfig.normalized()
-        val normalizedCloudConfig = newCloudConfig.normalized()
-        val normalizedInterval =
-            autoSaveIntervalMinutes.coerceIn(
-                MemorySearchSettingsPreferences.MIN_AUTO_SAVE_INTERVAL_MINUTES,
-                MemorySearchSettingsPreferences.MAX_AUTO_SAVE_INTERVAL_MINUTES
-            )
-        _uiState.update {
-            it.copy(
-                searchConfig = normalizedSearchConfig,
-                cloudEmbeddingConfig = normalizedCloudConfig,
-                autoSaveIntervalMinutes = normalizedInterval,
-                memoryExtractionCustomRules = memoryExtractionCustomRules
-            )
-        }
+        val normalizedInterval = autoSaveIntervalMinutes.coerceIn(
+            MemorySearchSettingsPreferences.MIN_AUTO_SAVE_INTERVAL_MINUTES,
+            MemorySearchSettingsPreferences.MAX_AUTO_SAVE_INTERVAL_MINUTES,
+        )
+        _uiState.update { it.copy(isSearchSettingsSaving = true, error = null) }
         viewModelScope.launch(Dispatchers.IO) {
-            searchSettingsPreferences.save(normalizedSearchConfig)
-            searchSettingsPreferences.saveAutoSaveIntervalMinutes(normalizedInterval)
-            searchSettingsPreferences.saveMemoryExtractionCustomRules(memoryExtractionCustomRules)
-            repository.saveCloudEmbeddingConfig(normalizedCloudConfig)
+            try {
+                memorySettingsDataSource.savePolicy(policy)
+                searchSettingsPreferences.save(normalizedSearchConfig)
+                searchSettingsPreferences.saveAutoSaveIntervalMinutes(normalizedInterval)
+                searchSettingsPreferences.saveMemoryExtractionCustomRules(memoryExtractionCustomRules)
+                _uiState.update { it.copy(
+                    searchConfig = normalizedSearchConfig,
+                    autoSaveIntervalMinutes = normalizedInterval,
+                    memoryExtractionCustomRules = memoryExtractionCustomRules,
+                    memorySettingsDetails = it.memorySettingsDetails.copy(policy = policy),
+                    isSearchSettingsDialogVisible = false,
+                    message = context.getString(R.string.settings_saved),
+                ) }
+                searchMemories()
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Exception) {
+                AppLogger.e(TAG, "保存记忆设置失败", failure)
+                _uiState.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) }
+            } finally {
+                _uiState.update { it.copy(isSearchSettingsSaving = false) }
+            }
         }
+    }
+
+    fun refreshMemorySettingsDetails(reloadSettings: Boolean = false) {
+        if (settingsLoadJob?.isActive == true) return
+        _uiState.update { it.copy(memorySettingsDetails = it.memorySettingsDetails.copy(loading = true, error = null)) }
+        settingsLoadJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val details = memorySettingsDataSource.load()
+                val config = repository.loadMemoryEmbeddingModel()
+                val usage = repository.getEmbeddingDimensionUsage()
+                val searchConfig = if (reloadSettings) searchSettingsPreferences.load() else _uiState.value.searchConfig
+                val interval = if (reloadSettings) searchSettingsPreferences.loadAutoSaveIntervalMinutes() else _uiState.value.autoSaveIntervalMinutes
+                val rules = if (reloadSettings) searchSettingsPreferences.loadMemoryExtractionCustomRules() else _uiState.value.memoryExtractionCustomRules
+                _uiState.update { it.copy(
+                    memorySettingsDetails = details,
+                    memoryEmbeddingModelName = if (config.isEmbeddingReady()) config?.modelName else null,
+                    embeddingDimensionUsage = usage,
+                    searchConfig = searchConfig,
+                    autoSaveIntervalMinutes = interval,
+                    memoryExtractionCustomRules = rules,
+                    error = null,
+                ) }
+            } catch (failure: CancellationException) {
+                throw failure
+            } catch (failure: Exception) {
+                AppLogger.e(TAG, "读取记忆设置状态失败", failure)
+                _uiState.update { it.copy(memorySettingsDetails = it.memorySettingsDetails.copy(
+                    loading = false,
+                    error = failure.message ?: failure.javaClass.simpleName,
+                )) }
+            }
+        }
+    }
+
+    fun startMemoryHistoryRebuild(chatIds: List<String>, windowMessageCount: Int, timeScope: ChatMemoryRebuildTimeScope) {
+        try {
+            val allowedIds = _uiState.value.memorySettingsDetails.chats.map { it.id }.toSet()
+            require(chatIds.isNotEmpty() && chatIds.all { it in allowedIds }) { "选择了当前记忆空间以外的聊天" }
+            historyRebuildManager.startForMemorySpace(profileId, chatIds, windowMessageCount, timeScope)
+        } catch (failure: Exception) {
+            AppLogger.e(TAG, "启动历史记忆重建失败", failure)
+            _uiState.update { it.copy(error = failure.message ?: failure.javaClass.simpleName) }
+        }
+    }
+
+    fun cancelMemoryHistoryRebuild() {
+        if (historyRebuildManager.progress.value.memorySpaceId == profileId) historyRebuildManager.cancel()
     }
 
     fun resetSearchSettings() {
@@ -310,10 +407,17 @@ class MemoryViewModel(
         }
     }
 
-    private fun loadCloudEmbeddingSettings() {
+    private fun loadMemoryEmbeddingSettings() {
         viewModelScope.launch(Dispatchers.IO) {
-            val config = repository.loadCloudEmbeddingConfig()
-            _uiState.update { it.copy(cloudEmbeddingConfig = config) }
+            try {
+                val config = repository.loadMemoryEmbeddingModel()
+                _uiState.update { it.copy(memoryEmbeddingModelName = if (config.isEmbeddingReady()) config?.modelName else null) }
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                com.ai.assistance.operit.util.AppLogger.e("MemoryEmbedding", "读取记忆向量功能绑定失败", error)
+                _uiState.update { it.copy(memoryEmbeddingModelName = null, error = error.message) }
+            }
         }
     }
 

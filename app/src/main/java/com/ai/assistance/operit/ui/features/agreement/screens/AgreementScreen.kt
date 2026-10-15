@@ -21,18 +21,20 @@ import com.ai.assistance.operit.data.preferences.AgreementPreferences
 import kotlinx.coroutines.delay
 
 @Composable
-fun AgreementScreen(onAgreementAccepted: () -> Unit) {
+fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boolean = true) {
         val scrollState = rememberScrollState()
         var isButtonEnabled by remember { mutableStateOf(false) }
         var remainingSeconds by remember { mutableStateOf(5) }
 
-        // Timer to enable the button after 5 seconds
-        LaunchedEffect(Unit) {
-                repeat(5) {
-                        delay(1000)
-                        remainingSeconds--
+        // 阅读入口无需等待同意倒计时，首次启动仍按原流程确认。
+        LaunchedEffect(showAcceptanceButton) {
+                if (showAcceptanceButton) {
+                        repeat(5) {
+                                delay(1000)
+                                remainingSeconds--
+                        }
+                        isButtonEnabled = true
                 }
-                isButtonEnabled = true
         }
 
         Column(
@@ -149,10 +151,10 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit) {
                         }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (showAcceptanceButton) {
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Agreement button
-                Button(
+                    Button(
                         onClick = onAgreementAccepted,
                         enabled = isButtonEnabled,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -169,7 +171,7 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit) {
                                                         alpha = 0.7f
                                                 )
                                 )
-                ) {
+                    ) {
                         Text(
                                 text =
                                         if (isButtonEnabled)
@@ -179,6 +181,7 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit) {
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                         )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

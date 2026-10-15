@@ -91,13 +91,16 @@ import com.ai.assistance.operit.api.voice.VoiceListFetcher
 import com.ai.assistance.operit.api.voice.VoiceService
 import com.ai.assistance.operit.api.chat.llmprovider.ModelListFetcher
 import androidx.compose.runtime.LaunchedEffect
+import com.ai.assistance.operit.ui.features.settings.components.speech.SpeechRecognitionTestSection
+import com.ai.assistance.operit.ui.features.settings.components.speech.WakeSettingsSection
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpeechServicesSettingsScreen(
     onBackPressed: () -> Unit,
-    onNavigateToTextToSpeech: () -> Unit = {}
+    onNavigateToTextToSpeech: () -> Unit = {},
+    initialTabIndex: Int = 0,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -127,7 +130,9 @@ fun SpeechServicesSettingsScreen(
     var ttsProfileError by remember { mutableStateOf<String?>(null) }
     var sttProfileError by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initialTabIndex) }
+    val settingsListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(selectedTabIndex) { settingsListState.scrollToItem(0) }
     var ttsCleanerExpanded by remember { mutableStateOf(false) }
     var ttsHttpAdvancedExpanded by remember { mutableStateOf(false) }
 
@@ -394,6 +399,7 @@ fun SpeechServicesSettingsScreen(
             .padding(paddingValues)
             .fillMaxSize()) {
             LazyColumn(
+                state = settingsListState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -407,7 +413,7 @@ fun SpeechServicesSettingsScreen(
                     )
                 }
 
-                item {
+                if (selectedTabIndex < 2) item {
                     SpeechProfileManagementBar(
                         selectedTabIndex = selectedTabIndex,
                         ttsProfiles = ttsProfiles.map { SpeechProfileOption(it.id, it.name) },
@@ -2268,7 +2274,7 @@ fun SpeechServicesSettingsScreen(
                 }
                 }
 
-                item {
+                if (selectedTabIndex < 2) item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -2292,6 +2298,22 @@ fun SpeechServicesSettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                }
+
+                if (selectedTabIndex == 1) item(key = "stt-test") {
+                    SpeechRecognitionTestSection(
+                        profileId = currentSttProfileId,
+                        serviceType = sttServiceTypeInput,
+                        httpConfig = SpeechServicesPreferences.SttHttpConfig(
+                            endpointUrl = sttEndpointUrlInput,
+                            apiKey = sttApiKeyInput,
+                            modelName = sttModelNameInput,
+                        ),
+                    )
+                }
+
+                if (selectedTabIndex == 2) item(key = "wake-settings") {
+                    WakeSettingsSection()
                 }
 
                 if (selectedTabIndex == 0) item {
@@ -2511,6 +2533,11 @@ private fun SpeechServicesModeTabs(
             selected = selectedTabIndex == 1,
             onClick = { onTabSelected(1) },
             text = { Text(stringResource(R.string.speech_services_info_stt_title)) },
+        )
+        Tab(
+            selected = selectedTabIndex == 2,
+            onClick = { onTabSelected(2) },
+            text = { Text(stringResource(R.string.voice_wakeup_section_title)) },
         )
     }
 }

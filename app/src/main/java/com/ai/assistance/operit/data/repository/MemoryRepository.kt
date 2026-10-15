@@ -11,7 +11,9 @@ import com.ai.assistance.operit.data.model.MemoryTag_
 import com.ai.assistance.operit.data.model.Memory_
 import com.ai.assistance.operit.data.model.DocumentChunk
 import com.ai.assistance.operit.data.model.Embedding
-import com.ai.assistance.operit.data.model.CloudEmbeddingConfig
+import com.ai.assistance.operit.data.model.ModelConfigData
+import com.ai.assistance.operit.data.embedding.MemoryEmbeddingModelResolver
+import com.ai.assistance.operit.data.embedding.isEmbeddingReady
 import com.ai.assistance.operit.data.model.DimensionCount
 import com.ai.assistance.operit.data.model.EmbeddingDimensionUsage
 import com.ai.assistance.operit.data.model.EmbeddingRebuildProgress
@@ -66,7 +68,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         private const val DANGLING_LINK_CLEANUP_INTERVAL_MS = 30_000L
         private const val SEARCH_RRF_K = 60.0
         private const val SEARCH_KEYWORD_COVERAGE_BONUS = 0.6
-        private const val SEARCH_RELEVANCE_THRESHOLD = 0.025
+        internal const val SEARCH_RELEVANCE_THRESHOLD = 0.025
         private val INDEX_KEY_SANITIZE_REGEX = Regex("[^a-zA-Z0-9._-]")
 
         fun normalizeFolderPath(folderPath: String?): String? {
@@ -95,11 +97,19 @@ class MemoryRepository(private val context: Context, profileId: String) {
 
     private val searchSettingsPreferences = MemorySearchSettingsPreferences(context, profileId)
     private val cloudEmbeddingService = CloudEmbeddingService(context)
+    private val embeddingModels = MemoryEmbeddingModelResolver(context)
     private val sanitizedProfileKey = sanitizeIndexKey(profileId)
     @Volatile
     private var lastDanglingCleanupAtMs: Long = 0L
 
-    private suspend fun generateEmbedding(text: String, config: CloudEmbeddingConfig): Embedding? {
+    private suspend fun loadActiveEmbeddingModel(
+        enabled: Boolean = searchSettingsPreferences.loadCloudEmbeddingEnabled(),
+    ): ModelConfigData? {
+        if (!enabled) return null
+        return embeddingModels.resolve()
+    }
+
+    private suspend fun generateEmbedding(text: String, config: ModelConfigData?): Embedding? {
         return cloudEmbeddingService.generateEmbedding(config, text)
     }
 
@@ -767,7 +777,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
      * @return 创建的Memory对象。
      */
     suspend fun createMemoryFromDocument(documentName: String, originalPath: String, text: String, folderPath: String = ""): Memory = withContext(Dispatchers.IO) {
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+        val cloudConfig = loadActiveEmbeddingModel()
         val documentEmbedding = generateEmbedding(documentName, cloudConfig)
 
         val documentMemory = Memory(
@@ -832,7 +842,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
      * @return The ID of the saved memory.
      */
     suspend fun saveMemory(memory: Memory): Long = withContext(Dispatchers.IO){
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+        val cloudConfig = loadActiveEmbeddingModel()
         val previousDimension = memory.id.takeIf { it > 0L }
             ?.let { existingId -> memoryBox.get(existingId)?.embedding?.vector?.size }
         memory.folderPath = normalizeFolderPath(memory.folderPath)
@@ -1164,7 +1174,8 @@ class MemoryRepository(private val context: Context, profileId: String) {
         edgeWeight: Float = 0.4f,
         relevanceThreshold: Double = SEARCH_RELEVANCE_THRESHOLD,
         createdAtStartMs: Long? = null,
-        createdAtEndMs: Long? = null
+        createdAtEndMs: Long? = null,
+        allowCloudEmbedding: Boolean = searchSettingsPreferences.loadCloudEmbeddingEnabled(),
     ): MemorySearchDebugInfo {
         return runSearchMemoriesWithDebug(
             query = query,
@@ -1176,7 +1187,8 @@ class MemoryRepository(private val context: Context, profileId: String) {
             edgeWeight = edgeWeight,
             relevanceThreshold = relevanceThreshold,
             createdAtStartMs = createdAtStartMs,
-            createdAtEndMs = createdAtEndMs
+            createdAtEndMs = createdAtEndMs,
+            allowCloudEmbedding = allowCloudEmbedding,
         ).debug
     }
 
@@ -1190,7 +1202,8 @@ class MemoryRepository(private val context: Context, profileId: String) {
         edgeWeight: Float = 0.4f,
         relevanceThreshold: Double = SEARCH_RELEVANCE_THRESHOLD,
         createdAtStartMs: Long? = null,
-        createdAtEndMs: Long? = null
+        createdAtEndMs: Long? = null,
+        allowCloudEmbedding: Boolean = searchSettingsPreferences.loadCloudEmbeddingEnabled(),
     ): SearchComputationResult = withContext(Dispatchers.IO) {
         val normalizedFolderPath = normalizeFolderPath(folderPath)
 
@@ -1414,11 +1427,11 @@ class MemoryRepository(private val context: Context, profileId: String) {
 
         // 3. Semantic search (for conceptual matches)
         val allMemoriesWithEmbedding = memoriesToSearch.filter { it.embedding != null }
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+        val cloudConfig = loadActiveEmbeddingModel(allowCloudEmbedding)
         val semanticMatchedIds = mutableSetOf<Long>()
         val scopedMemoryIds = allMemoriesWithEmbedding.map { it.id }.toHashSet()
 
-        if (effectiveSemanticWeight > 0.0f && cloudConfig.isReady()) {
+        if (effectiveSemanticWeight > 0.0f && cloudConfig.isEmbeddingReady()) {
             com.ai.assistance.operit.util.AppLogger.d("MemoryRepo", "--- Starting Semantic Search for ${keywords.size} keywords ---")
             keywords.forEach { keyword ->
                 val queryEmbedding = generateEmbedding(keyword, cloudConfig)
@@ -1730,8 +1743,8 @@ class MemoryRepository(private val context: Context, profileId: String) {
             }
         }
 
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
-        if (effectiveSemanticWeight > 0.0f && cloudConfig.isReady()) {
+        val cloudConfig = loadActiveEmbeddingModel()
+        if (effectiveSemanticWeight > 0.0f && cloudConfig.isEmbeddingReady()) {
             keywords.forEach { keyword ->
                 val queryEmbedding = generateEmbedding(keyword, cloudConfig)
                 if (queryEmbedding == null) {
@@ -1796,7 +1809,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
      */
     suspend fun updateChunk(chunkId: Long, newContent: String) = withContext(Dispatchers.IO) {
         val chunk = chunkBox.get(chunkId) ?: return@withContext
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+        val cloudConfig = loadActiveEmbeddingModel()
 
         chunk.content = newContent
         chunk.embedding = generateEmbedding(newContent, cloudConfig)
@@ -1815,13 +1828,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         removeMemoryFromIndexInternal(memory)
     }
 
-    fun loadCloudEmbeddingConfig(): CloudEmbeddingConfig {
-        return searchSettingsPreferences.loadCloudEmbedding()
-    }
-
-    fun saveCloudEmbeddingConfig(config: CloudEmbeddingConfig) {
-        searchSettingsPreferences.saveCloudEmbedding(config.normalized())
-    }
+    suspend fun loadMemoryEmbeddingModel(): ModelConfigData? = embeddingModels.resolve()
 
     suspend fun getEmbeddingDimensionUsage(): EmbeddingDimensionUsage = withContext(Dispatchers.IO) {
         val memories = memoryBox.all
@@ -1854,8 +1861,8 @@ class MemoryRepository(private val context: Context, profileId: String) {
     }
 
     suspend fun rebuildVectorIndices(onProgress: (EmbeddingRebuildProgress) -> Unit): EmbeddingRebuildProgress = withContext(Dispatchers.IO) {
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
-        if (!cloudConfig.isReady()) {
+        val cloudConfig = loadActiveEmbeddingModel()
+        if (!cloudConfig.isEmbeddingReady()) {
             throw IllegalStateException(context.getString(R.string.memory_embedding_rebuild_requires_config))
         }
 
@@ -2181,7 +2188,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
                 uuid = UUID.randomUUID().toString(),
                 folderPath = normalizedFolderPath
             )
-            val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+            val cloudConfig = loadActiveEmbeddingModel()
             val embedding = generateEmbedding(placeholder.content, cloudConfig)
             if (embedding != null) placeholder.embedding = embedding
             memoryBox.put(placeholder)
@@ -2247,7 +2254,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
         newFolderPath: String? = memory.folderPath,
         newTags: List<String>? = null // 可选的要更新的标签列表
     ): Memory? = withContext(Dispatchers.IO) {
-        val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+        val cloudConfig = loadActiveEmbeddingModel()
         val previousDimension = memory.embedding?.vector?.size
         val sanitizedCredibility = newCredibility.coerceIn(0.0f, 1.0f)
         val sanitizedImportance = newImportance.coerceIn(0.0f, 1.0f)
@@ -2388,7 +2395,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
 
             // After the transaction, handle non-transactional parts
             newMemory?.let { memory ->
-                val cloudConfig = searchSettingsPreferences.loadCloudEmbedding()
+                val cloudConfig = loadActiveEmbeddingModel()
                 // Generate and save embedding for the new memory
                 val textForEmbedding = generateTextForEmbedding(memory)
                 memory.embedding = generateEmbedding(textForEmbedding, cloudConfig)

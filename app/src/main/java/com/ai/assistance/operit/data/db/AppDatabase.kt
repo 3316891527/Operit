@@ -2,6 +2,8 @@ package com.ai.assistance.operit.data.db
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import com.ai.assistance.operit.data.chat.folders.ChatFolder
+import com.ai.assistance.operit.data.chat.folders.ChatFolderDao
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -21,12 +23,13 @@ import com.ai.assistance.operit.util.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 21
+private const val APP_DATABASE_VERSION = 22
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
     entities = [
         ChatEntity::class,
+        ChatFolder::class,
         MessageEntity::class,
         MessageVariantEntity::class,
         TokenUsageRecordEntity::class,
@@ -38,6 +41,7 @@ private const val APP_DATABASE_VERSION = 21
 abstract class AppDatabase : RoomDatabase() {
     /** 获取聊天DAO */
     abstract fun chatDao(): ChatDao
+    abstract fun chatFolderDao(): ChatFolderDao
 
     /** 获取消息DAO */
     abstract fun messageDao(): MessageDao
@@ -235,6 +239,43 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("ALTER TABLE chats ADD COLUMN `pinned` INTEGER NOT NULL DEFAULT 0")
                 }
             }
+
+        /** 将已发布的单层组名转换为稳定 ID，保留全部对话及原显示顺序。 */
+        internal val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                runSql { db.execSQL(it) }
+            }
+
+            override fun migrate(connection: androidx.sqlite.SQLiteConnection) {
+                runSql { sql ->
+                    val statement = connection.prepare(sql)
+                    try { statement.step() } finally { statement.close() }
+                }
+            }
+
+            private fun runSql(exec: (String) -> Unit) {
+                exec("""
+                    CREATE TABLE `chat_folders` (
+                        `id` TEXT NOT NULL PRIMARY KEY, `name` TEXT NOT NULL,
+                        `parentId` TEXT, `displayOrder` INTEGER NOT NULL,
+                        `characterCardName` TEXT, `characterGroupId` TEXT
+                    )
+                """.trimIndent())
+                exec("CREATE INDEX `index_chat_folders_parentId` ON `chat_folders` (`parentId`)")
+                exec("ALTER TABLE `chats` ADD COLUMN `folderId` TEXT")
+                exec("ALTER TABLE `chats` ADD COLUMN `lastUsedAt` INTEGER NOT NULL DEFAULT 0")
+                exec("""
+                    INSERT INTO `chat_folders` (`id`, `name`, `parentId`, `displayOrder`, `characterCardName`, `characterGroupId`)
+                    SELECT 'legacy:' || hex(`group`), `group`, NULL, MIN(displayOrder), NULL, NULL
+                    FROM `chats` WHERE `group` IS NOT NULL GROUP BY `group`
+                """.trimIndent())
+                exec("UPDATE `chats` SET `folderId` = 'legacy:' || hex(`group`) WHERE `group` IS NOT NULL")
+                exec("""
+                    UPDATE `chats` SET `lastUsedAt` = MAX(createdAt, COALESCE(
+                        (SELECT MAX(timestamp) FROM messages WHERE messages.chatId = chats.id AND sender = 'user'), 0))
+                """.trimIndent())
+            }
+        }
 
         /** v20 -> v21: token statistics schema and Room-declared message indexes. */
         internal val MIGRATION_20_21 =
@@ -533,7 +574,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_17_18,
                     MIGRATION_18_19,
                     MIGRATION_19_20,
-                    MIGRATION_20_21
+                    MIGRATION_20_21,
+                    MIGRATION_21_22
                 )
                 .build()
 

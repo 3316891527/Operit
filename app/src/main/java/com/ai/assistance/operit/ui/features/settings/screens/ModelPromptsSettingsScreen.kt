@@ -49,6 +49,7 @@ import android.widget.Toast
 import android.content.ClipData
 import android.content.ClipboardManager
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.settings.profile.RoleUserProfileDialog
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.CharacterGroupCard
 import com.ai.assistance.operit.data.model.GroupMemberConfig
@@ -135,7 +136,9 @@ fun ModelPromptsSettingsScreen(
     val characterCardList by characterCardManager.characterCardListFlow.collectAsState(initial = emptyList())
     var showAddCharacterCardDialog by remember { mutableStateOf(false) }
     var showEditCharacterCardDialog by remember { mutableStateOf(false) }
+    var userProfileCard by remember { mutableStateOf<CharacterCard?>(null) }
     var editingCharacterCard by remember { mutableStateOf<CharacterCard?>(null) }
+    var pendingCharacterAvatarUri by remember { mutableStateOf<Uri?>(null) }
     var editingOriginalName by remember { mutableStateOf<String?>(null) }
 
     // 删除确认对话框状态
@@ -180,16 +183,20 @@ fun ModelPromptsSettingsScreen(
             if (croppedUri != null) {
                 scope.launch {
                     editingCharacterCard?.let { card ->
-                        val internalUri = FileUtils.copyFileToInternalStorage(context, croppedUri, "avatar_${card.id}")
-                        if (internalUri != null) {
-                            activePromptManager.saveAiAvatarForPrompt(
-                                ActivePrompt.CharacterCard(card.id),
-                                internalUri.toString(),
-                            )
-                            Toast.makeText(context, context.getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
-                            refreshTrigger++
+                        if (card.id.isBlank()) {
+                            pendingCharacterAvatarUri = croppedUri
                         } else {
-                            Toast.makeText(context, context.getString(R.string.theme_copy_failed), Toast.LENGTH_LONG).show()
+                            val internalUri = FileUtils.copyFileToInternalStorage(context, croppedUri, "avatar_${card.id}")
+                            if (internalUri != null) {
+                                activePromptManager.saveAiAvatarForPrompt(
+                                    ActivePrompt.CharacterCard(card.id),
+                                    internalUri.toString(),
+                                )
+                                Toast.makeText(context, context.getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
+                                refreshTrigger++
+                            } else {
+                                Toast.makeText(context, context.getString(R.string.theme_copy_failed), Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 }
@@ -584,6 +591,7 @@ fun ModelPromptsSettingsScreen(
     }
     var showAddTagDialog by remember { mutableStateOf(false) }
     var showEditTagDialog by remember { mutableStateOf(false) }
+    var showCharacterTagManagementDialog by remember { mutableStateOf(false) }
     var editingTag by remember { mutableStateOf<PromptTag?>(null) }
 
     // 标签删除确认对话框状态
@@ -601,39 +609,63 @@ fun ModelPromptsSettingsScreen(
     }
     val allCharacterGroups by characterGroupCardManager.allCharacterGroupCardsFlow.collectAsState(initial = emptyList())
 
-    // 保存角色卡
-    fun saveCharacterCard() {
-        editingCharacterCard?.let { card ->
-            val originalNameSnapshot = editingOriginalName
-            val isExistingCard = card.id.isNotEmpty()
-            val nameChanged = isExistingCard &&
-                    !originalNameSnapshot.isNullOrEmpty() &&
-                    originalNameSnapshot != card.name
+    fun openCharacterCardExport(cardId: String, cardName: String) {
+        exportCharacterCardId = cardId
+        exportCharacterCardName = cardName
+        exportMode = ExportMode.COLOR_QR
+        exportTavernJson = ""
+        exportColorCount = 8
+        exportQrBitmap = null
+        exportTavernPngBytes = null
+        exportErrorMessage = ""
+        showExportModeDialog = true
+    }
 
-            scope.launch {
-                if (!isExistingCard) {
-                    val newCardId = characterCardManager.createCharacterCard(card)
-                    activePromptManager.saveCustomChatTitleForPrompt(
-                        ActivePrompt.CharacterCard(newCardId),
-                        card.name.ifEmpty { null },
-                    )
-                } else {
-                    characterCardManager.updateCharacterCard(card)
-                    activePromptManager.saveCustomChatTitleForPrompt(
-                        ActivePrompt.CharacterCard(card.id),
-                        card.name.ifEmpty { null },
-                    )
+    // 保存角色卡
+    fun saveCharacterCard(card: CharacterCard, onSaved: ((String, String) -> Unit)? = null) {
+        val originalNameSnapshot = editingOriginalName
+        val isExistingCard = card.id.isNotEmpty()
+        val nameChanged = isExistingCard &&
+                !originalNameSnapshot.isNullOrEmpty() &&
+                originalNameSnapshot != card.name
+
+        scope.launch {
+            val savedId = if (!isExistingCard) {
+                val newCardId = characterCardManager.createCharacterCard(card)
+                activePromptManager.saveCustomChatTitleForPrompt(
+                    ActivePrompt.CharacterCard(newCardId),
+                    card.name.ifEmpty { null },
+                )
+                pendingCharacterAvatarUri?.let { uri ->
+                    val internalUri = FileUtils.copyFileToInternalStorage(context, uri, "avatar_$newCardId")
+                    if (internalUri != null) {
+                        activePromptManager.saveAiAvatarForPrompt(
+                            ActivePrompt.CharacterCard(newCardId), internalUri.toString()
+                        )
+                    } else {
+                        Toast.makeText(context, context.getString(R.string.theme_copy_failed), Toast.LENGTH_LONG).show()
+                    }
                 }
-                showAddCharacterCardDialog = false
-                showEditCharacterCardDialog = false
-                editingCharacterCard = null
-                editingOriginalName = null
-                showSaveSuccessMessage = true
-                refreshTrigger++
-                if (nameChanged) {
-                    showChatManagementPrompt = true
-                }
+                newCardId
+            } else {
+                characterCardManager.updateCharacterCard(card)
+                activePromptManager.saveCustomChatTitleForPrompt(
+                    ActivePrompt.CharacterCard(card.id),
+                    card.name.ifEmpty { null },
+                )
+                card.id
             }
+            showAddCharacterCardDialog = false
+            showEditCharacterCardDialog = false
+            pendingCharacterAvatarUri = null
+            editingCharacterCard = null
+            editingOriginalName = null
+            showSaveSuccessMessage = true
+            refreshTrigger++
+            if (nameChanged) {
+                showChatManagementPrompt = true
+            }
+            onSaved?.invoke(savedId, card.name)
         }
     }
 
@@ -896,6 +928,7 @@ fun ModelPromptsSettingsScreen(
                             editingCharacterCard = card.copy()
                             showEditCharacterCardDialog = true
                         },
+                        onOpenUserProfile = { card -> userProfileCard = card },
                         onDeleteCharacterCard = { card -> showDeleteCharacterCardConfirm(card.id, card.name) },
                         onDuplicateCharacterCard = { card -> duplicateCharacterCard(card) },
                         onResetDefaultCharacterCard = { showResetDefaultConfirm = true },
@@ -918,15 +951,7 @@ fun ModelPromptsSettingsScreen(
                             takeColorQrPictureLauncher.launch(uri)
                         },
                         onExportCharacterCard = { cardId, cardName ->
-                            exportCharacterCardId = cardId
-                            exportCharacterCardName = cardName
-                            exportMode = ExportMode.COLOR_QR
-                            exportTavernJson = ""
-                            exportColorCount = 8
-                            exportQrBitmap = null
-                            exportTavernPngBytes = null
-                            exportErrorMessage = ""
-                            showExportModeDialog = true
+                            openCharacterCardExport(cardId, cardName)
                         }
                     )
                     1 -> TagTab(
@@ -1170,27 +1195,22 @@ fun ModelPromptsSettingsScreen(
             ),
             allTags = allTags,
             userPreferencesManager = userPreferencesManager,
+            avatarPreviewUri = pendingCharacterAvatarUri,
             onDismiss = {
                 showAddCharacterCardDialog = false
+                pendingCharacterAvatarUri = null
                 editingCharacterCard = null
             },
             onSave = { card ->
-                editingCharacterCard = card
-                saveCharacterCard()
+                saveCharacterCard(card)
             },
+            onExport = { card -> saveCharacterCard(card, ::openCharacterCardExport) },
+            onManageTags = { showCharacterTagManagementDialog = true },
             onAvatarChange = {
                 avatarImagePicker.launch("image/*")
             },
             onAvatarReset = {
-                scope.launch {
-                    editingCharacterCard?.let {
-                        activePromptManager.saveAiAvatarForPrompt(
-                            ActivePrompt.CharacterCard(it.id),
-                            null,
-                        )
-                        refreshTrigger++
-                    }
-                }
+                pendingCharacterAvatarUri = null
             }
         )
     }
@@ -1216,9 +1236,10 @@ fun ModelPromptsSettingsScreen(
                 editingOriginalName = null
             },
             onSave = { card ->
-                editingCharacterCard = card
-                saveCharacterCard()
-                                },
+                saveCharacterCard(card)
+            },
+            onExport = { card -> saveCharacterCard(card, ::openCharacterCardExport) },
+            onManageTags = { showCharacterTagManagementDialog = true },
             onAvatarChange = {
                 avatarImagePicker.launch("image/*")
             },
@@ -1235,6 +1256,54 @@ fun ModelPromptsSettingsScreen(
             }
         )
                         }
+
+    userProfileCard?.let { card ->
+        key(card.id) { RoleUserProfileDialog(card, onDismiss = { userProfileCard = null }) }
+    }
+
+    if (showCharacterTagManagementDialog) {
+        AlertDialog(
+            onDismissRequest = { showCharacterTagManagementDialog = false },
+            title = { Text(stringResource(R.string.tag_management)) },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    allTags.forEach { tag ->
+                        TextButton(
+                            onClick = {
+                                editingTag = tag.copy()
+                                showCharacterTagManagementDialog = false
+                                showEditTagDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(tag.name, modifier = Modifier.weight(1f), textAlign = TextAlign.Start)
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_tag))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    editingTag = PromptTag(
+                        id = "", name = "", description = "", promptContent = "", tagType = TagType.CUSTOM
+                    )
+                    showCharacterTagManagementDialog = false
+                    showAddTagDialog = true
+                }) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Text(stringResource(R.string.create_new_tag))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCharacterTagManagementDialog = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
+    }
 
     // 新建标签对话框
     if (showAddTagDialog) {
@@ -1979,6 +2048,7 @@ fun CharacterCardTab(
     allTags: List<PromptTag>,
     onAddCharacterCard: () -> Unit,
     onEditCharacterCard: (CharacterCard) -> Unit,
+    onOpenUserProfile: (CharacterCard) -> Unit,
     onDeleteCharacterCard: (CharacterCard) -> Unit,
     onDuplicateCharacterCard: (CharacterCard) -> Unit,
     onResetDefaultCharacterCard: () -> Unit,
@@ -2166,6 +2236,7 @@ fun CharacterCardTab(
                 isActive = (activePrompt as? ActivePrompt.CharacterCard)?.id == characterCard.id,
                 allTags = allTags,
                 onEdit = { onEditCharacterCard(characterCard) },
+                onOpenUserProfile = { onOpenUserProfile(characterCard) },
                 onDelete = { onDeleteCharacterCard(characterCard) },
                 onDuplicate = { onDuplicateCharacterCard(characterCard) },
                 onReset = onResetDefaultCharacterCard,
@@ -2221,6 +2292,7 @@ fun CharacterCardItem(
     isActive: Boolean,
     allTags: List<PromptTag>,
     onEdit: () -> Unit,
+    onOpenUserProfile: () -> Unit,
     onDelete: () -> Unit,
     onDuplicate: () -> Unit,
     onReset: () -> Unit,
@@ -2285,6 +2357,15 @@ fun CharacterCardItem(
                             )
                         }
                     }
+                }
+
+                IconButton(onClick = onOpenUserProfile, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Default.AssignmentInd,
+                        contentDescription = stringResource(R.string.role_user_profile),
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 // 三点菜单

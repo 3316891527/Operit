@@ -39,6 +39,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.NavItem
 import com.ai.assistance.operit.data.updates.FullUpdateInstaller
 import com.ai.assistance.operit.data.updates.UpdateManager
 import com.ai.assistance.operit.data.updates.UpdateStatus
@@ -460,7 +461,9 @@ private fun SettingsRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
-    navigateToUpdateHistory: () -> Unit
+    navigateToUpdateHistory: () -> Unit,
+    navigateToHelp: () -> Unit,
+    navigateToAgreement: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -951,6 +954,15 @@ fun AboutScreen(
             item {
                 SettingsGroup {
                     SettingsRow(
+                        icon = NavItem.Help.icon,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        title = stringResource(R.string.nav_help),
+                        onClick = navigateToHelp
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(start = 66.dp))
+
+                    SettingsRow(
                         icon = Icons.Default.Language,
                         iconTint = MaterialTheme.colorScheme.secondary,
                         title = stringResource(id = R.string.project_url),
@@ -984,6 +996,15 @@ fun AboutScreen(
                         iconTint = MaterialTheme.colorScheme.secondary,
                         title = stringResource(R.string.update_log),
                         onClick = { navigateToUpdateHistory() }
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(start = 66.dp))
+
+                    SettingsRow(
+                        icon = Icons.Default.Policy,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        title = stringResource(R.string.tool_user_agreement),
+                        onClick = navigateToAgreement
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(start = 66.dp))

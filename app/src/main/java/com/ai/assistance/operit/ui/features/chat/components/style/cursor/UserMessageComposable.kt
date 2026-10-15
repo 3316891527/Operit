@@ -252,18 +252,11 @@ fun UserMessageComposable(
                     enabled = waterGlassEnabled,
                     shape = RoundedCornerShape(8.dp),
                     containerColor = effectiveBackgroundColor,
-                    shadowElevation = 10.dp,
-                    borderWidth = 0.7.dp,
-                    overlayAlphaBoost = 0.08f,
                 )
                 .liquidGlass(
                     enabled = liquidGlassEnabled,
                     shape = RoundedCornerShape(8.dp),
                     containerColor = effectiveBackgroundColor,
-                    shadowElevation = 10.dp,
-                    borderWidth = 0.28.dp,
-                    blurRadius = 28.dp,
-                    overlayAlphaBoost = 0.10f,
                     enableLens = false,
                 ),
             colors = CardDefaults.cardColors(

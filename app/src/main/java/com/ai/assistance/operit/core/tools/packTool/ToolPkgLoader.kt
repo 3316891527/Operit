@@ -23,7 +23,7 @@ internal object ToolPkgLoader {
                         rawPath = path
                     )
                 }
-            return jsEngine.withTemporaryToolPkgTextResourceResolver(
+            val result = jsEngine.withTemporaryToolPkgTextResourceResolver(
                 resolver = { _, resourcePath -> readEntryText(resourcePath) }
             ) {
                 ToolPkgArchiveParser.parseToolPkgFromIndexedEntries(
@@ -39,6 +39,8 @@ internal object ToolPkgLoader {
                     reportPackageLoadError = reportPackageLoadError
                 )
             }
+            val size = archive.entries().asSequence().filterNot { it.isDirectory }.sumOf { it.size }
+            return result.copy(containerRuntime = result.containerRuntime.copy(fileSizeBytes = size))
         }
     }
 
@@ -64,7 +66,7 @@ internal object ToolPkgLoader {
                     rawPath = path
                 )
             }
-        return jsEngine.withTemporaryToolPkgTextResourceResolver(
+        val result = jsEngine.withTemporaryToolPkgTextResourceResolver(
             resolver = { _, resourcePath -> readEntryText(resourcePath) }
         ) {
             ToolPkgArchiveParser.parseToolPkgFromIndexedEntries(
@@ -80,6 +82,8 @@ internal object ToolPkgLoader {
                 reportPackageLoadError = reportPackageLoadError
             )
         }
+        val size = extractedDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        return result.copy(containerRuntime = result.containerRuntime.copy(fileSizeBytes = size))
     }
 
     private fun parseMainRegistration(

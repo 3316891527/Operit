@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.background
@@ -16,18 +19,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +52,9 @@ import com.ai.assistance.operit.util.AppLogger
 import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.packages.management.PackageAcquisitionActions
+import com.ai.assistance.operit.ui.features.packages.management.MCPServiceActions
+import com.ai.assistance.operit.data.api.MarketV2Entry
 import org.json.JSONObject
 
 import java.util.*
@@ -61,7 +62,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.ai.assistance.operit.data.mcp.InstallResult
-import com.ai.assistance.operit.data.mcp.InstallProgress
 import com.ai.assistance.operit.ui.features.startup.screens.LocalPluginLoadingState
 
 /** MCP配置屏幕 - 极简风格界面，专注于插件快速部署 */
@@ -70,6 +70,7 @@ import com.ai.assistance.operit.ui.features.startup.screens.LocalPluginLoadingSt
 @Composable
 fun MCPConfigScreen(
     onNavigateToMCPMarket: () -> Unit = {},
+    onOpenMcpMarketDetail: (MarketV2Entry) -> Unit = {},
     searchQuery: String = ""
 ) {
     val context = LocalContext.current
@@ -115,7 +116,7 @@ fun MCPConfigScreen(
     val outputMessages by deployViewModel.outputMessages.collectAsState()
     val currentDeployingPlugin by deployViewModel.currentDeployingPlugin.collectAsState()
     val environmentVariables by deployViewModel.environmentVariables.collectAsState()
-    
+
 
 
     // 标记是否已经执行过初始化时的自动启动
@@ -226,7 +227,7 @@ fun MCPConfigScreen(
     var remoteConnectionTypeExpanded by remember { mutableStateOf(false) }
     var remoteBearerToken by remember { mutableStateOf("") }
     var remoteHeaders by remember { mutableStateOf<List<EditableHeader>>(emptyList()) }
-    
+
     // 新增：配置导入相关状态
     var configJsonInput by remember { mutableStateOf("") }
 
@@ -251,19 +252,21 @@ fun MCPConfigScreen(
         }
         wasPluginLoading.value = isPluginLoading
     }
-    
+
     // 存储每个插件的工具信息
     var pluginToolsMap by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
 
     // 计算插件启动统计 - 只统计已启用的插件
-    val totalEnabledPlugins = remember(visiblePluginIds) {
+    val totalEnabledPlugins = remember(visiblePluginIds, mcpConfigSnapshot) {
         visiblePluginIds.count { pluginId -> mcpLocalServer.isServerEnabled(pluginId) }
     }
     val successfulToolRequests = remember { mutableStateOf(0) }
-    
+
     // 更新成功请求工具的插件数量
-    LaunchedEffect(pluginToolsMap) {
-        successfulToolRequests.value = pluginToolsMap.filter { it.value.isNotEmpty() }.size
+    LaunchedEffect(pluginToolsMap, mcpConfigSnapshot) {
+        successfulToolRequests.value = pluginToolsMap.count { (id, tools) ->
+            mcpLocalServer.isServerEnabled(id) && tools.isNotEmpty()
+        }
     }
 
     val computedSortedPluginIds = remember(
@@ -435,6 +438,10 @@ fun MCPConfigScreen(
                 },
                 installedPath = installedPath,
                 pluginConfig = pluginConfigJson,
+                onOpenMarketDetail = { entry ->
+                    selectedPluginForDetails = null
+                    onOpenMcpMarketDetail(entry)
+                },
                 onSaveConfig = {
                     selectedPluginId?.let { pluginId ->
                         scope.launch {
@@ -471,7 +478,7 @@ fun MCPConfigScreen(
                 onConfirm = {
                     // 在协程内部复制当前的pluginId避免外部状态变化导致空指针异常
                     val pluginId = pluginToDeploy!!
-                    
+
                     // 使用默认命令部署（会自动获取命令）
                     deployViewModel.deployPlugin(pluginId)
 
@@ -578,13 +585,13 @@ fun MCPConfigScreen(
         // 将值存储在本地变量中以避免智能转换问题
         val currentInstallResult = installResult
         // 判断当前是否是卸载操作
-        val isUninstallOperation = 
+        val isUninstallOperation =
             if (currentInstallResult is InstallResult.Success) {
                 currentInstallResult.pluginPath.isEmpty()
             } else {
                 false
             }
-        
+
         MCPInstallProgressDialog(
                 installProgress = installProgress,
                 onDismissRequest = { viewModel.resetInstallState() },
@@ -628,34 +635,34 @@ fun MCPConfigScreen(
                         Tab(
                             selected = importTabIndex == 0,
                             onClick = { importTabIndex = 0 },
-                            text = { 
+                            text = {
                                 Text(
                                     stringResource(R.string.import_from_repo),
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1
-                                ) 
+                                )
                             }
                         )
                         Tab(
                             selected = importTabIndex == 1,
                             onClick = { importTabIndex = 1 },
-                            text = { 
+                            text = {
                                 Text(
                                     stringResource(R.string.import_from_zip),
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1
-                                ) 
+                                )
                             }
                         )
                         Tab(
                             selected = importTabIndex == 2,
                             onClick = { importTabIndex = 2 },
-                            text = { 
+                            text = {
                                 Text(
                                     stringResource(R.string.connect_remote_service),
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1
-                                ) 
+                                )
                             }
                         )
                         Tab(
@@ -670,7 +677,7 @@ fun MCPConfigScreen(
                             }
                         )
                     }
-                        
+
                         // 滚动提示
                         if (importTabIndex < 2) {
                             Row(
@@ -696,9 +703,9 @@ fun MCPConfigScreen(
                             }
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     when (importTabIndex) {
                         0 -> {
                             // 从仓库导入
@@ -708,7 +715,7 @@ fun MCPConfigScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    stringResource(R.string.enter_repo_info), 
+                                    stringResource(R.string.enter_repo_info),
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -721,7 +728,7 @@ fun MCPConfigScreen(
                                     Text(stringResource(R.string.get_mcp))
                                 }
                             }
-                            
+
                             OutlinedTextField(
                                 value = repoUrlInput,
                                 onValueChange = { repoUrlInput = it },
@@ -735,7 +742,7 @@ fun MCPConfigScreen(
                         1 -> {
                             // 从压缩包导入
                             Text(stringResource(R.string.select_mcp_plugin_zip), style = MaterialTheme.typography.bodyMedium)
-                            
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -749,7 +756,7 @@ fun MCPConfigScreen(
                                     singleLine = true,
                                     readOnly = true
                                 )
-                                
+
                                 IconButton(onClick = { showFilePickerDialog = true }) {
                                     Icon(Icons.Default.Folder, contentDescription = stringResource(R.string.select_file))
                                 }
@@ -768,9 +775,9 @@ fun MCPConfigScreen(
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
                             )
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             val connectionTypes = listOf("httpStream", "sse")
                             ExposedDropdownMenuBox(
                                 expanded = remoteConnectionTypeExpanded,
@@ -802,9 +809,9 @@ fun MCPConfigScreen(
                                     }
                                 }
                             }
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             OutlinedTextField(
                                 value = remoteBearerToken,
                                 onValueChange = { remoteBearerToken = it },
@@ -833,9 +840,9 @@ fun MCPConfigScreen(
                                 modifier = Modifier.fillMaxWidth().height(180.dp),
                                 maxLines = 8
                             )
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             TextButton(
                                 onClick = {
                                     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
@@ -862,11 +869,11 @@ fun MCPConfigScreen(
                             }
                         }
                     }
-                    
+
                     if (importTabIndex != 3) {
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                         Text(stringResource(R.string.service_metadata), style = MaterialTheme.typography.titleSmall)
-                        
+
                         OutlinedTextField(
                             value = pluginNameInput,
                             onValueChange = { newValue ->
@@ -878,7 +885,7 @@ fun MCPConfigScreen(
                             placeholder = { Text(stringResource(R.string.my_mcp_plugin)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            supportingText = { 
+                            supportingText = {
                                 Text(
                                     stringResource(R.string.plugin_name_description),
                                     style = MaterialTheme.typography.bodySmall
@@ -935,7 +942,7 @@ fun MCPConfigScreen(
                             isImporting = true
                             // 生成一个唯一的ID，移除 "import_" 前缀
                             val importId = proposedId
-                            
+
                             // 创建服务器对象（描述将由自动生成功能填充）
                             val server = MCPLocalServer.PluginMetadata(
                                 id = importId,
@@ -954,7 +961,7 @@ fun MCPConfigScreen(
                                 bearerToken = if(isRemote && remoteBearerToken.isNotBlank()) remoteBearerToken else null,
                                 headers = if(isRemote) remoteHeaders.toHeaderMap() else null
                             )
-                            
+
                             if(isRemote){
                                 // 对于远程服务，直接保存到仓库
                                 viewModel.addRemoteServer(server)
@@ -967,7 +974,7 @@ fun MCPConfigScreen(
                                 viewModel.installServerFromZip(server, zipFilePath)
                                 }
                             }
-                            
+
                             // 清空输入并关闭对话框
                             repoUrlInput = ""
                             pluginNameInput = ""
@@ -991,7 +998,7 @@ fun MCPConfigScreen(
                             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                         }
                     },
-                    enabled = !isImporting && 
+                    enabled = !isImporting &&
                              ((importTabIndex == 0 && repoUrlInput.isNotBlank() && pluginNameInput.isNotBlank()) ||
                               (importTabIndex == 1 && zipFilePath.isNotBlank() && pluginNameInput.isNotBlank()) ||
                               (importTabIndex == 2 && remoteEndpointInput.isNotBlank() && pluginNameInput.isNotBlank()) ||
@@ -1012,7 +1019,7 @@ fun MCPConfigScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { 
+                TextButton(onClick = {
                     repoUrlInput = ""
                     pluginNameInput = ""
                     zipFilePath = ""
@@ -1022,14 +1029,14 @@ fun MCPConfigScreen(
                     remoteBearerToken = ""
                     remoteHeaders = emptyList()
                     configJsonInput = ""
-                    showImportDialog = false 
+                    showImportDialog = false
                 }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
-    
+
     // 文件选择对话框
     if (showFilePickerDialog) {
         AlertDialog(
@@ -1045,11 +1052,11 @@ fun MCPConfigScreen(
                             val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT)
                             intent.type = "application/zip"
                             val chooser = android.content.Intent.createChooser(intent, context.getString(R.string.choose_mcp_plugin_zip))
-                            
+
                             // 使用Activity启动选择器
                             val activity = context as? android.app.Activity
                             activity?.startActivityForResult(chooser, 1001)
-                            
+
                             // 设置监听器接收选择结果
                             val activityResultCallback = object : androidx.activity.result.ActivityResultCallback<androidx.activity.result.ActivityResult> {
                                 override fun onActivityResult(result: androidx.activity.result.ActivityResult) {
@@ -1061,7 +1068,7 @@ fun MCPConfigScreen(
                                                 if (it.moveToFirst()) {
                                                     val displayName = it.getString(it.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME))
                                                     zipFilePath = displayName
-                                                    
+
                                                     // 保存URI以便后续处理
                                                     viewModel.setSelectedZipUri(uri)
                                                 }
@@ -1071,7 +1078,7 @@ fun MCPConfigScreen(
                                     showFilePickerDialog = false
                                 }
                             }
-                            
+
                             // 注册回调
                             val registry = (context as androidx.activity.ComponentActivity).activityResultRegistry
                             val launcher = registry.register("zip_picker", androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), activityResultCallback)
@@ -1107,280 +1114,193 @@ fun MCPConfigScreen(
         }
         return
     }
-    
-    CustomScaffold(
-            floatingActionButton = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // 启动插件按钮
-                    FloatingActionButton(
-                        onClick = {
-                            if (!isAnyLoading) {
-                                val lifecycleScope = activity?.lifecycleScope
-                                if (lifecycleScope != null) {
-                                    pluginLoadingState.reset() // 确保每次都重置状态
-                                    pluginLoadingState.show()
-                                    pluginLoadingState.initializeMCPServer(context, lifecycleScope)
-                                } else {
-                                    Toast.makeText(context, "Failed to start plugin loading", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(56.dp)
-                    ) {
-                        if (isAnyLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        } else {
-                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.start_plugin))
+
+    Column(Modifier.fillMaxSize()) {
+        PackageAcquisitionActions(
+            marketLabelRes = R.string.mcp_market,
+            importLabelRes = R.string.import_action,
+            onMarketClick = onNavigateToMCPMarket,
+            onImportClick = { showImportDialog = true },
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+        )
+        MCPServiceActions(
+            readyCount = successfulToolRequests.value,
+            enabledCount = totalEnabledPlugins,
+            isLoading = isAnyLoading,
+            isRefreshing = isRefreshing,
+            onStart = {
+                val lifecycleScope = activity?.lifecycleScope
+                if (lifecycleScope != null) {
+                    pluginLoadingState.reset()
+                    pluginLoadingState.show()
+                    pluginLoadingState.initializeMCPServer(context, lifecycleScope)
+                } else {
+                    Toast.makeText(context, context.getString(R.string.mcp_start_services_failed), Toast.LENGTH_SHORT).show()
+                }
+            },
+            onRefresh = {
+                scope.launch {
+                    refreshMcpScreen()
+                    toolRefreshTrigger++
+                }
+            },
+        )
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 16.dp),
+        ) {
+            // 插件列表标题
+            if (displayedPluginIds.isNotEmpty()) {
+
+                // 插件列表
+                items(items = displayedPluginIds, key = { it }) { pluginId ->
+                    val pluginInfo = remember(pluginId) {
+                        mcpRepository.getInstalledPluginInfo(pluginId)
+                    }
+                    val isRemote = pluginInfo?.type == "remote"
+                    val invalidConfigReason: String? = null
+
+                    // 获取插件部署状态（通过检查Linux文件系统）
+                    val deploySuccessState = remember(pluginId) {
+                        mutableStateOf(false)
+                    }
+
+                    // 获取插件启用状态 - 从配置读取
+                    val pluginEnabledState = remember(pluginId) {
+                        mutableStateOf(mcpLocalServer.isServerEnabled(pluginId))
+                    }
+
+                    // 获取插件运行状态
+                    val pluginRunningState = remember(pluginId) {
+                        mutableStateOf(mcpLocalServer.isServerLikelyRunning(pluginId))
+                    }
+
+                    // 检查运行目录就绪状态
+                    LaunchedEffect(pluginId) {
+                        deploySuccessState.value = mcpLocalServer.isPluginRuntimeReady(pluginId)
+                    }
+
+                    // 监听服务器状态变化
+                    LaunchedEffect(pluginId) {
+                        mcpLocalServer.serverStatus.collect { _ ->
+                            pluginRunningState.value = mcpLocalServer.isServerLikelyRunning(pluginId)
+                            // 重新检查运行目录就绪状态
+                            deploySuccessState.value = mcpLocalServer.isPluginRuntimeReady(pluginId)
                         }
                     }
 
-                    // 市场按钮
-                    FloatingActionButton(
-                        onClick = onNavigateToMCPMarket,
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(56.dp)
-                    ) {
-                        Icon(Icons.Default.Store, contentDescription = stringResource(R.string.mcp_market))
+                    // 监听配置变化（isEnabled状态）
+                    LaunchedEffect(pluginId) {
+                        mcpLocalServer.mcpConfig.collect { _ ->
+                            pluginEnabledState.value = mcpLocalServer.isServerEnabled(pluginId)
+                        }
                     }
 
-                    // 导入按钮
-                    FloatingActionButton(
-                        onClick = {
-                            showImportDialog = true
-                        },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(56.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.import_action))
-                    }
-                }
-            }
-    ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-                // 主界面内容
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(
-                        start = 8.dp,
-                        top = 8.dp,
-                        end = 8.dp,
-                        bottom = 200.dp // 为悬浮按钮留出空间
+                    PluginListItem(
+                            pluginId = pluginId,
+                            displayName = getPluginDisplayName(pluginId, mcpRepository),
+                            isOfficial = pluginId.startsWith("official_"),
+                            isRemote = isRemote, // 传递插件类型
+                            toolNames = pluginToolsMap[pluginId] ?: emptyList(), // 传递工具信息
+                            onClick = {
+                                selectedPluginId = pluginId
+                                pluginConfigJson = mcpLocalServer.getPluginConfig(pluginId)
+                                selectedPluginForDetails = getPluginAsServer(
+                                    pluginId,
+                                    mcpRepository,
+                                    mcpConfigSnapshot,
+                                    discoveredInstalledPluginIds,
+                                    context
+                                )
+                            },
+                            onToolsClick = {
+                                selectedPluginForToolDetails = getPluginAsServer(
+                                    pluginId,
+                                    mcpRepository,
+                                    mcpConfigSnapshot,
+                                    discoveredInstalledPluginIds,
+                                    context
+                                )
+                            },
+                            onDeploy = {
+                                pluginToDeploy = pluginId
+                                showConfirmDialog = true // 显示确认对话框而不是直接进入命令编辑
+                            },
+                            onEdit = {
+                                // 设置要编辑的服务器并显示对话框
+                                val serverToEdit = getPluginAsServer(
+                                    pluginId,
+                                    mcpRepository,
+                                    mcpConfigSnapshot,
+                                    discoveredInstalledPluginIds,
+                                    context
+                                )
+                                if(serverToEdit != null){
+                                    editingRemoteServer = serverToEdit
+                                    showRemoteEditDialog = true
+                                }
+                            },
+                            isEnabled = pluginEnabledState.value,
+                            onEnabledChange = { isChecked ->
+                                scope.launch {
+                                    mcpLocalServer.setServerEnabled(pluginId, isChecked)
+                                }
+                            },
+                            isRunning = pluginRunningState.value,
+                            isDeployed = deploySuccessState.value,
+                            isConfigValid = isRemote || deploySuccessState.value,
+                            invalidConfigReason = invalidConfigReason
                     )
-                ) {
-                    // 状态指示器
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                            )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 4.dp))
+                }
+            } else {
+                // 无插件提示
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                Icon(
+                                    Icons.Default.Extension,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Text(
-                                    text = stringResource(R.string.mcp_management),
+                                    stringResource(
+                                        if (searchQuery.isBlank()) {
+                                            R.string.no_plugins
+                                        } else {
+                                            R.string.no_matching_plugins_found
+                                        }
+                                    ),
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.weight(1f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .background(
-                                                color = when {
-                                                    totalEnabledPlugins == 0 -> Color.Gray
-                                                    successfulToolRequests.value == totalEnabledPlugins -> Color.Green
-                                                    successfulToolRequests.value > 0 -> Color(0xFFFFA500) // Orange
-                                                    else -> Color.Red
-                                                },
-                                                shape = RoundedCornerShape(4.dp)
-                                            )
-                                    )
-                                    Text(
-                                        text = "${successfulToolRequests.value}/$totalEnabledPlugins",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    
-                    // 插件列表标题
-                    if (displayedPluginIds.isNotEmpty()) {
-                        
-                        // 插件列表
-                        items(items = displayedPluginIds, key = { it }) { pluginId ->
-                            val pluginInfo = remember(pluginId) {
-                                mcpRepository.getInstalledPluginInfo(pluginId)
-                            }
-                            val isRemote = pluginInfo?.type == "remote"
-                            val invalidConfigReason: String? = null
-
-                            // 获取插件部署状态（通过检查Linux文件系统）
-                            val deploySuccessState = remember(pluginId) {
-                                mutableStateOf(false)
-                            }
-
-                            // 获取插件启用状态 - 从配置读取
-                            val pluginEnabledState = remember(pluginId) {
-                                mutableStateOf(mcpLocalServer.isServerEnabled(pluginId))
-                            }
-
-                            // 获取插件运行状态
-                            val pluginRunningState = remember(pluginId) {
-                                mutableStateOf(mcpLocalServer.isServerLikelyRunning(pluginId))
-                            }
-                            
-                            // 检查运行目录就绪状态
-                            LaunchedEffect(pluginId) {
-                                deploySuccessState.value = mcpLocalServer.isPluginRuntimeReady(pluginId)
-                            }
-                            
-                            // 监听服务器状态变化
-                            LaunchedEffect(pluginId) {
-                                mcpLocalServer.serverStatus.collect { _ ->
-                                    pluginRunningState.value = mcpLocalServer.isServerLikelyRunning(pluginId)
-                                    // 重新检查运行目录就绪状态
-                                    deploySuccessState.value = mcpLocalServer.isPluginRuntimeReady(pluginId)
-                                }
-                            }
-                            
-                            // 监听配置变化（isEnabled状态）
-                            LaunchedEffect(pluginId) {
-                                mcpLocalServer.mcpConfig.collect { _ ->
-                                    pluginEnabledState.value = mcpLocalServer.isServerEnabled(pluginId)
-                                }
-                            }
-
-                            PluginListItem(
-                                    pluginId = pluginId,
-                                    displayName = getPluginDisplayName(pluginId, mcpRepository),
-                                    isOfficial = pluginId.startsWith("official_"),
-                                    isRemote = isRemote, // 传递插件类型
-                                    toolNames = pluginToolsMap[pluginId] ?: emptyList(), // 传递工具信息
-                                    onClick = {
-                                        selectedPluginId = pluginId
-                                        pluginConfigJson = mcpLocalServer.getPluginConfig(pluginId)
-                                        selectedPluginForDetails = getPluginAsServer(
-                                            pluginId,
-                                            mcpRepository,
-                                            mcpConfigSnapshot,
-                                            discoveredInstalledPluginIds,
-                                            context
-                                        )
-                                    },
-                                    onToolsClick = {
-                                        selectedPluginForToolDetails = getPluginAsServer(
-                                            pluginId,
-                                            mcpRepository,
-                                            mcpConfigSnapshot,
-                                            discoveredInstalledPluginIds,
-                                            context
-                                        )
-                                    },
-                                    onDeploy = {
-                                        pluginToDeploy = pluginId
-                                        showConfirmDialog = true // 显示确认对话框而不是直接进入命令编辑
-                                    },
-                                    onEdit = {
-                                        // 设置要编辑的服务器并显示对话框
-                                        val serverToEdit = getPluginAsServer(
-                                            pluginId,
-                                            mcpRepository,
-                                            mcpConfigSnapshot,
-                                            discoveredInstalledPluginIds,
-                                            context
-                                        )
-                                        if(serverToEdit != null){
-                                            editingRemoteServer = serverToEdit
-                                            showRemoteEditDialog = true
-                                        }
-                                    },
-                                    isEnabled = pluginEnabledState.value,
-                                    onEnabledChange = { isChecked ->
-                                        scope.launch {
-                                            mcpLocalServer.setServerEnabled(pluginId, isChecked)
-                                        }
-                                    },
-                                    isRunning = pluginRunningState.value,
-                                    isDeployed = deploySuccessState.value,
-                                    isConfigValid = isRemote || deploySuccessState.value,
-                                    invalidConfigReason = invalidConfigReason
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 4.dp))
-                        }
-                    } else {
-                        // 无插件提示
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                Text(
+                                    stringResource(R.string.use_import_function_to_add),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Extension,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(48.dp),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            stringResource(
-                                                if (searchQuery.isBlank()) {
-                                                    R.string.no_plugins
-                                                } else {
-                                                    R.string.no_matching_plugins_found
-                                                }
-                                            ),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            stringResource(R.string.use_import_function_to_add),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                        )
-                                    }
-                                }
                             }
                         }
                     }
                 }
-
             }
+        }
     }
 }
 
@@ -1532,14 +1452,16 @@ private fun PluginListItem(
     isConfigValid: Boolean = true,
     invalidConfigReason: String? = null
 ) {
+    val glassEnabled = rememberGlassAppearance().packageCards
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, MaterialTheme.colorScheme.surfaceContainer)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (glassEnabled) 0.dp else 1.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1598,7 +1520,7 @@ private fun PluginListItem(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false)
                         )
-                        
+
                         // 状态标签
                         if (isOfficial) {
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1615,7 +1537,7 @@ private fun PluginListItem(
                                 )
                             }
                         }
-                        
+
                         if (isRemote) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
@@ -1631,7 +1553,7 @@ private fun PluginListItem(
                                 )
                             }
                         }
-                        
+
                         if (isDeployed && !isRemote) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
@@ -1757,7 +1679,7 @@ private fun PluginListItem(
                 }
             }
 
-            // 操作按钮区域 
+            // 操作按钮区域
             if (!isRemote || isRemote) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -1781,7 +1703,7 @@ private fun PluginListItem(
                             )
                         }
                     }
-                    
+
                     // 编辑按钮
                     OutlinedButton(
                         onClick = onEdit,
@@ -1938,7 +1860,7 @@ fun RemoteServerEditDialog(
                             }
                         }
                     }
-                    
+
                     OutlinedTextField(
                         value = bearerToken,
                         onValueChange = { bearerToken = it },

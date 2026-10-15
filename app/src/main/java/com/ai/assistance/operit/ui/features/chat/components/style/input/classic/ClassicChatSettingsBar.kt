@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.classic
 
+import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageEntry
+import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageDialog
+import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
@@ -90,6 +93,7 @@ import com.ai.assistance.operit.R
 @Composable
 fun ClassicChatSettingsBar(
     modifier: Modifier = Modifier,
+    actualViewModel: ChatViewModel,
     currentChatId: String?,
     featureStates: Map<String, Boolean>,
     onToggleFeature: (String) -> Unit,
@@ -132,6 +136,10 @@ fun ClassicChatSettingsBar(
     characterCardBoundMemoryProfileId: String? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showContextUsageDialog by remember { mutableStateOf(false) }
+    if (showContextUsageDialog) {
+        ChatContextUsageDialog(actualViewModel, onDismiss = { showContextUsageDialog = false })
+    }
     val iconScale by
             animateFloatAsState(targetValue = if (showMenu) 1.2f else 1f, label = "iconScale")
 
@@ -454,6 +462,14 @@ fun ClassicChatSettingsBar(
                                         Modifier.padding(vertical = 4.dp)
                                 .verticalScroll(rememberScrollState())
                         ) {
+                            ChatContextUsageEntry(actualViewModel, onClick = {
+                                showMenu = false
+                                showContextUsageDialog = true
+                            })
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
                             ClassicSettingsFoldSection(
                                 title = stringResource(R.string.memory),
                                 value = currentProfileName,

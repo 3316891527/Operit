@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
+import com.ai.assistance.operit.ui.features.chat.components.details.calculateMessageTokenSpeed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

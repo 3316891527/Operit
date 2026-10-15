@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.agent
 
+import androidx.compose.material3.HorizontalDivider
+import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageEntry
+import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageDialog
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -106,6 +109,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.icons.ProviderLogo
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
@@ -237,6 +241,10 @@ fun AgentChatInputSection(
     val showFullscreenInput = remember { mutableStateOf(false) }
     val showModelSelectorPopup = remember { mutableStateOf(false) }
     val showExtraSettingsPopup = remember { mutableStateOf(false) }
+    var showContextUsageDialog by remember { mutableStateOf(false) }
+    if (showContextUsageDialog) {
+        ChatContextUsageDialog(actualViewModel, onDismiss = { showContextUsageDialog = false })
+    }
     var showCharacterCardBindingSwitchConfirm by remember { mutableStateOf(false) }
     var pendingCharacterCardModelSelection by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var showCharacterCardMemoryBindingSwitchConfirm by remember { mutableStateOf(false) }
@@ -527,6 +535,7 @@ fun AgentChatInputSection(
             isDarkTheme -> MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
             else -> MaterialTheme.colorScheme.surface
         }
+    val currentModelProviderTypeId = configSummaries.find { it.id == effectiveConfigMapping.configId }?.apiProviderTypeId
     val modelLabel =
         if (displayModelName.isBlank()) {
             context.getString(R.string.model_config)
@@ -799,18 +808,13 @@ fun AgentChatInputSection(
                                 enabled = inputWaterGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
-                                shadowElevation = if (chatInputFloating) 12.dp else 18.dp,
-                                borderWidth = 0.7.dp,
-                                overlayAlphaBoost = if (chatInputFloating) 0.04f else 0.08f,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
-                                shadowElevation = if (chatInputFloating) 12.dp else 18.dp,
-                                borderWidth = 0.42.dp,
-                                blurRadius = if (chatInputFloating) 16.dp else 20.dp,
-                                overlayAlphaBoost = if (chatInputFloating) 0.06f else 0.10f,
+                                // 保留输入框原有透镜，避免共享默认值变化移除折射。
+                                enableLens = true,
                             )
                             .clip(inputCardShape)
                             .background(
@@ -906,13 +910,17 @@ fun AgentChatInputSection(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
+                                    ProviderLogo(
+                                        providerTypeId = currentModelProviderTypeId,
+                                        modifier = Modifier.padding(end = 6.dp),
+                                    )
                                     Text(
                                         text = modelLabel,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.widthIn(max = 160.dp),
+                                        modifier = Modifier.weight(1f, fill = false).widthIn(max = 160.dp),
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Icon(
@@ -1099,18 +1107,13 @@ fun AgentChatInputSection(
                                 enabled = inputWaterGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
-                                shadowElevation = if (chatInputFloating) 12.dp else 18.dp,
-                                borderWidth = 0.7.dp,
-                                overlayAlphaBoost = if (chatInputFloating) 0.04f else 0.08f,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
-                                shadowElevation = if (chatInputFloating) 12.dp else 18.dp,
-                                borderWidth = 0.42.dp,
-                                blurRadius = if (chatInputFloating) 16.dp else 20.dp,
-                                overlayAlphaBoost = if (chatInputFloating) 0.06f else 0.10f,
+                                // 保留输入框原有透镜，避免共享默认值变化移除折射。
+                                enableLens = true,
                             )
                             .clip(inputCardShape)
                             .background(
@@ -1206,13 +1209,17 @@ fun AgentChatInputSection(
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
+                                        ProviderLogo(
+                                            providerTypeId = currentModelProviderTypeId,
+                                            modifier = Modifier.padding(end = 6.dp),
+                                        )
                                         Text(
                                             text = modelLabel,
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.widthIn(max = 160.dp),
+                                            modifier = Modifier.weight(1f, fill = false).widthIn(max = 160.dp),
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Icon(
@@ -1416,6 +1423,11 @@ fun AgentChatInputSection(
 
             AgentExtraSettingsPopup(
                 visible = showExtraSettingsPopup.value,
+                actualViewModel = actualViewModel,
+                onContextUsageClick = {
+                    showExtraSettingsPopup.value = false
+                    showContextUsageDialog = true
+                },
                 popupContainerColor = popupContainerColor,
                 preferenceProfiles = preferenceProfiles,
                 currentProfileId = effectiveProfileId,
@@ -2012,6 +2024,7 @@ private fun AgentModelSelectorItem(
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.width(8.dp))
+        ProviderLogo(currentConfig?.apiProviderTypeId, Modifier.padding(end = 6.dp), 16.dp)
         Text(
             text = currentModelName.ifEmpty { stringResource(R.string.not_selected) },
             fontSize = 13.sp,
@@ -2085,6 +2098,7 @@ private fun AgentModelSelectorItem(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                ProviderLogo(config.apiProviderTypeId, Modifier.padding(end = 8.dp), 18.dp)
                                 Text(
                                     text = config.name,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -2121,6 +2135,7 @@ private fun AgentModelSelectorItem(
                                 } else {
                                     Text(
                                         text = config.modelName,
+                                        modifier = Modifier.widthIn(max = 140.dp),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp,
@@ -2166,24 +2181,28 @@ private fun AgentModelSelectorItem(
                                                 }
                                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                                     ) {
-                                        Text(
-                                            text = modelName,
-                                            fontSize = 12.sp,
-                                            fontWeight =
-                                                if (isModelSelected) {
-                                                    FontWeight.Bold
-                                                } else {
-                                                    FontWeight.Normal
-                                                },
-                                            color =
-                                                if (isModelSelected) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurface
-                                                },
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
+                                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            ProviderLogo(config.apiProviderTypeId, Modifier.padding(end = 8.dp), 16.dp)
+                                            Text(
+                                                text = modelName,
+                                                fontSize = 12.sp,
+                                                fontWeight =
+                                                    if (isModelSelected) {
+                                                        FontWeight.Bold
+                                                    } else {
+                                                        FontWeight.Normal
+                                                    },
+                                                color =
+                                                    if (isModelSelected) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurface
+                                                    },
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.weight(1f),
+                                            )
+                                        }
                                     }
                                     if (index < modelList.size - 1) {
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -2218,6 +2237,8 @@ private fun AgentModelSelectorItem(
 @Composable
 private fun AgentExtraSettingsPopup(
     visible: Boolean,
+    actualViewModel: ChatViewModel,
+    onContextUsageClick: () -> Unit,
     popupContainerColor: Color,
     preferenceProfiles: List<MemorySpace>,
     currentProfileId: String,
@@ -2332,6 +2353,11 @@ private fun AgentExtraSettingsPopup(
                             .padding(vertical = 4.dp)
                             .verticalScroll(rememberScrollState()),
                 ) {
+                    ChatContextUsageEntry(actualViewModel, onClick = onContextUsageClick)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
                     AgentMemorySelectorItem(
                         preferenceProfiles = preferenceProfiles,
                         currentProfileId = currentProfileId,

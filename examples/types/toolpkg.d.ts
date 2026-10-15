@@ -825,7 +825,7 @@ export namespace ToolPkg {
     }
 
     export type NavigationSurface =
-        | "toolbox"
+        | "toolbox" // 兼容旧声明，宿主不再发布此导航入口
         | "main_sidebar_plugins";
 
     export interface NavigationEntryRegistration {
@@ -1046,7 +1046,7 @@ export namespace ToolPkg {
     }
 
     export interface Registry {
-        /** @since ToolPkg API 1.0.0 */
+        /** 兼容旧注册函数，只注册 UI route，不再自动生成工具箱入口。 @since ToolPkg API 1.0.0 */
         registerToolboxUiModule(definition: ToolboxUiModuleRegistration): void;
         /** @since ToolPkg API 1.0.0 */
         registerUiRoute(definition: UiRouteRegistration): void;

@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,8 +29,6 @@ import com.ai.assistance.operit.core.tools.defaultTool.standard.CookiePrivacyMan
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.ui.features.github.GitHubLoginDialog
-import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
@@ -44,6 +46,7 @@ fun SettingsScreen(
         navigateToThemeSettings: () -> Unit,
         navigateToGlobalDisplaySettings: () -> Unit,
         navigateToModelPrompts: () -> Unit,
+        navigateToMemory: () -> Unit,
         navigateToFunctionalConfig: () -> Unit,
         navigateToChatHistorySettings: () -> Unit,
         navigateToChatBackupSettings: () -> Unit,
@@ -55,12 +58,13 @@ fun SettingsScreen(
         navigateToTokenUsageStatistics: () -> Unit,
         navigateToPerformanceMonitor: () -> Unit,
         navigateToContextSummarySettings: () -> Unit,
-        navigateToLayoutAdjustmentSettings: () -> Unit
+        navigateToLayoutAdjustmentSettings: () -> Unit,
+        navigateToLogcat: () -> Unit,
+        navigateToAbout: () -> Unit
 ) {
         val context = LocalContext.current
         val githubAuth = remember { GitHubAuthPreferences.getInstance(context) }
         val scope = rememberCoroutineScope()
-        var showGitHubLogin by remember { mutableStateOf(false) }
         var showClearCookieConfirm by remember { mutableStateOf(false) }
 
         val isGitHubLoggedIn = githubAuth.isLoggedInFlow.collectAsState(initial = false).value
@@ -75,13 +79,7 @@ fun SettingsScreen(
                 }
         }
 
-        val hasBackgroundImage = LocalThemePreferenceSnapshot.current.useBackgroundImage
-        
-        val cardContainerColor = if (hasBackgroundImage) {
-                MaterialTheme.colorScheme.surface
-        } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        }
+        val cardContainerColor = MaterialTheme.colorScheme.surfaceContainer
 
         Column(
                 modifier = Modifier.fillMaxSize()
@@ -105,29 +103,6 @@ fun SettingsScreen(
                                 onClick = navigateToGitHubAccount
                         )
 
-                        if (isGitHubLoggedIn) {
-                                CompactSettingsItem(
-                                        title = stringResource(R.string.logout),
-                                        subtitle = stringResource(R.string.github_account_logout_desc),
-                                        icon = Icons.Default.Logout,
-                                        onClick = {
-                                                scope.launch { githubAuth.logout() }
-                                        }
-                                )
-                        } else {
-                                CompactSettingsItem(
-                                        title = stringResource(R.string.login_github),
-                                        subtitle = stringResource(R.string.github_account_login_desc),
-                                        icon = Icons.Default.Login,
-                                        onClick = { showGitHubLogin = true }
-                                )
-                        }
-                }
-
-                if (showGitHubLogin) {
-                        GitHubLoginDialog(
-                                onDismissRequest = { showGitHubLogin = false }
-                        )
                 }
 
                 // ======= 个性化配置 =======
@@ -213,7 +188,14 @@ fun SettingsScreen(
                                 icon = Icons.Default.ChatBubble,
                                 onClick = navigateToModelPrompts
                         )
-                        
+
+                        CompactSettingsItem(
+                                title = stringResource(R.string.memory_management_title),
+                                subtitle = stringResource(R.string.memory_management_subtitle),
+                                icon = Icons.Default.DeviceHub,
+                                onClick = navigateToMemory
+                        )
+
                         // 新增：人设卡生成
                         CompactSettingsItem(
                                 title = stringResource(R.string.persona_card_generation),
@@ -284,6 +266,27 @@ fun SettingsScreen(
                                 subtitle = stringResource(id = R.string.settings_performance_monitor_subtitle),
                                 icon = Icons.Default.Speed,
                                 onClick = navigateToPerformanceMonitor
+                        )
+
+                        CompactSettingsItem(
+                                title = stringResource(R.string.nav_about),
+                                subtitle = stringResource(R.string.settings_about_subtitle),
+                                icon = Icons.Default.Info,
+                                onClick = navigateToAbout
+                        )
+                }
+
+                // 日志入口保留在设置，开发工具不再占用设置列表。
+                SettingsSection(
+                        title = stringResource(R.string.settings_diagnostics),
+                        icon = Icons.Default.BugReport,
+                        containerColor = cardContainerColor
+                ) {
+                        CompactSettingsItem(
+                                title = stringResource(R.string.tool_log_viewer),
+                                subtitle = stringResource(R.string.logcat_description),
+                                icon = Icons.Default.Description,
+                                onClick = navigateToLogcat
                         )
                 }
 
@@ -365,16 +368,24 @@ private fun SettingsSection(
         containerColor: Color,
         content: @Composable ColumnScope.() -> Unit
 ) {
+        val glassEnabled = rememberGlassAppearance().settingsCards
+        // 开启颜色定制后让分组标题与图标跟随主色，默认主题继续使用黑白正文色。
+        val sectionTitleColor = if (LocalThemePreferenceSnapshot.current.useCustomColors) {
+                MaterialTheme.colorScheme.primary
+        } else {
+                MaterialTheme.colorScheme.onSurface
+        }
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                // 分组标题
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 6.dp)
+                            .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), containerColor)
+                            .padding(if (glassEnabled) 8.dp else 0.dp)
                 ) {
                         Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = sectionTitleColor,
                                 modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -382,15 +393,17 @@ private fun SettingsSection(
                                 text = title,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = sectionTitleColor
                         )
                 }
                 
                 // 内容区域
                 Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, containerColor),
                         colors = CardDefaults.cardColors(
-                                containerColor = containerColor
+                                containerColor = if (glassEnabled) Color.Transparent else containerColor,
+                                contentColor = MaterialTheme.colorScheme.onSurface
                         )
                 ) {
                         Column(
@@ -419,7 +432,7 @@ private fun CompactSettingsItem(
                 Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                 )
                 
@@ -430,6 +443,7 @@ private fun CompactSettingsItem(
                                 text = title,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                         )

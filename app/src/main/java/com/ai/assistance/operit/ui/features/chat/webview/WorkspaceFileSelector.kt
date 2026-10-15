@@ -213,18 +213,13 @@ fun MentionSuggestionPanel(
                     enabled = panelWaterGlassEnabled,
                     shape = panelShape,
                     containerColor = panelGlassTint,
-                    shadowElevation = if (panelStyle.chatInputFloating) 12.dp else 18.dp,
-                    borderWidth = 0.7.dp,
-                    overlayAlphaBoost = if (panelStyle.chatInputFloating) 0.04f else 0.08f,
                 )
                 .liquidGlass(
                     enabled = panelLiquidGlassEnabled,
                     shape = panelShape,
                     containerColor = panelGlassTint,
-                    shadowElevation = if (panelStyle.chatInputFloating) 12.dp else 18.dp,
-                    borderWidth = 0.42.dp,
-                    blurRadius = if (panelStyle.chatInputFloating) 16.dp else 20.dp,
-                    overlayAlphaBoost = if (panelStyle.chatInputFloating) 0.06f else 0.10f,
+                    // 保留提及面板原有透镜，避免共享默认值变化移除折射。
+                    enableLens = true,
                 )
                 .clip(panelShape)
                 .background(

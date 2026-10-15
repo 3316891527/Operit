@@ -1,7 +1,12 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.ui.theme.liquidGlass
+
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,19 +19,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +38,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -44,8 +49,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
+import com.ai.assistance.operit.core.tools.packTool.metadata.PluginActivity
 import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
 import com.ai.assistance.operit.ui.features.packages.components.EmptyState
+import com.ai.assistance.operit.ui.features.packages.management.PluginSortEntry
+import com.ai.assistance.operit.ui.features.packages.management.PluginSortSelection
+import com.ai.assistance.operit.ui.features.packages.management.sortPluginEntries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableItem
@@ -62,220 +71,154 @@ fun PluginTabContent(
     loadPluginLogo: suspend (String) -> PackageManager.ToolPkgLogoBytes?,
     pluginOrder: List<String> = emptyList(),
     onSavePluginOrder: (List<String>) -> Unit = {},
+    sort: PluginSortSelection = PluginSortSelection(),
+    activities: Map<String, PluginActivity> = emptyMap()
 ) {
-    // Convert map to ordered list, applying saved order if available
-    val orderedPluginList = remember(plugins, pluginOrder) {
-        val entries = plugins.entries.toList()
-        if (pluginOrder.isNotEmpty()) {
-            val orderIndex = pluginOrder.withIndex().associate { (i, name) -> name to i }
-            entries.sortedBy { (name, _) -> orderIndex[name] ?: Int.MAX_VALUE }
-        } else {
-            entries
-        }
+    val glassEnabled = rememberGlassAppearance().packageCards
+    val useCustomColors = LocalThemePreferenceSnapshot.current.useCustomColors
+    val orderedPluginList = remember(plugins, pluginOrder, sort, activities, enabledPackageNames) {
+        sortPluginEntries(
+            entries = plugins.map { (name, details) ->
+                val activity = activities[name]
+                PluginSortEntry(
+                    packageName = name,
+                    displayName = details.displayName,
+                    enabled = name in enabledPackageNames,
+                    fileSizeBytes = details.fileSizeBytes,
+                    installedAt = activity?.installedAt ?: 0L,
+                    lastUsedAt = activity?.lastUsedAt ?: 0L
+                )
+            },
+            selection = sort,
+            customOrder = pluginOrder
+        ).map { it.packageName }
     }
-
-    var orderedItems by remember(orderedPluginList) {
-        mutableStateOf(orderedPluginList)
-    }
-
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    var orderedItems by remember(orderedPluginList) { mutableStateOf(orderedPluginList) }
+    val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        orderedItems = orderedItems.toMutableList().apply {
-            add(to.index, removeAt(from.index))
-        }
-        val newOrder = orderedItems.map { (name, _) -> name }
-        onSavePluginOrder(newOrder)
+        orderedItems = orderedItems.toMutableList().apply { add(to.index, removeAt(from.index)) }
+        onSavePluginOrder(orderedItems)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        if (plugins.isEmpty() && isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp)
-            ) {
-                if (plugins.isEmpty()) {
-                    item(key = "empty_plugins_state") {
-                        EmptyState(
-                            message =
-                                stringResource(
-                                    if (isSearchActive) {
-                                        R.string.no_matching_plugins_found
-                                    } else {
-                                        R.string.no_plugins_available
-                                    }
-                                )
+    Box(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp)
+        ) {
+            if (plugins.isEmpty() && !isLoading) {
+                item(key = "empty_plugins_state") {
+                    EmptyState(
+                        message = stringResource(
+                            if (isSearchActive) R.string.no_matching_plugins_found else R.string.no_plugins_available
                         )
-                    }
+                    )
                 }
-
-                itemsIndexed(
-                    items = orderedItems,
-                    key = { _, (packageName, _) -> packageName }
-                ) { index, (packageName, details) ->
-                    val isEnabled = enabledPackageNames.contains(packageName)
-                    val logo by
-                        produceState<PackageManager.ToolPkgLogoBytes?>(
-                            initialValue = null,
-                            packageName,
-                            details.version,
-                            details.logoResourceKey
+            }
+            itemsIndexed(orderedItems, key = { _, name -> name }) { index, packageName ->
+                val details = plugins.getValue(packageName)
+                val isEnabled = packageName in enabledPackageNames
+                val logo by produceState<PackageManager.ToolPkgLogoBytes?>(
+                    initialValue = null, packageName, details.version, details.logoResourceKey
+                ) {
+                    value = if (details.logoResourceKey == null) null
+                    else withContext(Dispatchers.IO) { loadPluginLogo(packageName) }
+                }
+                val logoPainter = rememberLogoPainter(
+                    logoKey = "$packageName:${details.version}:${details.logoResourceKey}",
+                    bytes = logo?.bytes,
+                    mimeType = logo?.mimeType,
+                    fileName = logo?.fileName,
+                    size = 32.dp
+                )
+                ReorderableItem(
+                    reorderableState,
+                    key = packageName,
+                    animateItemModifier = Modifier.animateItem(
+                        fadeInSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        placementSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        fadeOutSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                    )
+                ) { isDragging ->
+                    Surface(
+                        onClick = { onPluginClick(packageName) },
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(vertical = if (glassEnabled) 3.dp else 0.dp)
+                            .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer)
+                            .longPressDraggableHandle().then(
+                            if (isDragging) Modifier.shadow(8.dp, RoundedCornerShape(12.dp)) else Modifier
+                        ),
+                        shape = RoundedCornerShape(if (isDragging || glassEnabled) 12.dp else 0.dp),
+                        // 普通行延续页面底色，拖动中的行使用实色表面承载阴影。
+                        color = if (glassEnabled) Color.Transparent else if (isDragging) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.background
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            value =
-                                if (details.logoResourceKey == null) {
-                                    null
-                                } else {
-                                    withContext(Dispatchers.IO) { loadPluginLogo(packageName) }
-                                }
-                        }
-                    val logoPainter =
-                        rememberLogoPainter(
-                            logoKey = "${packageName}:${details.version}:${details.logoResourceKey}",
-                            bytes = logo?.bytes,
-                            mimeType = logo?.mimeType,
-                            fileName = logo?.fileName,
-                            size = 24.dp
-                        )
-                    ReorderableItem(
-                        reorderableState,
-                        key = packageName,
-                        animateItemModifier = Modifier.animateItem(
-                            fadeInSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-                            placementSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-                            fadeOutSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
-                        )
-                    ) { isDragging ->
-                        val elevation = if (isDragging) 8.dp else 0.dp
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(
-                                    if (isDragging) {
-                                        Modifier.shadow(elevation, RoundedCornerShape(12.dp))
-                                    } else {
-                                        Modifier
-                                    }
-                                ),
-                            shape = RoundedCornerShape(12.dp),
-                            // Keep the dragged item opaque so its elevation shadow is not composited with the page behind it.
-                            color = if (isDragging) {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.surface
-                            },
-                        ) {
-                            Card(
-                                onClick = { onPluginClick(packageName) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .longPressDraggableHandle(),
-                                colors =
-                                    CardDefaults.cardColors(
-                                        containerColor = if (isDragging) {
-                                            MaterialTheme.colorScheme.surfaceVariant
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                                        }
-                                    ),
-                                shape = RoundedCornerShape(12.dp)
+                            Box(
+                                modifier = Modifier.size(36.dp).alpha(if (isEnabled) 1f else 0.55f),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier.size(24.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (logoPainter != null) {
-                                            Image(
-                                                painter = logoPainter,
-                                                contentDescription = details.displayName,
-                                                contentScale = ContentScale.Fit,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        } else {
-                                            Icon(
-                                                imageVector = Icons.Default.Apps,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(22.dp),
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(end = 8.dp)
-                                    ) {
-                                        Text(
-                                            text = details.displayName,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Medium,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = details.description,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text =
-                                                stringResource(
-                                                    R.string.plugin_subpackage_count,
-                                                    details.subpackages.size
-                                                ),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                    Switch(
-                                        checked = isEnabled,
-                                        onCheckedChange = { checked -> onTogglePlugin(details, checked) },
-                                        modifier = Modifier.size(width = 32.dp, height = 20.dp),
-                                        colors =
-                                            SwitchDefaults.colors(
-                                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                                            )
+                                if (logoPainter != null) {
+                                    Image(
+                                        painter = logoPainter,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                } else {
+                                    // 默认图标跟随已启用的定制主色，自带 Logo 与禁用透明度沿用原样。
+                                    Icon(
+                                        imageVector = Icons.Default.Apps,
+                                        contentDescription = null,
+                                        tint = if (useCustomColors) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                                        modifier = Modifier.size(28.dp)
                                     )
                                 }
                             }
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    text = details.displayName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (details.description.isNotBlank()) {
+                                    Text(
+                                        text = details.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                if (details.subpackages.isNotEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.plugin_subpackage_count, details.subpackages.size),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                                    )
+                                }
+                            }
+                            Switch(checked = isEnabled, onCheckedChange = { onTogglePlugin(details, it) })
                         }
-                        if (index < orderedItems.lastIndex) {
-                            HorizontalDivider(
-                                thickness = 0.5.dp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
-                            )
-                        }
+                    }
+                    if (index < orderedItems.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 54.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f)
+                        )
                     }
                 }
             }
         }
-
-        if (isLoading && plugins.isNotEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }
 }

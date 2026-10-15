@@ -1,18 +1,17 @@
 package com.ai.assistance.operit.ui.theme
 
 import android.os.Build
+import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.fletchmckee.liquid.LiquidState
 import io.github.fletchmckee.liquid.liquid
@@ -28,54 +27,35 @@ fun Modifier.waterGlass(
     enabled: Boolean,
     shape: Shape = RoundedCornerShape(0.dp),
     containerColor: Color,
-    shadowElevation: Dp = 14.dp,
-    borderWidth: Dp = 1.dp,
-    overlayAlphaBoost: Float = 0f,
+    subtleRefraction: Boolean = false,
 ): Modifier {
     if (!enabled) {
         return this
     }
 
+    val appearance = rememberGlassAppearance()
     val liquidState = if (isWaterGlassSupported()) LocalWaterGlassState.current else null
     val isLightGlass = containerColor.luminance() >= 0.5f
     if (liquidState == null) {
-        val fallbackTintAlpha = if (isLightGlass) 0.14f else 0.22f
-        val fallbackBorder =
-            if (isLightGlass) {
-                Color.White.copy(alpha = 0.26f)
-            } else {
-                Color.White.copy(alpha = 0.14f)
-            }
-        val fallbackGloss =
-            if (isLightGlass) {
-                Color.White.copy(alpha = 0.10f)
-            } else {
-                Color.White.copy(alpha = 0.05f)
-            }
+        val borderColor = Color.White.copy(alpha = appearance.highlightAlpha)
 
         return this
             .shadow(
-                elevation = shadowElevation,
+                elevation = appearance.shadowRadius.dp,
                 shape = shape,
                 clip = false,
                 ambientColor = Color.Black.copy(alpha = if (isLightGlass) 0.10f else 0.18f),
                 spotColor = Color.Black.copy(alpha = if (isLightGlass) 0.10f else 0.18f),
             )
-            .border(width = borderWidth.coerceAtLeast(0.6.dp), color = fallbackBorder, shape = shape)
-            .background(color = containerColor.copy(alpha = fallbackTintAlpha), shape = shape)
-            .drawWithContent {
-                drawContent()
-                drawRect(fallbackGloss)
-            }
+            .then(
+                if (appearance.edgeWidth > 0f && appearance.highlightAlpha > 0f) {
+                    Modifier.border(appearance.edgeWidth.dp, borderColor, shape)
+                } else Modifier
+            )
+            .background(color = containerColor.copy(alpha = appearance.tintOpacity), shape = shape)
     }
-    val tintAlpha = if (isLightGlass) 0.09f else 0.16f
-    val surfaceTint = containerColor.copy(alpha = (tintAlpha + overlayAlphaBoost).coerceIn(0f, 0.56f))
-    val borderColor =
-        if (isLightGlass) {
-            Color.White.copy(alpha = 0.18f)
-        } else {
-            Color.White.copy(alpha = 0.10f)
-        }
+    val surfaceTint = containerColor.copy(alpha = appearance.tintOpacity)
+    val borderColor = Color.White.copy(alpha = appearance.highlightAlpha)
     val shadowColor =
         if (isLightGlass) {
             Color.Black.copy(alpha = 0.10f)
@@ -85,21 +65,26 @@ fun Modifier.waterGlass(
 
     return this
         .shadow(
-            elevation = shadowElevation,
+            elevation = appearance.shadowRadius.dp,
             shape = shape,
             clip = false,
             ambientColor = shadowColor,
             spotColor = shadowColor,
         )
-        .border(width = borderWidth, color = borderColor, shape = shape)
+        .then(
+            if (appearance.edgeWidth > 0f && appearance.highlightAlpha > 0f) {
+                Modifier.border(appearance.edgeWidth.dp, borderColor, shape)
+            } else Modifier
+        )
         .liquid(liquidState) {
             this.shape = shape
-            this.frost = if (isLightGlass) 6.dp else 8.dp
-            this.curve = if (isLightGlass) 0.40f else 0.30f
-            this.refraction = if (isLightGlass) 0.12f else 0.09f
-            this.dispersion = if (isLightGlass) 0.18f else 0.13f
-            this.saturation = if (isLightGlass) 0.40f else 0.32f
-            this.contrast = if (isLightGlass) 1.22f else 1.40f
+            // 磨砂仍使用主题参数，恢复原有曲面与折射强度，保留水玻璃的视觉区分。
+            this.frost = appearance.blurRadius.dp
+            this.curve = if (subtleRefraction) 0.08f else if (isLightGlass) 0.40f else 0.30f
+            this.refraction = if (subtleRefraction) 0.02f else if (isLightGlass) 0.12f else 0.09f
+            this.dispersion = 0.02f
+            this.saturation = 1f
+            this.contrast = 1f
             this.tint = surfaceTint
         }
 }
