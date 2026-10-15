@@ -9124,4 +9124,8 @@
 <string name="api_key_pool_test_short">测试</string>
 <string name="api_key_pool_title">API 密钥池</string>
 <string name="enhanced_retrying_request">正在重试请求...</string>
+<string name="colorpicker_select_thinking_particle">选择思考粒子颜色</string>
+<string name="theme_thinking_particle_color">粒子颜色</string>
+<string name="theme_thinking_particle_color_desc">自定义开启思考时滑块粒子流动的颜色，默认使用白色</string>
+<string name="theme_thinking_particle_color_title">思考粒子颜色</string>
 </resources>

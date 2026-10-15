@@ -1008,7 +1008,6 @@ private data class ThinkingRuleEditor(
     val matchValues: String = "",
     val control: String = "levels",
     val parameterLabel: String = "",
-    val required: Boolean = false,
     val enabledActions: List<ThinkingActionEditor> = emptyList(),
     val disabledActions: List<ThinkingActionEditor> = emptyList(),
     val options: List<ThinkingOptionEditor> = listOf(
@@ -1388,7 +1387,7 @@ private fun ThinkingRuleEditForm(rule: ThinkingRuleEditor, onRuleChange: (Thinki
     }
     SettingsTextField(title = "匹配模型", subtitle = "多个值用逗号分隔", value = rule.matchValues, onValueChange = { onRuleChange(rule.copy(matchValues = it)) }, placeholder = "glm-, deepseek, gemini-2.5")
     SettingsTextField(title = "默认请求路径", value = rule.parameterLabel, onValueChange = { onRuleChange(rule.copy(parameterLabel = it)) }, placeholder = "reasoning_effort 或 thinking.type")
-    SettingsSwitchRow(title = "始终开启思考", subtitle = "即使滑块关闭，也写入开启参数", checked = rule.required, onCheckedChange = { onRuleChange(rule.copy(required = it)) })
+    // 自定义规则编辑器不再暴露始终开启选项。
     ThinkingCollapsibleEditor(title = "开启 / 关闭时写入", subtitle = "按请求路径写入固定值", initiallyExpanded = false) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ThinkingCompactActionsEditor(title = "开启时写入", actions = rule.enabledActions, onActionsChange = { onRuleChange(rule.copy(enabledActions = it)) })
@@ -2066,9 +2065,6 @@ private fun serializeThinkingRuleEditors(rules: List<ThinkingRuleEditor>): Strin
         rule.parameterLabel.trim().takeIf { it.isNotEmpty() }?.let {
             ruleObject.put("parameterLabel", it)
         }
-        if (rule.required) {
-            ruleObject.put("required", true)
-        }
         thinkingActionsArray(rule.enabledActions).takeIf { it.length() > 0 }?.let {
             ruleObject.put("enable", it)
         }
@@ -2129,7 +2125,6 @@ private fun JSONObject.toThinkingRuleEditor(index: Int): ThinkingRuleEditor {
             else -> "levels"
         },
         parameterLabel = optString("parameterLabel", optString("label", "")),
-        required = optBoolean("required", optBoolean("reasoningRequired", false)),
         enabledActions = actionEditors("enable", "enabledActions", "on"),
         disabledActions = actionEditors("disable", "disabledActions", "off"),
         options = optionEditors()
