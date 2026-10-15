@@ -342,15 +342,11 @@ class MessageCoordinationDelegate(
                 )
             coroutineContext.ensureActive()
             val (inputTokens, outputTokens) = tokenStatsDelegate.getCumulativeTokenCounts(targetChatId)
-            chatHistoryDelegate.saveCurrentChat(
-                inputTokens = inputTokens,
-                outputTokens = outputTokens,
-                actualContextWindowSize = newWindowSize,
-                chatIdOverride = targetChatId
-            )
+            // 窗口估算只保存窗口值，避免累计用量被旧快照覆盖。
+            chatHistoryDelegate.saveCurrentContextWindow(newWindowSize, chatIdOverride = targetChatId)
             withContext(Dispatchers.Main) {
                 coroutineContext.ensureActive()
-                tokenStatsDelegate.setTokenCounts(targetChatId, inputTokens, outputTokens, newWindowSize)
+                tokenStatsDelegate.setCurrentWindowSize(targetChatId, newWindowSize)
             }
             AppLogger.d(
                 TAG,
