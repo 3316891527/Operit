@@ -139,7 +139,10 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                                     events.add(event.outputChunk)
                                 }
                                 if (event.isCompleted) {
-                                    exitCode = 0
+                                    // 完成事件携带真实退出码，普通执行和流式执行统一上报。
+                                    exitCode = checkNotNull(event.exitCode) {
+                                        context.getString(R.string.terminal_error_command_failed)
+                                    }
                                     hasCompleted = true
                                 }
                             }
@@ -263,7 +266,10 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                     outputFlow.collect { event ->
                         if (event.isCompleted) {
                             completionOutput = event.outputChunk
-                            exitCode = 0
+                            // 完成事件携带真实退出码，普通执行和流式执行统一上报。
+                            exitCode = checkNotNull(event.exitCode) {
+                                context.getString(R.string.terminal_error_command_failed)
+                            }
                             hasCompleted = true
                             return@collect
                         }

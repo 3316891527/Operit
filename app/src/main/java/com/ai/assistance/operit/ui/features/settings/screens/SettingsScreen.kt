@@ -167,6 +167,13 @@ fun SettingsScreen(
                                 icon = Icons.Default.Tune,
                                 onClick = navigateToFunctionalConfig
                         )
+
+                        CompactSettingsItem(
+                                title = stringResource(id = R.string.settings_section_context_summary),
+                                subtitle = stringResource(id = R.string.settings_context_summary_subtitle),
+                                icon = Icons.Default.Tune,
+                                onClick = navigateToContextSummarySettings
+                        )
                         
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_speech_services),
@@ -211,20 +218,6 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.waifu_mode_settings_desc),
                                 icon = Icons.Default.EmojiEmotions,
                                 onClick = navigateToWaifuModeSettings
-                        )
-                }
-
-                // ======= 上下文和总结设置 =======
-                SettingsSection(
-                        title = stringResource(id = R.string.settings_section_context_summary),
-                        icon = Icons.Default.Analytics,
-                        containerColor = cardContainerColor
-                ) {
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_section_context_summary),
-                                subtitle = stringResource(id = R.string.settings_context_summary_subtitle),
-                                icon = Icons.Default.Tune,
-                                onClick = navigateToContextSummarySettings
                         )
                 }
 

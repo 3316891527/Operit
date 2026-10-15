@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -32,8 +31,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -74,13 +71,9 @@ import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistry
 import com.ai.assistance.operit.ui.main.navigation.RegisterRouteBackGuard
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -842,15 +835,6 @@ fun ModelConfigScreen(
                         saveCoordinator = saveCoordinator,
                         showNotification = { message -> showNotification(message) },
                         navigateToMnnModelDownload = navigateToMnnModelDownload
-                    )
-                }
-
-                item {
-                    ContextSummarySettingsSection(
-                        config = config,
-                        configManager = configManager,
-                        scope = scope,
-                        showNotification = { message -> showNotification(message) }
                     )
                 }
 
@@ -2448,367 +2432,6 @@ private fun CustomHeadersSettingsSection(
     }
 }
 
-@Composable
-private fun ContextSummarySettingsSection(
-    config: ModelConfigData,
-    configManager: ModelConfigManager,
-    scope: CoroutineScope,
-    showNotification: (String) -> Unit
-) {
-    val latestConfig by rememberUpdatedState(config)
-    var contextLengthInput by remember(config.id) { mutableStateOf(formatFloatValue(config.contextLength)) }
-    var maxContextLengthInput by remember(config.id) { mutableStateOf(formatFloatValue(config.maxContextLength)) }
-    var contextError by remember { mutableStateOf<String?>(null) }
-
-    var enableSummary by remember(config.id) { mutableStateOf(config.enableSummary) }
-    var summaryTokenThresholdInput by remember(config.id) { mutableStateOf(formatFloatValue(config.summaryTokenThreshold)) }
-    var enableSummaryByMessageCount by remember(config.id) { mutableStateOf(config.enableSummaryByMessageCount) }
-    var summaryMessageCountThresholdInput by remember(config.id) { mutableStateOf(config.summaryMessageCountThreshold.toString()) }
-    var summaryError by remember { mutableStateOf<String?>(null) }
-
-    var contextExpanded by rememberSaveable { mutableStateOf(false) }
-    var summaryExpanded by rememberSaveable { mutableStateOf(false) }
-
-    val errorValidContextLength = stringResource(id = R.string.model_config_error_valid_context_length)
-    val errorValidMaxContextLength = stringResource(id = R.string.model_config_error_valid_max_context_length)
-    val errorSaveFailed = stringResource(id = R.string.model_config_error_save_failed)
-    val errorSummaryThresholdRange = stringResource(id = R.string.model_config_error_summary_threshold_range)
-    val errorValidMessageCount = stringResource(id = R.string.model_config_error_valid_message_count)
-
-    LaunchedEffect(config.id, config.contextLength) {
-        contextLengthInput = formatFloatValue(config.contextLength)
-    }
-    LaunchedEffect(config.id, config.maxContextLength) {
-        maxContextLengthInput = formatFloatValue(config.maxContextLength)
-    }
-    LaunchedEffect(config.id, config.enableSummary) {
-        enableSummary = config.enableSummary
-    }
-    LaunchedEffect(config.id, config.summaryTokenThreshold) {
-        summaryTokenThresholdInput = formatFloatValue(config.summaryTokenThreshold)
-    }
-    LaunchedEffect(config.id, config.enableSummaryByMessageCount) {
-        enableSummaryByMessageCount = config.enableSummaryByMessageCount
-    }
-    LaunchedEffect(config.id, config.summaryMessageCountThreshold) {
-        summaryMessageCountThresholdInput = config.summaryMessageCountThreshold.toString()
-    }
-
-    LaunchedEffect(config.id) {
-        snapshotFlow { contextLengthInput to maxContextLengthInput }
-            .drop(1)
-            .debounce(700)
-            .distinctUntilChanged()
-            .collectLatest { (contextText, maxText) ->
-                val contextValue = contextText.toFloatOrNull()
-                val maxValue = maxText.toFloatOrNull()
-
-                when {
-                    contextValue == null || contextValue <= 0f -> {
-                        contextError = errorValidContextLength
-                    }
-
-                    maxValue == null || maxValue <= 0f -> {
-                        contextError = errorValidMaxContextLength
-                    }
-
-                    else -> {
-                        val current = latestConfig
-                        val isNoOp =
-                            current.contextLength == contextValue &&
-                                    current.maxContextLength == maxValue
-                        if (isNoOp) {
-                            contextError = null
-                            return@collectLatest
-                        }
-
-                        try {
-                            configManager.updateContextSettings(
-                                configId = current.id,
-                                contextLength = contextValue,
-                                maxContextLength = maxValue,
-                                enableMaxContextMode = current.enableMaxContextMode
-                            )
-                            contextError = null
-                        } catch (e: Exception) {
-                            contextError = e.message ?: errorSaveFailed
-                        }
-                    }
-                }
-            }
-    }
-
-    LaunchedEffect(config.id) {
-        snapshotFlow {
-            listOf(
-                enableSummary,
-                summaryTokenThresholdInput,
-                enableSummaryByMessageCount,
-                summaryMessageCountThresholdInput
-            )
-        }
-            .drop(1)
-            .debounce(700)
-            .distinctUntilChanged()
-            .collectLatest {
-                val current = latestConfig
-                if (!enableSummary) {
-                    if (current.enableSummary) {
-                        try {
-                            configManager.updateSummarySettings(
-                                configId = current.id,
-                                enableSummary = false,
-                                summaryTokenThreshold = current.summaryTokenThreshold,
-                                enableSummaryByMessageCount = current.enableSummaryByMessageCount,
-                                summaryMessageCountThreshold = current.summaryMessageCountThreshold
-                            )
-                            summaryError = null
-                        } catch (e: Exception) {
-                            summaryError = e.message ?: errorSaveFailed
-                        }
-                    }
-                    return@collectLatest
-                }
-
-                val threshold = summaryTokenThresholdInput.toFloatOrNull()
-                val messageCount = summaryMessageCountThresholdInput.toIntOrNull()
-
-                when {
-                    threshold == null || threshold <= 0f || threshold >= 1f -> {
-                        summaryError = errorSummaryThresholdRange
-                    }
-
-                    enableSummaryByMessageCount && (messageCount == null || messageCount <= 0) -> {
-                        summaryError = errorValidMessageCount
-                    }
-
-                    else -> {
-                        val nextMessageCount =
-                            if (enableSummaryByMessageCount) messageCount
-                                ?: current.summaryMessageCountThreshold
-                            else current.summaryMessageCountThreshold
-
-                        val isNoOp =
-                            current.enableSummary == enableSummary &&
-                                    current.summaryTokenThreshold == threshold &&
-                                    current.enableSummaryByMessageCount == enableSummaryByMessageCount &&
-                                    current.summaryMessageCountThreshold == nextMessageCount
-                        if (isNoOp) {
-                            summaryError = null
-                            return@collectLatest
-                        }
-
-                        try {
-                            configManager.updateSummarySettings(
-                                configId = current.id,
-                                enableSummary = enableSummary,
-                                summaryTokenThreshold = threshold,
-                                enableSummaryByMessageCount = enableSummaryByMessageCount,
-                                summaryMessageCountThreshold = nextMessageCount
-                            )
-                            summaryError = null
-                        } catch (e: Exception) {
-                            summaryError = e.message ?: errorSaveFailed
-                        }
-                    }
-                }
-            }
-    }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { contextExpanded = !contextExpanded }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Analytics,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.settings_context_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = if (contextExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (contextExpanded) stringResource(id = R.string.model_config_collapse) else stringResource(id = R.string.model_config_expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = contextExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SettingsInfoBanner(text = stringResource(id = R.string.settings_context_card_content))
-
-                        SettingsTextField(
-                            title = stringResource(id = R.string.settings_context_length),
-                            subtitle = stringResource(id = R.string.settings_context_length_subtitle),
-                            value = contextLengthInput,
-                            onValueChange = {
-                                contextLengthInput = it
-                                contextError = null
-                            },
-                            unitText = "K",
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        SettingsTextField(
-                            title = stringResource(id = R.string.settings_max_context_length),
-                            subtitle = stringResource(id = R.string.settings_max_context_length_subtitle),
-                            value = maxContextLengthInput,
-                            onValueChange = {
-                                maxContextLengthInput = it
-                                contextError = null
-                            },
-                            unitText = "K",
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal,
-                                imeAction = ImeAction.Done
-                            )
-                        )
-
-                        contextError?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { summaryExpanded = !summaryExpanded }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Summarize,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.settings_summary_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = if (summaryExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (summaryExpanded) stringResource(id = R.string.model_config_collapse) else stringResource(id = R.string.model_config_expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = summaryExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SettingsSwitchRow(
-                            title = stringResource(id = R.string.settings_enable_summary),
-                            subtitle = stringResource(id = R.string.settings_enable_summary_desc),
-                            checked = enableSummary,
-                            onCheckedChange = { enableSummary = it }
-                        )
-
-                        SettingsTextField(
-                            title = stringResource(id = R.string.settings_summary_threshold),
-                            subtitle = stringResource(id = R.string.settings_summary_threshold_subtitle),
-                            value = summaryTokenThresholdInput,
-                            onValueChange = {
-                                summaryTokenThresholdInput = it
-                                summaryError = null
-                            },
-                            enabled = enableSummary,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        SettingsSwitchRow(
-                            title = stringResource(id = R.string.settings_enable_summary_by_message_count),
-                            subtitle = stringResource(id = R.string.settings_enable_summary_by_message_count_desc),
-                            checked = enableSummaryByMessageCount,
-                            onCheckedChange = { enableSummaryByMessageCount = it },
-                            enabled = enableSummary
-                        )
-
-                        SettingsTextField(
-                            title = stringResource(id = R.string.settings_summary_message_count_threshold),
-                            subtitle = stringResource(id = R.string.settings_summary_message_count_threshold_subtitle),
-                            value = summaryMessageCountThresholdInput,
-                            onValueChange = {
-                                summaryMessageCountThresholdInput = it
-                                summaryError = null
-                            },
-                            unitText = stringResource(id = R.string.model_config_unit_items),
-                            enabled = enableSummary && enableSummaryByMessageCount,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            )
-                        )
-
-                        summaryError?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 private data class ConnectionTestItem(
     val labelResId: Int,
     val type: ModelConnectionTestType,
@@ -2858,8 +2481,4 @@ private fun ModelConnectionTestType.toLabelResId(): Int {
         ModelConnectionTestType.AUDIO -> R.string.test_item_audio
         ModelConnectionTestType.VIDEO -> R.string.test_item_video
     }
-}
-
-private fun formatFloatValue(value: Float): String {
-    return if (value % 1f == 0f) value.toInt().toString() else String.format("%.2f", value)
 }
