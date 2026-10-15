@@ -14,6 +14,21 @@ on:
           - ':app:assembleClone'
           - ':app:verifyCiPreviewRelease'
           - ':app:bundleRelease'
+      publish_release:
+        description: 发布独立发行 Release 并生成增量包
+        required: true
+        default: false
+        type: boolean
+      previous_tag:
+        description: 可选的基础 Release 标签；留空选择同一基础版本的最新正式包
+        required: false
+        default: ''
+        type: string
+      release_notes:
+        description: 本次发布说明
+        required: false
+        default: ''
+        type: string
   push:
     branches: [main]
     paths:
@@ -22,6 +37,7 @@ on:
       - .npmrc
       - app/**
       - build.gradle.kts
+      - ci/distribution/**
       - ci/script/download_android_dependencies.sh
       - ci/script/prepare_android_dependencies.py
       - cmake/**
@@ -51,7 +67,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   JAVA_VERSION: '21'
@@ -82,6 +98,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Validate distribution publishing inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+        env:
+          DISPATCH_GRADLE_TASK: ${{ inputs.gradle_task }}
+        shell: bash
+        run: |
+          if [ "$DISPATCH_GRADLE_TASK" != ':app:verifyCiPreviewRelease' ]; then
+            echo '发布独立发行版必须选择 :app:verifyCiPreviewRelease' >&2
+            exit 1
+          fi
+      - name: Check distribution patch publishing
+        run: python3 -m unittest discover -s ci/distribution/updates/tests -v
       - name: Initialize terminal submodule
         shell: bash
         run: |
@@ -243,3 +271,18 @@ jobs:
             app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish distribution release and patch
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_TAG: ${{ inputs.previous_tag }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          python3 ci/distribution/updates/publish_release.py \
+            --apk app/build/outputs/apk/release/app-kong.apk \
+            --build-tools "$ANDROID_HOME/build-tools/35.0.0" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$GITHUB_SHA" \
+            --previous-tag "$PREVIOUS_TAG" \
+            --notes "$RELEASE_NOTES"
