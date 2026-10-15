@@ -790,7 +790,8 @@ class MessageCoordinationDelegate(
                 .toInt()
 
         // 如果不是续写，检查是否需要总结
-        if (turnOptions.persistTurn && !isBackgroundSend && !isContinuation && !skipSummaryCheck) {
+        // 总结关闭时跳过历史预读；开启时继续在 IO 线程读取，避免阻塞主线程。
+        if (chatContextSettings.enableSummary && turnOptions.persistTurn && !isBackgroundSend && !isContinuation && !skipSummaryCheck) {
             val currentMessages =
                 withContext(Dispatchers.IO) {
                     chatHistoryDelegate.getCurrentRuntimeChatHistorySnapshot()

@@ -72,9 +72,8 @@ open class KimiProvider(
         }
 
         if (!enableThinking) {
-            val baseRequestBodyJson =
-                super.createRequestBodyInternal(context, chatHistory, modelParameters, stream, availableTools, preserveThinkInHistory)
-            val jsonObject = JSONObject(baseRequestBodyJson)
+            val jsonObject =
+                super.createRequestBodyObject(context, chatHistory, modelParameters, stream, availableTools, preserveThinkInHistory)
             if (stream) {
                 jsonObject.put("stream_options", JSONObject().put("include_usage", true))
             }
@@ -149,13 +148,7 @@ open class KimiProvider(
             )
         jsonObject.put("messages", messagesArray)
 
-        val logJson = JSONObject(jsonObject.toString())
-        if (logJson.has("tools")) {
-            val toolsArray = logJson.getJSONArray("tools")
-            logJson.put("tools", "[${toolsArray.length()} tools omitted for brevity]")
-        }
-        val sanitizedLogJson = sanitizeImageDataForLogging(logJson)
-        logLargeString("KimiProvider", sanitizedLogJson.toString(4), "Final Kimi K2.5 request body: ")
+        logRequestBody("KimiProvider", jsonObject, "Final Kimi K2.5 request body: ")
 
         return createJsonRequestBody(jsonObject.toString())
     }

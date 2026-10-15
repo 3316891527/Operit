@@ -56,7 +56,7 @@ class NvidiaAIProvider(
         availableTools: List<ToolPrompt>?,
         preserveThinkInHistory: Boolean
     ): RequestBody {
-        val baseRequestBodyJson = super.createRequestBodyInternal(
+        val jsonObject = super.createRequestBodyObject(
             context,
             chatHistory,
             modelParameters,
@@ -64,7 +64,6 @@ class NvidiaAIProvider(
             availableTools,
             preserveThinkInHistory
         )
-        val jsonObject = JSONObject(baseRequestBodyJson)
 
         ThinkingConfigurationApplier.apply(
             context = context,

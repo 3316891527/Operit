@@ -61,7 +61,7 @@ open class OpenRouterProvider(
         availableTools: List<ToolPrompt>?,
         preserveThinkInHistory: Boolean
     ): RequestBody {
-        val baseRequestBodyJson = super.createRequestBodyInternal(
+        val jsonObject = super.createRequestBodyObject(
             context,
             chatHistory,
             modelParameters,
@@ -69,7 +69,6 @@ open class OpenRouterProvider(
             availableTools,
             preserveThinkInHistory
         )
-        val jsonObject = JSONObject(baseRequestBodyJson)
 
         applyOpenRouterReasoning(
             context = context,
@@ -77,17 +76,7 @@ open class OpenRouterProvider(
             enableThinking = enableThinking
         )
 
-        val logJson = JSONObject(jsonObject.toString())
-        if (logJson.has("tools")) {
-            val toolsArray = logJson.getJSONArray("tools")
-            logJson.put("tools", "[${toolsArray.length()} tools omitted for brevity]")
-        }
-        val sanitizedLogJson = sanitizeImageDataForLogging(logJson)
-        logLargeString(
-            "OpenRouterProvider",
-            sanitizedLogJson.toString(4),
-            "Final OpenRouter request body: "
-        )
+        logRequestBody("OpenRouterProvider", jsonObject, "Final OpenRouter request body: ")
 
         return createJsonRequestBody(jsonObject.toString())
     }
