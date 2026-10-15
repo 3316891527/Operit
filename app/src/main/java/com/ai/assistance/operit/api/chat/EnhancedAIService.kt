@@ -30,6 +30,7 @@ import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.climode.CliToolModeSupport
 import com.ai.assistance.operit.core.tools.climode.ToolExposureMode
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
+import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilitySession
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.data.model.PromptFunctionType
@@ -431,6 +432,7 @@ class EnhancedAIService private constructor(private val context: Context) {
         val isConversationActive: AtomicBoolean = AtomicBoolean(true),
         val conversationHistory: MutableList<PromptTurn>,
         val eventChannel: MutableSharedStream<TextStreamEvent>,
+        val permissionSession: PermissionCapabilitySession,
         var modelExecutionSnapshot: ModelExecutionSnapshot? = null
     )
 
@@ -1013,6 +1015,8 @@ class EnhancedAIService private constructor(private val context: Context) {
                 null
             }
 
+        // 一次用户消息对应一个权限快照会话，后续工具调用直接复用该结果。
+        val permissionSession = toolHandler.beginPermissionSession()
         AppLogger.d(TAG, "sendMessage调用开始: 功能类型=$functionType, 提示词类型=$promptFunctionType")
         accumulatedInputTokenCount = 0L
         accumulatedOutputTokenCount = 0L
@@ -1027,7 +1031,8 @@ class EnhancedAIService private constructor(private val context: Context) {
                 MessageExecutionContext(
                     executionId = nextExecutionContextId.incrementAndGet(),
                     conversationHistory = chatHistory.toMutableList(),
-                    eventChannel = eventChannel
+                    eventChannel = eventChannel,
+                    permissionSession = permissionSession
                 )
             registerExecutionContext(execContext)
             var hadFatalError = false
@@ -2250,6 +2255,7 @@ class EnhancedAIService private constructor(private val context: Context) {
                 toolHandler = toolHandler,
                 packageManager = packageManager,
                 collector = collector,
+                permissionSession = context.permissionSession,
                 toolExposureMode = ToolExposureMode.resolve(config.apiProviderType),
                 callerName = characterName,
                 callerChatId = chatId,
