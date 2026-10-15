@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.chat.viewmodel
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import android.provider.Settings
 import com.ai.assistance.operit.util.AppLogger
 import androidx.activity.result.ActivityResultLauncher
@@ -873,7 +874,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_no_active_conversation))
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                     return@launch
                 }
                 if (message.sender != "user" && message.sender != "ai") {
@@ -991,7 +992,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             AppLogger.d(TAG, "准备批量删除消息，索引: $indices")
             val chatIdSnapshot = chatHistoryDelegate.currentChatId.value
             if (chatIdSnapshot == null) {
-                uiStateDelegate.showToast(context.getString(R.string.chat_no_active_conversation))
+                Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
@@ -1747,7 +1748,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 与发消息保持一致：无活跃对话时给出明确提示，而不是静默失败
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 
                 // 显示附件处理进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1818,7 +1823,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 
                 // 显示屏幕内容获取进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1849,7 +1858,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 
                 // 显示通知获取进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1880,7 +1893,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             try {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 
                 // 显示位置获取进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
@@ -1912,7 +1929,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
-                if (currentChatId == null) return@launch
+                if (currentChatId == null) {
+                    // 无活跃对话时给出明确提示，而不是静默失败
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 // 显示记忆文件夹附着进度
                 messageProcessingDelegate.setInputProcessingStateForChat(
                     currentChatId,
@@ -1939,6 +1960,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     /** Handles a photo taken by the camera */
     fun handleTakenPhoto(uri: Uri) {
         viewModelScope.launch {
+            val currentChatId = chatHistoryDelegate.currentChatId.value
+            if (currentChatId == null) {
+                // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
+                Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                return@launch
+            }
             attachmentDelegate.handleTakenPhoto(uri)
         }
     }
@@ -1947,6 +1974,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     fun attachPackage(packageName: String) {
         viewModelScope.launch {
             try {
+                val currentChatId = chatHistoryDelegate.currentChatId.value
+                if (currentChatId == null) {
+                    // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
+                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
                 attachmentDelegate.attachPackage(packageName)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "添加包附件失败", e)
