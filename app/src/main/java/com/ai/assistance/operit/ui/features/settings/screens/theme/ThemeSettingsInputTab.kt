@@ -158,12 +158,6 @@ internal fun ThemeSettingsInputTab(
             currentColorPickerMode = "thinkingParticle",
             primaryColorInput = MaterialTheme.colorScheme.primary.toArgb(),
             secondaryColorInput = MaterialTheme.colorScheme.secondary.toArgb(),
-            statusBarColorInput = MaterialTheme.colorScheme.surface.toArgb(),
-            appBarColorInput = MaterialTheme.colorScheme.surface.toArgb(),
-            navigationDrawerBackgroundColorInput = MaterialTheme.colorScheme.surface.toArgb(),
-            navigationDrawerAccentColorInput = MaterialTheme.colorScheme.primary.toArgb(),
-            historyIconColorInput = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(),
-            pipIconColorInput = MaterialTheme.colorScheme.onSurfaceVariant.toArgb(),
             cursorUserBubbleColorInput = MaterialTheme.colorScheme.primaryContainer.toArgb(),
             bubbleUserBubbleColorInput = MaterialTheme.colorScheme.primaryContainer.toArgb(),
             bubbleAiBubbleColorInput = MaterialTheme.colorScheme.surface.toArgb(),
@@ -171,7 +165,7 @@ internal fun ThemeSettingsInputTab(
             bubbleAiTextColorInput = MaterialTheme.colorScheme.onSurface.toArgb(),
             recentColors = recentColors,
             thinkingParticleColorInput = thinkingParticleColorInput,
-            onColorSelected = { _, _, _, _, _, _, _, _, _, _, _, _, _ -> },
+            onColorSelected = { _, _, _, _, _, _, _ -> },
             onSimpleColorSelected = { color ->
                 editorSession.setInt("thinking_particle_color", color)
                 shared.scope.launch { editorSession.addRecentColor(color) }

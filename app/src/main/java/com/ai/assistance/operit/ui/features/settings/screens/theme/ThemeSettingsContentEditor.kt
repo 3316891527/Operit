@@ -331,6 +331,8 @@ internal fun ThemeSettingsContentEditor(
         val draft = state.session
         if (isSaving || pendingAction != null) return
         val savedValues = draft.currentValues
+        val savedGlobalUserName = draft.currentGlobalUserName
+        val saveGlobalUserName = draft.hasGlobalUserNameChanges
         val resetRequested = draft.isResetRequested
         isSaving = true
         showApplyToAllConfirm = false
@@ -343,7 +345,11 @@ internal fun ThemeSettingsContentEditor(
                     activePromptManager.commitThemeDraft(state.target, savedValues)
                 }
                 activePromptManager.applyVisualThemeToAllCharacterCards(savedValues)
-                draft.markSaved(savedValues)
+                // 全局名字只保存一次，不加入传播给各角色卡的视觉主题字段。
+                if (saveGlobalUserName) {
+                    displayPreferencesManager.saveDisplaySettings(globalUserName = savedGlobalUserName)
+                }
+                draft.markSaved(savedValues, savedGlobalUserName)
                 showSaveSuccessMessage = true
                 Toast.makeText(
                     context,

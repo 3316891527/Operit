@@ -58,6 +58,7 @@ import com.ai.assistance.operit.util.ChatUtils
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.util.ThinkingMarkup
 import com.ai.assistance.operit.util.stream.Stream
+import com.ai.assistance.operit.util.stream.stream
 import java.io.StringReader
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
