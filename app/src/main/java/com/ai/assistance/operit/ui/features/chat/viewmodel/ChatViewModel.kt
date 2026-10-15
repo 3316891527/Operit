@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.chat.viewmodel
 
 import android.Manifest
 import android.content.Context
+import com.ai.assistance.operit.util.LocaleUtils
 import android.content.Intent
 import android.widget.Toast
 import android.provider.Settings
@@ -111,7 +112,8 @@ enum class ChatHistoryDisplayMode {
     CURRENT_CHARACTER_ONLY
 }
 
-class ChatViewModel(private val context: Context) : ViewModel() {
+class ChatViewModel(context: Context) : ViewModel() {
+    private val context: Context = LocaleUtils.getLocalizedContext(context.applicationContext)
 
     companion object {
         private const val TAG = "ChatViewModel"
@@ -554,7 +556,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         if (targetChatId != null) {
                             messageProcessingDelegate.setInputProcessingStateForChat(
                                 targetChatId,
-                                InputProcessingState.Summarizing(context.getString(R.string.chat_summarizing_memory))
+                                InputProcessingState.Summarizing(
+                                    LocaleUtils.getLocalizedContext(context).getString(R.string.chat_summarizing_memory)
+                                )
                             )
                         }
                     } else if (::messageProcessingDelegate.isInitialized) {
@@ -885,7 +889,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 // 设置输入处理状态（按chatId隔离）
                 messageProcessingDelegate.setInputProcessingStateForChat(
                     currentChatId,
-                    InputProcessingState.Summarizing(context.getString(R.string.chat_summarizing_generating))
+                    InputProcessingState.Summarizing(
+                        LocaleUtils.getLocalizedContext(context).getString(R.string.chat_summarizing_generating)
+                    )
                 )
 
                 val beforeTimestamp = if (message.sender == "ai") message.timestamp else null
@@ -907,7 +913,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 }
                 
                 // 显示生成中提示
-                uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_generating))
+                uiStateDelegate.showToast(
+                    LocaleUtils.getLocalizedContext(context).getString(R.string.chat_summarizing_generating)
+                )
                 
                 // 调用AI生成总结
                 if (enhancedAiService == null) {
