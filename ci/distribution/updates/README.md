@@ -1,0 +1,42 @@
+# 独立发行的 Release 与增量更新
+
+客户端更新源为 `3316891527/Operit` 的 GitHub Releases。更新检查、补丁生成和 APK 还原均在本仓库实现，不需要上游维护者的私有后端。`about_website` 保留项目原有介绍用途，独立发行版不再从其中推导更新仓库。
+
+## 首次接入
+
+先完整安装一次包含独立更新源的 `1.12.2+1`。更早安装包仍查询上游仓库，仅在个人仓库创建标签或 Release 无法改变旧安装包中的更新源。包名保持 `com.ai.assistance.operit.kong`，沿用已有固定签名，versionCode 保持递增。
+
+首次发布建立完整 APK 基线。没有基础 APK 的发布不生成增量包；完整 APK 必须保留在 Release 中，供新用户安装和后续工作流生成补丁。仅创建标签或只上传工作流 artifact 不会形成应用可发现的更新。
+
+## 发布方法
+
+在个人仓库的 Android Build 工作流中选择 `feat/integrated-distribution` 分支，任务选择 `:app:verifyCiPreviewRelease`，勾选 `publish_release` 并填写 `release_notes`。`previous_tag` 留空时选择同一基础版本中版本号最高且早于目标的正式 Release；也可指定符合条件的标签。普通构建的 `publish_release` 默认为 false。
+
+发布前同时提高 `versionName` 中的 `+n` 和 Android `versionCode`，例如从 `1.12.2+1`、53 改为 `1.12.2+2`、54。应使用仓库工作流验证过的源码提交；Android Build 本身执行发布脚本回归和 APK 验证，Android Tests 另行覆盖应用 JVM 用例。
+
+工作流读取 APK 内的实际版本并创建对应 `v1.12.2+n` 标签，目标固定为本次构建提交。已有 Release 不会被覆盖。发布先创建草稿并上传全部文件，文件到齐后再公开。仓库的工作流 Token 需要 `contents: write`，由工作流配置声明。
+
+## 补丁协议与校验
+
+复用 `tools/hotbuild/build_patch.py` 和 `apply_patch.py` 的 `apkraw-1` 协议。生成器比较 ZIP 原始记录，复制未变化的记录，携带变化记录及原 APK 的尾部，保留签名区和完整文件布局。发布前执行一次还原并比对目标 APK 的 SHA-256，客户端也核对基础 APK、补丁和目标 APK 的哈希。
+
+工作流校验新旧 APK 的 Kong 包名和已有证书指纹，并要求新版 versionCode 大于基础 APK。基础 Release 标签必须与其 APK 内的版本一致。补丁只在同一基础版本内生成，跨 `x.y.z` 的更新提供完整 APK。
+
+发布文件包括：
+
+- `app-kong.apk`：固定签名完整包
+- `apkrawpatch_*.zip`：存在同一基础版本的已发布基础 APK 时生成
+- `patch_*.json`：补丁完整元数据，与增量 ZIP 成对生成
+- `distribution-release.json`：发布摘要、展示文案、版本和哈希
+
+Release 正文保存 JSON 摘要，供既有补丁链扫描读取；应用更新界面显示其中的 `releaseNotes`。手动发布完整包时可使用普通正文，但必须提供 `app-kong.apk` 和规范版本标签；增量发布应使用工作流生成完整配套元数据。
+
+补丁可沿已发布链路跨过多个 `+n` 版本，现有安装器最多扫描最近 100 个 Release、连接 64 步。保留链上的 Release 和补丁文件。用户安装的 APK 必须与链上基线逐字节匹配；自行重签名或重新打包的 APK 不适用该补丁链。
+
+下载大小由实际变化决定。未变化的大模型或资源可以复用，模型、原生库或大量压缩记录发生变化时，补丁仍可能接近完整 APK 大小。
+
+## 验证状态
+
+新增发布脚本回归覆盖版本格式、基线选择、APK 包名与签名、原始记录复用和逐字节还原。客户端 JVM 用例覆盖同基础版本增量、跨基础版本完整包、数字版本排序、无更新、草稿与预发布过滤、资源配对和文案提取。
+
+本地仅进行源码、Python 语法、YAML 和 diff 检查，未运行构建或测试。实际运行结果以本轮 GitHub Actions 为准；尚未创建真实 Release 或完成设备上的增量安装。
