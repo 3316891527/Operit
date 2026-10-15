@@ -6,7 +6,7 @@ import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /** 先完成结构升级；旧正文留在 searchText，后台再解析成 sections。 */
-internal object MessageSectionsMigration : Migration(21, 22) {
+internal object MessageSectionsMigration : Migration(23, 24) {
     override fun migrate(db: SupportSQLiteDatabase) = migrate(cursorDatabase(db))
 
     override fun migrate(connection: SQLiteConnection) = migrate(connectionDatabase(connection))

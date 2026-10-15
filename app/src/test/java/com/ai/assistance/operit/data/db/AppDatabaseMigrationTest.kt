@@ -8,6 +8,23 @@ import org.junit.Test
 
 class AppDatabaseMigrationTest {
     @Test
+    fun migration25To26AddsPeakDaySwitches() {
+        val executedSql = mutableListOf<String>()
+
+        AppDatabase.MIGRATION_25_26.migrate(recordingDatabase(executedSql))
+
+        val normalizedSql = executedSql.map { it.replace(Regex("\\s+"), " ").trim() }
+        assertSqlWasExecuted(
+            normalizedSql,
+            "ALTER TABLE token_stats_models ADD COLUMN `weekendOffPeakPricingEnabled` INTEGER",
+        )
+        assertSqlWasExecuted(
+            normalizedSql,
+            "ALTER TABLE token_stats_models ADD COLUMN `holidayOffPeakPricingEnabled` INTEGER",
+        )
+    }
+
+    @Test
     fun migration20To21CreatesMessageIndexesExpectedByRoom() {
         val executedSql = mutableListOf<String>()
 
@@ -24,10 +41,10 @@ class AppDatabaseMigrationTest {
         )
     }
     @Test
-    fun migration21To22CreatesApiKeyAttemptTable() {
+    fun migration22To23CreatesApiKeyAttemptTable() {
         val executedSql = mutableListOf<String>()
 
-        AppDatabase.MIGRATION_21_22.migrate(recordingDatabase(executedSql))
+        AppDatabase.MIGRATION_22_23.migrate(recordingDatabase(executedSql))
 
         val normalizedSql = executedSql.map { it.replace(Regex("\\s+"), " ").trim() }
         assertTrue(

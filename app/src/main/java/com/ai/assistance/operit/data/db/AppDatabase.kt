@@ -25,7 +25,7 @@ import com.ai.assistance.operit.util.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 22
+private const val APP_DATABASE_VERSION = 26
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
@@ -282,7 +282,41 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         /** v20 -> v21: token statistics schema and Room-declared message indexes. */
-        internal val MIGRATION_21_22 = MessageSectionsMigration
+        internal val MIGRATION_23_24 = MessageSectionsMigration
+
+        /** v24 -> v25: 为模型价格增加峰谷和长上下文倍率配置。 */
+        internal val MIGRATION_24_25 =
+            object : Migration(24, 25) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `peakPricingEnabled` INTEGER")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `peakScheduleJson` TEXT")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `peakInputMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `peakCachedInputMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `peakCacheWriteMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `peakOutputMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextPricingEnabled` INTEGER")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextThreshold` INTEGER")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextInputMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextCachedInputMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextCacheWriteMultiplier` REAL")
+                    db.execSQL("ALTER TABLE token_stats_models ADD COLUMN `longContextOutputMultiplier` REAL")
+                }
+            }
+
+        /** v25 -> v26: 为峰谷规则增加周末和法定节假日低谷开关。 */
+        internal val MIGRATION_25_26 =
+            object : Migration(25, 26) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "ALTER TABLE token_stats_models " +
+                            "ADD COLUMN `weekendOffPeakPricingEnabled` INTEGER"
+                    )
+                    db.execSQL(
+                        "ALTER TABLE token_stats_models " +
+                            "ADD COLUMN `holidayOffPeakPricingEnabled` INTEGER"
+                    )
+                }
+            }
 
         internal val MIGRATION_20_21 =
             object : Migration(20, 21) {
@@ -399,9 +433,9 @@ abstract class AppDatabase : RoomDatabase() {
             }
 
 
-        /** v21 -> v22: per-key attempt log for pool failover. */
-        internal val MIGRATION_21_22 =
-            object : Migration(21, 22) {
+        /** v22 -> v23: 增加密钥池请求尝试日志，接在基点文件夹迁移之后。 */
+        internal val MIGRATION_22_23 =
+            object : Migration(22, 23) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     runSql { db.execSQL(it) }
                 }
@@ -635,7 +669,11 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_18_19,
                     MIGRATION_19_20,
                     MIGRATION_20_21,
-                    MIGRATION_21_22
+                    MIGRATION_21_22,
+                    MIGRATION_22_23,
+                    MIGRATION_23_24,
+                    MIGRATION_24_25,
+                    MIGRATION_25_26
                 )
                 .build()
 
