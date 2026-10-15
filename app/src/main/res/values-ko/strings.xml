@@ -7440,8 +7440,8 @@
     <string name="token_stats_chart_next_bucket">다음 시간 버킷</string>
     <string name="token_stats_chart_bucket_of">버킷 %1$d / %2$d</string>
     <string name="token_stats_chart_summary">%1$s, %2$s, %3$s, 합계 %4$s</string>
-    
-    
+
+
     <string name="deepseek_files_api_hint">이미지는 DeepSeek Files API에 자동 업로드되고 file_id로 참조됩니다. 실패 시 인라인 Base64로 대체됩니다.</string>
     <string name="enable_codex_web_search">Codex 웹 검색 활성화</string>
     <string name="enable_codex_web_search_desc">Codex에 로그인하면 모델이 서버 측 웹 검색을 사용할 수 있습니다.</string>

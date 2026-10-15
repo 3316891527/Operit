@@ -80,7 +80,6 @@ import com.ai.assistance.operit.ui.features.storage.MemoryLibraryStorageScreen
 import com.ai.assistance.operit.ui.features.storage.WorkspaceMediaStorageScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.AppPermissionsToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.LogcatToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.ShellExecutorToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoScreen

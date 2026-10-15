@@ -248,10 +248,10 @@ object TokenStatsQueryService {
                 recordsByIdentity[usageIdentityKey(usageRow)]?.let { records ->
                     TokenCostCalculator.currentCost(
                         records,
-                    pricing,
-                    params.targetCurrency,
-                    params.manualRate,
-                )
+                        pricing,
+                        params.targetCurrency,
+                        params.manualRate,
+                    )
                 } ?: TokenCostCalculator.currentCost(
                     usageRow,
                     pricing,

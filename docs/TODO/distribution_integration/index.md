@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/integrated-distribution
-status: integrating
+status: integrated-awaiting-ci
 ---
 # 独立发行集成
 
@@ -20,6 +20,18 @@ status: integrating
 
 #1338 的源分支 `fix/waifu-markdown-rendering-1280` 后来兼作 APK 集成分支，并合入 #1372 的聊天 UI 改动及 Kong 打包配置，因此 PR 相对 `dev` 扩大到 285 个文件。Waifu 修复本身并不需要如此多的改动。其当前源提交正是本次发行基点，顺序整合时按已包含记录。
 
+## 完成范围
+
+52 项来源已按清单顺序处理。51 项生成按序合并提交，#1338 的固定来源已在基点中；全部来源提交都可在最终分支历史中追溯。保留原有功能分支，不把本次发行集成反向同步到各个上游 PR。
+
+[集成与兼容记录](./01-集成与兼容记录.md)、[完整集成回归清单](./02-完整集成回归清单.md) 和 [逐项合并结果](./merge-results.json) 记录来源、人工协调与验证边界。
+
 ## 验证状态
 
-集成进行中。尚未执行本轮 Android 构建、JVM 测试或设备验证；工作流派发与结果将在整合完成后记录。
+来源数量、顺序与提交可追溯性、资源 XML、重复资源、孤立翻译及 diff 空白检查已通过。对手动协调的 Kotlin 文件及原生围栏插件做了辅助语法扫描；静态检查不能代替 Android 编译和运行验证。
+
+新增数据库联合迁移和 CSV 兼容回归，尚未运行。本轮不在本地执行 Android 构建或 JVM 测试，由本分支 [Android Build](https://github.com/3316891527/Operit/actions/workflows/android-build.yml?query=branch%3Afeat%2Fintegrated-distribution) 和 [Android Tests](https://github.com/3316891527/Operit/actions/workflows/android-tests.yml?query=branch%3Afeat%2Fintegrated-distribution) 工作流执行，实际通过与 APK 产出以对应运行结果为准。
+
+设备回归尚未执行。[聊天 UI 原有 216 项清单](../chat_ui_redesign/24-回归清单.md) 和本轮集成清单均保留，历史通过不等于本轮集成版本通过。
+
+[DONE] 按指定基点和编号顺序完成源码整合；构建、测试和设备结果待确认。

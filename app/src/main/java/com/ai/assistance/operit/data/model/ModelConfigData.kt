@@ -57,7 +57,8 @@ enum class ApiProviderType {
                 }
         }
 
-        private val apiKeyPoolSupportedProviders = setOf(
+        // 在调用时判断能力，避免枚举实例构造期间读取尚未初始化的其他枚举项。
+        fun supportsApiKeyPool(): Boolean = when (this) {
                 OPENAI,
                 XAI,
                 OPENAI_RESPONSES,
@@ -90,10 +91,8 @@ enum class ApiProviderType {
                 NOVITA,
                 MINIMAX,
                 OTHER,
-        )
-
-        fun supportsApiKeyPool(): Boolean {
-                return this in apiKeyPoolSupportedProviders
+                -> true
+                else -> false
         }
 }
 

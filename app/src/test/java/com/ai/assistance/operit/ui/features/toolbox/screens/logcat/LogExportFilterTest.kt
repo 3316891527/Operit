@@ -104,4 +104,3 @@ class LogExportFilterTest {
         assertEquals(listOf("I/ToolPkg: package loaded"), result.lines)
     }
 }
-

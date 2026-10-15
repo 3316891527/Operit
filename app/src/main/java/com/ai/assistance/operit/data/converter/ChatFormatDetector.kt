@@ -150,7 +150,7 @@ object ChatFormatDetector {
         // Operit 版本化 CSV 使用稳定表头，并且字段可能跨越多行，
         // 因此不能要求每个物理行都包含逗号。
         val normalizedFirstLine = lines.first().removePrefix("\uFEFF").trim()
-        if (normalizedFirstLine == ChatHistoryCsv.HEADER.joinToString(",")) {
+        if (ChatHistoryCsv.supportsHeader(normalizedFirstLine.split(",").map { it.trim() })) {
             return true
         }
 

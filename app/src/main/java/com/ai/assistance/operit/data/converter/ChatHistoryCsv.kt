@@ -81,6 +81,19 @@ object ChatHistoryCsv {
 
     private val columnIndex = HEADER.withIndex().associate { it.value to it.index }
 
+    /** 识别结构化片段和旧正文格式，文件夹字段允许来自加入文件夹功能之前的备份。 */
+    fun supportsHeader(header: List<String>): Boolean {
+        val optionalColumns = setOf(
+            "message_sections", "variant_sections", "folder_id", "last_used_at", "folder_path",
+        )
+        val requiredColumns = HEADER.filterNot { it in optionalColumns }
+        val hasMessageColumns =
+            ("message_sections" in header && "variant_sections" in header) ||
+                ("message_content" in header && "variant_content" in header)
+        return header.distinct().size == header.size &&
+            header.containsAll(requiredColumns) && hasMessageColumns
+    }
+
     fun writeHeader(writer: Writer) {
         writeRow(writer, HEADER)
     }

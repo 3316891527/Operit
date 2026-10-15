@@ -281,7 +281,7 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        /** v20 -> v21: token statistics schema and Room-declared message indexes. */
+        /** v23 -> v24: 将消息正文与候选变体迁移为结构化片段。 */
         internal val MIGRATION_23_24 = MessageSectionsMigration
 
         /** v24 -> v25: 为模型价格增加峰谷和长上下文倍率配置。 */

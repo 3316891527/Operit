@@ -414,75 +414,6 @@ class ChatHistoryManager private constructor(private val context: Context) {
         AppLogger.d(TAG, "流式导出 Operit 聊天记录完成，共 ${chatHistories.size} 个会话，目标=${file.absolutePath}")
     }
 
-    private suspend fun exportOperitArchiveCsvStream(
-        file: File,
-        chatHistories: List<ChatHistory>,
-    ) {
-        val exportedFolders = chatFolders.exportFolders(chatHistories.map { it.id }.toSet())
-        val foldersById = exportedFolders.associateBy { it.id }
-        AppLogger.d(TAG, "开始导出 Operit CSV 聊天记录，共 ${chatHistories.size} 个会话，目标=${file.absolutePath}")
-        BufferedWriter(
-            OutputStreamWriter(FileOutputStream(file), StandardCharsets.UTF_8),
-        ).use { writer ->
-            ChatHistoryCsv.writeHeader(writer)
-            exportedFolders.forEach { ChatHistoryCsv.writeFolder(writer, it) }
-            chatHistories.forEachIndexed { index, chatHistory ->
-                val archivedChat = OperitArchivedChat.fromChatHistory(chatHistory, emptyList()).copy(
-                    folderPath = folderAncestors(chatHistory.folderId, foldersById),
-                )
-                ChatHistoryCsv.writeChat(writer, archivedChat)
-                var offset = 0
-                while (true) {
-                    val messagePage = chatContentDao.getMessagesForChatAscRange(
-                        chatId = chatHistory.id,
-                        offset = offset,
-                        limit = MESSAGE_EXPORT_PAGE_SIZE,
-                    )
-                    if (messagePage.isEmpty()) {
-                        break
-                    }
-                    val variantsByTimestamp =
-                        chatContentDao
-                            .getVariantsForMessages(
-                                chatHistory.id,
-                                messagePage.map { it.timestamp },
-                            )
-                            .groupBy { it.messageTimestamp }
-                    messagePage.forEachIndexed { pageIndex, messageEntity ->
-                        val messageVariants = variantsByTimestamp[messageEntity.timestamp].orEmpty()
-                        val message = messageEntity.toChatMessage().copy(
-                            variantCount = messageVariants.size + 1,
-                        )
-                        ChatHistoryCsv.writeMessage(
-                            writer = writer,
-                            chatId = archivedChat.id,
-                            orderIndex = offset + pageIndex,
-                            message = message,
-                        )
-                        messageVariants.forEach { variantEntity ->
-                            ChatHistoryCsv.writeVariant(
-                                writer = writer,
-                                chatId = archivedChat.id,
-                                messageTimestamp = message.timestamp,
-                                variant = OperitArchivedMessageVariant.fromEntity(variantEntity),
-                            )
-                        }
-                    }
-                    offset += messagePage.size
-                    writer.flush()
-                    yield()
-                }
-                writer.flush()
-                if ((index + 1) % 20 == 0 || index == chatHistories.lastIndex) {
-                    AppLogger.d(
-                        TAG,
-                        "CSV 导出进度: ${index + 1}/${chatHistories.size}，chatId=${archivedChat.id}，messages=$offset",
-                    )
-                }
-            }
-        }
-        AppLogger.d(TAG, "CSV 导出 Operit 聊天记录完成，共 ${chatHistories.size} 个会话，目标=${file.absolutePath}")
-    }
     private fun writeJsonMessage(writer: JsonWriter, message: ChatMessage) {
         // 每次只序列化一条消息，使用统一序列化器保留结构化片段与旧备份兼容语义。
         writer.jsonValue(operitArchiveJson.encodeToString(message))
@@ -2363,12 +2294,15 @@ class ChatHistoryManager private constructor(private val context: Context) {
         totalTextCharacters: Long,
         onProgress: ((ChatExportProgress) -> Unit)?,
     ) {
+        val exportedFolders = chatFolders.exportFolders(chatHistories.map { it.id }.toSet())
+        val foldersById = exportedFolders.associateBy { it.id }
         val progressReporter = ChatExportProgressReporter(totalTextCharacters, onProgress)
         BufferedWriter(
             OutputStreamWriter(FileOutputStream(file), StandardCharsets.UTF_8),
             TEXT_EXPORT_WRITER_BUFFER_SIZE,
         ).use { writer ->
             ChatHistoryCsv.writeHeader(writer)
+            exportedFolders.forEach { ChatHistoryCsv.writeFolder(writer, it) }
             for (chatHistory in chatHistories) {
                 ChatHistoryCsv.writeChat(
                     writer,
@@ -2685,19 +2619,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
             val normalizedHeader = header.mapIndexed { index, value ->
                 if (index == 0) value.removePrefix("\uFEFF") else value
             }.map { it.trim() }
-            val optionalColumns = setOf(
-                "message_sections", "variant_sections", "folder_id", "last_used_at", "folder_path",
-            )
-            val requiredColumns = ChatHistoryCsv.HEADER.filterNot { it in optionalColumns }
-            require(normalizedHeader.distinct().size == normalizedHeader.size &&
-                normalizedHeader.containsAll(requiredColumns)) {
+            require(ChatHistoryCsv.supportsHeader(normalizedHeader)) {
                 "Unsupported Operit CSV header"
             }
             val columns = normalizedHeader.withIndex().associate { it.value to it.index }
-            require(("message_sections" in columns && "variant_sections" in columns) ||
-                ("message_content" in columns && "variant_content" in columns)) {
-                "Operit CSV must contain structured sections or legacy content columns"
-            }
 
             while (true) {
                 val row = rowReader.nextRow() ?: break
