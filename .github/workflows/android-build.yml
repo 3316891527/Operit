@@ -14,6 +14,7 @@ on:
           - ':app:assembleClone'
           - ':app:verifyCiPreviewRelease'
           - ':app:bundleRelease'
+          - publishOfflineResources
       publish_release:
         description: 发布独立发行 Release 并生成增量包
         required: true
@@ -63,7 +64,7 @@ on:
       - web-chat/**
 
 concurrency:
-  group: android-build-${{ github.event_name }}-${{ github.ref }}
+  group: android-build-${{ github.event_name }}-${{ github.ref }}-${{ inputs.gradle_task }}
   cancel-in-progress: true
 
 permissions:
@@ -80,6 +81,7 @@ env:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_dispatch' || inputs.gradle_task != 'publishOfflineResources'
     name: Build Android artifacts
     runs-on: ubuntu-24.04
     timeout-minutes: 240
@@ -290,3 +292,28 @@ jobs:
             --commit "$GITHUB_SHA" \
             --previous-tag "$PREVIOUS_TAG" \
             --notes "$RELEASE_NOTES"
+
+  resources:
+    if: github.event_name == 'workflow_dispatch' && inputs.gradle_task == 'publishOfflineResources'
+    name: Publish fixed offline resources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: publish-offline-resources-v1
+      cancel-in-progress: false
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Prepare, verify and publish resources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 ci/distribution/resources/publish_resources.py --source-artifact-id 11956415189
