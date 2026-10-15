@@ -619,9 +619,12 @@ if (ciPreviewRelease) {
             badgingReport.writeText(badging)
         }
     }
-    // 使用已有 bundleRelease 入口，产出使用独立包名的共存 APK 和 AAB。
+    // 保留现有发布入口；下载产物只保留共存 APK，避免上传规则同时收集 AAB。
     tasks.matching { it.name == "bundleRelease" }.configureEach {
         dependsOn(verifyCiPreviewRelease)
+        doLast {
+            project.delete(layout.buildDirectory.dir("outputs/bundle"))
+        }
     }
 }
 
