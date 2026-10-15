@@ -1,9 +1,20 @@
 package com.ai.assistance.operit.ui.common.markdown
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.data.model.MessageSectionCodec
+import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import com.ai.assistance.operit.util.markdown.MarkdownNode
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
+
+/** 分块已有解析节点，不再为每块校验整条正文；独立消息按内容变化准备显示片段。 */
+@Composable
+internal fun rememberDisplayMessageSections(message: ChatMessage): List<MessageSection> {
+    if (LocalMarkdownRenderFragment.current != null) return emptyList()
+    return remember(message.content, message.sections) { message.displaySections() }
+}
 
 /** 已分类的工具、思考和状态片段直接生成 XML 节点，正文继续使用现有 Markdown 解析。 */
 internal suspend fun parseMessageSectionsToNodes(

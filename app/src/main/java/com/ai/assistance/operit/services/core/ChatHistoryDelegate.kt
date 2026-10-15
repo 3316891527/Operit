@@ -6,6 +6,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.data.model.ChatMessagePageMetadata
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
 import com.ai.assistance.operit.data.model.WorkspaceRenameResult
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
@@ -165,76 +166,53 @@ class ChatHistoryDelegate(
         chatId: String,
         pageCount: Int,
         endTimestampInclusive: Long? = null,
-    ): List<ChatMessage> {
-        val collectedMessagesDesc = mutableListOf<ChatMessage>()
-        var beforeTimestampExclusive: Long? = null
-
-        while (true) {
-            val batch =
-                if (endTimestampInclusive != null && beforeTimestampExclusive == null) {
-                    chatHistoryManager.loadChatMessagesDescUpTo(
-                        chatId = chatId,
-                        maxTimestampInclusive = endTimestampInclusive,
-                        limit = DISPLAY_WINDOW_QUERY_BATCH_SIZE,
-                    )
-                } else {
-                    chatHistoryManager.loadChatMessagesDesc(
-                        chatId = chatId,
-                        limit = DISPLAY_WINDOW_QUERY_BATCH_SIZE,
-                        beforeTimestampExclusive = beforeTimestampExclusive,
-                    )
-                }
-            if (batch.isEmpty()) {
-                break
-            }
-
-            collectedMessagesDesc += batch
-            val currentAscendingMessages = collectedMessagesDesc.asReversed()
-            if (countDisplayPages(currentAscendingMessages) >= pageCount) {
-                return takeNewestDisplayPages(currentAscendingMessages, pageCount)
-            }
-
-            beforeTimestampExclusive = batch.lastOrNull()?.timestamp
-            if (batch.size < DISPLAY_WINDOW_QUERY_BATCH_SIZE || beforeTimestampExclusive == null) {
-                break
-            }
-        }
-
-        return takeNewestDisplayPages(collectedMessagesDesc.asReversed(), pageCount)
-    }
+    ): List<ChatMessage> = collectDisplayPagesBefore(
+        chatId = chatId,
+        pageCount = pageCount,
+        endTimestampInclusive = endTimestampInclusive,
+    )
 
     private suspend fun collectOlderDisplayPagesBefore(
         chatId: String,
         beforeTimestampExclusive: Long,
         pageCount: Int,
+    ): List<ChatMessage> = collectDisplayPagesBefore(
+        chatId = chatId,
+        pageCount = pageCount,
+        beforeTimestampExclusive = beforeTimestampExclusive,
+    )
+
+    private suspend fun collectDisplayPagesBefore(
+        chatId: String,
+        pageCount: Int,
+        beforeTimestampExclusive: Long? = null,
+        endTimestampInclusive: Long? = null,
     ): List<ChatMessage> {
-        val collectedMessagesDesc = mutableListOf<ChatMessage>()
+        if (pageCount <= 0) return emptyList()
+        val collectedMetadataDesc = mutableListOf<ChatMessagePageMetadata>()
         var nextBeforeTimestampExclusive = beforeTimestampExclusive
-
         while (true) {
-            val batch =
-                chatHistoryManager.loadChatMessagesDesc(
-                    chatId = chatId,
-                    limit = DISPLAY_WINDOW_QUERY_BATCH_SIZE,
-                    beforeTimestampExclusive = nextBeforeTimestampExclusive,
-                )
-            if (batch.isEmpty()) {
-                break
-            }
-
-            collectedMessagesDesc += batch
-            val currentAscendingMessages = collectedMessagesDesc.asReversed()
-            if (countDisplayPages(currentAscendingMessages) >= pageCount) {
-                return takeNewestDisplayPages(currentAscendingMessages, pageCount)
-            }
-
-            nextBeforeTimestampExclusive = batch.lastOrNull()?.timestamp ?: break
-            if (batch.size < DISPLAY_WINDOW_QUERY_BATCH_SIZE) {
-                break
-            }
+            val batch = chatHistoryManager.loadChatMessagePageMetadataDesc(
+                chatId = chatId,
+                limit = DISPLAY_WINDOW_QUERY_BATCH_SIZE,
+                beforeTimestampExclusive = nextBeforeTimestampExclusive,
+                upToTimestampInclusive = endTimestampInclusive,
+            )
+            if (batch.isEmpty()) break
+            collectedMetadataDesc += batch
+            val ranges = resolveDisplayPageRangesFromMetadata(collectedMetadataDesc.asReversed())
+            if (ranges.size >= pageCount || batch.size < DISPLAY_WINDOW_QUERY_BATCH_SIZE) break
+            nextBeforeTimestampExclusive = batch.last().timestamp
         }
-
-        return takeNewestDisplayPages(collectedMessagesDesc.asReversed(), pageCount)
+        if (collectedMetadataDesc.isEmpty()) return emptyList()
+        val ranges = resolveDisplayPageRangesFromMetadata(collectedMetadataDesc.asReversed())
+        val firstRange = ranges[(ranges.size - pageCount).coerceAtLeast(0)]
+        // 页边界确定后只还原实际要显示的正文，较新的消息也不越过本次读取的截止点。
+        return chatHistoryManager.loadChatMessagesWindow(
+            chatId = chatId,
+            startTimestampInclusive = firstRange.startTimestampInclusive,
+            endTimestampInclusive = collectedMetadataDesc.first().timestamp,
+        )
     }
 
     private suspend fun collectNewerDisplayPagesAfter(

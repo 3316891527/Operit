@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.model
 
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -51,9 +52,11 @@ object MessageSectionStorage {
 
     private fun decodeStored(stored: String): List<MessageSection> {
         if (stored.startsWith("operit-sections:1:")) return decodeLegacy(stored)
+        // 规范数组直接解码，避免长工具结果先生成完整 JSON 树，再生成片段对象。
+        if (stored.firstOrNull { !it.isWhitespace() } == '[') {
+            return json.decodeFromString<List<MessageSection>>(stored)
+        }
         return when (val element = json.parseToJsonElement(stored)) {
-            is kotlinx.serialization.json.JsonArray ->
-                json.decodeFromJsonElement<List<MessageSection>>(element)
             is JsonObject -> decodeLegacySections(
                 element["sections"]
                     ?: throw kotlinx.serialization.SerializationException("Missing sections field")

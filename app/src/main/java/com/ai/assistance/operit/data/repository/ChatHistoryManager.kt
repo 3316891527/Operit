@@ -21,6 +21,7 @@ import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
+import com.ai.assistance.operit.data.model.ChatMessagePageMetadata
 import com.ai.assistance.operit.data.model.CharacterCardChatStats
 import com.ai.assistance.operit.data.model.CharacterGroupChatStats
 import com.ai.assistance.operit.data.model.MessageEntity
@@ -3188,6 +3189,17 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 false
             }
         }
+    }
+
+    suspend fun loadChatMessagePageMetadataDesc(
+        chatId: String,
+        limit: Int,
+        beforeTimestampExclusive: Long?,
+        upToTimestampInclusive: Long?,
+    ): List<ChatMessagePageMetadata> = withContext(Dispatchers.IO) {
+        messageDao.getPageMetadataForChatDesc(
+            chatId, limit, beforeTimestampExclusive, upToTimestampInclusive,
+        )
     }
 
     suspend fun loadChatMessagesDesc(

@@ -6,11 +6,26 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
+import com.ai.assistance.operit.data.model.ChatMessagePageMetadata
 import com.ai.assistance.operit.data.model.MessageEntity
 
 /** 消息DAO接口，定义对消息表的数据访问方法 */
 @Dao
 interface MessageDao {
+    /** 先确定页面范围，避免为丢弃的页外消息读取并解码 sections。 */
+    @Query(
+        "SELECT sender, timestamp FROM messages WHERE chatId = :chatId" +
+            " AND (:beforeTimestampExclusive IS NULL OR timestamp < :beforeTimestampExclusive)" +
+            " AND (:upToTimestampInclusive IS NULL OR timestamp <= :upToTimestampInclusive)" +
+            " ORDER BY timestamp DESC LIMIT :limit"
+    )
+    suspend fun getPageMetadataForChatDesc(
+        chatId: String,
+        limit: Int,
+        beforeTimestampExclusive: Long?,
+        upToTimestampInclusive: Long?,
+    ): List<ChatMessagePageMetadata>
+
     /** 获取消息总数 */
     @Query("SELECT COUNT(*) FROM messages")
     suspend fun getTotalMessageCount(): Int

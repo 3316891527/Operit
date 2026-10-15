@@ -901,9 +901,21 @@ fun StreamMarkdownRenderer(
     state: StreamMarkdownRendererState? = null,
     enableDialogs: Boolean = true,
     fillMaxWidth: Boolean = true,
+    renderContent: Boolean = true,
 ) {
+    // 必须先复用时间线的块节点，避免滚动时重新拼接整条消息及构造缓存键。
+    if (renderContent) {
+        val fragment = LocalMarkdownRenderFragment.current
+        if (fragment != null) {
+            CompositionLocalProvider(LocalMarkdownRenderFragment provides null) {
+                fragment.Render(modifier, textColor, fontSize, onLinkClick, xmlRenderer, nodeGrouper, enableDialogs, fillMaxWidth)
+            }
+            return
+        }
+    }
+    val content = remember(sections) { MessageSectionCodec.render(sections) }
     StreamMarkdownRenderer(
-        content = MessageSectionCodec.render(sections),
+        content = content,
         modifier = modifier,
         textColor = textColor,
         fontSize = fontSize,
@@ -914,6 +926,7 @@ fun StreamMarkdownRenderer(
         state = state,
         enableDialogs = enableDialogs,
         fillMaxWidth = fillMaxWidth,
+        renderContent = renderContent,
         messageSections = sections,
     )
 }

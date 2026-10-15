@@ -1,11 +1,9 @@
 package com.ai.assistance.operit.data.resources
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
-import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
 import com.ai.assistance.operit.util.OperitPaths
 import java.io.File
 import java.io.IOException
@@ -92,11 +90,7 @@ object OfflineResources {
         access(context, id) { dir, files ->
             val jobContext = currentCoroutineContext()
             if (!files.all { ResourceArchive.verified(File(dir, it.name), it) { jobContext.ensureActive() } }) {
-                withContext(Dispatchers.Main) {
-                    context.startActivity(Intent(context, OfflineResourcesActivity::class.java)
-                        .putExtra(OfflineResourcesActivity.EXTRA_GROUP, id)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-                }
+                // 资源检查也会被后台初始化调用，导航由用户从设置主动发起。
                 throw IOException(context.getString(R.string.offline_resources_missing))
             }
             action(dir, files)

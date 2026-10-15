@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.bubble
 
 import com.ai.assistance.operit.ui.features.chat.components.timeline.LocalChatMessageSlice
+import com.ai.assistance.operit.ui.common.markdown.rememberDisplayMessageSections
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -408,7 +409,7 @@ fun BubbleAiMessageComposable(
                                 )
                             } else {
                                 StreamMarkdownRenderer(
-                                    sections = message.displaySections(),
+                                    sections = rememberDisplayMessageSections(message),
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -621,7 +622,7 @@ fun BubbleAiMessageComposable(
                                 // 对于已完成的静态消息，使用 content 参数的渲染器以支持Markdown
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
-                                    sections = message.displaySections(),
+                                    sections = rememberDisplayMessageSections(message),
                                     textColor = textColor,
                                     backgroundColor = backgroundColor,
                                     onLinkClick = rememberedOnLinkClick,

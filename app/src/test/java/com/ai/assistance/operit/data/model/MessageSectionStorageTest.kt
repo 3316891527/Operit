@@ -78,6 +78,20 @@ class MessageSectionStorageTest {
     }
 
 
+    @Test fun decode_directArrayPreservesLongEscapedToolPayload() {
+        val payload = "换行\n引号\"反斜杠\\和中文".repeat(8_192)
+        val sections = listOf(
+            MessageSection.Text("说明\n"),
+            MessageSection.ToolResult("read_file", "success", payload),
+            MessageSection.Protocol("provider", "hidden"),
+        )
+        val stored = MessageSectionStorage.encode(sections)
+        assertEquals(sections, MessageSectionStorage.decode(" \n\t$stored\r\n"))
+    }
+    @Test fun decode_directArrayIgnoresUnknownFields() {
+        val stored = """[{"type":"text","content":"回答","future":{"items":[1,2,3]}}]"""
+        assertEquals(listOf(MessageSection.Text("回答")), MessageSectionStorage.decode(stored))
+    }
     private fun sample(): String =
         "<think>draft</think>answer<meta provider=\"openai:responses_reasoning\">cGF5bG9hZA==</meta>"
 

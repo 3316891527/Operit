@@ -117,7 +117,9 @@ internal fun rememberChatTimelineEntries(
                         val charStream = remember(stream) { stream.toCharStream() }
                         StreamMarkdownRenderer(markdownStream = charStream, state = state, renderContent = false)
                     } else {
-                        StreamMarkdownRenderer(content = message.content, state = state, renderContent = false)
+                        // 已恢复的片段直接生成节点，工具结果不再进入全文 Markdown 扫描。
+                        val sections = remember(message.content, message.sections) { message.displaySections() }
+                        StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
                     // 隐藏协议不触发拆块；原始节点仍用于分组键和 XML 子流索引。
