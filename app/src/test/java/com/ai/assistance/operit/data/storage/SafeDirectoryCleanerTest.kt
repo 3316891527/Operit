@@ -2,6 +2,7 @@ package com.ai.assistance.operit.data.storage
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.attribute.PosixFilePermissions
 
 import kotlinx.coroutines.test.runTest
@@ -106,12 +107,14 @@ class SafeDirectoryCleanerTest {
                 listOf(DirectoryCleanupRequest(root, repairDirectoryPermissions = true)),
             )
 
-            assertTrue(root.isDirectory)
-            assertFalse(payload.exists())
-            assertFalse(restricted.exists())
+            // 先检查实际清理结果，不能把父目录不可访问时的 exists() 假阴性当作成功。
+            assertEquals("首个失败路径：${result.firstFailedPath}", 0, result.failedEntryCount)
             assertEquals(7L, result.deletedBytes)
             assertEquals(1L, result.deletedFileCount)
-            assertEquals(0, result.failedEntryCount)
+            assertTrue(root.isDirectory)
+            assertTrue(root.canRead() && root.canWrite() && root.canExecute())
+            assertTrue(Files.notExists(payload.toPath(), LinkOption.NOFOLLOW_LINKS))
+            assertTrue(Files.notExists(restricted.toPath(), LinkOption.NOFOLLOW_LINKS))
             assertTrue(result.firstFailedPath == null)
         } finally {
             Files.setPosixFilePermissions(root.toPath(), rootPermissions)

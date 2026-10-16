@@ -145,7 +145,11 @@ internal class SafeDirectoryCleaner {
                     PosixFilePermission.OWNER_EXECUTE,
                 ),
             )
-            if (changed) view.setPermissions(permissions)
+            if (changed && Files.isDirectory(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+                // NOFOLLOW 属性视图写权限前会打开目录，000 权限会使该步骤失败。
+                // 确认仍为真实目录后直接修改权限，不使用需要先打开目录的视图写入。
+                Files.setPosixFilePermissions(directory.toPath(), permissions)
+            }
         }
         // 无法修复时由正常扫描报告失败，保留删除记录和具体路径供重试。
     }
