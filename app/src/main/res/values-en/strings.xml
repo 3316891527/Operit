@@ -1,13 +1,13 @@
  <resources>
     <string name="app_name">Operit AI</string>
     <string name="accessibility_service_description">Used to obtain the UI hierarchy, providing faster interface analysis capabilities for AI assistants, and does not collect or store any personal information.</string>
-    
+
     <!-- Model selector related -->
     <string name="model_selector_title">Select Model Configuration</string>
     <string name="model_selector_toggle">Show Model Selector</string>
     <string name="model_selector_toggle_desc">Show model configuration selector at the top of the chat interface for easy switching between different model configurations</string>
     <string name="model">Model</string>
-    
+
     <!-- Navigation -->
     <string name="nav_ai_chat">AI Chat</string>
     <string name="nav_adb_commands">Permissions</string>
@@ -131,7 +131,7 @@
     <string name="token_config">Get API Key</string>
     <string name="package_category_plugin">Plugin</string>
     <string name="desktop_pet_start">Start Desktop Pet</string>
-    
+
     <!-- Workflow related -->
     <string name="workflow_list_title">Workflow List</string>
     <string name="workflow_create">Create Workflow</string>
@@ -343,18 +343,18 @@
     <string name="current_notifications">Current Notifications</string>
     <string name="current_location">Current Location</string>
     <string name="screen_ocr_select">Select OCR</string>
-    
+
     <!-- Model Suggestion Dialog -->
     <string name="model_suggestion_title">Model Suggestion</string>
     <string name="model_suggestion_message">The current model you are using has limited capabilities and may affect your user experience. We recommend switching to a more powerful model.</string>
     <string name="change_model">Change Model</string>
     <string name="ignore">Ignore</string>
-    
+
     <!-- Permission Request -->
     <string name="requested_operation">Requested Operation</string>
     <string name="used_tool">Used Tool</string>
     <string name="tool_category">Tool Category</string>
-    
+
     <!-- Assistant Config Screen -->
     <string name="assistant_config_title">Assistant Config</string>
     <string name="import_model">Import Model</string>
@@ -546,7 +546,7 @@
     <string name="character_card_change_prompt">The character card has changed. Do you want to go to Chat Management to handle chats bound to it?</string>
     <string name="go_to_chat_management">Go to Chat Management</string>
     <string name="maybe_later">Maybe Later</string>
-    
+
     <!-- Chat History Management Screen -->
     <string name="chat_history_manager">Chat History Manager</string>
     <string name="export_chat_history">Export Chat History</string>
@@ -562,14 +562,14 @@
     <string name="current_chats">Currently %1$d chat records</string>
     <string name="backup_location">Backup files are saved in the \"Download/Operit\" folder</string>
     <string name="faq_backup">FAQ</string>
-    
+
     <!-- Terminal Screen -->
     <string name="termux_not_installed">Termux Not Installed</string>
     <string name="termux_not_running">Termux Not Running</string>
     <string name="termux_command">Termux Command</string>
     <string name="execute_termux_command">Execute Command</string>
     <string name="termux_result">Command Result</string>
-    
+
     <!-- Termux Installation -->
     <string name="install_termux_title">Install Termux</string>
     <string name="install_termux_from_store">Install Termux from App Store</string>
@@ -578,7 +578,7 @@
     <string name="install_termux_failed">Termux Installation Failed</string>
     <string name="open_termux">Open Termux</string>
     <string name="termux_setup_guide">Termux Setup Guide</string>
-    
+
     <!-- About Screen -->
     <string name="about_title">About Operit AI</string>
     <string name="about_version">Version: %1$s</string>
@@ -591,7 +591,7 @@
     <string name="update_log">Update Log</string>
     <string name="app_logo_description">App Logo</string>
     <string name="github_star_description">GitHub Star</string>
-    
+
     <!-- AI Chat Screen -->
     <string name="configure_ai">Configure AI API</string>
     <string name="api_endpoint">API Endpoint</string>
@@ -608,26 +608,9 @@
     <string name="network_status_label">Network Status</string>
 
     <!-- Configuration Screen -->
-    <string name="config_title">Operit AI Assistant</string>
-    <string name="config_description">Use a DeepSeek API Key or configure another model service</string>
-    <string name="config_api_key_label">API Key</string>
-    <string name="config_api_key_placeholder">DeepSeek API Key</string>
-    <string name="config_save_button">Confirm and Save</string>
-    <string name="config_get_token">Get DeepSeek API Key</string>
-    <string name="config_saving">Saving...</string>
-    <string name="config_api_key_invalid_format">The DeepSeek API Key format is incorrect. Use only ASCII letters, numbers, and symbols, without spaces or invisible characters.</string>
     <string name="config_use_free">Fleece from contributors</string>
-    <string name="config_custom">Configure Another Model</string>
     <string name="config_free_usage_exceeded">Free daily usage limit reached</string>
-    <string name="onboarding_config_not_found">The selected model configuration no longer exists. Select another one.</string>
-    <string name="onboarding_config_provider_missing">Select a model service provider</string>
-    <string name="onboarding_config_provider_unavailable">The selected model service provider is unavailable. Select another one.</string>
-    <string name="onboarding_config_endpoint_invalid">Enter a valid HTTP or HTTPS API endpoint</string>
-    <string name="onboarding_config_model_missing">Select or enter a model for chat</string>
-    <string name="onboarding_config_api_key_missing">This model service requires an API Key</string>
-    <string name="onboarding_config_api_key_invalid">The API Key or key pool format is incorrect. Check it and try again.</string>
-    <string name="onboarding_config_apply_failed">The model configuration could not be saved or applied. Try again.</string>
-    
+
     <!-- One-click configuration related -->
     <string name="one_click_config_title">One-Click Config</string>
     <string name="one_click_config_loading">Loading configuration...</string>
@@ -639,13 +622,13 @@
     <string name="one_click_config_login_prompt">Please login or register</string>
     <string name="one_click_config_info_text">Please login or register first, the system will automatically get the API key after login</string>
     <string name="one_click_config_getting_key">Getting API key...</string>
-    
+
     <!-- Token Info Dialog -->
     <string name="token_info_title">Get DeepSeek API Token</string>
     <string name="token_info_content">You will be directed to the DeepSeek API website. We integrate DeepSeek access because we consider it the most cost-effective API with powerful performance, various discounts, and disk caching to reduce usage costs.\n\nAPI access and token configuration are not related to the app developers, and we do not provide any services in this regard or earn any fees.\n\nFor your first token usage, we recommend starting with a small amount as it\'s usually sufficient.</string>
     <string name="token_info_cancel">Cancel</string>
     <string name="token_info_confirm">Get Token</string>
-    
+
     <!-- Free Usage Dialog -->
     <string name="free_usage_title">Confirm Free Resource Usage</string>
     <string name="free_usage_message_1">Please use sparingly, our resources are limited</string>
@@ -664,7 +647,7 @@
     <string name="free_usage_interval_tip">To prevent developer bankruptcy, waiting time doubles after each use~</string>
     <string name="free_usage_first_tip">This is your first use, next time you\'ll need to wait 1 day~</string>
     <string name="free_usage_later_tip">Free stuff comes with limits, please wait %1$d more days (๑•̀ㅂ•́)و✧</string>
-    
+
     <!-- Plugin Loading Screen -->
     <string name="plugin_skip">Skip</string>
     <string name="plugin_app_name">OPERIT</string>
@@ -713,14 +696,6 @@
     <string name="plugin_terminal_service_unavailable">Terminal service unavailable, please start it first</string>
     <string name="plugin_pnpm_missing">pnpm not installed in terminal, please install it first</string>
 
-    <!-- Permission Guide Screen -->
-    <string name="permission_guide_intro_1_title">Voice-Driven UI Automation</string>
-    <string name="permission_guide_intro_1_desc">Converse naturally with the AI using on-device speech recognition and synthesis. Your voice is the command, enabling it to perform screen taps, app navigations, and other complex tasks, completely hands-free.</string>
-    <string name="permission_guide_intro_2_title">A Powerful Toolbox for Geeks and Developers</string>
-    <string name="permission_guide_intro_2_desc">With over 40 built-in professional tools for file management, web requests, script execution, and system control. Combined with a robust plugin system, you can automate tasks, and take deep control of your device.</string>
-    <string name="permission_guide_intro_3_title">Unleash Creativity, Always on Standby</string>
-    <string name="permission_guide_intro_3_desc">Whether designing web pages, processing media files, or accessing the AI via its floating window, Operit provides a powerful, flexible, and secure environment for creation and assistance. Your data, your control.</string>
-    <string name="permission_guide_intro_page_indicator">Feature Tour %1$d/%2$d</string>
 
     <!-- Context Menu -->
     <string name="copy_message">Copy Message</string>
@@ -868,7 +843,7 @@
     <string name="theme_loop_on">Disable loop</string>
     <string name="theme_loop_enabled">Loop playback enabled</string>
     <string name="theme_loop_disabled">Loop playback disabled</string>
-    
+
     <!-- Floating Window -->
     <string name="floating_chat_window">Floating Chat Window</string>
     <string name="enable_floating_mode">Enable Floating Window</string>
@@ -876,14 +851,14 @@
     <string name="overlay_permission_required">Overlay Permission Required</string>
     <string name="overlay_permission_denied">Overlay permission denied, cannot display floating window</string>
     <string name="close_floating_window">Close Floating Window</string>
-    
+
     <!-- Microphone Permission -->
     <string name="microphone_permission">Microphone Permission</string>
     <string name="microphone_permission_required">Microphone Permission Required</string>
     <string name="microphone_permission_desc">Allow the app to record audio for voice input and speech recognition</string>
     <string name="microphone_permission_denied">Microphone permission denied, cannot enable floating window feature</string>
     <string name="microphone_permission_floating_required">Floating window feature requires microphone permission for voice interaction</string>
-    
+
     <!-- AI Tools -->
     <string name="max_mode_title">Max Mode</string>
     <string name="max_mode_info">When Max Mode (extra-large context) is on, the context window is %2$sk. Turn it off to return to %1$sk. You can customize these values in Settings.</string>
@@ -902,7 +877,7 @@
     <string name="tool_calculator">Calculator</string>
     <string name="tool_web_search">Web Search</string>
     <string name="enhanced_service_not_initialized">Enhanced AI service not initialized, please check settings</string>
-    
+
     <!-- Settings Screen -->
     <string name="settings">Settings</string>
     <string name="no_settings">No settings available</string>
@@ -913,7 +888,7 @@
     <string name="show_thinking">Show Thinking Process</string>
     <string name="show_fps_counter">Show FPS Counter</string>
     <string name="fps_counter_description">Display real-time FPS in the upper right corner</string>
-    
+
     <!-- Settings Screen Sections -->
     <string name="settings_section_personalization">Personalization</string>
     <string name="settings_user_preferences">User Profile Settings</string>
@@ -932,11 +907,11 @@
     <string name="settings_chat_history_management">Chat History Management</string>
     <string name="settings_chat_history_management_subtitle">View stats and batch organize your conversations</string>
     <string name="settings_manage_backup">Manage Backup</string>
-    
+
     <string name="reset_successful">Reset Successfully</string>
     <string name="reset_default_character">Reset Default Character</string>
     <string name="reset_default_character_confirm">Are you sure you want to reset the default character card? This will restore the default name, settings, and prompts, and reset the avatar and theme.</string>
-    
+
     <string name="settings_section_ai_model">AI Model Configuration</string>
     <string name="settings_model_parameters">Model and Parameter Configuration</string>
     <string name="settings_model_parameters_desc">Configure API settings, model names and parameters, with support for multiple configuration management</string>
@@ -944,7 +919,7 @@
     <string name="settings_functional_model">Functional Model Configuration</string>
     <string name="settings_functional_model_desc">Configure specialized models and API settings for different functions (such as chat, summarization, memory, etc.)</string>
     <string name="settings_configure_function">Configure Function</string>
-    
+
     <string name="settings_section_context_summary">Context and Summary</string>
     <string name="settings_enable_summary">Enable Conversation Summary</string>
     <string name="settings_enable_summary_desc">Automatically generate conversation summaries when context is too long to save Token consumption</string>
@@ -966,7 +941,7 @@
     <string name="settings_summary_dialogue_review_desc">Append a program-generated record of users, assistants, and tool calls to the end of the summary</string>
     <string name="settings_summary_dialogue_review_title">Review Title</string>
     <string name="settings_summary_dialogue_review_title_desc">Title displayed at the end of the summary. Leave blank to use the default title</string>
-    
+
     <string name="settings_section_display">Display and Behavior</string>
 
     <string name="settings_keep_screen_on">Keep Screen On</string>
@@ -975,16 +950,14 @@
     <string name="settings_reply_notification_desc">Send notification when AI completes a reply</string>
     <string name="notification_ai_reply_title">AI Assistant</string>
     <string name="notification_ai_reply_content">AI has completed the reply</string>
-    <string name="notification_permission_rationale">Notification permission is needed to notify you when AI completes a reply</string>
-    <string name="notification_permission_denied">Notification permission denied, you will not receive AI reply notifications</string>
     <string name="settings_auto_accessibility">Auto-grant Accessibility Permission</string>
     <string name="settings_auto_accessibility_desc">When disabled, manual authorization is required each time the app is opened</string>
-    
+
     <string name="settings_section_permissions">Permissions and Security</string>
     <string name="settings_tool_permissions">Tool Permission Settings</string>
     <string name="settings_tool_permissions_desc">Configure permission levels for AI assistant tools, can be set to auto-allow, ask, or deny</string>
     <string name="settings_configure_permissions">Configure Permissions</string>
-    
+
     <string name="settings_section_usage">Usage Statistics</string>
     <string name="settings_section_external_calls">External Calls</string>
     <string name="settings_token_statistics">Token Statistics</string>
@@ -998,7 +971,7 @@
     <string name="settings_preference_input_token">Preference Analysis Input Tokens</string>
     <string name="settings_preference_output_token">Preference Analysis Output Tokens</string>
     <string name="settings_total">Total</string>
-    
+
     <!-- Shizuku Command Screen -->
     <string name="shizuku_command_executor">Shizuku ADB Command Executor</string>
     <string name="device_info">Device Information</string>
@@ -1033,13 +1006,13 @@
     <string name="grant_permission_first">Please grant Shizuku permission</string>
     <string name="feature_unavailable">ADB command feature unavailable</string>
     <string name="thinking_process">Thinking Process</string>
-    
+
     <!-- Built-in Shizuku -->
     <string name="install_from_store">Install Shizuku from App Store</string>
     <string name="install_bundled">Install Bundled Version (v%1$s)</string>
     <string name="installing_bundled">Installing bundled Shizuku, please grant installation permission</string>
     <string name="install_failed">Built-in Shizuku installation failed, please try installing from the app store</string>
-    
+
     <!-- User Preferences -->
     <string name="user_preferences_guide">Personalization</string>
     <string name="user_preferences">User Preferences</string>
@@ -1087,7 +1060,7 @@
     <string name="tag_count_lock">Lock Count</string>
     <string name="tag_count_limit">Max selectable</string>
     <string name="tag_count_locked_status">Selected %1$d / Limit %2$d</string>
-    
+
     <!-- Package Manager Screen -->
     <string name="packages">Scripts</string>
     <string name="skills">Skills</string>
@@ -1164,7 +1137,7 @@
     <string name="import_failed">Import failed: %1$s</string>
     <string name="package_import_failed">Package import failed</string>
     <string name="package_remove_failed">Package removal failed</string>
-    
+
     <!-- OperScript Execution -->
     <string name="run_script">Run Script</string>
     <string name="edit_script">Edit Script</string>
@@ -1179,10 +1152,10 @@
     <string name="script_execution_success">Script execution successful</string>
     <string name="script_execution_error">Script execution error: %1$s</string>
     <string name="missing_parameters">Missing required parameters: %1$s</string>
-    
+
     <string name="save_changes">Save Changes</string>
     <string name="back_to_list">Back to List</string>
-    
+
     <!-- Language Settings -->
     <string name="language_settings">Language Settings</string>
     <string name="language_settings_desc">Change the display language of the application</string>
@@ -1191,15 +1164,11 @@
     <string name="language_info">The app will restart automatically to apply the new language setting</string>
     <string name="language_changing">Changing language...</string>
     <string name="language_changed">Language changed, restarting app</string>
-    
+
     <!-- User Agreement Screen -->
     <string name="agreement_title">User Agreement and Privacy Policy</string>
-    <string name="agreement_subtitle">Please read and agree to the following terms before use.</string>
     <string name="agreement_version">Agreement version: %1$s</string>
-    <string name="agreement_human_readable_title">Plain Language Version (Not a legal document)</string>
-    <string name="agreement_human_readable_content">Service boundary: Operit does not provide publicly available anthropomorphic emotional interaction services. Operit is an open-source client that runs locally on your device. It does not operate model inference services, host chat sessions or interaction data, or distribute shared model credentials. Cloud model requests are sent directly from your device to the model provider you configure with your own credentials; related data is governed by the rules of that provider. Local models run inference on your device.\n\nThis app can call files, terminals, automation, Root, ADB, extensions, and similar capabilities. Check operations before running them, back up important data, and grant permissions carefully. Losses involving devices, data, accounts, or other interests caused by user actions, user configuration, third-party services, or third-party extensions should be handled by the actual operator under applicable law.\n\nThird-party plugins, scripts, Skills, toolkits, and other marketplace content belong to their labelled authors or right holders, together with related responsibility. Marketplace listing or installation does not mean Operit guarantees, endorses, or obtains rights to that content. Confirm the license and rights status before using, modifying, publishing, or redistributing it.</string>
-    <string name="agreement_serious_title">Formal Legal Agreement</string>
-    <string name="agreement_serious_content"><![CDATA[
+    <string name="agreement_content"><![CDATA[
         <p><b>Operit User Agreement and Privacy Policy</b><br>Version: 2026-07-15; intended effective date: July 15, 2026.</p>
         <p><b>1. Scope and Agreement Version</b><br>This agreement applies to the officially released Operit Android client and its optional online features. By using this app, you confirm that you have read and accepted the current version. The app records the agreement version you have accepted at startup; when the agreement is materially updated, the app will require you to confirm the new version before continuing. The open-source code in the repository is licensed under the GNU Lesser General Public License version 3 (LGPLv3) in the root <code>LICENSE</code> file. This agreement does not exclude or reduce rights granted by applicable law or open-source licenses.</p>
         <p><b>2. Product Positioning and Third-Party Services</b><br>Operit is open-source client software. It does not provide large language model inference, shared API Keys, chat request relay, or cloud hosting of chat records. Cloud models, cloud voice, search, image generation, MCP, and other network features are selected, configured, and enabled by you. When you use those services, data is sent directly to the corresponding service provider and is governed by the terms and privacy policy of that provider. You should evaluate the safety, legality, and suitability of providers, models, endpoints, and extensions, and keep credentials secure.</p>
@@ -1209,25 +1178,21 @@
         <p><b>6. Software Provided As Is</b><br>To the extent permitted by applicable law, this software is provided on an "as is" and "as available" basis. Contributors make no express or implied warranties regarding the continued availability, accuracy, safety, merchantability, fitness for a particular purpose, or non-infringement of the software or third-party services. Losses caused by use of this software, third-party services, extensions, user configuration, or self-made modifications should be handled under applicable law and the relevant service agreements.</p>
         <p><b>7. Agreement Updates and Contact</b><br>We may update this agreement due to feature, legal, or security requirements, and provide the current version in the app. Updates that materially affect user rights will take effect by increasing the agreement version and requiring confirmation again. You may raise questions and feedback through the project repository, in-app feedback entry, or public contact channels.</p>
     ]]></string>
-    <string name="agreement_disclaimer">The plain language version is only for easier understanding. If it differs from the Chinese formal version, the Chinese formal version prevails.</string>
-    <string name="agreement_accept">I have read and agree</string>
-    <string name="agreement_wait">Please wait... (%1$d)</string>
     <string name="market_agreement_title">Plugin Market Agreement and Community Rules</string>
-    <string name="market_agreement_subtitle">Please read and agree to this agreement before entering the plugin market. The market is for sharing and discovering plugins; authors are encouraged to open source through a public GitHub repository.</string>
     <string name="market_agreement_version">Market agreement version: %1$s</string>
-    <string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users must read and confirm the updated agreement when they next enter the market.</string>
-    
+    <string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users can review updated content from the market entry.</string>
+
     <!-- File Manager -->
     <string name="files_selected">%1$d files selected</string>
     <string name="file_count">%1$d items</string>
-    
+
     <!-- Search Dialog -->
     <string name="search_files">Search Files</string>
     <string name="searching">Searching...</string>
     <string name="case_sensitive">Case sensitive</string>
     <string name="use_wildcard">Use wildcard</string>
     <string name="search">Search</string>
-    
+
     <!-- File Operations -->
     <string name="new_folder">New Folder</string>
     <string name="folder_name">Folder name</string>
@@ -1253,66 +1218,18 @@
     <string name="network_transfer_failed">Network transfer failed, please check your connection</string>
     <string name="try_again_later">Request failed, please try again later</string>
 
-    <!-- Permission Guide Screen -->
-    <string name="permission_guide_previous">Previous</string>
-    <string name="permission_guide_next">Next</string>
-    <string name="permission_guide_complete">Complete</string>
-    <string name="permission_guide_welcome">Welcome</string>
-    <string name="permission_guide_basic_permissions">Basic Permissions</string>
-    <string name="permission_guide_permission_level">Permission Level</string>
-    
-    <string name="permission_guide_welcome_title">Welcome</string>
-    <string name="permission_guide_welcome_desc">Before using the app, we need to set up some basic permissions and select your preferred permission level.</string>
-    <string name="permission_guide_welcome_hint">This process takes just a few minutes and will help the app serve you better.</string>
-    <string name="permission_guide_welcome_start">Click the button in the lower right corner to start setup</string>
-    
-    <string name="permission_guide_basic_title">Basic Permissions</string>
-    <string name="permission_guide_basic_desc">Please grant the following basic permissions to ensure the app functions properly</string>
-    <string name="permission_guide_storage_title">Storage Permission</string>
-    <string name="permission_guide_storage_desc">Allow the app to read and write files</string>
-    <string name="permission_guide_overlay_title">Overlay Permission</string>
-    <string name="permission_guide_overlay_desc">Allow the app to display floating windows</string>
-    <string name="permission_guide_battery_title">Battery Optimization Exemption</string>
-    <string name="permission_guide_battery_desc">Allow the app to run in the background</string>
-    <string name="permission_guide_location_title">Location Permission</string>
-    <string name="permission_guide_location_desc">Allow the app to access location information</string>
-    <string name="permission_guide_check_permissions">Check Permission Status</string>
-    <string name="permission_guide_all_granted">All basic permissions granted, you can continue to the next step</string>
-    
-    <string name="permission_guide_warning_title">Incomplete Permissions</string>
-    <string name="permission_guide_warning_message">You have not granted all necessary permissions, which may result in incomplete functionality or abnormal app behavior. Are you sure you want to continue?</string>
-    <string name="permission_guide_warning_continue">Continue</string>
-    <string name="permission_guide_warning_return">Return to Permissions</string>
-    
-    <string name="permission_guide_level_title">Select Permission Level</string>
-    <string name="permission_guide_level_desc">Please select your preferred permission level, which will determine the range of features the app can use</string>
-    <string name="permission_guide_standard_title">Standard Permissions</string>
-    <string name="permission_guide_standard_desc">Basic app operation permissions, no special permissions required</string>
-    <string name="permission_guide_accessibility_title">Accessibility Permissions</string>
-    <string name="permission_guide_accessibility_desc">Enables screen content analysis and operation simulation via accessibility service</string>
-    <string name="permission_guide_debugger_title">Debug Permissions</string>
-    <string name="permission_guide_debugger_desc">Provides ADB-level system access through Shizuku</string>
-    <string name="permission_guide_root_title">Root Permissions</string>
-    <string name="permission_guide_root_desc">Superuser permissions, can perform any system operations</string>
-    <string name="permission_guide_confirm">Confirm Selection</string>
-    <string name="permission_guide_change_anytime">You can change the permission level in settings at any time</string>
-    
-    <!-- Permission Guide Toast Messages -->
-    <string name="permission_guide_storage_setting_failed">Cannot open storage permission settings, please authorize manually</string>
-    <string name="permission_guide_overlay_setting_failed">Cannot open overlay settings, please authorize manually</string>
-    <string name="permission_guide_battery_hint">Please find the app in the list and set it to \"Not optimized\"</string>
-    <string name="permission_guide_battery_setting_failed">Cannot open battery optimization settings, please set manually</string>
-    
-    <!-- Permission Status Description -->
-    <string name="permission_guide_granted">Granted</string>
-    <string name="permission_guide_not_granted">Not granted</string>
-    <string name="permission_guide_selected">Selected</string>
-    
+
+
+
+
+
+
+
     <!-- Wizard Cards Common -->
     <string name="wizard_collapse">Collapse</string>
     <string name="wizard_expand">Expand</string>
     <string name="wizard_open_docs">Official Docs</string>
-    
+
     <!-- RootWizardCard -->
     <string name="root_wizard_title">Root Permission Setup Wizard</string>
     <string name="root_wizard_step1">Step 1: Root Device</string>
@@ -1328,7 +1245,7 @@
     <string name="root_wizard_device_not_rooted">Your device is not rooted. ROOT requires specific system modifications and may void your warranty. If you need to use ROOT features, please complete the device ROOT process first.</string>
     <string name="root_wizard_risk_notice">Note: Root Operation Risk Warning</string>
     <string name="root_wizard_risk_details">1. ROOT operations carry risk and may void your warranty\n2. Some apps may refuse to run on rooted devices\n3. Improper ROOT operations may cause system instability</string>
-    
+
     <!-- ShizukuWizardCard -->
     <string name="shizuku_wizard_title">Shizuku Setup Wizard</string>
     <string name="shizuku_wizard_update_title">Shizuku Update Wizard</string>
@@ -1354,7 +1271,7 @@
     <string name="shizuku_wizard_current_version">Current version: %1$s</string>
     <string name="shizuku_wizard_latest_version">Latest version: %1$s</string>
     <string name="shizuku_wizard_update">Update Shizuku</string>
-    
+
     <!-- TermuxWizardCard -->
     <string name="termux_wizard_title">Termux Setup Wizard</string>
     <string name="termux_wizard_step1">Step 1: Install Termux</string>
@@ -1398,7 +1315,7 @@
     <string name="termux_wizard_success_title">Congratulations! Termux environment is fully configured</string>
     <string name="termux_wizard_success_message">You can now use Termux for various command line operations</string>
     <string name="termux_wizard_open">Open Termux</string>
-    
+
     <!-- ShizukuDemoScreen -->
     <string name="shizuku_demo_loading">Loading application status...</string>
     <string name="shizuku_demo_permission_failed">Cannot open permission settings</string>
@@ -1448,7 +1365,7 @@
     <string name="battery_optimization">Battery Optimization Exemption</string>
     <string name="location_permission">Location Permission</string>
     <string name="operit_terminal">Operit Terminal</string>
-    
+
     <!-- Permission Level Descriptions -->
     <string name="permission_level_standard">Standard Permission</string>
     <string name="permission_level_accessibility">Accessibility Permission</string>
@@ -1465,12 +1382,12 @@
     <string name="permission_level_admin_full_desc">Admin mode: authorize accessibility and Shizuku separately. Operations use the currently available backend, with standard file and shell operations when enhanced access is unavailable.</string>
     <string name="permission_level_debugger_full_desc">Debug Permissions: Allows advanced operations through ADB debugging functions, requires Shizuku service</string>
     <string name="permission_level_root_full_desc">Root Permissions: Allows the app to run as superuser, requires a rooted device</string>
-    
+
     <!-- Root Status Information -->
     <string name="root_access_granted">App has gained Root access, can execute privileged commands</string>
     <string name="device_rooted_request_permission">Device is rooted, click to request app permissions</string>
     <string name="device_not_rooted">Device is not rooted, unable to obtain Root permissions</string>
-    
+
     <!-- Toast Messages -->
     <string name="toast_download_link_failed">Unable to open download link</string>
     <string name="toast_apk_extract_failed">Failed to extract APK, please try again later</string>
@@ -1478,7 +1395,7 @@
     <string name="toast_operation_failed">Operation failed: %1$s</string>
     <string name="toast_skip_tuna_source">Skipped Tuna mirror configuration, you can configure the mirror in Termux later</string>
     <string name="toast_skip_tuna_source_dialog">You have chosen to skip Tuna mirror configuration. For manual configuration later, run the following command in Termux:\n\ntermux-change-repo\n\nThen select Tuna or another mirror from the list.</string>
-    
+
     <!-- Chat History Selector -->
     <string name="chat_history">Chat History</string>
     <string name="search_chat_history_hint">Search</string>
@@ -1492,7 +1409,7 @@
     <string name="chat_shared_file_target_recent_section">Recent 5 conversations</string>
     <string name="chat_shared_file_target_current_badge">Current conversation</string>
     <string name="chat_shared_file_target_no_recent">No recent conversations are available yet. You can create a new one directly.</string>
-    
+
     <!-- Chat Screen Header -->
     <string name="exit_edit_mode">Exit Edit Mode</string>
     <string name="enter_edit_mode">Enter Edit Mode</string>
@@ -1507,7 +1424,7 @@
     <string name="ask">Ask</string>
     <string name="ai_planning_mode">Deep Search</string>
     <string name="disabled">Disabled</string>
-    
+
     <!-- Termux Related -->
     <string name="termux_not_installed_message">Please install Termux first</string>
     <string name="termux_manual_auth_title">Manual Authorization Required</string>
@@ -1653,7 +1570,7 @@
     <string name="crash_report_copy_success">Copied to clipboard</string>
     <string name="crash_report_export_success">Error report exported to\n%1$s</string>
     <string name="crash_report_export_failed">Export failed: %1$s</string>
-    
+
     <!-- Model Prompts Settings Screen -->
     <string name="model_prompts_title">Prompt Settings</string>
     <string name="select_persona_config">Select AI Assistant Persona Card Configuration</string>
@@ -1680,7 +1597,7 @@
     <string name="create">Create</string>
     <string name="unnamed_config">Unnamed Configuration</string>
     <string name="delete_config">Delete</string>
-    
+
     <!-- Functional Prompt Config Screen -->
     <string name="functional_prompt_title">Functional Prompt Configuration</string>
     <string name="functional_prompt_desc">Set separate prompt configurations for different functions, so each function can use the most suitable prompts.</string>
@@ -1695,11 +1612,11 @@
     <string name="voice_function_desc">Voice interaction function, customize voice assistant prompt configuration</string>
     <string name="desktop_pet_function">Desktop Pet</string>
     <string name="desktop_pet_function_desc">Desktop pet function, customize pet personality and interaction style</string>
-    
+
     <!-- Desktop Pet Service Notification -->
     <string name="pet_service_notification_title">Desktop Pet Service</string>
     <string name="pet_service_notification_text">Desktop pet is running</string>
-    
+
     <!-- Settings Screen Additional Strings -->
     <string name="settings_prompt_section">Prompt Configuration</string>
     <string name="settings_prompt_title">Character Card Editor</string>
@@ -1781,7 +1698,7 @@
 
     <string name="accessibility_risk_warning_title">Accessibility Service Risk Warning</string>
     <string name="accessibility_risk_warning_message">While enabling the accessibility service can speed up UI operations, some apps may detect this service and impose restrictions, including account bans. Please enable only after understanding and accepting the associated risks.</string>
-    
+
     <string name="accessibility_risk_warning_additional">Please note: Debug mode already has UI operation capabilities. Enabling the accessibility service only accelerates UI operations but increases the risk of account bans. Unless you need maximum speed, it\'s not recommended. If enabled, please disable it immediately after use.</string>
     <string name="accessibility_risk_warning_input">Type \"I understand and acknowledge the risks of account bans and restricted account functions caused by accessibility permissions, and I bear the consequences myself\" to confirm</string>
     <string name="accessibility_risk_warning_input_error">Please type \"I understand and acknowledge the risks of account bans and restricted account functions caused by accessibility permissions, and I bear the consequences myself\" to confirm you understand the risks</string>
@@ -2110,22 +2027,22 @@
     <string name="common_collapse">Collapse</string>
     <string name="common_expand_more">Expand More</string>
     <string name="nav_memory_base">Memory Base</string>
-    
+
     <!-- Manual Memory Update -->
     <string name="manual_memory_update">Manual Memory Save</string>
     <string name="manual_memory_update_desc">If you need to store valuable content from this conversation immediately, manually trigger memory saving to write it directly into the long-term memory library.</string>
     <string name="manual_conversation_summary">Manual Conversation Summary</string>
     <string name="manual_conversation_summary_desc">Immediately trigger a conversation summary to compress context and keep key points from both sides. Useful for long chats or before sending new messages.</string>
-    
+
     <!-- Context and Summary Settings Screen -->
     <string name="screen_title_context_summary_settings">Context and Summary Settings</string>
     <string name="settings_context_title">Context Settings</string>
     <string name="settings_summary_title">Summary Settings</string>
     <string name="settings_context_summary_subtitle">Manage context, summary, and history media retention settings</string>
-    
+
     <!-- Details -->
     <string name="details">Details</string>
-    
+
     <!-- MCP and Plugin Related -->
     <string name="uninstall">Uninstall</string>
     <string name="install">Install</string>
@@ -2141,7 +2058,7 @@
     <string name="tool_category_file_management">File Management</string>
     <string name="tool_category_development">Development Tools</string>
     <string name="tool_category_system">System Tools</string>
-    
+
     <!-- Tool Names -->
     <string name="tool_file_manager">File Manager</string>
     <string name="tool_file_manager_desc">Browse and manage device files with various operations support</string>
@@ -2256,7 +2173,7 @@
     <string name="tool_process_limit_remover_desc">Manage Android 12+ phantom process count limits to allow more background child processes</string>
     <string name="tool_html_packager">HTML Packager</string>
     <string name="tool_html_packager_desc">Export web projects as Android packages or Windows ZIPs</string>
-    
+
     <!-- Process Limit Remover Screen -->
     <string name="process_limit_title">Phantom Process Limit Remover</string>
     <string name="process_limit_subtitle">Manage Android 12+ phantom process count limits</string>
@@ -2290,7 +2207,7 @@
     <string name="process_limit_exit_code">Exit Code: %d</string>
     <string name="process_limit_command">Command</string>
     <string name="toolbox_description">Convenient and practical tool collection to improve your work efficiency</string>
-    
+
     <!-- MCP Config Screen -->
     <string name="import_or_connect_mcp_service">Import or Connect MCP Service</string>
     <string name="select_mcp_plugin_zip">Please select MCP plugin zip package</string>
@@ -2349,24 +2266,24 @@
     <string name="name">Name</string>
     <string name="description">Description</string>
     <string name="author">Author</string>
-    
+
     <!-- Speech Services Settings -->
     <string name="speech_services_settings">Speech Services Settings</string>
     <string name="speech_services_settings_desc">Configure text-to-speech and speech recognition settings</string>
     <string name="configure_speech_services">Configure Speech Services</string>
-    
-    
-    
+
+
+
     <!-- Network Related -->
     <string name="wifi">WiFi</string>
     <string name="ui_automation_in_progress">UI automation in progress...</string>
-    
+
     <!-- Missing strings -->
     <string name="sherpa_k2_ncnn_init_failed">Real-time speech recognition engine initialization failed</string>
     <string name="sherpa_k2_ncnn_init_success">Real-time speech recognition engine initialization successful</string>
     <string name="floating_chat_window_desc">Display a floating window on screen for quick access to chat functionality</string>
     <string name="rename">Rename</string>
-    
+
     <!-- Theme Settings -->
     <string name="theme_background_blur">Background Blur</string>
     <string name="theme_background_blur_desc">Add Gaussian blur effect to background images or videos</string>
@@ -2409,7 +2326,7 @@
     <string name="doc_link_failed">Failed to open documentation link</string>
     <string name="root_tutorial_failed">Failed to open Root tutorial link</string>
     <string name="file_open_failed">Failed to open file: %1$s</string>
-    
+
     <!-- Snackbar Messages -->
     <string name="automation_config_imported">Automation configuration imported successfully</string>
     <string name="tab_import_not_supported">Current tab does not support import</string>
@@ -2418,7 +2335,7 @@
     <string name="tools_load_error">Error loading tools: %1$s</string>
     <string name="plugin_deployed_success">Plugin %1$s deployed successfully</string>
     <string name="remote_service_updated">Remote service %1$s updated</string>
-    
+
     <!-- UI Text -->
     <string name="plugin_zip_file">Plugin ZIP File</string>
     <string name="mcp_plugin">MCP Plugin</string>
@@ -2448,7 +2365,7 @@
     <string name="try_different_keywords">Try different keywords</string>
     <string name="try_show_system_apps">Try checking "System apps" to see more apps</string>
     <string name="no_apps_found_anywhere">No apps found anywhere</string>
-    
+
     <!-- Permission Groups -->
     <string name="permission_group_activity">Activity Recognition</string>
     <string name="permission_group_calendar">Calendar</string>
@@ -2464,19 +2381,19 @@
     <string name="permission_group_other_granted">Other granted permissions</string>
     <string name="permission_group_other_denied">Other denied permissions</string>
     <string name="permission_group_other">Other permissions</string>
-    
+
     <string name="target_format">Target format</string>
     <string name="start_conversion">Start conversion</string>
     <string name="conversion_success">Conversion successful</string>
     <string name="unknown_file">Unknown file</string>
-    
+
     <!-- File Types -->
     <string name="file_type_document">Document</string>
     <string name="file_type_image">Image</string>
     <string name="file_type_audio">Audio</string>
     <string name="file_type_video">Video</string>
     <string name="file_type_archive">Archive</string>
-    
+
     <!-- Stream Markdown Demo -->
     <string name="stream_markdown_title">Streaming Rendering</string>
     <string name="static_rendering">Static rendering</string>
@@ -2494,13 +2411,13 @@
     <string name="dangerous_permission">Dangerous permission</string>
         <string name="granted">Granted</string>
     <string name="not_granted">Not granted</string>
-    
+
     <!-- Toolbox Screen -->
     <string name="toolbox_title">Toolbox</string>
     <string name="toolbox_subtitle">Collection of development and system management tools</string>
     <string name="toolbox_no_tools">No tools in this category</string>
     <string name="toolbox_animation_loading">Loading tools...</string>
-    
+
     <!-- File Manager -->
     <string name="file_manager_title">File Manager</string>
     <string name="file_manager_dual_pane">Dual pane mode</string>
@@ -2587,7 +2504,7 @@
     <string name="file_op_confirm_delete_message">Are you sure you want to delete the selected files? This action cannot be undone.</string>
     <string name="file_op_confirm_overwrite">File exists</string>
     <string name="file_op_confirm_overwrite_message">A file with the same name already exists at the destination. Do you want to overwrite it?</string>
-    
+
     <!-- Terminal -->
     <string name="terminal_title">Terminal Emulator</string>
     <string name="terminal_new_session">New session</string>
@@ -2615,7 +2532,7 @@
     <string name="terminal_command_not_found">Command not found</string>
     <string name="terminal_process_running">Process is running...</string>
     <string name="terminal_process_completed">Process completed</string>
-    
+
     <!-- Terminal Auto Config -->
     <string name="terminal_auto_config_title">Terminal Auto Config</string>
     <string name="terminal_auto_config_desc">Automatically detect and configure terminal environment</string>
@@ -2627,7 +2544,7 @@
     <string name="terminal_auto_config_failed">Configuration failed</string>
     <string name="terminal_auto_config_detecting">Detecting environment...</string>
         <string name="terminal_auto_config_applying">Applying configuration...</string>
-    
+
     <!-- FFmpeg Toolbox -->
     <string name="ffmpeg_toolbox_title">FFmpeg Toolbox</string>
     <string name="ffmpeg_input_file">Input file</string>
@@ -2659,7 +2576,7 @@
     <string name="ffmpeg_no_file_selected">No file selected</string>
     <string name="ffmpeg_invalid_file">Invalid file format</string>
     <string name="ffmpeg_permission_error">Permission error, cannot access file</string>
-    
+
     <!-- Log Viewer (Logcat) -->
     <string name="logcat_title">Log Viewer</string>
     <string name="logcat_start">Start logging</string>
@@ -2724,7 +2641,7 @@
     <string name="stt_timeout">Recognition timeout</string>
     <string name="stt_result_saved">Recognition result saved</string>
     <string name="stt_save_failed">Failed to save result</string>
-    
+
     <!-- Speech Services Settings -->
     <string name="speech_services_tts_title">Text-to-Speech (TTS) Settings</string>
     <string name="speech_services_tts_desc">Configure how text is converted to voice output</string>
@@ -2746,7 +2663,7 @@
     <string name="speech_services_tts_engine">TTS Engine</string>
     <string name="speech_services_stt_engine">STT Engine</string>
     <string name="speech_services_dropdown_expand">Expand dropdown</string>
-    
+
     <!-- TTS Service Types -->
     <string name="speech_services_tts_type_simple">System TTS (Simple)</string>
     <string name="speech_services_simple_tts_settings">System TTS Settings</string>
@@ -2765,13 +2682,13 @@
     <string name="speech_services_tts_type_doubao">Doubao TTS</string>
     <string name="speech_services_tts_type_openai_ws">OpenAI Realtime (WebSocket)</string>
     <string name="speech_services_tts_type_openai">OpenAI Voice (HTTP)</string>
-    
+
     <!-- STT Service Types -->
     <string name="speech_services_stt_type_sherpa">Sherpa NCNN (Local)</string>
     <string name="speech_services_stt_type_sherpa_mnn">Sherpa MNN (Local, with VAD)</string>
     <string name="speech_services_stt_type_openai">OpenAI STT (Remote)</string>
     <string name="speech_services_stt_type_deepgram">Deepgram STT (Remote)</string>
-    
+
     <!-- TTS Cleaner Regex -->
     <string name="speech_services_tts_cleaner_title">TTS Cleaner Regex List</string>
     <string name="speech_services_tts_cleaner_desc">Remove matched text using these regular expressions before speaking.</string>
@@ -2784,7 +2701,7 @@
     <string name="speech_services_tts_cleaner_template_parenthesis">Remove (xxx)</string>
     <string name="speech_services_tts_cleaner_template_chinese_parenthesis">Remove （xxxx）</string>
     <string name="speech_services_tts_cleaner_template_xml">Remove XML tags</string>
-    
+
     <!-- HTTP TTS Configuration -->
     <string name="speech_services_http_tts_config">HTTP TTS Configuration</string>
     <string name="speech_services_http_url_template">URL Template</string>
@@ -2804,7 +2721,7 @@
     <string name="speech_services_http_content_type_placeholder">application/json</string>
     <string name="speech_services_http_request_body">Request Body Template</string>
     <string name="speech_services_http_request_body_placeholder">{\"text\": \"{text}\"}</string>
-    
+
     <!-- SiliconFlow TTS Configuration -->
     <string name="speech_services_siliconflow_config">SiliconFlow TTS Configuration</string>
     <string name="speech_services_siliconflow_api_key">API Key</string>
@@ -2915,21 +2832,21 @@
 
     <!-- STT Configuration -->
     <string name="speech_services_stt_info">Supports local Sherpa engines and OpenAI / Deepgram STT (remote).</string>
-    
+
     <!-- Save Actions -->
     <string name="speech_services_save_button">Save Settings</string>
     <string name="speech_services_saving">Saving...</string>
     <string name="speech_services_save_success">Settings saved</string>
     <string name="speech_services_save_error">Save failed: %1$s</string>
     <string name="speech_services_test_tts">Test TTS Feature</string>
-    
+
     <!-- Info Card -->
     <string name="speech_services_info_title">About Speech Services</string>
     <string name="speech_services_info_tts_title">Text-to-Speech (TTS)</string>
     <string name="speech_services_info_tts_desc">TTS service converts text to speech. You can use the built-in system TTS engine or connect to remote HTTP / WebSocket speech APIs.</string>
     <string name="speech_services_info_stt_title">Speech-to-Text (STT)</string>
     <string name="speech_services_info_stt_desc">STT service converts speech to text. Supports built-in Sherpa NCNN and Sherpa MNN engines, both run on local device without network connection. Sherpa MNN integrates VAD (Voice Activity Detection) capability for improved recognition accuracy and resource efficiency.</string>
-    
+
     <!-- Permission Names -->
     <string name="perm_name_camera">Camera</string>
     <string name="perm_name_read_contacts">Read Contacts</string>
@@ -2965,7 +2882,7 @@
     <string name="perm_name_read_sms">Read SMS</string>
     <string name="perm_name_receive_wap_push">Receive WAP Push</string>
     <string name="perm_name_receive_mms">Receive MMS</string>
-    
+
     <!-- Permission Descriptions -->
     <string name="perm_desc_camera">Allow app to take pictures and record videos</string>
     <string name="perm_desc_read_contacts">Allow app to read your contacts</string>
@@ -3001,7 +2918,7 @@
     <string name="perm_desc_read_sms">Allow app to read SMS messages</string>
     <string name="perm_desc_receive_wap_push">Allow app to receive WAP push messages</string>
     <string name="perm_desc_receive_mms">Allow app to receive MMS</string>
-    
+
     <!-- Functional Config Screen -->
     <string name="functional_model_config_title">Functional Model Configuration Settings</string>
     <string name="functional_model_config_desc">Set separate model configurations for different functions, allowing each function to use the most suitable API settings.</string>
@@ -3070,12 +2987,12 @@
     <string name="requested_permissions_list">Requested permissions: %s</string>
     <string name="granted_permissions_list">Granted permissions: %s</string>
     <string name="permission_error_desc">Error getting permissions: %s</string>
-    
+
     <!-- Tool Tester Screen -->
     <string name="parameters_label">Parameters:</string>
     <string name="detailed_result">Detailed Result:</string>
     <string name="retest">Retest</string>
-    
+
     <!-- Tool Test Groups -->
     <string name="env_setup_group">Environment Setup (Sequential)</string>
     <string name="basic_http_group">Basic &amp; HTTP (Parallel)</string>
@@ -3084,7 +3001,7 @@
     <string name="system_group">System (Parallel)</string>
     <string name="ui_automation_group">UI Automation (Parallel, May Fail)</string>
     <string name="cleanup_group">Cleanup (Auto Execute)</string>
-    
+
     <!-- Tool Test Names -->
     <string name="create_test_dir">Create Test Directory</string>
     <string name="download_test_image">Download Test Image</string>
@@ -3120,7 +3037,7 @@
     <string name="simulate_tap_test">Simulate Tap</string>
     <string name="simulate_swipe_test">Simulate Swipe</string>
     <string name="cleanup_test_dir">Cleanup Test Directory</string>
-    
+
     <!-- Tool Test Descriptions -->
     <string name="create_test_dir_desc">Create root directory for all test files.</string>
     <string name="download_test_image_desc">Download an image for subsequent tests.</string>
@@ -3156,7 +3073,7 @@
     <string name="simulate_tap_test_desc">Tap at (1,1), expected to fail</string>
     <string name="simulate_swipe_test_desc">Short swipe at screen center</string>
     <string name="cleanup_test_dir_desc">Delete all test files and directories.</string>
-    
+
     <!-- Additional missing strings -->
     <string name="ai_tools_availability_test">AI Tools Availability Test</string>
     <string name="ai_tools_grouped_desc">AI tools grouped by category</string>
@@ -3184,7 +3101,7 @@
     <string name="terminal_send_custom_input">Send Custom Input</string>
     <string name="terminal_yes_y">Yes (Y)</string>
     <string name="test_input_field">Test Input Field</string>
-    
+
     <!-- ShizukuDemoScreen strings -->
     <string name="loading_app_state">Loading application state...</string>
     <string name="setup_wizard">Setup Wizard</string>
@@ -3193,7 +3110,7 @@
     <string name="cannot_open_doc_link">Cannot open documentation link</string>
     <string name="welcome_termux_config">Welcome to Termux configuration tool\nClick the corresponding button to start configuration</string>
     <string name="executing_task">Executing: %1$s...</string>
-    
+
     <!-- Permission Level Features -->
     <string name="feature_overlay_window">Overlay Window</string>
     <string name="feature_file_operations">File Operations</string>
@@ -3705,7 +3622,7 @@
     <string name="choose_delete_method">Please choose deletion method:</string>
     <string name="swipe_hint">Swipe left or right to edit or delete (tap to hide)</string>
     <string name="long_press_manage">Long press to manage</string>
-    
+
     <!-- Settings Screen Subtitles -->
     <string name="settings_user_preferences_subtitle">Manage user profiles and associated memory spaces</string>
     <string name="settings_language_subtitle">Interface language switching</string>
@@ -3727,14 +3644,14 @@
     <string name="settings_max_context_length_subtitle">Maximum context length supported by the model API (k tokens)</string>
     <string name="settings_summary_threshold">Summary Token Threshold</string>
     <string name="settings_summary_threshold_subtitle">Threshold for triggering chat summary (0.1-0.95)</string>
-    
+
     <!-- History Media Retention Settings -->
     <string name="settings_history_retention_title">History Media Retention</string>
     <string name="settings_max_image_history_user_turns">Keep Image History Turns</string>
     <string name="settings_max_image_history_user_turns_subtitle">Only keep images from the last N user turns to avoid resending old images</string>
     <string name="settings_max_media_history_user_turns">Keep Media History Turns</string>
     <string name="settings_max_media_history_user_turns_subtitle">Only keep audio/video from the last N user turns to avoid resending old media</string>
-    
+
     <!-- Layout Adjustment Settings -->
     <string name="layout_adjustment_settings_title">Layout Adjustment Settings</string>
     <string name="layout_adjustment_description">Adjust the position and spacing of UI elements to customize your experience</string>
@@ -3762,7 +3679,7 @@
     <string name="reset_to_default">Reset to Default</string>
     <string name="layout_reset_settings">Reset Layout Settings</string>
     <string name="layout_reset_settings_desc">Reset all layout adjustment settings to default values</string>
-    
+
     <string name="settings_data_permissions">Data and Permissions</string>
     <string name="settings_diagnostics">Diagnostics and Logs</string>
     <string name="workspace_html_export_desc">Select a web project folder and export an Android or Windows package</string>
@@ -3946,7 +3863,7 @@
     <string name="token_stats_chart_next_bucket">Next time bucket</string>
     <string name="token_stats_chart_bucket_of">Bucket %1$d of %2$d</string>
     <string name="token_stats_chart_summary">%1$s, %2$s, %3$s, total %4$s</string>
-    
+
     <!-- User Preferences Guide Screen -->
     <string name="user_male">Male</string>
     <string name="user_female">Female</string>
@@ -3973,7 +3890,7 @@
     <string name="communication_style_general">Clear and organized communication style, focusing on practicality and efficiency</string>
     <string name="preferences_intro_template">I am %1$s, %2$s. I am particularly interested in %3$s. In communication, I prefer %4$s.</string>
     <string name="preferences_intro_template_no_age">I am %1$s, %2$s. I am particularly interested in %3$s. In communication, I prefer %4$s.</string>
-    
+
     <!-- Occupation Options -->
     <string name="occupation_student">Student</string>
     <string name="occupation_employee">Employee</string>
@@ -3988,7 +3905,7 @@
     <string name="occupation_freelancer">Freelancer</string>
     <string name="occupation_retired">Retired</string>
     <string name="occupation_other">Other</string>
-    
+
     <!-- Personality Traits -->
     <string name="personality_extroverted">Extroverted</string>
     <string name="personality_introverted">Introverted</string>
@@ -4006,7 +3923,7 @@
     <string name="personality_innovative">Innovative</string>
     <string name="personality_meticulous">Meticulous</string>
     <string name="personality_rough">Rough</string>
-    
+
     <!-- Identity Options -->
     <string name="identity_student">Student</string>
     <string name="identity_teacher">Teacher</string>
@@ -4020,7 +3937,7 @@
     <string name="identity_foodie">Foodie</string>
     <string name="identity_entrepreneur">Entrepreneur</string>
     <string name="identity_professional">Professional</string>
-    
+
     <!-- AI Style Options -->
     <string name="ai_style_professional">Professional &amp; Rigorous</string>
     <string name="ai_style_humorous">Lively &amp; Humorous</string>
@@ -4030,7 +3947,7 @@
     <string name="ai_style_technical">Technical Oriented</string>
     <string name="ai_style_educational">Educational Guidance</string>
     <string name="ai_style_supportive">Emotional Support</string>
-    
+
     <!-- User Preferences Settings Screen -->
     <string name="default_profile">Default Profile</string>
     <string name="date_format_chinese">yyyy/MM/dd</string>
@@ -4070,7 +3987,7 @@
     <string name="confirm_rename">Confirm Rename</string>
     <string name="confirm_delete_profile">Confirm Delete Profile</string>
     <string name="delete_profile_warning">Are you sure you want to delete this preference profile? This operation will also delete its bound memory library data and cannot be recovered.\n\nWe recommend backing up important content beforehand.</string>
-    
+
     <!-- Profile Selection for Import/Export -->
     <string name="select_profile">Select Profile</string>
     <string name="export_from_profile">Export from Profile</string>
@@ -4081,7 +3998,7 @@
     <string name="select_export_profile">Select profile to export from</string>
     <string name="select_import_profile">Select profile to import to</string>
 
-    
+
     <!-- User Preferences Guide Screen Dialog -->
     <string name="add_custom_personality">Add Custom Personality Trait</string>
     <string name="add_custom_identity">Add Custom Identity</string>
@@ -4104,7 +4021,7 @@
     <string name="info_icon">Info</string>
     <string name="add_icon">Add</string>
     <string name="delete_icon">Delete</string>
-  
+
     <!-- Theme Settings Additional Strings -->
     <string name="theme_on_color_mode">Theme Text Color</string>
     <string name="theme_on_color_auto">Auto</string>
@@ -4179,18 +4096,18 @@
     <string name="avatar_corner_radius">Avatar Corner Radius</string>
     <string name="avatar_corner_decrease">Decrease Corner</string>
     <string name="avatar_corner_increase">Increase Corner</string>
-    
+
     <!-- Global User Name Settings -->
     <string name="global_user_name_title">Global User Name</string>
     <string name="global_user_name_label">User Name</string>
     <string name="global_user_name_placeholder">Please enter your name</string>
     <string name="global_user_name_desc">Set a global user name that will be used by AI to address you in all conversations. This name is shared across all character cards.</string>
-    
+
     <string name="ui_text_title">UI Text</string>
     <string name="custom_chat_title_label">Custom Chat Title</string>
     <string name="custom_chat_title_placeholder">e.g.: AI Assistant</string>
     <string name="save_title_desc">Save Title</string>
-  
+
     <!-- Model Configuration Screen -->
     <string name="select_model_config">Select Model Configuration</string>
     <string name="connection_test_success">Connection Success</string>
@@ -4207,7 +4124,7 @@
     <string name="rename_model_config">Rename Model Configuration</string>
     <string name="rename_model_config_desc">Modify the name of the model configuration</string>
     <string name="config_renamed">Configuration Renamed</string>
-    
+
     <!-- ModelApiSettingsSection strings -->
     <string name="api_endpoint_placeholder">e.g.: https://api.openai.com/v1/chat/completions</string>
     <string name="actual_request_url">Actual request URL: %s</string>
@@ -4365,7 +4282,7 @@
     <string name="temperature_recommendation">Temperature Recommendation</string>
     <string name="parameter_value">Parameter Value</string>
     <string name="parameter_range_format">Range: %1$s - %2$s</string>
-  
+
     <!-- Custom Parameters Dialog -->
     <string name="add_custom_parameter">Add</string>
     <string name="custom_parameter_added">Custom parameter added</string>
@@ -4384,7 +4301,7 @@
     <string name="custom_parameters_section">Custom Parameters</string>
     <string name="parameter_name_required">Parameter name cannot be empty</string>
     <string name="api_name_required">API name cannot be empty</string>
-    
+
     <!-- Model Parameters Section new strings -->
     <string name="model_parameters_title">Model Parameters Settings</string>
     <string name="repetition_parameters">Repetition Control Parameters</string>
@@ -4411,7 +4328,7 @@
     <string name="persona_card_generation_desc">Enter AI conversation to generate personalized character cards</string>
     <string name="waifu_mode_settings">Waifu Mode Settings</string>
     <string name="waifu_mode_settings_desc">Configure AI response sentence-by-sentence sending mode</string>
-    
+
     <!-- Tavern Character Card Import -->
     <string name="import_tavern_card">Import Tavern Card</string>
     <string name="import_tavern_card_desc">Import character cards from JSON or PNG tavern format files</string>
@@ -4420,7 +4337,7 @@
     <string name="tavern_card_import_failed">Failed to import tavern card</string>
     <string name="invalid_tavern_card_format">Invalid tavern card format</string>
     <string name="tavern_card_parse_error">Error parsing tavern card: %1$s</string>
-    
+
     <!-- Screen Titles -->
     <string name="screen_title_memory_base">Memory Base</string>
     <string name="screen_title_tool_permissions">Tool Permissions</string>
@@ -4455,7 +4372,7 @@
     <string name="screen_title_mcp_market">MCP Market</string>
     <string name="screen_title_mcp_publish">Publish MCP Plugin</string>
     <string name="screen_title_mcp_manage">Manage My Plugins</string>
-    
+
     <!-- Model Prompts Settings Screen -->
     <string name="unknown_error">Unknown error</string>
     <string name="file_read_error">Failed to read file: %1$s</string>
@@ -4517,7 +4434,7 @@
     <string name="copy_tone_prompt">Copy Tone Prompt</string>
     <string name="old_config_usage_tip">You can copy this content for use in the new character card system.</string>
     <string name="close">Close</string>
-    
+
     <!-- Waifu Mode Settings Screen -->
     <string name="waifu_mode">Waifu Mode</string>
     <string name="waifu_mode_description">When enabled, AI responses will be split by punctuation and sent sentence by sentence for a more natural conversation experience.</string>
@@ -4566,7 +4483,7 @@
     <string name="github_account_info_following">Following</string>
     <string name="github_account_info_not_available">Login to view account info</string>
     <string name="github_account_not_logged_in_desc">Please login to GitHub first</string>
-    
+
     <!-- Character Card Dialog -->
     <string name="character_card_tab_basic">Basic</string>
     <string name="character_card_tab_content">Content</string>
@@ -4706,7 +4623,7 @@
     <string name="title_label">Title</string>
     <string name="url_label">URL</string>
     <string name="settings_config">Settings</string>
-    
+
     <!-- Terminal Environment Wizard -->
     <string name="configure_terminal_environment">Configure Terminal Environment</string>
     <string name="nodejs_pip_environment_ready">NodeJS and pip environment ready</string>
@@ -4717,7 +4634,7 @@
     <string name="go_to_terminal_config">Go to Terminal Configuration</string>
     <string name="nodejs_pip_environment_configured">NodeJS and pip environment are configured and ready to use MCP plugins.</string>
     <string name="open_terminal">Open Terminal</string>
-    
+
     <!-- MCP Market Screen -->
     <string name="login_github_to_manage_mcp_plugins">Login to GitHub to publish and manage your MCP plugins</string>
     <string name="browse">Browse</string>
@@ -4749,7 +4666,7 @@
     <string name="publish_mcp_plugins_to_market">• Publish your MCP plugins to the market</string>
     <string name="manage_published_plugins">• Manage your published plugins</string>
     <string name="better_installation_experience">• Get better installation experience</string>
-    
+
     <!-- MCP Publish Screen -->
     <string name="edit_description">Edit Description</string>
     <string name="publish_description">Publish Description</string>
@@ -4767,7 +4684,7 @@
     <string name="update_success">Update Successful</string>
     <string name="publish_success">Publish Successful</string>
 
-    
+
     <!-- MCP Config Screen -->
     <string name="mcp_community_resources">MCP Community Resources</string>
     <string name="mcp_official_repo">MCP Official Repository</string>
@@ -4783,7 +4700,7 @@
     <string name="mcp_market">MCP Market</string>
     <string name="more">More</string>
     <string name="copy_link">Copy Link</string>
-    
+
     <!-- MCP Manage Screen -->
     <string name="need_login_github_manage_plugins">Need to login to GitHub to manage your published plugins</string>
     <string name="no_published_plugins_yet">No published plugins yet</string>
@@ -4795,7 +4712,7 @@
     <string name="market_review_pending">Pending Review</string>
     <string name="remove">Remove</string>
     <string name="republish">Republish</string>
-    
+
     <!-- Additional strings -->
     <string name="author_colon">Author:</string>
     <string name="share_colon">Share:</string>
@@ -4820,7 +4737,7 @@
     <string name="awesome_mcp">Awesome MCP</string>
     <string name="loading_your_plugins">Loading your plugins...</string>
     <string name="confirm_remove_plugin_from_market">Are you sure you want to remove plugin "%1$s" from the market? This will close the corresponding Issue but will not delete your code repository.</string>
-    
+
     <!-- MCPPublishScreen additional strings -->
     <string name="edit_plugin_info_description">You are editing published plugin information. Modified information will be updated to the corresponding Issue in the market repository.</string>
     <string name="publish_plugin_info_description">Your plugin information will be published as a GitHub Issue to the market repository. Please ensure the information is accurate and complete. Form content will be automatically saved as a draft until successfully published.</string>
@@ -4923,7 +4840,7 @@
     <string name="mcp_publish_body_table_row_platform">| Platform | Operit MCP Market |</string>
     <string name="mcp_publish_body_table_row_parser_version">| Parser Version | 1.0 |</string>
     <string name="mcp_publish_body_table_row_publish_time">| Published at | %1$s |</string>
-    
+
     <!-- MCP Plugin Detail Screen -->
     <string name="mcp_plugin_detail_title">Plugin Details</string>
     <string name="market_detail_published_label">Published</string>
@@ -4958,7 +4875,7 @@
     <string name="mcp_plugin_cancel">Cancel</string>
     <string name="mcp_plugin_refresh_comments">Refresh Comments</string>
     <string name="mcp_plugin_unknown_author">Unknown</string>
-    
+
     <!-- Advanced Settings Section -->
     <string name="advanced_settings">Advanced Settings</string>
     <string name="use_api_key_pool">Use API Key Pool</string>
@@ -5078,7 +4995,7 @@
     <string name="message_limit_reached_title">Message Limit Reached</string>
     <string name="message_limit_reached_message">The current conversation has reached the limit of %1$d messages.\nTo maintain conversation quality and performance, please clear the history to continue.</string>
     <string name="go_clear">Clear Now</string>
-    
+
     <!-- MNN Local Inference -->
     <string name="screen_title_mnn_model_download">MNN Model Download</string>
     <string name="mnn_model_download">Download MNN Model</string>
@@ -5117,7 +5034,7 @@
     <string name="default_assistant_guide_subtitle">Make Operit Your Smart Assistant</string>
     <string name="default_assistant_guide_intro">After setting Operit as the default system assistant, you can quickly launch the Operit voice assistant by long-pressing the Home button or using voice wake-up, providing a more convenient AI interaction experience.</string>
     <string name="default_assistant_guide_steps_title">Setup Steps</string>
-    
+
     <!-- Step 1 -->
     <string name="default_assistant_guide_step1_title">Open System Settings</string>
     <string name="default_assistant_guide_step1_desc">First, you need to enter the Android system settings interface</string>
@@ -5125,7 +5042,7 @@
     <string name="default_assistant_guide_step1_detail2">• Find and select "Operit AI" in the assistant app list</string>
     <string name="default_assistant_guide_step1_detail_android12">Android 12+: Settings → Apps → Default apps → Digital assistant app → Default digital assistant app</string>
     <string name="default_assistant_guide_open_settings">Open Settings</string>
-    
+
     <!-- Step 2 -->
     <string name="default_assistant_guide_open_gesture_settings">Open Gesture Settings</string>
     <string name="default_assistant_guide_step2_title">Find Assistant Settings</string>
@@ -5135,20 +5052,20 @@
     <string name="default_assistant_guide_step2_detail3">• Voice wake-up: \"Hey Google\" or your device\'s designated wake word (device support required)</string>
     <string name="default_assistant_guide_step2_note">Note: Gesture settings may vary between phone brands. Please check available options in system settings</string>
     <string name="default_assistant_guide_step2_detail_android12">Android 12+: Settings → Apps → Default apps → Digital assistant app → Default digital assistant app</string>
-    
+
     <!-- Step 3 -->
     <string name="default_assistant_guide_step3_title">Select Operit</string>
     <string name="default_assistant_guide_step3_desc">Choose Operit AI from the assistant app list</string>
     <string name="default_assistant_guide_step3_detail1">• Find \"Operit AI\" in the available assistant apps list</string>
     <string name="default_assistant_guide_step3_detail2">• Tap to select, and the system will set Operit as the default assistant</string>
     <string name="default_assistant_guide_step3_detail3">• You can try speaking or typing to interact with the assistant</string>
-    
+
     <!-- Step 4 -->
     <string name="default_assistant_guide_step4_title">Test Voice Assistant</string>
     <string name="default_assistant_guide_step4_desc">After setup, test if it can be launched normally</string>
     <string name="default_assistant_guide_step4_detail1">• Long-press the Home button (home screen button) should invoke Operit voice assistant</string>
     <string name="default_assistant_guide_step4_detail2">• If voice wake-up is supported, saying \"Hey Google\" or your device\'s designated wake word may also trigger Operit</string>
-    
+
     <!-- Troubleshooting -->
     <string name="default_assistant_guide_troubleshooting_title">Having Problems?</string>
     <string name="default_assistant_guide_troubleshooting_content">If you can\'t find Operit in the list, please ensure:\n\n• The app is properly installed and not disabled\n• Necessary permissions have been granted (microphone, overlay, etc.)\n• Try restarting the device and setting it up again\n\nSome custom systems may restrict third-party apps from being set as default assistants. If you encounter this situation, you can still use Operit through the in-app floating window feature.</string>
@@ -5284,7 +5201,7 @@
     <string name="generate_image_failed">Failed to generate image: %1$s</string>
     <string name="start_export">Starting export...</string>
     <string name="file_operation_error">File operation error: %1$s</string>
-    
+
     <!-- Missing translations added -->
     <string name="bind_character_card">Bind Character Card</string>
     <string name="unbound_character_card">Unbound</string>
@@ -5303,7 +5220,7 @@
     <string name="insert_attachment">Insert Attachment</string>
     <string name="remove_attachment">Remove Attachment</string>
     <string name="token_limit_exceeded_message">Maximum token limit exceeded (%1$d / %2$d)</string>
-    
+
     <!-- Font Settings -->
     <string name="font_file_saved">Font file saved (.%1$s)</string>
     <string name="font_file_save_failed">Failed to save font file</string>
@@ -5320,7 +5237,7 @@
     <string name="clear_font">Clear Font</string>
     <string name="current_font_file_path">Current font file:\n%1$s</string>
     <string name="font_size_scale_label">Font Size Scale (%1$s)</string>
-    
+
     <!-- Chat History Batch -->
     <string name="no_available_character_cards_toast">No available character cards, please create one first</string>
     <string name="please_select_chats_first">Please select chat records first</string>
@@ -5342,7 +5259,7 @@
     <string name="filter_chat_history">Filter Chat History</string>
     <string name="no_chat_records_for_batch">No chat records available for batch operations.</string>
     <string name="no_matching_chats_adjust_filter">No matching chat records, please adjust filter conditions.</string>
-    
+
     <!-- Assign Dialog -->
     <string name="assign_to_character_card_title">Assign to Character Card</string>
     <string name="unbound_chats_select_card">There are %1$d chat records not bound to a character card. Please select the target character card:</string>
@@ -5358,11 +5275,11 @@
     <string name="chat_records_label">Chat Records</string>
     <string name="group_label">Group: %1$s</string>
     <string name="unnamed_conversation">Unnamed Conversation</string>
-    
+
     <!-- Character Selector -->
     <string name="select_character">Select Character</string>
     <string name="character_count">%1$d characters</string>
-    
+
     <!-- Attachment Selector -->
     <string name="attachment_photo">Photo</string>
     <string name="attachment_camera">Camera</string>
@@ -5372,7 +5289,7 @@
     <string name="attachment_notifications">Notifications</string>
     <string name="attachment_location">Location</string>
     <string name="attachments_count">Attachments (%1$d)</string>
-    
+
     <!-- Workspace -->
     <string name="select_file_to_reference">Select file to reference</string>
     <string name="workspace_directory_invalid">Workspace directory does not exist or is invalid</string>
@@ -5389,7 +5306,7 @@
     <string name="create_new_workspace_in_app">Create new workspace in app</string>
     <string name="select_existing_workspace">Select Existing</string>
     <string name="select_folder_from_device">Select a folder from device</string>
-    
+
     <!-- Global Display Settings -->
     <string name="global_display_settings_description">These settings control global display behavior, independent of character cards and theme configurations.</string>
     <string name="message_display_settings">Message Display Settings</string>
@@ -5437,7 +5354,7 @@
     <string name="software_identity_option_operit">Operit AI</string>
     <string name="software_identity_option_lingshu">Lingshu AI</string>
     <string name="reset_all_display_settings">Reset All Display Settings</string>
-    
+
     <!-- Chat History Management -->
     <string name="default_profile_name">Default Profile</string>
     <string name="removed_character_card_binding">Removed character card binding from %1$d chat(s)</string>
@@ -5474,7 +5391,7 @@
     <string name="delete_selected_workspaces">Delete Selected Workspaces (%1$d)</string>
     <string name="delete_workspaces_confirmation">Are you sure you want to delete the selected %1$d workspace(s)?\n\nAll files and data will be permanently lost.</string>
     <string name="not_used_by_any_chat">Not used by any chat</string>
-    
+
     <!-- Accessibility - Markdown Block Types -->
     <string name="code_block">Code Block</string>
     <string name="table_block">Table</string>
@@ -5499,14 +5416,14 @@
     <string name="search_group_title">Search</string>
     <string name="thinking_search_group_title">Thinking and searching</string>
     <string name="thinking_search_tools_group_title_with_count">Thinking, searching, and calling tools (%1$d)</string>
-    
+
     <!-- Backup Settings Screen -->
     <string name="backup_data_overview">Data Overview</string>
     <string name="backup_current_profile">Current Profile: %1$s</string>
     <string name="backup_chat_count">Chat History</string>
     <string name="backup_memory_count">Memory Entries</string>
     <string name="backup_memory_link_count">Memory Links</string>
-    
+
     <string name="backup_files_statistics">Backup Files Statistics</string>
     <string name="backup_files_statistics_subtitle">Backup files in Operit export directory</string>
     <string name="backup_refresh">Refresh</string>
@@ -5545,7 +5462,7 @@
     <string name="backup_room_db_restart_later">Later</string>
     <string name="backup_room_db_last_success">Last successful backup: %1$s</string>
     <string name="backup_room_db_last_error">Last error: %1$s</string>
-    
+
     <string name="backup_raw_snapshot_title">File Snapshot Backup (Experimental)</string>
     <string name="backup_raw_snapshot_subtitle">Archive/restore app data by file &amp; directory</string>
     <string name="backup_raw_snapshot_desc">This archives app data that is removed by Clear data: internal files/shared_prefs/datastore/databases and Android/data/package/files (the terminal Linux environment can be very large, so it is excluded by default). Restoring overwrites current data and requires an app restart. Some encrypted data may not work after device migration or reinstall.</string>
@@ -5582,19 +5499,19 @@
     <string name="backup_clear_selection">Clear selection</string>
     <string name="backup_chat_history_subtitle">Cross-format backup, export and recovery</string>
     <string name="backup_chat_current_count">Currently %1$d chat record(s).</string>
-    
+
     <string name="backup_export">Export</string>
     <string name="backup_import">Import</string>
     <string name="backup_delete_all">Delete All</string>
-    
+
     <string name="backup_memory_library">Memory Library</string>
     <string name="backup_memory_library_subtitle">Cross-profile backup and recovery</string>
     <string name="backup_memory_current_count">Currently %1$d memor(y/ies) and %2$d link(s).</string>
-    
+
     <string name="backup_model_config">Model Configurations</string>
     <string name="backup_model_config_subtitle">Backup and restore all model settings, including API keys and parameters</string>
     <string name="backup_model_config_current_count">Currently %1$d model configuration(s).</string>
-    
+
     <string name="backup_exporting">Exporting %1$s...</string>
     <string name="backup_text_export_progress">Exporting long text: %1$d%% (%2$d / %3$d characters processed)</string>
     <string name="backup_importing">Importing %1$s...</string>
@@ -5603,7 +5520,7 @@
     <string name="backup_import_success">Import Successful</string>
     <string name="backup_delete_success">Delete Successful</string>
     <string name="backup_operation_failed">Operation Failed</string>
-    
+
     <string name="backup_faq_title">FAQ</string>
     <string name="backup_faq_subtitle">Learn about backup and import precautions to avoid common issues.</string>
     <string name="backup_faq_why">Why backup data?</string>
@@ -5612,7 +5529,7 @@
     <string name="backup_faq_where_answer">Exported backup files are saved in the \"Download/Operit\" folder on your phone, with filenames containing the data type, date and time.</string>
     <string name="backup_faq_duplicate">Will importing create duplicate data?</string>
     <string name="backup_faq_duplicate_answer">The system uses record IDs to determine duplicates. Records with the same ID will be updated rather than duplicated. Records with different IDs will be added as new entries.</string>
-    
+
     <!-- Export Format Selection -->
     <string name="backup_select_export_format">Select Export Format</string>
     <string name="backup_select_format_hint">Please select the chat history format to export:</string>
@@ -5624,7 +5541,7 @@
     <string name="backup_format_html_desc">Web format, suitable for viewing in browsers</string>
     <string name="backup_format_txt">Plain Text</string>
     <string name="backup_format_txt_desc">Simple text format, easy to share</string>
-    
+
     <!-- Import Format Selection -->
     <string name="backup_select_import_format">Select Import Format</string>
     <string name="backup_import_format_hint">Please select the chat history format to import:</string>
@@ -5636,7 +5553,7 @@
 
     <string name="backup_format_generic_json">Generic JSON</string>
     <string name="backup_format_generic_json_desc">Standard role-content JSON structure (supports Claude, LibreChat, etc.)</string>
-    
+
     <string name="backup_import_result_success">Successfully imported %1$s format:\n- New records: %2$d\n- Updated records: %3$d%4$s</string>
     <string name="backup_import_result_skipped">\n- Skipped invalid records: %1$d</string>
     <string name="backup_import_result_failed">Import failed: No valid chat history found</string>
@@ -5677,7 +5594,7 @@
     <string name="backup_delete_confirm_title">Confirm Delete</string>
     <string name="backup_delete_confirm_message">Deleting all chat history cannot be undone. It is recommended to export a backup before performing this operation.\n\nAre you sure you want to delete?</string>
     <string name="backup_delete_result_success">Successfully cleared %1$d chat record(s)</string>
-    
+
     <!-- Model Config Export Security Warning -->
     <string name="backup_model_config_warning_title">Security Notice</string>
     <string name="backup_model_config_warning_contains">This configuration file contains the following sensitive information:</string>
@@ -5689,7 +5606,7 @@
     <string name="backup_model_config_warning_tips">• Do not share this file with others\n• Do not upload to public cloud storage\n• Move the file to a secure location\n• Use encryption tools to protect the file</string>
     <string name="backup_model_config_warning_export_path">Export Location:</string>
     <string name="backup_model_config_warning_confirm">I Understand</string>
-    
+
     <!-- Memory Import Strategy -->
     <string name="backup_memory_import_strategy_title">Select Import Strategy</string>
     <string name="backup_memory_import_profile_title">Select Profile</string>
@@ -8595,7 +8512,6 @@
     <string name="openai_file_omitted">File content omitted, current model does not support file processing</string>
 
     <string name="provider_openai_codex">Codex (OpenAI)</string>
-    <string name="onboarding_config_codex_login_required">Sign in to Codex first</string>
     <string name="codex_login_title">Sign in to Codex</string>
     <string name="codex_login_starting">Preparing Codex sign-in...</string>
     <string name="codex_login_waiting">Complete sign-in in your browser</string>
@@ -8620,7 +8536,6 @@
     <string name="codex_reset_after_days">Resets in %1$d days</string>
     <string name="codex_reset_after_clock">Resets in %1$02d:%2$02d</string>
     <string name="provider_antigravity">Antigravity (Google)</string>
-    <string name="onboarding_config_antigravity_login_required">Sign in to Antigravity first</string>
     <string name="antigravity_login_title">Sign in to Antigravity</string>
     <string name="antigravity_login_starting">Preparing Antigravity sign-in...</string>
     <string name="antigravity_login_waiting">Finish Google sign-in in the browser</string>
@@ -9266,4 +9181,8 @@
     <string name="theme_input_background_transparency">Input background transparency</string>
     <string name="theme_user_background_transparency">User bubble background transparency</string>
     <string name="theme_ai_background_transparency">AI bubble background transparency</string>
+    <!-- 单页首次使用流程 -->
+    <string name="onboarding_tagline">Make everyday tasks simpler</string>
+    <string name="onboarding_consent"><![CDATA[I have read and agree to the <a href="operit://agreement">User Agreement and Privacy Policy</a>]]></string>
+    <string name="onboarding_start">Agree and start</string>
 </resources>

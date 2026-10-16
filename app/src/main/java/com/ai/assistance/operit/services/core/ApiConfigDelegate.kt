@@ -545,42 +545,6 @@ class ApiConfigDelegate(
         }
     }
 
-    suspend fun saveDeepSeekConfiguration(expectedConfigId: String, apiKey: String) {
-        try {
-            val normalizedApiKey = ApiKeyFormatValidator.normalize(apiKey)
-            require(ApiKeyFormatValidator.isValid(normalizedApiKey)) {
-                "DeepSeek API Key format is invalid"
-            }
-            check(_activeConfigId.value == expectedConfigId) {
-                "Active chat configuration changed while saving"
-            }
-            val targetConfig = checkNotNull(modelConfigManager.getModelConfig(expectedConfigId)) {
-                "Active chat configuration no longer exists"
-            }
-            check(
-                ApiProviderType.fromProviderTypeId(targetConfig.apiProviderTypeId) ==
-                    ApiProviderType.DEEPSEEK
-            ) {
-                "Active chat configuration is not a DeepSeek configuration"
-            }
-            modelConfigManager.updateSingleApiKey(expectedConfigId, normalizedApiKey)
-            check(_activeConfigId.value == expectedConfigId) {
-                "Active chat configuration changed while saving"
-            }
-            val enhancedAiService =
-                withContext(Dispatchers.IO) {
-                    EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
-                    EnhancedAIService.getInstance(context)
-                }
-            withContext(Dispatchers.Main) { onConfigChanged(enhancedAiService) }
-            _isConfigured.value = true
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "保存 DeepSeek 配置失败: ${e.message}", e)
-            throw e
-        }
-    }
 
     private suspend fun persistApiSettings(
         apiKey: String,

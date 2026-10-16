@@ -40,7 +40,7 @@
     <string name="screen_content">Contenido de pantalla</string>
     <string name="current_notifications">Notificaciones actuales</string>
     <string name="current_location">Ubicación actual</string>
-    
+
     <!-- Permission Request -->
     <string name="requested_operation">Operación solicitada</string>
     <string name="used_tool">Herramienta utilizada</string>
@@ -423,7 +423,7 @@
     <string name="export">Exportar</string>
     <string name="update_history">Historial de Actualizaciones</string>
     <string name="nav_memory_base">Base de Memoria</string>
-    
+
     <!-- MCP and Plugin Related -->
     <string name="uninstall">Desinstalar</string>
     <string name="install">Instalar</string>
@@ -459,11 +459,11 @@
     <string name="stop_recognition_error">Error al detener reconocimiento: %s</string>
     <string name="speech_usage_steps">1. Seleccionar motor de voz\n2. Hacer clic en el botón de iniciar grabación\n3. Hablar claramente\n4. Hacer clic en detener grabación\n5. Esperar los resultados de transcripción</string>
     <string name="speech_engine_note">Nota: Diferentes motores de voz pueden tener diferente precisión e idiomas soportados</string>
-    
+
     <!-- Free Usage -->
     <string name="free_usage_title">Confirmar uso de recursos gratuitos</string>
     <string name="free_usage_interval_tip">Para evitar que el autor vaya a la bancarrota, el tiempo de espera se duplica después de cada uso～</string>
-    
+
     <!-- Accessibility Risk Warning -->
     <string name="accessibility_risk_warning_title">Advertencia de riesgo del servicio de accesibilidad</string>
     <string name="accessibility_risk_warning_message">Aunque habilitar el servicio de accesibilidad puede acelerar las operaciones de UI, algunas aplicaciones pueden detectar este servicio e imponer restricciones, incluyendo prohibiciones de cuenta. Habilítelo solo después de entender y aceptar los riesgos relacionados.</string>
@@ -472,24 +472,20 @@
     <string name="accessibility_risk_warning_input_error">Escriba \"Entiendo y reconozco los riesgos de prohibición de cuentas y funciones de cuenta restringidas causados por los permisos de accesibilidad, y asumo las consecuencias yo mismo\" para confirmar que entiende los riesgos</string>
     <string name="accessibility_risk_warning_confirm">Confirmar continuar</string>
     <string name="accessibility_risk_warning_cancel">Cancelar</string>
-    
+
     <!-- Usage Instructions -->
     <string name="usage_instructions">Instrucciones de uso</string>
-    
+
     <!-- Plugin Status Messages -->
     <string name="plugin_termux_not_running">El servicio de terminal no está en ejecución, no se pueden iniciar los plugins</string>
     <string name="plugin_termux_not_authorized">El servicio de terminal no está listo, por favor inícielo antes de usar plugins</string>
     <string name="plugin_nodejs_missing">pnpm no está instalado en el entorno de terminal (se requiere Node.js). Por favor instálelo antes de usar plugins</string>
     <string name="plugin_bridge_failed">Error en la inicialización del puente, no se pueden iniciar los plugins</string>
     <string name="plugin_other_error">Ocurrió un error al iniciar plugins, puede hacer clic en \"Omitir\" en la esquina superior derecha para continuar</string>
-    
+
     <!-- Agreement Screen -->
-    <string name="agreement_subtitle">Por favor lea cuidadosamente y acepte los siguientes términos antes de usar.</string>
     <string name="agreement_version">Versión del acuerdo: %1$s</string>
-    <string name="agreement_human_readable_title">Acuerdo en lenguaje simple (versión no legal)</string>
-    <string name="agreement_human_readable_content">Límite del servicio: Operit no proporciona servicios públicos de interacción emocional antropomórfica. Operit es un cliente de código abierto que se ejecuta localmente en el dispositivo del usuario. No opera servicios de inferencia de modelos, no aloja sesiones de chat ni datos de interacción, y no distribuye credenciales de modelo compartidas. Las solicitudes a modelos en la nube se envían directamente desde su dispositivo al proveedor de modelos que configure con sus propias credenciales; los datos relacionados se rigen por las reglas de ese proveedor. Los modelos locales infieren en su dispositivo.\n\nEsta aplicación puede llamar archivos, terminales, automatización, Root, ADB, extensiones y capacidades similares. Revise las operaciones antes de ejecutarlas, haga copias de seguridad de los datos importantes y otorgue permisos con cuidado. Las pérdidas relacionadas con dispositivos, datos, cuentas u otros intereses causadas por acciones del usuario, configuración del usuario, servicios de terceros o extensiones de terceros deben ser gestionadas por el operador real según la ley aplicable.\n\nLos plugins, scripts, Skills, kits de herramientas y otros contenidos de terceros del mercado pertenecen a sus autores o titulares de derechos indicados, junto con la responsabilidad correspondiente. La publicación o instalación desde el mercado no significa que Operit garantice, respalde u obtenga derechos sobre ese contenido. Confirme la licencia y el estado de los derechos antes de usarlo, modificarlo, publicarlo o redistribuirlo.</string>
-    <string name="agreement_serious_title">Acuerdo legal riguroso</string>
-    <string name="agreement_serious_content"><![CDATA[
+    <string name="agreement_content"><![CDATA[
         <p><b>Acuerdo de usuario y política de privacidad de Operit</b><br>Versión: 2026-07-15; fecha efectiva prevista: 15 de julio de 2026.</p>
         <p><b>1. Alcance y versión del acuerdo</b><br>Este acuerdo se aplica al cliente Android publicado oficialmente por Operit y a sus funciones en línea opcionales. Al usar esta aplicación, confirma que ha leído y aceptado la versión actual. La aplicación registra al iniciar la versión del acuerdo que usted ha aceptado; cuando el acuerdo tenga una actualización sustancial, la aplicación le pedirá confirmar la nueva versión antes de continuar. El código abierto del repositorio se licencia bajo la Licencia Pública General Menor de GNU versión 3 (LGPLv3) indicada en el archivo raíz <code>LICENSE</code>. Este acuerdo no excluye ni reduce los derechos otorgados por la ley aplicable o por licencias de código abierto.</p>
         <p><b>2. Posición del producto y servicios de terceros</b><br>Operit es software cliente de código abierto. No proporciona inferencia de modelos de lenguaje grandes, API Keys compartidas, retransmisión de solicitudes de chat ni alojamiento en la nube de historiales de chat. Los modelos en la nube, voz en la nube, búsqueda, generación de imágenes, MCP y otras funciones de red son elegidos, configurados y habilitados por usted. Cuando usa esos servicios, los datos se envían directamente al proveedor correspondiente y se rigen por sus términos de servicio y política de privacidad. Usted debe evaluar la seguridad, legalidad e idoneidad de proveedores, modelos, endpoints y extensiones, y proteger sus credenciales.</p>
@@ -499,10 +495,7 @@
         <p><b>6. Software proporcionado tal como está</b><br>En la medida permitida por la ley aplicable, este software se proporciona "tal como está" y "según disponibilidad". Los contribuyentes no ofrecen garantías expresas o implícitas sobre la disponibilidad continua, exactitud, seguridad, comerciabilidad, idoneidad para un propósito particular o no infracción del software o de servicios de terceros. Las pérdidas causadas por el uso de este software, servicios de terceros, extensiones, configuración del usuario o modificaciones propias deben gestionarse conforme a la ley aplicable y los acuerdos de servicio correspondientes.</p>
         <p><b>7. Actualizaciones del acuerdo y contacto</b><br>Podemos actualizar este acuerdo por requisitos funcionales, legales o de seguridad, y proporcionar la versión actual dentro de la aplicación. Las actualizaciones que afecten sustancialmente los derechos de los usuarios entrarán en vigor aumentando la versión del acuerdo y solicitando confirmación nuevamente. Puede enviar preguntas y comentarios mediante el repositorio del proyecto, la entrada de comentarios de la aplicación o canales públicos de contacto.</p>
     ]]></string>
-    <string name="agreement_disclaimer">La versión en lenguaje simple solo facilita la comprensión. Si difiere de la versión formal china, prevalece la versión formal china.</string>
-    <string name="agreement_accept">He leído y acepto</string>
-    <string name="agreement_wait">Por favor espere... (%1$d)</string>
-    
+
     <!-- Sherpa Speech Engine -->
     <string name="sherpa_k2_ncnn_init_failed">Error en la inicialización del motor de reconocimiento de voz en tiempo real</string>
     <string name="sherpa_k2_ncnn_init_success">Motor de reconocimiento de voz en tiempo real inicializado exitosamente</string>
@@ -580,13 +573,13 @@
     <string name="chat_style_cursor_user_bubble_liquid_glass_desc">Cuando está activado, el fondo del globo de usuario en modo comando usará un efecto de cristal esmerilado estilo iOS</string>
     <string name="chat_style_cursor_user_bubble_water_glass">Cristal acuoso para el globo de usuario en modo comando</string>
     <string name="chat_style_cursor_user_bubble_water_glass_desc">Cuando está activado, el fondo del globo de usuario en modo comando usará un efecto de cristal acuoso y desactivará el cristal esmerilado</string>
-    
+
     <!-- Toolbox Categories -->
     <string name="tool_category_all">Todas las herramientas</string>
     <string name="tool_category_file_management">Gestión de archivos</string>
     <string name="tool_category_development">Herramientas de desarrollo</string>
     <string name="tool_category_system">Herramientas del sistema</string>
-    
+
     <!-- Tool Names -->
     <string name="tool_file_manager">Gestor de archivos</string>
     <string name="tool_file_manager_desc">Navegar y gestionar archivos del dispositivo con soporte para varias operaciones</string>
@@ -614,7 +607,7 @@
     <string name="tool_log_viewer_desc">Captura y visualización en tiempo real de registros del sistema y aplicaciones con filtrado y búsqueda</string>
     <string name="tool_token_config_desc">Abrir la página de obtención y configuración de la clave API para completar rápidamente la integración del modelo</string>
     <string name="toolbox_description">Colección de herramientas convenientes y prácticas para mejorar la eficiencia del trabajo</string>
-    
+
     <!-- MCP Config Screen -->
     <string name="import_or_connect_mcp_service">Importar o conectar servicio MCP</string>
     <string name="select_mcp_plugin_zip">Por favor seleccione el paquete zip del plugin MCP</string>
@@ -664,12 +657,12 @@
     <string name="name">Nombre</string>
     <string name="description">Descripción</string>
     <string name="author">Autor</string>
-    
+
     <!-- Speech Services Settings -->
     <string name="speech_services_settings">Configuración de Servicios de Voz</string>
     <string name="speech_services_settings_desc">Configurar texto a voz y reconocimiento de voz</string>
     <string name="configure_speech_services">Configurar Servicios de Voz</string>
-    
+
     <!-- Settings Screen Sections -->
     <string name="settings_section_personalization">Personalización</string>
     <string name="settings_user_preferences">Preferencias de Usuario</string>
@@ -684,7 +677,7 @@
     <string name="settings_data_backup">Respaldo y Recuperación de Datos</string>
     <string name="settings_data_backup_desc">Importar, exportar o eliminar historial de chat y datos de la biblioteca de memoria para facilitar respaldo y recuperación</string>
     <string name="settings_manage_backup">Gestionar Respaldo</string>
-    
+
     <string name="settings_section_ai_model">Configuración del Modelo IA</string>
     <string name="settings_model_parameters">Configuración de Modelo y Parámetros</string>
     <string name="settings_model_parameters_desc">Configurar ajustes de API, nombres de modelo y parámetros, con soporte para gestión de múltiples configuraciones</string>
@@ -692,7 +685,7 @@
     <string name="settings_functional_model">Configuración de Modelo Funcional</string>
     <string name="settings_functional_model_desc">Configurar modelos especializados y ajustes de API para diferentes funciones (chat, resumen, memoria, etc.)</string>
     <string name="settings_configure_function">Configurar Función</string>
-    
+
     <string name="settings_section_display">Visualización y Comportamiento</string>
     <string name="settings_keep_screen_on">Mantener Pantalla Encendida</string>
     <string name="settings_keep_screen_on_desc">Mantener pantalla encendida durante salida de IA para evitar que se apague</string>
@@ -702,12 +695,12 @@
     <string name="notification_ai_reply_content">La IA ha completado la respuesta</string>
     <string name="settings_auto_accessibility">Auto-conceder Permiso de Accesibilidad</string>
     <string name="settings_auto_accessibility_desc">Cuando esté deshabilitado, se requiere autorización manual cada vez que se abre la aplicación</string>
-    
+
     <string name="settings_section_permissions">Permisos y Seguridad</string>
     <string name="settings_tool_permissions">Configuración de Permisos de Herramientas</string>
     <string name="settings_tool_permissions_desc">Configurar niveles de permiso para herramientas del asistente IA, puede establecerse como auto-permitir, preguntar o denegar</string>
     <string name="settings_configure_permissions">Configurar Permisos</string>
-    
+
     <string name="settings_section_usage">Estadísticas de Uso</string>
     <string name="settings_token_statistics">Estadísticas de Tokens</string>
     <string name="settings_reset_analysis_count">Reiniciar Contador de Análisis de Preferencias</string>
@@ -718,65 +711,17 @@
     <string name="settings_preference_input_token">Tokens de Entrada de Análisis de Preferencias</string>
     <string name="settings_preference_output_token">Tokens de Salida de Análisis de Preferencias</string>
     <string name="settings_total">Total</string>
-    
-    <!-- Permission Guide Screen -->
-    <string name="permission_guide_previous">Anterior</string>
-    <string name="permission_guide_next">Siguiente</string>
-    <string name="permission_guide_complete">Completar</string>
-    <string name="permission_guide_welcome">Bienvenido</string>
-    <string name="permission_guide_basic_permissions">Permisos Básicos</string>
-    <string name="permission_guide_permission_level">Nivel de Permisos</string>
-    
-    <string name="permission_guide_welcome_title">Bienvenido</string>
-    <string name="permission_guide_welcome_desc">Antes de usar la aplicación, necesitamos configurar algunos permisos básicos y seleccionar tu nivel de permisos preferido.</string>
-    <string name="permission_guide_welcome_hint">Este proceso toma solo unos minutos y ayudará a la aplicación a servirte mejor.</string>
-    <string name="permission_guide_welcome_start">Haga clic en el botón en la esquina inferior derecha para comenzar</string>
-    
-    <string name="permission_guide_basic_title">Permisos Básicos</string>
-    <string name="permission_guide_basic_desc">Por favor conceda los siguientes permisos básicos para asegurar el funcionamiento correcto de la aplicación</string>
-    <string name="permission_guide_storage_title">Permiso de Almacenamiento</string>
-    <string name="permission_guide_storage_desc">Permitir a la aplicación leer y escribir archivos</string>
-    <string name="permission_guide_overlay_title">Permiso de Superposición</string>
-    <string name="permission_guide_overlay_desc">Permitir a la aplicación mostrar ventanas flotantes</string>
-    <string name="permission_guide_battery_title">Exención de Optimización de Batería</string>
-    <string name="permission_guide_battery_desc">Permitir a la aplicación ejecutarse en segundo plano</string>
-    <string name="permission_guide_location_title">Permiso de Ubicación</string>
-    <string name="permission_guide_location_desc">Permitir a la aplicación acceder a información de ubicación</string>
-    <string name="permission_guide_check_permissions">Verificar Estado de Permisos</string>
-    <string name="permission_guide_all_granted">Todos los permisos básicos concedidos, puede continuar al siguiente paso</string>
-    
-    <string name="permission_guide_warning_title">Permisos Incompletos</string>
-    <string name="permission_guide_warning_message">No ha concedido todos los permisos necesarios, lo que puede resultar en funcionalidad incompleta o comportamiento anormal de la aplicación. ¿Está seguro de que desea continuar?</string>
-    <string name="permission_guide_warning_continue">Continuar</string>
-    <string name="permission_guide_warning_return">Volver a Permisos</string>
-    
-    <string name="permission_guide_level_title">Seleccionar Nivel de Permisos</string>
-    <string name="permission_guide_level_desc">Por favor seleccione su nivel de permisos preferido, que determinará el rango de funciones que la aplicación puede usar</string>
-    <string name="permission_guide_standard_title">Permisos Estándar</string>
-    <string name="permission_guide_standard_desc">Permisos básicos de operación de aplicación, no se requieren permisos especiales</string>
-    <string name="permission_guide_accessibility_title">Permisos de Accesibilidad</string>
-    <string name="permission_guide_accessibility_desc">Habilita análisis de contenido de pantalla y simulación de operaciones a través del servicio de accesibilidad</string>
-    <string name="permission_guide_debugger_title">Permisos de Depuración</string>
-    <string name="permission_guide_debugger_desc">Proporciona acceso al sistema a nivel ADB a través de Shizuku</string>
-    <string name="permission_guide_root_title">Permisos Root</string>
-    <string name="permission_guide_root_desc">Permisos de superusuario, puede realizar cualquier operación del sistema</string>
-    <string name="permission_guide_confirm">Confirmar Selección</string>
-    <string name="permission_guide_change_anytime">Puede cambiar el nivel de permisos en configuración en cualquier momento</string>
-    
-    <!-- Permission Guide Toast Messages -->
-    <string name="permission_guide_storage_setting_failed">No se puede abrir configuración de permisos de almacenamiento, autorizar manualmente</string>
-    <string name="permission_guide_overlay_setting_failed">No se puede abrir configuración de superposición, autorizar manualmente</string>
-    <string name="permission_guide_battery_hint">Encuentre la aplicación en la lista y configúrela como "Sin optimizar"</string>
-    <string name="permission_guide_battery_setting_failed">No se puede abrir configuración de optimización de batería, configurar manualmente</string>
-    
-    <!-- Permission Status Description -->
-    <string name="permission_guide_granted">Concedido</string>
-    <string name="permission_guide_not_granted">No Concedido</string>
-    <string name="permission_guide_selected">Seleccionado</string>
-    
+
+
+
+
+
+
+
+
     <!-- Network Related -->
     <string name="wifi">WiFi</string>
-    
+
     <!-- Additional Text-to-Speech and Speech Recognition -->
     <string name="text_to_speech_engine_initialized">Motor de texto a voz inicializado</string>
     <string name="text_to_speech_engine_init_failed">Error al inicializar motor de texto a voz</string>
@@ -785,7 +730,7 @@
     <string name="speech_error_init_failed">Error al inicializar motor de reconocimiento de voz</string>
     <string name="speech_error_not_initialized">Motor de reconocimiento de voz no inicializado</string>
     <string name="title_activity_crash_report">Error de Aplicación</string>
-    
+
     <!-- Crash Report Screen -->
     <string name="crash_report_header">La aplicación ha encontrado un error irrecuperable y necesita reiniciarse.</string>
     <string name="crash_report_restart_button">Reiniciar Aplicación</string>
@@ -796,7 +741,7 @@
     <string name="crash_report_copy_success">Copiado al portapapeles</string>
     <string name="crash_report_export_success">Reporte de error exportado a\n%1$s</string>
     <string name="crash_report_export_failed">Error al exportar: %1$s</string>
-    
+
     <!-- Toolbox Permission Manager -->
     <string name="toolbox_permissions_search_hint">Buscar aplicaciones</string>
     <string name="toolbox_permissions_system_apps">Aplicaciones del sistema</string>
@@ -822,7 +767,7 @@
     <string name="try_different_keywords">Pruebe con palabras clave diferentes</string>
     <string name="try_show_system_apps">Pruebe marcar "Aplicaciones del sistema" para ver más aplicaciones</string>
     <string name="no_apps_found_anywhere">No se encontraron aplicaciones</string>
-    
+
     <!-- Permission Groups -->
     <string name="permission_group_activity">Reconocimiento de actividad</string>
     <string name="permission_group_calendar">Calendario</string>
@@ -838,7 +783,7 @@
     <string name="permission_group_other_granted">Otros permisos concedidos</string>
     <string name="permission_group_other_denied">Otros permisos denegados</string>
     <string name="permission_group_other">Otros permisos</string>
-    
+
     <!-- Permission Names -->
     <string name="perm_name_camera">Cámara</string>
     <string name="perm_name_read_contacts">Leer Contactos</string>
@@ -874,7 +819,7 @@
     <string name="perm_name_read_sms">Leer SMS</string>
     <string name="perm_name_receive_wap_push">Recibir WAP Push</string>
     <string name="perm_name_receive_mms">Recibir MMS</string>
-    
+
     <!-- Permission Descriptions -->
     <string name="perm_desc_camera">Permitir que la aplicación tome fotos y grabe videos</string>
     <string name="perm_desc_read_contacts">Permitir que la aplicación lea sus contactos</string>
@@ -910,7 +855,7 @@
     <string name="perm_desc_read_sms">Permitir que la aplicación lea mensajes SMS</string>
     <string name="perm_desc_receive_wap_push">Permitir que la aplicación reciba mensajes WAP push</string>
     <string name="perm_desc_receive_mms">Permitir que la aplicación reciba mensajes MMS</string>
-    
+
     <!-- Functional Config Screen -->
     <string name="functional_model_config_title">Configuración de Modelo Funcional</string>
     <string name="functional_model_config_desc">Establecer configuraciones de modelo separadas para diferentes funciones, permitiendo que cada función use la configuración de API más adecuada.</string>
@@ -926,7 +871,7 @@
     <string name="test">Probar</string>
     <string name="expand_desc">Expandir</string>
     <string name="selected_desc">Seleccionado</string>
-    
+
     <!-- Function Types -->
     <string name="function_type_chat">Función de Chat</string>
     <string name="function_type_title_generation">Resumen de título con IA</string>
@@ -934,7 +879,7 @@
     <string name="function_type_memory">Gestión de memoria</string>
     <string name="function_type_file_binding">Procesamiento de Vinculación de Archivos</string>
     <string name="function_type_ui_controller">Controlador de UI</string>
-    
+
     <!-- Function Descriptions -->
     <string name="function_desc_chat">Función principal de chat para interacción diaria de conversación con usuarios</string>
     <string name="function_desc_title_generation">Genera un título breve y preciso para la conversación a partir del primer mensaje del usuario.</string>
@@ -942,7 +887,7 @@
     <string name="function_desc_memory">Procesar recuerdos y almacenarlos en la biblioteca de memoria</string>
     <string name="function_desc_file_binding">Procesa la vinculación inteligente y mezcla de contenido de archivos, proporcionando capacidades de procesamiento de código más precisas. Se recomienda usar modelos rápidos y económicos como Gemini Flash, no se recomienda usar DeepSeek R1</string>
     <string name="function_desc_ui_controller">Utilizado para la exploración y operación automáticas de interfaces de UI. El modelo de controlador de UI correspondiente solo se activará cuando el usuario solicite explícitamente usar un «agente» para el control, por ejemplo eligiendo modelos dedicados como autoglm-phone-9b.</string>
-    
+
     <!-- Functional Prompt Config Screen -->
     <string name="advanced_config_notice">Para configuraciones avanzadas como modificar plantillas de prompt del sistema, vaya a la página \"Gestionar Todos los Prompts\".</string>
 
@@ -976,7 +921,7 @@
     <string name="settings_input_tokens">Entrada</string>
     <string name="settings_output_tokens">Salida</string>
     <string name="settings_cost">Costo</string>
-    
+
     <!-- User Preferences Guide Screen -->
     <string name="user_male">Masculino</string>
     <string name="user_female">Femenino</string>
@@ -1003,7 +948,7 @@
     <string name="communication_style_general">Estilo de comunicación claro y organizado, enfocándose en practicidad y eficiencia</string>
     <string name="preferences_intro_template">Soy %1$s, %2$s. Estoy particularmente interesado en %3$s. En comunicación, prefiero %4$s.</string>
     <string name="preferences_intro_template_no_age">Soy %1$s, %2$s. Estoy particularmente interesado en %3$s. En comunicación, prefiero %4$s.</string>
-    
+
     <!-- Occupation Options -->
     <string name="occupation_student">Estudiante</string>
     <string name="occupation_employee">Empleado</string>
@@ -1018,7 +963,7 @@
     <string name="occupation_freelancer">Freelancer</string>
     <string name="occupation_retired">Jubilado</string>
     <string name="occupation_other">Otro</string>
-    
+
     <!-- Personality Traits -->
     <string name="personality_extroverted">Extrovertido</string>
     <string name="personality_introverted">Introvertido</string>
@@ -1036,7 +981,7 @@
     <string name="personality_innovative">Innovador</string>
     <string name="personality_meticulous">Meticuloso</string>
     <string name="personality_rough">Tosco</string>
-    
+
     <!-- Identity Options -->
     <string name="identity_student">Estudiante</string>
     <string name="identity_teacher">Profesor</string>
@@ -1050,7 +995,7 @@
     <string name="identity_foodie">Amante de la Comida</string>
     <string name="identity_entrepreneur">Emprendedor</string>
     <string name="identity_professional">Profesional</string>
-    
+
     <!-- AI Style Options -->
     <string name="ai_style_professional">Profesional y Riguroso</string>
     <string name="ai_style_humorous">Animado y Humorístico</string>
@@ -1060,7 +1005,7 @@
     <string name="ai_style_technical">Orientado a la Técnica</string>
     <string name="ai_style_educational">Guía Educativa</string>
     <string name="ai_style_supportive">Apoyo Emocional</string>
-    
+
     <!-- User Preferences Settings Screen -->
     <string name="default_profile">Perfil Predeterminado</string>
     <string name="date_format_chinese">dd/MM/yyyy</string>
@@ -1098,7 +1043,7 @@
     <string name="confirm_delete_profile">Confirmar Eliminar Perfil</string>
     <string name="delete_profile_warning">¿Estás seguro de que quieres eliminar este perfil de preferencias? Esta operación también eliminará sus datos de base de conocimiento vinculados y no se puede recuperar.\n\nRecomendamos hacer una copia de seguridad del contenido importante de antemano.</string>
 
-    
+
     <!-- User Preferences Guide Screen Dialog -->
     <string name="add_custom_personality">Agregar Rasgo de Personalidad Personalizado</string>
     <string name="add_custom_identity">Agregar Identidad Personalizada</string>
@@ -1121,7 +1066,7 @@
     <string name="info_icon">Info</string>
     <string name="add_icon">Agregar</string>
     <string name="delete_icon">Eliminar</string>
-    
+
     <!-- Theme Settings Additional Strings -->
     <string name="theme_on_color_mode">Color del Texto del Tema</string>
     <string name="theme_on_color_auto">Automático</string>
@@ -1156,7 +1101,7 @@
     <string name="custom_chat_title_label">Título de Chat Personalizado</string>
     <string name="custom_chat_title_placeholder">ej.: Asistente de IA</string>
     <string name="save_title_desc">Guardar Título</string>
-    
+
     <!-- Model Configuration Screen -->
     <string name="select_model_config">Seleccionar Configuración de Modelo</string>
     <string name="connection_test_success">Conexión Exitosa</string>
@@ -1173,7 +1118,7 @@
     <string name="rename_model_config">Renombrar Configuración de Modelo</string>
     <string name="rename_model_config_desc">Modificar el nombre de la configuración de modelo</string>
     <string name="config_renamed">Configuración Renombrada</string>
-    
+
     <!-- ModelApiSettingsSection strings -->
     <string name="api_endpoint_placeholder">ej.: https://api.openai.com/v1/chat/completions</string>
     <string name="actual_request_url">URL de solicitud real: %s</string>
@@ -1204,7 +1149,7 @@
     <string name="models_displayed">Mostrando %d modelos</string>
     <string name="models_displayed_filtered"> (filtrados)</string>
     <string name="close">Cerrar</string>
-    
+
     <!-- API Provider names -->
     <string name="provider_openai">ChatGPT (OpenAI)</string>
     <string name="provider_xai">Grok (SpaceXAI)</string>
@@ -1266,7 +1211,7 @@
     <string name="must_be_float">Debe ser un número decimal</string>
     <string name="default_value_format">Valor predeterminado: %s</string>
     <string name="temperature_recommendation">Recomendación de Temperatura</string>
-    
+
     <!-- Context Menu -->
     <string name="copy_message">Copiar Mensaje</string>
     <string name="markdown_source">Código fuente Markdown</string>
@@ -1310,7 +1255,7 @@
     <string name="image_generated">Imagen generada</string>
     <string name="load_more_history">Toca para cargar mensajes anteriores</string>
     <string name="load_newer_history">Toca para cargar mensajes más recientes</string>
-    
+
     <!-- Layout Adjustment Settings -->
     <string name="layout_adjustment_settings_title">Configuración de Ajuste de Diseño</string>
     <string name="layout_adjustment_description">Ajustar la posición y el espaciado de los elementos de la interfaz para personalizar su experiencia</string>
@@ -1334,10 +1279,10 @@
     <string name="reset_to_default">Restablecer por Defecto</string>
     <string name="layout_reset_settings">Restablecer Configuración de Diseño</string>
     <string name="layout_reset_settings_desc">Restablecer todas las configuraciones de ajuste de diseño a valores predeterminados</string>
-    
+
     <!-- Screen Titles -->
     <string name="screen_title_layout_adjustment">Ajuste de Diseño</string>
-    
+
     <!-- Accesibilidad - Tipos de Bloques Markdown -->
     <string name="code_block">Bloque de Código</string>
     <string name="table_block">Tabla</string>
@@ -1363,7 +1308,7 @@
     <string name="thinking_type_mode">mode</string>
     <string name="thinking_quality">Intensidad de pensamiento</string>
     <string name="thinking_quality_desc">Solo funciona en el modo de pensamiento. Los valores disponibles siguen el mapeo real del modelo y del proveedor actuales.</string>
-    
+
     <string name="provider_doubao">Doubao (Volcengine)</string>
     <string name="provider_nvidia">NIM (NVIDIA)</string>
 
@@ -1828,25 +1773,8 @@
     <string name="app_logo_description">Icono de la aplicación</string>
     <string name="github_star_description">Estrella de GitHub</string>
     <string name="network_status_label">Estado de red</string>
-    <string name="config_title">Asistente Operit AI</string>
-    <string name="config_description">Usa una clave API de DeepSeek o configura otro servicio de modelos</string>
-    <string name="config_api_key_label">Clave API</string>
-    <string name="config_api_key_placeholder">Clave API de DeepSeek</string>
-    <string name="config_save_button">Confirmar y guardar</string>
-    <string name="config_get_token">Obtener clave API de DeepSeek</string>
-    <string name="config_saving">Guardando...</string>
-    <string name="config_api_key_invalid_format">El formato de la clave API de DeepSeek es incorrecto. Usa solo letras ASCII, números y símbolos, sin espacios ni caracteres invisibles.</string>
     <string name="config_use_free">Usar gratis (de los contribuyentes)</string>
-    <string name="config_custom">Configurar otro modelo</string>
     <string name="config_free_usage_exceeded">Se agotaron los usos gratuitos de hoy</string>
-    <string name="onboarding_config_not_found">La configuración de modelo seleccionada ya no existe. Selecciona otra.</string>
-    <string name="onboarding_config_provider_missing">Selecciona un proveedor de servicios de modelos</string>
-    <string name="onboarding_config_provider_unavailable">El proveedor de servicios de modelos seleccionado no está disponible. Selecciona otro.</string>
-    <string name="onboarding_config_endpoint_invalid">Introduce un endpoint de API HTTP o HTTPS válido</string>
-    <string name="onboarding_config_model_missing">Selecciona o introduce un modelo para el chat</string>
-    <string name="onboarding_config_api_key_missing">Este servicio de modelos requiere una clave API</string>
-    <string name="onboarding_config_api_key_invalid">El formato de la clave API o del grupo de claves es incorrecto. Revísalo e inténtalo de nuevo.</string>
-    <string name="onboarding_config_apply_failed">No se pudo guardar o aplicar la configuración del modelo. Inténtalo de nuevo.</string>
     <string name="one_click_config_title">Configuración con un clic</string>
     <string name="one_click_config_loading">Obteniendo información de configuración...</string>
     <string name="one_click_config_success">¡Configuración con un clic exitosa!</string>
@@ -2017,13 +1945,6 @@
     <string name="select_all_messages">Seleccionar todo</string>
     <string name="clear_selection">Cancelar</string>
     <string name="image_preview">Vista previa de imagen</string>
-    <string name="permission_guide_intro_1_title">Automatización de UI impulsada por voz</string>
-    <string name="permission_guide_intro_1_desc">Mediante el reconocimiento y síntesis de voz local que se ejecuta completamente en su dispositivo, converse de forma natural con la IA. Su voz es la instrucción; puede ordenarle realizar clics en pantalla, saltos entre aplicaciones y otras operaciones complejas, liberando completamente sus manos.</string>
-    <string name="permission_guide_intro_2_title">Potente caja de herramientas para geeks y desarrolladores</string>
-    <string name="permission_guide_intro_2_desc">Incluye más de 40 herramientas profesionales que abarcan gestión de archivos, solicitudes de red, ejecución de scripts y control del sistema. Combinado con un potente sistema de complementos, puede automatizar tareas y tener un control profundo de su dispositivo.</string>
-    <string name="permission_guide_intro_3_title">Libere su creatividad, siempre disponible</string>
-    <string name="permission_guide_intro_3_desc">Ya sea diseñando páginas web, procesando archivos multimedia o despertando a la IA en cualquier momento a través de una ventana flotante, Operit le ofrece un entorno de creación y asistencia potente, flexible y seguro. Sus datos, bajo su control.</string>
-    <string name="permission_guide_intro_page_indicator">Introducción de funciones %1$d/%2$d</string>
     <string name="debugger_accessibility_fallback_title">Plan de aceleración de accesibilidad (alto riesgo)</string>
     <string name="debugger_accessibility_fallback_description">El modo de depuración ejecuta operaciones de UI a través de Shell de forma predeterminada. Habilitar el servicio de accesibilidad puede acelerar significativamente la automatización de la UI, pero aumenta considerablemente el riesgo de ser detectado por algunas aplicaciones y de que la cuenta sea suspendida. A menos que busque la máxima velocidad de operación, no se recomienda activarlo.</string>
     <string name="message_info_title">Información del mensaje</string>
@@ -2190,8 +2111,6 @@
     <string name="settings_enable_summary_by_message_count_desc">Activa el resumen cuando la cantidad de mensajes nuevos alcanza el umbral</string>
     <string name="settings_summary_message_count_threshold">Umbral de número de mensajes</string>
     <string name="settings_summary_message_count_threshold_subtitle">Cantidad de mensajes nuevos para activar el resumen (1-20 mensajes)</string>
-    <string name="notification_permission_rationale">Para notificarle oportunamente cuando la IA complete su respuesta, es necesario otorgar el permiso de notificación</string>
-    <string name="notification_permission_denied">Permiso de notificación denegado, no podrá recibir avisos de respuesta de la IA</string>
     <string name="settings_section_external_calls">Llamadas externas</string>
     <string name="settings_total_tokens_breakdown">Entrada: %1$d (caché: %2$d) / Salida: %3$d</string>
     <string name="settings_cached_tokens">(caché: %1$d)</string>
@@ -7571,7 +7490,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="markdown_link_not_openable">Este enlace apunta a una referencia dentro del documento y no se puede abrir</string>
     <string name="provider_openai_codex">Codex (OpenAI)</string>
     <string name="provider_antigravity">Antigravity (Google)</string>
-    <string name="onboarding_config_codex_login_required">Inicia sesión primero en Codex</string>
     <string name="codex_login_title">Iniciar sesión en Codex</string>
     <string name="codex_login_starting">Preparando el inicio de sesión de Codex...</string>
     <string name="codex_login_waiting">Completa el inicio de sesión en el navegador</string>
@@ -7806,9 +7724,8 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="package_market_origin_title">Aviso de origen de paquete externo</string>
     <string name="package_market_origin_message">Este paquete proviene del mercado de Operit.\nNombre del paquete: %1$s\nVersión: %2$s\nAutor: %3$s\nApoya al autor original y ten cuidado con la reventa.</string>
     <string name="market_agreement_title">Acuerdo de uso y normas de comportamiento del mercado de complementos</string>
-    <string name="market_agreement_subtitle">Antes de entrar al mercado de complementos, lea y acepte este acuerdo. El mercado se utiliza para compartir y descubrir complementos; recomendamos que los autores publiquen directamente en repositorios públicos de GitHub.</string>
     <string name="market_agreement_version">Versión del acuerdo del mercado: %1$s</string>
-    <string name="market_agreement_content">1. Posicionamiento del mercado. El mercado de complementos de Operit se utiliza únicamente para compartir, descubrir e indexar scripts, kits de herramientas, Skills, MCP y otras extensiones, y proporciona acceso de navegación, descarga e instalación dentro del mercado. El mercado no es autor, comprador, vendedor, intermediario, cobrador, garante ni registro de derechos; que el mercado muestre, incluya, clasifique o recomiende un complemento no implica que Operit lo haya desarrollado, sea propietario, lo represente o lo respalde.\n\n2. Autorización de publicación. Al enviar un complemento al mercado, el publicador otorga a Operit una licencia no exclusiva, no transferible y necesaria únicamente para operar el mercado, para guardar, almacenar en caché, copiar, procesar, mostrar, indexar entradas del mercado y proporcionar a los usuarios del mercado la descarga e instalación de dicho complemento. La publicación también indica que el publicador permite a los usuarios del mercado descargar, instalar y usar el complemento dentro del ámbito de su diseño, pero no autoriza automáticamente la modificación o redistribución. Esta licencia no transfiere los derechos de autor, propiedad u otros derechos del complemento; el mercado no puede obtener una sublicencia libre fuera del mercado. El publicador debe asegurarse de tener derecho a otorgar dicha autorización.\n\n3. Recomendación de código abierto en GitHub. Recomendamos que los publicadores publiquen directamente el código fuente, README, licencia, versiones o releases y registro de cambios en un repositorio público de GitHub bajo su control, y registren la fuente en el mercado desde ese repositorio. Que un repositorio de GitHub sea visible públicamente no equivale a otorgar automáticamente una licencia de código abierto; si se permite el uso, modificación y redistribución depende de la licencia de código abierto declarada explícitamente por el autor u otra autorización escrita.\n\n4. Uso y redistribución por parte del usuario. El derecho de redistribución de un complemento queda, en principio, reservado al autor u otros titulares de derechos. La descarga, instalación y uso normal mencionados no equivalen a otorgar a cada usuario el derecho de volver a subir, reenviar, modificar el paquete, vender o republicar el complemento. Salvo disposición legal en contrario, los usuarios solo pueden modificar y redistribuir según la licencia o autorización declarada por el autor; los complementos que no declaren permiso de redistribución no pueden redistribuirse por cuenta propia. El alcance de los derechos de los complementos de código abierto se rige por su licencia de código abierto.\n\n5. Riesgo de terceros y responsabilidad de seguridad. Los complementos tienen código, configuración y permisos de ejecución independientes; pueden ejecutar código, iniciar servicios locales, acceder a archivos, leer variables de entorno o conectarse a la red. Los usuarios deben revisar por sí mismos y asumir los riesgos de habilitar, instalar y usar complementos. Los publicadores no deben incluir API Keys, cookies, tokens, claves privadas, contraseñas de cuentas o datos de usuario en complementos, repositorios, ejemplos o configuraciones, y deben declarar con precisión autor, licencia, permisos, comportamiento de red, variables de entorno, servicios externos y riesgos conocidos. Operit no garantiza la seguridad, precisión, disponibilidad, legalidad o compatibilidad de extensiones de terceros.\n\n6. Comentarios y comportamiento comunitario. Los comentarios deben estar relacionados con la funcionalidad del complemento, la experiencia de uso, defectos o problemas de seguridad. No se permite publicar números de grupo de QQ, Telegram, Discord, información de contacto, publicidad, contenido de desvío, información de transacciones, enlaces no relacionados u otro contenido que pueda alterar el orden de la comunidad; no se permite publicar API Keys, cookies, tokens, claves privadas, contraseñas de cuentas u otros datos personales.\n\n7. Prohibición de transacciones y desvío. No se permite comprar, vender, revender o instalar complementos en el mercado, ni inducir a otros a pagar por complementos gratuitos mediante cobros, donaciones, membresías, chats privados o enlaces de terceros. El mercado no ofrece servicios de pago, cumplimiento, reembolso o resolución de disputas de transacciones. Los complementos gratuitos no requieren pago a nadie; los cobros, autorizaciones o promesas de canales de terceros no representan el respaldo oficial de Operit.\n\n8. Límites del servicio del mercado. Para proporcionar servicios de intercambio, descarga e instalación, el mercado puede guardar, almacenar en caché o transmitir entradas del mercado y archivos de complementos, pero no promete alojamiento permanente, copias de seguridad, confidencialidad o prevención de copias. Publicar en el mercado implica que el autor autoriza al mercado a proporcionar descarga e instalación a los usuarios del mercado según este acuerdo, pero no implica que el público obtenga automáticamente derechos de redistribución. La accesibilidad, descarga y disponibilidad continua del complemento también dependen del repositorio del autor, GitHub y otros servicios de terceros.\n\n9. Ejecución de normas y actualización del acuerdo. Los comentarios, entradas o cuentas que violen estas normas pueden ser restringidos, ocultados o eliminados. Cuando el acuerdo del mercado sufra cambios sustanciales por razones funcionales, legales o de seguridad, se aumentará la versión del acuerdo; los usuarios deberán volver a leerlo y confirmarlo al entrar nuevamente al mercado.</string>
+    <string name="market_agreement_content">1. Posicionamiento del mercado. El mercado de complementos de Operit se utiliza únicamente para compartir, descubrir e indexar scripts, kits de herramientas, Skills, MCP y otras extensiones, y proporciona acceso de navegación, descarga e instalación dentro del mercado. El mercado no es autor, comprador, vendedor, intermediario, cobrador, garante ni registro de derechos; que el mercado muestre, incluya, clasifique o recomiende un complemento no implica que Operit lo haya desarrollado, sea propietario, lo represente o lo respalde.\n\n2. Autorización de publicación. Al enviar un complemento al mercado, el publicador otorga a Operit una licencia no exclusiva, no transferible y necesaria únicamente para operar el mercado, para guardar, almacenar en caché, copiar, procesar, mostrar, indexar entradas del mercado y proporcionar a los usuarios del mercado la descarga e instalación de dicho complemento. La publicación también indica que el publicador permite a los usuarios del mercado descargar, instalar y usar el complemento dentro del ámbito de su diseño, pero no autoriza automáticamente la modificación o redistribución. Esta licencia no transfiere los derechos de autor, propiedad u otros derechos del complemento; el mercado no puede obtener una sublicencia libre fuera del mercado. El publicador debe asegurarse de tener derecho a otorgar dicha autorización.\n\n3. Recomendación de código abierto en GitHub. Recomendamos que los publicadores publiquen directamente el código fuente, README, licencia, versiones o releases y registro de cambios en un repositorio público de GitHub bajo su control, y registren la fuente en el mercado desde ese repositorio. Que un repositorio de GitHub sea visible públicamente no equivale a otorgar automáticamente una licencia de código abierto; si se permite el uso, modificación y redistribución depende de la licencia de código abierto declarada explícitamente por el autor u otra autorización escrita.\n\n4. Uso y redistribución por parte del usuario. El derecho de redistribución de un complemento queda, en principio, reservado al autor u otros titulares de derechos. La descarga, instalación y uso normal mencionados no equivalen a otorgar a cada usuario el derecho de volver a subir, reenviar, modificar el paquete, vender o republicar el complemento. Salvo disposición legal en contrario, los usuarios solo pueden modificar y redistribuir según la licencia o autorización declarada por el autor; los complementos que no declaren permiso de redistribución no pueden redistribuirse por cuenta propia. El alcance de los derechos de los complementos de código abierto se rige por su licencia de código abierto.\n\n5. Riesgo de terceros y responsabilidad de seguridad. Los complementos tienen código, configuración y permisos de ejecución independientes; pueden ejecutar código, iniciar servicios locales, acceder a archivos, leer variables de entorno o conectarse a la red. Los usuarios deben revisar por sí mismos y asumir los riesgos de habilitar, instalar y usar complementos. Los publicadores no deben incluir API Keys, cookies, tokens, claves privadas, contraseñas de cuentas o datos de usuario en complementos, repositorios, ejemplos o configuraciones, y deben declarar con precisión autor, licencia, permisos, comportamiento de red, variables de entorno, servicios externos y riesgos conocidos. Operit no garantiza la seguridad, precisión, disponibilidad, legalidad o compatibilidad de extensiones de terceros.\n\n6. Comentarios y comportamiento comunitario. Los comentarios deben estar relacionados con la funcionalidad del complemento, la experiencia de uso, defectos o problemas de seguridad. No se permite publicar números de grupo de QQ, Telegram, Discord, información de contacto, publicidad, contenido de desvío, información de transacciones, enlaces no relacionados u otro contenido que pueda alterar el orden de la comunidad; no se permite publicar API Keys, cookies, tokens, claves privadas, contraseñas de cuentas u otros datos personales.\n\n7. Prohibición de transacciones y desvío. No se permite comprar, vender, revender o instalar complementos en el mercado, ni inducir a otros a pagar por complementos gratuitos mediante cobros, donaciones, membresías, chats privados o enlaces de terceros. El mercado no ofrece servicios de pago, cumplimiento, reembolso o resolución de disputas de transacciones. Los complementos gratuitos no requieren pago a nadie; los cobros, autorizaciones o promesas de canales de terceros no representan el respaldo oficial de Operit.\n\n8. Límites del servicio del mercado. Para proporcionar servicios de intercambio, descarga e instalación, el mercado puede guardar, almacenar en caché o transmitir entradas del mercado y archivos de complementos, pero no promete alojamiento permanente, copias de seguridad, confidencialidad o prevención de copias. Publicar en el mercado implica que el autor autoriza al mercado a proporcionar descarga e instalación a los usuarios del mercado según este acuerdo, pero no implica que el público obtenga automáticamente derechos de redistribución. La accesibilidad, descarga y disponibilidad continua del complemento también dependen del repositorio del autor, GitHub y otros servicios de terceros.\n\n9. Ejecución de normas y actualización del acuerdo. Los comentarios, entradas o cuentas que violen estas normas pueden ser restringidos, ocultados o eliminados. Cuando el acuerdo del mercado sufra cambios sustanciales por razones funcionales, legales o de seguridad, se aumentará la versión del acuerdo; los usuarios pueden revisar el contenido actualizado desde la entrada del mercado.</string>
     <string name="multi_select_actions">Acciones</string>
     <string name="speech_services_tts_profiles">Perfiles de configuración TTS</string>
     <string name="speech_services_stt_profiles">Perfiles de configuración STT</string>
@@ -8421,4 +8338,8 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
 <string name="data_recovery_start_main_app">Iniciar aplicación principal</string>
 <string name="data_recovery_started">Proceso de recuperación iniciado</string>
 <string name="data_recovery_variants_size">Tamaño de variants</string>
+    <!-- 单页首次使用流程 -->
+    <string name="onboarding_tagline">Simplifica tus tareas diarias</string>
+    <string name="onboarding_consent"><![CDATA[He leído y acepto el <a href="operit://agreement">Acuerdo de usuario y la Política de privacidad</a>]]></string>
+    <string name="onboarding_start">Aceptar y comenzar</string>
 </resources>

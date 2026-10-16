@@ -21,7 +21,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.CodeOff
@@ -88,7 +87,6 @@ import com.ai.assistance.operit.ui.main.components.LocalSetScreenSoftInputMode
 import com.ai.assistance.operit.ui.main.components.LocalSetUseScreenImePadding
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.CancellationException
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextRange
@@ -117,11 +115,9 @@ fun AIChatScreen(
         onLoading: (Boolean) -> Unit = {},
         onError: (String) -> Unit = {},
         hasBackgroundImage: Boolean = false,
-        onNavigateToTokenConfig: () -> Unit = {},
         onNavigateToSettings: () -> Unit = {},
         onNavigateToMemoryBase: () -> Unit = {},
         onNavigateToModelConfig: () -> Unit = {},
-        onNavigateToOnboardingModelConfig: () -> Unit = {},
         onNavigateToModelPrompts: () -> Unit = {},
         onNavigateToPackageManager: () -> Unit = {},
         onNavigateToHtmlPackager: () -> Unit = {},
@@ -243,8 +239,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val editingMessageContent = remember { mutableStateOf("") }
 
     // Collect state from ViewModel
-    val apiKey by actualViewModel.apiKey.collectAsState()
-    val activeChatConfigId by actualViewModel.activeChatConfigId.collectAsState()
     val modelName by actualViewModel.modelName.collectAsState()
     val chatHistory by actualViewModel.chatHistory.collectAsState()
     // 仅对当前会话显示处理中状态（影响“停止/发送”按钮）
@@ -316,7 +310,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     // 收集滚动事件
     val scrollToBottomEvent = actualViewModel.scrollToBottomEvent
     // 从ViewModel收集新的状态
-    val shouldShowConfigDialog by actualViewModel.shouldShowConfigDialog.collectAsState()
     val isWorkspaceOpen by actualViewModel.isWorkspaceOpen.collectAsState()
     val isWorkspacePreparing by actualViewModel.isWorkspacePreparing.collectAsState()
 
@@ -623,14 +616,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
     }
 
-    var isSavingInitialConfiguration by remember { mutableStateOf(false) }
-    var initialConfigurationSaveFailed by
-        rememberSaveable(activeChatConfigId) { mutableStateOf(false) }
-    val showConfig =
-        shouldShowConfigDialog ||
-            isSavingInitialConfiguration ||
-            initialConfigurationSaveFailed
-
     // 添加手势状态
     var chatScreenGestureConsumed by remember { mutableStateOf(false) }
     val onChatScreenGestureConsumedChange = remember {
@@ -775,311 +760,276 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                 containerColor = Color.Transparent,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { paddingValues ->
-            // 根据前面的逻辑条件决定是否显示配置界面
-            if (showConfig) {
-                ConfigurationScreen(
-                        apiKey = apiKey,
-                        isSaving = isSavingInitialConfiguration,
-                        onSaveApiKey = { normalizedApiKey ->
-                            if (!isSavingInitialConfiguration) {
-                                coroutineScope.launch {
-                                    isSavingInitialConfiguration = true
-                                    initialConfigurationSaveFailed = false
-                                    try {
-                                        actualViewModel.saveDeepSeekConfiguration(
-                                            activeChatConfigId,
-                                            normalizedApiKey
-                                        )
-                                    } catch (e: CancellationException) {
-                                        throw e
-                                    } catch (e: Exception) {
-                                        initialConfigurationSaveFailed = true
-                                        actualViewModel.showErrorMessage(
-                                            e.message ?: context.getString(R.string.save_failed)
-                                        )
-                                    } finally {
-                                        isSavingInitialConfiguration = false
-                                    }
-                                }
-                            }
-                        },
-                        onNavigateToTokenConfig = onNavigateToTokenConfig,
-                        onNavigateToModelConfig = {
-                            initialConfigurationSaveFailed = false
-                            onNavigateToOnboardingModelConfig()
-                        }
-                )
-            } else {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .clipToBounds()
+            ) {
                 Box(
                     modifier =
                         Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues)
-                            .clipToBounds()
+                            .matchParentSize()
+                            .graphicsLayer { translationY = -chatViewportTranslationYPx }
                 ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .matchParentSize()
-                                .graphicsLayer { translationY = -chatViewportTranslationYPx }
-                    ) {
-                        ChatScreenContent(
-                                modifier = Modifier.fillMaxSize(),
-                                paddingValues =
-                                        PaddingValues(), // Padding is already handled by the parent Box
-                                bottomInset = bottomBarHeightDp,
-                                actualViewModel = actualViewModel,
-                                enableMessageDialogs = !isFloatingMode,
-                                showChatHeader = !useMainSidebar,
-                                showChatHistorySelector = showChatHistorySelector,
-                                chatHistory = chatHistory,
-                                isLoading = isLoading,
-                                userMessageColor = userMessageColor,
-                                aiMessageColor = aiMessageColor,
-                                userTextColor = userTextColor,
-                                aiTextColor = aiTextColor,
-                                systemMessageColor = systemMessageColor,
-                                systemTextColor = systemTextColor,
-                                thinkingBackgroundColor = thinkingBackgroundColor,
-                                thinkingTextColor = thinkingTextColor,
-                                hasBackgroundImage = effectiveHasBackgroundImage,
-                                editingMessageIndex = editingMessageIndex,
-                                editingMessageContent = editingMessageContent,
-                                chatScreenGestureConsumed = chatScreenGestureConsumed,
-                                onChatScreenGestureConsumed = onChatScreenGestureConsumedChange,
-                                currentDrag = currentDrag,
-                                onCurrentDragChange = onCurrentDragChange,
-                                verticalDrag = verticalDrag,
-                                onVerticalDragChange = onVerticalDragChange,
-                                dragThreshold = dragThreshold,
-                                scrollState = scrollState,
-                                autoScrollToBottom = autoScrollToBottom,
-                                onAutoScrollToBottomChange = onAutoScrollToBottomChange,
-                                coroutineScope = coroutineScope,
-                                chatHistories = chatHistories,
-                                currentChatId = currentChatId ?: "",
-                                chatStyle = chatStyle, // Pass chat style
-                                cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
-                                cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
-                                bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
-                                bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
-                                bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
-                                bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
-                                historyListState = historyListState,
-                                showCharacterSelector = showCharacterSelector,
-                                onShowCharacterSelectorChange = { showCharacterSelector = it },
-                                onSwitchCharacter = onSwitchCharacter,
-                                onOpenCharacterSettings = onNavigateToModelPrompts,
-                                chatAreaHorizontalPadding = chatAreaHorizontalPadding,
-                                bubbleUserImageStyle = bubbleUserImageStyle,
-                                bubbleAiImageStyle = bubbleAiImageStyle,
-                                bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
-                                bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
-                                bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
-                                bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
-                                bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
-                                bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
-                                showChatFloatingDotsAnimation = showChatFloatingDotsAnimation,
-                        )
+                    ChatScreenContent(
+                            modifier = Modifier.fillMaxSize(),
+                            paddingValues =
+                                    PaddingValues(), // Padding is already handled by the parent Box
+                            bottomInset = bottomBarHeightDp,
+                            actualViewModel = actualViewModel,
+                            enableMessageDialogs = !isFloatingMode,
+                            showChatHeader = !useMainSidebar,
+                            showChatHistorySelector = showChatHistorySelector,
+                            chatHistory = chatHistory,
+                            isLoading = isLoading,
+                            userMessageColor = userMessageColor,
+                            aiMessageColor = aiMessageColor,
+                            userTextColor = userTextColor,
+                            aiTextColor = aiTextColor,
+                            systemMessageColor = systemMessageColor,
+                            systemTextColor = systemTextColor,
+                            thinkingBackgroundColor = thinkingBackgroundColor,
+                            thinkingTextColor = thinkingTextColor,
+                            hasBackgroundImage = effectiveHasBackgroundImage,
+                            editingMessageIndex = editingMessageIndex,
+                            editingMessageContent = editingMessageContent,
+                            chatScreenGestureConsumed = chatScreenGestureConsumed,
+                            onChatScreenGestureConsumed = onChatScreenGestureConsumedChange,
+                            currentDrag = currentDrag,
+                            onCurrentDragChange = onCurrentDragChange,
+                            verticalDrag = verticalDrag,
+                            onVerticalDragChange = onVerticalDragChange,
+                            dragThreshold = dragThreshold,
+                            scrollState = scrollState,
+                            autoScrollToBottom = autoScrollToBottom,
+                            onAutoScrollToBottomChange = onAutoScrollToBottomChange,
+                            coroutineScope = coroutineScope,
+                            chatHistories = chatHistories,
+                            currentChatId = currentChatId ?: "",
+                            chatStyle = chatStyle, // Pass chat style
+                            cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
+                            cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
+                            bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
+                            bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
+                            bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
+                            bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
+                            historyListState = historyListState,
+                            showCharacterSelector = showCharacterSelector,
+                            onShowCharacterSelectorChange = { showCharacterSelector = it },
+                            onSwitchCharacter = onSwitchCharacter,
+                            onOpenCharacterSettings = onNavigateToModelPrompts,
+                            chatAreaHorizontalPadding = chatAreaHorizontalPadding,
+                            bubbleUserImageStyle = bubbleUserImageStyle,
+                            bubbleAiImageStyle = bubbleAiImageStyle,
+                            bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
+                            bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
+                            bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
+                            bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
+                            bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
+                            bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
+                            showChatFloatingDotsAnimation = showChatFloatingDotsAnimation,
+                    )
 
-                        if (inputStyle == UserPreferencesManager.INPUT_STYLE_CLASSIC) {
-                            ClassicChatSettingsBar(
-                                    actualViewModel = actualViewModel,
-                                    modifier =
-                                            Modifier
-                                                    .align(Alignment.BottomEnd)
-                                                    .padding(
-                                                            end = 4.dp,
-                                                            bottom = classicSettingsBarBottomPadding,
-                                                    )
-                                                    .graphicsLayer {
-                                                        translationY = -inputBarTranslationYPx
-                                                    },
-                                    currentChatId = currentChatId,
-                                    featureStates = featureStates,
-                                    onToggleFeature = { featureKey ->
-                                        actualViewModel.toggleFeature(featureKey)
-                                    },
-                                    inputMenuRuntime = chatViewRuntime,
-                                    permissionLevel =
-                                            actualViewModel.masterPermissionLevel
-                                                    .collectAsState()
-                                                    .value,
-                                    onSetPermissionLevel = actualViewModel::setMasterPermissionLevel,
-                                    enableThinkingMode = enableThinkingMode,
-                                    onToggleThinkingMode = { actualViewModel.toggleThinkingMode() },
-                                    thinkingOptionId = thinkingOptionId,
-                                    onThinkingOptionIdChange = {
-                                        actualViewModel.updateThinkingOptionId(it)
-                                    },
-                                    maxWindowSizeInK =
-                                            actualViewModel.maxWindowSizeInK.collectAsState().value,
-                                    onContextLengthChange = {
-                                        actualViewModel.updateContextLength(it)
-                                    },
-                                    enableMemoryAutoUpdate = enableMemoryAutoUpdate,
-                                    onToggleMemoryAutoUpdate = {
-                                        actualViewModel.toggleMemoryAutoUpdate()
-                                    },
-                                    summaryTokenThreshold = summaryTokenThreshold,
-                                    onSummaryTokenThresholdChange = {
-                                        actualViewModel.updateSummaryTokenThreshold(it)
-                                    },
-                                    onNavigateToMemoryBase = onNavigateToMemoryBase,
-                                    onNavigateToModelConfig = onNavigateToModelConfig,
-                                    onNavigateToModelPrompts = onNavigateToModelPrompts,
-                                    onNavigateToPackageManager = onNavigateToPackageManager,
-                                    isAutoReadEnabled = isAutoReadEnabled,
-                                    onToggleAutoRead = { actualViewModel.toggleAutoRead() },
-                                    enableTools = enableTools,
-                                    onToggleTools = { actualViewModel.toggleTools() },
-                                    toolPromptVisibility = toolPromptVisibility,
-                                    onSaveToolPromptVisibilityMap = { visibilityMap ->
-                                        actualViewModel.saveToolPromptVisibilityMap(visibilityMap)
-                                    },
-                                    toolOrder = toolPromptOrder,
-                                    onSaveToolOrder = { order ->
-                                        actualViewModel.saveToolPromptOrder(order)
-                                    },
-                                    disableStreamOutput = disableStreamOutput,
-                                    onToggleDisableStreamOutput = {
-                                        actualViewModel.toggleDisableStreamOutput()
-                                    },
-                                    disableUserPreferenceDescription =
-                                            disableUserPreferenceDescription,
-                                    onToggleDisableUserPreferenceDescription = {
-                                        actualViewModel.toggleDisableUserPreferenceDescription()
-                                    },
-                                    onManualMemoryUpdate = {
-                                        actualViewModel.manuallyUpdateMemory()
-                                    },
-                                    characterCardBoundChatModelConfigId = characterCardBoundChatModelConfigId,
-                                    characterCardBoundChatModelIndex = characterCardBoundChatModelIndex,
-                                    characterCardBoundMemoryProfileId = characterCardBoundMemoryProfileId
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .onGloballyPositioned {
-                                    bottomBarHeightPx = it.size.height
-                                }
-                                .graphicsLayer { translationY = -inputBarTranslationYPx }
-                    ) {
-                        ChatInputBottomBar(
+                    if (inputStyle == UserPreferencesManager.INPUT_STYLE_CLASSIC) {
+                        ClassicChatSettingsBar(
                                 actualViewModel = actualViewModel,
-                                inputStyle = inputStyle,
+                                modifier =
+                                        Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(
+                                                        end = 4.dp,
+                                                        bottom = classicSettingsBarBottomPadding,
+                                                )
+                                                .graphicsLayer {
+                                                    translationY = -inputBarTranslationYPx
+                                                },
                                 currentChatId = currentChatId,
-                                inputMenuRuntime = chatViewRuntime,
-                                enableEnterToSend = enableEnterToSend,
-                                isLoading = isLoading,
-                                inputState = inputProcessingState,
-                                hasBackgroundImage = effectiveHasBackgroundImage,
-                                chatInputTransparent = chatInputTransparent,
-                                chatInputOpacity = chatInputOpacity,
-                                chatInputFloating = chatInputFloating,
-                                chatInputLiquidGlass = chatInputLiquidGlass,
-                                chatInputWaterGlass = chatInputWaterGlass,
-                                showInputProcessingStatus = showInputProcessingStatus,
-                                enableTools = enableTools,
-                                isWorkspaceOpen = isWorkspaceOpen,
-                                enableThinkingMode = enableThinkingMode,
-                                thinkingOptionId = thinkingOptionId,
                                 featureStates = featureStates,
+                                onToggleFeature = { featureKey ->
+                                    actualViewModel.toggleFeature(featureKey)
+                                },
+                                inputMenuRuntime = chatViewRuntime,
+                                permissionLevel =
+                                        actualViewModel.masterPermissionLevel
+                                                .collectAsState()
+                                                .value,
+                                onSetPermissionLevel = actualViewModel::setMasterPermissionLevel,
+                                enableThinkingMode = enableThinkingMode,
+                                onToggleThinkingMode = { actualViewModel.toggleThinkingMode() },
+                                thinkingOptionId = thinkingOptionId,
+                                onThinkingOptionIdChange = {
+                                    actualViewModel.updateThinkingOptionId(it)
+                                },
+                                maxWindowSizeInK =
+                                        actualViewModel.maxWindowSizeInK.collectAsState().value,
+                                onContextLengthChange = {
+                                    actualViewModel.updateContextLength(it)
+                                },
                                 enableMemoryAutoUpdate = enableMemoryAutoUpdate,
-                                isAutoReadEnabled = isAutoReadEnabled,
-                                disableStreamOutput = disableStreamOutput,
-                                disableUserPreferenceDescription =
-                                        disableUserPreferenceDescription,
+                                onToggleMemoryAutoUpdate = {
+                                    actualViewModel.toggleMemoryAutoUpdate()
+                                },
+                                summaryTokenThreshold = summaryTokenThreshold,
+                                onSummaryTokenThresholdChange = {
+                                    actualViewModel.updateSummaryTokenThreshold(it)
+                                },
                                 onNavigateToMemoryBase = onNavigateToMemoryBase,
+                                onNavigateToModelConfig = onNavigateToModelConfig,
+                                onNavigateToModelPrompts = onNavigateToModelPrompts,
                                 onNavigateToPackageManager = onNavigateToPackageManager,
+                                isAutoReadEnabled = isAutoReadEnabled,
+                                onToggleAutoRead = { actualViewModel.toggleAutoRead() },
+                                enableTools = enableTools,
+                                onToggleTools = { actualViewModel.toggleTools() },
                                 toolPromptVisibility = toolPromptVisibility,
-                                toolPromptOrder = toolPromptOrder,
+                                onSaveToolPromptVisibilityMap = { visibilityMap ->
+                                    actualViewModel.saveToolPromptVisibilityMap(visibilityMap)
+                                },
+                                toolOrder = toolPromptOrder,
                                 onSaveToolOrder = { order ->
                                     actualViewModel.saveToolPromptOrder(order)
                                 },
-                                onNavigateToModelConfig = onNavigateToModelConfig,
-                                characterCardBoundChatModelConfigId =
-                                        characterCardBoundChatModelConfigId,
-                                characterCardBoundChatModelIndex =
-                                        characterCardBoundChatModelIndex,
-                                characterCardBoundMemoryProfileId =
-                                        characterCardBoundMemoryProfileId,
-                                onShowMemoryFolderDialog = {
-                                    showMemoryFolderDialog = true
+                                disableStreamOutput = disableStreamOutput,
+                                onToggleDisableStreamOutput = {
+                                    actualViewModel.toggleDisableStreamOutput()
                                 },
-                                onRequestAutoScrollToBottom = requestAutoScrollToBottom,
+                                disableUserPreferenceDescription =
+                                        disableUserPreferenceDescription,
+                                onToggleDisableUserPreferenceDescription = {
+                                    actualViewModel.toggleDisableUserPreferenceDescription()
+                                },
+                                onManualMemoryUpdate = {
+                                    actualViewModel.manuallyUpdateMemory()
+                                },
+                                characterCardBoundChatModelConfigId = characterCardBoundChatModelConfigId,
+                                characterCardBoundChatModelIndex = characterCardBoundChatModelIndex,
+                                characterCardBoundMemoryProfileId = characterCardBoundMemoryProfileId
+                        )
+                    }
+                }
+
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .onGloballyPositioned {
+                                bottomBarHeightPx = it.size.height
+                            }
+                            .graphicsLayer { translationY = -inputBarTranslationYPx }
+                ) {
+                    ChatInputBottomBar(
+                            actualViewModel = actualViewModel,
+                            inputStyle = inputStyle,
+                            currentChatId = currentChatId,
+                            inputMenuRuntime = chatViewRuntime,
+                            enableEnterToSend = enableEnterToSend,
+                            isLoading = isLoading,
+                            inputState = inputProcessingState,
+                            hasBackgroundImage = effectiveHasBackgroundImage,
+                            chatInputTransparent = chatInputTransparent,
+                            chatInputOpacity = chatInputOpacity,
+                            chatInputFloating = chatInputFloating,
+                            chatInputLiquidGlass = chatInputLiquidGlass,
+                            chatInputWaterGlass = chatInputWaterGlass,
+                            showInputProcessingStatus = showInputProcessingStatus,
+                            enableTools = enableTools,
+                            isWorkspaceOpen = isWorkspaceOpen,
+                            enableThinkingMode = enableThinkingMode,
+                            thinkingOptionId = thinkingOptionId,
+                            featureStates = featureStates,
+                            enableMemoryAutoUpdate = enableMemoryAutoUpdate,
+                            isAutoReadEnabled = isAutoReadEnabled,
+                            disableStreamOutput = disableStreamOutput,
+                            disableUserPreferenceDescription =
+                                    disableUserPreferenceDescription,
+                            onNavigateToMemoryBase = onNavigateToMemoryBase,
+                            onNavigateToPackageManager = onNavigateToPackageManager,
+                            toolPromptVisibility = toolPromptVisibility,
+                            toolPromptOrder = toolPromptOrder,
+                            onSaveToolOrder = { order ->
+                                actualViewModel.saveToolPromptOrder(order)
+                            },
+                            onNavigateToModelConfig = onNavigateToModelConfig,
+                            characterCardBoundChatModelConfigId =
+                                    characterCardBoundChatModelConfigId,
+                            characterCardBoundChatModelIndex =
+                                    characterCardBoundChatModelIndex,
+                            characterCardBoundMemoryProfileId =
+                                    characterCardBoundMemoryProfileId,
+                            onShowMemoryFolderDialog = {
+                                showMemoryFolderDialog = true
+                            },
+                            onRequestAutoScrollToBottom = requestAutoScrollToBottom,
+                    )
+                }
+
+                if (!useMainSidebar) {
+                    CharacterSelectorPanel(
+                        isVisible = showCharacterSelector,
+                        onDismiss = { showCharacterSelector = false },
+                        onSelectCharacter = onSwitchCharacter,
+                        onOpenCharacterSettings = onNavigateToModelPrompts
+                    )
+
+                    AnimatedVisibility(
+                        visible = showChatHistorySelector,
+                        enter = fadeIn(animationSpec = tween(300)),
+                        exit = fadeOut(animationSpec = tween(300)),
+                        modifier = Modifier.matchParentSize()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    actualViewModel.toggleChatHistorySelector()
+                                }
                         )
                     }
 
-                    if (!useMainSidebar) {
-                        CharacterSelectorPanel(
-                            isVisible = showCharacterSelector,
-                            onDismiss = { showCharacterSelector = false },
-                            onSelectCharacter = onSwitchCharacter,
-                            onOpenCharacterSettings = onNavigateToModelPrompts
-                        )
-
-                        AnimatedVisibility(
-                            visible = showChatHistorySelector,
-                            enter = fadeIn(animationSpec = tween(300)),
-                            exit = fadeOut(animationSpec = tween(300)),
-                            modifier = Modifier.matchParentSize()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.3f))
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) {
-                                        actualViewModel.toggleChatHistorySelector()
-                                    }
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = showChatHistorySelector,
-                            enter = androidx.compose.animation.slideInHorizontally(
-                                initialOffsetX = { -it },
-                                animationSpec = tween(300)
-                            ),
-                            exit = androidx.compose.animation.slideOutHorizontally(
-                                targetOffsetX = { -it },
-                                animationSpec = tween(300)
-                            ),
-                            modifier = Modifier.matchParentSize()
-                        ) {
-                            val chatHistorySearchQuery by actualViewModel.chatHistorySearchQuery.collectAsState()
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                Box(modifier = Modifier.align(Alignment.TopStart)) {
-                                    ChatHistorySelectorPanel(
-                                        actualViewModel = actualViewModel,
-                                        chatHistories = historySidebarState.displayedChatHistories,
-                                        currentChatId = currentChatId ?: "",
-                                        showChatHistorySelector = showChatHistorySelector,
-                                        historyListState = historyListState,
-                                        onChatScreenGestureConsumed = onChatScreenGestureConsumedChange,
-                                        searchQuery = chatHistorySearchQuery,
-                                        onSearchQueryChange = actualViewModel::onChatHistorySearchQueryChange,
-                                        activePrompt = activePrompt,
-                                        historyDisplayMode = historySidebarState.historyDisplayMode,
-                                        onDisplayModeChange = historySidebarState.onDisplayModeChange,
-                                        autoSwitchCharacterCard = historySidebarState.autoSwitchCharacterCard,
-                                        onAutoSwitchCharacterCardChange = historySidebarState.onAutoSwitchCharacterCardChange,
-                                        autoSwitchChatOnCharacterSelect = historySidebarState.autoSwitchChatOnCharacterSelect,
-                                        onAutoSwitchChatOnCharacterSelectChange = historySidebarState.onAutoSwitchChatOnCharacterSelectChange
-                                    )
-                                }
+                    AnimatedVisibility(
+                        visible = showChatHistorySelector,
+                        enter = androidx.compose.animation.slideInHorizontally(
+                            initialOffsetX = { -it },
+                            animationSpec = tween(300)
+                        ),
+                        exit = androidx.compose.animation.slideOutHorizontally(
+                            targetOffsetX = { -it },
+                            animationSpec = tween(300)
+                        ),
+                        modifier = Modifier.matchParentSize()
+                    ) {
+                        val chatHistorySearchQuery by actualViewModel.chatHistorySearchQuery.collectAsState()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.align(Alignment.TopStart)) {
+                                ChatHistorySelectorPanel(
+                                    actualViewModel = actualViewModel,
+                                    chatHistories = historySidebarState.displayedChatHistories,
+                                    currentChatId = currentChatId ?: "",
+                                    showChatHistorySelector = showChatHistorySelector,
+                                    historyListState = historyListState,
+                                    onChatScreenGestureConsumed = onChatScreenGestureConsumedChange,
+                                    searchQuery = chatHistorySearchQuery,
+                                    onSearchQueryChange = actualViewModel::onChatHistorySearchQueryChange,
+                                    activePrompt = activePrompt,
+                                    historyDisplayMode = historySidebarState.historyDisplayMode,
+                                    onDisplayModeChange = historySidebarState.onDisplayModeChange,
+                                    autoSwitchCharacterCard = historySidebarState.autoSwitchCharacterCard,
+                                    onAutoSwitchCharacterCardChange = historySidebarState.onAutoSwitchCharacterCardChange,
+                                    autoSwitchChatOnCharacterSelect = historySidebarState.autoSwitchChatOnCharacterSelect,
+                                    onAutoSwitchChatOnCharacterSelectChange = historySidebarState.onAutoSwitchChatOnCharacterSelectChange
+                                )
                             }
                         }
                     }
                 }
             }
+
         }
 
         MentionSuggestionOverlay(

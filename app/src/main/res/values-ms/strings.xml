@@ -555,26 +555,9 @@
     <string name="network_unavailable">Sambungan rangkaian tidak tersedia, sila semak tetapan rangkaian anda</string>
     <string name="network_status">Status rangkaian: %1$s</string>
     <string name="network_status_label">Status rangkaian</string>
-    <string name="config_title">Pembantu Operit AI</string>
-    <string name="config_description">Gunakan Kunci API DeepSeek atau konfigurasikan perkhidmatan model lain</string>
-    <string name="config_api_key_label">Kunci API</string>
-    <string name="config_api_key_placeholder">Kunci API DeepSeek</string>
-    <string name="config_save_button">Sahkan dan simpan</string>
-    <string name="config_get_token">Dapatkan Kunci API DeepSeek</string>
-    <string name="config_saving">Menyimpan...</string>
-    <string name="config_api_key_invalid_format">Format Kunci API DeepSeek tidak betul. Gunakan hanya huruf ASCII, nombor dan simbol, tanpa ruang atau aksara halimunan.</string>
     <string name="config_use_free">Gunakan percuma penyumbang</string>
 
-    <string name="config_custom">Konfigurasikan Model Lain</string>
     <string name="config_free_usage_exceeded">Had penggunaan percuma hari ini telah habis</string>
-    <string name="onboarding_config_not_found">Konfigurasi model yang dipilih tidak lagi wujud. Pilih yang lain.</string>
-    <string name="onboarding_config_provider_missing">Pilih penyedia perkhidmatan model</string>
-    <string name="onboarding_config_provider_unavailable">Penyedia perkhidmatan model yang dipilih tidak tersedia. Pilih yang lain.</string>
-    <string name="onboarding_config_endpoint_invalid">Masukkan endpoint API HTTP atau HTTPS yang sah</string>
-    <string name="onboarding_config_model_missing">Pilih atau masukkan model untuk perbualan</string>
-    <string name="onboarding_config_api_key_missing">Perkhidmatan model ini memerlukan Kunci API</string>
-    <string name="onboarding_config_api_key_invalid">Format Kunci API atau kumpulan kunci tidak betul. Semak dan cuba lagi.</string>
-    <string name="onboarding_config_apply_failed">Konfigurasi model tidak dapat disimpan atau digunakan. Cuba lagi.</string>
     <string name="one_click_config_title">Konfigurasi Satu Klik</string>
     <string name="one_click_config_loading">Mendapatkan maklumat konfigurasi...</string>
     <string name="one_click_config_success">Konfigurasi satu klik berjaya!</string>
@@ -688,19 +671,6 @@
     <string name="request_timeout">Permintaan tamat masa, sila cuba lagi nanti</string>
     <string name="network_transfer_failed">Pemindahan rangkaian gagal, sila semak sambungan rangkaian</string>
     <string name="try_again_later">Permintaan gagal, sila cuba lagi nanti</string>
-    <string name="permission_guide_previous">Sebelumnya</string>
-    <string name="permission_guide_next">Seterusnya</string>
-    <string name="permission_guide_complete">Selesai</string>
-    <string name="permission_guide_welcome">Selamat datang</string>
-    <string name="permission_guide_basic_permissions">Tetapan keizinan asas</string>
-    <string name="permission_guide_permission_level">Pemilihan tahap keizinan</string>
-    <string name="permission_guide_welcome_title">Selamat menggunakan</string>
-    <string name="permission_guide_welcome_desc">Sebelum mula menggunakan aplikasi, kami perlu menetapkan beberapa keizinan asas dan memilih tahap keizinan pilihan anda.</string>
-    <string name="permission_guide_welcome_hint">Proses ini hanya mengambil masa beberapa minit dan akan membantu aplikasi berfungsi dengan lebih baik untuk anda.</string>
-    <string name="permission_guide_welcome_start">Klik butang di sudut kanan bawah untuk mula menetapkan</string>
-    <string name="permission_guide_basic_title">Tetapan keizinan asas</string>
-    <string name="permission_guide_basic_desc">Sila berikan keizinan asas berikut untuk memastikan aplikasi berjalan dengan lancar</string>
-    <string name="permission_guide_storage_title">Keizinan storan</string>
 
     <string name="preferences_guide_title">Untuk memberikan perkhidmatan yang lebih baik, sila lengkapkan tetapan berikut</string>
     <string name="preference_lock">Kunci keutamaan pengguna</string>
@@ -749,8 +719,6 @@
     <string name="settings_reply_notification_desc">Hantar pemberitahuan apabila AI selesai membalas</string>
     <string name="notification_ai_reply_title">Pembantu AI</string>
     <string name="notification_ai_reply_content">AI telah selesai membalas</string>
-    <string name="notification_permission_rationale">Untuk memberitahu anda segera selepas AI selesai membalas, kebenaran pemberitahuan diperlukan</string>
-    <string name="notification_permission_denied">Kebenaran pemberitahuan ditolak, anda tidak akan menerima peringatan balasan AI</string>
     <string name="settings_auto_accessibility">Berikan kebenaran aksesibiliti secara automatik</string>
     <string name="settings_auto_accessibility_desc">Selepas ditutup, perlu diberi kuasa secara manual setiap kali perisian dibuka</string>
     <string name="settings_section_permissions">Kebenaran &amp; Keselamatan</string>
@@ -868,38 +836,6 @@
     <string name="plugin_pnpm_missing">pnpm tidak dipasang dalam terminal, sila pasang dahulu</string>
     <string name="theme_title_mode">Mod Tema</string>
 
-    <string name="permission_guide_storage_desc">Benarkan aplikasi membaca dan menulis fail</string>
-    <string name="permission_guide_overlay_title">Keizinan Tetingkap Terapung</string>
-    <string name="permission_guide_overlay_desc">Benarkan aplikasi memaparkan tetingkap terapung</string>
-    <string name="permission_guide_battery_title">Pengecualian Pengoptimuman Bateri</string>
-    <string name="permission_guide_battery_desc">Benarkan aplikasi berjalan di latar belakang</string>
-    <string name="permission_guide_location_title">Keizinan Lokasi</string>
-    <string name="permission_guide_location_desc">Benarkan aplikasi mendapatkan maklumat lokasi</string>
-    <string name="permission_guide_check_permissions">Semak status keizinan</string>
-    <string name="permission_guide_all_granted">Semua keizinan asas telah diberikan, boleh teruskan ke langkah seterusnya</string>
-    <string name="permission_guide_warning_title">Pemberian Keizinan Tidak Lengkap</string>
-    <string name="permission_guide_warning_message">Anda belum memberikan semua keizinan yang diperlukan, ini mungkin menyebabkan fungsi aplikasi tidak lengkap atau keluar secara tidak normal. Pastikan untuk teruskan?</string>
-    <string name="permission_guide_warning_continue">Teruskan</string>
-    <string name="permission_guide_warning_return">Kembali ke Pemberian Keizinan</string>
-    <string name="permission_guide_level_title">Pilih Tahap Keizinan</string>
-    <string name="permission_guide_level_desc">Sila pilih tahap keizinan yang anda sukai, ini akan menentukan skop fungsi yang boleh digunakan oleh aplikasi</string>
-    <string name="permission_guide_standard_title">Keizinan Standard</string>
-    <string name="permission_guide_standard_desc">Keizinan asas untuk menjalankan aplikasi, tidak memerlukan keizinan khas</string>
-    <string name="permission_guide_accessibility_title">Keizinan Aksesibiliti</string>
-    <string name="permission_guide_accessibility_desc">Mencapai analisis kandungan skrin dan simulasi operasi melalui perkhidmatan aksesibiliti</string>
-    <string name="permission_guide_debugger_title">Keizinan Penyahpepijat</string>
-    <string name="permission_guide_debugger_desc">Menyediakan akses sistem peringkat ADB melalui Shizuku</string>
-    <string name="permission_guide_root_title">Keizinan Root</string>
-    <string name="permission_guide_root_desc">Keizinan pengguna super, boleh melaksanakan sebarang operasi sistem</string>
-    <string name="permission_guide_confirm">Sahkan Pilihan</string>
-    <string name="permission_guide_change_anytime">Anda boleh menukar tahap keizinan pada bila-bila masa dalam tetapan</string>
-    <string name="permission_guide_storage_setting_failed">Tidak dapat membuka tetapan keizinan storan, sila berikan keizinan secara manual</string>
-    <string name="permission_guide_overlay_setting_failed">Tidak dapat membuka tetapan tetingkap terapung, sila berikan keizinan secara manual</string>
-    <string name="permission_guide_battery_hint">Sila cari aplikasi dalam senarai dan tetapkan sebagai "Tidak dioptimumkan"</string>
-    <string name="permission_guide_battery_setting_failed">Tidak dapat membuka tetapan pengoptimuman bateri, sila tetapkan secara manual</string>
-    <string name="permission_guide_granted">Telah Diberikan</string>
-    <string name="permission_guide_not_granted">Belum Diberikan</string>
-    <string name="permission_guide_selected">Telah Dipilih</string>
     <string name="wizard_collapse">Tutup</string>
     <string name="wizard_expand">Buka</string>
     <string name="wizard_open_docs">Dokumen Rasmi</string>
@@ -1216,13 +1152,6 @@
     <string name="image_preview">Pratonton imej</string>
     <string name="load_more_history">Klik untuk muat sejarah terdahulu</string>
     <string name="load_newer_history">Klik untuk muat mesej lebih baharu</string>
-    <string name="permission_guide_intro_1_title">Automasi UI didorong suara</string>
-    <string name="permission_guide_intro_1_desc">Berbual secara semula jadi dengan AI melalui pengecaman dan sintesis suara tempatan yang berjalan sepenuhnya pada peranti anda. Suara anda adalah arahan, mampu menyuruhnya melakukan operasi kompleks seperti klik skrin, lompat aplikasi, membebaskan tangan anda sepenuhnya.</string>
-    <string name="permission_guide_intro_2_title">Kotak alat berkuasa untuk geek dan pembangun</string>
-    <string name="permission_guide_intro_2_desc">Dilengkapi lebih 40 alat profesional merangkumi pengurusan fail, permintaan rangkaian, pelaksanaan skrip dan kawalan sistem. Digabungkan dengan sistem pemalam berkuasa, anda boleh mengautomasikan tugas, mengawal peranti anda secara mendalam.</string>
-    <string name="permission_guide_intro_3_title">Lepaskan kreativiti, sentiasa bersedia</string>
-    <string name="permission_guide_intro_3_desc">Sama ada mereka bentuk laman web, memproses fail media, atau membangunkan AI melalui tetingkap terapung bila-bila masa, Operit menyediakan persekitaran penciptaan dan bantuan yang berkuasa, fleksibel dan selamat. Data anda, di bawah kawalan anda.</string>
-    <string name="permission_guide_intro_page_indicator">Pengenalan fungsi %1$d/%2$d</string>
 
     <string name="no_mirrors_found">Tiada sumber cermin tersedia</string>
     <string name="beta_plan">Pelan Beta</string>
@@ -1777,12 +1706,8 @@
     <string name="language_changing">Sedang menukar bahasa...</string>
     <string name="language_changed">Bahasa telah ditukar, sedang memulakan semula aplikasi</string>
     <string name="agreement_title">Perjanjian Pengguna dan Dasar Privasi</string>
-    <string name="agreement_subtitle">Sila baca dan setujui terma-terma berikut sebelum menggunakan.</string>
     <string name="agreement_version">Versi perjanjian: %1$s</string>
-    <string name="agreement_human_readable_title">Versi Perjanjian Mudah Faham (Bukan versi undang-undang)</string>
-    <string name="agreement_human_readable_content">Sempadan perkhidmatan: Operit tidak menyediakan perkhidmatan interaksi emosi antropomorfik kepada orang awam. Operit ialah klien sumber terbuka yang berjalan secara setempat pada peranti pengguna. Operit tidak mengendalikan perkhidmatan inferens model, tidak mengehos sesi sembang atau data interaksi, dan tidak mengedarkan kelayakan model berkongsi. Permintaan model awan dihantar terus daripada peranti anda kepada penyedia model yang anda konfigurasikan dengan kelayakan anda sendiri; data berkaitan tertakluk kepada peraturan penyedia tersebut. Model tempatan menjalankan inferens pada peranti anda.\n\nAplikasi ini boleh memanggil fail, terminal, automasi, Root, ADB, sambungan dan keupayaan serupa. Semak operasi sebelum menjalankannya, sandarkan data penting, dan berikan kebenaran dengan berhati-hati. Kerugian pada peranti, data, akaun atau kepentingan lain yang disebabkan oleh tindakan pengguna, konfigurasi pengguna, perkhidmatan pihak ketiga atau sambungan pihak ketiga hendaklah dikendalikan oleh operator sebenar menurut undang-undang yang terpakai.\n\nPlugin, skrip, Skill, kit alat dan kandungan pihak ketiga lain dalam marketplace adalah milik pengarang atau pemegang hak yang dilabelkan, bersama tanggungjawab berkaitan. Paparan atau pemasangan melalui marketplace tidak bermaksud Operit menjamin, menyokong atau memperoleh hak terhadap kandungan tersebut. Sahkan lesen dan status hak sebelum menggunakan, mengubah suai, menerbitkan atau mengedarkannya semula.</string>
-    <string name="agreement_serious_title">Perjanjian Undang-Undang Versi Ketat</string>
-    <string name="agreement_serious_content"><![CDATA[
+    <string name="agreement_content"><![CDATA[
         <p><b>Perjanjian Pengguna dan Dasar Privasi Operit</b><br>Versi: 2026-07-15; tarikh kuat kuasa yang dirancang: 15 Julai 2026.</p>
         <p><b>1. Skop dan Versi Perjanjian</b><br>Perjanjian ini terpakai kepada klien Android Operit yang dikeluarkan secara rasmi dan fungsi dalam talian pilihannya. Dengan menggunakan aplikasi ini, anda mengesahkan bahawa anda telah membaca dan menerima versi semasa. Aplikasi merekodkan versi perjanjian yang anda sahkan semasa permulaan; apabila perjanjian dikemas kini secara material, aplikasi akan meminta anda mengesahkan versi baharu sebelum meneruskan. Kod sumber terbuka dalam repositori dilesenkan di bawah GNU Lesser General Public License version 3 (LGPLv3) dalam fail <code>LICENSE</code> di root. Perjanjian ini tidak mengecualikan atau mengurangkan hak yang diberikan oleh undang-undang terpakai atau lesen sumber terbuka.</p>
         <p><b>2. Kedudukan Produk dan Perkhidmatan Pihak Ketiga</b><br>Operit ialah perisian klien sumber terbuka. Operit tidak menyediakan inferens model bahasa besar, API Key berkongsi, perantaraan permintaan sembang, atau pengehosan awan rekod sembang. Model awan, suara awan, carian, penjanaan imej, MCP, dan fungsi rangkaian lain dipilih, dikonfigurasikan, dan diaktifkan oleh anda. Apabila anda menggunakan perkhidmatan tersebut, data dihantar terus kepada penyedia perkhidmatan yang berkaitan dan tertakluk kepada terma perkhidmatan serta dasar privasi penyedia tersebut. Anda hendaklah menilai keselamatan, kesahan dan kesesuaian penyedia, model, endpoint dan sambungan, serta menjaga kelayakan dengan baik.</p>
@@ -1792,9 +1717,6 @@
         <p><b>6. Perisian Disediakan Seadanya</b><br>Setakat yang dibenarkan oleh undang-undang terpakai, perisian ini disediakan dalam keadaan "seadanya" dan "seperti tersedia". Penyumbang tidak memberi jaminan tersurat atau tersirat mengenai ketersediaan berterusan, ketepatan, keselamatan, kebolehdagangan, kesesuaian untuk tujuan tertentu atau tidak melanggar hak bagi perisian atau perkhidmatan pihak ketiga. Kerugian yang disebabkan oleh penggunaan perisian ini, perkhidmatan pihak ketiga, sambungan, konfigurasi pengguna atau pengubahsuaian sendiri hendaklah dikendalikan menurut undang-undang terpakai dan perjanjian perkhidmatan berkaitan.</p>
         <p><b>7. Kemas Kini Perjanjian dan Hubungan</b><br>Kami mungkin mengemas kini perjanjian ini kerana keperluan fungsi, undang-undang atau keselamatan, dan menyediakan versi semasa dalam aplikasi. Kemas kini yang memberi kesan material kepada hak pengguna akan berkuat kuasa dengan menaikkan versi perjanjian dan meminta pengesahan semula. Anda boleh mengemukakan soalan dan maklum balas melalui repositori projek, pintu masuk maklum balas dalam aplikasi atau saluran hubungan awam.</p>
     ]]></string>
-    <string name="agreement_disclaimer">Versi mudah faham hanya untuk memudahkan pemahaman. Jika berbeza daripada versi formal bahasa Cina, versi formal bahasa Cina akan digunakan.</string>
-    <string name="agreement_accept">Saya telah membaca dan bersetuju</string>
-    <string name="agreement_wait">Sila tunggu sebentar... (%1$d)</string>
     <string name="sherpa_k2_ncnn_init_failed">Enjin pengecaman suara masa nyata gagal dimulakan</string>
     <string name="sherpa_k2_ncnn_init_success">Enjin pengecaman suara masa nyata berjaya dimulakan</string>
     <string name="files_selected">%1$d fail telah dipilih</string>
@@ -7500,7 +7422,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="markdown_link_not_openable">Pautan ini menghala ke rujukan dalam dokumen dan tidak boleh dibuka</string>
     <string name="provider_openai_codex">Codex (OpenAI)</string>
     <string name="provider_antigravity">Antigravity (Google)</string>
-    <string name="onboarding_config_codex_login_required">Log masuk ke Codex dahulu</string>
     <string name="codex_login_title">Log masuk Codex</string>
     <string name="codex_login_starting">Menyediakan log masuk Codex...</string>
     <string name="codex_login_waiting">Lengkapkan log masuk dalam pelayar</string>
@@ -7735,9 +7656,8 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="package_market_origin_title">Notis asal pakej luaran</string>
     <string name="package_market_origin_message">Pakej ini berasal dari pasaran Operit.\nNama pakej: %1$s\nVersi: %2$s\nPengarang: %3$s\nSila sokong pengarang asal dan berhati-hati dengan penjualan semula.</string>
     <string name="market_agreement_title">Perjanjian penggunaan pasaran plugin dan kod kelakuan</string>
-    <string name="market_agreement_subtitle">Sebelum memasuki pasaran plugin, sila baca dan bersetuju dengan perjanjian ini. Pasaran digunakan untuk berkongsi dan menemui plugin; kami mengesyorkan pengarang menerbitkan sumber terbuka secara langsung melalui repositori GitHub awam.</string>
     <string name="market_agreement_version">Versi perjanjian pasaran: %1$s</string>
-    <string name="market_agreement_content">1. Kedudukan pasaran. Pasaran plugin Operit hanya digunakan untuk berkongsi, menemui, dan mengindeks skrip, kit alat, Skill, MCP, dan sambungan lain, serta menyediakan pintu masuk untuk melayari, memuat turun, dan memasang dalam pasaran. Pasaran bukan pengarang plugin, pembeli, penjual, broker, pihak pembayaran, penjamin, atau institusi pendaftaran hak; paparan, penyertaan, penyusunan, atau pengesyoran plugin oleh pasaran tidak bermakna plugin itu dibangunkan, dimiliki, diwakili, atau disokong oleh Operit.\n\n2. Kebenaran penerbitan. Apabila penerbit menghantar plugin ke pasaran, mereka memberikan Operit lesen bukan eksklusif, tidak boleh dipindah milik, yang diperlukan semata-mata untuk mengendalikan pasaran, untuk menyimpan, cache, menyalin, memproses, memaparkan, mengindeks entri pasaran, dan menyediakan muat turun dan pemasangan plugin kepada pengguna pasaran. Tindakan penerbitan juga bermakna penerbit membenarkan pengguna pasaran memuat turun, memasang, dan menggunakan plugin secara normal dalam skop tujuan reka bentuk, tetapi tidak semestinya membenarkan pengubahsuaian atau pengedaran semula. Lesen ini tidak memindahkan hak cipta, pemilikan, atau hak lain plugin; pasaran tidak boleh memperoleh hak sublesen bebas di luar pasaran berdasarkan ini. Penerbit harus memastikan mereka berhak memberikan kebenaran di atas.\n\n3. Cadangan sumber terbuka GitHub. Kami mengesyorkan penerbit menerbitkan kod sumber, README, lesen, versi atau Release, dan rekod perubahan secara langsung dalam repositori GitHub awam yang mereka kawal, dan mendaftarkan sumber dari repositori tersebut ke pasaran. Repositori GitHub yang boleh dilihat secara awam tidak bermakna lesen sumber terbuka diberikan secara automatik; sama ada penggunaan, pengubahsuaian, dan pengedaran semula dibenarkan adalah berdasarkan lesen sumber terbuka yang dinyatakan secara jelas oleh pengarang atau kebenaran bertulis lain.\n\n4. Penggunaan dan pengedaran semula oleh pengguna. Hak pengedaran semula plugin pada dasarnya dikekalkan oleh pengarang atau pemegang hak lain. Muat turun, pemasangan, dan penggunaan normal yang disebutkan di atas tidak bermakna setiap pengguna diberi hak untuk memuat naik semula, memajukan, mengubah pakej, menjual, atau menerbitkan semula plugin. Kecuali dinyatakan sebaliknya oleh undang-undang, pengguna hanya boleh mengubah suai dan mengedarkan semula mengikut lesen atau kebenaran yang dinyatakan oleh pengarang; plugin yang tidak menyatakan kebenaran pengedaran semula tidak boleh diedarkan semula sendiri. Skop hak plugin sumber terbuka adalah berdasarkan lesen sumber terbukanya.\n\n5. Risiko pihak ketiga dan tanggungjawab keselamatan. Plugin mempunyai kod, konfigurasi, dan kebenaran pelaksanaan bebas; ia mungkin melaksanakan kod, memulakan perkhidmatan tempatan, mengakses fail, membaca pemboleh ubah persekitaran, atau menyambung ke rangkaian. Pengguna harus menyemak sendiri dan menanggung risiko mengaktifkan, memasang, dan menggunakan plugin. Penerbit tidak boleh menyerahkan API Key, Cookie, Token, kunci peribadi, kata laluan akaun, atau data pengguna dalam plugin, repositori, contoh, atau konfigurasi, dan harus menerangkan dengan jujur pengarang, lesen, kebenaran, tingkah laku rangkaian, pemboleh ubah persekitaran, perkhidmatan luaran, dan risiko yang diketahui. Operit tidak menjamin keselamatan, ketepatan, ketersediaan, kesahan, atau keserasian sambungan pihak ketiga.\n\n6. Ulasan dan tingkah laku komuniti. Kandungan ulasan harus berkaitan dengan fungsi plugin, pengalaman penggunaan, kecacatan, atau isu keselamatan. Tidak dibenarkan menerbitkan nombor kumpulan QQ, Telegram, Discord, maklumat hubungan, iklan, maklumat pemindahan trafik, maklumat transaksi, pautan tidak berkaitan, atau kandungan lain yang mungkin mengganggu ketenteraman komuniti; tidak dibenarkan mendedahkan API Key, Cookie, Token, kunci peribadi, kata laluan akaun, atau data peribadi lain.\n\n7. Larangan transaksi dan pemindahan trafik. Tidak dibenarkan membeli, menjual, atau memasang plugin secara tidak sah dalam pasaran; tidak dibenarkan menggunakan pembayaran, tip, keahlian, sembang peribadi, atau pautan pihak ketiga untuk memujuk orang lain membayar untuk plugin percuma. Pasaran tidak menyediakan perkhidmatan pembayaran, pelaksanaan, bayaran balik, atau penyelesaian pertikaian transaksi. Plugin percuma tidak memerlukan pembayaran kepada sesiapa; caj, kebenaran, atau janji dari saluran pihak ketiga tidak mewakili sokongan rasmi Operit.\n\n8. Sempadan perkhidmatan pasaran. Untuk menyediakan perkhidmatan perkongsian, muat turun, dan pemasangan, pasaran mungkin menyimpan, cache, atau menghantar entri pasaran dan fail plugin, tetapi tidak menjanjikan pengehosan kekal, sandaran, kerahsiaan, atau pencegahan penyalinan. Menerbitkan ke pasaran bermakna pengarang memberi kebenaran kepada pasaran untuk menyediakan muat turun dan pemasangan kepada pengguna pasaran mengikut perjanjian ini, tetapi tidak bermakna orang ramai secara automatik mendapat hak pengedaran semula. Ketersediaan, muat turun, dan penggunaan berterusan plugin juga bergantung pada repositori pengarang, GitHub, dan perkhidmatan pihak ketiga lain.\n\n9. Penguatkuasaan peraturan dan kemas kini perjanjian. Ulasan, entri, atau akaun yang melanggar peraturan ini mungkin disekat, disembunyikan, atau dialih keluar. Apabila perjanjian pasaran berubah secara substantif kerana keperluan fungsi, undang-undang, atau keselamatan, versi perjanjian akan dinaikkan; pengguna perlu membaca dan mengesahkan semula apabila memasuki pasaran.</string>
+    <string name="market_agreement_content">1. Kedudukan pasaran. Pasaran plugin Operit hanya digunakan untuk berkongsi, menemui, dan mengindeks skrip, kit alat, Skill, MCP, dan sambungan lain, serta menyediakan pintu masuk untuk melayari, memuat turun, dan memasang dalam pasaran. Pasaran bukan pengarang plugin, pembeli, penjual, broker, pihak pembayaran, penjamin, atau institusi pendaftaran hak; paparan, penyertaan, penyusunan, atau pengesyoran plugin oleh pasaran tidak bermakna plugin itu dibangunkan, dimiliki, diwakili, atau disokong oleh Operit.\n\n2. Kebenaran penerbitan. Apabila penerbit menghantar plugin ke pasaran, mereka memberikan Operit lesen bukan eksklusif, tidak boleh dipindah milik, yang diperlukan semata-mata untuk mengendalikan pasaran, untuk menyimpan, cache, menyalin, memproses, memaparkan, mengindeks entri pasaran, dan menyediakan muat turun dan pemasangan plugin kepada pengguna pasaran. Tindakan penerbitan juga bermakna penerbit membenarkan pengguna pasaran memuat turun, memasang, dan menggunakan plugin secara normal dalam skop tujuan reka bentuk, tetapi tidak semestinya membenarkan pengubahsuaian atau pengedaran semula. Lesen ini tidak memindahkan hak cipta, pemilikan, atau hak lain plugin; pasaran tidak boleh memperoleh hak sublesen bebas di luar pasaran berdasarkan ini. Penerbit harus memastikan mereka berhak memberikan kebenaran di atas.\n\n3. Cadangan sumber terbuka GitHub. Kami mengesyorkan penerbit menerbitkan kod sumber, README, lesen, versi atau Release, dan rekod perubahan secara langsung dalam repositori GitHub awam yang mereka kawal, dan mendaftarkan sumber dari repositori tersebut ke pasaran. Repositori GitHub yang boleh dilihat secara awam tidak bermakna lesen sumber terbuka diberikan secara automatik; sama ada penggunaan, pengubahsuaian, dan pengedaran semula dibenarkan adalah berdasarkan lesen sumber terbuka yang dinyatakan secara jelas oleh pengarang atau kebenaran bertulis lain.\n\n4. Penggunaan dan pengedaran semula oleh pengguna. Hak pengedaran semula plugin pada dasarnya dikekalkan oleh pengarang atau pemegang hak lain. Muat turun, pemasangan, dan penggunaan normal yang disebutkan di atas tidak bermakna setiap pengguna diberi hak untuk memuat naik semula, memajukan, mengubah pakej, menjual, atau menerbitkan semula plugin. Kecuali dinyatakan sebaliknya oleh undang-undang, pengguna hanya boleh mengubah suai dan mengedarkan semula mengikut lesen atau kebenaran yang dinyatakan oleh pengarang; plugin yang tidak menyatakan kebenaran pengedaran semula tidak boleh diedarkan semula sendiri. Skop hak plugin sumber terbuka adalah berdasarkan lesen sumber terbukanya.\n\n5. Risiko pihak ketiga dan tanggungjawab keselamatan. Plugin mempunyai kod, konfigurasi, dan kebenaran pelaksanaan bebas; ia mungkin melaksanakan kod, memulakan perkhidmatan tempatan, mengakses fail, membaca pemboleh ubah persekitaran, atau menyambung ke rangkaian. Pengguna harus menyemak sendiri dan menanggung risiko mengaktifkan, memasang, dan menggunakan plugin. Penerbit tidak boleh menyerahkan API Key, Cookie, Token, kunci peribadi, kata laluan akaun, atau data pengguna dalam plugin, repositori, contoh, atau konfigurasi, dan harus menerangkan dengan jujur pengarang, lesen, kebenaran, tingkah laku rangkaian, pemboleh ubah persekitaran, perkhidmatan luaran, dan risiko yang diketahui. Operit tidak menjamin keselamatan, ketepatan, ketersediaan, kesahan, atau keserasian sambungan pihak ketiga.\n\n6. Ulasan dan tingkah laku komuniti. Kandungan ulasan harus berkaitan dengan fungsi plugin, pengalaman penggunaan, kecacatan, atau isu keselamatan. Tidak dibenarkan menerbitkan nombor kumpulan QQ, Telegram, Discord, maklumat hubungan, iklan, maklumat pemindahan trafik, maklumat transaksi, pautan tidak berkaitan, atau kandungan lain yang mungkin mengganggu ketenteraman komuniti; tidak dibenarkan mendedahkan API Key, Cookie, Token, kunci peribadi, kata laluan akaun, atau data peribadi lain.\n\n7. Larangan transaksi dan pemindahan trafik. Tidak dibenarkan membeli, menjual, atau memasang plugin secara tidak sah dalam pasaran; tidak dibenarkan menggunakan pembayaran, tip, keahlian, sembang peribadi, atau pautan pihak ketiga untuk memujuk orang lain membayar untuk plugin percuma. Pasaran tidak menyediakan perkhidmatan pembayaran, pelaksanaan, bayaran balik, atau penyelesaian pertikaian transaksi. Plugin percuma tidak memerlukan pembayaran kepada sesiapa; caj, kebenaran, atau janji dari saluran pihak ketiga tidak mewakili sokongan rasmi Operit.\n\n8. Sempadan perkhidmatan pasaran. Untuk menyediakan perkhidmatan perkongsian, muat turun, dan pemasangan, pasaran mungkin menyimpan, cache, atau menghantar entri pasaran dan fail plugin, tetapi tidak menjanjikan pengehosan kekal, sandaran, kerahsiaan, atau pencegahan penyalinan. Menerbitkan ke pasaran bermakna pengarang memberi kebenaran kepada pasaran untuk menyediakan muat turun dan pemasangan kepada pengguna pasaran mengikut perjanjian ini, tetapi tidak bermakna orang ramai secara automatik mendapat hak pengedaran semula. Ketersediaan, muat turun, dan penggunaan berterusan plugin juga bergantung pada repositori pengarang, GitHub, dan perkhidmatan pihak ketiga lain.\n\n9. Penguatkuasaan peraturan dan kemas kini perjanjian. Ulasan, entri, atau akaun yang melanggar peraturan ini mungkin disekat, disembunyikan, atau dialih keluar. Apabila perjanjian pasaran berubah secara substantif kerana keperluan fungsi, undang-undang, atau keselamatan, versi perjanjian akan dinaikkan; pengguna boleh menyemak kandungan yang dikemas kini dari pintu masuk pasaran.</string>
     <string name="multi_select_actions">Tindakan</string>
     <string name="speech_services_tts_profiles">Profil konfigurasi TTS</string>
     <string name="speech_services_stt_profiles">Profil konfigurasi STT</string>
@@ -8350,4 +8270,8 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
 <string name="data_recovery_start_main_app">Lancarkan aplikasi utama</string>
 <string name="data_recovery_started">Proses pemulihan telah dimulakan</string>
 <string name="data_recovery_variants_size">Saiz variants</string>
+    <!-- 单页首次使用流程 -->
+    <string name="onboarding_tagline">Permudahkan tugas harian</string>
+    <string name="onboarding_consent"><![CDATA[Saya telah membaca dan bersetuju dengan <a href="operit://agreement">Perjanjian Pengguna dan Dasar Privasi</a>]]></string>
+    <string name="onboarding_start">Setuju dan mula</string>
 </resources>
