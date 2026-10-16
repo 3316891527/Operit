@@ -42,13 +42,16 @@ def source_catalog(cache: Path, kind: str) -> dict[str, str]:
 
 
 def referenced_icons(terminal_source: Path) -> set[str]:
-    output = subprocess.run(["rg", "--files", "-g", "*.kt", "-g", "!material-icons-subset/**", "-g", "!terminal/**"],
-                            cwd=ROOT, capture_output=True, text=True, check=True).stdout
+    # 只扫描仓库跟踪的 Kotlin 源码，排除图标子集自身和构建产物。
+    # 不使用 rg，因为云端图标检查早于 ripgrep 安装。
+    tracked = subprocess.run(["git", "ls-files", "-z", "*.kt"], cwd=ROOT,
+                             capture_output=True, text=True, check=True).stdout
+    paths = [ROOT / relative for relative in tracked.split("\0")
+             if relative and not relative.startswith("material-icons-subset/")]
     terminal_sources = terminal_source / "src"
     if not terminal_sources.is_dir():
         raise ValueError(f"请先初始化 terminal 子模块，或通过 --terminal-source 指定固定版本源码：{terminal_source}")
-    # 子模块未纳入父仓库的 rg 文件列表，需要显式扫描，避免遗漏终端运行时图标。
-    paths = [ROOT / relative for relative in output.splitlines()]
+    # 子模块源码不在父仓库的跟踪列表里，需要显式扫描，避免遗漏终端运行时图标。
     paths.extend(sorted(terminal_sources.rglob("*.kt")))
     names = set()
     for path in paths:
