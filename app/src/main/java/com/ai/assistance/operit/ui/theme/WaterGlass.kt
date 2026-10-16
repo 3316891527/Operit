@@ -28,12 +28,14 @@ fun Modifier.waterGlass(
     shape: Shape = RoundedCornerShape(0.dp),
     containerColor: Color,
     subtleRefraction: Boolean = false,
+    backgroundOpacity: Float? = null,
 ): Modifier {
-    if (!enabled) {
+    if (!enabled || backgroundOpacity == 0f) {
         return this
     }
 
     val appearance = rememberGlassAppearance()
+    val tintOpacity = backgroundOpacity?.coerceIn(0f, 1f) ?: appearance.tintOpacity
     val liquidState = if (isWaterGlassSupported()) LocalWaterGlassState.current else null
     val isLightGlass = containerColor.luminance() >= 0.5f
     if (liquidState == null) {
@@ -52,9 +54,9 @@ fun Modifier.waterGlass(
                     Modifier.border(appearance.edgeWidth.dp, borderColor, shape)
                 } else Modifier
             )
-            .background(color = containerColor.copy(alpha = appearance.tintOpacity), shape = shape)
+            .background(color = containerColor.copy(alpha = tintOpacity), shape = shape)
     }
-    val surfaceTint = containerColor.copy(alpha = appearance.tintOpacity)
+    val surfaceTint = containerColor.copy(alpha = tintOpacity)
     val borderColor = Color.White.copy(alpha = appearance.highlightAlpha)
     val shadowColor =
         if (isLightGlass) {

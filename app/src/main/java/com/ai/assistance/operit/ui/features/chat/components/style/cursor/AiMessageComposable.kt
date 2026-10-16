@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.cursor
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.ui.features.chat.components.timeline.LocalChatMessageSlice
 import com.ai.assistance.operit.ui.common.markdown.rememberDisplayMessageSections
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
@@ -60,6 +63,10 @@ fun AiMessageComposable(
     val context = LocalContext.current
     val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
     val themeSnapshot = LocalThemePreferenceSnapshot.current
+    // 命令行 AI 消息原来没有外层背景，新配置缺省时保留原状。
+    val backgroundOpacity = themeSnapshot.values
+        .float(ThemeTransparencyPreferences.CURSOR_AI)?.coerceIn(0f, 1f)
+    val containerBackground = backgroundColor.copy(alpha = backgroundOpacity ?: 0f)
     val showThinkingProcess = themeSnapshot.showThinkingProcess
     val showStatusTags = themeSnapshot.showStatusTags
     val effectiveShowThinkingProcess = if (forceShowThinkingProcess) true else showThinkingProcess
@@ -124,6 +131,7 @@ fun AiMessageComposable(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .background(containerBackground, RoundedCornerShape(8.dp))
                     .padding(top = if (slice?.first != false) 2.dp else 0.dp, bottom = if (slice?.last != false) 2.dp else 0.dp)
                     .onSizeChanged { size ->
                         heightMemory?.updateMeasured(message.timestamp, size.height)

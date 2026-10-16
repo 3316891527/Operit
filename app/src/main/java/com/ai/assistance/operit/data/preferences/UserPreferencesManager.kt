@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.preferences
 
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.data.preferences.glass.GlassThemePreferences
 
 import android.content.Context
@@ -841,7 +842,7 @@ class UserPreferencesManager private constructor(private val context: Context) {
             BUBBLE_AI_IMAGE_REPEAT_Y_START, BUBBLE_AI_IMAGE_REPEAT_Y_END, BUBBLE_AI_IMAGE_SCALE,
             BUBBLE_USER_CONTENT_PADDING_LEFT, BUBBLE_USER_CONTENT_PADDING_RIGHT,
             BUBBLE_AI_CONTENT_PADDING_LEFT, BUBBLE_AI_CONTENT_PADDING_RIGHT
-        ) + GlassThemePreferences.floatKeys
+        ) + GlassThemePreferences.floatKeys + ThemeTransparencyPreferences.floatKeys
     }
 
     private fun copyThemeValues(

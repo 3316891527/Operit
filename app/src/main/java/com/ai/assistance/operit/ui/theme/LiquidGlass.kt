@@ -32,12 +32,14 @@ fun Modifier.liquidGlass(
     shape: CornerBasedShape = RoundedCornerShape(0.dp),
     containerColor: Color,
     enableLens: Boolean = false,
+    backgroundOpacity: Float? = null,
 ): Modifier {
-    if (!enabled) {
+    if (!enabled || backgroundOpacity == 0f) {
         return this
     }
 
     val appearance = rememberGlassAppearance()
+    val tintOpacity = backgroundOpacity?.coerceIn(0f, 1f) ?: appearance.tintOpacity
     val backdrop = if (isLiquidGlassSupported()) LocalLiquidGlassBackdrop.current else null
     val isLightGlass = containerColor.luminance() >= 0.5f
     if (backdrop == null) {
@@ -56,10 +58,10 @@ fun Modifier.liquidGlass(
                     Modifier.border(appearance.edgeWidth.dp, borderColor, shape)
                 } else Modifier
             )
-            .background(color = containerColor.copy(alpha = appearance.tintOpacity), shape = shape)
+            .background(color = containerColor.copy(alpha = tintOpacity), shape = shape)
     }
     val surfaceTint =
-        containerColor.copy(alpha = appearance.tintOpacity)
+        containerColor.copy(alpha = tintOpacity)
     val edgeWidth = appearance.edgeWidth.dp
     val shadowRadius = appearance.shadowRadius.dp
     val shadowColor =

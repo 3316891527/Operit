@@ -1,5 +1,10 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import com.ai.assistance.operit.ui.features.settings.components.transparency.BackgroundTransparencySlider
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
+import androidx.compose.ui.graphics.luminance
+import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported
+import com.ai.assistance.operit.ui.theme.isWaterGlassSupported
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,10 +43,27 @@ internal fun ThemeSettingsInputTab(
     val editorSession = shared.editorSession
     val values by editorSession.values.collectAsState()
     val inputStyle = values.requiredString("input_style")
-    val chatInputTransparent = values.requiredBoolean("chat_input_transparent")
+    val isDarkTheme = MaterialTheme.colorScheme.onSurface.luminance() > 0.5f
+    val legacyOpaqueOpacity = when {
+        !values.requiredBoolean("use_background_image") -> 1f
+        inputStyle == UserPreferencesManager.INPUT_STYLE_AGENT && isDarkTheme -> 0.82f
+        else -> 0.85f
+    }
     val chatInputFloating = values.requiredBoolean("chat_input_floating")
     val chatInputLiquidGlass = values.requiredBoolean("chat_input_liquid_glass")
     val chatInputWaterGlass = values.requiredBoolean("chat_input_water_glass")
+    val legacyGlassEnabled =
+        (chatInputWaterGlass && isWaterGlassSupported()) ||
+            (!chatInputWaterGlass && chatInputLiquidGlass && isLiquidGlassSupported())
+    val legacyTransparentOpacity =
+        if (legacyGlassEnabled) values.requiredFloat("glass_tint_opacity") else 0f
+    val inputOpacity = ThemeTransparencyPreferences.inputOpacity(
+        values,
+        opaqueOpacity = legacyOpaqueOpacity,
+        transparentOpacity = legacyTransparentOpacity,
+    )
+    val chatInputTransparent = values.float(ThemeTransparencyPreferences.INPUT)?.let { it < 1f }
+        ?: values.requiredBoolean("chat_input_transparent")
     val thinkingParticleColorInput =
         values.int("thinking_particle_color") ?: Color.White.toArgb()
     val recentColors by editorSession.recentColorsFlow.collectAsState(initial = emptyList())
@@ -119,11 +141,15 @@ internal fun ThemeSettingsInputTab(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
-            ThemeSettingsInputSwitch(
-                title = stringResource(id = R.string.theme_chat_input_transparent),
-                description = stringResource(id = R.string.theme_chat_input_transparent_desc),
-                checked = chatInputTransparent,
-                onCheckedChange = { editorSession.setBoolean("chat_input_transparent", it) },
+            BackgroundTransparencySlider(
+                title = stringResource(R.string.theme_input_background_transparency),
+                opacity = inputOpacity,
+                onOpacityChange = { opacity ->
+                    editorSession.update {
+                        it.withFloat(ThemeTransparencyPreferences.INPUT, opacity)
+                            .withBoolean("chat_input_transparent", opacity < 1f)
+                    }
+                },
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             ThemeSettingsInputSwitch(

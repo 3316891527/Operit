@@ -186,6 +186,7 @@ fun AgentChatInputSection(
     onTakePhoto: (Uri) -> Unit,
     hasBackgroundImage: Boolean = false,
     chatInputTransparent: Boolean = false,
+    chatInputOpacity: Float? = null,
     chatInputFloating: Boolean = false,
     chatInputLiquidGlass: Boolean = false,
     chatInputWaterGlass: Boolean = false,
@@ -517,28 +518,30 @@ fun AgentChatInputSection(
             0.08f,
         )
 
-    val inputContainerColor =
-        when {
-            chatInputTransparent -> Color.Transparent
-            isDarkTheme && hasBackgroundImage -> darkModeInputColor.copy(alpha = 0.82f)
-            isDarkTheme -> darkModeInputColor
-            hasBackgroundImage -> MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-            else -> MaterialTheme.colorScheme.surface
-        }
+    val hasTransparentBackground = chatInputOpacity?.let { it < 1f } ?: chatInputTransparent
+    val inputBaseColor = if (isDarkTheme) darkModeInputColor else MaterialTheme.colorScheme.surface
+    val inputContainerColor = inputBaseColor.copy(
+        alpha = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
+            chatInputTransparent -> 0f
+            isDarkTheme && hasBackgroundImage -> 0.82f
+            hasBackgroundImage -> 0.85f
+            else -> 1f
+        },
+    )
     val popupContainerColor =
         when {
-            isDarkTheme && chatInputTransparent -> darkModeInputColor
+            isDarkTheme && hasTransparentBackground -> darkModeInputColor
             isDarkTheme -> inputContainerColor
             else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
         }
     val queueContainerColor =
         when {
-            chatInputTransparent -> MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+            hasTransparentBackground -> MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
             else -> inputContainerColor
         }
     val queueItemColor =
         when {
-            chatInputTransparent -> MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            hasTransparentBackground -> MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
             isDarkTheme -> MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
             else -> MaterialTheme.colorScheme.surface
         }
@@ -773,9 +776,9 @@ fun AgentChatInputSection(
                     RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
                 }
             val inputLiquidGlassEnabled =
-                chatInputTransparent && chatInputLiquidGlass && !chatInputWaterGlass && isLiquidGlassSupported()
+                hasTransparentBackground && chatInputOpacity != 0f && chatInputLiquidGlass && !chatInputWaterGlass && isLiquidGlassSupported()
             val inputWaterGlassEnabled =
-                chatInputTransparent && chatInputWaterGlass && isWaterGlassSupported()
+                hasTransparentBackground && chatInputOpacity != 0f && chatInputWaterGlass && isWaterGlassSupported()
             val inputLiquidGlassTint =
                 if (isDarkTheme) {
                     darkModeInputColor
@@ -803,23 +806,25 @@ fun AgentChatInputSection(
                     )
                 }
 
-            if (chatInputTransparent) {
+            if (hasTransparentBackground) {
                 // 透明模式：暗色顶部高光，亮色保持原阴影
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .padding(top = if (chatInputFloating) 2.dp else 4.dp)
-                            .then(inputContainerEffectModifier)
+                            .then(if (chatInputOpacity == 0f) Modifier else inputContainerEffectModifier)
                             .waterGlass(
                                 enabled = inputWaterGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
+                                backgroundOpacity = chatInputOpacity,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
+                                backgroundOpacity = chatInputOpacity,
                                 // 保留输入框原有透镜，避免共享默认值变化移除折射。
                                 enableLens = true,
                             )
@@ -1109,7 +1114,7 @@ fun AgentChatInputSection(
                         Modifier
                             .fillMaxWidth()
                             .padding(top = if (chatInputFloating) 2.dp else 4.dp)
-                            .then(inputContainerEffectModifier)
+                            .then(if (chatInputOpacity == 0f) Modifier else inputContainerEffectModifier)
                             .waterGlass(
                                 enabled = inputWaterGlassEnabled,
                                 shape = inputCardShape,

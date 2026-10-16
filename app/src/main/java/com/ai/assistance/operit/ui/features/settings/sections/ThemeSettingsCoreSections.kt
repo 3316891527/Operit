@@ -1,5 +1,10 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
+import com.ai.assistance.operit.ui.theme.isWaterGlassSupported
+import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported
+import com.ai.assistance.operit.ui.features.settings.components.transparency.BackgroundTransparencySlider
+import androidx.compose.runtime.collectAsState
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.foundation.Canvas
@@ -218,6 +223,7 @@ internal fun ThemeSettingsChatStyleSection(
     bubbleAiContentPaddingRightInput: Float,
     showInputStyleControls: Boolean = true,
 ) {
+    val values by editorSession.values.collectAsState()
     ThemeSettingsSectionTitle(
         title = stringResource(id = R.string.chat_style_title),
         icon = Icons.Default.ColorLens,
@@ -1114,28 +1120,58 @@ internal fun ThemeSettingsChatStyleSection(
                     ChatStyle.CURSOR
                 }
 
+            val isCursorStyle = previewChatStyle == ChatStyle.CURSOR
+            val userBaseColor = when {
+                isCursorStyle && cursorUserBubbleFollowThemeInput -> MaterialTheme.colorScheme.primaryContainer
+                isCursorStyle -> Color(cursorUserBubbleColorInput)
+                else -> Color(bubbleUserBubbleColorInput)
+            }
+            val aiBaseColor = if (isCursorStyle) MaterialTheme.colorScheme.surface else Color(bubbleAiBubbleColorInput)
+            val userOpacityKey = if (isCursorStyle) ThemeTransparencyPreferences.CURSOR_USER else ThemeTransparencyPreferences.BUBBLE_USER
+            val aiOpacityKey = if (isCursorStyle) ThemeTransparencyPreferences.CURSOR_AI else ThemeTransparencyPreferences.BUBBLE_AI
+            val userGlassEnabled = if (isCursorStyle) {
+                (cursorUserBubbleWaterGlassInput && isWaterGlassSupported()) ||
+                    (cursorUserBubbleLiquidGlassInput && isLiquidGlassSupported())
+            } else {
+                (bubbleUserBubbleWaterGlassInput && isWaterGlassSupported()) ||
+                    (bubbleUserBubbleLiquidGlassInput && isLiquidGlassSupported())
+            }
+            val aiGlassEnabled = !isCursorStyle &&
+                ((bubbleAiBubbleWaterGlassInput && isWaterGlassSupported()) ||
+                    (bubbleAiBubbleLiquidGlassInput && isLiquidGlassSupported()))
+            val legacyUserOpacity = when {
+                userGlassEnabled -> values.requiredFloat("glass_tint_opacity")
+                !isCursorStyle && previewUserImageStyle != null -> 1f
+                else -> userBaseColor.alpha
+            }
+            val legacyAiOpacity = when {
+                isCursorStyle -> 0f
+                aiGlassEnabled -> values.requiredFloat("glass_tint_opacity")
+                previewAiImageStyle != null -> 1f
+                else -> aiBaseColor.alpha
+            }
+            val userOpacity = ThemeTransparencyPreferences.opacity(values, userOpacityKey, legacyUserOpacity)
+            val aiOpacity = ThemeTransparencyPreferences.opacity(values, aiOpacityKey, legacyAiOpacity)
+            BackgroundTransparencySlider(
+                title = stringResource(R.string.theme_user_background_transparency),
+                opacity = userOpacity,
+                onOpacityChange = { editorSession.setFloat(userOpacityKey, it) },
+            )
+            BackgroundTransparencySlider(
+                title = stringResource(R.string.theme_ai_background_transparency),
+                opacity = aiOpacity,
+                onOpacityChange = { editorSession.setFloat(aiOpacityKey, it) },
+            )
             ChatStylePreviewCard(
                 chatStyle = previewChatStyle,
-                userColor =
-                    if (previewChatStyle == ChatStyle.CURSOR && cursorUserBubbleFollowThemeInput) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else if (previewChatStyle == ChatStyle.CURSOR) {
-                        Color(cursorUserBubbleColorInput)
-                    } else {
-                        Color(bubbleUserBubbleColorInput)
-                    },
-                aiColor =
-                    if (previewChatStyle == ChatStyle.BUBBLE) {
-                        Color(bubbleAiBubbleColorInput)
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
+                userColor = userBaseColor.copy(alpha = userOpacity),
+                aiColor = aiBaseColor.copy(alpha = aiOpacity),
                 userTextColor = Color(bubbleUserTextColorInput),
                 aiTextColor = Color(bubbleAiTextColorInput),
                 userFontFamily = previewUserFontFamily,
                 aiFontFamily = previewAiFontFamily,
-                userImageStyle = if (previewChatStyle == ChatStyle.BUBBLE) previewUserImageStyle else null,
-                aiImageStyle = if (previewChatStyle == ChatStyle.BUBBLE) previewAiImageStyle else null,
+                userImageStyle = if (previewChatStyle == ChatStyle.BUBBLE) previewUserImageStyle?.copy(backgroundOpacity = userOpacity) else null,
+                aiImageStyle = if (previewChatStyle == ChatStyle.BUBBLE) previewAiImageStyle?.copy(backgroundOpacity = aiOpacity) else null,
                 bubbleShowAvatar = bubbleShowAvatarInput,
                 bubbleWideLayoutEnabled = bubbleWideLayoutEnabledInput,
                 bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabledInput,
@@ -1777,7 +1813,7 @@ private fun ChatStylePreviewCard(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = userColor,
-                    tonalElevation = 1.dp,
+                    tonalElevation = if (userColor.alpha == 0f) 0.dp else 1.dp,
                 ) {
                     Text(
                         text = stringResource(id = R.string.chat_style_preview_user_message),
@@ -1787,7 +1823,7 @@ private fun ChatStylePreviewCard(
                     )
                 }
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    modifier = Modifier.fillMaxWidth().background(aiColor, RoundedCornerShape(8.dp)).padding(horizontal = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(

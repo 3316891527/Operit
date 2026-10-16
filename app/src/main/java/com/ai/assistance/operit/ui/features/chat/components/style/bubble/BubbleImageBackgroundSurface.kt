@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.bubble
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Paint
 import androidx.collection.LruCache
 import com.ai.assistance.operit.ui.features.chat.components.timeline.LocalChatMessageSlice
 import kotlinx.coroutines.sync.Mutex
@@ -51,6 +54,7 @@ data class BubbleImageStyleConfig(
     val repeatYEndRatio: Float = 0.65f,
     val imageScale: Float = 1f,
     val renderMode: String = BubbleImageRenderMode.TILED_NINE_SLICE,
+    val backgroundOpacity: Float = 1f,
 )
 
 object BubbleImageRenderMode {
@@ -69,6 +73,8 @@ fun BubbleImageBackgroundSurface(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val imageBitmap = rememberBubbleImageBitmap(imageStyle.imageUri)
+    val backgroundOpacity = imageStyle.backgroundOpacity.coerceIn(0f, 1f)
+    val backgroundPaint = remember(backgroundOpacity) { Paint().apply { alpha = backgroundOpacity } }
     val slice = LocalChatMessageSlice.current
 
     Box(
@@ -76,20 +82,31 @@ fun BubbleImageBackgroundSurface(
             modifier
                 .clip(shape)
                 .drawWithContent {
-                    imageBitmap?.let { bitmap ->
-                        if (imageStyle.renderMode == BubbleImageRenderMode.NINE_PATCH) {
-                            drawStretchedNinePatchBubble(bitmap, imageStyle, slice?.first != false, slice?.last != false)
-                        } else {
-                            drawRepeatedCenterBubble(bitmap, imageStyle, slice?.first != false, slice?.last != false)
-                        }
-                        if (showSliceGuides) {
-                            drawNinePatchSliceGuides(
-                                bitmap = bitmap,
-                                config = imageStyle,
-                                guideColor = sliceGuideColor,
-                            )
+                    if (backgroundOpacity > 0f) {
+                        imageBitmap?.let { bitmap ->
+                            val canvas = drawContext.canvas
+                            if (backgroundOpacity < 1f) {
+                                canvas.saveLayer(Rect(Offset.Zero, size), backgroundPaint)
+                            }
+                            try {
+                                if (imageStyle.renderMode == BubbleImageRenderMode.NINE_PATCH) {
+                                    drawStretchedNinePatchBubble(bitmap, imageStyle, slice?.first != false, slice?.last != false)
+                                } else {
+                                    drawRepeatedCenterBubble(bitmap, imageStyle, slice?.first != false, slice?.last != false)
+                                }
+                                if (showSliceGuides) {
+                                    drawNinePatchSliceGuides(
+                                        bitmap = bitmap,
+                                        config = imageStyle,
+                                        guideColor = sliceGuideColor,
+                                    )
+                                }
+                            } finally {
+                                if (backgroundOpacity < 1f) canvas.restore()
+                            }
                         }
                     }
+                    // 图层仅包含背景，正文和附件保持原有清晰度。
                     drawContent()
                 }
                 .padding(contentPadding),

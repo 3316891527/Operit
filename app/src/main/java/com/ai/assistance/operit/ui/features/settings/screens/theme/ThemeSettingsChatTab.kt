@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -482,15 +483,21 @@ internal fun ThemeSettingsChatTab(
     val bubbleUserBubbleWaterGlassInput = values.requiredBoolean("bubble_user_bubble_water_glass")
     val bubbleAiBubbleLiquidGlassInput = values.requiredBoolean("bubble_ai_bubble_liquid_glass")
     val bubbleAiBubbleWaterGlassInput = values.requiredBoolean("bubble_ai_bubble_water_glass")
-    val cursorUserBubbleColorInput = values.int("cursor_user_bubble_color") ?: defaultCursorUserBubbleColor
-    val bubbleUserBubbleColorInput = values.int("bubble_user_bubble_color") ?: defaultBubbleUserBubbleColor
-    val bubbleAiBubbleColorInput = values.int("bubble_ai_bubble_color") ?: defaultBubbleAiBubbleColor
+    val cursorUserBubbleColorInput = Color(values.int("cursor_user_bubble_color") ?: defaultCursorUserBubbleColor).let { color ->
+        color.copy(alpha = ThemeTransparencyPreferences.opacity(values, ThemeTransparencyPreferences.CURSOR_USER, color.alpha)).toArgb()
+    }
+    val bubbleUserBubbleColorInput = Color(values.int("bubble_user_bubble_color") ?: defaultBubbleUserBubbleColor).let { color ->
+        color.copy(alpha = ThemeTransparencyPreferences.opacity(values, ThemeTransparencyPreferences.BUBBLE_USER, color.alpha)).toArgb()
+    }
+    val bubbleAiBubbleColorInput = Color(values.int("bubble_ai_bubble_color") ?: defaultBubbleAiBubbleColor).let { color ->
+        color.copy(alpha = ThemeTransparencyPreferences.opacity(values, ThemeTransparencyPreferences.BUBBLE_AI, color.alpha)).toArgb()
+    }
     val bubbleUserTextColorInput =
         values.int("bubble_user_text_color")
-            ?: getTextColorForBackground(Color(bubbleUserBubbleColorInput)).toArgb()
+            ?: getTextColorForBackground(Color(bubbleUserBubbleColorInput).copy(alpha = 1f)).toArgb()
     val bubbleAiTextColorInput =
         values.int("bubble_ai_text_color")
-            ?: getTextColorForBackground(Color(bubbleAiBubbleColorInput)).toArgb()
+            ?: getTextColorForBackground(Color(bubbleAiBubbleColorInput).copy(alpha = 1f)).toArgb()
     val bubbleUserUseCustomFontInput = values.requiredBoolean("bubble_user_use_custom_font")
     val bubbleUserFontTypeInput = values.requiredString("bubble_user_font_type")
     val bubbleUserSystemFontNameInput = values.requiredString("bubble_user_system_font_name")
@@ -779,13 +786,22 @@ private fun setSelectedChatColor(
     selectedColor?.let { shared.scope.launch { shared.editorSession.addRecentColor(it) } }
     when (currentColorPickerMode) {
         "cursorUserBubble" -> cursorUserBubbleColor?.let {
-            shared.editorSession.setInt("cursor_user_bubble_color", it)
+            shared.editorSession.update { values ->
+                values.withInt("cursor_user_bubble_color", it)
+                    .withFloat(ThemeTransparencyPreferences.CURSOR_USER, Color(it).alpha)
+            }
         }
         "bubbleUserBubble" -> bubbleUserBubbleColor?.let {
-            shared.editorSession.setInt("bubble_user_bubble_color", it)
+            shared.editorSession.update { values ->
+                values.withInt("bubble_user_bubble_color", it)
+                    .withFloat(ThemeTransparencyPreferences.BUBBLE_USER, Color(it).alpha)
+            }
         }
         "bubbleAiBubble" -> bubbleAiBubbleColor?.let {
-            shared.editorSession.setInt("bubble_ai_bubble_color", it)
+            shared.editorSession.update { values ->
+                values.withInt("bubble_ai_bubble_color", it)
+                    .withFloat(ThemeTransparencyPreferences.BUBBLE_AI, Color(it).alpha)
+            }
         }
         "bubbleUserText" -> bubbleUserTextColor?.let {
             shared.editorSession.setInt("bubble_user_text_color", it)

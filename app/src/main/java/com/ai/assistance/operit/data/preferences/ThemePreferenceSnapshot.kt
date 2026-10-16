@@ -173,7 +173,10 @@ data class ThemePreferenceSnapshot(
         get() = values.requiredBoolean("navigation_drawer_button_liquid_glass")
     val chatHeaderTransparent: Boolean get() = values.requiredBoolean("chat_header_transparent")
     val chatHeaderOverlayMode: Boolean get() = values.requiredBoolean("chat_header_overlay_mode")
-    val chatInputTransparent: Boolean get() = values.requiredBoolean("chat_input_transparent")
+    val chatInputOpacity: Float? get() = values.float("chat_input_opacity")?.coerceIn(0f, 1f)
+    val chatInputTransparent: Boolean
+        get() = chatInputOpacity?.let { it < 1f }
+            ?: values.requiredBoolean("chat_input_transparent")
     val chatInputFloating: Boolean get() = values.requiredBoolean("chat_input_floating")
     val chatInputLiquidGlass: Boolean get() = values.requiredBoolean("chat_input_liquid_glass")
     val chatInputWaterGlass: Boolean get() = values.requiredBoolean("chat_input_water_glass")

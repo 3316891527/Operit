@@ -101,6 +101,7 @@ fun ClassicChatInputSection(
     onTakePhoto: (Uri) -> Unit,
     hasBackgroundImage: Boolean = false,
     chatInputTransparent: Boolean = false,
+    chatInputOpacity: Float? = null,
     chatInputFloating: Boolean = false,
     chatInputLiquidGlass: Boolean = false,
     chatInputWaterGlass: Boolean = false,
@@ -238,24 +239,27 @@ fun ClassicChatInputSection(
         setShowAttachmentPanel(false)
     }
 
-    val surfaceColor = when {
-        chatInputTransparent -> MaterialTheme.colorScheme.surface.copy(alpha = 0f)
-        hasBackgroundImage -> MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
-        else -> MaterialTheme.colorScheme.surface
-    }
+    val hasTransparentBackground = chatInputOpacity?.let { it < 1f } ?: chatInputTransparent
+    val surfaceColor = MaterialTheme.colorScheme.surface.copy(
+        alpha = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
+            chatInputTransparent -> 0f
+            hasBackgroundImage -> 0.85f
+            else -> 1f
+        },
+    )
     val queueContainerColor = when {
-        chatInputTransparent -> MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+        hasTransparentBackground -> MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
         else -> surfaceColor
     }
     val queueItemColor = when {
-        chatInputTransparent -> MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        hasTransparentBackground -> MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
         hasBackgroundImage -> MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
         else -> MaterialTheme.colorScheme.surface
     }
     val inputLiquidGlassEnabled =
-        chatInputTransparent && chatInputLiquidGlass && !chatInputWaterGlass && isLiquidGlassSupported()
+        hasTransparentBackground && chatInputOpacity != 0f && chatInputLiquidGlass && !chatInputWaterGlass && isLiquidGlassSupported()
     val inputWaterGlassEnabled =
-        chatInputTransparent && chatInputWaterGlass && isWaterGlassSupported()
+        hasTransparentBackground && chatInputOpacity != 0f && chatInputWaterGlass && isWaterGlassSupported()
     val containerShape = if (chatInputFloating) RoundedCornerShape(22.dp) else RoundedCornerShape(0.dp)
     val containerModifier =
         if (chatInputFloating) {
@@ -268,7 +272,7 @@ fun ClassicChatInputSection(
         modifier =
             containerModifier
                 .then(
-                    if (chatInputFloating && !inputLiquidGlassEnabled && !inputWaterGlassEnabled) {
+                    if (chatInputFloating && chatInputOpacity != 0f && !inputLiquidGlassEnabled && !inputWaterGlassEnabled) {
                         Modifier.shadow(4.dp, containerShape, clip = false)
                     } else {
                         Modifier
@@ -278,11 +282,13 @@ fun ClassicChatInputSection(
                     enabled = inputWaterGlassEnabled,
                     shape = containerShape,
                     containerColor = MaterialTheme.colorScheme.surface,
+                    backgroundOpacity = chatInputOpacity,
                 )
                 .liquidGlass(
                     enabled = inputLiquidGlassEnabled,
                     shape = containerShape,
                     containerColor = MaterialTheme.colorScheme.surface,
+                    backgroundOpacity = chatInputOpacity,
                     // 保留输入框原有透镜，避免共享默认值变化移除折射。
                     enableLens = true,
                 )

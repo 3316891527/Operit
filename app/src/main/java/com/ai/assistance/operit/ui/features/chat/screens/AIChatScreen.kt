@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.screens
 
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.ui.features.chat.components.animateScrollToEnd
 import android.content.ClipboardManager
 import android.os.Build
@@ -168,6 +169,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val useBackgroundImage = themeSnapshot.useBackgroundImage
     val backgroundImageUri = themeSnapshot.backgroundImageUri
     val chatInputTransparent = themeSnapshot.chatInputTransparent
+    val chatInputOpacity = themeSnapshot.chatInputOpacity
     val chatInputFloating = themeSnapshot.chatInputFloating
     val chatInputLiquidGlassRaw = themeSnapshot.chatInputLiquidGlass
     val chatInputWaterGlass = themeSnapshot.chatInputWaterGlass
@@ -446,11 +448,25 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             }
 
             ChatStyle.BUBBLE -> bubbleCustomUserMessageColor ?: defaultUserMessageColor
+        }.let { color ->
+            val key = if (chatStyle == ChatStyle.CURSOR) {
+                ThemeTransparencyPreferences.CURSOR_USER
+            } else {
+                ThemeTransparencyPreferences.BUBBLE_USER
+            }
+            color.copy(alpha = ThemeTransparencyPreferences.opacity(themeSnapshot.values, key, color.alpha))
         }
     val aiMessageColor =
         when (chatStyle) {
             ChatStyle.BUBBLE -> bubbleCustomAiMessageColor ?: defaultAiMessageColor
             ChatStyle.CURSOR -> defaultAiMessageColor
+        }.let { color ->
+            val key = if (chatStyle == ChatStyle.CURSOR) {
+                ThemeTransparencyPreferences.CURSOR_AI
+            } else {
+                ThemeTransparencyPreferences.BUBBLE_AI
+            }
+            color.copy(alpha = ThemeTransparencyPreferences.opacity(themeSnapshot.values, key, color.alpha))
         }
     val userTextColor =
         when {
@@ -963,6 +979,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                 inputState = inputProcessingState,
                                 hasBackgroundImage = effectiveHasBackgroundImage,
                                 chatInputTransparent = chatInputTransparent,
+                                chatInputOpacity = chatInputOpacity,
                                 chatInputFloating = chatInputFloating,
                                 chatInputLiquidGlass = chatInputLiquidGlass,
                                 chatInputWaterGlass = chatInputWaterGlass,
@@ -1312,6 +1329,7 @@ private fun ChatInputBottomBar(
     inputState: InputProcessingState,
     hasBackgroundImage: Boolean,
     chatInputTransparent: Boolean,
+    chatInputOpacity: Float?,
     chatInputFloating: Boolean,
     chatInputLiquidGlass: Boolean,
     chatInputWaterGlass: Boolean,
@@ -1718,6 +1736,7 @@ private fun ChatInputBottomBar(
                 onTakePhoto = actualViewModel::handleTakenPhoto,
                 hasBackgroundImage = hasBackgroundImage,
                 chatInputTransparent = chatInputTransparent,
+                chatInputOpacity = chatInputOpacity,
                 chatInputFloating = chatInputFloating,
                 chatInputLiquidGlass = chatInputLiquidGlass,
                 chatInputWaterGlass = chatInputWaterGlass,
@@ -1812,6 +1831,7 @@ private fun ChatInputBottomBar(
                 onTakePhoto = actualViewModel::handleTakenPhoto,
                 hasBackgroundImage = hasBackgroundImage,
                 chatInputTransparent = chatInputTransparent,
+                chatInputOpacity = chatInputOpacity,
                 chatInputFloating = chatInputFloating,
                 chatInputLiquidGlass = chatInputLiquidGlass,
                 chatInputWaterGlass = chatInputWaterGlass,

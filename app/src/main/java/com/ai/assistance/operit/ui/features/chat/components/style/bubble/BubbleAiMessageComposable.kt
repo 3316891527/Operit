@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.bubble
 
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.ui.features.chat.components.timeline.LocalChatMessageSlice
 import com.ai.assistance.operit.ui.common.markdown.rememberDisplayMessageSections
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
@@ -104,6 +105,9 @@ fun BubbleAiMessageComposable(
     val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
     val themeSnapshot = LocalThemePreferenceSnapshot.current
+    val backgroundOpacity = themeSnapshot.values
+        .float(ThemeTransparencyPreferences.BUBBLE_AI)?.coerceIn(0f, 1f)
+    val effectiveBackgroundColor = backgroundColor.copy(alpha = backgroundOpacity ?: backgroundColor.alpha)
     val bubbleShowAvatar = themeSnapshot.bubbleShowAvatar
     val bubbleWideLayoutEnabled = themeSnapshot.bubbleWideLayoutEnabled
     val showThinkingProcess = themeSnapshot.showThinkingProcess
@@ -392,7 +396,7 @@ fun BubbleAiMessageComposable(
                                 StreamMarkdownRenderer(
                                     markdownStream = charStream,
                                     textColor = textColor,
-                                    backgroundColor = backgroundColor,
+                                    backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
                                     xmlRenderer = xmlRenderer,
                                     nodeGrouper = nodeGrouper,
@@ -411,7 +415,7 @@ fun BubbleAiMessageComposable(
                                 StreamMarkdownRenderer(
                                     sections = rememberDisplayMessageSections(message),
                                     textColor = textColor,
-                                    backgroundColor = backgroundColor,
+                                    backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
                                     xmlRenderer = xmlRenderer,
                                     nodeGrouper = nodeGrouper,
@@ -432,7 +436,7 @@ fun BubbleAiMessageComposable(
 
                     if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
-                            imageStyle = effectiveBubbleImageStyle,
+                            imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
                             shape = bubbleShape,
                             modifier = bubbleModifier,
                             contentPadding = PaddingValues(0.dp),
@@ -446,12 +450,14 @@ fun BubbleAiMessageComposable(
                                     .waterGlass(
                                         enabled = waterGlassEnabled,
                                         shape = bubbleShape,
-                                        containerColor = backgroundColor,
+                                        containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                     )
                                     .liquidGlass(
                                         enabled = liquidGlassEnabled,
                                         shape = bubbleShape,
-                                        containerColor = backgroundColor,
+                                        containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                         enableLens = false,
                                     ),
                             shape = bubbleShape,
@@ -459,10 +465,10 @@ fun BubbleAiMessageComposable(
                                 if (liquidGlassEnabled || waterGlassEnabled) {
                                     Color.Transparent
                                 } else {
-                                    backgroundColor
+                                    effectiveBackgroundColor
                                 },
                             tonalElevation =
-                                if (liquidGlassEnabled || waterGlassEnabled) {
+                                if (liquidGlassEnabled || waterGlassEnabled || backgroundOpacity == 0f) {
                                     0.dp
                                 } else {
                                     2.dp
@@ -603,7 +609,7 @@ fun BubbleAiMessageComposable(
                                 StreamMarkdownRenderer(
                                     markdownStream = charStream,
                                     textColor = textColor,
-                                    backgroundColor = backgroundColor,
+                                    backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
                                     xmlRenderer = xmlRenderer,
                                     nodeGrouper = nodeGrouper,
@@ -624,7 +630,7 @@ fun BubbleAiMessageComposable(
                                 StreamMarkdownRenderer(
                                     sections = rememberDisplayMessageSections(message),
                                     textColor = textColor,
-                                    backgroundColor = backgroundColor,
+                                    backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
                                     xmlRenderer = xmlRenderer,
                                     nodeGrouper = nodeGrouper,
@@ -645,7 +651,7 @@ fun BubbleAiMessageComposable(
 
                     if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
-                            imageStyle = effectiveBubbleImageStyle,
+                            imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
                             shape = bubbleShape,
                             modifier = bubbleModifier,
                             contentPadding = PaddingValues(0.dp),
@@ -659,12 +665,14 @@ fun BubbleAiMessageComposable(
                                     .waterGlass(
                                         enabled = waterGlassEnabled,
                                         shape = bubbleShape,
-                                        containerColor = backgroundColor,
+                                        containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                     )
                                     .liquidGlass(
                                         enabled = liquidGlassEnabled,
                                         shape = bubbleShape,
-                                        containerColor = backgroundColor,
+                                        containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                         enableLens = false,
                                     ),
                             shape = bubbleShape,
@@ -672,10 +680,10 @@ fun BubbleAiMessageComposable(
                                 if (liquidGlassEnabled || waterGlassEnabled) {
                                     Color.Transparent
                                 } else {
-                                    backgroundColor
+                                    effectiveBackgroundColor
                                 },
                             tonalElevation =
-                                if (liquidGlassEnabled || waterGlassEnabled) {
+                                if (liquidGlassEnabled || waterGlassEnabled || backgroundOpacity == 0f) {
                                     0.dp
                                 } else {
                                     2.dp

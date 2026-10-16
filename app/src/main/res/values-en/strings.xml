@@ -9262,4 +9262,8 @@
     <string name="resource_ubuntu_not_installed">Ubuntu is not installed. Prepare the terminal resources, then open the terminal to install it.</string>
     <string name="resource_delete_error">Deletion failed: %1$s</string>
     <string name="resource_ubuntu_delete_pending">Ubuntu is not installed. Terminal cleanup is incomplete. Import resources again after cleanup finishes. If it fails, tap Delete to retry.</string>
+    <string name="theme_background_transparency_hint" formatted="false">0% opaque, 100% transparent. Only affects the background.</string>
+    <string name="theme_input_background_transparency">Input background transparency</string>
+    <string name="theme_user_background_transparency">User bubble background transparency</string>
+    <string name="theme_ai_background_transparency">AI bubble background transparency</string>
 </resources>

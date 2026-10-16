@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.bubble
 
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.net.Uri
@@ -88,6 +89,8 @@ fun BubbleUserMessageComposable(
     enableDialogs: Boolean = true,
 ) {
     val context = LocalContext.current
+    val backgroundOpacity = LocalThemePreferenceSnapshot.current.values
+        .float(ThemeTransparencyPreferences.BUBBLE_USER)?.coerceIn(0f, 1f)
     val isHiddenPlaceholder =
         message.sender == "user" &&
             message.displayMode == ChatMessageDisplayMode.HIDDEN_PLACEHOLDER
@@ -95,7 +98,7 @@ fun BubbleUserMessageComposable(
         if (isHiddenPlaceholder) {
             Color.Transparent
         } else {
-            backgroundColor
+            backgroundColor.copy(alpha = backgroundOpacity ?: backgroundColor.alpha)
         }
     val effectiveTextColor =
         textColor
@@ -414,7 +417,7 @@ fun BubbleUserMessageComposable(
                 ) {
                     if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
-                            imageStyle = effectiveBubbleImageStyle,
+                            imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
                             shape = bubbleShape,
                             modifier = bubbleModifier,
                             contentPadding =
@@ -446,11 +449,13 @@ fun BubbleUserMessageComposable(
                                         enabled = waterGlassEnabled,
                                         shape = bubbleShape,
                                         containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                     )
                                     .liquidGlass(
                                         enabled = liquidGlassEnabled,
                                         shape = bubbleShape,
                                         containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                         enableLens = false,
                                     ),
                             shape = bubbleShape,
@@ -461,7 +466,7 @@ fun BubbleUserMessageComposable(
                                     effectiveBackgroundColor
                                 },
                             tonalElevation =
-                                if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder) {
+                                if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder || backgroundOpacity == 0f) {
                                     0.dp
                                 } else {
                                     2.dp
@@ -548,7 +553,7 @@ fun BubbleUserMessageComposable(
 
                     if (effectiveBubbleImageStyle != null) {
                         BubbleImageBackgroundSurface(
-                            imageStyle = effectiveBubbleImageStyle,
+                            imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
                             shape = bubbleShape,
                             modifier = bubbleModifier,
                             contentPadding =
@@ -580,11 +585,13 @@ fun BubbleUserMessageComposable(
                                         enabled = waterGlassEnabled,
                                         shape = bubbleShape,
                                         containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                     )
                                     .liquidGlass(
                                         enabled = liquidGlassEnabled,
                                         shape = bubbleShape,
                                         containerColor = effectiveBackgroundColor,
+                                        backgroundOpacity = backgroundOpacity,
                                         enableLens = false,
                                     ),
                             shape = bubbleShape,
@@ -595,7 +602,7 @@ fun BubbleUserMessageComposable(
                                     effectiveBackgroundColor
                                 },
                             tonalElevation =
-                                if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder) {
+                                if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder || backgroundOpacity == 0f) {
                                     0.dp
                                 } else {
                                     2.dp

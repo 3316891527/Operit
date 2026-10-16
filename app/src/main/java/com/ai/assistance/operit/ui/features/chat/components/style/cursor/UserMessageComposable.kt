@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.cursor
 
+import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import android.graphics.Bitmap
 import android.util.Base64
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -94,6 +96,8 @@ fun UserMessageComposable(
     enableDialogs: Boolean = true,
 ) {
     val context = LocalContext.current
+    val backgroundOpacity = LocalThemePreferenceSnapshot.current.values
+        .float(ThemeTransparencyPreferences.CURSOR_USER)?.coerceIn(0f, 1f)
     val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
@@ -127,8 +131,10 @@ fun UserMessageComposable(
     val effectiveBackgroundColor =
         when {
             isHiddenPlaceholder -> Color.Transparent
-            isProxySender -> MaterialTheme.colorScheme.secondaryContainer
-            else -> backgroundColor
+            isProxySender -> MaterialTheme.colorScheme.secondaryContainer.copy(
+                alpha = backgroundOpacity ?: MaterialTheme.colorScheme.secondaryContainer.alpha,
+            )
+            else -> backgroundColor.copy(alpha = backgroundOpacity ?: backgroundColor.alpha)
         }
     val effectiveTextColor =
         when {
@@ -252,11 +258,13 @@ fun UserMessageComposable(
                     enabled = waterGlassEnabled,
                     shape = RoundedCornerShape(8.dp),
                     containerColor = effectiveBackgroundColor,
+                    backgroundOpacity = backgroundOpacity,
                 )
                 .liquidGlass(
                     enabled = liquidGlassEnabled,
                     shape = RoundedCornerShape(8.dp),
                     containerColor = effectiveBackgroundColor,
+                    backgroundOpacity = backgroundOpacity,
                     enableLens = false,
                 ),
             colors = CardDefaults.cardColors(
