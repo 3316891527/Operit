@@ -109,7 +109,9 @@ class A2uiToolsTest {
         val prepared = call("a2ui_prepare", context, "source" to liveSource, "live" to "true")
         assertTrue(prepared.success)
         val reference = payload(prepared).getValue("reference").jsonPrimitive.content
-        assertNotNull(CardDelivery.resolve(context.dynamicUiRunId!!, reference))
+        // 发布前的 live 更新同样执行版本校验，普通 JVM 没有 Android AtomicFile 的实现。
+        assertEquals(0, payload(prepared).getValue("version").jsonPrimitive.int)
+        assertNotNull(CardDelivery.source(context.dynamicUiRunId!!, reference))
         fun patch(version: String) = call(
             "a2ui_patch_data", context,
             "reference" to reference,
