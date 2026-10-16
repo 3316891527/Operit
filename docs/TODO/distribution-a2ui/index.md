@@ -23,8 +23,9 @@ status: implementation-complete-awaiting-cloud-verification
 - [命名与私有状态目录统一](06-a2ui-naming-and-storage.md)
 - [live 校验与说明修复](07-live-validation-and-guide.md)
 - [完整 A2UI 实机回归](08-a2ui-device-regression.md)
+- [发行图标依赖修复](09-release-icon-dependency.md)
 - [A2UI 工具说明](../../agent/a2ui.md)
 
-开发验证只使用 Operit Debug。用户已授权本轮正式发行，展示版本设为 `1.12.2+2`，内部 versionCode 递增至 `58`，Kong 应用显示名、包名和签名保持一致。通过个人分支的 Android Build 工作流执行 `:app:verifyCiPreviewRelease` 并启用 `publish_release`，构建验证成功后由工作流发布正式 Release；工作流已派发不代表构建或发布已完成，不轮询 CI。
+开发验证只使用 Operit Debug。用户已授权本轮正式发行，展示版本设为 `1.12.2+2`，内部 versionCode 递增至 `58`，Kong 应用显示名、包名和签名保持一致。通过个人仓库 `main` 的 Android Build 工作流执行 `:app:verifyCiPreviewRelease` 并启用 `publish_release`，构建验证成功后由工作流发布正式 Release；工作流已派发不代表构建或发布已完成，不轮询 CI。
 
 低于 `+2` 的同基础版本只有在已接入个人更新源、存在正式基础 APK 且补丁哈希匹配时才能增量更新；当前没有历史正式 APK Release，本次建立完整包基线。此前展示为 `+2/+3/+4` 的旧包使用完整 APK 覆盖安装，Android 通过递增的 versionCode 接受升级；既有客户端按展示版本比较，需从 Release 或分发渠道获取完整包，不能承诺旧客户端会自动提示这个同名或较低展示版本。

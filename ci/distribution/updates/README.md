@@ -10,7 +10,7 @@
 
 ## 发布方法
 
-在个人仓库的 Android Build 工作流中选择 `feat/distribution-a2ui` 分支，任务选择 `:app:verifyCiPreviewRelease`，勾选 `publish_release` 并填写 `release_notes`。`previous_tag` 留空时选择同一基础版本中版本号最高且早于目标的正式 Release；也可指定符合条件的标签。普通构建的 `publish_release` 默认为 false。
+在个人仓库的 Android Build 工作流中选择 `main` 分支，任务选择 `:app:verifyCiPreviewRelease`，勾选 `publish_release` 并填写 `release_notes`。`previous_tag` 留空时选择同一基础版本中版本号最高且早于目标的正式 Release；也可指定符合条件的标签。普通构建的 `publish_release` 默认为 false。
 
 本次经用户确认，正式发行使用 `versionName = 1.12.2+2`、`versionCode = 58`。此前已经分发过展示版本为 `+2/+3/+4` 的安装包，Android 覆盖安装以包名、签名和内部 versionCode 为准，因此这些旧包可以通过完整 APK 升级到 58，展示版本回到 `+2` 不阻止覆盖安装。
 

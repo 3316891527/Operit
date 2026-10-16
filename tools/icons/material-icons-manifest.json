@@ -112,6 +112,7 @@
     "filled/Fullscreen.kt",
     "filled/FullscreenExit.kt",
     "filled/Functions.kt",
+    "filled/GetApp.kt",
     "filled/Group.kt",
     "filled/Groups.kt",
     "filled/History.kt",

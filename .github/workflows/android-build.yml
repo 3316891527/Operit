@@ -55,6 +55,8 @@ on:
       - pnpm-workspace.yaml
       - quickjs/**
       - settings.gradle.kts
+      - material-icons-subset/**
+      - tools/icons/**
       - showerclient/**
       - terminal/**
       - terminal
@@ -120,6 +122,8 @@ jobs:
           git submodule update --init --recursive --depth 1 terminal
           git submodule status -- terminal
 
+      - name: Check Material icon references
+        run: python3 tools/icons/sync_material_icons.py --check
       - name: Set up JDK
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:

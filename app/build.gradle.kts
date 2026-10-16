@@ -665,7 +665,11 @@ kotlin {
 dependencies {
     implementation("com.github.jelmerk:hnswlib-core:1.2.1")
     implementation(project(":dragonbones"))
-    implementation(project(":terminal"))
+    implementation(project(":terminal")) {
+        // 终端保留独立编译依赖，应用只打包图标子集，避免完整扩展库产生重复类。
+        exclude(group = "androidx.compose.material", module = "material-icons-extended")
+        exclude(group = "androidx.compose.material", module = "material-icons-extended-android")
+    }
     implementation(project(":mnn"))
     implementation(project(":llama"))
     implementation(project(":mmd"))

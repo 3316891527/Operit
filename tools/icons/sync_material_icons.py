@@ -41,12 +41,18 @@ def source_catalog(cache: Path, kind: str) -> dict[str, str]:
                 for name in archive.namelist() if name.startswith(PREFIX) and name.endswith(".kt")}
 
 
-def referenced_icons() -> set[str]:
+def referenced_icons(terminal_source: Path) -> set[str]:
     output = subprocess.run(["rg", "--files", "-g", "*.kt", "-g", "!material-icons-subset/**", "-g", "!terminal/**"],
                             cwd=ROOT, capture_output=True, text=True, check=True).stdout
+    terminal_sources = terminal_source / "src"
+    if not terminal_sources.is_dir():
+        raise ValueError(f"请先初始化 terminal 子模块，或通过 --terminal-source 指定固定版本源码：{terminal_source}")
+    # 子模块未纳入父仓库的 rg 文件列表，需要显式扫描，避免遗漏终端运行时图标。
+    paths = [ROOT / relative for relative in output.splitlines()]
+    paths.extend(sorted(terminal_sources.rglob("*.kt")))
     names = set()
-    for relative in output.splitlines():
-        text = (ROOT / relative).read_text()
+    for path in paths:
+        text = path.read_text()
         for tail in re.findall(r"^import androidx\.compose\.material\.icons\.(.*)", text, re.M):
             key = tail.split(" as ")[0].strip().replace(".", "/") + ".kt"
             if key != "Icons.kt" and not key.endswith("/*.kt"):
@@ -81,10 +87,10 @@ def path_data(source: str) -> str:
     return ("1" if "autoMirror = true" in source else "0") + "\t" + "|".join(paths)
 
 
-def generate(cache: Path) -> None:
+def generate(cache: Path, terminal_source: Path) -> None:
     extended = source_catalog(cache, "extended")
     core = source_catalog(cache, "core")
-    names = referenced_icons()
+    names = referenced_icons(terminal_source)
     missing = names - extended.keys() - core.keys()
     if missing:
         raise ValueError(f"图标引用未找到：{sorted(missing)}")
@@ -126,12 +132,12 @@ internal object MaterialFilledIconData {
     print(f"静态扩展图标 {len(selected)}/{len(extended)}；动态 Filled 名称 {len(filled)}")
 
 
-def check_references() -> None:
+def check_references(terminal_source: Path) -> None:
     selected = {str(p.relative_to(ROOT / "material-icons-subset/src/main/java/androidx/compose/material/icons"))
                 for p in (ROOT / "material-icons-subset/src/main/java/androidx/compose/material/icons").rglob("*.kt")}
     manifest = json.loads((ROOT / "tools/icons/material-icons-manifest.json").read_text())
     core_names = set(manifest["core_icons"])
-    missing = referenced_icons() - selected - core_names
+    missing = referenced_icons(terminal_source) - selected - core_names
     if missing:
         raise ValueError(f"请重新生成 Material 图标子集：{sorted(missing)}")
     print("Material 图标引用已覆盖")
@@ -141,12 +147,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--cache", type=Path, default=Path("/tmp/operit-material-icons"))
+    parser.add_argument("--terminal-source", type=Path, default=ROOT / "terminal",
+                        help="固定版本的 terminal 源码目录，默认使用已初始化的子模块")
     args = parser.parse_args()
     if args.check:
-        check_references()
+        check_references(args.terminal_source)
     else:
         args.cache.mkdir(parents=True, exist_ok=True)
-        generate(args.cache)
+        generate(args.cache, args.terminal_source)
         path = ROOT / "tools/icons/material-icons-manifest.json"
         manifest = json.loads(path.read_text())
         manifest["core_icons"] = sorted(source_catalog(args.cache, "core"))
