@@ -2,6 +2,8 @@ package com.ai.assistance.operit.data.storage
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
+
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -66,6 +68,108 @@ class SafeDirectoryCleanerTest {
         assertEquals(4L, result.deletedBytes)
         assertEquals(2L, result.deletedFileCount)
         assertEquals(0, result.failedEntryCount)
+    }
+
+    @Test
+    fun cleanDeletesEmptyDirectoryWithoutReadPermission() = runTest {
+        val root = temporaryFolder.newFolder("empty-restricted-root")
+        assumeTrue(Files.getFileStore(root.toPath()).supportsFileAttributeView("posix"))
+        val restricted = File(root, "sdcard").apply { mkdir() }
+        val original = Files.getPosixFilePermissions(restricted.toPath())
+        try {
+            Files.setPosixFilePermissions(restricted.toPath(), emptySet())
+
+            val result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(root)))
+
+            assertTrue(root.isDirectory)
+            assertFalse(restricted.exists())
+            assertEquals(0, result.failedEntryCount)
+        } finally {
+            // 断言失败时也恢复权限，保证临时目录能够被测试框架清理。
+            if (restricted.exists()) Files.setPosixFilePermissions(restricted.toPath(), original)
+        }
+    }
+
+    @Test
+    fun cleanRepairsRestrictedUbuntuRootAndNestedDirectoryWhenEnabled() = runTest {
+        val root = temporaryFolder.newFolder("restricted-ubuntu-root")
+        assumeTrue(Files.getFileStore(root.toPath()).supportsFileAttributeView("posix"))
+        val restricted = File(root, "restricted").apply { mkdir() }
+        val payload = File(restricted, "payload.bin").apply { writeBytes(ByteArray(7)) }
+        val rootPermissions = Files.getPosixFilePermissions(root.toPath())
+        val childPermissions = Files.getPosixFilePermissions(restricted.toPath())
+        try {
+            Files.setPosixFilePermissions(restricted.toPath(), emptySet())
+            Files.setPosixFilePermissions(root.toPath(), emptySet())
+
+            val result = SafeDirectoryCleaner().clean(
+                listOf(DirectoryCleanupRequest(root, repairDirectoryPermissions = true)),
+            )
+
+            assertTrue(root.isDirectory)
+            assertFalse(payload.exists())
+            assertFalse(restricted.exists())
+            assertEquals(7L, result.deletedBytes)
+            assertEquals(1L, result.deletedFileCount)
+            assertEquals(0, result.failedEntryCount)
+            assertTrue(result.firstFailedPath == null)
+        } finally {
+            Files.setPosixFilePermissions(root.toPath(), rootPermissions)
+            if (restricted.exists()) Files.setPosixFilePermissions(restricted.toPath(), childPermissions)
+        }
+    }
+
+    @Test
+    fun cleanDoesNotRepairNonemptyRestrictedDirectoryByDefault() = runTest {
+        val root = temporaryFolder.newFolder("default-restricted-root")
+        assumeTrue(Files.getFileStore(root.toPath()).supportsFileAttributeView("posix"))
+        val restricted = File(root, "restricted").apply { mkdir() }
+        val retained = File(restricted, "retained.bin").apply { writeBytes(ByteArray(9)) }
+        val original = Files.getPosixFilePermissions(restricted.toPath())
+        try {
+            Files.setPosixFilePermissions(restricted.toPath(), emptySet())
+            // 特权运行环境无法复现普通应用的权限拒绝，不伪造失败结果。
+            assumeTrue("当前进程仍能读取权限为 000 的目录", !restricted.canRead())
+
+            val result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(root)))
+
+            assertEquals(1, result.failedEntryCount)
+            assertEquals(restricted.absolutePath, result.firstFailedPath)
+            assertTrue(Files.getPosixFilePermissions(restricted.toPath()).isEmpty())
+        } finally {
+            Files.setPosixFilePermissions(restricted.toPath(), original)
+        }
+        assertTrue(retained.isFile)
+    }
+
+    @Test
+    fun permissionRepairPreservesExcludedDirectoriesAndExternalLinkTargets() = runTest {
+        val root = temporaryFolder.newFolder("permission-boundary-root")
+        assumeTrue(Files.getFileStore(root.toPath()).supportsFileAttributeView("posix"))
+        val outside = temporaryFolder.newFolder("outside-directory")
+        val retained = File(outside, "retained.bin").apply { writeBytes(ByteArray(11)) }
+        val preserved = File(root, "keep").apply { mkdir() }
+        val outsidePermissions = Files.getPosixFilePermissions(outside.toPath())
+        val preservedPermissions = Files.getPosixFilePermissions(preserved.toPath())
+        val link = File(root, "outside-link")
+        Files.createSymbolicLink(link.toPath(), outside.toPath())
+        try {
+            Files.setPosixFilePermissions(outside.toPath(), PosixFilePermissions.fromString("---------"))
+            Files.setPosixFilePermissions(preserved.toPath(), emptySet())
+
+            val result = SafeDirectoryCleaner().clean(
+                listOf(DirectoryCleanupRequest(root, setOf("keep"), repairDirectoryPermissions = true)),
+            )
+
+            assertFalse(Files.isSymbolicLink(link.toPath()))
+            assertTrue(Files.getPosixFilePermissions(outside.toPath()).isEmpty())
+            assertTrue(Files.getPosixFilePermissions(preserved.toPath()).isEmpty())
+            assertEquals(0, result.failedEntryCount)
+        } finally {
+            Files.setPosixFilePermissions(outside.toPath(), outsidePermissions)
+            Files.setPosixFilePermissions(preserved.toPath(), preservedPermissions)
+        }
+        assertTrue(retained.isFile)
     }
 
     @Test

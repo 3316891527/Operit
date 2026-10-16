@@ -77,8 +77,8 @@ class OfflineResourcesActivity : ComponentActivity() {
         }
         fun refresh() {
             checking = true
-            failed = false
-            message = ""
+            // 自动刷新只更新资源状态，保留最近一次操作结果，避免错误提示一闪而过。
+
             scope.launch {
                 try {
                     groups.forEach {
@@ -96,6 +96,8 @@ class OfflineResourcesActivity : ComponentActivity() {
             }
         }
         fun perform(id: String, label: Int, removing: Boolean = false, operation: suspend () -> Unit) {
+            // 手动删除也计入恢复尝试，避免维护结束后自动重启同一次失败操作。
+            if (id == OfflineResources.UBUNTU && removing) recoveryAttempted = true
             active = id
             deleting = removing
             operationLabel = getString(label)

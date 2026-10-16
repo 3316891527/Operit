@@ -116,16 +116,26 @@ object OfflineResources {
                             if (path.exists()) {
                                 if (path.isDirectory) {
                                     // 终端进程退出后目录内容可能仍在完成收尾，失败时短暂重扫，避免一次竞态永久留下 pending。
-                                    var result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(path)))
+                                    val request = DirectoryCleanupRequest(
+                                        path, repairDirectoryPermissions = id == UBUNTU,
+                                    )
+                                    var result = SafeDirectoryCleaner().clean(listOf(request))
                                     var retries = 0
                                     while (result.failedEntryCount > 0 && retries < 2) {
                                         kotlinx.coroutines.delay(250)
-                                        result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(path)))
+                                        result = SafeDirectoryCleaner().clean(listOf(request))
                                         retries++
                                     }
-                                    if (result.failedEntryCount > 0) throw IOException(context.getString(R.string.resource_delete_failed))
+                                    if (result.failedEntryCount > 0) {
+                                        throw IOException(
+                                            context.getString(R.string.resource_delete_failed) +
+                                                "\n" + (result.firstFailedPath ?: path.absolutePath),
+                                        )
+                                    }
                                 }
-                                if (!path.delete()) throw IOException(context.getString(R.string.resource_delete_failed))
+                                if (!path.delete() && path.exists()) {
+                                    throw IOException(context.getString(R.string.resource_delete_failed) + "\n" + path.absolutePath)
+                                }
                             }
                         }
                     }

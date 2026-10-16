@@ -2,6 +2,9 @@ package com.ai.assistance.operit.data.storage
 
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.attribute.PosixFilePermission
 import java.util.ArrayDeque
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -11,12 +14,14 @@ import kotlinx.coroutines.withContext
 internal data class DirectoryCleanupRequest(
     val directory: File,
     val preservedNames: Set<String> = emptySet(),
+    val repairDirectoryPermissions: Boolean = false,
 )
 
 internal data class RawDirectoryCleanupResult(
     val deletedBytes: Long,
     val deletedFileCount: Long,
     val failedEntryCount: Int,
+    val firstFailedPath: String? = null,
 )
 
 internal class SafeDirectoryCleaner {
@@ -28,28 +33,29 @@ internal class SafeDirectoryCleaner {
             requests.forEach requestLoop@{ request ->
                 currentCoroutineContext().ensureActive()
                 if (runCatching { Files.isSymbolicLink(request.directory.toPath()) }.getOrDefault(false)) {
-                    result.failedEntryCount++
+                    result.recordFailure(request.directory)
                     return@requestLoop
                 }
                 val root = runCatching { request.directory.canonicalFile }.getOrNull()
                 if (root == null) {
-                    result.failedEntryCount++
+                    result.recordFailure(request.directory)
                     return@requestLoop
                 }
                 if (!visitedRoots.add(root.path) || !root.exists()) return@requestLoop
                 if (!root.isDirectory) {
-                    result.failedEntryCount++
+                    result.recordFailure(root)
                     return@requestLoop
                 }
 
+                prepareDirectory(root, request.repairDirectoryPermissions)
                 val children = runCatching { root.listFiles() }.getOrNull()
                 if (children == null) {
-                    result.failedEntryCount++
+                    result.recordFailure(root)
                     return@requestLoop
                 }
                 children.forEach { child ->
                     if (child.name !in request.preservedNames) {
-                        deleteEntry(root, child, result)
+                        deleteEntry(root, child, result, request.repairDirectoryPermissions)
                     }
                 }
             }
@@ -58,6 +64,7 @@ internal class SafeDirectoryCleaner {
                 deletedBytes = result.deletedBytes,
                 deletedFileCount = result.deletedFileCount,
                 failedEntryCount = result.failedEntryCount,
+                firstFailedPath = result.firstFailedPath,
             )
         }
 
@@ -65,6 +72,7 @@ internal class SafeDirectoryCleaner {
         root: File,
         entry: File,
         result: MutableCleanupResult,
+        repairDirectoryPermissions: Boolean,
     ) {
         val pending = ArrayDeque<DeleteFrame>()
         pending.add(DeleteFrame(entry, expanded = false))
@@ -78,22 +86,25 @@ internal class SafeDirectoryCleaner {
             if (runCatching { Files.isSymbolicLink(file.toPath()) }.getOrDefault(false)) {
                 if (file.delete()) {
                     result.deletedFileCount++
-                } else if (file.exists()) {
-                    result.failedEntryCount++
+                } else if (Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+                    result.recordFailure(file)
                 }
                 continue
             }
 
             val canonicalPath = runCatching { file.canonicalPath }.getOrNull()
             if (canonicalPath == null || !isAtOrBelow(canonicalPath, rootPath)) {
-                result.failedEntryCount++
+                result.recordFailure(file)
                 continue
             }
 
             if (file.isDirectory && !frame.expanded) {
+                // 空目录可直接移除，无需读取权限为 000 的挂载占位目录。
+                if (file.delete()) continue
+                prepareDirectory(file, repairDirectoryPermissions)
                 val children = runCatching { file.listFiles() }.getOrNull()
                 if (children == null) {
-                    result.failedEntryCount++
+                    result.recordFailure(file)
                     continue
                 }
                 pending.add(DeleteFrame(file, expanded = true))
@@ -107,12 +118,36 @@ internal class SafeDirectoryCleaner {
                     result.deletedBytes += bytes
                     result.deletedFileCount++
                 } else if (file.exists()) {
-                    result.failedEntryCount++
+                    result.recordFailure(file)
                 }
             } else if (file.exists() && !file.delete()) {
-                result.failedEntryCount++
+                result.recordFailure(file)
             }
         }
+    }
+
+    private fun prepareDirectory(directory: File, repairPermissions: Boolean) {
+        if (!repairPermissions) return
+        // 仅由 Ubuntu 删除显式启用；不递归 chmod，也不修改符号链接目标。
+        runCatching {
+            val view = Files.getFileAttributeView(
+                directory.toPath(),
+                PosixFileAttributeView::class.java,
+                LinkOption.NOFOLLOW_LINKS,
+            ) ?: return
+            val attributes = view.readAttributes()
+            if (!attributes.isDirectory) return
+            val permissions = attributes.permissions().toMutableSet()
+            val changed = permissions.addAll(
+                listOf(
+                    PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OWNER_EXECUTE,
+                ),
+            )
+            if (changed) view.setPermissions(permissions)
+        }
+        // 无法修复时由正常扫描报告失败，保留删除记录和具体路径供重试。
     }
 
     private fun isAtOrBelow(path: String, root: String): Boolean =
@@ -127,5 +162,11 @@ internal class SafeDirectoryCleaner {
         var deletedBytes: Long = 0L
         var deletedFileCount: Long = 0L
         var failedEntryCount: Int = 0
+        var firstFailedPath: String? = null
+
+        fun recordFailure(file: File) {
+            failedEntryCount++
+            if (firstFailedPath == null) firstFailedPath = file.absolutePath
+        }
     }
 }
