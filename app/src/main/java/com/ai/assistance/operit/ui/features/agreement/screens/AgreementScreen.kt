@@ -1,7 +1,5 @@
 package com.ai.assistance.operit.ui.features.agreement.screens
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,12 +8,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.text.HtmlCompat
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.AgreementPreferences
 import kotlinx.coroutines.delay
@@ -37,11 +34,16 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boole
                 }
         }
 
+        // 软件内阅读时整页滚动；首次启动仍保留独立的底部确认区。
         Column(
                 modifier =
                         Modifier.fillMaxSize()
-                                .padding(16.dp)
-                                .background(MaterialTheme.colorScheme.background),
+                                .background(MaterialTheme.colorScheme.background)
+                                .then(
+                                        if (showAcceptanceButton) Modifier
+                                        else Modifier.verticalScroll(scrollState)
+                                )
+                                .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
         ) {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -55,13 +57,14 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boole
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                        text = stringResource(R.string.agreement_subtitle),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                if (showAcceptanceButton) {
+                        Text(
+                                text = stringResource(R.string.agreement_subtitle),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 Text(
                         text = stringResource(
@@ -74,10 +77,10 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boole
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Agreement text content
+                // 协议正文
                 Box(
                         modifier =
-                                Modifier.weight(1f)
+                                (if (showAcceptanceButton) Modifier.weight(1f) else Modifier)
                                         .fillMaxWidth()
                                         .background(
                                                 MaterialTheme.colorScheme.surfaceVariant,
@@ -85,8 +88,15 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boole
                                         )
                                         .padding(16.dp)
                 ) {
-                        Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
-                                // Human-readable version
+                        Column(
+                                modifier =
+                                        if (showAcceptanceButton) {
+                                                Modifier.fillMaxSize().verticalScroll(scrollState)
+                                        } else {
+                                                Modifier.fillMaxWidth()
+                                        }
+                        ) {
+                                // 简明说明
                                 Text(
                                         text = stringResource(R.string.agreement_human_readable_title),
                                         style = MaterialTheme.typography.titleLarge,
@@ -104,7 +114,7 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boole
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                                 Spacer(modifier = Modifier.height(24.dp))
 
-                                // Serious version
+                                // 完整协议
                                 Text(
                                         text = stringResource(R.string.agreement_serious_title),
                                         style = MaterialTheme.typography.titleLarge,
@@ -113,36 +123,23 @@ fun AgreementScreen(onAgreementAccepted: () -> Unit, showAcceptanceButton: Boole
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                val textColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                val typography = MaterialTheme.typography.bodyMedium
-                                AndroidView(
-                                        factory = { context ->
-                                                android.widget.TextView(context).apply {
-                                                        setTextColor(textColor.toArgb())
-                                                        textSize = typography.fontSize.value
-                                                        val lineHeightInPixels = (typography.lineHeight.value * context.resources.displayMetrics.scaledDensity).toInt()
-                                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                                lineHeight = lineHeightInPixels
-                                                        } else {
-                                                                // Fallback for older APIs
-                                                                setLineSpacing(lineHeightInPixels - paint.fontMetricsInt.descent + paint.fontMetricsInt.ascent.toFloat(), 1.0f)
-                                                        }
-                                                }
-                                        },
-                                        update = { textView ->
-                                                textView.text = HtmlCompat.fromHtml(
-                                                        textView.context.getString(R.string.agreement_serious_content),
-                                                        HtmlCompat.FROM_HTML_MODE_COMPACT
-                                                )
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
+                                val agreementHtml = stringResource(R.string.agreement_serious_content)
+                                val agreementText = remember(agreementHtml) {
+                                        AnnotatedString.fromHtml(agreementHtml)
+                                }
+                                // 统一使用 Compose 排版，避免原生视图的颜色和尺寸脱离当前主题。
+                                Text(
+                                        text = agreementText,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
 
                                 Spacer(modifier = Modifier.height(24.dp))
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                                 Spacer(modifier = Modifier.height(24.dp))
 
-                                // Disclaimer
+                                // 说明与免责声明
                                 Text(
                                         text = stringResource(R.string.agreement_disclaimer),
                                         style = MaterialTheme.typography.bodySmall,
