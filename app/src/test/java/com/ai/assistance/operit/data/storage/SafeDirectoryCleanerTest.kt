@@ -97,17 +97,15 @@ class SafeDirectoryCleanerTest {
         assumeTrue(Files.getFileStore(root.toPath()).supportsFileAttributeView("posix"))
         val restricted = File(root, "restricted").apply { mkdir() }
         val payload = File(restricted, "payload.bin").apply { writeBytes(ByteArray(7)) }
-        val rootPermissions = Files.getPosixFilePermissions(root.toPath())
         val childPermissions = Files.getPosixFilePermissions(restricted.toPath())
         try {
             Files.setPosixFilePermissions(restricted.toPath(), emptySet())
-            Files.setPosixFilePermissions(root.toPath(), emptySet())
 
             val result = SafeDirectoryCleaner().clean(
                 listOf(DirectoryCleanupRequest(root, repairDirectoryPermissions = true)),
             )
 
-            // 先检查实际清理结果，不能把父目录不可访问时的 exists() 假阴性当作成功。
+            // 先检查实际清理结果，避免只凭文件存在性判断删除成功。
             assertEquals("首个失败路径：${result.firstFailedPath}", 0, result.failedEntryCount)
             assertEquals(7L, result.deletedBytes)
             assertEquals(1L, result.deletedFileCount)
@@ -117,7 +115,6 @@ class SafeDirectoryCleanerTest {
             assertTrue(Files.notExists(restricted.toPath(), LinkOption.NOFOLLOW_LINKS))
             assertTrue(result.firstFailedPath == null)
         } finally {
-            Files.setPosixFilePermissions(root.toPath(), rootPermissions)
             if (restricted.exists()) Files.setPosixFilePermissions(restricted.toPath(), childPermissions)
         }
     }

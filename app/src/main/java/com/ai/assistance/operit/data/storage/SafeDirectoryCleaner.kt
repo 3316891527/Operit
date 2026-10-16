@@ -3,7 +3,6 @@ package com.ai.assistance.operit.data.storage
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.LinkOption
-import java.nio.file.attribute.PosixFileAttributeView
 import java.nio.file.attribute.PosixFilePermission
 import java.util.ArrayDeque
 import kotlinx.coroutines.Dispatchers
@@ -130,14 +129,8 @@ internal class SafeDirectoryCleaner {
         if (!repairPermissions) return
         // 仅由 Ubuntu 删除显式启用；不递归 chmod，也不修改符号链接目标。
         runCatching {
-            val view = Files.getFileAttributeView(
-                directory.toPath(),
-                PosixFileAttributeView::class.java,
-                LinkOption.NOFOLLOW_LINKS,
-            ) ?: return
-            val attributes = view.readAttributes()
-            if (!attributes.isDirectory) return
-            val permissions = attributes.permissions().toMutableSet()
+            if (!Files.isDirectory(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) return
+            val permissions = Files.getPosixFilePermissions(directory.toPath(), LinkOption.NOFOLLOW_LINKS).toMutableSet()
             val changed = permissions.addAll(
                 listOf(
                     PosixFilePermission.OWNER_READ,
@@ -145,9 +138,8 @@ internal class SafeDirectoryCleaner {
                     PosixFilePermission.OWNER_EXECUTE,
                 ),
             )
-            if (changed && Files.isDirectory(directory.toPath(), LinkOption.NOFOLLOW_LINKS)) {
-                // NOFOLLOW 属性视图写权限前会打开目录，000 权限会使该步骤失败。
-                // 确认仍为真实目录后直接修改权限，不使用需要先打开目录的视图写入。
+            if (changed) {
+                // 直接按路径修改权限，避免先打开 000 目录的属性视图。
                 Files.setPosixFilePermissions(directory.toPath(), permissions)
             }
         }
