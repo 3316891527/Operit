@@ -81,9 +81,13 @@ internal suspend fun handleKeyAwareRetry(
     if (exception is UserCancellationException || exception is CancellationException) {
         throw exception
     }
-
+    val transportError = ApiTransportError.describe(exception)
     val errorText =
-        exception.message?.takeIf { it.isNotBlank() }
+        transportError?.json(
+            attempt = attemptNumber,
+            retryable = enableRetry,
+        )
+            ?: exception.message?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.provider_error_network_interrupted)
 
     if (!enableRetry) {
@@ -109,7 +113,10 @@ internal suspend fun handleKeyAwareRetry(
     if (decision.exhausted) {
         val summary = session?.triedSummary()
         val message =
-            if (summary != null && summary.attempted > 0) {
+            transportError?.json(
+                attempt = attemptNumber,
+                retryable = false,
+            ) ?: if (summary != null && summary.attempted > 0) {
                 formatApiKeyPoolExhaustedMessage(context, summary, errorText)
             } else {
                 context.getString(
@@ -127,7 +134,13 @@ internal suspend fun handleKeyAwareRetry(
         if (shouldSuppressRetryNotice(exception, decision, logTag)) {
             ""
         } else {
-            buildRetryMessage(errorText, attemptNumber + 1)
+            transportError?.json(
+                attempt = attemptNumber,
+                retry = ApiTransportErrorDescription.RetryInfo(
+                    nextAttempt = attemptNumber + 1,
+                    delayMs = decision.delayMs,
+                ),
+            ) ?: buildRetryMessage(errorText, attemptNumber + 1)
         }
     if (decision.delayMs > 0L) {
         AppLogger.w(logTag, "$errorText，将在 ${decision.delayMs}ms 后重试", exception)
