@@ -115,8 +115,14 @@ object OfflineResources {
                         paths.forEach { path ->
                             if (path.exists()) {
                                 if (path.isDirectory) {
-                                    // 复用不跟随符号链接的清理器，避免删除 Ubuntu 映射的共享文件。
-                                    val result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(path)))
+                                    // 终端进程退出后目录内容可能仍在完成收尾，失败时短暂重扫，避免一次竞态永久留下 pending。
+                                    var result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(path)))
+                                    var retries = 0
+                                    while (result.failedEntryCount > 0 && retries < 2) {
+                                        kotlinx.coroutines.delay(250)
+                                        result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(path)))
+                                        retries++
+                                    }
                                     if (result.failedEntryCount > 0) throw IOException(context.getString(R.string.resource_delete_failed))
                                 }
                                 if (!path.delete()) throw IOException(context.getString(R.string.resource_delete_failed))
