@@ -32,7 +32,7 @@ fun MarketBrowseControls(
     onSortOptionChanged: (MarketSortOption) -> Unit,
     @StringRes searchPlaceholderRes: Int,
     sortOptions: List<MarketSortOption> = MarketSortOption.entries,
-    featuredOnly: Boolean = true,
+    featuredOnly: Boolean = false,
     onFeaturedOnlyChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
