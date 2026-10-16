@@ -114,7 +114,7 @@ internal fun CardPopoverHost(content: @Composable () -> Unit) {
                                 Text(entry.title,Modifier.weight(1f),style=MaterialTheme.typography.titleSmall,
                                     maxLines=2,overflow=TextOverflow.Ellipsis)
                                 IconButton(onClick={state.entry=null}) {
-                                    Icon(Icons.Outlined.Close,stringResource(R.string.dynamic_ui_close_details))
+                                    Icon(Icons.Outlined.Close,stringResource(R.string.a2ui_close_details))
                                 }
                             }
                             Box(Modifier.weight(1f,fill=false).verticalScroll(rememberScrollState())) { entry.content() }

@@ -30,14 +30,14 @@ class CardHostIntegrationTest {
 
     @Test fun interactionRequiresCurrentChatAndExactCandidateRevision() {
         val message = ChatMessage(sender = "ai", content = block, timestamp = 100, selectedVariantIndex = 2)
-        val owner = DynamicUiOwner("a", 100, 2, block)
-        assertTrue(matchesDynamicUiOwner("a", message, owner))
-        assertFalse(matchesDynamicUiOwner("b", message, owner))
-        assertFalse(matchesDynamicUiOwner("a", null, owner))
-        assertFalse(matchesDynamicUiOwner("a", message.copy(timestamp = 101), owner))
-        assertFalse(matchesDynamicUiOwner("a", message.copy(sender = "user"), owner))
-        assertFalse(matchesDynamicUiOwner("a", message.copy(isVariantPreview = true), owner))
-        assertFalse(matchesDynamicUiOwner("a", message.copy(selectedVariantIndex = 1), owner))
-        assertFalse(matchesDynamicUiOwner("a", message.copy(content = "$block changed"), owner))
+        val owner = A2uiOwner("a", 100, 2, block)
+        assertTrue(matchesA2uiOwner("a", message, owner))
+        assertFalse(matchesA2uiOwner("b", message, owner))
+        assertFalse(matchesA2uiOwner("a", null, owner))
+        assertFalse(matchesA2uiOwner("a", message.copy(timestamp = 101), owner))
+        assertFalse(matchesA2uiOwner("a", message.copy(sender = "user"), owner))
+        assertFalse(matchesA2uiOwner("a", message.copy(isVariantPreview = true), owner))
+        assertFalse(matchesA2uiOwner("a", message.copy(selectedVariantIndex = 1), owner))
+        assertFalse(matchesA2uiOwner("a", message.copy(content = "$block changed"), owner))
     }
 }

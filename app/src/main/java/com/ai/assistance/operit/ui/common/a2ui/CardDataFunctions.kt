@@ -14,7 +14,7 @@ internal object CardDataFunctions {
         else -> false
     }
     fun safeValue(value: Any?): Any? = value?.takeIf {
-        bounded(it) && runCatching { DynamicUiProtocol.toJson(it).toString().length <= 32768 }.getOrDefault(false)
+        bounded(it) && runCatching { A2uiProtocol.toJson(it).toString().length <= 32768 }.getOrDefault(false)
     }
     private fun number(value: Any?): Double? = when (value) {
         is Number -> value.toDouble()

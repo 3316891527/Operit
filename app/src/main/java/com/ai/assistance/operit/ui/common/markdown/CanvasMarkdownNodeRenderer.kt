@@ -1,8 +1,8 @@
 package com.ai.assistance.operit.ui.common.markdown
 
 import androidx.compose.runtime.CompositionLocalProvider
-import com.ai.assistance.operit.ui.common.a2ui.DynamicUiCard
-import com.ai.assistance.operit.ui.common.a2ui.LocalDynamicUiOwner
+import com.ai.assistance.operit.ui.common.a2ui.A2uiCard
+import com.ai.assistance.operit.ui.common.a2ui.LocalA2uiOwner
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -594,15 +594,15 @@ private fun renderNodeContent(
 
             // 只在 AI 正文中解释卡片，使用整条消息的节点索引区分长消息分片。
             when {
-                LocalDynamicUiOwner.current != null && codeBlock.language == "a2ui" -> DynamicUiCard(
+                LocalA2uiOwner.current != null && codeBlock.language == "a2ui" -> A2uiCard(
                     source = codeBlock.code,
                     closed = codeBlock.closed,
                     streaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING,
                     blockIndex = index,
                     ink = textColor,
                 )
-                LocalDynamicUiOwner.current != null && codeBlock.language == "a2ui-ref" -> Text(
-                    text = stringResource(com.ai.assistance.operit.R.string.dynamic_ui_reference_unavailable),
+                LocalA2uiOwner.current != null && codeBlock.language == "a2ui-ref" -> Text(
+                    text = stringResource(com.ai.assistance.operit.R.string.a2ui_reference_unavailable),
                     color = textColor.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -671,7 +671,7 @@ private fun renderNodeContent(
         MarkdownProcessorType.XML_BLOCK -> {
             CompositionLocalProvider(
                 LocalMarkdownCardNodeIndex provides index,
-                LocalDynamicUiOwner provides null,
+                LocalA2uiOwner provides null,
             ) {
             xmlRenderer.RenderXmlContent(
                 xmlContent = content,

@@ -26,8 +26,8 @@ internal fun CardMap(title: String, raw: Any?, route: Boolean, modifier: Modifie
     var selected by remember(raw) { mutableIntStateOf(0) }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (title.isNotBlank()) Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.dynamic_ui_map_schematic), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (points.isFailure) Text(stringResource(R.string.dynamic_ui_bad_chart), color = MaterialTheme.colorScheme.error)
+        Text(stringResource(R.string.a2ui_map_schematic), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (points.isFailure) Text(stringResource(R.string.a2ui_bad_chart), color = MaterialTheme.colorScheme.error)
         else {
             val markers = points.getOrThrow()
             CardChart(if (route) "line" else "scatter", "", listOf(CardChartSeries("", markers)))
@@ -40,7 +40,7 @@ internal fun CardMap(title: String, raw: Any?, route: Boolean, modifier: Modifie
                 Text("${marker.y}, ${marker.x}", style = MaterialTheme.typography.bodySmall)
                 OutlinedButton(onClick = { onOpenUrl("https://www.google.com/maps/search/?api=1&query=${marker.y},${marker.x}") },
                     enabled = LocalCardBrowse.current) {
-                    Text(stringResource(R.string.dynamic_ui_open_map))
+                    Text(stringResource(R.string.a2ui_open_map))
                 }
             }
         }

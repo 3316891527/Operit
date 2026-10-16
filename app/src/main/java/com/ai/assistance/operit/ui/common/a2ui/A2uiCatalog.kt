@@ -47,9 +47,9 @@ internal fun updateCardField(onError: () -> Unit, update: () -> Unit): Boolean {
 }
 
 /** Official protocol and Material components, plus small Operit catalog extensions. */
-internal val operitDynamicUiCatalog by lazy {
+internal val operitA2uiCatalog by lazy {
     A2uiCatalog(
-        catalogId = DynamicUiProtocol.CATALOG,
+        catalogId = A2uiProtocol.CATALOG,
         components = run {
             listOf(CardIcon, CardHtml, FramedCard, CardDivider, CardButton, CardPressable, CardVector, CardPopover, CardTooltip, CardStepper, CardFormula, CardFlow) +
                 listOf("Text", "Row", "Column", "List", "Panel", "Scroll", "Frame").map(::CardLayoutComponent) +
@@ -98,7 +98,7 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
     private val tableHeight = A2uiProperty.dynamicNumber("maxHeight")
     override val description = "Operit native $name. Local field changes do not send model requests."
     // onChange contains host-side event_value placeholders, not a DynamicValue binding.
-    // DynamicUiProtocol validates it and resolveLocalCardContext reads it after real input.
+    // A2uiProtocol validates it and resolveLocalCardContext reads it after real input.
     override val properties = listOf(text, label, if (name == "CheckBox") checkboxValue else value, checked, number, options, rows, columns, children, minimum, maximum, stepCount, columnCount, columnSpans, minItemWidth, expandedProperty, inputType, tone, status, align, disabled, error, mask, minLines, maxLines, minDate, maxDate, clearable, widths, tableHeight, A2uiProperty.any("onChange"))
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -159,7 +159,7 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                 if (LocalCardReadOnly.current) Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text((if (fieldMask == "password") "•".repeat(current.length.coerceAtMost(32)) else current)
-                        .ifBlank { stringResource(R.string.dynamic_ui_empty_value) }, style = MaterialTheme.typography.bodyMedium)
+                        .ifBlank { stringResource(R.string.a2ui_empty_value) }, style = MaterialTheme.typography.bodyMedium)
                     if (fieldError.isNotBlank()) Text(fieldError, color = MaterialTheme.colorScheme.error)
                 } else OutlinedTextField(
                     value = current, onValueChange = { next ->
@@ -199,9 +199,9 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                 var expanded by remember { mutableStateOf(false) }
                 Column(modifier) {
                     if (title.isNotEmpty()) Text(title, style = MaterialTheme.typography.labelLarge)
-                    if (LocalCardReadOnly.current) Text(current.ifBlank { stringResource(R.string.dynamic_ui_empty_value) })
+                    if (LocalCardReadOnly.current) Text(current.ifBlank { stringResource(R.string.a2ui_empty_value) })
                     else if (name == "Select") OutlinedButton(onClick = { expanded = !expanded }, enabled = update != null && interactive, modifier = Modifier.fillMaxWidth()) {
-                        Text(current.ifBlank { stringResource(R.string.dynamic_ui_select) }, Modifier.weight(1f))
+                        Text(current.ifBlank { stringResource(R.string.a2ui_select) }, Modifier.weight(1f))
                         Icon(Icons.Outlined.ExpandMore, contentDescription = null)
                     }
                     if (!LocalCardReadOnly.current && (name != "Select" || expanded)) choices.forEach { choice ->
@@ -232,7 +232,7 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                     if (current.isFinite() && min.isFinite() && max.isFinite() && max > min) {
                         Slider(current.coerceIn(min, max), { next -> if (interactive && update != null) change(current, next, -1) { update(next) } }, enabled = update != null && interactive, valueRange = min..max,
                             steps = (properties.bind(stepCount)?.toInt() ?: 0).coerceIn(0, 999))
-                    } else Text(stringResource(R.string.dynamic_ui_bad_number), color = MaterialTheme.colorScheme.error)
+                    } else Text(stringResource(R.string.a2ui_bad_number), color = MaterialTheme.colorScheme.error)
                 }
             }
             "DatePicker" -> {
@@ -245,23 +245,23 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                 Column(modifier) {
                     Text(title, style = MaterialTheme.typography.labelLarge)
                     if (bounds == null) {
-                        Text(stringResource(R.string.dynamic_ui_invalid), color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.a2ui_invalid), color = MaterialTheme.colorScheme.error)
                         return@Column
                     }
                     val selectedDate = remember(current, bounds) {
                         runCatching { LocalDate.parse(current) }.getOrNull()?.takeIf { it in bounds }
                     }
                     if (current.isNotEmpty() && selectedDate == null)
-                        Text(stringResource(R.string.dynamic_ui_date_outside_range), color = MaterialTheme.colorScheme.error)
-                    if (LocalCardReadOnly.current) Text(current.ifBlank { stringResource(R.string.dynamic_ui_empty_value) })
+                        Text(stringResource(R.string.a2ui_date_outside_range), color = MaterialTheme.colorScheme.error)
+                    if (LocalCardReadOnly.current) Text(current.ifBlank { stringResource(R.string.a2ui_empty_value) })
                     else OutlinedButton(onClick = { expanded = !expanded }, enabled = update != null && interactive, modifier = Modifier.fillMaxWidth()) {
-                        Text(current.ifBlank { stringResource(R.string.dynamic_ui_select_date) }, Modifier.weight(1f))
+                        Text(current.ifBlank { stringResource(R.string.a2ui_select_date) }, Modifier.weight(1f))
                         Icon(Icons.Outlined.ExpandMore, contentDescription = null)
                     }
                     if (!LocalCardReadOnly.current && properties.bind(clearable) == true && current.isNotEmpty())
                         TextButton(onClick = {
                             if (interactive && update != null) change(current, "", -1) { update("") }
-                        }, enabled = interactive && update != null) { Text(stringResource(R.string.dynamic_ui_clear)) }
+                        }, enabled = interactive && update != null) { Text(stringResource(R.string.a2ui_clear)) }
                     if (expanded && interactive) {
                         val initial = selectedDate?.atStartOfDay()?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
                         // Recreate only when the bound date changes. Programmatic updates
@@ -302,7 +302,7 @@ private class OperitCardComponent(override val name: String) : A2uiComponent {
                 val data = properties.bind(rows) as? List<*>
                 if (data == null || data.size > 32 || data.any { it !is List<*> || it.size != headers.size ||
                         it.any { cell -> cell is List<*> || cell is Map<*, *> } }) {
-                    Text(stringResource(R.string.dynamic_ui_bad_table), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.a2ui_bad_table), color = MaterialTheme.colorScheme.error)
                     return
                 }
                 val columnWidths = (properties.bind(widths) as? List<*>)?.map { (it as Number).toInt() }
@@ -452,12 +452,12 @@ private object CardIcon : A2uiComponent {
         val iconSize = (properties.bind(size)?.toInt() ?: 24).coerceIn(12, 96).dp
         val boundTone = properties.bind(tone)
         val tint = cardToneInk(if (boundTone == "accent") "primary" else boundTone,
-            MaterialTheme.colorScheme, LocalDynamicUiBackdrop.current)
+            MaterialTheme.colorScheme, LocalA2uiBackdrop.current)
             ?: LocalContentColor.current
         if (vector == null) {
             val warn = LocalCardIconWarning.current
             LaunchedEffect(name) { warn() }
-            Icon(Icons.Outlined.HelpOutline, stringResource(R.string.dynamic_ui_icon_missing), modifier.size(iconSize),
+            Icon(Icons.Outlined.HelpOutline, stringResource(R.string.a2ui_icon_missing), modifier.size(iconSize),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             val description = accessibility?.let {

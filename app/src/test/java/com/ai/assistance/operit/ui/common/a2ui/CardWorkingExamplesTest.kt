@@ -7,7 +7,7 @@ import org.junit.Test
 /** Checks the authored examples' actual calculations and state transitions, not just syntax. */
 class CardWorkingExamplesTest {
     private fun example(name: String) =
-        DynamicUiProtocol.parse(CardExpress.compile(javaClass.getResource("/a2ui/$name.express")!!.readText()), true)
+        A2uiProtocol.parse(CardExpress.compile(javaClass.getResource("/a2ui/$name.express")!!.readText()), true)
 
     @Test fun shoppingQuantitiesReactWithoutLosingCheckedRows() {
         val batch = example("shopping_list")
@@ -26,7 +26,7 @@ class CardWorkingExamplesTest {
             assertEquals(listOf(true, false, false), rows().map {
                 CardRepeat.evaluate(it.getValue("value"), data).jsonPrimitive.boolean
             })
-            DynamicUiProtocol.validateExpanded(CardRepeat.expand(graph, data), data)
+            A2uiProtocol.validateExpanded(CardRepeat.expand(graph, data), data)
         }
     }
 
@@ -47,7 +47,7 @@ class CardWorkingExamplesTest {
             val total = people * 120.0 + nights * rooms * 280.0
             assertEquals(total, amount("total"), 0.001)
             assertEquals(total / people, amount("perPerson"), 0.001)
-            DynamicUiProtocol.validateExpanded(graph, data)
+            A2uiProtocol.validateExpanded(graph, data)
         }
     }
 
@@ -62,7 +62,7 @@ class CardWorkingExamplesTest {
             assertEquals(values, chart.getValue("series").jsonArray.single().jsonObject.getValue("values").jsonArray.map { it.jsonPrimitive.int })
             val total = graph.getValue("total").getValue("text").jsonObject.getValue("args").jsonObject.getValue("value")
             assertEquals(values.sum().toDouble(), CardRepeat.evaluate(total, data).jsonPrimitive.double, 0.001)
-            DynamicUiProtocol.validateExpanded(graph, data)
+            A2uiProtocol.validateExpanded(graph, data)
         }
     }
 }

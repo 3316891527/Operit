@@ -47,7 +47,7 @@ internal object CardHtml : A2uiComponent {
         val styles = properties.bind(css).orEmpty()
         val description = properties.bind(label)
         val limit = (properties.bind(maxHeight)?.toInt() ?: 720).coerceIn(120, 900)
-        val contentKey = remember(source, styles) { DynamicUiProtocol.fingerprint("$source\u0000$styles") }
+        val contentKey = remember(source, styles) { A2uiProtocol.fingerprint("$source\u0000$styles") }
         var approvedContent by rememberSaveable { mutableStateOf<String?>(null) }
         val loaded = approvedContent == contentKey
         var measured by rememberSaveable(source, styles) { mutableIntStateOf(120) }
@@ -67,7 +67,7 @@ internal object CardHtml : A2uiComponent {
         }) {
             if (!loaded) {
                 OutlinedButton(onClick = { approvedContent = contentKey }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.dynamic_ui_html_click_to_load))
+                    Text(stringResource(R.string.a2ui_html_click_to_load))
                 }
             } else {
                 // Keep the measured slot stable during offscreen disposal, so chat does not jump.

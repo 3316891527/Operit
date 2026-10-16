@@ -35,33 +35,33 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.*
 
-val LocalDynamicUiOwner = staticCompositionLocalOf<DynamicUiOwner?> { null }
-val LocalDynamicUiSubmit = staticCompositionLocalOf<((DynamicUiOwner, String) -> Boolean)?> { null }
+val LocalA2uiOwner = staticCompositionLocalOf<A2uiOwner?> { null }
+val LocalA2uiSubmit = staticCompositionLocalOf<((A2uiOwner, String) -> Boolean)?> { null }
 /** Solid color the card is drawn on (a plain chat bubble); unspecified for images, glass or no bubble. */
-val LocalDynamicUiBackdrop = staticCompositionLocalOf { Color.Unspecified }
+val LocalA2uiBackdrop = staticCompositionLocalOf { Color.Unspecified }
 
 @Composable
-fun DynamicUiCard(source: String, closed: Boolean, streaming: Boolean, blockIndex: Int, ink: Color = Color.Unspecified) {
-    val owner = LocalDynamicUiOwner.current
+fun A2uiCard(source: String, closed: Boolean, streaming: Boolean, blockIndex: Int, ink: Color = Color.Unspecified) {
+    val owner = LocalA2uiOwner.current
     // A completed revision owns independent state. Streaming cards are display-only.
-    val revision = remember(source, closed) { if (closed) DynamicUiProtocol.fingerprint(source) else "streaming" }
+    val revision = remember(source, closed) { if (closed) A2uiProtocol.fingerprint(source) else "streaming" }
     key(owner?.chatId, owner?.timestamp, owner?.variant, revision, blockIndex) {
-        DynamicUiCardContent(source, closed, streaming, owner, blockIndex, ink)
+        A2uiCardContent(source, closed, streaming, owner, blockIndex, ink)
     }
 }
 
 @Composable
-private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boolean, owner: DynamicUiOwner?, blockIndex: Int, ink: Color) {
+private fun A2uiCardContent(source: String, closed: Boolean, streaming: Boolean, owner: A2uiOwner?, blockIndex: Int, ink: Color) {
     val context = LocalContext.current
     val resources = LocalResources.current
-    val submit by rememberUpdatedState(LocalDynamicUiSubmit.current)
+    val submit by rememberUpdatedState(LocalA2uiSubmit.current)
     val currentOwner by rememberUpdatedState(owner)
     val storageSource = "$blockIndex:$source"
     val storageFiles = remember(owner?.chatId, owner?.timestamp, owner?.variant, storageSource) {
         mutableMapOf<String, java.io.File>()
     }
     fun stateFile(surfaceId: String): java.io.File? = currentOwner?.let { identity ->
-        storageFiles.getOrPut(surfaceId) { DynamicUiStateStore.file(context, identity, storageSource, surfaceId) }
+        storageFiles.getOrPut(surfaceId) { A2uiStateStore.file(context, identity, storageSource, surfaceId) }
     }
     var error by remember { mutableStateOf<String?>(null) }
     var validated by remember { mutableStateOf(false) }
@@ -78,29 +78,29 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
     var pending by remember { mutableStateOf<A2uiClientEventMessage?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
     var showSource by remember { mutableStateOf(false) }
-    val storageFailures by DynamicUiStateStore.failures.collectAsState()
+    val storageFailures by A2uiStateStore.failures.collectAsState()
     val processor = remember {
         A2uiMessageProcessor(
-            listOf(operitDynamicUiCatalog),
+            listOf(operitA2uiCatalog),
             listOf(A2uiActionInterceptor { action ->
-                if (action is A2uiEventAction && action.eventName in DynamicUiProtocol.actions + CARD_CHANGE_EVENT) action else null
+                if (action is A2uiEventAction && action.eventName in A2uiProtocol.actions + CARD_CHANGE_EVENT) action else null
             }),
         )
     }
     val surfaces by processor.activeSurfaces.collectAsState()
-    val invalidText = stringResource(R.string.dynamic_ui_invalid)
-    val failedText = stringResource(R.string.dynamic_ui_action_failed)
-    val sentText = stringResource(R.string.dynamic_ui_sent)
-    val copiedText = stringResource(R.string.dynamic_ui_copied)
-    val localSavedText = stringResource(R.string.dynamic_ui_local_saved)
-    val requiredText = stringResource(R.string.dynamic_ui_required)
-    val tooLargeText = stringResource(R.string.dynamic_ui_state_limit)
-    val submitFailedText = stringResource(R.string.dynamic_ui_submit_failed)
+    val invalidText = stringResource(R.string.a2ui_invalid)
+    val failedText = stringResource(R.string.a2ui_action_failed)
+    val sentText = stringResource(R.string.a2ui_sent)
+    val copiedText = stringResource(R.string.a2ui_copied)
+    val localSavedText = stringResource(R.string.a2ui_local_saved)
+    val requiredText = stringResource(R.string.a2ui_required)
+    val tooLargeText = stringResource(R.string.a2ui_state_limit)
+    val submitFailedText = stringResource(R.string.a2ui_submit_failed)
 
     fun logIssue(phase: String, surfaceId: String = "", category: String = "") {
         val safeCategory = category.filter { it.isLetterOrDigit() || it == '_' }.take(64)
         if (loggedErrors.size < 64 && loggedErrors.add("$phase:$surfaceId:$safeCategory")) {
-            AppLogger.w("DynamicUi", "phase=$phase block=$blockIndex source=${DynamicUiProtocol.fingerprint(source).take(12)} surface=${surfaceId.take(80)} category=$safeCategory")
+            AppLogger.w("A2ui", "phase=$phase block=$blockIndex source=${A2uiProtocol.fingerprint(source).take(12)} surface=${surfaceId.take(80)} category=$safeCategory")
         }
     }
 
@@ -110,22 +110,22 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
     }
 
     fun model(surface: A2uiCoreSurfaceModel): JsonElement {
-        val raw = DynamicUiProtocol.toJson(surface.dataModel[A2uiDataPath("/")]) as? JsonObject ?: JsonObject(emptyMap())
-        return JsonObject(raw.filterKeys { it != DynamicUiProtocol.MARKER }).also {
+        val raw = A2uiProtocol.toJson(surface.dataModel[A2uiDataPath("/")]) as? JsonObject ?: JsonObject(emptyMap())
+        return JsonObject(raw.filterKeys { it != A2uiProtocol.MARKER }).also {
             // Reserve the independent Agent quota; a progress update must never evict form data.
             require((if (CardLiveStore.isLive(surface.id)) CardLiveStore.userData(it) else it)
-                .toString().length <= DynamicUiProtocol.MAX_STATE)
+                .toString().length <= A2uiProtocol.MAX_STATE)
         }
     }
     fun restore(surface: A2uiCoreSurfaceModel, data: JsonElement) {
         val restored = if (CardLiveStore.isLive(surface.id)) JsonObject(data.jsonObject +
-            ("agent" to DynamicUiProtocol.toJson(surface.dataModel[A2uiDataPath("/agent")]))) else data
-        surface.dataModel.update(A2uiDataPath("/"), DynamicUiProtocol.toValue(restored))
-        surface.dataModel.update(A2uiDataPath("/${DynamicUiProtocol.MARKER}"), "ready")
+            ("agent" to A2uiProtocol.toJson(surface.dataModel[A2uiDataPath("/agent")]))) else data
+        surface.dataModel.update(A2uiDataPath("/"), A2uiProtocol.toValue(restored))
+        surface.dataModel.update(A2uiDataPath("/${A2uiProtocol.MARKER}"), "ready")
     }
     fun persist(surface: A2uiCoreSurfaceModel, data: JsonElement) {
         val file = stateFile(surface.id) ?: return
-        DynamicUiStateStore.save(file, buildJsonObject {
+        A2uiStateStore.save(file, buildJsonObject {
             put("data", if (CardLiveStore.isLive(surface.id)) CardLiveStore.userData(data.jsonObject) else data)
             saved[surface.id]?.let { put("saved", if (CardLiveStore.isLive(surface.id)) CardLiveStore.userData(it.jsonObject) else it) }
             put("result", results[surface.id] == true)
@@ -165,13 +165,13 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                             val actionContext = if (event.type == "local_action" || change)
                                 resolveLocalCardContext(surface, event.componentId, component, event.context, change)
                                 else event.context
-                            val payload = DynamicUiProtocol.toJson(actionContext)
-                            require(payload.toString().length <= DynamicUiProtocol.MAX_STATE)
+                            val payload = A2uiProtocol.toJson(actionContext)
+                            require(payload.toString().length <= A2uiProtocol.MAX_STATE)
                             when (if (change) "local_action" else event.type) {
                                 "local_action" -> when (actionContext["op"]) {
                                     "set", "add" -> {
                                         val path = actionContext["path"] as? String ?: error("Missing path")
-                                        DynamicUiProtocol.validatePath(path)
+                                        A2uiProtocol.validatePath(path)
                                         require(!CardLiveStore.isLive(surface.id) || !CardLiveStore.protectedPath(path)) {
                                             "User actions cannot write Agent data"
                                         }
@@ -180,15 +180,15 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                                             val delta = actionContext["value"] as? Number ?: error("Missing number")
                                             (old.toDouble() + delta.toDouble()).also { require(it.isFinite() && kotlin.math.abs(it) <= 1e9) }
                                         } else actionContext["value"]
-                                        DynamicUiProtocol.toJson(next)
+                                        A2uiProtocol.toJson(next)
                                         val before = model(surface)
-                                        var candidate = CardRowState.userWrite(before.jsonObject, path, DynamicUiProtocol.toJson(next))
+                                        var candidate = CardRowState.userWrite(before.jsonObject, path, A2uiProtocol.toJson(next))
                                         templates[surface.id]?.let { definition ->
                                             candidate = CardRowState.prepare(definition, candidate, CardLiveStore.isLive(surface.id))
-                                            DynamicUiProtocol.validateExpanded(CardRepeat.expand(definition, candidate), candidate)
+                                            A2uiProtocol.validateExpanded(CardRepeat.expand(definition, candidate), candidate)
                                         }
                                         require((if (CardLiveStore.isLive(surface.id)) CardLiveStore.userData(candidate) else candidate)
-                                            .toString().length <= DynamicUiProtocol.MAX_STATE) { "Data model too large" }
+                                            .toString().length <= A2uiProtocol.MAX_STATE) { "Data model too large" }
                                         androidx.compose.runtime.snapshots.Snapshot.withMutableSnapshot { restore(surface, candidate) }
                                     }
                                     "row_set" -> {
@@ -197,9 +197,9 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                                             actionContext["repeat"] as? String ?: error("Missing Repeat"),
                                             actionContext["key"] as? String ?: error("Missing key"),
                                             actionContext["field"] as? String ?: error("Missing field"),
-                                            DynamicUiProtocol.toJson(actionContext["value"]), CardLiveStore.isLive(surface.id),
+                                            A2uiProtocol.toJson(actionContext["value"]), CardLiveStore.isLive(surface.id),
                                             (actionContext["parents"] as? List<*>)?.map { it as? String ?: error("Invalid parent key") }.orEmpty())
-                                        DynamicUiProtocol.validateExpanded(CardRepeat.expand(definition, candidate), candidate)
+                                        A2uiProtocol.validateExpanded(CardRepeat.expand(definition, candidate), candidate)
                                         restore(surface, candidate)
                                     }
                                     "save" -> { saved[surface.id] = model(surface); results[surface.id] = true; notice = localSavedText }
@@ -210,14 +210,14 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                                 "ai_submit", "tool_action" -> {
                                     val missing = (event.context["required"] as? List<*>).orEmpty().any {
                                         val path = it as? String ?: error("Invalid required path")
-                                        DynamicUiProtocol.validatePath(path)
+                                        A2uiProtocol.validatePath(path)
                                         surface.dataModel[A2uiDataPath(path)]?.toString().isNullOrBlank()
                                     }
                                     if (missing) notice = requiredText else pending = event
                                 }
                                 "open_url" -> {
                                     val url = event.context["url"] as? String ?: error("Missing URL")
-                                    require(DynamicUiProtocol.safeUrl(url))
+                                    require(A2uiProtocol.safeUrl(url))
                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                                 }
                                 "copy" -> {
@@ -239,7 +239,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
     }
     LaunchedEffect(source, closed) {
         try {
-            val batch = withContext(Dispatchers.Default) { DynamicUiProtocol.parse(source, closed) }
+            val batch = withContext(Dispatchers.Default) { A2uiProtocol.parse(source, closed) }
             expectedSurfaces = batch.surfaceIds
             if (!closed && batch.componentsBySurface.values.any { graph ->
                     graph.values.any { it["component"]?.jsonPrimitive?.content == "Repeat" }
@@ -262,7 +262,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
             processed = batch.lines
             if (closed) {
                 batch.surfaceIds.forEach { id ->
-                    val record = stateFile(id)?.let { DynamicUiStateStore.read(it) }
+                    val record = stateFile(id)?.let { A2uiStateStore.read(it) }
                     val live = if (CardLiveStore.isLive(id)) currentOwner?.let { identity ->
                         CardLiveStore.observe(identity.chatId, source, id)?.value
                             ?: CardLiveStore.read(requireNotNull(stateFile(id)).parentFile!!, source, id)
@@ -273,18 +273,18 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                         val data = if (CardLiveStore.isLive(id) && agent != null)
                             JsonObject(CardLiveStore.userData(old.jsonObject) + ("agent" to agent)) else old
                         val initialized = templates[id]?.let { CardRowState.prepare(it, data.jsonObject, CardLiveStore.isLive(id)) } ?: data
-                        processor.processMessage(A2uiUpdateDataModelMessage(id, "/", DynamicUiProtocol.toValue(initialized)))
+                        processor.processMessage(A2uiUpdateDataModelMessage(id, "/", A2uiProtocol.toValue(initialized)))
                     }
-                    if (live != null) processor.processMessage(A2uiUpdateDataModelMessage(id, "/agent", DynamicUiProtocol.toValue(live.getValue("agent"))))
+                    if (live != null) processor.processMessage(A2uiUpdateDataModelMessage(id, "/agent", A2uiProtocol.toValue(live.getValue("agent"))))
                     record?.get("saved")?.let { saved[id] = it }
                     results[id] = record?.get("result")?.jsonPrimitive?.booleanOrNull == true
-                    processor.processMessage(A2uiUpdateDataModelMessage(id, "/${DynamicUiProtocol.MARKER}", "ready"))
+                    processor.processMessage(A2uiUpdateDataModelMessage(id, "/${A2uiProtocol.MARKER}", "ready"))
                 }
             }
             validated = closed
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) {
-            logIssue("protocol", category = "${DynamicUiProtocol.diagnosticCode(e)}_line_${DynamicUiProtocol.diagnosticLine(e) ?: 0}")
+            logIssue("protocol", category = "${A2uiProtocol.diagnosticCode(e)}_line_${A2uiProtocol.diagnosticLine(e) ?: 0}")
             error = e.message?.take(240) ?: invalidText
         }
     }
@@ -293,7 +293,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
         LaunchedEffect(surface, validated) {
             if (!validated) return@LaunchedEffect
             snapshotFlow {
-                surface.dataModel[A2uiDataPath("/${DynamicUiProtocol.MARKER}")] == "ready" ||
+                surface.dataModel[A2uiDataPath("/${A2uiProtocol.MARKER}")] == "ready" ||
                     surface.id in surfaceErrors
             }.first { it }
             if (surface.id in surfaceErrors) return@LaunchedEffect
@@ -305,7 +305,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                         updates.collect { record ->
                             if (record["error"]?.jsonPrimitive?.booleanOrNull == true) notice = failedText
                             try {
-                                surface.dataModel.update(A2uiDataPath("/agent"), DynamicUiProtocol.toValue(record.getValue("agent")))
+                                surface.dataModel.update(A2uiDataPath("/agent"), A2uiProtocol.toValue(record.getValue("agent")))
                             } catch (e: CancellationException) { throw e }
                             catch (_: Exception) { notice = failedText }
                         }
@@ -325,7 +325,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                             val before = model(surface).jsonObject
                             val data = CardRowState.prepare(definition, before, CardLiveStore.isLive(surface.id))
                             val next = CardRepeat.expand(definition, data)
-                            DynamicUiProtocol.validateExpanded(next, data)
+                            A2uiProtocol.validateExpanded(next, data)
                             if (components[surface.id] != next || before != data) {
                                 val payloads = CardRepeat.payloads(next)
                                 // Replace synchronously without deleting the surface/data model.
@@ -367,7 +367,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
     // Embedded like a Markdown block: no host frame, background or padding. A root Card draws its
     // own frame, so only authors who need visual grouping get one.
     MaterialTheme(
-        colorScheme = cardColorScheme(MaterialTheme.colorScheme, ink, LocalDynamicUiBackdrop.current),
+        colorScheme = cardColorScheme(MaterialTheme.colorScheme, ink, LocalA2uiBackdrop.current),
         shapes = MaterialTheme.shapes.copy(medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(20.dp)),
         typography = MaterialTheme.typography.copy(bodyLarge = MaterialTheme.typography.bodyMedium),
     ) {
@@ -401,9 +401,9 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
         }.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (error != null) {
                 Text(invalidText, color = MaterialTheme.colorScheme.error)
-                Text(stringResource(R.string.dynamic_ui_regenerate), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.a2ui_regenerate), style = MaterialTheme.typography.bodySmall)
             } else {
-                if (!closed) Text(stringResource(if (streaming) R.string.dynamic_ui_generating else R.string.dynamic_ui_interrupted))
+                if (!closed) Text(stringResource(if (streaming) R.string.a2ui_generating else R.string.a2ui_interrupted))
                 if (surfaceErrors.keys.any { id -> surfaces.none { it.id == id } }) {
                     Text(invalidText, color = MaterialTheme.colorScheme.error)
                 }
@@ -416,7 +416,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                             LocalCardBrowse provides (closed && ready[surface.id] == true && pending == null && surface.id !in surfaceErrors),
                             LocalCardReadOnly provides readOnly,
                             LocalCardValueResolver provides { path ->
-                                DynamicUiProtocol.toJson((surface as A2uiCoreSurfaceModel).dataModel[A2uiDataPath(path)])
+                                A2uiProtocol.toJson((surface as A2uiCoreSurfaceModel).dataModel[A2uiDataPath(path)])
                             },
                             LocalCardMutationGuard provides { update ->
                                 val core = surface as A2uiCoreSurfaceModel
@@ -430,7 +430,7 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                                             val after = model(core).jsonObject
                                             templates[surface.id]?.let { definition ->
                                                 val initialized = CardRowState.prepare(definition, after, CardLiveStore.isLive(surface.id))
-                                                DynamicUiProtocol.validateExpanded(CardRepeat.expand(definition, initialized), initialized)
+                                                A2uiProtocol.validateExpanded(CardRepeat.expand(definition, initialized), initialized)
                                                 if (initialized != after) restore(core, initialized)
                                             }
                                         } catch (e: Exception) { restore(core, before); throw e }
@@ -453,20 +453,20 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                             }
                         }
                         if (surface.id in surfaceErrors) Text(
-                            stringResource(R.string.dynamic_ui_partial_error), color = MaterialTheme.colorScheme.error,
+                            stringResource(R.string.a2ui_partial_error), color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                         )
                         if (readOnly) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.dynamic_ui_saved), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.a2ui_saved), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
                             TextButton(enabled = pending == null && surface.id !in surfaceErrors, onClick = { safely { results[surface.id] = false; persist(surface as A2uiCoreSurfaceModel, model(surface)) } }) {
-                                Text(stringResource(R.string.dynamic_ui_edit))
+                                Text(stringResource(R.string.a2ui_edit))
                             }
                         } else {
                             if (saved.containsKey(surface.id)) TextButton(onClick = { safely {
                                 restore(surface as A2uiCoreSurfaceModel, saved.getValue(surface.id))
                                 results[surface.id] = true
                                 persist(surface, model(surface))
-                            } }, enabled = enabled) { Text(stringResource(R.string.dynamic_ui_cancel_edit)) }
+                            } }, enabled = enabled) { Text(stringResource(R.string.a2ui_cancel_edit)) }
                         }
                     }
                 }
@@ -474,18 +474,18 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
             notice?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             if (owner != null && surfaces.any {
                 stateFile(it.id) in storageFailures
-            }) Text(stringResource(R.string.dynamic_ui_save_failed), color = MaterialTheme.colorScheme.error)
+            }) Text(stringResource(R.string.a2ui_save_failed), color = MaterialTheme.colorScheme.error)
             pending?.let { event ->
                 Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(if (event.type == "tool_action") R.string.dynamic_ui_confirm_tool else R.string.dynamic_ui_confirm_send))
+                Text(stringResource(if (event.type == "tool_action") R.string.a2ui_confirm_tool else R.string.a2ui_confirm_send))
                 val graph = components[event.surfaceId].orEmpty()
                 val definition = (graph[event.componentId]?.get("action") as? JsonObject)?.get("event")
                     ?.jsonObject?.get("context")
                 val rows = remember(event, definition, graph) {
-                    cardSubmissionRows(DynamicUiProtocol.toJson(event.context), definition, graph.values)
+                    cardSubmissionRows(A2uiProtocol.toJson(event.context), definition, graph.values)
                 }
                 Column(Modifier.heightIn(max = 240.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     rows.forEach { (label, value) ->
@@ -493,11 +493,11 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                             if (label.isNotBlank()) Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             val text = when {
                                 value is JsonPrimitive && value.booleanOrNull != null && !value.isString ->
-                                    stringResource(if (value.boolean) R.string.dynamic_ui_yes else R.string.dynamic_ui_no)
+                                    stringResource(if (value.boolean) R.string.a2ui_yes else R.string.a2ui_no)
                                 value is JsonPrimitive -> value.content.takeUnless { value is JsonNull }.orEmpty()
                                 else -> value.toString()
                             }
-                            Text(text.ifBlank { stringResource(R.string.dynamic_ui_empty_value) }, style = MaterialTheme.typography.bodyMedium)
+                            Text(text.ifBlank { stringResource(R.string.a2ui_empty_value) }, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -513,17 +513,17 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
                         val submittedState = model(surface) // Validate before any model request.
                         val request = buildJsonObject {
                             put("card", event.surfaceId); put("action", event.type)
-                            put("data", DynamicUiProtocol.toJson(event.context))
+                            put("data", A2uiProtocol.toJson(event.context))
                         }
                         val accepted = identity != null && submit?.invoke(identity,
-                            resources.getString(R.string.dynamic_ui_request) + "\n" + request.toString()) == true
+                            resources.getString(R.string.a2ui_request) + "\n" + request.toString()) == true
                         if (accepted) {
                             saved[surface.id] = submittedState
                             results[surface.id] = true
                             persist(surface, submittedState)
                         }
                         notice = if (accepted) sentText else submitFailedText
-                    } }) { Text(stringResource(R.string.dynamic_ui_send)) }
+                    } }) { Text(stringResource(R.string.a2ui_send)) }
                     TextButton(onClick = { pending = null }) { Text(stringResource(android.R.string.cancel)) }
                 }
                 }
@@ -532,14 +532,14 @@ private fun DynamicUiCardContent(source: String, closed: Boolean, streaming: Boo
             // Source is a diagnostic tool, so it only appears when this block has a problem.
             val hasIssue = error != null || surfaceErrors.isNotEmpty() || iconWarnings.isNotEmpty()
             if (hasIssue) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                if (iconWarnings.isNotEmpty()) Text(stringResource(R.string.dynamic_ui_icon_missing), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (iconWarnings.isNotEmpty()) Text(stringResource(R.string.a2ui_icon_missing), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 IconButton(onClick = { showSource = !showSource }, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Outlined.Code, stringResource(R.string.dynamic_ui_source), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Outlined.Code, stringResource(R.string.a2ui_source), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             if (hasIssue && showSource) {
                 error?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                EnhancedCodeBlock(source.take(DynamicUiProtocol.MAX_SOURCE), "json")
+                EnhancedCodeBlock(source.take(A2uiProtocol.MAX_SOURCE), "json")
             }
         }
         }

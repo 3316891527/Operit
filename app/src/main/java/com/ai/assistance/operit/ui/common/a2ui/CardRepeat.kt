@@ -6,10 +6,10 @@ import kotlinx.serialization.json.*
 internal object CardRepeat {
     fun payloads(graph: Map<String, JsonObject>) = graph.map { (id, c) ->
         androidx.a2ui.model.protocol.A2uiComponentPayload(id, c.getValue("component").jsonPrimitive.content,
-            c.filterKeys { it !in setOf("id", "component") }.mapValues { DynamicUiProtocol.toValue(it.value) })
+            c.filterKeys { it !in setOf("id", "component") }.mapValues { A2uiProtocol.toValue(it.value) })
     }
 
-    fun lowerLines(batch: DynamicUiProtocol.Batch): List<String> {
+    fun lowerLines(batch: A2uiProtocol.Batch): List<String> {
         val lowered = batch.componentsBySurface.mapValues { (id, graph) ->
             expand(graph, CardRowState.prepare(graph, initialData(batch.lines, id), CardLiveStore.isLive(id)))
         }
@@ -49,10 +49,10 @@ internal object CardRepeat {
                 resolve(path)
             }
             "call" in value -> {
-                val args = value.getValue("args").jsonObject.mapValues { DynamicUiProtocol.toValue(evaluate(it.value, resolve)) }
+                val args = value.getValue("args").jsonObject.mapValues { A2uiProtocol.toValue(evaluate(it.value, resolve)) }
                 require(args.values.none { it == null }) { "Unresolved Repeat calculation" }
                 @Suppress("UNCHECKED_CAST")
-                DynamicUiProtocol.toJson(CardFunctions.evaluate(value.getValue("call").jsonPrimitive.content, args as Map<String, Any>))
+                A2uiProtocol.toJson(CardFunctions.evaluate(value.getValue("call").jsonPrimitive.content, args as Map<String, Any>))
             }
             else -> JsonObject(value.mapValues { evaluate(it.value, resolve) })
         }
@@ -121,7 +121,7 @@ internal object CardRepeat {
         fun visit(id: String, scope: String?, item: JsonObject?, depth: Int, parentKeys: List<String>): String {
             require(depth <= 12) { "Cyclic or deeply nested components" }
             require(++visits <= 512) { "Too many rendered components" }
-            val resultId = if (scope == null) id else "r_" + DynamicUiProtocol.fingerprint("$scope:$id").take(48)
+            val resultId = if (scope == null) id else "r_" + A2uiProtocol.fingerprint("$scope:$id").take(48)
             if (resultId in output) return resultId
             val definition = graph[id] ?: error("Missing template component")
             val result = if (definition["component"]?.jsonPrimitive?.content == "Repeat") {
@@ -160,7 +160,7 @@ internal object CardRepeat {
         }
         visit("root", null, null, 0, emptyList())
         require(itemCalls + output.values.sumOf { calls(it) } <= 128) { "Local calculation count exceeds 128" }
-        require(JsonArray(output.values.toList()).toString().length <= DynamicUiProtocol.MAX_SOURCE) { "Expanded Repeat is too large" }
+        require(JsonArray(output.values.toList()).toString().length <= A2uiProtocol.MAX_SOURCE) { "Expanded Repeat is too large" }
         return output
     }
 }

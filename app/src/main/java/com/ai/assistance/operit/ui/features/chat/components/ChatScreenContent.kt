@@ -261,8 +261,8 @@ fun ChatScreenContent(
                 )
             }
             androidx.compose.runtime.CompositionLocalProvider(
-                com.ai.assistance.operit.ui.common.a2ui.LocalDynamicUiSubmit provides
-                    if (enableMessageDialogs && !isMultiSelectMode) actualViewModel::submitDynamicUi else null,
+                com.ai.assistance.operit.ui.common.a2ui.LocalA2uiSubmit provides
+                    if (enableMessageDialogs && !isMultiSelectMode) actualViewModel::submitA2ui else null,
             ) {
             ChatArea(
                     chatHistory = chatHistory,

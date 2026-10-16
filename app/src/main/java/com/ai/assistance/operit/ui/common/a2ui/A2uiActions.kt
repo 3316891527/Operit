@@ -20,8 +20,8 @@ internal fun resolveLocalCardContext(
     if ((event?.get("name") as? JsonPrimitive)?.content != "local_action") return fallback
     val raw = event["context"] ?: return fallback
     val definition = if (change) cardEventValues(raw, fallback) else raw
-    val evaluated = surface.evaluatePayload(componentId, { surface.dataModel[it] }, A2uiDataPath("/"), DynamicUiProtocol.toValue(definition))
+    val evaluated = surface.evaluatePayload(componentId, { surface.dataModel[it] }, A2uiDataPath("/"), A2uiProtocol.toValue(definition))
         as? Map<*, *> ?: error("Invalid local action")
     return evaluated.entries.associate { (key, value) -> (key as? String ?: error("Invalid local action key")) to value }
-        .also { DynamicUiProtocol.toJson(it) }
+        .also { A2uiProtocol.toJson(it) }
 }

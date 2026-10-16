@@ -9,7 +9,7 @@ import kotlinx.serialization.json.*
  */
 internal object CardExpress {
     const val MAX_SOURCE = 65_536
-    private val forbidden = setOf("__proto__", "constructor", "prototype", DynamicUiProtocol.MARKER)
+    private val forbidden = setOf("__proto__", "constructor", "prototype", A2uiProtocol.MARKER)
     open class Failure(val line: Int, val column: Int, val reason: String) : IllegalArgumentException(reason)
     internal class SyntaxFailure(line: Int, column: Int, reason: String) : Failure(line, column, reason)
     private data class Token(val text: String, val line: Int, val column: Int, val quoted: Boolean = false)
@@ -229,7 +229,7 @@ internal object CardExpress {
             n.fields.values.any(::hasItem) || n.items.any(::hasItem)
         private fun path(node: Node): String {
             val path = node.token.text.removePrefix("$")
-            try { DynamicUiProtocol.validatePath(path) } catch (_: Exception) { fail(node.token, "Invalid state path.") }
+            try { A2uiProtocol.validatePath(path) } catch (_: Exception) { fail(node.token, "Invalid state path.") }
             if (path == "/" || path.drop(1).split('/').any { it.isEmpty() || it in forbidden || it == CardRowState.ROOT })
                 fail(node.token, "Use a nonempty, nonreserved object path.")
             return path
@@ -241,7 +241,7 @@ internal object CardExpress {
                     fail(value.token, "Initialize each state branch once; overlapping paths are not allowed.")
                 state[p] = json(value, literal = true)
             }
-            if (state.entries.sumOf { it.key.length + it.value.toString().length } > DynamicUiProtocol.MAX_STATE)
+            if (state.entries.sumOf { it.key.length + it.value.toString().length } > A2uiProtocol.MAX_STATE)
                 throw Failure(1, 1, "Initial data exceeds 32K characters.")
             val root = declarations["root"] ?: throw Failure(1, 1, "Declare root = Card(...) or another root component.")
             component(root, "root", 0)
@@ -262,13 +262,13 @@ internal object CardExpress {
                 put("version", "v0.9"); put(name, body)
             }.toString()
             val source = buildList {
-                add(event("createSurface", buildJsonObject { put("surfaceId", "card"); put("catalogId", DynamicUiProtocol.CATALOG) }))
+                add(event("createSurface", buildJsonObject { put("surfaceId", "card"); put("catalogId", A2uiProtocol.CATALOG) }))
                 add(event("updateComponents", buildJsonObject { put("surfaceId", "card"); put("components", JsonArray(components.values.toList())) }))
                 state.forEach { (path, value) ->
                     add(event("updateDataModel", buildJsonObject { put("surfaceId", "card"); put("path", path); put("value", value) }))
                 }
             }.joinToString("\n")
-            val report = DynamicUiProtocol.validationReport(source)
+            val report = A2uiProtocol.validationReport(source)
             if (report["valid"]?.jsonPrimitive?.boolean != true) fail(root.token, report["message"]!!.jsonPrimitive.content)
             return source
         }
@@ -295,7 +295,7 @@ internal object CardExpress {
                             if (value.kind != "call" || value.token.text != "Event") fail(value.token, "Use Event(name=..., context={...}).")
                             if (value.fields.keys.any { it !in setOf("name", "context") }) fail(value.token, "Unknown Event argument.")
                             val name = value.fields["name"]?.takeIf { it.kind == "string" }?.token?.text
-                            if (name !in DynamicUiProtocol.actions) fail(value.token, "Unknown Event action.")
+                            if (name !in A2uiProtocol.actions) fail(value.token, "Unknown Event action.")
                             if (field.name == "onChange" && name != "local_action")
                                 fail(value.token, "onChange only supports local_action.")
                             changeContext = field.name == "onChange"
@@ -327,17 +327,17 @@ internal object CardExpress {
             if (node.token.text == "Chart" && !hasItem(node)) {
                 val series = node.fields.getValue("series")
                 val labels = node.fields["labels"]?.let { initial(it).jsonArray.map { v -> v.jsonPrimitive.content } }.orEmpty()
-                try { cardChartSeries(DynamicUiProtocol.toValue(initial(series)), labels, initial(node.fields.getValue("type")).jsonPrimitive.content) }
+                try { cardChartSeries(A2uiProtocol.toValue(initial(series)), labels, initial(node.fields.getValue("type")).jsonPrimitive.content) }
                 catch (_: Exception) { fail(series.token, "Invalid chart series. Check type, numeric values, label lengths and series limits.") }
             }
             if (node.token.text == "Map" && !hasItem(node)) {
                 val markers = node.fields.getValue("markers")
-                try { cardMapMarkers(DynamicUiProtocol.toValue(initial(markers))) }
+                try { cardMapMarkers(A2uiProtocol.toValue(initial(markers))) }
                 catch (_: Exception) { fail(markers.token, "Invalid map markers. Check numeric latitude/longitude and the 32-marker limit.") }
             }
             if (node.token.text == "Flow" && !hasItem(node)) {
                 val steps = node.fields.getValue("steps")
-                try { cardFlowSteps(DynamicUiProtocol.toValue(initial(steps))) }
+                try { cardFlowSteps(A2uiProtocol.toValue(initial(steps))) }
                 catch (e: Exception) { fail(steps.token, "Invalid Flow steps: ${e.message ?: "use 1..8 {title,caption?,icon?,tone?} objects"}. Use list_icons to find supported icon names.") }
             }
             if (node.token.text == "Table" && !hasItem(node)) {
@@ -391,11 +391,11 @@ internal object CardExpress {
                 value ?: fail(node.token, "State binding is not initialized.")
             }
             "call" -> {
-                val args = node.fields.mapValues { DynamicUiProtocol.toValue(initial(it.value)) }
+                val args = node.fields.mapValues { A2uiProtocol.toValue(initial(it.value)) }
                 if (args.values.any { it == null }) JsonNull
                 else {
                     @Suppress("UNCHECKED_CAST")
-                    DynamicUiProtocol.toJson(CardFunctions.evaluate(node.token.text, args as Map<String, Any>))
+                    A2uiProtocol.toJson(CardFunctions.evaluate(node.token.text, args as Map<String, Any>))
                 }
             }
             "array" -> JsonArray(node.items.map(::initial))

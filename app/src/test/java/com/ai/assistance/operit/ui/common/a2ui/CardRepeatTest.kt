@@ -9,7 +9,7 @@ class CardRepeatTest {
         ${'$'}/rows = [{id:"a",title:"Alpha"},{id:"b",title:"Beta"}]
         root = Repeat(items=${'$'}/rows,key="id",maxItems=3,child=Text(text=item(field="title")))
     """.trimIndent()
-    private fun graph() = DynamicUiProtocol.parse(CardExpress.compile(source), true).componentsBySurface.getValue("card")
+    private fun graph() = A2uiProtocol.parse(CardExpress.compile(source), true).componentsBySurface.getValue("card")
     private fun data(rows: String) = Json.parseToJsonElement("""{"rows":$rows}""").jsonObject
 
     @Test fun reorderKeepsIdentityAndRemovalDropsNodes() {
@@ -46,7 +46,7 @@ class CardRepeatTest {
             ${'$'}/quantity = 3
             root = Repeat(items=${'$'}/rows,key="id",child=Display(text=formatNumber(value=multiply(a=item(field="price"),b=${'$'}/quantity))))
         """.trimIndent()
-        val batch = DynamicUiProtocol.parse(CardExpress.compile(s), true)
+        val batch = A2uiProtocol.parse(CardExpress.compile(s), true)
         val data = CardRepeat.initialData(batch.lines, "card")
         val expanded = CardRepeat.expand(batch.componentsBySurface.getValue("card"), data)
         val value = expanded.values.first { it["component"]?.jsonPrimitive?.content == "Display" }.getValue("text")

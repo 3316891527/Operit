@@ -125,7 +125,7 @@ internal class CardLayoutComponent(override val name: String) : A2uiComponent {
                     else -> MaterialTheme.typography.bodyMedium
                 },
                 // Unspecified keeps the surrounding ink (e.g. an accentMuted Panel) for untoned text.
-                color = cardToneInk(properties.bind(tone), MaterialTheme.colorScheme, LocalDynamicUiBackdrop.current)
+                color = cardToneInk(properties.bind(tone), MaterialTheme.colorScheme, LocalA2uiBackdrop.current)
                     ?: Color.Unspecified,
                 textAlign = when (properties.bind(textAlign)) {
                     "center" -> TextAlign.Center; "end" -> TextAlign.End; else -> TextAlign.Start
@@ -164,7 +164,7 @@ internal class CardLayoutComponent(override val name: String) : A2uiComponent {
                 }
             }
             "Panel" -> {
-                val style = cardPanelStyle(properties.bind(background), MaterialTheme.colorScheme, LocalDynamicUiBackdrop.current)
+                val style = cardPanelStyle(properties.bind(background), MaterialTheme.colorScheme, LocalA2uiBackdrop.current)
                 // A panel sharing a grid row stretches to the tallest cell, like a Display tile.
                 val rowFill = LocalCardRowFill.current
                 val slot = remember { Any() }
@@ -177,7 +177,7 @@ internal class CardLayoutComponent(override val name: String) : A2uiComponent {
                     border = if (properties.bind(border) == true) BorderStroke(1.dp, style.colors.outlineVariant) else null) {
                     MaterialTheme(colorScheme = style.colors) {
                         // Tiles nested in this panel belong to it, not to the outer row.
-                        CompositionLocalProvider(LocalDynamicUiBackdrop provides style.backdrop, LocalCardRowFill provides null) {
+                        CompositionLocalProvider(LocalA2uiBackdrop provides style.backdrop, LocalCardRowFill provides null) {
                             Box(Modifier.wrapContentHeight(Alignment.Top).cardRowReport(rowFill, slot)
                                 .padding(cardSpacing(properties.bind(padding), 16))) { render(false) }
                         }

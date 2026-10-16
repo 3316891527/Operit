@@ -113,7 +113,7 @@ internal object CardFlow : A2uiComponent {
         val description = properties.bind(label).orEmpty()
         val items = parsed.getOrNull()
         if (items == null) {
-            Text(stringResource(R.string.dynamic_ui_invalid), modifier, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.a2ui_invalid), modifier, color = MaterialTheme.colorScheme.error)
             return
         }
         val requested = properties.bind(direction) ?: "auto"

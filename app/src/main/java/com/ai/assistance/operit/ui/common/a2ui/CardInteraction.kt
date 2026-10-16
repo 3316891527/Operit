@@ -28,10 +28,10 @@ internal fun A2uiComponentScope.cardChangeHandler(
     val disabled = properties[A2uiProperty.any("disabled")]
     return { previous, next, index, update ->
         val blocked = disabled != null && runCatching {
-            CardRepeat.evaluate(DynamicUiProtocol.toJson(disabled), resolve) != JsonPrimitive(false)
+            CardRepeat.evaluate(A2uiProtocol.toJson(disabled), resolve) != JsonPrimitive(false)
         }.getOrDefault(true)
         if (!blocked) applyCardInput(
-            current = { if (path != null) DynamicUiProtocol.toValue(resolve(path)) else previous },
+            current = { if (path != null) A2uiProtocol.toValue(resolve(path)) else previous },
             next = next, guard = guard, update = update,
         ) { actual ->
             dispatchAction(mapOf("event" to mapOf("name" to CARD_CHANGE_EVENT,
@@ -46,14 +46,14 @@ internal fun applyCardInput(current: () -> Any?, next: Any?, guard: (() -> Unit)
 }
 internal fun sameCardInput(a: Any?, b: Any?): Boolean =
     if (a is Number && b is Number) a.toDouble() == b.toDouble()
-    else DynamicUiProtocol.toJson(a) == DynamicUiProtocol.toJson(b)
+    else A2uiProtocol.toJson(a) == A2uiProtocol.toJson(b)
 
 internal fun cardEventValues(value: JsonElement, context: Map<String, Any?>): JsonElement = when (value) {
     is JsonObject -> if ("event_value" in value) {
         require(value.keys == setOf("event_value"))
         val field = value.getValue("event_value").jsonPrimitive.content
         require(field in setOf("value", "previous", "index"))
-        val result = DynamicUiProtocol.toJson(context[field])
+        val result = A2uiProtocol.toJson(context[field])
         require(result is JsonPrimitive) { "Event values must be scalar" }
         result
     } else JsonObject(value.mapValues { cardEventValues(it.value, context) })

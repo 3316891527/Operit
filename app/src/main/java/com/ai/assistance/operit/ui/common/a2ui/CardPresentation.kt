@@ -202,7 +202,7 @@ internal fun CardDisplayValue(text: String, atStart: Boolean) {
 @Composable
 internal fun CardInfoRow(label: String, value: String, tone: String?, modifier: Modifier) {
     val scheme = MaterialTheme.colorScheme
-    val valueColor = cardToneInk(tone, scheme, LocalDynamicUiBackdrop.current) ?: scheme.onSurface
+    val valueColor = cardToneInk(tone, scheme, LocalA2uiBackdrop.current) ?: scheme.onSurface
     val labelStyle = MaterialTheme.typography.bodyMedium
     val valueStyle = labelStyle.copy(fontWeight = FontWeight.Medium)
     val measurer = rememberTextMeasurer()

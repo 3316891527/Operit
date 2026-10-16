@@ -15,7 +15,7 @@ import kotlinx.serialization.json.*
  * Private, atomic sidecars. A conflated writer survives a card scrolling out of composition.
  * Never store protocol actions for replay, credentials, or a copy of the whole conversation.
  */
-internal object DynamicUiStateStore {
+internal object A2uiStateStore {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val signal = Channel<Unit>(Channel.CONFLATED)
     private val pending = linkedMapOf<File, String>()
@@ -26,10 +26,11 @@ internal object DynamicUiStateStore {
     val failures = MutableStateFlow<Set<File>>(emptySet())
     private var started = false
 
-    fun file(context: Context, owner: DynamicUiOwner, source: String, surface: String): File {
-        val chat = DynamicUiProtocol.fingerprint(owner.chatId)
-        val key = DynamicUiProtocol.fingerprint("$surface:$source")
-        return File(context.filesDir, "dynamic_ui/$chat/${owner.timestamp}_${owner.variant}_$key.json").also {
+    // 功能尚未正式发布，普通卡片与 live 快照统一使用 files/a2ui。
+    fun file(context: Context, owner: A2uiOwner, source: String, surface: String): File {
+        val chat = A2uiProtocol.fingerprint(owner.chatId)
+        val key = A2uiProtocol.fingerprint("$surface:$source")
+        return File(context.filesDir, "a2ui/$chat/${owner.timestamp}_${owner.variant}_$key.json").also {
             synchronized(pending) { tracked.add(it); deletedFiles.remove(it) }
         }
     }
@@ -40,7 +41,7 @@ internal object DynamicUiStateStore {
             val text = queued ?: ioMutex.withLock {
                 AtomicFile(file).openRead().use {
                     // State limit is in UTF-16 characters; UTF-8 may take up to 4 bytes each.
-                    require(it.channel.size() <= DynamicUiProtocol.MAX_STATE * 12L)
+                    require(it.channel.size() <= A2uiProtocol.MAX_STATE * 12L)
                     it.bufferedReader().readText()
                 }
             }
@@ -50,7 +51,7 @@ internal object DynamicUiStateStore {
 
     fun save(file: File, record: JsonObject) {
         val text = record.toString()
-        require(text.length <= DynamicUiProtocol.MAX_STATE * 3)
+        require(text.length <= A2uiProtocol.MAX_STATE * 3)
         synchronized(pending) {
             if (file.parentFile in deleted || file in deletedFiles) return
             pending[file] = text
@@ -76,7 +77,7 @@ internal object DynamicUiStateStore {
                             } catch (e: Exception) {
                                 atomic.failWrite(stream)
                                 failures.update { (it + next.first).toList().takeLast(64).toSet() }
-                                com.ai.assistance.operit.util.AppLogger.w("DynamicUi", "Unable to persist card state", e)
+                                com.ai.assistance.operit.util.AppLogger.w("A2ui", "Unable to persist card state", e)
                             } finally {
                                 synchronized(pending) {
                                     if (pending[next.first] == next.second) pending.remove(next.first)
@@ -93,7 +94,7 @@ internal object DynamicUiStateStore {
     /** Live tool updates acknowledge only after an atomic write, serialized with chat deletion. */
     fun writeNow(file: File, record: JsonObject) = runBlocking(Dispatchers.IO) {
         val text = record.toString()
-        require(text.length <= DynamicUiProtocol.MAX_STATE * 3)
+        require(text.length <= A2uiProtocol.MAX_STATE * 3)
         ioMutex.withLock {
             check(synchronized(pending) { file.parentFile !in deleted && file !in deletedFiles }) { "Chat was deleted" }
             file.parentFile?.mkdirs()
@@ -111,7 +112,7 @@ internal object DynamicUiStateStore {
     }
 
     private fun directory(context: Context, chatId: String) =
-        File(context.filesDir, "dynamic_ui/${DynamicUiProtocol.fingerprint(chatId)}")
+        File(context.filesDir, "a2ui/${A2uiProtocol.fingerprint(chatId)}")
 
     /**
      * Branches copy messages with their original timestamps, so the same state file names resolve
@@ -138,11 +139,11 @@ internal object DynamicUiStateStore {
             names.filter(::copied).forEach { name ->
                 // One unreadable card must not drop the rest of the branch's state.
                 runCatching { writeAtomic(File(target, name), AtomicFile(File(source, name)).readFully()) }
-                    .onFailure { com.ai.assistance.operit.util.AppLogger.w("DynamicUi", "Unable to copy card state $name", it) }
+                    .onFailure { com.ai.assistance.operit.util.AppLogger.w("A2ui", "Unable to copy card state $name", it) }
             }
             queued.forEach { (file, text) ->
                 runCatching { writeAtomic(file, text.toByteArray(Charsets.UTF_8)) }
-                    .onFailure { com.ai.assistance.operit.util.AppLogger.w("DynamicUi", "Unable to copy queued card state ${file.name}", it) }
+                    .onFailure { com.ai.assistance.operit.util.AppLogger.w("A2ui", "Unable to copy queued card state ${file.name}", it) }
             }
         }
     }
@@ -192,8 +193,8 @@ internal object DynamicUiStateStore {
 
     /** 批量删除仅扫描卡片目录和聊天元数据，不读取消息全文。 */
     suspend fun deleteMissingChats(context: Context, chatIds: Set<String>) = withContext(Dispatchers.IO) {
-        val valid = chatIds.mapTo(mutableSetOf(), DynamicUiProtocol::fingerprint)
-        val root = File(context.filesDir, "dynamic_ui")
+        val valid = chatIds.mapTo(mutableSetOf(), A2uiProtocol::fingerprint)
+        val root = File(context.filesDir, "a2ui")
         root.listFiles().orEmpty().filter { it.isDirectory && it.name !in valid }.forEach { dir ->
             synchronized(pending) {
                 deleted.add(dir)

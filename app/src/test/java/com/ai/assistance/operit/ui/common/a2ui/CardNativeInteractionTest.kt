@@ -26,7 +26,7 @@ class CardNativeInteractionTest {
             assertEquals(JsonPrimitive(value), CardRepeat.field(data, CardRowState.path("root", "a", "done").drop(1)))
         }
     }
-    private fun batch(source: String) = DynamicUiProtocol.parse(CardExpress.compile(source), true)
+    private fun batch(source: String) = A2uiProtocol.parse(CardExpress.compile(source), true)
     private val rows = """
         ${'$'}/rows = [{id:"a",title:"Alpha"},{id:"b",title:"Beta"}]
         root = Repeat(items=${'$'}/rows,key="id",child=CheckBox(label=item(field="title"),value=item_state(field="done",default=false)))
@@ -134,7 +134,7 @@ class CardNativeInteractionTest {
         data = CardRowState.set(graph, data, "steps", "step3", "done", JsonPrimitive(true))
         data = CardRepeat.put(data, "/flow/step", JsonPrimitive(3))
         val expanded = CardRepeat.expand(graph, data)
-        DynamicUiProtocol.validateExpanded(expanded, data)
+        A2uiProtocol.validateExpanded(expanded, data)
         val next = expanded.values.first { c ->
             c["component"]?.jsonPrimitive?.content == "Button" &&
                 c["variant"]?.jsonPrimitive?.content == "primary"

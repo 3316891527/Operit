@@ -1623,10 +1623,10 @@ class ChatViewModel(context: Context) : ViewModel() {
         hideMentionSuggestionPanel()
     }
 
-    fun submitDynamicUi(
-        owner: com.ai.assistance.operit.ui.common.a2ui.DynamicUiOwner,
+    fun submitA2ui(
+        owner: com.ai.assistance.operit.ui.common.a2ui.A2uiOwner,
         text: String,
-    ): Boolean = messageCoordinationDelegate.trySendDynamicUi(owner, text)
+    ): Boolean = messageCoordinationDelegate.trySendA2ui(owner, text)
 
     fun sendUserMessage(promptFunctionType: PromptFunctionType = PromptFunctionType.CHAT) {
         hideMentionSuggestionPanel()

@@ -432,7 +432,7 @@ class EnhancedAIService private constructor(context: Context) {
 
     private data class MessageExecutionContext(
         val executionId: Int,
-        val dynamicUiRunId: String = java.util.UUID.randomUUID().toString(),
+        val a2uiRunId: String = java.util.UUID.randomUUID().toString(),
         val streamBuffer: StringBuilder = StringBuilder(),
         val roundManager: ConversationRoundManager = ConversationRoundManager(),
         val isConversationActive: AtomicBoolean = AtomicBoolean(true),
@@ -446,18 +446,18 @@ class EnhancedAIService private constructor(context: Context) {
     private val nextExecutionContextId = AtomicInteger(0)
 
     private fun registerExecutionContext(context: MessageExecutionContext) {
-        CardDelivery.begin(context.dynamicUiRunId)
+        CardDelivery.begin(context.a2uiRunId)
         activeExecutionContexts[context.executionId] = context
     }
 
     private fun unregisterExecutionContext(context: MessageExecutionContext) {
         activeExecutionContexts.remove(context.executionId, context)
-        CardDelivery.end(context.dynamicUiRunId)
+        CardDelivery.end(context.a2uiRunId)
     }
 
     private fun invalidateExecutionContext(context: MessageExecutionContext, reason: String) {
         if (context.isConversationActive.compareAndSet(true, false)) {
-            CardDelivery.end(context.dynamicUiRunId)
+            CardDelivery.end(context.a2uiRunId)
             AppLogger.d(TAG, "执行上下文已失效: id=${context.executionId}, reason=$reason")
         }
     }
@@ -1220,7 +1220,7 @@ class EnhancedAIService private constructor(context: Context) {
 
                     // 创建一个新的轮次来管理内容
                     startAssistantResponseRound(execContext)
-                    val cardExpander = CardReferenceExpander { CardDelivery.resolve(execContext.dynamicUiRunId, it) }
+                    val cardExpander = CardReferenceExpander { CardDelivery.resolve(execContext.a2uiRunId, it) }
                     val revisionTracker = TextStreamRevisionTracker()
                     val revisionMutex = Mutex()
 
@@ -2289,7 +2289,7 @@ class EnhancedAIService private constructor(context: Context) {
                 callerName = characterName,
                 callerChatId = chatId,
                 callerCardId = roleCardId,
-                dynamicUiRunId = context.dynamicUiRunId
+                a2uiRunId = context.a2uiRunId
             )
 
             if (toolBatch.results.isNotEmpty()) {
@@ -2547,7 +2547,7 @@ class EnhancedAIService private constructor(context: Context) {
                 var lastLogTime = messageTimingNow()
                 var isFirstChunk = true
                 val revisableStream = responseStream as? TextStreamEventCarrier
-                val cardExpander = CardReferenceExpander { CardDelivery.resolve(context.dynamicUiRunId, it) }
+                val cardExpander = CardReferenceExpander { CardDelivery.resolve(context.a2uiRunId, it) }
                 val revisionTracker = TextStreamRevisionTracker()
                 val revisionMutex = Mutex()
 

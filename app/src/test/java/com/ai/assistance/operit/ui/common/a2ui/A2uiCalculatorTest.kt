@@ -4,7 +4,7 @@ import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
 
-class DynamicUiCalculatorTest {
+class A2uiCalculatorTest {
     private fun press(vararg keys: String): Map<String, Any> =
         keys.fold(CardCalculator.initial()) { state, key -> requireNotNull(CardCalculator.step(state, key)) }
 
@@ -36,19 +36,19 @@ class DynamicUiCalculatorTest {
         assertEquals(true, CardCalculator.step(tiny, "=")!!["error"])
         val state = press("9", "9", "9", "9", "9", "9", "9", "9", "9", "9", "9", "9", "*", "9", "=")
         assertEquals(true, state["error"])
-        assertTrue(DynamicUiProtocol.toJson(state).toString().length < 256)
+        assertTrue(A2uiProtocol.toJson(state).toString().length < 256)
     }
 
     @Test fun nativeValidatorExplainsActualDeviceFailureWithoutEchoingSource() {
         val source = javaClass.getResource("/a2ui/device-malformed-calculator.ndjson")!!.readText()
-        val report = DynamicUiProtocol.validationReport(source)
+        val report = A2uiProtocol.validationReport(source)
         assertEquals(false, report["valid"]!!.jsonPrimitive.boolean)
         assertEquals(2, report["line"]!!.jsonPrimitive.int)
         assertEquals("invalid_json", report["code"]!!.jsonPrimitive.content)
         assertFalse(report.toString().contains("/calc/"))
-        assertEquals(4, DynamicUiProtocol.validationReport("\n\n$source")["line"]!!.jsonPrimitive.int)
+        assertEquals(4, A2uiProtocol.validationReport("\n\n$source")["line"]!!.jsonPrimitive.int)
         val keypad = javaClass.getResource("/a2ui/calculator.ndjson")!!.readText()
-        assertEquals(true, DynamicUiProtocol.validationReport(keypad)["valid"]!!.jsonPrimitive.boolean)
-        assertEquals(false, DynamicUiProtocol.validationReport(keypad.replace("\"columnCount\":4", "\"columnCount\":5"))["valid"]!!.jsonPrimitive.boolean)
+        assertEquals(true, A2uiProtocol.validationReport(keypad)["valid"]!!.jsonPrimitive.boolean)
+        assertEquals(false, A2uiProtocol.validationReport(keypad.replace("\"columnCount\":4", "\"columnCount\":5"))["valid"]!!.jsonPrimitive.boolean)
     }
 }

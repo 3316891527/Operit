@@ -3,7 +3,7 @@ package com.ai.assistance.operit.ui.common.a2ui
 import org.junit.Assert.*
 import org.junit.Test
 
-class DynamicUiChartGeometryTest {
+class A2uiChartGeometryTest {
     @Test fun paletteKeepsFourSeriesColorsForAnyPrimary() {
         for (dark in listOf(false, true)) for (sat in listOf(0f, .1f, .6f, .9f)) for (hue in 0 until 360) {
             val primary = androidx.compose.ui.graphics.Color.hsv(hue.toFloat(), sat, .7f)

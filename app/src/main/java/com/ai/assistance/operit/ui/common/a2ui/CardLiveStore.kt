@@ -13,7 +13,7 @@ internal object CardLiveStore {
 
     fun isLive(surface: String) = surface.matches(Regex("live_[0-9a-f]{32}"))
     fun surface(reference: String) = "live_${reference.replace("-", "")}"
-    private fun fingerprint(document: String) = DynamicUiProtocol.fingerprint(document.trimEnd('\r', '\n'))
+    private fun fingerprint(document: String) = A2uiProtocol.fingerprint(document.trimEnd('\r', '\n'))
     fun userData(data: JsonObject) = JsonObject(data.filterKeys { it != "agent" })
     fun protectedPath(path: String) = path == "/" || path == "/agent" || path.startsWith("/agent/")
 
@@ -25,7 +25,7 @@ internal object CardLiveStore {
     @Synchronized fun register(run: String, reference: String, chat: String, directory: File,
         source: String, document: String) {
         val id = surface(reference)
-        val batch = DynamicUiProtocol.parse(document, true)
+        val batch = A2uiProtocol.parse(document, true)
         val data = CardRepeat.initialData(batch.lines, id)["agent"] as? JsonObject
             ?: error("Live cards must initialize $/agent as an object")
         validate(source, data)
@@ -54,7 +54,7 @@ internal object CardLiveStore {
         if (e.failed) return false
         if (!e.published) {
             try {
-                DynamicUiStateStore.writeNow(e.file, e.state.value)
+                A2uiStateStore.writeNow(e.file, e.state.value)
                 e.published = true
             } catch (_: Exception) {
                 // A full disk must not abort the enclosing model stream.
@@ -72,7 +72,7 @@ internal object CardLiveStore {
         require(expected == version) { "Card data version conflict; current version=$version" }
         validate(e.source, data)
         val next = record(e.fingerprint, data, version + 1, true)
-        if (e.published) DynamicUiStateStore.writeNow(e.file, next)
+        if (e.published) A2uiStateStore.writeNow(e.file, next)
         e.state.value = next
         return version + 1
     }
@@ -84,7 +84,7 @@ internal object CardLiveStore {
         val retiring = entries.filterValues { it.run == run }
         retiring.forEach { (id, e) ->
             val frozen = JsonObject(e.state.value + ("active" to JsonPrimitive(false)))
-            if (e.published) runCatching { DynamicUiStateStore.writeNow(e.file, frozen) }
+            if (e.published) runCatching { A2uiStateStore.writeNow(e.file, frozen) }
             e.state.value = frozen
             entries.remove(id)
         }
@@ -92,7 +92,7 @@ internal object CardLiveStore {
 
     suspend fun read(directory: File, document: String, id: String): JsonObject? {
         if (!isLive(id)) return null
-        return DynamicUiStateStore.read(File(directory, "$id.json"))?.takeIf {
+        return A2uiStateStore.read(File(directory, "$id.json"))?.takeIf {
             it["fingerprint"]?.jsonPrimitive?.content == fingerprint(document)
         }
     }

@@ -125,13 +125,13 @@ internal object CardVector : A2uiComponent {
         // Keep invalid expressions inside the visual's boundary. AndroidX bind reports an
         // irreversible registry error; this pure evaluator lets the user correct input.
         val data = runCatching {
-            CardVectorData.parse(CardRepeat.evaluate(DynamicUiProtocol.toJson(mapOf(
+            CardVectorData.parse(CardRepeat.evaluate(A2uiProtocol.toJson(mapOf(
                 "label" to properties[label], "width" to properties[width],
                 "height" to properties[height], "shapes" to properties[shapes],
             )), resolve).jsonObject)
         }.getOrNull()
         if (data == null) {
-            Text(stringResource(R.string.dynamic_ui_invalid), modifier, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.a2ui_invalid), modifier, color = MaterialTheme.colorScheme.error)
             return
         }
         val scheme = MaterialTheme.colorScheme

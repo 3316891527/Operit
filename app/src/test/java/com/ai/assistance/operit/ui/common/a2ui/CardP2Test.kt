@@ -56,7 +56,7 @@ class CardP2Test {
     @Test fun nestedStableStateSurvivesParentReorderAndRejectsStaleParent() {
         val report = CardExpress.report(nested)
         assertEquals(report.toString(), JsonPrimitive(true), report["valid"])
-        val batch = DynamicUiProtocol.parse(CardExpress.compile(nested),true)
+        val batch = A2uiProtocol.parse(CardExpress.compile(nested),true)
         val graph = batch.componentsBySurface.getValue("card")
         var data = CardRowState.prepare(graph,CardRepeat.initialData(batch.lines,"card"))
         data = CardRowState.set(graph,data,"inner","same","done",JsonPrimitive(true),parents=listOf("a"))
@@ -112,7 +112,7 @@ class CardP2Test {
             inner=Repeat(items=if(condition=item_state(field="show",default=true),then=item(field="children"),else=[]),key="id",child=row)
             row=Text(text=item(field="title"))
         """.trimIndent()
-        val batch = DynamicUiProtocol.parse(CardExpress.compile(source),true)
+        val batch = A2uiProtocol.parse(CardExpress.compile(source),true)
         val graph = batch.componentsBySurface.getValue("card")
         val data = CardRepeat.put(CardRepeat.initialData(batch.lines,"card"),"/agent/groups",
             Json.parseToJsonElement("""[{"id":"new","children":[{"id":"child","title":"Appeared"}]}]"""))
@@ -125,11 +125,11 @@ class CardP2Test {
             ${'$'}/items=[{id:"a"}]
             root=Column(children=[Formula(label="Math",text=${'$'}/formula),Repeat(items=${'$'}/items,key="id",child=Text(text="Row"))])
         """.trimIndent()
-        val batch=DynamicUiProtocol.parse(CardExpress.compile(source),true)
+        val batch=A2uiProtocol.parse(CardExpress.compile(source),true)
         val graph=batch.componentsBySurface.getValue("card")
         for (text in listOf("", "\\", "\\frac{", "\\frac{1}{2}")) {
             val data=CardRepeat.put(CardRepeat.initialData(batch.lines,"card"),"/formula",JsonPrimitive(text))
-            DynamicUiProtocol.validateExpanded(CardRepeat.expand(graph,data),data)
+            A2uiProtocol.validateExpanded(CardRepeat.expand(graph,data),data)
         }
     }
 }

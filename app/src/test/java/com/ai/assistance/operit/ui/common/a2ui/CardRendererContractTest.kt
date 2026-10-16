@@ -25,7 +25,7 @@ class CardRendererContractTest {
         """.trimIndent())
         // Official Button actions allow literal scalars and bindings, not literal objects.
         val incompatible = valid.replace("\"value\":\"plain\"", "\"value\":{\"private\":\"do-not-relay\"}")
-        val report = DynamicUiProtocol.validationReport(incompatible)
+        val report = A2uiProtocol.validationReport(incompatible)
         assertEquals(false, report.getValue("valid").jsonPrimitive.boolean)
         assertTrue(report.getValue("message").jsonPrimitive.content.contains("Button.action"))
         assertFalse(report.toString().contains("do-not-relay"))
@@ -57,8 +57,8 @@ class CardRendererContractTest {
     }
 
     private fun validateRenderer(source: String) {
-        val batch = DynamicUiProtocol.parse(CardExpress.compile(source), true)
-        val catalog = operitDynamicUiCatalog as androidx.a2ui.engine.catalog.A2uiCoreCatalog
+        val batch = A2uiProtocol.parse(CardExpress.compile(source), true)
+        val catalog = operitA2uiCatalog as androidx.a2ui.engine.catalog.A2uiCoreCatalog
         val validator = A2uiCoreSchemaValidator(catalog)
         batch.componentsBySurface.forEach { (surface, graph) ->
             val data = CardRowState.prepare(graph, CardRepeat.initialData(batch.lines, surface), false)

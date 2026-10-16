@@ -142,15 +142,15 @@ internal fun CardChart(type: String, title: String, data: List<CardChartSeries>,
             val shown = series.points.take(perSeries)
             val values = (shown.map { p ->
                 "${p.label} ${cardChartNumber(p.y)}" + if (type == "scatter") " (x ${cardChartNumber(p.x)})" else ""
-            } + listOfNotNull((series.points.size - shown.size).takeIf { it > 0 }?.let { resources.getString(R.string.dynamic_ui_chart_more, it) }))
+            } + listOfNotNull((series.points.size - shown.size).takeIf { it > 0 }?.let { resources.getString(R.string.a2ui_chart_more, it) }))
                 .joinToString(", ")
             if (series.label.isBlank()) values else "${series.label}: $values"
         }
     }
-    val chartDescription = stringResource(R.string.dynamic_ui_chart_description, points.size, chartValues)
+    val chartDescription = stringResource(R.string.a2ui_chart_description, points.size, chartValues)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (title.isNotBlank()) Text(title, style = MaterialTheme.typography.titleMedium)
-        if (empty) Text(stringResource(R.string.dynamic_ui_no_data), style = MaterialTheme.typography.bodyMedium)
+        if (empty) Text(stringResource(R.string.a2ui_no_data), style = MaterialTheme.typography.bodyMedium)
         else {
             val xAxis = remember(data, type) { if (type == "scatter")
                 cardChartAxis(points.minOf { it.x }, points.maxOf { it.x }, false) else null }
@@ -371,7 +371,7 @@ internal fun CardChart(type: String, title: String, data: List<CardChartSeries>,
                     } }
                 }
             }
-            Text(stringResource(R.string.dynamic_ui_chart_gesture), style = MaterialTheme.typography.labelSmall, color = ink)
+            Text(stringResource(R.string.a2ui_chart_gesture), style = MaterialTheme.typography.labelSmall, color = ink)
             if (type == "pie") Column(Modifier.heightIn(max = 240.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 val total = points.sumOf { it.y }

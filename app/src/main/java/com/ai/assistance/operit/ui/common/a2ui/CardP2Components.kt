@@ -38,7 +38,7 @@ internal object CardStepper : A2uiComponent {
         val rawIndex = properties.bind(current)?.toDouble()
         if (steps.size !in 1..32 || rawIndex == null || !rawIndex.isFinite() ||
             rawIndex % 1.0 != 0.0 || rawIndex < 0 || rawIndex >= steps.size) {
-            Text(stringResource(R.string.dynamic_ui_invalid), modifier, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.a2ui_invalid), modifier, color = MaterialTheme.colorScheme.error)
             return
         }
         val index = rawIndex.toInt()
@@ -103,7 +103,7 @@ internal object CardFormula : A2uiComponent {
                         drawContext.canvas.nativeCanvas.let(image::draw)
                     }
                 }
-                finished -> Text(stringResource(R.string.dynamic_ui_invalid), color = MaterialTheme.colorScheme.error)
+                finished -> Text(stringResource(R.string.a2ui_invalid), color = MaterialTheme.colorScheme.error)
                 else -> CircularProgressIndicator(Modifier.size(20.dp))
             }
         }

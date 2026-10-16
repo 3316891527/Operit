@@ -54,7 +54,7 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
         val mutationGuard = LocalCardMutationGuard.current
         val link = properties.bind(url).orEmpty()
         fun open(link: String) {
-            if (DynamicUiProtocol.safeUrl(link)) dispatchAction(mapOf("event" to mapOf("name" to "open_url", "context" to mapOf("url" to link))))
+            if (A2uiProtocol.safeUrl(link)) dispatchAction(mapOf("event" to mapOf("name" to "open_url", "context" to mapOf("url" to link))))
         }
         when (name) {
             "Image", "Video", "Audio" -> CardMedia(name, link, title, modifier)
@@ -65,7 +65,7 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                 val chartLabels = properties.bind(labels).orEmpty()
                 val data = remember(raw, chartType, chartLabels) { runCatching { cardChartSeries(raw, chartLabels, chartType) } }
                 if (data.isSuccess) CardChart(chartType, title, data.getOrThrow(), modifier)
-                else Text(stringResource(R.string.dynamic_ui_bad_chart), modifier, color = MaterialTheme.colorScheme.error)
+                else Text(stringResource(R.string.a2ui_bad_chart), modifier, color = MaterialTheme.colorScheme.error)
             }
             "Map" -> CardMap(title, properties.bind(markers), properties.bind(route) == true, modifier) { if (browse) open(it) }
             "Draft" -> {
@@ -78,10 +78,10 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                         modifier = Modifier.fillMaxWidth(), enabled = interactive, readOnly = update == null, minLines = 4, maxLines = 12)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (!readOnly) OutlinedButton(onClick = { dispatchAction(mapOf("event" to mapOf("name" to "local_action", "context" to mapOf("op" to "save")))) }, enabled = interactive) {
-                            Text(stringResource(R.string.dynamic_ui_save_draft))
+                            Text(stringResource(R.string.a2ui_save_draft))
                         }
                         TextButton(onClick = { dispatchAction(mapOf("event" to mapOf("name" to "copy", "context" to mapOf("text" to current)))) }, enabled = browse) {
-                            Text(stringResource(R.string.dynamic_ui_copy))
+                            Text(stringResource(R.string.a2ui_copy))
                         }
                     }
                 }
@@ -120,7 +120,7 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                                 is A2uiComponentState.Success -> CompositionLocalProvider(LocalCardRowItem provides false) {
                                     A2uiComponent(child.component, modifier = Modifier.fillMaxWidth())
                                 }
-                                is A2uiComponentState.Error -> Text(stringResource(R.string.dynamic_ui_partial_error), color = MaterialTheme.colorScheme.error)
+                                is A2uiComponentState.Error -> Text(stringResource(R.string.a2ui_partial_error), color = MaterialTheme.colorScheme.error)
                                 A2uiComponentState.Loading -> LinearProgressIndicator(Modifier.fillMaxWidth())
                             }
                         }
@@ -149,9 +149,9 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                     } else if (name == "Conditional") refs.indices.forEach { renderChild(it) }
                     else renderChild(selected)
                     if (name == "Carousel" && refs.isNotEmpty()) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        TextButton(onClick = { select(selected - 1) }, enabled = canNavigate && selected > 0) { Text(stringResource(R.string.dynamic_ui_previous)) }
+                        TextButton(onClick = { select(selected - 1) }, enabled = canNavigate && selected > 0) { Text(stringResource(R.string.a2ui_previous)) }
                         Text("${selected + 1} / ${refs.size}", style = MaterialTheme.typography.labelMedium)
-                        TextButton(onClick = { select(selected + 1) }, enabled = canNavigate && selected < refs.lastIndex) { Text(stringResource(R.string.dynamic_ui_next)) }
+                        TextButton(onClick = { select(selected + 1) }, enabled = canNavigate && selected < refs.lastIndex) { Text(stringResource(R.string.a2ui_next)) }
                     }
                 }
             }
@@ -166,12 +166,12 @@ internal class AdvancedCardComponent(override val name: String) : A2uiComponent 
                     if (amount.isNotBlank()) Text(amount, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                     if (location.isNotBlank()) Text(location, style = MaterialTheme.typography.bodyMedium)
                     if (description.isNotBlank()) Text(description, style = MaterialTheme.typography.bodyMedium)
-                    if (DynamicUiProtocol.safeUrl(link)) {
+                    if (A2uiProtocol.safeUrl(link)) {
                         Text(remember(link) { URI(link).host }, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         OutlinedButton(onClick = { open(link) }, enabled = browse) {
-                            Text(stringResource(if (name == "File") R.string.dynamic_ui_open_file else R.string.dynamic_ui_open_link))
+                            Text(stringResource(if (name == "File") R.string.a2ui_open_file else R.string.a2ui_open_link))
                         }
-                    } else if (link.isNotBlank()) Text(stringResource(R.string.dynamic_ui_bad_url), color = MaterialTheme.colorScheme.error)
+                    } else if (link.isNotBlank()) Text(stringResource(R.string.a2ui_bad_url), color = MaterialTheme.colorScheme.error)
                 }
             }
         }

@@ -11,7 +11,7 @@ class CardExpressTest {
             root = Column(children=[title,Display(text=formatNumber(value=multiply(a=${'$'}/form/years,b=10)))])
             title = Heading(text="Cost")
         """.trimIndent()
-        val batch = DynamicUiProtocol.parse(CardExpress.compile(source), true)
+        val batch = A2uiProtocol.parse(CardExpress.compile(source), true)
         val graph = batch.componentsBySurface.getValue("card")
         assertEquals(3, graph.size)
         assertEquals(listOf("title", "inline_1"), graph.getValue("root")["children"]!!.jsonArray.map { it.jsonPrimitive.content })
@@ -23,7 +23,7 @@ class CardExpressTest {
             val source = javaClass.getResource("/a2ui/$name.express")!!.readText()
             val report = CardExpress.report(source)
             assertEquals("$name: $report", JsonPrimitive(true), report["valid"])
-            assertTrue(DynamicUiProtocol.parse(report["document"]!!.jsonPrimitive.content, true).complete)
+            assertTrue(A2uiProtocol.parse(report["document"]!!.jsonPrimitive.content, true).complete)
         }
     }
 
@@ -80,7 +80,7 @@ class CardExpressTest {
             val source = javaClass.getResource("/a2ui/$name.express")!!.readText()
             assertFalse(name, source.contains("$/"))
             assertFalse(name, source.contains("Event("))
-            val batch = DynamicUiProtocol.parse(CardExpress.compile(source), true)
+            val batch = A2uiProtocol.parse(CardExpress.compile(source), true)
             val graph = batch.componentsBySurface.getValue("card")
             assertTrue(name, graph.values.none { "action" in it || "onChange" in it })
             assertNotEquals(name, "Card", graph.getValue("root")["component"]!!.jsonPrimitive.content)
@@ -88,8 +88,8 @@ class CardExpressTest {
     }
 
     @Test fun catalogMatchesRendererNamesAndPropertyKeys() {
-        assertEquals(DynamicUiProtocol.components, CardAuthoringCatalog.components.keys)
-        val actual = operitDynamicUiCatalog.components.associateBy { it.name }
+        assertEquals(A2uiProtocol.components, CardAuthoringCatalog.components.keys)
+        val actual = operitA2uiCatalog.components.associateBy { it.name }
         CardAuthoringCatalog.components.forEach { (name, fields) ->
             // Repeat is a bounded compiler template, lowered to official Column/components.
             if (name == "Repeat") return@forEach

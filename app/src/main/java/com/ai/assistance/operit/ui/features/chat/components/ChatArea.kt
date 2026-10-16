@@ -704,9 +704,9 @@ private fun MessageItem(
             ),
     ) {
         CompositionLocalProvider(
-            com.ai.assistance.operit.ui.common.a2ui.LocalDynamicUiOwner provides
+            com.ai.assistance.operit.ui.common.a2ui.LocalA2uiOwner provides
                 if (message.sender == "ai" && !message.isVariantPreview && currentChatId.isNotBlank()) {
-                    com.ai.assistance.operit.ui.common.a2ui.DynamicUiOwner(
+                    com.ai.assistance.operit.ui.common.a2ui.A2uiOwner(
                         currentChatId, message.timestamp, message.selectedVariantIndex, message.content,
                     )
                 } else null,

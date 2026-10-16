@@ -8,7 +8,7 @@ import kotlinx.serialization.json.*
  * Resource limits around the official A2UI parser, not a replacement protocol.
  * Repeat templates are lowered to bounded static graphs before the official renderer.
  */
-internal object DynamicUiProtocol {
+internal object A2uiProtocol {
     const val CATALOG = "https://operit.ai/a2ui/catalog/v1"
     const val MAX_SOURCE = 131_072
     const val MAX_STATE = 32_768
@@ -335,11 +335,11 @@ internal object DynamicUiProtocol {
             }
             if (kind == "Chart") {
                 val labels = c["labels"]?.let { CardRepeat.evaluate(it, data).jsonArray.map { v -> v.jsonPrimitive.content } }.orEmpty()
-                cardChartSeries(DynamicUiProtocol.toValue(CardRepeat.evaluate(c.getValue("series"), data)), labels,
+                cardChartSeries(A2uiProtocol.toValue(CardRepeat.evaluate(c.getValue("series"), data)), labels,
                     c.getValue("type").jsonPrimitive.content)
             }
-            if (kind == "Map") cardMapMarkers(DynamicUiProtocol.toValue(CardRepeat.evaluate(c.getValue("markers"), data)))
-            if (kind == "Flow") cardFlowSteps(DynamicUiProtocol.toValue(CardRepeat.evaluate(c.getValue("steps"), data)))
+            if (kind == "Map") cardMapMarkers(A2uiProtocol.toValue(CardRepeat.evaluate(c.getValue("markers"), data)))
+            if (kind == "Flow") cardFlowSteps(A2uiProtocol.toValue(CardRepeat.evaluate(c.getValue("steps"), data)))
             if (kind == "Table") {
                 val rows = CardRepeat.evaluate(c.getValue("rows"), data).jsonArray
                 val count = c.getValue("columns").jsonArray.size

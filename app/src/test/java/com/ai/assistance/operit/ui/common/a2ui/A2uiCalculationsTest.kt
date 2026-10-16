@@ -4,7 +4,7 @@ import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
 
-class DynamicUiCalculationsTest {
+class A2uiCalculationsTest {
     @Test fun invalidCalculationsRecoverWithoutThrowing() {
         assertNull(CardFunctions.evaluate("divide", mapOf("a" to 12, "b" to 0)))
         assertEquals(4.0, CardFunctions.evaluate("divide", mapOf("a" to 12, "b" to 3)))
@@ -19,15 +19,15 @@ class DynamicUiCalculationsTest {
     @Test fun actualExamplesAreBoundedAndOnlyPureCallsAreAccepted() {
         listOf("calculator", "cost_calculator", "charts").forEach { name ->
             val text = javaClass.getResource("/a2ui/$name.ndjson")!!.readText()
-            val batch = DynamicUiProtocol.parse(text, true)
+            val batch = A2uiProtocol.parse(text, true)
             assertEquals(if (name == "charts") 4 else 1, batch.surfaceIds.size)
         }
         val source = javaClass.getResource("/a2ui/cost_calculator.ndjson")!!.readText()
-        assertTrue(runCatching { DynamicUiProtocol.parse(source.replace("\"multiply\"", "\"exec\""), true) }.isFailure)
+        assertTrue(runCatching { A2uiProtocol.parse(source.replace("\"multiply\"", "\"exec\""), true) }.isFailure)
         val malformed = source + """{"version":"v0.9","updataDataModelPlaceholder":false}"""
-        assertTrue(runCatching { DynamicUiProtocol.parse(malformed, true) }.exceptionOrNull()!!.message!!.contains("Line 4"))
+        assertTrue(runCatching { A2uiProtocol.parse(malformed, true) }.exceptionOrNull()!!.message!!.contains("Line 4"))
         val stateCall = source + """{"version":"v0.9","updateDataModel":{"surfaceId":"calculator","path":"/bad","value":{"call":"add","args":{"a":1,"b":2}}}}"""
-        assertTrue(runCatching { DynamicUiProtocol.parse(stateCall, true) }.isFailure)
+        assertTrue(runCatching { A2uiProtocol.parse(stateCall, true) }.isFailure)
     }
 
     @Test fun graphAndMapDataCannotIntroduceNonFiniteGeometry() {

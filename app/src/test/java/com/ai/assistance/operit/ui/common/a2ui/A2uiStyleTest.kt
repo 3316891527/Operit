@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.*
 import org.junit.Test
 
-class DynamicUiStyleTest {
+class A2uiStyleTest {
     @Test fun cardsUseNeutralSurfacesButKeepUserAccentsInBothModes() {
         val accent = Color(0xFFE85488)
         val light = cardColorScheme(lightColorScheme(primary = accent))

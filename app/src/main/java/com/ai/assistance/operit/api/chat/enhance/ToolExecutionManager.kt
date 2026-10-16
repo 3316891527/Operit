@@ -50,7 +50,7 @@ object ToolExecutionManager {
         val callerCardId: String? = null,
         val toolExposureMode: ToolExposureMode = ToolExposureMode.FULL,
         val callerChatId: String? = null,
-        val dynamicUiRunId: String? = null
+        val a2uiRunId: String? = null
     )
 
     private data class ResolvedToolTarget(
@@ -505,7 +505,7 @@ object ToolExecutionManager {
         callerName: String? = null,
         callerChatId: String? = null,
         callerCardId: String? = null,
-        dynamicUiRunId: String? = null
+        a2uiRunId: String? = null
     ): ToolExecutionBatch = PermissionCapabilityResolver.withSession(permissionSession) {
         coroutineScope {
         val orderedResults = OrderedToolResults(invocations.size) { markup ->
@@ -533,7 +533,7 @@ object ToolExecutionManager {
                 callerCardId = callerCardId,
                 toolExposureMode = toolExposureMode,
                 callerChatId = callerChatId,
-                dynamicUiRunId = dynamicUiRunId
+                a2uiRunId = a2uiRunId
             )
 
         // 1. 顶层工具暴露模式拦截

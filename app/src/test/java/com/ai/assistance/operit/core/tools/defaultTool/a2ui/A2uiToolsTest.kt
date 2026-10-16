@@ -6,7 +6,7 @@ import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
-import com.ai.assistance.operit.ui.common.a2ui.DynamicUiProtocol
+import com.ai.assistance.operit.ui.common.a2ui.A2uiProtocol
 import java.util.UUID
 import kotlinx.serialization.json.*
 import org.junit.Assert.*
@@ -22,7 +22,7 @@ class A2uiToolsTest {
         val run = "native-" + UUID.randomUUID()
         CardDelivery.begin(run)
         try {
-            action(ToolRuntimeContext(callerChatId = "chat", dynamicUiRunId = run))
+            action(ToolRuntimeContext(callerChatId = "chat", a2uiRunId = run))
         } finally {
             CardDelivery.end(run)
         }
@@ -42,9 +42,9 @@ class A2uiToolsTest {
         val result = call("a2ui_prepare", context, "source" to source)
         assertTrue(result.success)
         val reference = payload(result).getValue("reference").jsonPrimitive.content
-        val document = CardDelivery.resolve(context.dynamicUiRunId!!, reference)
+        val document = CardDelivery.resolve(context.a2uiRunId!!, reference)
         assertNotNull(document)
-        assertTrue(DynamicUiProtocol.parse(document!!, true).complete)
+        assertTrue(A2uiProtocol.parse(document!!, true).complete)
     }
 
     @Test fun generationRequiresTrustedRuntimeContext() {
@@ -59,7 +59,7 @@ class A2uiToolsTest {
     }
 
     @Test fun completedTurnsCannotCreateCards() = withRun { context ->
-        CardDelivery.end(context.dynamicUiRunId!!)
+        CardDelivery.end(context.a2uiRunId!!)
         val result = call("a2ui_prepare", context, "source" to source)
         assertFalse(result.success)
         assertEquals("inactive_turn", payload(result).getValue("code").jsonPrimitive.content)
@@ -75,7 +75,7 @@ class A2uiToolsTest {
 
     @Test fun revisionsPreserveOldCardsAndCannotUseAnotherTurn() = withRun { context ->
         val reference = payload(call("a2ui_prepare", context, "source" to source)).getValue("reference").jsonPrimitive.content
-        val original = CardDelivery.resolve(context.dynamicUiRunId!!, reference)
+        val original = CardDelivery.resolve(context.a2uiRunId!!, reference)
         withRun { other ->
             val invalid = call("a2ui_revise", other, "reference" to reference, "changes" to "root=Text(text=\"Other\")")
             assertFalse(invalid.success)
@@ -85,8 +85,8 @@ class A2uiToolsTest {
         assertTrue(revised.success)
         val next = payload(revised).getValue("reference").jsonPrimitive.content
         assertNotEquals(reference, next)
-        assertEquals(original, CardDelivery.resolve(context.dynamicUiRunId!!, reference))
-        assertTrue(CardDelivery.resolve(context.dynamicUiRunId!!, next)!!.contains("Revised"))
+        assertEquals(original, CardDelivery.resolve(context.a2uiRunId!!, reference))
+        assertTrue(CardDelivery.resolve(context.a2uiRunId!!, next)!!.contains("Revised"))
     }
 
     @Test fun invalidNativeParameterShapesAreRejected() = withRun { context ->
@@ -111,7 +111,7 @@ class A2uiToolsTest {
         val reference = payload(prepared).getValue("reference").jsonPrimitive.content
         // 发布前的 live 更新同样执行版本校验，普通 JVM 没有 Android AtomicFile 的实现。
         assertEquals(0, payload(prepared).getValue("version").jsonPrimitive.int)
-        assertNotNull(CardDelivery.source(context.dynamicUiRunId!!, reference))
+        assertNotNull(CardDelivery.source(context.a2uiRunId!!, reference))
         fun patch(version: String) = call(
             "a2ui_patch_data", context,
             "reference" to reference,

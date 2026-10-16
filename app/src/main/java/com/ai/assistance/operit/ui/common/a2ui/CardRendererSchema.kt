@@ -17,7 +17,7 @@ import kotlinx.serialization.json.JsonObject
 @SuppressLint("RestrictedApi")
 internal object CardRendererSchema {
     // The AndroidX Compose catalog factory implements both public catalog interfaces.
-    private val catalog by lazy { operitDynamicUiCatalog as A2uiCoreCatalog }
+    private val catalog by lazy { operitA2uiCatalog as A2uiCoreCatalog }
     private val validator by lazy { A2uiCoreSchemaValidator(catalog) }
 
     class Failure(val component: String, val field: String) :

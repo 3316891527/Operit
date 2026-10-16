@@ -36,10 +36,10 @@ internal fun CardMedia(kind: String, url: String, title: String, modifier: Modif
         visible = bounds.width > 0 && bounds.height > 0
     }, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (title.isNotBlank()) Text(title, style = MaterialTheme.typography.labelLarge)
-        if (!DynamicUiProtocol.safeUrl(url)) Text(stringResource(R.string.dynamic_ui_bad_url), color = MaterialTheme.colorScheme.error)
+        if (!A2uiProtocol.safeUrl(url)) Text(stringResource(R.string.a2ui_bad_url), color = MaterialTheme.colorScheme.error)
         else if (!requested) OutlinedButton(
             onClick = { requested = true; failed = false }, enabled = enabled, modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(if (kind == "Image") R.string.dynamic_ui_load_image else R.string.dynamic_ui_play_media)) }
+        ) { Text(stringResource(if (kind == "Image") R.string.a2ui_load_image else R.string.a2ui_play_media)) }
         else if (kind == "Image") {
             AsyncImage(
                 model = remember(url) { ImageRequest.Builder(context).data(url).size(1280, 1280).build() },
@@ -72,11 +72,11 @@ internal fun CardMedia(kind: String, url: String, title: String, modifier: Modif
                 update = { it.player = player },
                 modifier = Modifier.fillMaxWidth().height(if (kind == "Audio") 88.dp else 210.dp),
             )
-            TextButton(onClick = { requested = false }) { Text(stringResource(R.string.dynamic_ui_close_media)) }
+            TextButton(onClick = { requested = false }) { Text(stringResource(R.string.a2ui_close_media)) }
         }
         if (failed) {
-            Text(stringResource(R.string.dynamic_ui_media_failed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = { requested = false }) { Text(stringResource(R.string.dynamic_ui_retry_media)) }
+            Text(stringResource(R.string.a2ui_media_failed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = { requested = false }) { Text(stringResource(R.string.a2ui_retry_media)) }
         }
     }
 }

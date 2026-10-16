@@ -4,14 +4,14 @@ import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager.ToolRuntim
 import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
 import com.ai.assistance.operit.ui.common.a2ui.CardExpress
 import com.ai.assistance.operit.ui.common.a2ui.CardLiveStore
-import com.ai.assistance.operit.ui.common.a2ui.DynamicUiProtocol
+import com.ai.assistance.operit.ui.common.a2ui.A2uiProtocol
 import java.io.File
 import kotlinx.serialization.json.*
 
 /** 所有生成操作只接受执行器传入的真实请求上下文，不从模型参数读取聊天身份。 */
 internal object A2uiToolRuntime {
     private fun activeRun(context: ToolRuntimeContext?): String? =
-        context?.takeIf { !it.callerChatId.isNullOrBlank() }?.dynamicUiRunId
+        context?.takeIf { !it.callerChatId.isNullOrBlank() }?.a2uiRunId
 
     internal fun failure(code: String, message: String): JsonObject = buildJsonObject {
         put("valid", false)
@@ -40,8 +40,8 @@ internal object A2uiToolRuntime {
                 document = report.getValue("document").jsonPrimitive.content,
                 source = report["preparedSource"]?.jsonPrimitive?.content ?: source,
                 liveChat = if (live) chat else null,
-                // 保留既有目录，包名迁移不改变已保存的 live 数据位置。
-                liveDirectory = if (live) File(filesDirectory, "dynamic_ui/" + DynamicUiProtocol.fingerprint(chat)) else null,
+                // 普通卡片与 live 快照统一存入 a2ui 私有目录。
+                liveDirectory = if (live) File(filesDirectory, "a2ui/" + A2uiProtocol.fingerprint(chat)) else null,
             )
             buildJsonObject {
                 put("valid", true)

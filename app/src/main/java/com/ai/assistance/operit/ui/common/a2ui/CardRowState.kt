@@ -8,7 +8,7 @@ internal object CardRowState {
     private val fieldPattern = Regex("[A-Za-z][A-Za-z0-9_]{0,39}")
     fun path(repeat: String, key: String, field: String): String {
         require(fieldPattern.matches(field)) { "Invalid row state field" }
-        return "/$ROOT/$repeat/k${DynamicUiProtocol.fingerprint(key).take(40)}/$field"
+        return "/$ROOT/$repeat/k${A2uiProtocol.fingerprint(key).take(40)}/$field"
     }
     fun placeholder(field: String, default: JsonElement): JsonObject {
         require(fieldPattern.matches(field) && default is JsonPrimitive && default != JsonNull) {
@@ -66,7 +66,7 @@ internal object CardRowState {
             a.isString == b.isString && (a.isString || (a.booleanOrNull != null) == (b.booleanOrNull != null))
 
     fun userWrite(data: JsonObject, path: String, value: JsonElement): JsonObject {
-        DynamicUiProtocol.validatePath(path)
+        A2uiProtocol.validatePath(path)
         require(path.split('/').none { it == ROOT }) { "Reserved row state" }
         if (path != "/") return CardRepeat.put(data, path, value)
         val root = value as? JsonObject ?: error("Root state must be an object")
@@ -88,8 +88,8 @@ internal object CardRowState {
                 }
         }
         // Includes hidden rows: filters must not silently erase user edits.
-        DynamicUiProtocol.toJson(DynamicUiProtocol.toValue(next))
-        require((if (live) CardLiveStore.userData(next) else next).toString().length <= DynamicUiProtocol.MAX_STATE) { "Data model too large" }
+        A2uiProtocol.toJson(A2uiProtocol.toValue(next))
+        require((if (live) CardLiveStore.userData(next) else next).toString().length <= A2uiProtocol.MAX_STATE) { "Data model too large" }
         return next
     }
     fun set(graph: Map<String, JsonObject>, data: JsonObject, repeatId: String, key: String,
