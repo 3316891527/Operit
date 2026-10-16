@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
 import java.io.IOException
 import java.net.ConnectException
 import java.net.NoRouteToHostException
