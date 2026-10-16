@@ -26,8 +26,10 @@ internal object CardLiveStore {
         source: String, document: String) {
         val id = surface(reference)
         val batch = A2uiProtocol.parse(document, true)
-        val data = CardRepeat.initialData(batch.lines, id)["agent"] as? JsonObject
-            ?: error("Live cards must initialize $/agent as an object")
+        // 缺少 Agent 数据属于源码输入错误，不能误报为聊天轮次失效。
+        val data = requireNotNull(CardRepeat.initialData(batch.lines, id)["agent"] as? JsonObject) {
+            "Live source must initialize $/agent as an object, for example $/agent={progress:10}."
+        }
         validate(source, data)
         // User controls and local transitions must never target the Agent-owned branch.
         batch.componentsBySurface.values.flatMap { it.values }.forEach { c ->

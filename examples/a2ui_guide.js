@@ -52,9 +52,11 @@ const guide = [
   "生成流程：调用 a2ui_prepare，把返回的 reference 放在回答正文的 a2ui-ref 围栏中。围栏内容只包含引用，如 card-1。原生消息管线会展开成自包含的 a2ui v0.9 文档，Compose 再进行渲染。引用仅属于本轮请求，不能跨请求复用。",
   "直接输出完整、有效的 a2ui v0.9 围栏也可由原生渲染器识别。网上的 A2UI 示例可能采用其他协议版本或组件目录；应遵循本应用的原生目录，不将通用示例视为已经兼容。",
   "界面中的本地输入、选择和试算不会自动发起模型请求。AI 提交和工具操作需要用户确认，并沿用当前聊天、候选回复和权限检查。编辑卡片不会消耗聊天输入框的草稿。",
-  "live=true 用于当前请求内的数据更新；更新时提供当前 expected_version，初始为 0。应用返回递增版本。模型数据更新不覆盖用户已经修改的输入状态；修订会返回新卡片引用，原卡片和状态保留。",
+  "live=true 必须在 source 中初始化 $/agent 对象，例如 $/agent={progress:10}，并把模型更新的数据绑定到 $/agent/progress；仅声明 $/progress=10 不符合 live 合同。更新时 data 直接传 {progress:50}，替换整个 $/agent 对象，不再包裹 agent 键。expected_version 初始为 0，每次成功后使用返回的递增版本。",
+  "Progress.number 使用 0～1 的比例；数据为 0～100 时可写 number=divide(a=$/agent/progress,b=100)。live_progress 是当前请求内更新的专用示例，progress 是用户本地勾选的进度示例。",
+  "模型数据更新不覆盖用户已经修改的输入状态；$/agent 属于模型，用户输入控件应绑定到其他路径。请求结束后保留最终快照，后续请求不能复用旧引用继续更新。修订返回新引用，原卡片和状态保留。",
   "HTML 卡片通过 Express 的 Html 组件描述并交给 a2ui_prepare；宿主只支持受限的离线 HTML/CSS，作者脚本和联网不受支持。",
-  "示例包括 shopping_list、trip_budget、filtered_chart、calculator、cost_calculator、charts、form、info、stats、progress、responsive、data、vector、repeat、curves、interactive_flow、p2_controls、p2_lists、flow_steps、flowchart、data_story、mixed_branch、profile、backgrounds、surfaces。read_example 只返回示例源码；示例数据不能当作已查询到的事实。"
+  "示例包括 shopping_list、trip_budget、filtered_chart、calculator、cost_calculator、charts、form、info、stats、progress、live_progress、responsive、data、vector、repeat、curves、interactive_flow、p2_controls、p2_lists、flow_steps、flowchart、data_story、mixed_branch、profile、backgrounds、surfaces。read_example 只返回示例源码；示例数据不能当作已查询到的事实。"
 ].join("\n\n");
 
 function example(name) {
@@ -254,6 +256,12 @@ root = Card(child=Column(children=[
  CheckBox(label="检查问题",value=$/tasks/review),
  CheckBox(label="运行测试",value=$/tasks/test)
 ]))`;
+    if (name === "live_progress") return String.raw`
+$/agent = {progress:10}
+root = Card(child=Column(children=[
+ Display(label="progress",text=concat(values=[$/agent/progress])),
+ Progress(label="实时进度",number=divide(a=$/agent/progress,b=100))
+]))`;
     if (name === "responsive") return String.raw`
 root = Column(gap="md",children=[
  Row(wrap=true,gap="sm",align="center",children=[Badge(text="Android",tone="info"),Badge(text="本地交互",tone="success"),Badge(text="响应式布局")]),
@@ -320,8 +328,8 @@ groups=Repeat(items=$/groups,key="id",child=Panel(child=Column(children=[
 ]),background="inset"))
 tasks=Repeat(items=item(field="children"),key="id",child=CheckBox(label=item(field="title"),value=item_state(field="done",default=false)))
 `;
-    throw new Error("Choose shopping_list, trip_budget, filtered_chart, backgrounds, surfaces, profile, flow_steps, flowchart, data_story, mixed_branch, stats, charts, info, vector, curves, responsive, interactive_flow, calculator, cost_calculator, form, progress, data, repeat, p2_controls or p2_lists.");
+    throw new Error("Choose shopping_list, trip_budget, filtered_chart, backgrounds, surfaces, profile, flow_steps, flowchart, data_story, mixed_branch, stats, charts, info, vector, curves, responsive, interactive_flow, calculator, cost_calculator, form, progress, live_progress, data, repeat, p2_controls or p2_lists.");
 }
 
 exports.read_guide = async () => complete({success:true,message:guide});
-exports.read_example = async ({name}) => complete({success:true,source:example(name),message:"示例源码；按任务修改后可调用原生 a2ui_prepare。"});
+exports.read_example = async ({name}) => complete({success:true,source:example(name),message:name === "live_progress" ? "以 live=true 调用 a2ui_prepare；更新时 data={\"progress\":50}，不包裹 agent 键，expected_version 初始为 0。" : "示例源码；按任务修改后可调用原生 a2ui_prepare。"});

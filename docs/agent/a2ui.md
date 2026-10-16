@@ -12,4 +12,13 @@ A2UI 的生成、校验、修订、数据更新和 Compose 渲染由 Kotlin 提�
 
 网络中的 A2UI 示例可能采用不同协议版本、组件目录和交互合同，需要对照本应用的原生目录。示例数据不能当作已查询到的事实。
 
-宿主包为 `ui.common.a2ui`，工具入口位于独立的 `core.tools.defaultTool.a2ui`。历史卡片的存储目录保留，包路径重命名不清空用户已填写的数据。
+宿主包为 `ui.common.a2ui`，工具入口位于独立的 `core.tools.defaultTool.a2ui`。普通卡片状态与 live 最终快照保存在应用私有目录 `files/a2ui/` 下。本功能尚未正式发布，不迁移旧调试目录中的填写状态。
+
+live 卡片必须在源码中初始化 `$/agent` 对象，并将可更新的数据绑定到该对象下。`a2ui_patch_data` 的 data 是整个 Agent 对象的替换值；例如 `{"progress":50}`，不再包裹 agent 键。用户输入应使用其他路径。
+
+```text
+$/agent={progress:10}
+root=Progress(label="实时进度",number=divide(a=$/agent/progress,b=100))
+```
+
+上例交给 `a2ui_prepare(source, live=true)` 后，按返回引用更新数据，expected_version 从 0 开始，每次使用上一次返回的版本。Progress.number 的范围是 0～1，示例将 0～100 的数值除以 100。`a2ui_prepare` 缺少或错误初始化 Agent 对象时返回 `invalid_card`；真实生成轮次失效时返回 `inactive_turn`。

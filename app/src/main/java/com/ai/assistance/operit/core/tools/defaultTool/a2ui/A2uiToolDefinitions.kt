@@ -15,8 +15,8 @@ internal object A2uiToolDefinitions {
                     name = "a2ui_prepare",
                     description = text("Compile Express into a native A2UI card reference for the active chat turn.", "在当前聊天请求中将 Express 编译为原生 A2UI 卡片引用。"),
                     parametersStructured = listOf(
-                        ToolParameterSchema("source", "string", text("Express source, up to 65536 characters; component schema is available from a2ui_catalog.", "Express 源码，最多 65536 字符；组件参数可通过 a2ui_catalog 查询。")),
-                        ToolParameterSchema("live", "boolean", text("Enable data updates during this turn.", "允许本轮请求内更新卡片数据。"), required = false, default = "false"),
+                        ToolParameterSchema("source", "string", text("Express source, up to 65536 characters; query a2ui_catalog for signatures. Progress.number uses a 0 to 1 ratio.", "Express 源码，最多 65536 字符；组件参数见 a2ui_catalog。Progress.number 使用 0～1 的比例。")),
+                        ToolParameterSchema("live", "boolean", text("Enable updates during this turn. Initialize $/agent as an object and bind model-owned values below $/agent/.", "允许本轮请求内更新数据；需初始化 $/agent 对象，并将模型拥有的数据绑定到 $/agent/ 下。"), required = false, default = "false"),
                     ),
                 ),
                 ToolPrompt(
@@ -34,7 +34,7 @@ internal object A2uiToolDefinitions {
                     parametersStructured = listOf(
                         ToolParameterSchema("reference", "string", text("Live card reference from this turn.", "本轮的 live 卡片引用。")),
                         ToolParameterSchema("expected_version", "integer", text("Current data version, initially 0.", "当前数据版本，初始为 0。")),
-                        ToolParameterSchema("data", "object", text("Agent data object, up to 8192 characters when serialized.", "Agent 数据对象，序列化后最多 8192 字符。")),
+                        ToolParameterSchema("data", "object", text("Replacement object for $/agent, up to 8192 characters when serialized; omit the outer agent key.", "替换 $/agent 的数据对象，序列化后最多 8192 字符；不再包裹外层 agent 键。")),
                     ),
                 ),
                 ToolPrompt(

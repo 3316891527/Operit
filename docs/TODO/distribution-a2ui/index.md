@@ -13,7 +13,7 @@ status: implementation-complete-awaiting-cloud-verification
 
 宿主、工具与测试统一使用 a2ui 包路径，类型和文件名使用 A2ui 前缀，字段、资源键与私有状态目录使用 a2ui 命名。普通卡片状态和 live 快照保存在应用私有 `files/a2ui/<聊天指纹>/`。功能尚未正式发布，直接使用新目录，不迁移旧调试数据。
 
-配套保留 127 个 JVM 用例和 40 项完整手动回归条目。用户确认命名整理前的调试版本已编译通过；本轮命名及状态目录变更重新派发云端 Debug 和 Android Tests，实机结果等待用户验收。未执行本地构建或测试。
+配套保留 128 个 JVM 用例，A2UI 完整实机清单已扩充到 48 项并覆盖 55 种组件，原发行版整体回归清单继续保留。命名与目录统一版本 `0dfbea95` 的云端 Debug 和 Android Tests 已通过；本轮补充 live 输入校验、错误分类及说明后重新派发两条工作流，结果以本轮实际运行和用户实机验收为准。未执行本地构建或测试。
 
 - [依赖、来源与包体输入](01-dependencies-and-size.md)
 - [消息、交互与状态接入](02-chat-integration.md)
@@ -21,6 +21,8 @@ status: implementation-complete-awaiting-cloud-verification
 - [调试反馈修正](04-debug-feedback.md)
 - [原生工具与外部可选引导](05-native-tools-and-optional-guide.md)
 - [命名与私有状态目录统一](06-a2ui-naming-and-storage.md)
+- [live 校验与说明修复](07-live-validation-and-guide.md)
+- [完整 A2UI 实机回归](08-a2ui-device-regression.md)
 - [A2UI 工具说明](../../agent/a2ui.md)
 
 开发验证只使用 Operit Debug。正式发行等待用户实机验收通过，展示版本按既定计划设为 `1.12.2+2`，内部 versionCode 继续递增，Kong 包名和签名保持一致。当前工作不发布 Release，不改变正式更新源，也不轮询 CI。

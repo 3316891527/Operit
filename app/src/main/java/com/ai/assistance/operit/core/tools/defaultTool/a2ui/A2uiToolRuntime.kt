@@ -53,7 +53,7 @@ internal object A2uiToolRuntime {
             }
         } catch (error: IllegalArgumentException) {
             failure("invalid_card", error.message?.take(240) ?: "Invalid card data.")
-        } catch (_: IllegalStateException) {
+        } catch (_: CardDelivery.InactiveRunException) {
             inactive()
         }
     }

@@ -13,6 +13,9 @@ import kotlinx.serialization.json.*
  * The UUID stays internal because live surfaces and state files are keyed by it across turns.
  */
 internal object CardDelivery {
+    // 仅标识真实的轮次失效，卡片内容错误由输入校验单独报告。
+    class InactiveRunException : IllegalStateException("Card generation is unavailable outside an active chat turn.")
+
     private data class Revision(val document: String, val source: String) {
         val size get() = document.length + source.length
     }
@@ -23,7 +26,7 @@ internal object CardDelivery {
     @Synchronized fun end(run: String) { runs.remove(run); CardLiveStore.end(run) }
     @Synchronized fun register(run: String, document: String, source: String = "",
         liveChat: String? = null, liveDirectory: java.io.File? = null): String {
-        val cards = runs[run] ?: error("Card generation is unavailable outside an active chat turn.")
+        val cards = runs[run] ?: throw InactiveRunException()
         val id = UUID.randomUUID().toString()
         val stored = if (liveChat == null) document else document.lines().filter(String::isNotBlank).joinToString("\n") { line ->
             val event = Json.parseToJsonElement(line).jsonObject

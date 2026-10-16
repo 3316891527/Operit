@@ -17,6 +17,10 @@ import org.junit.rules.TemporaryFolder
 class A2uiToolsTest {
     @get:Rule val temporary = TemporaryFolder()
     private val source = "root=Text(text=\"Native card\")"
+    private val liveSource = """
+        ${'$'}/agent={progress:10}
+        root=Card(child=Column(children=[Display(label="progress",text=concat(values=[${'$'}/agent/progress])),Progress(label="实时进度",number=divide(a=${'$'}/agent/progress,b=100))]))
+        """.trimIndent()
 
     private fun withRun(action: (ToolRuntimeContext) -> Unit) {
         val run = "native-" + UUID.randomUUID()
@@ -104,8 +108,30 @@ class A2uiToolsTest {
         }
     }
 
+    @Test fun liveInputErrorsDoNotInvalidateTheActiveTurn() = withRun { context ->
+        val invalidSources = listOf(
+            """
+            ${'$'}/progress=10
+            root=Card(child=Progress(number=${'$'}/progress,label="代理数据 progress"))
+            """.trimIndent(),
+            """
+            ${'$'}/agent=10
+            root=Progress(number=${'$'}/agent)
+            """.trimIndent(),
+        )
+        invalidSources.forEach { invalidSource ->
+            val invalid = call("a2ui_prepare", context, "source" to invalidSource, "live" to "true")
+            assertFalse(invalid.success)
+            assertEquals("invalid_card", payload(invalid).getValue("code").jsonPrimitive.content)
+            assertTrue(payload(invalid).getValue("message").jsonPrimitive.content.contains("$/agent"))
+        }
+        val corrected = call("a2ui_prepare", context, "source" to liveSource, "live" to "true")
+        assertTrue(corrected.success)
+        assertEquals("card-1", payload(corrected).getValue("reference").jsonPrimitive.content)
+        assertEquals(0, payload(corrected).getValue("version").jsonPrimitive.int)
+    }
+
     @Test fun nativeLiveUpdatesEnforceExpectedVersion() = withRun { context ->
-        val liveSource = "${'$'}/agent={progress:10}\nroot=Progress(number=${'$'}/agent/progress)"
         val prepared = call("a2ui_prepare", context, "source" to liveSource, "live" to "true")
         assertTrue(prepared.success)
         val reference = payload(prepared).getValue("reference").jsonPrimitive.content
