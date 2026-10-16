@@ -172,6 +172,16 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
         AppLogger.d(TAG, "【启动计时】应用启动开始")
         AppLogger.d(TAG, "【启动计时】实例初始化完成 - ${System.currentTimeMillis() - startTime}ms")
 
+        // 仅在主应用初始化时恢复，避免修复、崩溃独立进程同时清理终端目录。
+        applicationScope.launch {
+            try {
+                com.ai.assistance.operit.data.resources.OfflineResources.resumePendingUbuntuDeletion(applicationContext)
+            } catch (error: kotlinx.coroutines.CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e(TAG, "恢复未完成的 Ubuntu 删除失败，可在离线资源页重试", error)
+            }
+        }
         launchCleanOnExitCleanup()
         AppLogger.d(TAG, "【启动计时】cleanOnExit 清理任务已提交（异步IO） - ${System.currentTimeMillis() - startTime}ms")
         launchExternalCodeMediaShield()

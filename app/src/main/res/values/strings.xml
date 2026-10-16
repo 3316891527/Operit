@@ -9259,4 +9259,5 @@
     <string name="resource_delete_failed">部分文件未能删除，请重试。</string>
     <string name="resource_ubuntu_not_installed">Ubuntu 环境未安装。准备好终端资源后，进入终端完成安装。</string>
     <string name="resource_delete_error">删除失败：%1$s</string>
+    <string name="resource_ubuntu_delete_pending">Ubuntu 环境未安装，终端清理尚未完成。完成后可重新导入；若清理失败，请再次点击删除。</string>
 </resources>

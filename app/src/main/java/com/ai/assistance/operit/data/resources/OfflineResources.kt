@@ -69,7 +69,20 @@ object OfflineResources {
     private fun ubuntuRoot(context: Context): File =
         File(context.filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu")
 
+    private fun ubuntuInstallationPaths(context: Context): List<File> {
+        val root = ubuntuRoot(context)
+        return listOf(
+            root,
+            File(root.parentFile, "${root.name}.install.tmp"),
+            File(root.parentFile, "${root.name}.install.lock"),
+            File(context.filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"),
+        )
+    }
+
+    fun ubuntuDeletionPending(context: Context): Boolean = TerminalManager.isEnvironmentRemovalPending(context)
+
     fun ubuntuInstalled(context: Context): Boolean {
+        if (ubuntuDeletionPending(context)) return false
         val root = ubuntuRoot(context)
         // 与终端安装脚本判断相同，保留已有环境的离线可用性。
         return File(root, ".operit_installed_ok").isFile || File(root, "etc/issue.net").isFile
@@ -77,12 +90,15 @@ object OfflineResources {
 
     suspend fun hasLocalData(context: Context, id: String): Boolean = withContext(Dispatchers.IO) {
         directory(context, id).exists() || (id == UBUNTU && (
-            ubuntuRoot(context).exists() ||
-                File(context.filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz").exists()
+            ubuntuDeletionPending(context) || ubuntuInstallationPaths(context).any { it.exists() }
             ))
     }
 
-    suspend fun delete(context: Context, id: String) {
+    suspend fun resumePendingUbuntuDeletion(context: Context) {
+        delete(context, UBUNTU, resumeOnly = true)
+    }
+
+    suspend fun delete(context: Context, id: String, resumeOnly: Boolean = false) {
         val operation: suspend () -> Unit = {
             withContext(NonCancellable + Dispatchers.IO) {
                 locks.getOrPut(id) { Mutex() }.withLock {
@@ -95,11 +111,7 @@ object OfflineResources {
                             LocalModelDeleteOutcome.FAILED -> throw IOException(context.getString(R.string.resource_delete_failed))
                         }
                     } else {
-                        val paths = if (id == UBUNTU) listOf(
-                            ubuntuRoot(context),
-                            File(context.filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"),
-                            dir,
-                        ) else listOf(dir)
+                        val paths = if (id == UBUNTU) ubuntuInstallationPaths(context) + dir else listOf(dir)
                         paths.forEach { path ->
                             if (path.exists()) {
                                 if (path.isDirectory) {
@@ -116,12 +128,21 @@ object OfflineResources {
             }
         }
         // 锁顺序与初始化一致：先暂停终端，再锁定资源，避免导入和初始化互相等待。
-        if (id == UBUNTU) TerminalManager.withEnvironmentMaintenance(operation) else operation()
+        if (id == UBUNTU) TerminalManager.withEnvironmentMaintenance(context, resumeOnly, operation) else operation()
     }
 
-    private suspend fun <T> access(context: Context, id: String, writing: Boolean = false, action: suspend (File, List<ResourceFileSpec>) -> T): T =
+    private suspend fun <T> access(
+        context: Context,
+        id: String,
+        writing: Boolean = false,
+        allowPendingDeletion: Boolean = false,
+        action: suspend (File, List<ResourceFileSpec>) -> T,
+    ): T =
         withContext(Dispatchers.IO) {
             locks.getOrPut(id) { Mutex() }.withLock {
+                if (id == UBUNTU && !allowPendingDeletion && ubuntuDeletionPending(context)) {
+                    throw IOException(context.getString(R.string.resource_ubuntu_delete_pending))
+                }
                 val directory = directory(context, id)
                 val handle = if (id == SPEECH) {
                     if (writing && LocalModelRuntimeRegistry.isInUse(directory)) {
@@ -134,7 +155,8 @@ object OfflineResources {
             }
         }
 
-    suspend fun isReady(context: Context, id: String): Boolean = access(context, id) { dir, files ->
+    suspend fun isReady(context: Context, id: String): Boolean = access(context, id, allowPendingDeletion = true) { dir, files ->
+        if (id == UBUNTU && ubuntuDeletionPending(context)) return@access false
         val jobContext = currentCoroutineContext()
         files.all { ResourceArchive.verified(File(dir, it.name), it) { jobContext.ensureActive() } }
     }

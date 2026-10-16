@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.resources.OfflineResources
+import com.ai.assistance.operit.terminal.TerminalManager
 import com.ai.assistance.operit.ui.theme.OperitTheme
 import com.ai.assistance.operit.util.AppLogger
 import java.util.Locale
@@ -51,10 +52,12 @@ class OfflineResourcesActivity : ComponentActivity() {
         val context = this
         val scope = rememberCoroutineScope()
         val resumeEvent by resumeEvents.collectAsState()
+        val terminalMaintenance by TerminalManager.environmentMaintenanceState.collectAsState()
         val groups = remember { OfflineResources.groups(context) }
         val ready = remember { mutableStateMapOf<String, Boolean>() }
         val stored = remember { mutableStateMapOf<String, Boolean>() }
         var ubuntuInstalled by remember { mutableStateOf(OfflineResources.ubuntuInstalled(context)) }
+        var ubuntuDeletionPending by remember { mutableStateOf(OfflineResources.ubuntuDeletionPending(context)) }
         var selected by rememberSaveable { mutableStateOf(intent.getStringExtra(EXTRA_GROUP) ?: OfflineResources.SPEECH) }
         var active by remember { mutableStateOf<String?>(null) }
         var checking by remember { mutableStateOf(true) }
@@ -67,6 +70,7 @@ class OfflineResourcesActivity : ComponentActivity() {
         var confirmDownload by remember { mutableStateOf<String?>(null) }
         var confirmDelete by remember { mutableStateOf<String?>(null) }
         var deleting by remember { mutableStateOf(false) }
+        var recoveryAttempted by remember { mutableStateOf(false) }
         val progress: (Long, Long) -> Unit = { done, total ->
             // 合并后台高频进度，不为每个数据块创建主线程任务。
             transferProgress.value = if (total > 0) (done.toDouble() / total).toFloat().coerceIn(0f, 1f) else 0f
@@ -82,6 +86,7 @@ class OfflineResourcesActivity : ComponentActivity() {
                         stored[it.id] = OfflineResources.hasLocalData(context, it.id)
                     }
                     ubuntuInstalled = OfflineResources.ubuntuInstalled(context)
+                    ubuntuDeletionPending = OfflineResources.ubuntuDeletionPending(context)
                 } catch (error: CancellationException) { throw error }
                 catch (error: Exception) {
                     AppLogger.e("OfflineResources", "Checking resources failed", error)
@@ -112,6 +117,7 @@ class OfflineResourcesActivity : ComponentActivity() {
                     try {
                         withContext(NonCancellable) {
                             ubuntuInstalled = OfflineResources.ubuntuInstalled(context)
+                            ubuntuDeletionPending = OfflineResources.ubuntuDeletionPending(context)
                             stored[id] = OfflineResources.hasLocalData(context, id)
                             ready[id] = OfflineResources.isReady(context, id)
                         }
@@ -144,7 +150,17 @@ class OfflineResourcesActivity : ComponentActivity() {
                 }
             }
         }
-        LaunchedEffect(resumeEvent) { if (active == null) refresh() }
+        LaunchedEffect(resumeEvent, terminalMaintenance) {
+            if (active == null && !terminalMaintenance) {
+                // 资源页被 Android 单独恢复时，也能接续删除，不依赖主页面先创建。
+                if (!recoveryAttempted && OfflineResources.ubuntuDeletionPending(context)) {
+                    recoveryAttempted = true
+                    perform(OfflineResources.UBUNTU, R.string.resource_delete, removing = true) {
+                        OfflineResources.resumePendingUbuntuDeletion(context)
+                    }
+                } else refresh()
+            }
+        }
         BackHandler(enabled = active != null) { if (!deleting) job?.cancel() }
         Scaffold(topBar = {
             TopAppBar(
@@ -158,8 +174,10 @@ class OfflineResourcesActivity : ComponentActivity() {
         }) { padding ->
             OfflineResourcesContent(
                 groups = groups, ready = ready, stored = stored, requestedGroup = intent.getStringExtra(EXTRA_GROUP),
-                active = active, checking = checking, progress = fraction, operationLabel = operationLabel,
-                message = message, failed = failed, ubuntuInstalled = ubuntuInstalled, deleting = deleting,
+                active = active ?: OfflineResources.UBUNTU.takeIf { terminalMaintenance },
+                checking = checking, progress = fraction, operationLabel = operationLabel,
+                message = message, failed = failed, ubuntuInstalled = ubuntuInstalled && !terminalMaintenance,
+                ubuntuDeletionPending = ubuntuDeletionPending || terminalMaintenance, deleting = deleting || terminalMaintenance,
                 modifier = Modifier.fillMaxSize().padding(padding),
                 onDownload = { confirmDownload = it },
                 onDelete = { confirmDelete = it },

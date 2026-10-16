@@ -49,6 +49,7 @@ internal fun OfflineResourcesContent(
     message: String,
     failed: Boolean,
     ubuntuInstalled: Boolean,
+    ubuntuDeletionPending: Boolean,
     deleting: Boolean,
     modifier: Modifier = Modifier,
     onDownload: (String) -> Unit,
@@ -130,6 +131,7 @@ internal fun OfflineResourcesContent(
                         group = group, ready = ready[group.id], busy = active != null || checking,
                         active = active == group.id, progress = progress, operationLabel = operationLabel,
                         ubuntuInstalled = group.id == OfflineResources.UBUNTU && ubuntuInstalled,
+                        pendingDeletion = group.id == OfflineResources.UBUNTU && ubuntuDeletionPending,
                         onDownload = { onDownload(group.id) }, onImport = { onImport(group.id) },
                         onExport = { onExport(group.id) }, onDelete = { onDelete(group.id) }, onCancel = onCancel,
                         hasLocalData = stored[group.id] == true, deleting = deleting,
@@ -145,7 +147,7 @@ private fun ResourceGroupCard(
     group: OfflineResources.Group, ready: Boolean?, busy: Boolean, active: Boolean,
     progress: Float, operationLabel: String, ubuntuInstalled: Boolean,
     onDownload: () -> Unit, onImport: () -> Unit, onExport: () -> Unit, onDelete: () -> Unit, onCancel: () -> Unit,
-    hasLocalData: Boolean, deleting: Boolean,
+    hasLocalData: Boolean, deleting: Boolean, pendingDeletion: Boolean,
 ) {
     val icon = when (group.id) {
         OfflineResources.SPEECH -> Icons.Default.Mic
@@ -189,7 +191,11 @@ private fun ResourceGroupCard(
                 }), style = MaterialTheme.typography.labelMedium)
             }
             if (group.id == OfflineResources.UBUNTU) Text(
-                stringResource(if (ubuntuInstalled) R.string.offline_resources_ubuntu_installed else R.string.resource_ubuntu_not_installed),
+                stringResource(when {
+                    pendingDeletion -> R.string.resource_ubuntu_delete_pending
+                    ubuntuInstalled -> R.string.offline_resources_ubuntu_installed
+                    else -> R.string.resource_ubuntu_not_installed
+                }),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (ubuntuInstalled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -203,7 +209,7 @@ private fun ResourceGroupCard(
                     if (!deleting) TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
                 }
             } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onImport, enabled = !busy) {
+                TextButton(onClick = onImport, enabled = !busy && !pendingDeletion) {
                     Icon(Icons.Default.FolderOpen, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.offline_resources_import))
@@ -212,7 +218,7 @@ private fun ResourceGroupCard(
                     Icon(Icons.Default.Delete, stringResource(R.string.resource_delete), tint = MaterialTheme.colorScheme.error)
                 }
                 Spacer(Modifier.weight(1f))
-                Button(onClick = if (ready == true) onExport else onDownload, enabled = !busy && ready != null) {
+                Button(onClick = if (ready == true) onExport else onDownload, enabled = !busy && !pendingDeletion && ready != null) {
                     Icon(if (ready == true) Icons.Default.SaveAlt else Icons.Default.Download, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(if (ready == true) R.string.resource_save_backup else R.string.offline_resources_download))

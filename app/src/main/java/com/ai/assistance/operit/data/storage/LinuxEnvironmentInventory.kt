@@ -42,7 +42,8 @@ class LinuxEnvironmentInventory(
 ) {
     private val cleaner = SafeDirectoryCleaner()
     private val storageRepository = DataStorageRepository(context)
-    private val filesDir = context.applicationContext.filesDir
+    private val appContext = context.applicationContext
+    private val filesDir = appContext.filesDir
     private val ubuntuRoot =
         File(filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu")
 
@@ -138,7 +139,7 @@ class LinuxEnvironmentInventory(
         LinuxEnvironmentSnapshot(
             units = units,
             totalBytes = units.filter { it.kind != LinuxStorageUnitKind.APT_CACHE }.sumOf { it.bytes },
-            ubuntuInstalled = ubuntuRoot.isDirectory,
+            ubuntuInstalled = com.ai.assistance.operit.data.resources.OfflineResources.ubuntuInstalled(appContext),
             scannedAtMillis = System.currentTimeMillis(),
         )
     }
