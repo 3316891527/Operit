@@ -9252,4 +9252,13 @@
     <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
 
     <string name="chat_generated_at">Generated at %1$s</string>
+    <string name="resource_delete">Delete</string>
+    <string name="resource_delete_title">Delete local resources</string>
+    <string name="resource_delete_confirm">Delete the local resources for “%1$s”? Download or import them again to use them. ZIP backups exported to shared storage will be kept.</string>
+    <string name="resource_delete_ubuntu_confirm">All terminal sessions will stop. The Ubuntu environment, its installed software and files, and the saved installation archive will be deleted. The environment will show as not installed so you can download or import terminal resources again. Exported ZIP backups will be kept. Continue?</string>
+    <string name="resource_deleting">Deleting, please wait…</string>
+    <string name="resource_deleted">Deleted. You can download or import the resources again.</string>
+    <string name="resource_delete_failed">Some files could not be deleted. Please retry.</string>
+    <string name="resource_ubuntu_not_installed">Ubuntu is not installed. Prepare the terminal resources, then open the terminal to install it.</string>
+    <string name="resource_delete_error">Deletion failed: %1$s</string>
 </resources>

@@ -4,6 +4,11 @@ import android.content.Context
 import android.net.Uri
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
+import com.ai.assistance.operit.data.storage.LocalModelDeleteOutcome
+import com.ai.assistance.operit.data.storage.DataStorageRepository
+import com.ai.assistance.operit.data.storage.DirectoryCleanupRequest
+import com.ai.assistance.operit.data.storage.SafeDirectoryCleaner
+import com.ai.assistance.operit.terminal.TerminalManager
 import com.ai.assistance.operit.util.OperitPaths
 import java.io.File
 import java.io.IOException
@@ -12,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -60,10 +66,57 @@ object OfflineResources {
         else -> error("Unknown resource group: $id")
     }
 
+    private fun ubuntuRoot(context: Context): File =
+        File(context.filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu")
+
     fun ubuntuInstalled(context: Context): Boolean {
-        val root = File(context.filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu")
+        val root = ubuntuRoot(context)
         // 与终端安装脚本判断相同，保留已有环境的离线可用性。
         return File(root, ".operit_installed_ok").isFile || File(root, "etc/issue.net").isFile
+    }
+
+    suspend fun hasLocalData(context: Context, id: String): Boolean = withContext(Dispatchers.IO) {
+        directory(context, id).exists() || (id == UBUNTU && (
+            ubuntuRoot(context).exists() ||
+                File(context.filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz").exists()
+            ))
+    }
+
+    suspend fun delete(context: Context, id: String) {
+        val operation: suspend () -> Unit = {
+            withContext(NonCancellable + Dispatchers.IO) {
+                locks.getOrPut(id) { Mutex() }.withLock {
+                    val dir = directory(context, id)
+                    if (id == SPEECH) {
+                        // 删除期间由运行时注册表阻止新识别任务占用模型。
+                        when (LocalModelRuntimeRegistry.deleteIfUnused(dir)) {
+                            LocalModelDeleteOutcome.DELETED -> Unit
+                            LocalModelDeleteOutcome.IN_USE -> throw IOException(context.getString(R.string.offline_resources_in_use))
+                            LocalModelDeleteOutcome.FAILED -> throw IOException(context.getString(R.string.resource_delete_failed))
+                        }
+                    } else {
+                        val paths = if (id == UBUNTU) listOf(
+                            ubuntuRoot(context),
+                            File(context.filesDir, "ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"),
+                            dir,
+                        ) else listOf(dir)
+                        paths.forEach { path ->
+                            if (path.exists()) {
+                                if (path.isDirectory) {
+                                    // 复用不跟随符号链接的清理器，避免删除 Ubuntu 映射的共享文件。
+                                    val result = SafeDirectoryCleaner().clean(listOf(DirectoryCleanupRequest(path)))
+                                    if (result.failedEntryCount > 0) throw IOException(context.getString(R.string.resource_delete_failed))
+                                }
+                                if (!path.delete()) throw IOException(context.getString(R.string.resource_delete_failed))
+                            }
+                        }
+                    }
+                    DataStorageRepository(context).invalidateCache()
+                }
+            }
+        }
+        // 锁顺序与初始化一致：先暂停终端，再锁定资源，避免导入和初始化互相等待。
+        if (id == UBUNTU) TerminalManager.withEnvironmentMaintenance(operation) else operation()
     }
 
     private suspend fun <T> access(context: Context, id: String, writing: Boolean = false, action: suspend (File, List<ResourceFileSpec>) -> T): T =

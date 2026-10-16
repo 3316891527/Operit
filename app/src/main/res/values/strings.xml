@@ -9250,4 +9250,13 @@
     <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
 
     <string name="chat_generated_at">生成于 %1$s</string>
+    <string name="resource_delete">删除</string>
+    <string name="resource_delete_title">删除本地资源</string>
+    <string name="resource_delete_confirm">删除“%1$s”的本地资源？之后需要重新下载或导入，已导出到共享存储的 ZIP 备份会保留。</string>
+    <string name="resource_delete_ubuntu_confirm">将停止所有终端会话，并删除 Ubuntu 环境、其中安装的软件和文件，以及应用内保存的安装归档。删除后显示为未安装，可重新下载或导入终端资源。已导出的 ZIP 备份会保留。是否继续？</string>
+    <string name="resource_deleting">正在删除，请稍候…</string>
+    <string name="resource_deleted">删除完成。可重新下载或导入资源。</string>
+    <string name="resource_delete_failed">部分文件未能删除，请重试。</string>
+    <string name="resource_ubuntu_not_installed">Ubuntu 环境未安装。准备好终端资源后，进入终端完成安装。</string>
+    <string name="resource_delete_error">删除失败：%1$s</string>
 </resources>

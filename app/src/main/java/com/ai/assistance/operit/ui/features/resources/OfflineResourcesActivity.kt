@@ -33,6 +33,12 @@ import kotlinx.coroutines.launch
 
 class OfflineResourcesActivity : ComponentActivity() {
     companion object { const val EXTRA_GROUP = "resource_group" }
+    private val resumeEvents = MutableStateFlow(0)
+
+    override fun onResume() {
+        super.onResume()
+        resumeEvents.value += 1
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,9 +50,11 @@ class OfflineResourcesActivity : ComponentActivity() {
     private fun ResourceScreen() {
         val context = this
         val scope = rememberCoroutineScope()
+        val resumeEvent by resumeEvents.collectAsState()
         val groups = remember { OfflineResources.groups(context) }
         val ready = remember { mutableStateMapOf<String, Boolean>() }
-        val ubuntuInstalled = remember { OfflineResources.ubuntuInstalled(context) }
+        val stored = remember { mutableStateMapOf<String, Boolean>() }
+        var ubuntuInstalled by remember { mutableStateOf(OfflineResources.ubuntuInstalled(context)) }
         var selected by rememberSaveable { mutableStateOf(intent.getStringExtra(EXTRA_GROUP) ?: OfflineResources.SPEECH) }
         var active by remember { mutableStateOf<String?>(null) }
         var checking by remember { mutableStateOf(true) }
@@ -57,6 +65,8 @@ class OfflineResourcesActivity : ComponentActivity() {
         var failed by remember { mutableStateOf(false) }
         var job by remember { mutableStateOf<Job?>(null) }
         var confirmDownload by remember { mutableStateOf<String?>(null) }
+        var confirmDelete by remember { mutableStateOf<String?>(null) }
+        var deleting by remember { mutableStateOf(false) }
         val progress: (Long, Long) -> Unit = { done, total ->
             // 合并后台高频进度，不为每个数据块创建主线程任务。
             transferProgress.value = if (total > 0) (done.toDouble() / total).toFloat().coerceIn(0f, 1f) else 0f
@@ -67,7 +77,11 @@ class OfflineResourcesActivity : ComponentActivity() {
             message = ""
             scope.launch {
                 try {
-                    groups.forEach { ready[it.id] = OfflineResources.isReady(context, it.id) }
+                    groups.forEach {
+                        ready[it.id] = OfflineResources.isReady(context, it.id)
+                        stored[it.id] = OfflineResources.hasLocalData(context, it.id)
+                    }
+                    ubuntuInstalled = OfflineResources.ubuntuInstalled(context)
                 } catch (error: CancellationException) { throw error }
                 catch (error: Exception) {
                     AppLogger.e("OfflineResources", "Checking resources failed", error)
@@ -76,8 +90,9 @@ class OfflineResourcesActivity : ComponentActivity() {
                 } finally { checking = false }
             }
         }
-        fun perform(id: String, label: Int, operation: suspend () -> Unit) {
+        fun perform(id: String, label: Int, removing: Boolean = false, operation: suspend () -> Unit) {
             active = id
+            deleting = removing
             operationLabel = getString(label)
             transferProgress.value = 0f
             message = ""
@@ -85,16 +100,30 @@ class OfflineResourcesActivity : ComponentActivity() {
             job = scope.launch {
                 try {
                     operation()
-                    ready[id] = OfflineResources.isReady(context, id)
-                    message = getString(R.string.offline_resources_done)
+                    message = getString(if (removing) R.string.resource_deleted else R.string.offline_resources_done)
                 } catch (error: CancellationException) {
                     message = getString(R.string.offline_resources_cancelled)
                     throw error
                 } catch (error: Exception) {
                     AppLogger.e("OfflineResources", "Resource operation failed: $id", error)
                     failed = true
-                    message = getString(R.string.offline_resources_failed, error.message)
-                } finally { active = null }
+                    message = getString(if (removing) R.string.resource_delete_error else R.string.offline_resources_failed, error.message)
+                } finally {
+                    try {
+                        withContext(NonCancellable) {
+                            ubuntuInstalled = OfflineResources.ubuntuInstalled(context)
+                            stored[id] = OfflineResources.hasLocalData(context, id)
+                            ready[id] = OfflineResources.isReady(context, id)
+                        }
+                    } catch (error: Exception) {
+                        AppLogger.e("OfflineResources", "Refreshing resource state failed: $id", error)
+                        failed = true
+                        message = getString(R.string.offline_resources_failed, error.message)
+                    } finally {
+                        active = null
+                        deleting = false
+                    }
+                }
             }
         }
         val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -115,24 +144,25 @@ class OfflineResourcesActivity : ComponentActivity() {
                 }
             }
         }
-        LaunchedEffect(Unit) { refresh() }
-        BackHandler(enabled = active != null) { job?.cancel() }
+        LaunchedEffect(resumeEvent) { if (active == null) refresh() }
+        BackHandler(enabled = active != null) { if (!deleting) job?.cancel() }
         Scaffold(topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.offline_resources_title)) },
                 navigationIcon = {
-                    IconButton(onClick = { if (active != null) job?.cancel() else finish() }) {
+                    IconButton(enabled = !deleting, onClick = { if (active != null) job?.cancel() else finish() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(if (active != null) R.string.cancel else R.string.back))
                     }
                 },
             )
         }) { padding ->
             OfflineResourcesContent(
-                groups = groups, ready = ready, requestedGroup = intent.getStringExtra(EXTRA_GROUP),
+                groups = groups, ready = ready, stored = stored, requestedGroup = intent.getStringExtra(EXTRA_GROUP),
                 active = active, checking = checking, progress = fraction, operationLabel = operationLabel,
-                message = message, failed = failed, ubuntuInstalled = ubuntuInstalled,
+                message = message, failed = failed, ubuntuInstalled = ubuntuInstalled, deleting = deleting,
                 modifier = Modifier.fillMaxSize().padding(padding),
                 onDownload = { confirmDownload = it },
+                onDelete = { confirmDelete = it },
                 onImport = { id ->
                     selected = id
                     importLauncher.launch(arrayOf("application/zip", "application/octet-stream", "application/x-zip-compressed"))
@@ -144,6 +174,20 @@ class OfflineResourcesActivity : ComponentActivity() {
                 onCancel = { job?.cancel() },
                 onRefresh = ::refresh,
                 onOpenSource = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(OfflineResources.RELEASE_URL))) },
+            )
+        }
+        confirmDelete?.let { id ->
+            val group = groups.first { it.id == id }
+            AlertDialog(
+                onDismissRequest = { confirmDelete = null },
+                title = { Text(stringResource(R.string.resource_delete_title)) },
+                text = { Text(if (id == OfflineResources.UBUNTU) getString(R.string.resource_delete_ubuntu_confirm)
+                    else getString(R.string.resource_delete_confirm, getString(group.label))) },
+                confirmButton = { TextButton(onClick = {
+                    confirmDelete = null
+                    perform(id, R.string.resource_delete, removing = true) { OfflineResources.delete(context, id) }
+                }) { Text(stringResource(R.string.resource_delete), color = MaterialTheme.colorScheme.error) } },
+                dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } },
             )
         }
         confirmDownload?.let { id ->

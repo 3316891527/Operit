@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Memory
@@ -39,6 +40,7 @@ import java.util.Locale
 internal fun OfflineResourcesContent(
     groups: List<OfflineResources.Group>,
     ready: Map<String, Boolean>,
+    stored: Map<String, Boolean>,
     requestedGroup: String?,
     active: String?,
     checking: Boolean,
@@ -47,10 +49,12 @@ internal fun OfflineResourcesContent(
     message: String,
     failed: Boolean,
     ubuntuInstalled: Boolean,
+    deleting: Boolean,
     modifier: Modifier = Modifier,
     onDownload: (String) -> Unit,
     onImport: (String) -> Unit,
     onExport: (String) -> Unit,
+    onDelete: (String) -> Unit,
     onCancel: () -> Unit,
     onOpenSource: () -> Unit,
     onRefresh: () -> Unit,
@@ -127,7 +131,8 @@ internal fun OfflineResourcesContent(
                         active = active == group.id, progress = progress, operationLabel = operationLabel,
                         ubuntuInstalled = group.id == OfflineResources.UBUNTU && ubuntuInstalled,
                         onDownload = { onDownload(group.id) }, onImport = { onImport(group.id) },
-                        onExport = { onExport(group.id) }, onCancel = onCancel,
+                        onExport = { onExport(group.id) }, onDelete = { onDelete(group.id) }, onCancel = onCancel,
+                        hasLocalData = stored[group.id] == true, deleting = deleting,
                     )
                 }
             }
@@ -139,7 +144,8 @@ internal fun OfflineResourcesContent(
 private fun ResourceGroupCard(
     group: OfflineResources.Group, ready: Boolean?, busy: Boolean, active: Boolean,
     progress: Float, operationLabel: String, ubuntuInstalled: Boolean,
-    onDownload: () -> Unit, onImport: () -> Unit, onExport: () -> Unit, onCancel: () -> Unit,
+    onDownload: () -> Unit, onImport: () -> Unit, onExport: () -> Unit, onDelete: () -> Unit, onCancel: () -> Unit,
+    hasLocalData: Boolean, deleting: Boolean,
 ) {
     val icon = when (group.id) {
         OfflineResources.SPEECH -> Icons.Default.Mic
@@ -182,19 +188,28 @@ private fun ResourceGroupCard(
                     null -> R.string.resource_checking
                 }), style = MaterialTheme.typography.labelMedium)
             }
-            if (ubuntuInstalled) Text(stringResource(R.string.offline_resources_ubuntu_installed),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            if (group.id == OfflineResources.UBUNTU) Text(
+                stringResource(if (ubuntuInstalled) R.string.offline_resources_ubuntu_installed else R.string.resource_ubuntu_not_installed),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (ubuntuInstalled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (active) {
-                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                if (deleting) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                else LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(stringResource(R.string.resource_transfer_progress, operationLabel, (progress * 100).toInt()), style = MaterialTheme.typography.labelMedium)
-                    TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
+                    Text(if (deleting) stringResource(R.string.resource_deleting)
+                        else stringResource(R.string.resource_transfer_progress, operationLabel, (progress * 100).toInt()),
+                        style = MaterialTheme.typography.labelMedium)
+                    if (!deleting) TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) }
                 }
             } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onImport, enabled = !busy) {
                     Icon(Icons.Default.FolderOpen, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.offline_resources_import))
+                }
+                if (hasLocalData || ubuntuInstalled) IconButton(onClick = onDelete, enabled = !busy) {
+                    Icon(Icons.Default.Delete, stringResource(R.string.resource_delete), tint = MaterialTheme.colorScheme.error)
                 }
                 Spacer(Modifier.weight(1f))
                 Button(onClick = if (ready == true) onExport else onDownload, enabled = !busy && ready != null) {
