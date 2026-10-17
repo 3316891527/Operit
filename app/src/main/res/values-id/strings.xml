@@ -1388,7 +1388,6 @@
     <string name="language_changing">Mengganti bahasa...</string>
     <string name="language_changed">Bahasa telah diubah, memulai ulang aplikasi</string>
     <string name="agreement_title">Perjanjian Pengguna</string>
-    <string name="agreement_version">Versi perjanjian: %1$s</string>
     <string name="sherpa_k2_ncnn_init_failed">Inisialisasi mesin pengenalan suara real-time gagal</string>
     <string name="sherpa_k2_ncnn_init_success">Inisialisasi mesin pengenalan suara real-time berhasil</string>
     <string name="files_selected">%1$d file dipilih</string>

@@ -1109,7 +1109,6 @@
 
     <!-- 用户协议界面 -->
     <string name="agreement_title">Acord de utilizare</string>
-    <string name="agreement_version">Versiunea acordului:%1$s</string>
 
     <!-- Sherpa -->
     <string name="sherpa_k2_ncnn_init_failed">Eșecul inițializării motorului de recunoaștere vocală în timp real</string>

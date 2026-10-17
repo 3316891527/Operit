@@ -925,7 +925,6 @@
     <string name="language_changing">Mudando de idioma...</string>
     <string name="language_changed">O idioma foi alterado, o aplicativo está sendo reiniciado</string>
     <string name="agreement_title">Contrato do Usuário</string>
-    <string name="agreement_version">Versão do acordo: %1$s</string>
     <string name="sherpa_k2_ncnn_init_failed">Falha na inicialização do mecanismo de reconhecimento de fala em tempo real</string>
     <string name="sherpa_k2_ncnn_init_success">Mecanismo de reconhecimento de fala em tempo real inicializado com sucesso</string>
     <string name="files_selected">%1$d arquivos selecionados</string>

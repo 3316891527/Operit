@@ -1706,7 +1706,6 @@
     <string name="language_changing">Sedang menukar bahasa...</string>
     <string name="language_changed">Bahasa telah ditukar, sedang memulakan semula aplikasi</string>
     <string name="agreement_title">Perjanjian Pengguna</string>
-    <string name="agreement_version">Versi perjanjian: %1$s</string>
     <string name="sherpa_k2_ncnn_init_failed">Enjin pengecaman suara masa nyata gagal dimulakan</string>
     <string name="sherpa_k2_ncnn_init_success">Enjin pengecaman suara masa nyata berjaya dimulakan</string>
     <string name="files_selected">%1$d fail telah dipilih</string>

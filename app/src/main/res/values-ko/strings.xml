@@ -999,7 +999,6 @@
     <string name="language_changing">언어를 변경하는 중...</string>
     <string name="language_changed">언어가 변경되었습니다. 앱을 다시 시작합니다</string>
     <string name="agreement_title">이용약관</string>
-    <string name="agreement_version">약관 버전: %1$s</string>
     <string name="sherpa_k2_ncnn_init_failed">실시간 음성인식 엔진 초기화 실패</string>
     <string name="sherpa_k2_ncnn_init_success">실시간 음성인식 엔진 초기화 성공</string>
     <string name="files_selected">%1$d 파일이 선택됨</string>

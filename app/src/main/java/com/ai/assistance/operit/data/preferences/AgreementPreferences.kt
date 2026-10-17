@@ -6,32 +6,30 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Manages agreement-related preferences for the application */
+/** 管理首次使用时的用户协议确认状态。 */
 class AgreementPreferences(context: Context) {
-    private val PREFS_NAME = "agreement_preferences"
-    private val KEY_ACCEPTED_AGREEMENT_VERSION = "accepted_agreement_version"
-
     private val prefs: SharedPreferences =
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context.getSharedPreferences("agreement_preferences", Context.MODE_PRIVATE)
+    private val agreementAcceptedKey = "agreement_accepted"
+    private val legacyAgreementVersionKey = "accepted_agreement_version"
 
     private val _agreementAcceptedFlow = MutableStateFlow(isAgreementAccepted())
     val agreementAcceptedFlow: StateFlow<Boolean> = _agreementAcceptedFlow.asStateFlow()
 
-    /** Check whether the user has accepted the current agreement version. */
     fun isAgreementAccepted(): Boolean {
-        return prefs.getString(KEY_ACCEPTED_AGREEMENT_VERSION, null) == CURRENT_AGREEMENT_VERSION
+        if (prefs.contains(legacyAgreementVersionKey)) {
+            // 已确认旧协议的覆盖安装用户保留完成状态，并清除旧的版本记录。
+            val wasAccepted = prefs.getString(legacyAgreementVersionKey, null) != null
+            prefs.edit()
+                .putBoolean(agreementAcceptedKey, wasAccepted)
+                .remove(legacyAgreementVersionKey)
+                .apply()
+        }
+        return prefs.getBoolean(agreementAcceptedKey, false)
     }
 
-    /** Records acceptance of the agreement version bundled with this app release. */
     fun acceptCurrentAgreement() {
-        prefs.edit()
-            .putString(KEY_ACCEPTED_AGREEMENT_VERSION, CURRENT_AGREEMENT_VERSION)
-            .apply()
+        prefs.edit().putBoolean(agreementAcceptedKey, true).apply()
         _agreementAcceptedFlow.value = true
-    }
-
-    companion object {
-        /** Bump this value whenever the user agreement changes substantively. */
-        const val CURRENT_AGREEMENT_VERSION = "v0.2"
     }
 }

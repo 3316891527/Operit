@@ -15,7 +15,8 @@ document_type: implementation-record
 - `app/src/main/res/raw/operit_user_agreement_v02.md` 与用户提供的 `01_用户协议_完整草案.md` 保持字节级一致
 - 阅读页直接读取该 raw 资源，按 Markdown 标题做基础排版并支持滚动与文本选择
 - 应用内标题、勾选入口和设置说明统一使用“用户协议”，没有新增或假设隐私政策
-- 确认版本改为 `v0.2`，协议正文中原有的草案状态、待确认字段和发布前说明保持不变
+- 欢迎页只保存“已经同意”的布尔状态，不保存协议版本或日期；读取到旧的 `accepted_agreement_version` 记录时保留完成状态并清除旧字段
+- 阅读页不展示协议版本行，也不要求等待或滚动到底部；协议正文中原有的草案状态、待确认字段和发布前说明保持不变
 - 删除旧的 `agreement_content` 用户协议字符串资源，避免旧正文继续被误用
 ## 验证
 - 九个 `values*` 目录的 `strings.xml` 均通过 XML 解析

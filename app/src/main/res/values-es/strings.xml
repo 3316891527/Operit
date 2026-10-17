@@ -484,7 +484,6 @@
     <string name="plugin_other_error">Ocurrió un error al iniciar plugins, puede hacer clic en \"Omitir\" en la esquina superior derecha para continuar</string>
 
     <!-- Agreement Screen -->
-    <string name="agreement_version">Versión del acuerdo: %1$s</string>
 
     <!-- Sherpa Speech Engine -->
     <string name="sherpa_k2_ncnn_init_failed">Error en la inicialización del motor de reconocimiento de voz en tiempo real</string>
