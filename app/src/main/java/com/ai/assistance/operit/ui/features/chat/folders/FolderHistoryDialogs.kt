@@ -25,7 +25,7 @@ import com.ai.assistance.operit.data.chat.folders.folderAncestors
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMode
 
-internal data class HistoryAction(val label: String, val icon: ImageVector, val action: () -> Unit)
+internal data class HistoryAction(val label: String, val icon: ImageVector, val enabled: Boolean = true, val action: () -> Unit)
 internal data class HistoryBindingOption(val label: String, val binding: ChatFolderBinding)
 
 @Composable
@@ -36,7 +36,7 @@ internal fun HistoryActionsDialog(title: String, actions: List<HistoryAction>, o
             Column(Modifier.heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.6f).dp)
                 .verticalScroll(rememberScrollState())) {
                 actions.forEach { option ->
-                    TextButton(onClick = option.action, modifier = Modifier.fillMaxWidth()) {
+                    TextButton(onClick = option.action, enabled = option.enabled, modifier = Modifier.fillMaxWidth()) {
                         Icon(option.icon, null, Modifier.size(20.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(option.label, Modifier.weight(1f))

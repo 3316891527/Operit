@@ -151,6 +151,7 @@ fun ChatSidebarContent(
                     onSelectChat = { id -> onRunChatAction { viewModel.showChatPage(); viewModel.switchChat(id) } },
                     onDeleteChat = viewModel::deleteChatHistory,
                     onUpdateChatTitle = viewModel::updateChatTitle,
+                    onSummarizeChatTitle = viewModel::summarizeChatTitle,
                     onUpdateChatBinding = viewModel::updateChatCharacterBinding,
                     chatHistories = state.displayedChatHistories,
                     currentId = currentChatId,

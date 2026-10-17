@@ -29,6 +29,7 @@ import com.ai.assistance.operit.ui.features.about.screens.AboutScreen
 import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScreen
 import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
 import com.ai.assistance.operit.ui.features.chat.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.chat.sidebar.LocalRunMainChatAction
 import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
 import com.ai.assistance.operit.ui.features.help.screens.HelpScreen
 import com.ai.assistance.operit.ui.features.memory.screens.MemoryScreen
@@ -83,7 +84,8 @@ import com.ai.assistance.operit.ui.features.toolbox.screens.LogcatToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.ShellExecutorToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalAutoConfigToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalToolScreen
+import com.ai.assistance.operit.ui.features.terminal.EmbeddedTerminalPage
+import com.ai.assistance.operit.ui.features.terminal.TerminalEntryScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.ToolboxScreen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.UIDebuggerToolScreen
@@ -1439,7 +1441,16 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            TerminalToolScreen(navController = navController)
+            val viewModel = LocalMainChatViewModel.current
+            val runMainChatAction = LocalRunMainChatAction.current
+            TerminalEntryScreen(
+                initialPage = EmbeddedTerminalPage.CONSOLE,
+                onOpenTerminal = { page ->
+                    runMainChatAction { viewModel.openTerminalFromHub(page) }
+                },
+                onGoBack = onGoBack,
+                onError = onError,
+            )
         }
     }
 
@@ -1455,7 +1466,16 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            TerminalToolScreen(navController = navController, forceShowSetup = true)
+            val viewModel = LocalMainChatViewModel.current
+            val runMainChatAction = LocalRunMainChatAction.current
+            TerminalEntryScreen(
+                initialPage = EmbeddedTerminalPage.SETUP,
+                onOpenTerminal = { page ->
+                    runMainChatAction { viewModel.openTerminalFromHub(page) }
+                },
+                onGoBack = onGoBack,
+                onError = onError,
+            )
         }
     }
 

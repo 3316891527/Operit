@@ -3565,6 +3565,10 @@
     <string name="delete_group_only">Delete group only</string>
     <string name="chats_move_to_ungrouped">Chats will be moved to \"Ungrouped\"</string>
     <string name="edit_title">Edit Title</string>
+    <string name="summarize_chat_title">Summarize Title</string>
+    <string name="summarize_chat_title_started">Generating title…</string>
+    <string name="summarize_chat_title_empty">This conversation has no messages to summarize yet</string>
+    <string name="summarize_chat_title_failed">Failed to generate title</string>
     <string name="move_up">Move Up</string>
     <string name="move_down">Move Down</string>
     <string name="drag_item">Drag item %1$s</string>

@@ -51,7 +51,8 @@ private data class FolderEditRequest(
 fun FolderChatHistoryPanel(
     modifier: Modifier, onNewChat: (String?, String?, String?) -> Unit,
     onSelectChat: (String) -> Unit, onDeleteChat: (String) -> Unit,
-    onUpdateChatTitle: (String, String) -> Unit, onUpdateChatBinding: (String, String?, String?) -> Unit,
+    onUpdateChatTitle: (String, String) -> Unit, onSummarizeChatTitle: (String) -> Unit,
+    onUpdateChatBinding: (String, String?, String?) -> Unit,
     chatHistories: List<ChatHistory>, currentId: String?, activeStreamingChatIds: Set<String>,
     lazyListState: LazyListState?, onBack: (() -> Unit)?, searchQuery: String, onSearchQueryChange: (String) -> Unit,
     historyDisplayMode: ChatHistoryDisplayMode, onDisplayModeChange: (ChatHistoryDisplayMode) -> Unit,
@@ -203,7 +204,7 @@ fun FolderChatHistoryPanel(
         }
     }
     fun promptDelete(chat: ChatHistory) {
-        if (chat.locked) onDeleteChat(chat.id) else chatDelete = chat
+        if (!chat.locked) chatDelete = chat
     }
     fun moveChatBy(chat: ChatHistory, delta: Int) {
         val peers = histories.filter {
@@ -378,12 +379,13 @@ fun FolderChatHistoryPanel(
         val chat = histories.firstOrNull { it.id == selected.id }
         if (chat != null) HistoryActionsDialog(chat.title, listOf(
             HistoryAction(stringResource(R.string.edit_title), Icons.Default.Edit) { chatEdit = chat; chatMenu = null },
+            HistoryAction(stringResource(R.string.summarize_chat_title), Icons.Default.AutoAwesome) { onSummarizeChatTitle(chat.id); chatMenu = null },
             HistoryAction(stringResource(R.string.folder_move_to), Icons.Default.Folder) { moveNode = ChatFolderNode.Chat(chat.id); chatMenu = null },
             HistoryAction(stringResource(R.string.move_up), Icons.Default.KeyboardArrowUp) { moveChatBy(chat, -1) },
             HistoryAction(stringResource(R.string.move_down), Icons.Default.KeyboardArrowDown) { moveChatBy(chat, 1) },
             HistoryAction(stringResource(if (chat.pinned) R.string.unpin_chat else R.string.pin_chat), Icons.Default.PushPin) { perform { manager.updateChatPinned(chat.id, !chat.pinned) }; chatMenu = null },
             HistoryAction(stringResource(if (chat.locked) R.string.unlock_chat else R.string.lock_chat), Icons.Default.Lock) { perform { manager.updateChatLocked(chat.id, !chat.locked) }; chatMenu = null },
-            HistoryAction(stringResource(R.string.delete), Icons.Default.Delete) { promptDelete(chat); chatMenu = null },
+            HistoryAction(stringResource(R.string.delete), Icons.Default.Delete, enabled = !chat.locked) { promptDelete(chat); chatMenu = null },
         )) { chatMenu = null }
     }
     chatEdit?.let { chat -> HistoryChatEditDialog(chat, options, ::label, { chatEdit = null }) { title, binding ->
@@ -393,7 +395,8 @@ fun FolderChatHistoryPanel(
     } }
     chatDelete?.let { chat -> AlertDialog(onDismissRequest = { chatDelete = null },
         title = { Text(stringResource(R.string.confirm_delete_chat)) }, text = { Text(stringResource(R.string.delete_chat_confirmation, chat.title)) },
-        confirmButton = { TextButton(onClick = { onDeleteChat(chat.id); chatDelete = null }) { Text(stringResource(R.string.confirm_delete_action)) } },
+        confirmButton = { TextButton(onClick = { onDeleteChat(chat.id); chatDelete = null },
+            enabled = histories.any { it.id == chat.id && !it.locked }) { Text(stringResource(R.string.confirm_delete_action)) } },
         dismissButton = { TextButton(onClick = { chatDelete = null }) { Text(stringResource(R.string.cancel)) } }) }
     if (showSettings) FolderHistorySettingsDialog(historyDisplayMode, onDisplayModeChange, sort, { sort = it },
         autoSwitchCharacterCard, onAutoSwitchCharacterCardChange, autoSwitchChatOnCharacterSelect, onAutoSwitchChatOnCharacterSelectChange,

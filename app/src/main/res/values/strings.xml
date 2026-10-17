@@ -3507,6 +3507,10 @@
     <string name="delete_group_only">仅删除分组</string>
     <string name="chats_move_to_ungrouped">对话将移至"未分组"</string>
     <string name="edit_title">编辑标题</string>
+    <string name="summarize_chat_title">总结标题</string>
+    <string name="summarize_chat_title_started">正在总结标题…</string>
+    <string name="summarize_chat_title_empty">这条对话还没有可总结的内容</string>
+    <string name="summarize_chat_title_failed">总结标题失败</string>
     <string name="move_up">上移</string>
     <string name="move_down">下移</string>
     <string name="drag_item">拖动项目 %1$s</string>

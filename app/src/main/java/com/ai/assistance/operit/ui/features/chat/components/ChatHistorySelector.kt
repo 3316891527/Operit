@@ -15,6 +15,7 @@ fun ChatHistorySelector(
     onNewChat: (characterCardName: String?, characterGroupId: String?, folderId: String?) -> Unit,
     onSelectChat: (String) -> Unit, onDeleteChat: (String) -> Unit,
     onUpdateChatTitle: (chatId: String, newTitle: String) -> Unit,
+    onSummarizeChatTitle: (chatId: String) -> Unit,
     onUpdateChatBinding: (chatId: String, characterCardName: String?, characterGroupId: String?) -> Unit,
     chatHistories: List<ChatHistory>, currentId: String?,
     activeStreamingChatIds: Set<String> = emptySet(), lazyListState: LazyListState? = null,
@@ -25,7 +26,7 @@ fun ChatHistorySelector(
     onQuickScrollInteractionChange: (Boolean) -> Unit = {}, activePrompt: ActivePrompt,
 ) {
     FolderChatHistoryPanel(
-        modifier, onNewChat, onSelectChat, onDeleteChat, onUpdateChatTitle, onUpdateChatBinding,
+        modifier, onNewChat, onSelectChat, onDeleteChat, onUpdateChatTitle, onSummarizeChatTitle, onUpdateChatBinding,
         chatHistories, currentId, activeStreamingChatIds, lazyListState, onBack, searchQuery, onSearchQueryChange,
         historyDisplayMode, onDisplayModeChange, autoSwitchCharacterCard, onAutoSwitchCharacterCardChange,
         autoSwitchChatOnCharacterSelect, onAutoSwitchChatOnCharacterSelectChange, onQuickScrollInteractionChange, activePrompt,
