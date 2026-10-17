@@ -47,9 +47,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -66,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -92,7 +90,6 @@ fun WorkflowListScreen(
     viewModel: WorkflowViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
     var showCreateDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showTemplateDialog by remember { mutableStateOf(false) }
@@ -125,18 +122,7 @@ fun WorkflowListScreen(
 
     val selectedCount = selectedWorkflowIds.size
 
-    CustomScaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                Snackbar(
-                    modifier = Modifier.padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    snackbarData = data
-                )
-            }
-        }
-    ) { paddingValues ->
+    CustomScaffold { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -238,8 +224,7 @@ fun WorkflowListScreen(
 
             viewModel.error?.let { errorMessage ->
                 LaunchedEffect(errorMessage) {
-                    snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(errorMessage)
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     viewModel.clearError()
                 }
             }

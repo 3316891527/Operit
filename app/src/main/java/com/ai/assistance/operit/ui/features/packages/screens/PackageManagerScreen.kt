@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -330,7 +331,7 @@ fun PackageManagerScreen(
                             }
 
                         if (fileName == null) {
-                            snackbarHostState.showSnackbar(context.getString(R.string.no_filename))
+                            Toast.makeText(context, context.getString(R.string.no_filename), Toast.LENGTH_SHORT).show()
                             return@launch
                         }
 
@@ -351,16 +352,14 @@ fun PackageManagerScreen(
                                         else -> false
                                     }
                                 if (!supported) {
-                                    snackbarHostState.showSnackbar(
-                                        message =
+                                    Toast.makeText(context, message =
                                             context.getString(
                                                 if (selectedTab == PackageTab.PLUGINS) {
                                                     R.string.plugin_toolpkg_only
                                                 } else {
                                                     R.string.package_script_only
                                                 }
-                                            )
-                                    )
+                                            ), Toast.LENGTH_SHORT).show()
                                     return@launch
                                 }
 
@@ -428,9 +427,7 @@ fun PackageManagerScreen(
                                     if (marketOrigin != null) {
                                         marketOriginImportNotice = marketOrigin
                                     } else {
-                                        snackbarHostState.showSnackbar(
-                                            message = context.getString(R.string.external_package_imported)
-                                        )
+                                        Toast.makeText(context, message = context.getString(R.string.external_package_imported), Toast.LENGTH_SHORT).show()
                                     }
                                 } else {
                                     importErrorMessage =
@@ -451,7 +448,7 @@ fun PackageManagerScreen(
                                 }
                             }
                             else -> {
-                                snackbarHostState.showSnackbar(context.getString(R.string.current_tab_not_support_import))
+                                Toast.makeText(context, context.getString(R.string.current_tab_not_support_import), Toast.LENGTH_SHORT).show()
                             }
                         }
                     } catch (e: Exception) {
@@ -565,18 +562,7 @@ fun PackageManagerScreen(
         }
     )
 
-    CustomScaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                Snackbar(
-                    modifier = Modifier.padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    snackbarData = data
-                )
-            }
-        },
-    ) { paddingValues ->
+    CustomScaffold { paddingValues ->
         Column(
             modifier =
                 Modifier
@@ -826,14 +812,12 @@ fun PackageManagerScreen(
                                             e
                                         )
                                         visibleImportedPackages.value = importedPackages.value
-                                        snackbarHostState.showSnackbar(
-                                            message =
+                                        Toast.makeText(context, message =
                                                 if (isChecked) {
                                                     context.getString(R.string.plugin_enable_failed)
                                                 } else {
                                                     context.getString(R.string.plugin_disable_failed)
-                                                }
-                                        )
+                                                }, Toast.LENGTH_SHORT).show()
                                     }
                                  }
                              },
@@ -906,14 +890,12 @@ fun PackageManagerScreen(
                                             e
                                         )
                                         visibleImportedPackages.value = importedPackages.value
-                                        snackbarHostState.showSnackbar(
-                                            message =
+                                        Toast.makeText(context, message =
                                                 if (isChecked) {
                                                     context.getString(R.string.package_import_failed)
                                                 } else {
                                                     context.getString(R.string.package_remove_failed)
-                                                }
-                                        )
+                                                }, Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }
@@ -1017,7 +999,7 @@ fun PackageManagerScreen(
                                 "Lists refreshed. Available: ${availablePackages.value.keys}, Imported: ${importedPackages.value}"
                             )
                             isLoading = false
-                            snackbarHostState.showSnackbar("Package deleted successfully.")
+                            Toast.makeText(context, "Package deleted successfully.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 )
@@ -1074,9 +1056,7 @@ fun PackageManagerScreen(
                                     packageManager.deleteExternalPackageSource(sourcePath)
                                 }
                             if (!deleted) {
-                                snackbarHostState.showSnackbar(
-                                    message = context.getString(R.string.package_conflict_delete_failed)
-                                )
+                                Toast.makeText(context, message = context.getString(R.string.package_conflict_delete_failed), Toast.LENGTH_SHORT).show()
                                 return@launch
                             }
 
@@ -1105,9 +1085,7 @@ fun PackageManagerScreen(
                             if (packageLoadErrorInfos.value.isEmpty()) {
                                 showPackageLoadErrorsDialog = false
                             }
-                            snackbarHostState.showSnackbar(
-                                message = context.getString(R.string.package_conflict_delete_success)
-                            )
+                            Toast.makeText(context, message = context.getString(R.string.package_conflict_delete_success), Toast.LENGTH_SHORT).show()
                         }
                     },
                     onDismiss = { showPackageLoadErrorsDialog = false }
@@ -1177,8 +1155,7 @@ fun PackageManagerScreen(
                                 }
                             if (!created.success || created.file == null) {
                                 isLoading = false
-                                snackbarHostState.showSnackbar(
-                                    message =
+                                Toast.makeText(context, message =
                                         when (created.error) {
                                             PackageTemplateCreateError.INVALID_DISPLAY_NAME ->
                                                 context.getString(R.string.package_template_display_name_required)
@@ -1197,8 +1174,7 @@ fun PackageManagerScreen(
                                                 )
                                             else ->
                                                 context.getString(R.string.package_template_create_failed)
-                                        }
-                                )
+                                        }, Toast.LENGTH_SHORT).show()
                                 return@launch
                             }
 
@@ -1257,9 +1233,7 @@ fun PackageManagerScreen(
                                         )
                                     }
                             } else {
-                                snackbarHostState.showSnackbar(
-                                    message = context.getString(R.string.package_template_created)
-                                )
+                                Toast.makeText(context, message = context.getString(R.string.package_template_created), Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -1282,7 +1256,7 @@ fun PackageManagerScreen(
                                 onRunningChange = { quickPluginSetupRunning = it },
                                 onResult = { quickPluginSetupResult = it },
                                 onMessage = { message ->
-                                    snackbarHostState.showSnackbar(message)
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                 }
                             )
                         }
@@ -1292,9 +1266,7 @@ fun PackageManagerScreen(
                         val requirement = quickPluginRequirement.trim()
                         if (requirement.isBlank()) {
                             scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    context.getString(R.string.quick_plugin_creator_requirement_empty)
-                                )
+                                Toast.makeText(context, context.getString(R.string.quick_plugin_creator_requirement_empty), Toast.LENGTH_SHORT).show()
                             }
                         } else {
                             showQuickPluginCreatorDialog = false

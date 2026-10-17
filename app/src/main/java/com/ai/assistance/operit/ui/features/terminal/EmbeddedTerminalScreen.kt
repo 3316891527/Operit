@@ -78,10 +78,7 @@ fun EmbeddedTerminalScreen(page: EmbeddedTerminalPage, onPageChange: (EmbeddedTe
                 val keyboard = remember { VirtualKeyboardConfigManager.getInstance(context).loadLayout() }
                 val density = LocalDensity.current
                 val imeBottom = (WindowInsets.ime.getBottom(density) - WindowInsets.navigationBars.getBottom(density)).coerceAtLeast(0)
-                val shortcutLift = with(density) {
-                    ((keyboard.rows.size * 42).dp + 5.dp).roundToPx()
-                }
-                val committedImeBottom = rememberTerminalImeViewport(imeBottom + shortcutLift)
+                val committedImeBottom = rememberTerminalImeViewport(imeBottom)
                 var ctrl by remember { mutableStateOf(false) }
                 var alt by remember { mutableStateOf(false) }
                 val sendInput: (String) -> Unit = { text ->
