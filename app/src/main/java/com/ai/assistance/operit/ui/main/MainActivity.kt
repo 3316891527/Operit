@@ -359,7 +359,7 @@ class MainActivity : ComponentActivity() {
     private fun performInitialChecks() {
         lifecycleScope.launch {
             prepareStartupChatIfNeeded()
-            if (agreementPreferences.isAgreementAccepted()) {
+            if (agreementPreferences.isOnboardingCompleted()) {
                 startPluginLoading()
             }
         }
