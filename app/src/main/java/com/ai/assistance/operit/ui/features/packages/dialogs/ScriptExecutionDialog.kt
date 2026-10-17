@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material3.*
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.EnvVar
 import com.ai.assistance.operit.core.tools.PackageTool
+import com.ai.assistance.operit.core.tools.ScriptExecutionTraceData
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.javascript.JsToolManager
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
@@ -62,6 +65,14 @@ fun ScriptExecutionDialog(
         mutableStateOf(listOfNotNull(initialResult))
     }
 
+    var showExecutionLogs by remember(packageName, tool) { mutableStateOf(false) }
+    // 日志和中间输出使用 success=true 封装，不能当成脚本最终执行成功。
+    val finalResults = remember(executionResults) {
+        executionResults.filterNot { it.result is ScriptExecutionTraceData }
+    }
+    val executionTraces = remember(executionResults) {
+        executionResults.mapNotNull { it.result as? ScriptExecutionTraceData }
+    }
     PackageDialogLayout(onDismiss = onDismiss) { compact ->
         PackageDialogHeader(
             title = tool.name,
@@ -109,13 +120,13 @@ fun ScriptExecutionDialog(
                     }
                 }
             }
-            if (executionResults.isNotEmpty()) {
+            if (finalResults.isNotEmpty()) {
                 Text(
                     text = stringResource(R.string.execution_result),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                executionResults.forEach { result ->
+                finalResults.forEach { result ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -145,6 +156,33 @@ fun ScriptExecutionDialog(
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
+                        }
+                    }
+                }
+            }
+            if (executionTraces.isNotEmpty()) {
+                TextButton(onClick = { showExecutionLogs = !showExecutionLogs }) {
+                    Icon(
+                        imageVector = if (showExecutionLogs) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.pkg_runtime_monitor_logs_title))
+                }
+                if (showExecutionLogs) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        ),
+                    ) {
+                        SelectionContainer {
+                            Text(
+                                text = executionTraces.joinToString("\n"),
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
@@ -180,6 +218,7 @@ fun ScriptExecutionDialog(
                         )
                         executing = true
                         executionResults = emptyList()
+                        showExecutionLogs = false
                         scope.launch {
                             try {
                                 withContext(Dispatchers.IO) {
@@ -199,7 +238,10 @@ fun ScriptExecutionDialog(
                                         .collect { result ->
                                             withContext(Dispatchers.Main) {
                                                 executionResults = executionResults + result
-                                                latestOnExecuted(result)
+                                                // 父页面只缓存最终结果，重新打开时不会把日志显示成成功。
+                                                if (result.result !is ScriptExecutionTraceData) {
+                                                    latestOnExecuted(result)
+                                                }
                                             }
                                         }
                                 }
