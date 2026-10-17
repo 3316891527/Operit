@@ -352,7 +352,7 @@ fun PackageManagerScreen(
                                         else -> false
                                     }
                                 if (!supported) {
-                                    Toast.makeText(context, message =
+                                    Toast.makeText(context,
                                             context.getString(
                                                 if (selectedTab == PackageTab.PLUGINS) {
                                                     R.string.plugin_toolpkg_only
@@ -427,7 +427,7 @@ fun PackageManagerScreen(
                                     if (marketOrigin != null) {
                                         marketOriginImportNotice = marketOrigin
                                     } else {
-                                        Toast.makeText(context, message = context.getString(R.string.external_package_imported), Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.external_package_imported), Toast.LENGTH_SHORT).show()
                                     }
                                 } else {
                                     importErrorMessage =
@@ -812,7 +812,7 @@ fun PackageManagerScreen(
                                             e
                                         )
                                         visibleImportedPackages.value = importedPackages.value
-                                        Toast.makeText(context, message =
+                                        Toast.makeText(context,
                                                 if (isChecked) {
                                                     context.getString(R.string.plugin_enable_failed)
                                                 } else {
@@ -890,7 +890,7 @@ fun PackageManagerScreen(
                                             e
                                         )
                                         visibleImportedPackages.value = importedPackages.value
-                                        Toast.makeText(context, message =
+                                        Toast.makeText(context,
                                                 if (isChecked) {
                                                     context.getString(R.string.package_import_failed)
                                                 } else {
@@ -1056,7 +1056,7 @@ fun PackageManagerScreen(
                                     packageManager.deleteExternalPackageSource(sourcePath)
                                 }
                             if (!deleted) {
-                                Toast.makeText(context, message = context.getString(R.string.package_conflict_delete_failed), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.package_conflict_delete_failed), Toast.LENGTH_SHORT).show()
                                 return@launch
                             }
 
@@ -1085,7 +1085,7 @@ fun PackageManagerScreen(
                             if (packageLoadErrorInfos.value.isEmpty()) {
                                 showPackageLoadErrorsDialog = false
                             }
-                            Toast.makeText(context, message = context.getString(R.string.package_conflict_delete_success), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.package_conflict_delete_success), Toast.LENGTH_SHORT).show()
                         }
                     },
                     onDismiss = { showPackageLoadErrorsDialog = false }
@@ -1155,7 +1155,7 @@ fun PackageManagerScreen(
                                 }
                             if (!created.success || created.file == null) {
                                 isLoading = false
-                                Toast.makeText(context, message =
+                                Toast.makeText(context,
                                         when (created.error) {
                                             PackageTemplateCreateError.INVALID_DISPLAY_NAME ->
                                                 context.getString(R.string.package_template_display_name_required)
@@ -1233,7 +1233,7 @@ fun PackageManagerScreen(
                                         )
                                     }
                             } else {
-                                Toast.makeText(context, message = context.getString(R.string.package_template_created), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.package_template_created), Toast.LENGTH_SHORT).show()
                             }
                         }
                     },

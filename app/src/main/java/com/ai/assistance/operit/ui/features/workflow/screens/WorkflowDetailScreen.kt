@@ -129,6 +129,7 @@ fun WorkflowDetailScreen(
     onNavigateBack: () -> Unit,
     viewModel: WorkflowViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showTriggerResult by remember { mutableStateOf<String?>(null) }
