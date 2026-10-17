@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.workspace
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -16,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
@@ -95,6 +98,22 @@ private fun WorkspaceHubContent(
     SideEffect { if (requestedPage != WorkspaceHubPage.CHAT) lastOpenPage = requestedPage }
     val entryRequest by actualViewModel.workspaceEntryRequest.collectAsState()
     val context = LocalContext.current
+    val activity = context as? Activity
+    val statusBarSurfaceColor = MaterialTheme.colorScheme.surface.toArgb()
+    // 终端工作台使用不透明的主题底色，离开终端页时恢复全局沉浸式状态栏。
+    SideEffect {
+        activity?.window?.statusBarColor =
+            if (isVisible && page == WorkspaceHubPage.TERMINAL) {
+                statusBarSurfaceColor
+            } else {
+                android.graphics.Color.TRANSPARENT
+            }
+    }
+    DisposableEffect(activity, isVisible, page) {
+        onDispose {
+            activity?.window?.statusBarColor = android.graphics.Color.TRANSPARENT
+        }
+    }
     val terminalManager = remember(context) { TerminalManager.getInstance(context) }
     val terminalState by terminalManager.terminalState.collectAsState()
     val keyboard = LocalSoftwareKeyboardController.current

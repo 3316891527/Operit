@@ -15,7 +15,7 @@ description: 用于 Operit Sandbox Package 开发。
 - 再通过 `operit_editor` 这个 package 里的 `debug_run_sandbox_script` 工具运行它
 - 脚本会自动创建目录，并更新 `SKILL.md`、完整 `references/toolpkg_developer_documentation/`、`types/*.d.ts` 和示例包
 
-完整开发文档现在直接来自独立仓库 `3316891527/OperitAI-Toolpkg-Dev-Docs`，以 `references/toolpkg_developer_documentation/index.md` 为入口；`types` 目录继续保留，供快速定位声明使用。重跑脚本时也会清理本地残留的旧 guide 文件。
+完整开发文档现在直接来自独立发行版仓库 `3316891527/Operit` 的 `docs/doc-src/toolpkg_developer_documentation/`，以 `references/toolpkg_developer_documentation/index.md` 为入口；`types` 目录继续保留，供快速定位声明使用。重跑脚本时也会清理本地残留的旧 guide 文件。
 
 这里说的“执行”，指的是：
 
@@ -67,7 +67,7 @@ description: 用于 Operit Sandbox Package 开发。
 首次安装时，按下面顺序做：
 
 1. 先创建 `/sdcard/Download/Operit/skills/SandboxPackage_DEV/scripts/`
-2. 用 `download_file` 下载 `https://cdn.jsdelivr.net/gh/AAswordman/Operit@main/tools/sandboxpackage_dev_install_or_update.js`
+2. 用 `download_file` 下载 `https://cdn.jsdelivr.net/gh/3316891527/Operit@main/tools/sandboxpackage_dev_install_or_update.js`
 3. 保存为 `/sdcard/Download/Operit/skills/SandboxPackage_DEV/scripts/install_or_update.js`
 4. 调用 `operit_editor` 的 `debug_run_sandbox_script`
 5. 把 `source_path` 设为 `/sdcard/Download/Operit/skills/SandboxPackage_DEV/scripts/install_or_update.js`
@@ -93,7 +93,7 @@ description: 用于 Operit Sandbox Package 开发。
 更新时按下面规则处理：
 
 1. 每次正式开始新的 Sandbox Package 开发任务前，必须优先重新下载一次安装脚本，再重新运行本地脚本
-   - 安装脚本下载地址：`https://cdn.jsdelivr.net/gh/AAswordman/Operit@main/tools/sandboxpackage_dev_install_or_update.js`
+   - 安装脚本下载地址：`https://cdn.jsdelivr.net/gh/3316891527/Operit@main/tools/sandboxpackage_dev_install_or_update.js`
    - 安装脚本保存位置：`/sdcard/Download/Operit/skills/SandboxPackage_DEV/scripts/install_or_update.js`
 2. 如果怀疑完整开发文档、types 或 `SKILL.md` 已经过旧，也重新运行这个脚本
 3. 如果本地 skill 目录缺文件、文件名不对、或者内容明显陈旧，不要手动零散修补，直接重跑安装脚本

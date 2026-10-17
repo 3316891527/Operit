@@ -9,6 +9,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.api.GitHubApiService
 import com.ai.assistance.operit.util.GithubReleaseUtil
 import com.ai.assistance.operit.util.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -648,7 +649,15 @@ object PatchUpdateInstaller {
         onEvent: (ProgressEvent) -> Unit
     ) {
         if (multiThread) {
-            downloadToFileMultiThread(url = url, out = out, label = label, onEvent = onEvent)
+            try {
+                downloadToFileMultiThread(url = url, out = out, label = label, onEvent = onEvent)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                // GitHub 镜像可能不支持 Range，分片失败时回退到普通下载。
+                AppLogger.w(TAG, "Range 下载不可用，回退到单线程: $url", error)
+                downloadToFileSingleThread(url = url, out = out, label = label, onEvent = onEvent)
+            }
             return
         }
         downloadToFileSingleThread(url = url, out = out, label = label, onEvent = onEvent)
