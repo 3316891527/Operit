@@ -924,6 +924,5 @@
 <string name="role_response_planner_planning">グループの発言順を計画しています...</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">アイデアを、対話の枠の外へ。</string>
-    <string name="onboarding_consent"><![CDATA[私は<a href="operit://agreement">ユーザー規約</a>を読み、同意します]]></string>
-    <string name="onboarding_start">同意して始める</string>
+    <string name="onboarding_start">開始</string>
 </resources>

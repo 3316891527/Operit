@@ -8329,6 +8329,5 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
 <string name="data_recovery_variants_size">Tamaño de variants</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Deja que tus ideas salgan del cuadro de diálogo.</string>
-    <string name="onboarding_consent"><![CDATA[He leído y acepto el <a href="operit://agreement">Acuerdo de usuario</a>]]></string>
-    <string name="onboarding_start">Aceptar y comenzar</string>
+    <string name="onboarding_start">Comenzar</string>
 </resources>

@@ -8261,6 +8261,5 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
 <string name="data_recovery_variants_size">Saiz variants</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Biarkan idea melangkaui kotak dialog.</string>
-    <string name="onboarding_consent"><![CDATA[Saya telah membaca dan bersetuju dengan <a href="operit://agreement">Perjanjian Pengguna</a>]]></string>
-    <string name="onboarding_start">Setuju dan mula</string>
+    <string name="onboarding_start">Mula</string>
 </resources>

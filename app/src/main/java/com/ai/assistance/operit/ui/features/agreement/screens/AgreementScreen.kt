@@ -15,26 +15,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.displays.MarkdownTextComposable
+
 @Composable
 fun AgreementScreen() {
     val context = LocalContext.current
-    // 直接读取用户提供的完整草案，避免把旧资源误当作当前协议。
+    // 直接读取用户提供的正文，让成熟的 Markdown 渲染器负责标题、强调、链接和列表排版。
     val agreementMarkdown = remember(context) {
         context.resources
             .openRawResource(R.raw.operit_user_agreement_v02)
             .bufferedReader(Charsets.UTF_8)
             .use { it.readText() }
-    }
-    val agreementText = remember(agreementMarkdown) {
-        agreementMarkdownToAnnotatedString(agreementMarkdown)
     }
 
     SelectionContainer {
@@ -42,56 +37,23 @@ fun AgreementScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Text(
-                text = stringResource(R.string.agreement_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = agreementText,
+                text = stringResource(R.string.agreement_document_title),
                 modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground
             )
-        }
-    }
-}
-
-private fun agreementMarkdownToAnnotatedString(markdown: String): AnnotatedString {
-    val lines = markdown.lines()
-    return buildAnnotatedString {
-        lines.forEachIndexed { index, line ->
-            val visibleLine = line.trimEnd()
-            when {
-                visibleLine.startsWith("# ") -> {
-                    withStyle(
-                        SpanStyle(
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append(visibleLine.removePrefix("# ").trim())
-                    }
-                }
-                visibleLine.startsWith("## ") -> {
-                    withStyle(
-                        SpanStyle(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append(visibleLine.removePrefix("## ").trim())
-                    }
-                }
-                else -> append(visibleLine)
-            }
-            if (index < lines.lastIndex) {
-                append('\n')
-            }
+            MarkdownTextComposable(
+                text = agreementMarkdown,
+                textColor = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.fillMaxWidth(),
+                isSelectable = true
+            )
         }
     }
 }

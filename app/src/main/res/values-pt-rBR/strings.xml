@@ -8101,6 +8101,5 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
 <string name="user_configuration_unlock_notice">This configuration was locked during migration from older settings. Saving removes the document-wide lock.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Deixe suas ideias saírem da caixa de diálogo.</string>
-    <string name="onboarding_consent"><![CDATA[Li e concordo com o <a href="operit://agreement">Contrato do Usuário</a>]]></string>
-    <string name="onboarding_start">Concordar e começar</string>
+    <string name="onboarding_start">Iniciar</string>
 </resources>

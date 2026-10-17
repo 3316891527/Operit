@@ -8854,6 +8854,5 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
 <string name="data_recovery_variants_size">dimensiunea variants</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Lasă-ți ideile să iasă din caseta de dialog.</string>
-    <string name="onboarding_consent"><![CDATA[Am citit și sunt de acord cu <a href="operit://agreement">Acordul de utilizare</a>]]></string>
-    <string name="onboarding_start">Acceptă și începe</string>
+    <string name="onboarding_start">Începe</string>
 </resources>

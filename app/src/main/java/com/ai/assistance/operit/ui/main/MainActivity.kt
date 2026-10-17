@@ -546,11 +546,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             OperitTheme {
                 Box {
-                    val agreementAccepted by agreementPreferences.agreementAcceptedFlow.collectAsState()
-                    if (!agreementAccepted) {
+                    val onboardingCompleted by agreementPreferences.onboardingCompletedFlow.collectAsState()
+                    if (!onboardingCompleted) {
                         WelcomeScreen(
                             onStart = {
-                                agreementPreferences.acceptCurrentAgreement()
+                                agreementPreferences.markOnboardingCompleted()
                                 startPluginLoading()
                             }
                         )

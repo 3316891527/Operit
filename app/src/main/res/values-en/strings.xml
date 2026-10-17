@@ -9172,6 +9172,5 @@
     <string name="theme_ai_background_transparency">AI bubble background transparency</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Let ideas move beyond the chat box.</string>
-    <string name="onboarding_consent"><![CDATA[I have read and agree to the <a href="operit://agreement">User Agreement</a>]]></string>
-    <string name="onboarding_start">Agree and start</string>
+    <string name="onboarding_start">Start</string>
 </resources>

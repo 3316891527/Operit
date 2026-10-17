@@ -8110,6 +8110,5 @@
 <string name="user_configuration_unlock_notice">This configuration was locked during migration from older settings. Saving removes the document-wide lock.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">아이디어를 대화창 밖으로.</string>
-    <string name="onboarding_consent"><![CDATA[<a href="operit://agreement">이용약관</a>을 읽었으며 이에 동의합니다]]></string>
-    <string name="onboarding_start">동의하고 시작</string>
+    <string name="onboarding_start">시작</string>
 </resources>
