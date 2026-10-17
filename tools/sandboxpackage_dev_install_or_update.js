@@ -42,6 +42,16 @@ const SandboxPackageDevInstaller = (function () {
     "ui.d.ts",
     "workflow.d.ts"
   ];
+  const EXAMPLE_PACKAGE_FILES = [
+    "automatic_ui_base.js", "automatic_ui_subagent.js", "browser.js",
+    "code_runner.js", "crossref.js", "daily_life.js", "duckduckgo.js",
+    "extended_chat.js", "extended_file_tools.js", "extended_http_tools.js",
+    "extended_memory_tools.js", "ffmpeg.js", "file_converter.js", "github.js",
+    "google_search.js", "minimax_draw.js", "nanobanana_draw.js", "openai_draw.js",
+    "operit_editor.js", "qwen_draw.js", "siliconflow_draw.js", "spacexai_draw.js",
+    "super_admin.js", "system_tools.js", "tavily.js", "time.js",
+    "various_search.js", "workflow.js", "zhipu_draw.js", "zhipu_search.js"
+  ];
   const DOC_DIRECTORIES = [
     "01_getting_started",
     "02_package_model",
@@ -132,22 +142,25 @@ const SandboxPackageDevInstaller = (function () {
   }
 
   async function downloadFileAsync(url, destination) {
-    return await Tools.Files.download(url, destination, ENVIRONMENT);
+    const result = await Tools.Files.download(url, destination, ENVIRONMENT);
+    if (!result || result.successful !== true) {
+      throw new Error(`Download failed: ${destination}: ${result?.details || "unknown error"}`);
+    }
+    return result;
   }
-
-  async function downloadAllFiles() {
+  async function downloadFiles(items) {
     let nextIndex = 0;
 
     async function worker() {
-      while (nextIndex < DOWNLOADS.length) {
-        const item = DOWNLOADS[nextIndex];
+      while (nextIndex < items.length) {
+        const item = items[nextIndex];
         nextIndex += 1;
         logStep(`Downloading -> ${item.destination}`);
         await downloadFileAsync(item.url, item.destination);
       }
     }
 
-    const workerCount = Math.min(MAX_DOWNLOAD_CONCURRENCY, DOWNLOADS.length);
+    const workerCount = Math.min(MAX_DOWNLOAD_CONCURRENCY, items.length);
     const workers = [];
     for (let index = 0; index < workerCount; index += 1) {
       workers.push(worker());
@@ -218,12 +231,26 @@ const SandboxPackageDevInstaller = (function () {
     }
     await makeDirectory(SCRIPTS_DIR);
     await makeDirectory(EXAMPLES_DIR);
-    await downloadAllFiles();
-    await removeLegacyDocuments();
-
     logStep(`Syncing built-in package examples -> ${EXAMPLE_PACKAGES_DIR}`);
-    const copiedExampleFiles = syncBuiltInPackageExamples();
+    let copiedExampleFiles = [];
+    let examplesFromCdn = false;
+    try {
+      copiedExampleFiles = syncBuiltInPackageExamples();
+    } catch (error) {
+      logStep(`Built-in example sync unavailable -> ${String(error)}`);
+    }
+    if (copiedExampleFiles.length === 0) {
+      examplesFromCdn = true;
+      await makeDirectory(EXAMPLE_PACKAGES_DIR);
+      await downloadFiles(EXAMPLE_PACKAGE_FILES.map((fileName) => ({
+        url: `${CDN_BASE}/app/src/main/assets/packages/${fileName}`,
+        destination: `${EXAMPLE_PACKAGES_DIR}/${fileName}`
+      })));
+      copiedExampleFiles = EXAMPLE_PACKAGE_FILES;
+    }
     logStep(`Built-in package examples synced -> ${copiedExampleFiles.length} files`);
+    await downloadFiles(DOWNLOADS);
+    await removeLegacyDocuments();
 
     return {
       success: true,
@@ -237,7 +264,7 @@ const SandboxPackageDevInstaller = (function () {
         scripts_dir: SCRIPTS_DIR,
         examples_dir: EXAMPLES_DIR,
         examples_packages_dir: EXAMPLE_PACKAGES_DIR,
-        downloaded_count: DOWNLOADS.length,
+        downloaded_count: DOWNLOADS.length + (examplesFromCdn ? copiedExampleFiles.length : 0),
         type_count: TYPE_FILES.length,
         documentation_count: DOC_FILES.length,
         builtin_example_count: copiedExampleFiles.length,
