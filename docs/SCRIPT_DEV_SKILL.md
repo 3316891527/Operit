@@ -15,7 +15,7 @@ description: 用于 Operit Sandbox Package 开发。
 - 再通过 `operit_editor` 这个 package 里的 `debug_run_sandbox_script` 工具运行它
 - 脚本会自动创建目录，并更新 `SKILL.md`、完整 `references/toolpkg_developer_documentation/`、`types/*.d.ts` 和示例包
 
-完整开发文档现在直接来自独立发行版仓库 `3316891527/Operit` 的 `docs/doc-src/toolpkg_developer_documentation/`，以 `references/toolpkg_developer_documentation/index.md` 为入口；`types` 目录继续保留，供快速定位声明使用。重跑脚本时也会清理本地残留的旧 guide 文件。
+完整开发文档现在直接来自独立文档仓库 `3316891527/OperitAI-Toolpkg-Dev-Docs` 的 `main` 分支，以 `references/toolpkg_developer_documentation/index.md` 为入口；`types` 目录继续保留，供快速定位声明使用。重跑脚本时也会清理本地残留的旧 guide 文件。
 
 这里说的“执行”，指的是：
 
