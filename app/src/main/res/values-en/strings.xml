@@ -5875,7 +5875,7 @@
     <!-- Skill Market -->
     <string name="available_skills_market">Available Skills</string>
     <string name="beta_plan">Beta Program</string>
-    <string name="beta_plan_desc">After joining, when there are updated test versions, patch updates of about 30MB will be automatically downloaded over WiFi.</string>
+    <string name="beta_plan_desc">Enable to check for patch releases whose version numbers contain +. When disabled, only stable releases are checked.</string>
     <string name="beta_plan_enabled">Joined Beta Program</string>
     <string name="beta_plan_disabled">Not in Beta Program</string>
     <string name="beta_plan_join">Join</string>

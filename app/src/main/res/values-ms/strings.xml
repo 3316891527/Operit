@@ -1155,7 +1155,7 @@
 
     <string name="no_mirrors_found">Tiada sumber cermin tersedia</string>
     <string name="beta_plan">Pelan Beta</string>
-    <string name="beta_plan_desc">Selepas menyertai, tambahan kira-kira 30MB akan dimuat turun secara automatik melalui Wi-Fi apabila terdapat versi ujian yang dikemas kini.</string>
+    <string name="beta_plan_desc">Aktifkan untuk menyemak kemas kini tampalan dengan + dalam nombor versi. Apabila dimatikan, hanya keluaran stabil disemak.</string>
     <string name="main_github_login_success">Log masuk berjaya, selamat datang %1$s!</string>
     <string name="main_github_get_user_failed">Gagal mendapatkan maklumat pengguna: %1$s</string>
     <string name="main_github_login_failed">Log masuk gagal: %1$s</string>

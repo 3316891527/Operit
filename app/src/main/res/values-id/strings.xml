@@ -1080,7 +1080,7 @@
     <string name="github_source_desc">Unduh langsung dari server resmi GitHub, kecepatan mungkin lambat</string>
     <string name="no_mirrors_found">Tidak ditemukan sumber mirror yang tersedia</string>
     <string name="beta_plan">Rencana Beta</string>
-    <string name="beta_plan_desc">Setelah bergabung, pembaruan patch sekitar 30MB akan otomatis diunduh saat ada versi uji coba baru di jaringan wifi.</string>
+    <string name="beta_plan_desc">Aktifkan untuk memeriksa pembaruan patch dengan + pada nomor versi. Saat dinonaktifkan, hanya rilis stabil yang diperiksa.</string>
     <string name="main_github_login_success">Login berhasil, selamat datang %1$s!</string>
     <string name="main_github_get_user_failed">Gagal mendapatkan informasi pengguna: %1$s</string>
     <string name="main_github_login_failed">Login gagal: %1$s</string>

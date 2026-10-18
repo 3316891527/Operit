@@ -96,7 +96,7 @@ fun EmbeddedTerminalScreen(page: EmbeddedTerminalPage, onPageChange: (EmbeddedTe
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         config = config,
                         pty = session.pty,
-                        imeAnimationOffsetPx = imeBottom,
+                        // 动画期间保持画布顶部固定，避免整块内容上移后又在提交尺寸时跳回。
                         committedImeBottomInsetPx = committedImeBottom,
                         onInput = sendInput,
                         sessionId = session.id,
@@ -115,7 +115,7 @@ fun EmbeddedTerminalScreen(page: EmbeddedTerminalPage, onPageChange: (EmbeddedTe
     }
 }
 
-/** 动画期间只移动快捷键与画布视口，键盘稳定后再提交 PTY 尺寸。 */
+/** 动画期间只移动快捷键，键盘稳定后再提交 PTY 尺寸。 */
 @Composable
 private fun rememberTerminalImeViewport(target: Int): Int {
     var committed by remember { mutableStateOf(target) }

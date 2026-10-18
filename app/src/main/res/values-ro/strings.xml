@@ -1486,7 +1486,7 @@
     <string name="github_source_desc">Direct de laGitHubDescărcare de pe serverul oficial; viteza poate fi mai redusă</string>
     <string name="no_mirrors_found">Nu s-au găsit surse de oglindă disponibile</string>
     <string name="beta_plan">Beta Plan</string>
-    <string name="beta_plan_desc">După înscriere, atunci când vor apărea versiuni de testare actualizate,wifiDescărcare automată30MBActualizări ale patch-urilor de aproximativ.</string>
+    <string name="beta_plan_desc">Activează pentru a verifica actualizările de tip patch cu + în numărul versiunii. Când opțiunea este dezactivată, sunt verificate doar versiunile stabile.</string>
     <string name="main_github_login_success">Autentificare reușită, bine ați venit %1$s!</string>
     <string name="main_github_get_user_failed">Eroare la preluarea informațiilor utilizatorului: %1$s</string>
     <string name="main_github_login_failed">Autentificare eșuată: %1$s</string>
