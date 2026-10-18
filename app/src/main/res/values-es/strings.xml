@@ -1620,7 +1620,7 @@
     <string name="github_source_desc">Descargar directamente desde el servidor oficial de GitHub, puede ser más lento</string>
     <string name="no_mirrors_found">No se encontraron espejos disponibles</string>
     <string name="beta_plan">Plan Beta</string>
-    <string name="beta_plan_desc">Al unirse, cuando haya una versión de prueba actualizada, se descargará automáticamente un parche de unos 30 MB por WiFi.</string>
+    <string name="beta_plan_desc">Activa la opción para buscar actualizaciones de parche con + en el número de versión. Si está desactivada, solo se buscan versiones estables.</string>
     <string name="main_github_login_success">Inicio de sesión exitoso, ¡bienvenido %1$s!</string>
     <string name="main_github_get_user_failed">Error al obtener información del usuario: %1$s</string>
     <string name="main_github_login_failed">Error al iniciar sesión: %1$s</string>
@@ -6105,15 +6105,15 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="chat_ai_service_unavailable_summarize">El servicio de IA no está disponible, no se puede resumir</string>
     <string name="chat_summarize_failed_no_valid_summary">Error al resumir: no se pudo generar un resumen válido</string>
     <string name="chat_summarize_generation_failed">Error al generar el resumen: %1$s</string>
-    <string name="service_operit_running">Operit está en ejecución</string>
+    <string name="service_operit_running">Operit Kong está en ejecución</string>
     <string name="service_chat_complete_reminder">Recordatorio de conversación completada</string>
     <string name="service_chat_complete_reminder_sound">Recordatorio de conversación completada (sonido)</string>
     <string name="service_chat_complete_reminder_vibration">Recordatorio de conversación completada (vibración)</string>
     <string name="service_chat_complete_reminder_sound_vibration">Recordatorio de conversación completada (sonido y vibración)</string>
-    <string name="service_keep_background">Mantener Operit ejecutándose en segundo plano.</string>
+    <string name="service_keep_background">Mantener Operit Kong ejecutándose en segundo plano.</string>
     <string name="service_notify_when_complete">Notificarle cuando la conversación esté completa.</string>
-    <string name="service_running_wake_pause">Operit está en ejecución (pausa de activación)</string>
-    <string name="service_running_wake_listening">Operit está en ejecución (escuchando activación)</string>
+    <string name="service_running_wake_pause">Operit Kong está en ejecución (pausa de activación)</string>
+    <string name="service_running_wake_listening">Operit Kong está en ejecución (escuchando activación)</string>
     <string name="service_running_stats">Ejecutando conversaciones %1$d · herramientas invocadas %2$d</string>
     <string name="service_running_http_listening">HTTP externo escuchando en el puerto %1$d</string>
     <string name="service_running_with_http">%1$s · HTTP externo %2$d</string>
@@ -8330,4 +8330,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Deja que tus ideas salgan del cuadro de diálogo.</string>
     <string name="onboarding_start">Comenzar</string>
+    <string name="terminal_error_command_timeout">Se agotó el tiempo de ejecución del comando del terminal</string>
+    <string name="browser_error_action_timeout">Se agotó el tiempo de espera de la operación del navegador</string>
 </resources>

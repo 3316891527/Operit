@@ -3565,6 +3565,10 @@
     <string name="delete_group_only">Delete group only</string>
     <string name="chats_move_to_ungrouped">Chats will be moved to \"Ungrouped\"</string>
     <string name="edit_title">Edit Title</string>
+    <string name="summarize_chat_title">Summarize Title</string>
+    <string name="summarize_chat_title_started">Generating title…</string>
+    <string name="summarize_chat_title_empty">This conversation has no messages to summarize yet</string>
+    <string name="summarize_chat_title_failed">Failed to generate title</string>
     <string name="move_up">Move Up</string>
     <string name="move_down">Move Down</string>
     <string name="drag_item">Drag item %1$s</string>
@@ -5871,7 +5875,7 @@
     <!-- Skill Market -->
     <string name="available_skills_market">Available Skills</string>
     <string name="beta_plan">Beta Program</string>
-    <string name="beta_plan_desc">After joining, when there are updated test versions, patch updates of about 30MB will be automatically downloaded over WiFi.</string>
+    <string name="beta_plan_desc">Enable to check for patch releases whose version numbers contain +. When disabled, only stable releases are checked.</string>
     <string name="beta_plan_enabled">Joined Beta Program</string>
     <string name="beta_plan_disabled">Not in Beta Program</string>
     <string name="beta_plan_join">Join</string>
@@ -7164,15 +7168,15 @@
     <string name="chat_summarize_generation_failed">Summary generation failed: %1$s</string>
 
     <!-- AIForegroundService (新增) -->
-    <string name="service_operit_running">Operit is running</string>
+    <string name="service_operit_running">Operit Kong is running</string>
     <string name="service_chat_complete_reminder">Chat completion reminder</string>
     <string name="service_chat_complete_reminder_sound">Chat completion reminder (sound)</string>
     <string name="service_chat_complete_reminder_vibration">Chat completion reminder (vibration)</string>
     <string name="service_chat_complete_reminder_sound_vibration">Chat completion reminder (sound and vibration)</string>
-    <string name="service_keep_background">Keep Operit running in the background.</string>
+    <string name="service_keep_background">Keep Operit Kong running in the background.</string>
     <string name="service_notify_when_complete">Notify you when the conversation is complete.</string>
-    <string name="service_running_wake_pause">Operit is running (wake paused)</string>
-    <string name="service_running_wake_listening">Operit is running (wake listening)</string>
+    <string name="service_running_wake_pause">Operit Kong is running (wake paused)</string>
+    <string name="service_running_wake_listening">Operit Kong is running (wake listening)</string>
     <string name="service_running_stats">Conversations %1$d · Tools %2$d</string>
     <string name="service_running_http_listening">External HTTP listening on port %1$d</string>
     <string name="service_running_with_http">%1$s · HTTP %2$d</string>
@@ -9173,4 +9177,6 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Let ideas move beyond the chat box.</string>
     <string name="onboarding_start">Start</string>
+    <string name="terminal_error_command_timeout">Terminal command execution timed out</string>
+    <string name="browser_error_action_timeout">Timed out waiting for the browser action to complete</string>
 </resources>

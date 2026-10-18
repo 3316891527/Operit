@@ -6,8 +6,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.api.GitHubApiService
+import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.updates.distribution.DistributionReleaseResolver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 // 更新状态 - 移除下载相关状态
@@ -93,6 +95,10 @@ class UpdateManager private constructor(private val context: Context) {
         }
     }
 
+    fun resetUpdateStatus() {
+        _updateStatus.value = UpdateStatus.Initial
+    }
+
     suspend fun checkForUpdatesSilently(currentVersion: String) {
         AppLogger.d(TAG, "checkForUpdatesSilently() start: currentVersion=$currentVersion")
         try {
@@ -131,7 +137,13 @@ class UpdateManager private constructor(private val context: Context) {
                     page = 1,
                     perPage = 100
                 ).getOrThrow()
-                DistributionReleaseResolver.resolve(currentVersion, releases)
+                // 每次检查都读取当前开关，自动检查和手动检查使用相同的渠道规则。
+                val betaPlanEnabled = UserPreferencesManager.getInstance(context).betaPlanEnabled.first()
+                DistributionReleaseResolver.resolve(
+                    currentVersion = currentVersion,
+                    betaPlanEnabled = betaPlanEnabled,
+                    releases = releases
+                )
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error checking distribution updates", e)
                 UpdateStatus.Error(context.getString(R.string.update_check_failed, e.message))

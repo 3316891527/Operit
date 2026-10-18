@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
@@ -128,6 +129,7 @@ fun WorkflowDetailScreen(
     onNavigateBack: () -> Unit,
     viewModel: WorkflowViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showTriggerResult by remember { mutableStateOf<String?>(null) }
@@ -138,7 +140,6 @@ fun WorkflowDetailScreen(
     var showEditNodeDialog by remember { mutableStateOf<WorkflowNode?>(null) }
     var showExecutionLogDialog by remember { mutableStateOf(false) }
     var showExecutionLogsForNodeId by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(workflowId) {
         viewModel.loadWorkflow(workflowId)
@@ -224,16 +225,6 @@ fun WorkflowDetailScreen(
     }
 
     CustomScaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                Snackbar(
-                    modifier = Modifier.padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    snackbarData = data
-                )
-            }
-        },
         floatingActionButton = {
             if (workflow != null) {
                 ExtendedFloatingActionButton(
@@ -398,8 +389,7 @@ fun WorkflowDetailScreen(
             // 错误提示
             viewModel.error?.let { error ->
                 LaunchedEffect(error) {
-                    snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar(error)
+                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                     viewModel.clearError()
                 }
             }

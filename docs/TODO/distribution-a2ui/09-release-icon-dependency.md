@@ -1,5 +1,7 @@
 # 发行版 Material 图标依赖修复
 
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
+
 ## 问题与原因
 
 发行提交 `387ee3e8` 在 `mergeDexRelease` 遇到重复的 `androidx.compose.material.icons.automirrored.filled.ArticleKt`。应用已改用源码子集，但固定提交 `105ed5e4` 的 `terminal` 子模块仍依赖完整 `material-icons-extended`；该库经项目依赖传递进入应用，与子集提供同名类。

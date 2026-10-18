@@ -1486,7 +1486,7 @@
     <string name="github_source_desc">Direct de laGitHubDescărcare de pe serverul oficial; viteza poate fi mai redusă</string>
     <string name="no_mirrors_found">Nu s-au găsit surse de oglindă disponibile</string>
     <string name="beta_plan">Beta Plan</string>
-    <string name="beta_plan_desc">După înscriere, atunci când vor apărea versiuni de testare actualizate,wifiDescărcare automată30MBActualizări ale patch-urilor de aproximativ.</string>
+    <string name="beta_plan_desc">Activează pentru a verifica actualizările de tip patch cu + în numărul versiunii. Când opțiunea este dezactivată, sunt verificate doar versiunile stabile.</string>
     <string name="main_github_login_success">Autentificare reușită, bine ați venit %1$s!</string>
     <string name="main_github_get_user_failed">Eroare la preluarea informațiilor utilizatorului: %1$s</string>
     <string name="main_github_login_failed">Autentificare eșuată: %1$s</string>
@@ -7318,15 +7318,15 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="chat_summarize_generation_failed">Eșecul generării rezumatului: %1$s</string>
 
     <!-- AIForegroundService (新增) -->
-    <string name="service_operit_running">Operit În curs de execuție</string>
+    <string name="service_operit_running">Operit Kong În curs de execuție</string>
     <string name="service_chat_complete_reminder">Notificare privind finalizarea conversației</string>
     <string name="service_chat_complete_reminder_sound">Notificare privind finalizarea conversației (semnal sonor)</string>
     <string name="service_chat_complete_reminder_vibration">Notificare privind finalizarea conversației (vibrație)</string>
     <string name="service_chat_complete_reminder_sound_vibration">Notificare la finalizarea conversației (sunet și vibrație)</string>
-    <string name="service_keep_background">Menținere Operit Se execută în fundal.</string>
+    <string name="service_keep_background">Menținere Operit Kong Se execută în fundal.</string>
     <string name="service_notify_when_complete">Te va avertiza după finalizarea conversației.</string>
-    <string name="service_running_wake_pause">Operit În curs de execuție (în așteptare)</string>
-    <string name="service_running_wake_listening">Operit În execuție (în așteptare de activare)</string>
+    <string name="service_running_wake_pause">Operit Kong În curs de execuție (în așteptare)</string>
+    <string name="service_running_wake_listening">Operit Kong În execuție (în așteptare de activare)</string>
     <string name="service_running_stats">Fereastra de dialog de execuție %1$d · Instrumente de apelare %2$d</string>
     <string name="service_running_http_listening">Extern HTTP Se monitorizează portul %1$d</string>
     <string name="service_running_with_http">%1$s · Extern HTTP %2$d</string>
@@ -8855,4 +8855,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Lasă-ți ideile să iasă din caseta de dialog.</string>
     <string name="onboarding_start">Începe</string>
+    <string name="terminal_error_command_timeout">Execuția comenzii de terminal a depășit timpul limită</string>
+    <string name="browser_error_action_timeout">Timpul de așteptare pentru operația browserului a expirat</string>
 </resources>

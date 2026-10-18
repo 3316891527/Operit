@@ -447,6 +447,16 @@ object PatchUpdateInstaller {
                     (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex <= targetToPatchIndex)
             }
             if (candidates.isEmpty()) {
+                val direct = stepsByEdge.values.filter { step ->
+                    step.targetSha256 == targetSha &&
+                        (targetToVersion.isBlank() || step.toVersion.isBlank() || step.toVersion == targetToVersion) &&
+                        (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex == targetToPatchIndex)
+                }
+                if (direct.size == 1 && chain.isEmpty()) {
+                    // 已安装包与发布补丁记录的上一版哈希不一致时，仍允许使用唯一的目标补丁。
+                    chain.add(direct.first())
+                    break
+                }
                 throw IllegalStateException("No applicable next patch for base sha ${currentSha.take(12)}")
             }
 

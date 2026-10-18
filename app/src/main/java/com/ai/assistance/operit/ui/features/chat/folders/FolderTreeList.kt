@@ -290,7 +290,7 @@ internal fun FolderTreeList(
                                 icon = { Icon(Icons.Default.Edit, stringResource(R.string.edit_title), Modifier.padding(12.dp), tint = Color.White) })
                             val delete = SwipeAction(onSwipe = { onDeleteChat(row.history) }, background = MaterialTheme.colorScheme.error,
                                 icon = { Icon(Icons.Default.Delete, stringResource(R.string.delete), Modifier.padding(12.dp), tint = Color.White) })
-                            SwipeableActionsBox(startActions = listOf(edit), endActions = listOf(delete), swipeThreshold = 100.dp,
+                            SwipeableActionsBox(startActions = listOf(edit), endActions = if (row.history.locked) emptyList() else listOf(delete), swipeThreshold = 100.dp,
                                 modifier = Modifier.clip(RoundedCornerShape(8.dp))) { content() }
                         } else content()
                         if (highlighted && zone == FolderDropZone.AFTER) HorizontalDivider(color = MaterialTheme.colorScheme.primary, thickness = 2.dp)

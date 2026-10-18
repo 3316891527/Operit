@@ -1,9 +1,11 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/integrated-distribution
-status: integrated-awaiting-ci
+status: implemented-user-verified
 ---
 # 独立发行集成
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](06-验证结果补录.md)。
 
 以 [Release 38675165272](https://github.com/3316891527/Operit/actions/runs/38675165272) 的固定提交 `39a0abaaf23446e5122f7951b5350f4f40b9d52d` 为起点，按用户给定的 52 个 PR 编号顺序整合当前分支代码。来源提交保存在 [pr-sources.json](./pr-sources.json)。
 
@@ -32,9 +34,9 @@ status: integrated-awaiting-ci
 
 新增数据库联合迁移和 CSV 兼容回归，尚未运行。本轮不在本地执行 Android 构建或 JVM 测试，由本分支 [Android Build](https://github.com/3316891527/Operit/actions/workflows/android-build.yml?query=branch%3Afeat%2Fintegrated-distribution) 和 [Android Tests](https://github.com/3316891527/Operit/actions/workflows/android-tests.yml?query=branch%3Afeat%2Fintegrated-distribution) 工作流执行，实际通过与 APK 产出以对应运行结果为准。
 
-设备回归尚未执行。[聊天 UI 原有 216 项清单](../chat_ui_redesign/24-回归清单.md) 和本轮集成清单均保留，历史通过不等于本轮集成版本通过。
+设备功能回归已按用户本次确认补录为通过。[聊天 UI 原有 216 项清单](../chat_ui_redesign/24-回归清单.md) 和本轮集成清单均保留，历史通过不等于本轮集成版本通过。
 
-[DONE] 按指定基点和编号顺序完成源码整合；构建、测试和设备结果待确认。
+[DONE] 按指定基点和编号顺序完成源码整合；功能验收已按用户确认补录为通过；CI 状态见验证结果补录。
 
 ## 后续发行调整
 
@@ -42,4 +44,6 @@ status: integrated-awaiting-ci
 
 当前发行版：`1.12.2+1`、versionCode 53。本轮同时修复插件市场与沙盒包不接受 `personal` 版本后缀的问题，并更新设置入口和终端核心。详见 [设置入口、终端核心与版本格式更新](./03-设置入口与终端核心更新.md)。
 
-[独立发行增量更新](./04-独立发行增量更新.md) 接入个人仓库 Releases，保留既有补丁还原协议，并补充发布工作流。实际 Release 与设备安装结果待验证。
+[独立发行增量更新](./04-独立发行增量更新.md) 接入个人仓库 Releases，保留既有补丁还原协议，并补充发布工作流。设备功能验收已按用户确认补录为通过；实际 Release 发布记录单独保留。
+
+[工具超时结果](./05-工具超时结果.md) 记录 `+5` 的紧急补充：终端、浏览器动作等待和 BLE 读取超时按失败处理，包含字符串资源与完整回归清单。

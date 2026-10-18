@@ -945,7 +945,11 @@ fun AboutScreen(
                             Switch(
                                 checked = betaEnabled,
                                 onCheckedChange = { enabled ->
-                                    scope.launch { preferences.saveBetaPlanEnabled(enabled) }
+                                    scope.launch {
+                                        preferences.saveBetaPlanEnabled(enabled)
+                                        // 切换渠道后丢弃旧检查结果，下次检查使用新的开关状态。
+                                        updateManager.resetUpdateStatus()
+                                    }
                                 }
                             )
                         }

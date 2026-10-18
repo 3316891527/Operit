@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -165,8 +166,6 @@ fun ModelConfigScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val saveCoordinator = rememberModelConfigSaveCoordinator()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     // 配置状态
     val configList = configManager.configListFlow.collectAsState(initial = listOf("default")).value
     val configSummaries by configManager.configSummariesFlow.collectAsState(initial = emptyList())
@@ -257,10 +256,7 @@ fun ModelConfigScreen(
 
     fun showNotification(message: String) {
         if (message.isBlank()) return
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(message)
-        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
 
@@ -282,7 +278,6 @@ fun ModelConfigScreen(
 
     // 主界面内容
     CustomScaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(

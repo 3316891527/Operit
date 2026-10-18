@@ -1156,6 +1156,9 @@ fun ChatHistorySelectorPanel(
                 onUpdateChatTitle = { chatId, newTitle ->
                     actualViewModel.updateChatTitle(chatId, newTitle)
                 },
+                onSummarizeChatTitle = { chatId ->
+                    actualViewModel.summarizeChatTitle(chatId)
+                },
                 onUpdateChatBinding = { chatId, characterCardName, characterGroupId ->
                     actualViewModel.updateChatCharacterBinding(chatId, characterCardName, characterGroupId)
                 },

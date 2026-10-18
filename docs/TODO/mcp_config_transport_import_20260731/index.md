@@ -1,10 +1,12 @@
 ---
 title: MCP standard config transport import
-status: implemented-verification-pending
+status: implemented-user-verified
 fork: https://github.com/AAswordman/Operit.git
 ---
 
 # MCP 标准配置传输导入
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 ## 原状
 

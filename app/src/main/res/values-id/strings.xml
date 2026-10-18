@@ -1080,7 +1080,7 @@
     <string name="github_source_desc">Unduh langsung dari server resmi GitHub, kecepatan mungkin lambat</string>
     <string name="no_mirrors_found">Tidak ditemukan sumber mirror yang tersedia</string>
     <string name="beta_plan">Rencana Beta</string>
-    <string name="beta_plan_desc">Setelah bergabung, pembaruan patch sekitar 30MB akan otomatis diunduh saat ada versi uji coba baru di jaringan wifi.</string>
+    <string name="beta_plan_desc">Aktifkan untuk memeriksa pembaruan patch dengan + pada nomor versi. Saat dinonaktifkan, hanya rilis stabil yang diperiksa.</string>
     <string name="main_github_login_success">Login berhasil, selamat datang %1$s!</string>
     <string name="main_github_get_user_failed">Gagal mendapatkan informasi pengguna: %1$s</string>
     <string name="main_github_login_failed">Login gagal: %1$s</string>
@@ -6271,15 +6271,15 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
 
     <string name="chat_summarize_failed_no_valid_summary">Ringkasan gagal: Tidak dapat menghasilkan ringkasan yang valid</string>
     <string name="chat_summarize_generation_failed">Pembuatan ringkasan gagal: %1$s</string>
-    <string name="service_operit_running">Operit sedang berjalan</string>
+    <string name="service_operit_running">Operit Kong sedang berjalan</string>
     <string name="service_chat_complete_reminder">Pengingat percakapan selesai</string>
     <string name="service_chat_complete_reminder_sound">Pengingat percakapan selesai (suara)</string>
     <string name="service_chat_complete_reminder_vibration">Pengingat percakapan selesai (getaran)</string>
     <string name="service_chat_complete_reminder_sound_vibration">Pengingat percakapan selesai (suara dan getaran)</string>
-    <string name="service_keep_background">Jaga Operit tetap berjalan di latar belakang.</string>
+    <string name="service_keep_background">Jaga Operit Kong tetap berjalan di latar belakang.</string>
     <string name="service_notify_when_complete">Ingatkan Anda setelah percakapan selesai.</string>
-    <string name="service_running_wake_pause">Operit sedang berjalan (bangun dijeda)</string>
-    <string name="service_running_wake_listening">Operit sedang berjalan (bangun sedang mendengarkan)</string>
+    <string name="service_running_wake_pause">Operit Kong sedang berjalan (bangun dijeda)</string>
+    <string name="service_running_wake_listening">Operit Kong sedang berjalan (bangun sedang mendengarkan)</string>
     <string name="service_running_stats">Percakapan berjalan %1$d · Alat dipanggil %2$d</string>
     <string name="service_running_http_listening">HTTP eksternal sedang mendengarkan port %1$d</string>
     <string name="service_running_with_http">%1$s · HTTP eksternal %2$d</string>
@@ -8262,4 +8262,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Biarkan ide melampaui kotak dialog.</string>
     <string name="onboarding_start">Mulai</string>
+    <string name="terminal_error_command_timeout">Eksekusi perintah terminal melewati batas waktu</string>
+    <string name="browser_error_action_timeout">Waktu tunggu operasi browser habis</string>
 </resources>

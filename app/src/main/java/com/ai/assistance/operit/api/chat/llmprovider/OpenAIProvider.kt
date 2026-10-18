@@ -1534,9 +1534,8 @@ open class OpenAIProvider(
         private val savepointLengths = mutableMapOf<String, Int>()
 
         private fun markFirstOutputIfNeeded() {
-            if (receivedContent.isEmpty()) {
-                onFirstOutput()
-            }
+            // 思考标签会先写入缓冲，不能把缓冲为空当成还没收到输出。
+            onFirstOutput()
         }
 
         suspend fun emitContent(content: String) {

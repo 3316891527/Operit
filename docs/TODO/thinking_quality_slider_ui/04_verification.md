@@ -1,5 +1,7 @@
 # 验证记录
 
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
+
 验证记录：
 
 - `git diff --check`：通过
@@ -31,11 +33,11 @@
 - 参考样式修正构建提交：`49b5ba3fc`
 - 参考样式修正 Release APK：`operit-release-fix_provider-logos-token-statistics-main-49b5ba3f.apk`
 - 参考样式修正 APK SHA-256：`c206440ce40234e81900999ea0d5e66bf08489df6b461ad7f6bd3b3e6813ac56`
-- 参考样式修正视觉验收：待确认
+- 参考样式修正视觉验收：通过（用户确认）
 - 响应式标签对齐修正：Android/Web 标签改为与 stop indicator 共用锚点
 - 响应式标签对齐 `git diff --check`：通过
 - 响应式标签对齐 Release 构建：通过
 - 响应式标签对齐构建提交：`65d4859f2`
 - 响应式标签对齐 Release APK：`operit-release-fix_provider-logos-token-statistics-main-65d4859f.apk`
 - 响应式标签对齐 APK SHA-256：`982ff1cb7ef1be1cde19f57ea52f90d3b4dd603522cbed4b40e0fa1c55064b13`
-- 响应式标签对齐视觉验收：待确认
+- 响应式标签对齐视觉验收：通过（用户确认）

@@ -3,6 +3,7 @@ package com.ai.assistance.operit.core.tools.defaultTool.websession.browser
 import android.webkit.JsPromptResult
 import android.webkit.JsResult
 import android.webkit.WebResourceRequest
+import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.defaultTool.standard.StandardBrowserSessionTools
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
@@ -500,31 +501,8 @@ internal fun StandardBrowserSessionTools.settleBrowserAction(
             )
     }
 
-    val registry = buildPageRegistry()
-    val activeSession =
-        when {
-            policy.allowActivePageSwitch -> registry.activeSessionId?.let(::sessionById)
-            else -> sessionById(markers.initialSessionId)
-        } ?: sessionById(markers.initialSessionId)
-            ?: candidateSession
-    runOnMainSync<Unit> {
-        ensureSessionAttachedOnMain(activeSession.id)
-    }
-    val snapshot =
-        if (policy.captureSnapshot && canCaptureSnapshotForSettlement(activeSession)) {
-            latestSnapshot(activeSession)
-        } else {
-            null
-        }
-    val finalRegistry = buildPageRegistry()
-    return BrowserToolActionSettlement(
-        registry = finalRegistry,
-        session = activeSession,
-        snapshot = snapshot,
-        consoleMarker = if (activeSession.id == markers.initialSessionId) markers.consoleTimestamp else 0L,
-        downloadMarker = markers.downloadTimestamp,
-        timedOut = true
-    )
+    // 等待动作稳定已超时，由调用入口返回失败，不继续报告操作成功。
+    throw IllegalStateException(context.getString(R.string.browser_error_action_timeout))
 }
 
 private fun StandardBrowserSessionTools.canCaptureSnapshotForSettlement(

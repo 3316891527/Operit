@@ -1,9 +1,11 @@
 ---
 topic: Thinking quality slider UI
-status: in_progress
+status: implemented-user-verified
 ---
 
 # Thinking quality slider UI
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 ## 原本状况
 
@@ -37,5 +39,5 @@ Android Classic 和 Agent 使用了两套重复的思考程度控件。控件只
 - [DONE] 视觉修订已通过远程 Release 构建
 - [REJECTED] 早期 thumb/track 比例和渐变方案未通过视觉验收
 - [REJECTED] 早期黑色 thumb 和满宽渐变方案未通过视觉验收
-- [WIP] 透明外框、仅填充 active 区域和内嵌高亮 thumb 已通过 Release 构建，等待视觉验收
-- [WIP] Android/Web 档位标签响应式锚点布局已通过 Release 构建，等待视觉验收
+- [DONE] 透明外框、仅填充 active 区域和内嵌高亮 thumb 已通过 Release 构建；视觉验收通过（用户确认）
+- [DONE] Android/Web 档位标签响应式锚点布局已通过 Release 构建；视觉验收通过（用户确认）

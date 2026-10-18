@@ -33,6 +33,7 @@ import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
 import com.ai.assistance.operit.data.model.FunctionType
+import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.data.repository.MessageTranslationRepository
 import com.ai.assistance.operit.data.model.PromptFunctionType
 import com.ai.assistance.operit.data.model.ToolParameter
@@ -63,6 +64,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.filterNotNull
+import com.ai.assistance.operit.ui.features.terminal.EmbeddedTerminalPage
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubPage
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryAction
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryRequest
@@ -518,6 +520,8 @@ class ChatViewModel(context: Context) : ViewModel() {
     // 工作区主页、文件页面和终端统一导航，绑定状态仍独立保存。
     private val _workspaceHubPage = MutableStateFlow(WorkspaceHubPage.CHAT)
     val workspaceHubPage: StateFlow<WorkspaceHubPage> = _workspaceHubPage.asStateFlow()
+    private val _embeddedTerminalPage = MutableStateFlow(EmbeddedTerminalPage.CONSOLE)
+    val embeddedTerminalPage: StateFlow<EmbeddedTerminalPage> = _embeddedTerminalPage.asStateFlow()
     private val _workspaceEntryRequest = MutableStateFlow(WorkspaceEntryRequest())
     val workspaceEntryRequest: StateFlow<WorkspaceEntryRequest> = _workspaceEntryRequest.asStateFlow()
 
@@ -2434,9 +2438,13 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatId
     }
 
-    fun openTerminalFromHub() {
+    fun openTerminalFromHub(page: EmbeddedTerminalPage = EmbeddedTerminalPage.CONSOLE) {
         cancelWorkspaceOpen()
+        _embeddedTerminalPage.value = page
         _workspaceHubPage.value = WorkspaceHubPage.TERMINAL
+    }
+    fun showEmbeddedTerminalPage(page: EmbeddedTerminalPage) {
+        _embeddedTerminalPage.value = page
     }
 
     private fun isWorkspaceServerEnabled(workspacePath: String, workspaceEnv: String?): Boolean {
@@ -2655,6 +2663,48 @@ class ChatViewModel(context: Context) : ViewModel() {
     /** 更新指定聊天的标题 */
     fun updateChatTitle(chatId: String, newTitle: String) {
         chatHistoryDelegate.updateChatTitle(chatId, newTitle)
+    }
+
+    private val titleGenerationJobs = mutableMapOf<String, Job>()
+
+    fun summarizeChatTitle(chatId: String) {
+        // 同一条对话只发起一次请求，失败后允许重新点击。
+        if (titleGenerationJobs[chatId]?.isActive == true) return
+        titleGenerationJobs[chatId] = viewModelScope.launch {
+            try {
+                val manager = ChatHistoryManager.getInstance(context)
+                val originalTitle = manager.getChatTitle(chatId) ?: return@launch
+                val messages = manager.loadChatMessages(chatId)
+                val source = messages.firstOrNull { message ->
+                    message.sender == "user" && message.displayContent().isNotBlank()
+                }
+                if (source == null) {
+                    uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_empty))
+                    return@launch
+                }
+                uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_started))
+                val generatedTitle = withContext(Dispatchers.IO) {
+                    EnhancedAIService.getChatInstance(context, chatId)
+                        .generateConversationTitle(userText = source.displayContent().trim())
+                        .trim()
+                }
+                if (generatedTitle.isBlank()) {
+                    uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_failed))
+                    return@launch
+                }
+                // 生成期间手动改名或删除对话时，不用旧请求的结果覆盖用户操作。
+                if (manager.getChatTitle(chatId) == originalTitle) {
+                    chatHistoryDelegate.updateChatTitle(chatId, generatedTitle)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "手动总结对话标题失败", e)
+                uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_failed))
+            } finally {
+                titleGenerationJobs.remove(chatId)
+            }
+        }
     }
 
     /** 更新指定聊天绑定的角色卡 */

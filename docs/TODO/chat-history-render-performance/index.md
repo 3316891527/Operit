@@ -1,10 +1,12 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/integrated-distribution
-status: 代码已实现，等待云端构建及设备复测
+status: implemented-user-verified
 ---
 
 # 聊天历史加载与分块渲染性能
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 用户在 Android 个人发行版中反馈：快速滚动历史消息短暂降至约 20 FPS，启动到消息显示由旧版约 1 秒增加到约 4–5 秒，加载更早消息也变慢。这些数值来自用户的版本对照，尚无本次修复的设备测量。
 

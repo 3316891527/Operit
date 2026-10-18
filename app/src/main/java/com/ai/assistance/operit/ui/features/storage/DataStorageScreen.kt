@@ -45,8 +45,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -66,6 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,7 +96,6 @@ fun DataStorageScreen(
     val factory = remember(context) { DataStorageViewModel.Factory(context) }
     val storageViewModel: DataStorageViewModel = viewModel(factory = factory)
     val state by storageViewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var selectedTargets by remember { mutableStateOf<Set<CleanupTarget>>(emptySet()) }
     var showCleanupConfirmation by remember { mutableStateOf(false) }
@@ -144,7 +142,7 @@ fun DataStorageScreen(
                     result.failedEntryCount,
                 )
             }
-        snackbarHostState.showSnackbar(message)
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         storageViewModel.consumeCleanupResult()
     }
 
@@ -225,10 +223,6 @@ fun DataStorageScreen(
             item { Spacer(modifier = Modifier.height(8.dp)) }
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
-        )
     }
 
     if (showClearCookieConfirm) {
@@ -249,7 +243,7 @@ fun DataStorageScreen(
                                     AppLogger.e("DataStorageScreen", "Failed to clear cookies", error)
                                     context.getString(R.string.clear_cookies_failed)
                                 }
-                            snackbarHostState.showSnackbar(message)
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {

@@ -453,7 +453,9 @@ object BluetoothSessionManager {
             if (!session.gatt.readCharacteristic(characteristic)) {
                 throw IllegalStateException("Failed to start BLE characteristic read")
             }
-            val bytes = withTimeoutOrNull(timeoutMs) { deferred.await() } ?: ByteArray(0)
+            // 超时和成功读取空内容是两种结果，超时必须进入工具失败路径。
+            val bytes = withTimeoutOrNull(timeoutMs) { deferred.await() }
+                ?: throw IllegalStateException("BLE characteristic read timed out")
             return BluetoothReadData(
                 sessionId = sessionId,
                 bytesRead = bytes.size,
