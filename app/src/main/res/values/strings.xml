@@ -9177,4 +9177,6 @@
     <string name="onboarding_brand_name">Operit</string>
     <string name="onboarding_tagline">让想法，走出对话框。</string>
     <string name="onboarding_start">开始</string>
+    <string name="terminal_error_command_timeout">终端命令执行超时</string>
+    <string name="browser_error_action_timeout">浏览器操作等待超时</string>
 </resources>

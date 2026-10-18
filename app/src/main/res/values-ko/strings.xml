@@ -8111,4 +8111,6 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">아이디어를 대화창 밖으로.</string>
     <string name="onboarding_start">시작</string>
+    <string name="terminal_error_command_timeout">터미널 명령 실행 시간이 초과되었습니다</string>
+    <string name="browser_error_action_timeout">브라우저 작업 대기 시간이 초과되었습니다</string>
 </resources>

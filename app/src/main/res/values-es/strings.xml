@@ -8330,4 +8330,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Deja que tus ideas salgan del cuadro de diálogo.</string>
     <string name="onboarding_start">Comenzar</string>
+    <string name="terminal_error_command_timeout">Se agotó el tiempo de ejecución del comando del terminal</string>
+    <string name="browser_error_action_timeout">Se agotó el tiempo de espera de la operación del navegador</string>
 </resources>

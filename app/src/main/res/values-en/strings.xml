@@ -9177,4 +9177,6 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Let ideas move beyond the chat box.</string>
     <string name="onboarding_start">Start</string>
+    <string name="terminal_error_command_timeout">Terminal command execution timed out</string>
+    <string name="browser_error_action_timeout">Timed out waiting for the browser action to complete</string>
 </resources>

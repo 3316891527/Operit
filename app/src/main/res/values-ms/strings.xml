@@ -8262,4 +8262,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Biarkan idea melangkaui kotak dialog.</string>
     <string name="onboarding_start">Mula</string>
+    <string name="terminal_error_command_timeout">Pelaksanaan arahan terminal tamat masa</string>
+    <string name="browser_error_action_timeout">Masa menunggu operasi pelayar telah tamat</string>
 </resources>

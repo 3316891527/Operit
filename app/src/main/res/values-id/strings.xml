@@ -8262,4 +8262,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Biarkan ide melampaui kotak dialog.</string>
     <string name="onboarding_start">Mulai</string>
+    <string name="terminal_error_command_timeout">Eksekusi perintah terminal melewati batas waktu</string>
+    <string name="browser_error_action_timeout">Waktu tunggu operasi browser habis</string>
 </resources>

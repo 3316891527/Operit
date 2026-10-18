@@ -287,7 +287,7 @@ export namespace System {
          * @param sessionId The ID of the session.
          * @param command The command to execute.
          * @param timeoutMs Optional timeout in milliseconds. Strongly recommended to always pass explicitly.
-         * @returns Promise resolving to the command execution result. On timeout, the current command is cancelled, the terminal session is kept, and the returned result has `timedOut === true`.
+         * @returns 正常完成时返回命令结果；超时则取消当前命令并拒绝 Promise，会话保留，异常的 data 中保留输出及 timedOut === true。
          */
         function exec(sessionId: string, command: string, timeoutMs?: number | string): Promise<TerminalCommandResultData>;
 
@@ -297,7 +297,7 @@ export namespace System {
          * @param sessionId The ID of the session.
          * @param command The command to execute.
          * @param options Streaming execution options.
-         * @returns Promise resolving to the final command execution result.
+         * @returns 正常完成时返回最终命令结果；超时拒绝 Promise，异常的 data 中保留已收集输出及 timedOut === true。
          */
         function execStreaming(sessionId: string, command: string, options?: {
             timeoutMs?: number | string;
@@ -309,7 +309,7 @@ export namespace System {
          * Commands using the same executorKey reuse the same hidden login context and are not shown in the visible terminal UI.
          * @param command The command to execute.
          * @param options Optional hidden executor options.
-         * @returns Promise resolving to the hidden command execution result. On timeout, the current command is cancelled, the hidden executor session is kept, and the returned result has `timedOut === true`.
+         * @returns 正常完成时返回隐藏命令结果；超时拒绝 Promise，异常的 data 中保留输出及 timedOut === true，隐藏执行器继续按原有规则管理。
          */
         function hiddenExec(command: string, options?: {
             executorKey?: string;

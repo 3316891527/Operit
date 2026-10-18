@@ -157,9 +157,10 @@ class StandardTerminalCommandExecutor(private val context: Context) {
 
                     val fullOutput = completionOutput?.takeIf { it.isNotEmpty() } ?: events.joinToString("")
                     AppLogger.d(TAG, "Command output collected: '$fullOutput', exitCode: $exitCode")
+                    // 超时必须返回失败，不能因为命令没有抛出普通异常而显示成功。
                     val errorMessage =
                             when {
-                                didTimeout -> null
+                                didTimeout -> context.getString(R.string.terminal_error_command_timeout)
                                 !hasCompleted -> context.getString(R.string.terminal_error_command_failed)
                                 else -> null
                             }
@@ -311,7 +312,7 @@ class StandardTerminalCommandExecutor(private val context: Context) {
             val fullOutput = completionOutput?.takeIf { it.isNotEmpty() } ?: events.joinToString("")
             val errorMessage =
                 when {
-                    didTimeout -> null
+                    didTimeout -> context.getString(R.string.terminal_error_command_timeout)
                     !hasCompleted -> context.getString(R.string.terminal_error_command_failed)
                     else -> null
                 }
@@ -383,7 +384,7 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                 val didTimeout = hiddenResult.state == HiddenExecResult.State.TIMEOUT
                 val errorMessage =
                     when {
-                        didTimeout -> null
+                        didTimeout -> context.getString(R.string.terminal_error_command_timeout)
                         !hiddenResult.isOk ->
                             context.getString(
                                 R.string.terminal_error_execute_hidden_command,

@@ -8102,4 +8102,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Deixe suas ideias saírem da caixa de diálogo.</string>
     <string name="onboarding_start">Iniciar</string>
+    <string name="terminal_error_command_timeout">O tempo de execução do comando do terminal se esgotou</string>
+    <string name="browser_error_action_timeout">O tempo de espera da operação do navegador se esgotou</string>
 </resources>

@@ -8855,4 +8855,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">Lasă-ți ideile să iasă din caseta de dialog.</string>
     <string name="onboarding_start">Începe</string>
+    <string name="terminal_error_command_timeout">Execuția comenzii de terminal a depășit timpul limită</string>
+    <string name="browser_error_action_timeout">Timpul de așteptare pentru operația browserului a expirat</string>
 </resources>
