@@ -637,10 +637,11 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val workspaceHubPage by actualViewModel.workspaceHubPage.collectAsState()
     val isWorkspaceHubOpen = workspaceHubPage != WorkspaceHubPage.CHAT
     val keyboardController = LocalSoftwareKeyboardController.current
-    // AppContent owns the primary chat IME layout; embedded chat retains its local translation.
+    // 聊天输入框和工作台终端各自维护 IME 位移；终端不能再叠加外层 imePadding。
     val shouldUseChatLocalImeHandling =
-        embedded &&
-            inputStyle == UserPreferencesManager.INPUT_STYLE_AGENT
+        (embedded &&
+            inputStyle == UserPreferencesManager.INPUT_STYLE_AGENT) ||
+            (isWorkspaceHubOpen && workspaceHubPage == WorkspaceHubPage.TERMINAL)
     var hasEverShownWorkspaceHub by remember { mutableStateOf(false) }
     LaunchedEffect(isWorkspaceHubOpen) {
         if (isWorkspaceHubOpen) hasEverShownWorkspaceHub = true
