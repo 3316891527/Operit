@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -79,7 +80,6 @@ fun AssistantConfigScreen() {
         zipFileLauncher.launch(intent)
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState(initial = uiState.scrollPosition)
 
     // 在 Composable 函数中获取字符串资源，以便在 LaunchedEffect 中使用
@@ -95,16 +95,15 @@ fun AssistantConfigScreen() {
     // 显示操作结果的 SnackBar
     LaunchedEffect(uiState.operationSuccess, uiState.errorMessage) {
         if (uiState.operationSuccess) {
-            snackbarHostState.showSnackbar(operationSuccessString)
+            Toast.makeText(context, operationSuccessString, Toast.LENGTH_SHORT).show()
             viewModel.clearOperationSuccess()
         } else if (uiState.errorMessage != null) {
-            snackbarHostState.showSnackbar(uiState.errorMessage ?: errorOccurredString)
+            Toast.makeText(context, uiState.errorMessage ?: errorOccurredString, Toast.LENGTH_SHORT).show()
             viewModel.clearErrorMessage()
         }
     }
 
     CustomScaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             // 主要内容

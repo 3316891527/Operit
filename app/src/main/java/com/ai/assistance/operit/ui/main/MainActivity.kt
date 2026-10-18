@@ -1,6 +1,5 @@
 package com.ai.assistance.operit.ui.main
 
-import android.Manifest
 import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -12,13 +11,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -39,13 +37,11 @@ import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.preferences.AgreementPreferences
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.OrientationReloadPolicy
-import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.data.updates.UpdateManager
 import com.ai.assistance.operit.data.updates.UpdateStatus
 import com.ai.assistance.operit.ui.common.NavItem
-import com.ai.assistance.operit.ui.features.agreement.screens.AgreementScreen
-import com.ai.assistance.operit.ui.features.permission.screens.PermissionGuideScreen
+import com.ai.assistance.operit.ui.features.onboarding.screens.WelcomeScreen
 import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingScreenWithState
 import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingState
 import com.ai.assistance.operit.ui.features.startup.screens.LocalPluginLoadingState
@@ -96,8 +92,6 @@ class MainActivity : ComponentActivity() {
     // UpdateManager实例
     private lateinit var updateManager: UpdateManager
 
-    // 是否显示权限引导界面
-    private var showPermissionGuide by mutableStateOf(false)
 
     // 存储待处理的分享文件URIs
     private var pendingSharedFileUris: List<Uri>? = null
@@ -110,17 +104,6 @@ class MainActivity : ComponentActivity() {
     private var pendingRouteArgs by mutableStateOf<Map<String, Any?>>(emptyMap())
     private var pendingRouteRequestId by mutableStateOf(0L)
 
-    // 通知权限请求启动器
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            AppLogger.d(TAG, "通知权限已授予")
-        } else {
-            AppLogger.d(TAG, "通知权限被拒绝")
-            Toast.makeText(this, getString(R.string.notification_permission_denied), Toast.LENGTH_LONG).show()
-        }
-    }
 
     private fun processPendingSharedText() {
         if (pendingSharedFileUris != null) {
@@ -375,16 +358,8 @@ class MainActivity : ComponentActivity() {
     // ======== 执行初始化检查 ========
     private fun performInitialChecks() {
         lifecycleScope.launch {
-            // 1. 检查通知权限（Android 13+）
-            checkNotificationPermission()
-
-            // 2. 检查权限级别设置
-            checkPermissionLevelSet()
-
             prepareStartupChatIfNeeded()
-
-            // 3. 在协议已接受且无需权限引导时，启动插件加载
-            if (!showPermissionGuide && agreementPreferences.isAgreementAccepted()) {
+            if (agreementPreferences.isOnboardingCompleted()) {
                 startPluginLoading()
             }
         }
@@ -527,49 +502,6 @@ class MainActivity : ComponentActivity() {
 
     }
 
-    // ======== 检查通知权限 ========
-    private fun checkNotificationPermission() {
-        // Android 13 (API 33) 及以上需要请求通知权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permission = Manifest.permission.POST_NOTIFICATIONS
-            when {
-                ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
-                    AppLogger.d(TAG, "通知权限已授予")
-                }
-                shouldShowRequestPermissionRationale(permission) -> {
-                    // 用户之前拒绝过，显示说明并再次请求
-                    AppLogger.d(TAG, "需要显示通知权限说明")
-                    Toast.makeText(
-                        this,
-                        getString(R.string.notification_permission_rationale),
-                        Toast.LENGTH_LONG
-                    ).show()
-                    notificationPermissionLauncher.launch(permission)
-                }
-                else -> {
-                    // 直接请求权限
-                    AppLogger.d(TAG, "请求通知权限")
-                    notificationPermissionLauncher.launch(permission)
-                }
-            }
-        } else {
-            // Android 13 以下不需要运行时通知权限
-            AppLogger.d(TAG, "Android 版本 < 13，无需请求通知权限")
-        }
-    }
-
-    // ======== 检查权限级别设置 ========
-    private fun checkPermissionLevelSet() {
-        // 检查是否已设置权限级别
-        val permissionLevel = androidPermissionPreferences.getPreferredPermissionLevel()
-        AppLogger.d(TAG, "当前权限级别: $permissionLevel")
-        showPermissionGuide = permissionLevel == null
-        AppLogger.d(
-                TAG,
-                "权限级别检查: 已设置=${!showPermissionGuide}, 将${if(showPermissionGuide) "" else "不"}显示权限引导界面"
-        )
-    }
-
     // ======== 显示与性能配置 ========
     private fun configureDisplaySettings() {
         // 1. 请求持续的高性能模式 (API 31+)
@@ -614,38 +546,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             OperitTheme {
                 Box {
-                    // 检查是否需要显示用户协议
-                        if (!agreementPreferences.isAgreementAccepted()) {
-                            AgreementScreen(
-                                    onAgreementAccepted = {
-                                        agreementPreferences.acceptCurrentAgreement()
-                                        // 协议接受后，检查权限级别设置
-                                        lifecycleScope.launch {
-                                            // 确保使用非阻塞方式更新UI
-                                            delay(300) // 短暂延迟确保UI状态更新
-                                            checkPermissionLevelSet()
-                                            if (!showPermissionGuide) {
-                                                startPluginLoading()
-                                            }
-                                            // 重新设置应用内容
-                                            setAppContent()
-                                        }
-                                    }
-                            )
-                        }
-                        // 检查是否需要显示权限引导界面
-                        else if (showPermissionGuide) {
-                            PermissionGuideScreen(
-                                    onComplete = {
-                                        showPermissionGuide = false
-                                        // 权限设置完成后，启动插件加载并更新内容
-                                        startPluginLoading()
-                                        setAppContent()
-                                    }
-                            )
-                        }
-                        // 显示主应用界面
-                        else {
+                    val onboardingCompleted by agreementPreferences.onboardingCompletedFlow.collectAsState()
+                    if (!onboardingCompleted) {
+                        WelcomeScreen(
+                            onStart = {
+                                agreementPreferences.markOnboardingCompleted()
+                                startPluginLoading()
+                            }
+                        )
+                    } else {
                             // 处理待处理的分享文件
                             processPendingSharedFiles()
                             processPendingSharedText()

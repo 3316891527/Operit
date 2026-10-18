@@ -1,8 +1,10 @@
 ---
 fork: https://github.com/3316891527/Operit
-status: implemented-ci-pending
+status: implemented-user-verified
 ---
 # 个人发行版离线资源外置
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 现有 APK 随包携带 Sherpa-NCNN 模型、Ubuntu 安装归档和 Android/Windows 导出模板，完整安装包接近 400 MB。
 

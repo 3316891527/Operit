@@ -1,10 +1,12 @@
 ---
 repo: https://github.com/3316891527/Operit
 branch: feat/integrated-distribution
-status: implemented-awaiting-ci
+status: implemented-user-verified
 ---
 
 # 插件页面生命周期与聊天草稿
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 用户反馈插件首次打开或从 AI 对话切回时持续转圈，原版同一插件的页面可以保持；聊天输入框的未发送文字在切后台后丢失。另有插件加载超时变频繁的反馈，需要区分启动插件扫描与页面脚本执行。
 

@@ -1,10 +1,12 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/integrated-distribution
-status: 代码已实现，等待云端构建及设备复测
+status: implemented-user-verified
 ---
 
 # 工作台终端与资源入口界面整理
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 用户实测聊天性能修复后，终端页成为下一项体验问题：当前界面同时显示工作台页签、Canvas 内部终端页签和底部输入工具栏，层级关系不清晰；侧栏展开时主内容的 3D 旋转和阴影让右侧聊天页像被压出一层厚重阴影。HTML 打包器在资源缺失时允许继续进入，直到真正导出才失败；离线资源页功能完整但视觉和状态表达简陋。
 

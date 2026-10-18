@@ -1,10 +1,12 @@
 ---
 repo: https://github.com/3316891527/Operit
 branch: feat/integrated-distribution
-status: implementation-complete-awaiting-cloud
+status: implemented-user-verified
 ---
 
 # 个人发行版设置与消息体验整理
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 本轮实现用户提出的 11 项调整，兼容已经发布的个人发行版。源码完成后派发 Android Build 和 Android Tests；构建、JVM 用例和 Android 界面验收分别记录，不将已派发当作通过。
 

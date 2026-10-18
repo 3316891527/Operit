@@ -80,16 +80,34 @@ internal fun WorkspaceSessionTabs(
             }
         }
         if (hasTerminal) {
+            val newTerminalIconTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                alpha = if (creatingSession) 0.38f else 1f,
+            )
             IconButton(onClick = onNewTerminal, enabled = !creatingSession) {
-                if (creatingSession) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                else Icon(Icons.Default.Add, stringResource(R.string.workspace_terminal_new))
+                if (creatingSession) {
+                    CircularProgressIndicator(
+                        Modifier.size(18.dp),
+                        color = newTerminalIconTint,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Add,
+                        stringResource(R.string.workspace_terminal_new),
+                        tint = newTerminalIconTint,
+                    )
+                }
             }
         }
         if (page == WorkspaceHubPage.TERMINAL) {
             var menuOpen by remember { mutableStateOf(false) }
             androidx.compose.foundation.layout.Box {
                 IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Default.MoreVert, stringResource(R.string.workspace_terminal_options))
+                    Icon(
+                        Icons.Default.MoreVert,
+                        stringResource(R.string.workspace_terminal_options),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.workspace_terminal_setup)) }, onClick = {

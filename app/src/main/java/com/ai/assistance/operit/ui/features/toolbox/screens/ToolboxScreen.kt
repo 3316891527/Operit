@@ -29,13 +29,10 @@ import com.ai.assistance.operit.ui.features.toolbox.screens.ffmpegtoolbox.FFmpeg
 import com.ai.assistance.operit.ui.features.toolbox.screens.filemanager.FileManagerScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.logcat.LogcatScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.shellexecutor.ShellExecutorScreen
-import com.ai.assistance.operit.terminal.main.TerminalScreen as TerminalViewScreen
 // import com.ai.assistance.operit.ui.features.toolbox.screens.terminalconfig.TerminalAutoConfigScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.uidebugger.UIDebuggerScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.ai.assistance.operit.terminal.TerminalManager
-import com.ai.assistance.operit.terminal.rememberTerminalEnv
 import com.ai.assistance.operit.ui.main.LocalAppNavigationModel
 import com.ai.assistance.operit.ui.main.navigation.NavigationEntrySpec
 import com.ai.assistance.operit.ui.main.navigation.NavigationSurface
@@ -199,18 +196,6 @@ fun FileManagerToolScreen(navController: NavController) {
                 Box(modifier = Modifier.padding(paddingValues)) {
                         FileManagerScreen(navController = navController)
                 }
-        }
-}
-
-/** 显示终端工具屏幕 */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TerminalToolScreen(navController: NavController, forceShowSetup: Boolean = false) {
-        val context = LocalContext.current
-        val terminalManager = remember { TerminalManager.getInstance(context) }
-        val terminalEnv = rememberTerminalEnv(terminalManager = terminalManager, forceShowSetup = forceShowSetup)
-        CustomScaffold() { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) { TerminalViewScreen(env = terminalEnv) }
         }
 }
 

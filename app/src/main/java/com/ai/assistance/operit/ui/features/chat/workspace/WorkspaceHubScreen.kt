@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.workspace
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -16,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
@@ -95,11 +98,27 @@ private fun WorkspaceHubContent(
     SideEffect { if (requestedPage != WorkspaceHubPage.CHAT) lastOpenPage = requestedPage }
     val entryRequest by actualViewModel.workspaceEntryRequest.collectAsState()
     val context = LocalContext.current
+    val activity = context as? Activity
+    val statusBarSurfaceColor = MaterialTheme.colorScheme.surface.toArgb()
+    // 终端工作台使用不透明的主题底色，离开终端页时恢复全局沉浸式状态栏。
+    SideEffect {
+        activity?.window?.statusBarColor =
+            if (isVisible && page == WorkspaceHubPage.TERMINAL) {
+                statusBarSurfaceColor
+            } else {
+                android.graphics.Color.TRANSPARENT
+            }
+    }
+    DisposableEffect(activity, isVisible, page) {
+        onDispose {
+            activity?.window?.statusBarColor = android.graphics.Color.TRANSPARENT
+        }
+    }
     val terminalManager = remember(context) { TerminalManager.getInstance(context) }
     val terminalState by terminalManager.terminalState.collectAsState()
     val keyboard = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
-    var terminalPage by remember { mutableStateOf(EmbeddedTerminalPage.CONSOLE) }
+    val terminalPage by actualViewModel.embeddedTerminalPage.collectAsState()
     var creatingSession by remember { mutableStateOf(false) }
     var sessionError by remember { mutableStateOf<String?>(null) }
     var sessionToClose by remember { mutableStateOf<TerminalSessionData?>(null) }
@@ -121,7 +140,6 @@ private fun WorkspaceHubContent(
                     )
                     return@launch
                 }
-                terminalPage = EmbeddedTerminalPage.CONSOLE
                 if (sessionId != null) terminalManager.switchToSession(sessionId)
                 actualViewModel.openTerminalFromHub()
                 if (createNewSession || terminalManager.terminalState.value.sessions.isEmpty()) {
@@ -147,7 +165,7 @@ private fun WorkspaceHubContent(
 
     BackHandler(enabled = isVisible && requestedPage != WorkspaceHubPage.CHAT) {
         if (page == WorkspaceHubPage.TERMINAL && terminalPage != EmbeddedTerminalPage.CONSOLE) {
-            terminalPage = EmbeddedTerminalPage.CONSOLE
+            actualViewModel.showEmbeddedTerminalPage(EmbeddedTerminalPage.CONSOLE)
         } else actualViewModel.onWorkspaceHubBack()
     }
 
@@ -170,7 +188,7 @@ private fun WorkspaceHubContent(
             onTerminal = { id -> enterTerminal(sessionId = id) },
             onCloseTerminal = { id -> sessionToClose = terminalManager.terminalState.value.sessions.firstOrNull { it.id == id } },
             onNewTerminal = { enterTerminal(createNewSession = true) },
-            onTerminalPage = { keyboard?.hide(); terminalPage = it },
+            onTerminalPage = { keyboard?.hide(); actualViewModel.showEmbeddedTerminalPage(it) },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f))
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -213,7 +231,7 @@ private fun WorkspaceHubContent(
             }
             // 离开终端即释放显示层，会话仍由终端管理器持有。
             if (isVisible && page == WorkspaceHubPage.TERMINAL) {
-                ComputerScreen(page = terminalPage, onPageChange = { terminalPage = it })
+                ComputerScreen(page = terminalPage, onPageChange = actualViewModel::showEmbeddedTerminalPage)
             }
         }
     }

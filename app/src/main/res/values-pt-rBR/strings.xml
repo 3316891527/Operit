@@ -543,25 +543,8 @@
     <string name="network_unavailable">Conexão de rede não disponível, verifique suas configurações de rede</string>
     <string name="network_status">Status da rede: %1$s</string>
     <string name="network_status_label">status da rede</string>
-    <string name="config_title">Assistente Operat AI</string>
-    <string name="config_description">Use uma chave de API da DeepSeek ou configure outro serviço de modelo</string>
-    <string name="config_api_key_label">Chave de API</string>
-    <string name="config_api_key_placeholder">Chave API DeepSeek</string>
-    <string name="config_save_button">Confirme e salve</string>
-    <string name="config_get_token">Obter chave de API da DeepSeek</string>
-    <string name="config_saving">Salvando...</string>
-    <string name="config_api_key_invalid_format">O formato da chave de API da DeepSeek está incorreto. Use apenas letras ASCII, números e símbolos, sem espaços ou caracteres invisíveis.</string>
     <string name="config_use_free">de contribuidores</string>
-    <string name="config_custom">Configurar outro modelo</string>
     <string name="config_free_usage_exceeded">Os tempos livres de hoje foram usados</string>
-    <string name="onboarding_config_not_found">A configuração de modelo selecionada não existe mais. Selecione outra.</string>
-    <string name="onboarding_config_provider_missing">Selecione um provedor de serviço de modelo</string>
-    <string name="onboarding_config_provider_unavailable">O provedor de serviço de modelo selecionado não está disponível. Selecione outro.</string>
-    <string name="onboarding_config_endpoint_invalid">Insira um endpoint de API HTTP ou HTTPS válido</string>
-    <string name="onboarding_config_model_missing">Selecione ou insira um modelo para o chat</string>
-    <string name="onboarding_config_api_key_missing">Este serviço de modelo requer uma chave de API</string>
-    <string name="onboarding_config_api_key_invalid">O formato da chave de API ou do conjunto de chaves está incorreto. Verifique e tente novamente.</string>
-    <string name="onboarding_config_apply_failed">Não foi possível salvar ou aplicar a configuração do modelo. Tente novamente.</string>
     <string name="one_click_config_title">Configuração com um clique</string>
     <string name="one_click_config_loading">Recuperando informações de configuração...</string>
     <string name="one_click_config_success">Configuração com um clique bem-sucedida!</string>
@@ -788,8 +771,6 @@
     <string name="settings_reply_notification_desc">Enviar lembrete de notificação depois que a IA concluir a resposta</string>
     <string name="notification_ai_reply_title">Assistente de IA</string>
     <string name="notification_ai_reply_content">AI terminou de responder</string>
-    <string name="notification_permission_rationale">Para notificá-lo imediatamente após a IA concluir sua resposta, a permissão de notificação precisa ser concedida</string>
-    <string name="notification_permission_denied">Permissão de notificação negada, você não poderá receber lembretes de resposta de IA</string>
     <string name="settings_auto_accessibility">Conceder permissões de acessibilidade automaticamente</string>
     <string name="settings_auto_accessibility_desc">Após fechar, você precisa autorizar manualmente cada vez que abrir o software.</string>
     <string name="settings_section_permissions">Permissões e segurança</string>
@@ -943,25 +924,7 @@
     <string name="language_info">Após alterar o idioma, o aplicativo será reiniciado automaticamente para aplicar a nova configuração de idioma</string>
     <string name="language_changing">Mudando de idioma...</string>
     <string name="language_changed">O idioma foi alterado, o aplicativo está sendo reiniciado</string>
-    <string name="agreement_title">Contrato do Usuário e Política de Privacidade</string>
-    <string name="agreement_subtitle">Leia atentamente e concorde com os seguintes termos antes de usar.</string>
-    <string name="agreement_version">Versão do acordo: %1$s</string>
-    <string name="agreement_human_readable_title">Versão humana do acordo (versão não legal)</string>
-    <string name="agreement_human_readable_content">Limite do serviço: Operit não fornece serviços públicos de interação emocional antropomórfica. Operit é um cliente de código aberto que roda localmente no dispositivo do usuário. Não opera serviços de inferência de modelos, não hospeda sessões de chat ou dados de interação, e não distribui credenciais de modelo compartilhadas. Solicitações a modelos em nuvem são enviadas diretamente do seu dispositivo ao provedor de modelos que você configurar com suas próprias credenciais; os dados relacionados seguem as regras desse provedor. Modelos locais executam inferência no seu dispositivo.\n\nEste app pode chamar arquivos, terminais, automação, Root, ADB, extensões e recursos semelhantes. Verifique as operações antes de executá-las, faça backup de dados importantes e conceda permissões com cuidado. Perdas envolvendo dispositivos, dados, contas ou outros interesses causadas por ações do usuário, configuração do usuário, serviços de terceiros ou extensões de terceiros devem ser tratadas pelo operador real conforme a lei aplicável.\n\nPlugins, scripts, Skills, kits de ferramentas e outros conteúdos de terceiros no marketplace pertencem aos autores ou titulares de direitos indicados, junto com a responsabilidade relacionada. A listagem ou instalação pelo marketplace não significa que Operit garanta, endosse ou obtenha direitos sobre esse conteúdo. Confirme a licença e o status dos direitos antes de usar, modificar, publicar ou redistribuir.</string>
-    <string name="agreement_serious_title">Versão estrita do acordo legal</string>
-    <string name="agreement_serious_content"><![CDATA[
-        <p><b>Contrato do Usuário e Política de Privacidade do Operit</b><br>Versão: 2026-07-15; data efetiva pretendida: 15 de julho de 2026.</p>
-        <p><b>1. Escopo e versão do contrato</b><br>Este contrato se aplica ao cliente Android lançado oficialmente pelo Operit e aos seus recursos online opcionais. Ao usar este app, você confirma que leu e aceitou a versão atual. O app registra, na inicialização, a versão do contrato que você aceitou; quando o contrato tiver atualização substancial, o app exigirá que você confirme a nova versão antes de continuar. O código aberto no repositório é licenciado sob a GNU Lesser General Public License version 3 (LGPLv3), conforme o arquivo <code>LICENSE</code> na raiz. Este contrato não exclui nem reduz direitos concedidos pela lei aplicável ou por licenças de código aberto.</p>
-        <p><b>2. Posicionamento do produto e serviços de terceiros</b><br>Operit é software cliente de código aberto. Não fornece inferência de grandes modelos de linguagem, API Keys compartilhadas, retransmissão de solicitações de chat ou hospedagem em nuvem de registros de chat. Modelos em nuvem, voz em nuvem, busca, geração de imagens, MCP e outros recursos de rede são escolhidos, configurados e ativados por você. Ao usar esses serviços, os dados são enviados diretamente ao provedor correspondente e regidos pelos termos de serviço e política de privacidade desse provedor. Você deve avaliar a segurança, legalidade e adequação de provedores, modelos, endpoints e extensões, e proteger suas credenciais.</p>
-        <p><b>3. Processamento de dados e privacidade</b><br>Registros de chat, cartões de personagem, memórias, configuração de modelos e API Keys normalmente ficam armazenados nos dados do app no seu dispositivo. Quando você exporta, faz backup, envia arquivos, usa recursos de rede de terceiros ou envia solicitações para um serviço HTTP externo, os dados relacionados serão copiados, transmitidos ou divulgados conforme suas ações. Marketplace, anúncios, verificações de atualização, login do GitHub e recursos de publicação podem acessar recursos do Operit, GitHub ou terceiros relacionados; esses recursos não retransmitem solicitações de modelos de chat. Gerencie seus dados e credenciais junto com as configurações de segurança do dispositivo, termos de terceiros e este contrato.</p>
-        <p><b>4. Implantação externa e responsabilidade do operador</b><br>Serviços HTTP externos, QQ Bot, resposta automática e recursos semelhantes são ativados por sua escolha. Se você os disponibilizar a outras pessoas ou ao público, você atua como implantador ou operador real e é responsável por controle de acesso, autorização de usuários, segurança de conteúdo, proteção de dados, proteção de menores, avisos necessários e outras obrigações aplicáveis. Se você fornecer continuamente ao público na China continental serviços de interação emocional que simulem traços de personalidade, padrões de pensamento ou estilos de comunicação de pessoas naturais, deve avaliar e cumprir as Medidas Provisórias para a Administração de Serviços de Interação Antropomórfica de Inteligência Artificial (《人工智能拟人化互动服务管理暂行办法》) e outras regras aplicáveis. Você não deve usar este app para fornecer a menores parentes virtuais, companheiros virtuais ou outros serviços de relacionamento íntimo virtual, induzir dependência emocional ou vício, realizar manipulação emocional ou infringir direitos e interesses legítimos de terceiros.</p>
-        <p><b>5. Uso legal e responsabilidade pelo conteúdo</b><br>Você deve cumprir leis e regulamentos aplicáveis, regras de serviços de terceiros e regras de plataforma. Você não deve usar este app, extensões ou configuração para realizar atividades ilegais, infringir direitos de terceiros, acessar sistemas ou dados sem autorização, ou disseminar conteúdo ilegal ou prejudicial. Você é responsável pelo conteúdo e pela conduta que inserir, configurar, gerar, publicar, encaminhar ou operar. Saídas de IA podem conter erros, omissões ou vieses e não constituem aconselhamento médico, de crise de saúde mental, jurídico, financeiro ou outro aconselhamento profissional. Em situações urgentes de perigo, contate imediatamente serviços de emergência locais, instituições médicas ou pessoas de confiança.</p>
-        <p><b>6. Software fornecido no estado em que se encontra</b><br>Na medida permitida pela lei aplicável, este software é fornecido "no estado em que se encontra" e "conforme disponível". Contribuidores não oferecem garantias expressas ou implícitas quanto à disponibilidade contínua, exatidão, segurança, comercialização, adequação a finalidade específica ou não violação do software ou de serviços de terceiros. Perdas causadas pelo uso deste software, serviços de terceiros, extensões, configuração do usuário ou modificações próprias devem ser tratadas conforme a lei aplicável e os contratos de serviço relevantes.</p>
-        <p><b>7. Atualizações do contrato e contato</b><br>Podemos atualizar este contrato por requisitos de função, legais ou de segurança, e fornecer a versão atual no app. Atualizações que afetem substancialmente os direitos dos usuários entrarão em vigor com o aumento da versão do contrato e nova solicitação de confirmação. Você pode enviar perguntas e comentários pelo repositório do projeto, entrada de feedback no app ou canais públicos de contato.</p>
-    ]]></string>
-    <string name="agreement_disclaimer">A versão em linguagem simples serve apenas para facilitar o entendimento. Se ela diferir da versão formal chinesa, a versão formal chinesa prevalecerá.</string>
-    <string name="agreement_accept">eu li e concordo</string>
-    <string name="agreement_wait">Aguarde... (%1$d)</string>
+    <string name="agreement_title">Contrato do Usuário</string>
     <string name="sherpa_k2_ncnn_init_failed">Falha na inicialização do mecanismo de reconhecimento de fala em tempo real</string>
     <string name="sherpa_k2_ncnn_init_success">Mecanismo de reconhecimento de fala em tempo real inicializado com sucesso</string>
     <string name="files_selected">%1$d arquivos selecionados</string>
@@ -992,51 +955,6 @@
     <string name="request_timeout">A solicitação expirou. Tente novamente mais tarde</string>
     <string name="network_transfer_failed">Falha na transmissão de rede, verifique a conexão de rede</string>
     <string name="try_again_later">Falha na solicitação, tente novamente mais tarde</string>
-    <string name="permission_guide_previous">Etapa anterior</string>
-    <string name="permission_guide_next">Próxima etapa</string>
-    <string name="permission_guide_complete">Terminar</string>
-    <string name="permission_guide_welcome">Bem-vindo</string>
-    <string name="permission_guide_basic_permissions">Configurações básicas de permissão</string>
-    <string name="permission_guide_permission_level">Seleção de nível de permissão</string>
-    <string name="permission_guide_welcome_title">Bem-vindo</string>
-    <string name="permission_guide_welcome_desc">Antes de começarmos a usar o aplicativo, precisamos configurar algumas permissões básicas e selecionar o nível de permissão de sua preferência.</string>
-    <string name="permission_guide_welcome_hint">Esse processo leva apenas alguns minutos e ajudará o aplicativo a funcionar melhor para você.</string>
-    <string name="permission_guide_welcome_start">Clique no botão no canto inferior direito para iniciar a configuração</string>
-    <string name="permission_guide_basic_title">Configurações básicas de permissão</string>
-    <string name="permission_guide_basic_desc">Conceda as seguintes permissões básicas para garantir o funcionamento normal do aplicativo</string>
-    <string name="permission_guide_storage_title">Permissões de armazenamento</string>
-    <string name="permission_guide_storage_desc">Permite que o aplicativo leia e grave arquivos</string>
-    <string name="permission_guide_overlay_title">Permissões de janela flutuante</string>
-    <string name="permission_guide_overlay_desc">Permitir que o aplicativo exiba janelas flutuantes</string>
-    <string name="permission_guide_battery_title">Isenção de otimização de bateria</string>
-    <string name="permission_guide_battery_desc">Permitir que o aplicativo seja executado em segundo plano</string>
-    <string name="permission_guide_location_title">permissões de localização</string>
-    <string name="permission_guide_location_desc">Permitir que aplicativos obtenham informações de localização</string>
-    <string name="permission_guide_check_permissions">Verifique o status da permissão</string>
-    <string name="permission_guide_all_granted">所有基础权限已授予，可以继续下一步</string>
-    <string name="permission_guide_warning_title">Concessão de permissão incompleta</string>
-    <string name="permission_guide_warning_message">Você não concedeu todas as permissões necessárias, o que pode resultar na funcionalidade incompleta do aplicativo ou na saída inesperada. Tem certeza de que deseja continuar?</string>
-    <string name="permission_guide_warning_continue">continuar</string>
-    <string name="permission_guide_warning_return">autorização de devolução</string>
-    <string name="permission_guide_level_title">Selecione o nível de permissão</string>
-    <string name="permission_guide_level_desc">Selecione seu nível de permissão preferido, que determinará o escopo da funcionalidade disponível para o aplicativo</string>
-    <string name="permission_guide_standard_title">Permissões padrão</string>
-    <string name="permission_guide_standard_desc">Permissões básicas de execução de aplicativos, sem necessidade de permissões especiais</string>
-    <string name="permission_guide_accessibility_title">Acessibilidade</string>
-    <string name="permission_guide_accessibility_desc">Análise e simulação de conteúdo de tela através de serviços de acessibilidade</string>
-    <string name="permission_guide_debugger_title">permissões de depuração</string>
-    <string name="permission_guide_debugger_desc">Fornece acesso ao sistema em nível ADB via Shizuku</string>
-    <string name="permission_guide_root_title">Permissões de raiz</string>
-    <string name="permission_guide_root_desc">Direitos de superusuário, pode realizar qualquer operação do sistema</string>
-    <string name="permission_guide_confirm">Confirmar seleção</string>
-    <string name="permission_guide_change_anytime">Você pode alterar o nível de permissão a qualquer momento nas configurações</string>
-    <string name="permission_guide_storage_setting_failed">Não foi possível abrir as configurações de permissão de armazenamento. Autorize manualmente</string>
-    <string name="permission_guide_overlay_setting_failed">Não foi possível abrir as configurações da janela flutuante. Autorize manualmente</string>
-    <string name="permission_guide_battery_hint">Encontre o aplicativo na lista e defina-o como "Não otimizar"</string>
-    <string name="permission_guide_battery_setting_failed">Não foi possível abrir as configurações de otimização da bateria. Defina-as manualmente</string>
-    <string name="permission_guide_granted">Autorizado</string>
-    <string name="permission_guide_not_granted">Não autorizado</string>
-    <string name="permission_guide_selected">Selecionado</string>
     <string name="wizard_collapse">fechar</string>
     <string name="wizard_expand">Expandir</string>
     <string name="wizard_open_docs">Documentação oficial</string>
@@ -1327,7 +1245,7 @@
     <string name="github_source_desc">Baixe diretamente do servidor oficial do GitHub, a velocidade pode ser mais lenta</string>
     <string name="no_mirrors_found">Nenhuma fonte de espelho disponível encontrada</string>
     <string name="beta_plan">Programa beta</string>
-    <string name="beta_plan_desc">Após a adesão, quando uma versão de teste atualizada estiver disponível, uma atualização de patch de cerca de 30 MB será baixada automaticamente em WiFi.</string>
+    <string name="beta_plan_desc">Ative para verificar atualizações de patch com + no número da versão. Quando desativado, apenas versões estáveis são verificadas.</string>
     <string name="main_github_login_success">Login bem-sucedido. Bem-vindo %1$s!</string>
     <string name="main_github_get_user_failed">Falha ao obter informações do usuário: %1$s</string>
     <string name="main_github_login_failed">Falha no login: %1$s</string>
@@ -1440,13 +1358,6 @@
     <string name="image_generated">A imagem foi gerada</string>
     <string name="image_preview">Visualização da imagem</string>
     <string name="load_more_history">Clique para carregar o histórico</string>
-    <string name="permission_guide_intro_1_title">Automação de UI orientada por voz</string>
-    <string name="permission_guide_intro_1_desc">Converse naturalmente com a IA por meio de reconhecimento e síntese de fala nativos que são executados inteiramente no seu dispositivo. Sua voz é o comando e você pode comandá-la para realizar operações complexas, como cliques na tela e saltos de aplicativos, liberando completamente suas mãos.</string>
-    <string name="permission_guide_intro_2_title">Uma caixa de ferramentas poderosa para geeks e desenvolvedores</string>
-    <string name="permission_guide_intro_2_desc">Mais de 40 ferramentas profissionais integradas, abrangendo gerenciamento de arquivos, solicitações de rede, execução de scripts e controle de sistema. Combinado com um poderoso sistema de plug-ins, você pode automatizar tarefas e obter controle profundo sobre seu dispositivo.</string>
-    <string name="permission_guide_intro_3_title">Liberte a sua criatividade e esteja pronto quando precisar</string>
-    <string name="permission_guide_intro_3_desc">Esteja você projetando páginas da web, processando arquivos de mídia ou despertando a IA a qualquer momento por meio de uma janela flutuante, o Operit oferece um ambiente criativo e de assistência poderoso, flexível e seguro. Seus dados são seus para controlar.</string>
-    <string name="permission_guide_intro_page_indicator">Introdução à função %1$d/%2$d</string>
     <string name="debugger_accessibility_fallback_title">Programa de Aceleração de Acessibilidade (Alto Risco)</string>
     <string name="debugger_accessibility_fallback_description">O modo de depuração executa operações de UI por meio do Shell por padrão. A ativação de serviços de acessibilidade pode acelerar bastante a automação da IU, mas aumentará significativamente o risco de ser detectado por alguns aplicativos e resultar no banimento da conta. A menos que você esteja buscando a velocidade operacional máxima, não é recomendável ligá-lo.</string>
     <string name="accessibility_risk_warning_title">Aviso de risco do serviço de acessibilidade</string>
@@ -1792,7 +1703,7 @@
     <string name="tool_permission_manager">Gerenciamento de permissões de aplicativos</string>
     <string name="tool_permission_manager_desc">Gerencie as permissões de vários aplicativos móveis para proteger a privacidade e a segurança</string>
     <string name="tool_user_agreement">Contrato do usuário</string>
-    <string name="tool_user_agreement_desc">Veja o contrato do usuário e a política de privacidade do aplicativo</string>
+    <string name="tool_user_agreement_desc">Veja o contrato do usuário do aplicativo</string>
     <string name="tool_default_assistant_guide">Configurações padrão do assistente</string>
     <string name="tool_default_assistant_guide_desc">Defina a suspensão de voz do Operit como assistente padrão do sistema</string>
     <string name="tool_terminal">terminal de comando</string>
@@ -6025,15 +5936,15 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="chat_ai_service_unavailable_summarize">O serviço de IA está indisponível e não pode ser resumido</string>
     <string name="chat_summarize_failed_no_valid_summary">Falha no resumo: falha ao gerar um resumo válido</string>
     <string name="chat_summarize_generation_failed">Falha na geração do resumo: %1$s</string>
-    <string name="service_operit_running">Operat está em execução</string>
+    <string name="service_operit_running">Operit Kong está em execução</string>
     <string name="service_chat_complete_reminder">Lembrete de conclusão de conversa</string>
     <string name="service_chat_complete_reminder_sound">Lembrete de conclusão de conversa (som de bipe)</string>
     <string name="service_chat_complete_reminder_vibration">Lembrete de conclusão de conversa (vibração)</string>
     <string name="service_chat_complete_reminder_sound_vibration">Lembrete de conclusão de conversa (bipe e vibração)</string>
-    <string name="service_keep_background">Mantenha o Operit rodando em segundo plano.</string>
+    <string name="service_keep_background">Mantenha o Operit Kong rodando em segundo plano.</string>
     <string name="service_notify_when_complete">Lembrá-lo quando a conversa for concluída.</string>
-    <string name="service_running_wake_pause">Operit está em execução (pausa de ativação)</string>
-    <string name="service_running_wake_listening">Operit está rodando (acordando e ouvindo)</string>
+    <string name="service_running_wake_pause">Operit Kong está em execução (pausa de ativação)</string>
+    <string name="service_running_wake_listening">Operit Kong está rodando (acordando e ouvindo)</string>
     <string name="service_running_stats">Executar sessão %1$d · Invocar ferramenta %2$d</string>
     <string name="service_running_http_listening">Escuta HTTP externa na porta %1$d</string>
     <string name="service_running_with_http">%1$s · HTTP externo %2$d</string>
@@ -7341,7 +7252,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="markdown_link_not_openable">Este link aponta para uma referência dentro do documento e não pode ser aberto</string>
     <string name="provider_openai_codex">Codex (OpenAI)</string>
     <string name="provider_antigravity">Antigravity (Google)</string>
-    <string name="onboarding_config_codex_login_required">Faça login no Codex primeiro</string>
     <string name="codex_login_title">Login no Codex</string>
     <string name="codex_login_starting">Preparando o login do Codex...</string>
     <string name="codex_login_waiting">Conclua o login no navegador</string>
@@ -8116,8 +8026,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
 <string name="long_pasted_text_threshold_unit">characters</string>
 <string name="long_pasted_text_to_file">Convert long pasted text to a file</string>
 <string name="long_pasted_text_to_file_desc">Pasted text longer than the configured limit is added as a text attachment</string>
-<string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users must read and confirm the updated agreement when they next enter the market.</string>
-<string name="market_agreement_subtitle">Please read and agree to this agreement before entering the plugin market. The market is for sharing and discovering plugins; authors are encouraged to open source through a public GitHub repository.</string>
+<string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users can review updated content from the market entry.</string>
 <string name="market_agreement_title">Plugin Market Agreement and Community Rules</string>
 <string name="market_agreement_version">Market agreement version: %1$s</string>
 <string name="multi_select_actions">Actions</string>
@@ -8190,4 +8099,9 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
 <string name="user_configuration_rename">Rename user configuration</string>
 <string name="user_configuration_select">Select user configuration</string>
 <string name="user_configuration_unlock_notice">This configuration was locked during migration from older settings. Saving removes the document-wide lock.</string>
+    <!-- 单页首次使用流程 -->
+    <string name="onboarding_tagline">Deixe suas ideias saírem da caixa de diálogo.</string>
+    <string name="onboarding_start">Iniciar</string>
+    <string name="terminal_error_command_timeout">O tempo de execução do comando do terminal se esgotou</string>
+    <string name="browser_error_action_timeout">O tempo de espera da operação do navegador se esgotou</string>
 </resources>

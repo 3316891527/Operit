@@ -9,6 +9,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.api.GitHubApiService
 import com.ai.assistance.operit.util.GithubReleaseUtil
 import com.ai.assistance.operit.util.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -446,6 +447,16 @@ object PatchUpdateInstaller {
                     (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex <= targetToPatchIndex)
             }
             if (candidates.isEmpty()) {
+                val direct = stepsByEdge.values.filter { step ->
+                    step.targetSha256 == targetSha &&
+                        (targetToVersion.isBlank() || step.toVersion.isBlank() || step.toVersion == targetToVersion) &&
+                        (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex == targetToPatchIndex)
+                }
+                if (direct.size == 1 && chain.isEmpty()) {
+                    // 已安装包与发布补丁记录的上一版哈希不一致时，仍允许使用唯一的目标补丁。
+                    chain.add(direct.first())
+                    break
+                }
                 throw IllegalStateException("No applicable next patch for base sha ${currentSha.take(12)}")
             }
 
@@ -648,7 +659,15 @@ object PatchUpdateInstaller {
         onEvent: (ProgressEvent) -> Unit
     ) {
         if (multiThread) {
-            downloadToFileMultiThread(url = url, out = out, label = label, onEvent = onEvent)
+            try {
+                downloadToFileMultiThread(url = url, out = out, label = label, onEvent = onEvent)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                // GitHub 镜像可能不支持 Range，分片失败时回退到普通下载。
+                AppLogger.w(TAG, "Range 下载不可用，回退到单线程: $url", error)
+                downloadToFileSingleThread(url = url, out = out, label = label, onEvent = onEvent)
+            }
             return
         }
         downloadToFileSingleThread(url = url, out = out, label = label, onEvent = onEvent)

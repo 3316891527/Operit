@@ -2,6 +2,8 @@
 
 客户端更新源为 `3316891527/Operit` 的 GitHub Releases。更新检查、补丁生成和 APK 还原均在本仓库实现，不需要上游维护者的私有后端。`about_website` 保留项目原有介绍用途，独立发行版不再从其中推导更新仓库。
 
+自动检查与手动检查共用 Beta 计划开关：关闭时仅选择 `x.y.z` 正式版，开启后也选择 `x.y.z+n` 补丁版。渠道过滤在选择最新版本前完成，避免补丁版遮住较新的正式版。退出 Beta 计划不会降级已安装的补丁版，仍可检查更高基础版本的正式版。切换开关后清除旧检查结果，下次检查使用新的渠道设置。此规则从 `+5` 客户端生效，已发布旧安装包仍按其自身代码检查更新。
+
 ## 首次接入
 
 先完整安装一次包含独立更新源的 `1.12.2+1`。更早安装包仍查询上游仓库，仅在个人仓库创建标签或 Release 无法改变旧安装包中的更新源。包名保持 `com.ai.assistance.operit.kong`，沿用已有固定签名，versionCode 保持递增。
@@ -12,7 +14,7 @@
 
 在个人仓库的 Android Build 工作流中选择 `main` 分支，任务选择 `:app:verifyCiPreviewRelease`，勾选 `publish_release` 并填写 `release_notes`。`previous_tag` 留空时选择同一基础版本中版本号最高且早于目标的正式 Release；也可指定符合条件的标签。普通构建的 `publish_release` 默认为 false。
 
-本次紧急修复使用 `versionName = 1.12.2+3`、`versionCode = 59`，先派发 `assembleDebug` 并保持 `publish_release=false`。调试包使用 `com.ai.assistance.operit.debug`，与 Kong 正式版的数据独立。确认调试结果后，再从包含修复的正式发行分支执行上述发布步骤；内部版本号 59 高于 `+2` 的 58。
+本次修复准备 `versionName = 1.12.2+5`、`versionCode = 61`，先派发 `assembleDebug` 并保持 `publish_release=false`。调试包使用 `com.ai.assistance.operit.debug`，与 Kong 正式版的数据独立。确认调试结果后，再从包含修复的正式发行分支执行上述发布步骤；内部版本号 61 高于 `+4` 的 60。
 
 增量发布只选择同一基础版本且展示版本低于目标 `+2` 的正式 APK；还需匹配已安装 APK 的哈希及完整补丁链。展示版本为 `+2` 及以上的旧包使用完整 APK，不生成版本号倒序或相等的增量包。既有客户端的检查更新按展示版本比较，不能通过新 Release 远程改变旧客户端逻辑，因此这些用户需从 Release 或分发渠道下载完整包覆盖安装。低于 `+2` 的旧客户端也必须已经接入个人仓库更新源，才可能发现此 Release。
 

@@ -1,5 +1,7 @@
 # 第二十三节：review 修复
 
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
+
 关联 PR：[#1372](https://github.com/AAswordman/Operit/pull/1372)。上下文拆分原 PR #1249 已关闭，后续统一在本分支维护。
 
 ## 原本情况与目标
@@ -22,7 +24,6 @@ review 指出的 Room 迁移版本冲突涉及 #1278、#1284 和本 PR，等待�
 ## 验证安排
 
 静态检查完整 PR 差异、语言资源和代码引用；提交后派发 Android Tests 与 assembleDebug。工作流结果及新增界面实机验收另行记录。
-
 
 ## 实现结果
 

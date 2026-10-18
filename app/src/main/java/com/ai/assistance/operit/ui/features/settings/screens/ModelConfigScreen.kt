@@ -23,11 +23,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,11 +38,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.data.api.CodexAuthManager
 import com.ai.assistance.operit.api.chat.llmprovider.AIService
 import com.ai.assistance.operit.api.chat.llmprovider.ApiKeyPoolAvailabilityTester
-import com.ai.assistance.operit.api.chat.llmprovider.ChatConfigReadiness
-import com.ai.assistance.operit.api.chat.llmprovider.ChatConfigReadinessIssue
 import com.ai.assistance.operit.api.chat.llmprovider.ModelConfigConnectionTester
 import com.ai.assistance.operit.api.chat.llmprovider.ModelConnectionTestOutcome
 import com.ai.assistance.operit.api.chat.llmprovider.ModelConnectionTestType
@@ -64,11 +60,8 @@ import com.ai.assistance.operit.ui.features.settings.sections.AdvancedSettingsSe
 import com.ai.assistance.operit.ui.features.settings.sections.ModelApiSettingsSection
 import com.ai.assistance.operit.ui.features.settings.sections.ModelParametersSection
 import com.ai.assistance.operit.ui.features.settings.sections.SettingsInfoBanner
-import com.ai.assistance.operit.ui.features.settings.sections.SettingsSectionHeader
 import com.ai.assistance.operit.ui.features.settings.sections.SettingsSwitchRow
 import com.ai.assistance.operit.ui.features.settings.sections.SettingsTextField
-import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistry
-import com.ai.assistance.operit.ui.main.navigation.RegisterRouteBackGuard
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -93,10 +86,6 @@ private data class ConfigOrganizerRow(
     val group: ModelConfigGroup? = null
 )
 
-enum class ModelConfigEntryMode {
-    STANDARD,
-    CHAT_ONBOARDING
-}
 
 private val headerPresets =
     listOf(
@@ -168,22 +157,15 @@ private fun serializeHeaderEntries(headers: List<Pair<String, String>>): String 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ModelConfigScreen(
-    navigateToMnnModelDownload: (() -> Unit)? = null,
-    entryMode: ModelConfigEntryMode = ModelConfigEntryMode.STANDARD
+    navigateToMnnModelDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val configManager = remember { ModelConfigManager(context) }
     val functionalConfigManager = remember { FunctionalConfigManager(context) }
-    val codexAuthManager = remember { CodexAuthManager.getInstance(context) }
-    val codexAuthState by codexAuthManager.authState.collectAsState()
-    val antigravityAuthManager = remember { com.ai.assistance.operit.data.api.AntigravityAuthManager.getInstance(context) }
-    val antigravityAuthState by antigravityAuthManager.authState.collectAsState()
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val saveCoordinator = rememberModelConfigSaveCoordinator()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     // 配置状态
     val configList = configManager.configListFlow.collectAsState(initial = listOf("default")).value
     val configSummaries by configManager.configSummariesFlow.collectAsState(initial = emptyList())
@@ -204,7 +186,6 @@ fun ModelConfigScreen(
             ApiKeyPoolAvailabilityTester(selectedConfigId, configManager)
         }
     var hasInitializedSelection by remember { mutableStateOf(false) }
-    var isCompletingOnboarding by remember { mutableStateOf(false) }
 
     // 配置名称映射
     val configNameMap = remember { mutableStateMapOf<String, String>() }
@@ -275,114 +256,10 @@ fun ModelConfigScreen(
 
     fun showNotification(message: String) {
         if (message.isBlank()) return
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(message)
-        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    fun showOnboardingError(message: String) {
-        showNotification(message)
-    }
 
-    if (entryMode == ModelConfigEntryMode.CHAT_ONBOARDING) {
-        RegisterRouteBackGuard {
-            if (!hasInitializedSelection || isCompletingOnboarding) {
-                return@RegisterRouteBackGuard false
-            }
-
-            val targetConfigId = selectedConfigId
-            if (targetConfigId.isEmpty()) return@RegisterRouteBackGuard false
-            isCompletingOnboarding = true
-            try {
-                saveCoordinator.flushAll(showSuccess = false)
-                if (selectedConfigId != targetConfigId) {
-                    showOnboardingError(
-                        context.getString(R.string.onboarding_config_apply_failed)
-                    )
-                    return@RegisterRouteBackGuard false
-                }
-
-                val targetConfig = configManager.getModelConfig(targetConfigId)
-                if (targetConfig == null) {
-                    showOnboardingError(
-                        context.getString(R.string.onboarding_config_not_found)
-                    )
-                    return@RegisterRouteBackGuard false
-                }
-
-                val currentMapping =
-                    functionalConfigManager.getConfigMappingForFunction(FunctionType.CHAT)
-                val targetModelIndex =
-                    if (currentMapping.configId == targetConfigId) {
-                        currentMapping.modelIndex
-                    } else {
-                        0
-                    }
-                val registeredPluginProviderIds =
-                    ToolPkgAiProviderRegistry.list().mapTo(mutableSetOf()) { it.providerId }
-                val readiness =
-                    ChatConfigReadiness.evaluate(
-                        config = targetConfig,
-                        modelIndex = targetModelIndex,
-                        registeredPluginProviderIds = registeredPluginProviderIds,
-                        codexAuthenticated = codexAuthState != null,
-                        antigravityAuthenticated = antigravityAuthState != null,
-                    )
-                if (!readiness.isReady) {
-                    val messageResId =
-                        when (readiness.issue) {
-                            ChatConfigReadinessIssue.PROVIDER_MISSING ->
-                                R.string.onboarding_config_provider_missing
-                            ChatConfigReadinessIssue.PROVIDER_UNAVAILABLE ->
-                                R.string.onboarding_config_provider_unavailable
-                            ChatConfigReadinessIssue.ENDPOINT_INVALID ->
-                                R.string.onboarding_config_endpoint_invalid
-                            ChatConfigReadinessIssue.MODEL_MISSING ->
-                                R.string.onboarding_config_model_missing
-                            ChatConfigReadinessIssue.CODEX_LOGIN_REQUIRED ->
-                                R.string.onboarding_config_codex_login_required
-                            ChatConfigReadinessIssue.ANTIGRAVITY_LOGIN_REQUIRED ->
-                                R.string.onboarding_config_antigravity_login_required
-                            ChatConfigReadinessIssue.API_KEY_MISSING ->
-                                R.string.onboarding_config_api_key_missing
-                            ChatConfigReadinessIssue.API_KEY_INVALID ->
-                                R.string.onboarding_config_api_key_invalid
-                            null -> R.string.onboarding_config_apply_failed
-                        }
-                    showOnboardingError(context.getString(messageResId))
-                    return@RegisterRouteBackGuard false
-                }
-
-                functionalConfigManager.setConfigForFunction(
-                    FunctionType.CHAT,
-                    targetConfigId,
-                    targetModelIndex
-                )
-                val savedMapping =
-                    functionalConfigManager.getConfigMappingForFunction(FunctionType.CHAT)
-                check(
-                    savedMapping.configId == targetConfigId &&
-                        savedMapping.modelIndex == targetModelIndex
-                )
-                EnhancedAIService.refreshServiceForFunction(
-                    context.applicationContext,
-                    FunctionType.CHAT
-                )
-                true
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e("ModelConfigScreen", "首次引导配置保存或绑定失败", e)
-                showOnboardingError(
-                    context.getString(R.string.onboarding_config_apply_failed)
-                )
-                false
-            } finally {
-                isCompletingOnboarding = false
-            }
-        }
-    }
 
     DisposableEffect(lifecycleOwner, saveCoordinator) {
         val observer =
@@ -401,7 +278,6 @@ fun ModelConfigScreen(
 
     // 主界面内容
     CustomScaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -966,19 +842,6 @@ fun ModelConfigScreen(
             )
         }
 
-        if (isCompletingOnboarding) {
-            Surface(
-                modifier = Modifier.matchParentSize().clickable(enabled = true) {},
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-        }
         }
     }
 }

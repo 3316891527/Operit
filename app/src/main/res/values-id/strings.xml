@@ -518,25 +518,8 @@
     <string name="network_unavailable">Koneksi jaringan tidak tersedia, periksa pengaturan jaringan Anda</string>
     <string name="network_status">Status jaringan: %1$s</string>
     <string name="network_status_label">Status Jaringan</string>
-    <string name="config_title">Asisten Operit AI</string>
-    <string name="config_description">Gunakan Kunci API DeepSeek atau konfigurasikan layanan model lain</string>
-    <string name="config_api_key_label">Kunci API</string>
-    <string name="config_api_key_placeholder">Kunci API DeepSeek</string>
-    <string name="config_save_button">Konfirmasi dan Simpan</string>
-    <string name="config_get_token">Dapatkan Kunci API DeepSeek</string>
-    <string name="config_saving">Menyimpan...</string>
-    <string name="config_api_key_invalid_format">Format Kunci API DeepSeek tidak benar. Gunakan hanya huruf ASCII, angka, dan simbol, tanpa spasi atau karakter tak terlihat.</string>
     <string name="config_use_free">Manfaatkan kontributor</string>
-    <string name="config_custom">Konfigurasikan Model Lain</string>
     <string name="config_free_usage_exceeded">Kuota gratis hari ini telah habis</string>
-    <string name="onboarding_config_not_found">Konfigurasi model yang dipilih sudah tidak ada. Pilih konfigurasi lain.</string>
-    <string name="onboarding_config_provider_missing">Pilih penyedia layanan model</string>
-    <string name="onboarding_config_provider_unavailable">Penyedia layanan model yang dipilih tidak tersedia. Pilih yang lain.</string>
-    <string name="onboarding_config_endpoint_invalid">Masukkan endpoint API HTTP atau HTTPS yang valid</string>
-    <string name="onboarding_config_model_missing">Pilih atau masukkan model untuk percakapan</string>
-    <string name="onboarding_config_api_key_missing">Layanan model ini memerlukan Kunci API</string>
-    <string name="onboarding_config_api_key_invalid">Format Kunci API atau kumpulan kunci tidak benar. Periksa lalu coba lagi.</string>
-    <string name="onboarding_config_apply_failed">Konfigurasi model tidak dapat disimpan atau diterapkan. Coba lagi.</string>
     <string name="one_click_config_title">Konfigurasi Satu Klik</string>
     <string name="one_click_config_loading">Mengambil informasi konfigurasi...</string>
     <string name="one_click_config_success">Konfigurasi satu klik berhasil!</string>
@@ -836,8 +819,6 @@
     <string name="settings_reply_notification_desc">Kirim notifikasi pengingat setelah AI menyelesaikan balasan</string>
     <string name="notification_ai_reply_title">Asisten AI</string>
     <string name="notification_ai_reply_content">AI telah menyelesaikan balasan</string>
-    <string name="notification_permission_rationale">Untuk memberi tahu Anda tepat waktu setelah AI menyelesaikan balasan, izin notifikasi diperlukan</string>
-    <string name="notification_permission_denied">Izin notifikasi ditolak, Anda tidak akan menerima pengingat balasan AI</string>
     <string name="settings_auto_accessibility">Izin Aksesibilitas Otomatis</string>
     <string name="settings_auto_accessibility_desc">Setelah dimatikan, perlu otorisasi manual setiap kali membuka perangkat lunak</string>
     <string name="settings_section_permissions">Izin dan Keamanan</string>
@@ -965,29 +946,6 @@
     <string name="request_timeout">Permintaan waktu habis, coba lagi nanti</string>
     <string name="network_transfer_failed">Transfer jaringan gagal, periksa koneksi jaringan</string>
     <string name="try_again_later">Permintaan gagal, coba lagi nanti</string>
-    <string name="permission_guide_previous">Sebelumnya</string>
-    <string name="permission_guide_next">Selanjutnya</string>
-    <string name="permission_guide_complete">Selesai</string>
-    <string name="permission_guide_welcome">Selamat Datang</string>
-    <string name="permission_guide_basic_permissions">Pengaturan Izin Dasar</string>
-    <string name="permission_guide_permission_level">Pemilihan Tingkat Izin</string>
-    <string name="permission_guide_welcome_title">Selamat Datang</string>
-    <string name="permission_guide_welcome_desc">Sebelum mulai menggunakan aplikasi, kami perlu mengatur beberapa izin dasar dan memilih tingkat izin yang Anda sukai.</string>
-    <string name="permission_guide_welcome_hint">Proses ini hanya memerlukan beberapa menit, dan akan membantu aplikasi melayani Anda dengan lebih baik.</string>
-    <string name="permission_guide_welcome_start">Klik tombol di kanan bawah untuk mulai pengaturan</string>
-    <string name="permission_guide_basic_title">Pengaturan Izin Dasar</string>
-    <string name="permission_guide_basic_desc">Berikan izin dasar berikut untuk memastikan aplikasi berjalan normal</string>
-    <string name="permission_guide_storage_title">Izin Penyimpanan</string>
-    <string name="permission_guide_storage_desc">Izinkan aplikasi membaca dan menulis file</string>
-    <string name="permission_guide_overlay_title">Izin Jendela Mengambang</string>
-    <string name="permission_guide_overlay_desc">Izinkan aplikasi menampilkan jendela mengambang</string>
-    <string name="permission_guide_battery_title">Pengecualian Optimasi Baterai</string>
-    <string name="permission_guide_battery_desc">Izinkan aplikasi berjalan di latar belakang</string>
-    <string name="permission_guide_location_title">Izin Lokasi</string>
-    <string name="permission_guide_location_desc">Izinkan aplikasi mendapatkan informasi lokasi</string>
-    <string name="permission_guide_check_permissions">Periksa Status Izin</string>
-    <string name="permission_guide_all_granted">Semua izin dasar telah diberikan, dapat melanjutkan ke langkah berikutnya</string>
-    <string name="permission_guide_warning_title">Pemberian Izin Tidak Lengkap</string>
 
     <string name="shizuku_demo_shizuku_permission_granted">Izin Shizuku telah diberikan</string>
     <string name="shizuku_demo_shizuku_permission_denied">Permintaan izin Shizuku ditolak</string>
@@ -1071,28 +1029,6 @@
     <string name="update_check">Pemeriksaan pembaruan</string>
     <string name="unknown_value">Tidak diketahui</string>
 
-    <string name="permission_guide_warning_message">Anda belum memberikan semua izin yang diperlukan, ini dapat menyebabkan fungsi aplikasi tidak lengkap atau keluar secara tidak normal. Yakin ingin melanjutkan?</string>
-    <string name="permission_guide_warning_continue">Lanjutkan</string>
-    <string name="permission_guide_warning_return">Kembali ke Pemberian Izin</string>
-    <string name="permission_guide_level_title">Pilih Tingkat Izin</string>
-    <string name="permission_guide_level_desc">Silakan pilih tingkat izin yang Anda sukai, ini akan menentukan cakupan fungsi yang dapat digunakan aplikasi</string>
-    <string name="permission_guide_standard_title">Izin Standar</string>
-    <string name="permission_guide_standard_desc">Izin dasar untuk menjalankan aplikasi, tidak memerlukan izin khusus</string>
-    <string name="permission_guide_accessibility_title">Izin Aksesibilitas</string>
-    <string name="permission_guide_accessibility_desc">Menganalisis konten layar dan mensimulasikan operasi melalui layanan aksesibilitas</string>
-    <string name="permission_guide_debugger_title">Izin Debug</string>
-    <string name="permission_guide_debugger_desc">Menyediakan akses sistem tingkat ADB melalui Shizuku</string>
-    <string name="permission_guide_root_title">Izin Root</string>
-    <string name="permission_guide_root_desc">Izin pengguna super, dapat menjalankan operasi sistem apa pun</string>
-    <string name="permission_guide_confirm">Konfirmasi Pilihan</string>
-    <string name="permission_guide_change_anytime">Anda dapat mengubah tingkat izin kapan saja di pengaturan</string>
-    <string name="permission_guide_storage_setting_failed">Tidak dapat membuka pengaturan izin penyimpanan, harap berikan izin secara manual</string>
-    <string name="permission_guide_overlay_setting_failed">Tidak dapat membuka pengaturan jendela mengambang, harap berikan izin secara manual</string>
-    <string name="permission_guide_battery_hint">Harap temukan aplikasi dalam daftar dan atur menjadi "Tidak dioptimalkan"</string>
-    <string name="permission_guide_battery_setting_failed">Tidak dapat membuka pengaturan optimasi baterai, harap atur secara manual</string>
-    <string name="permission_guide_granted">Telah Diizinkan</string>
-    <string name="permission_guide_not_granted">Belum Diizinkan</string>
-    <string name="permission_guide_selected">Telah Dipilih</string>
     <string name="wizard_collapse">Tutup</string>
     <string name="wizard_expand">Buka</string>
     <string name="wizard_open_docs">Dokumentasi Resmi</string>
@@ -1144,7 +1080,7 @@
     <string name="github_source_desc">Unduh langsung dari server resmi GitHub, kecepatan mungkin lambat</string>
     <string name="no_mirrors_found">Tidak ditemukan sumber mirror yang tersedia</string>
     <string name="beta_plan">Rencana Beta</string>
-    <string name="beta_plan_desc">Setelah bergabung, pembaruan patch sekitar 30MB akan otomatis diunduh saat ada versi uji coba baru di jaringan wifi.</string>
+    <string name="beta_plan_desc">Aktifkan untuk memeriksa pembaruan patch dengan + pada nomor versi. Saat dinonaktifkan, hanya rilis stabil yang diperiksa.</string>
     <string name="main_github_login_success">Login berhasil, selamat datang %1$s!</string>
     <string name="main_github_get_user_failed">Gagal mendapatkan informasi pengguna: %1$s</string>
     <string name="main_github_login_failed">Login gagal: %1$s</string>
@@ -1451,25 +1387,7 @@
     <string name="language_info">Setelah mengubah bahasa, aplikasi akan otomatis dimulai ulang untuk menerapkan pengaturan bahasa baru</string>
     <string name="language_changing">Mengganti bahasa...</string>
     <string name="language_changed">Bahasa telah diubah, memulai ulang aplikasi</string>
-    <string name="agreement_title">Perjanjian Pengguna &amp; Kebijakan Privasi</string>
-    <string name="agreement_subtitle">Harap baca dan setujui ketentuan berikut sebelum menggunakan.</string>
-    <string name="agreement_version">Versi perjanjian: %1$s</string>
-    <string name="agreement_human_readable_title">Versi Perjanjian Mudah Dipahami (Bukan Versi Hukum)</string>
-    <string name="agreement_human_readable_content">Batas layanan: Operit tidak menyediakan layanan interaksi emosional antropomorfik untuk publik. Operit adalah klien sumber terbuka yang berjalan secara lokal di perangkat pengguna. Operit tidak mengoperasikan layanan inferensi model, tidak menghosting sesi chat atau data interaksi, dan tidak membagikan kredensial model bersama. Permintaan model cloud dikirim langsung dari perangkat Anda ke penyedia model yang Anda konfigurasi dengan kredensial Anda sendiri; data terkait tunduk pada aturan penyedia tersebut. Model lokal melakukan inferensi di perangkat Anda.\n\nAplikasi ini dapat memanggil file, terminal, otomatisasi, Root, ADB, ekstensi, dan kemampuan serupa. Periksa operasi sebelum menjalankannya, cadangkan data penting, dan berikan izin dengan hati-hati. Kerugian atas perangkat, data, akun, atau kepentingan lain yang disebabkan oleh tindakan pengguna, konfigurasi pengguna, layanan pihak ketiga, atau ekstensi pihak ketiga harus ditangani oleh operator sebenarnya menurut hukum yang berlaku.\n\nPlugin, skrip, Skill, toolkit, dan konten pihak ketiga lain di marketplace adalah milik penulis atau pemegang hak yang tercantum, beserta tanggung jawab terkait. Penayangan atau pemasangan dari marketplace tidak berarti Operit menjamin, mendukung, atau memperoleh hak atas konten tersebut. Pastikan lisensi dan status hak sebelum menggunakan, memodifikasi, menerbitkan, atau mendistribusikannya kembali.</string>
-    <string name="agreement_serious_title">Perjanjian Hukum Versi Ketat</string>
-    <string name="agreement_serious_content"><![CDATA[
-        <p><b>Perjanjian Pengguna dan Kebijakan Privasi Operit</b><br>Versi: 2026-07-15; tanggal berlaku yang direncanakan: 15 Juli 2026.</p>
-        <p><b>1. Ruang Lingkup dan Versi Perjanjian</b><br>Perjanjian ini berlaku untuk klien Android Operit yang dirilis secara resmi dan fitur online opsionalnya. Dengan menggunakan aplikasi ini, Anda menyatakan telah membaca dan menyetujui versi saat ini. Aplikasi mencatat versi perjanjian yang Anda setujui saat startup; ketika perjanjian diperbarui secara substansial, aplikasi akan meminta Anda mengonfirmasi versi baru sebelum melanjutkan. Kode sumber terbuka di repositori dilisensikan berdasarkan GNU Lesser General Public License version 3 (LGPLv3) dalam file <code>LICENSE</code> di root. Perjanjian ini tidak mengecualikan atau mengurangi hak yang diberikan oleh hukum yang berlaku atau lisensi sumber terbuka.</p>
-        <p><b>2. Posisi Produk dan Layanan Pihak Ketiga</b><br>Operit adalah perangkat lunak klien sumber terbuka. Operit tidak menyediakan inferensi model bahasa besar, API Key bersama, relay permintaan chat, atau hosting cloud untuk riwayat chat. Model cloud, suara cloud, pencarian, pembuatan gambar, MCP, dan fitur jaringan lain dipilih, dikonfigurasi, dan diaktifkan oleh Anda. Saat Anda menggunakan layanan tersebut, data dikirim langsung ke penyedia layanan terkait dan tunduk pada ketentuan layanan serta kebijakan privasi penyedia tersebut. Anda harus menilai keamanan, legalitas, dan kesesuaian penyedia, model, endpoint, dan ekstensi, serta menjaga kredensial dengan baik.</p>
-        <p><b>3. Pemrosesan Data dan Privasi</b><br>Riwayat chat, kartu karakter, memori, konfigurasi model, dan API Key biasanya disimpan dalam data aplikasi di perangkat Anda. Saat Anda secara aktif mengekspor, mencadangkan, mengunggah file, menggunakan fitur jaringan pihak ketiga, atau mengirim permintaan ke layanan HTTP eksternal, data terkait akan disalin, dikirim, atau diungkap sesuai tindakan Anda. Marketplace, pengumuman, pemeriksaan pembaruan, login GitHub, dan fitur publikasi dapat mengakses Operit, GitHub, atau sumber daya pihak ketiga terkait; fitur ini tidak merelay permintaan model chat. Kelola data dan kredensial Anda bersama pengaturan keamanan perangkat, ketentuan layanan pihak ketiga, dan perjanjian ini.</p>
-        <p><b>4. Deployment Eksternal dan Tanggung Jawab Operator</b><br>Layanan HTTP eksternal, QQ Bot, balasan otomatis, dan kemampuan serupa diaktifkan atas pilihan Anda. Jika Anda menyediakannya untuk orang lain atau publik, Anda bertindak sebagai pihak yang benar-benar melakukan deployment atau operator dan bertanggung jawab atas kontrol akses, otorisasi pengguna, keamanan konten, perlindungan data, perlindungan anak di bawah umur, pemberitahuan yang diperlukan, dan kewajiban lain yang berlaku. Jika Anda secara berkelanjutan menyediakan kepada publik di Tiongkok daratan layanan interaksi emosional yang mensimulasikan sifat kepribadian, pola berpikir, atau gaya komunikasi manusia alami, Anda harus menilai dan mematuhi Interim Measures for the Administration of Artificial Intelligence Anthropomorphic Interaction Services (《人工智能拟人化互动服务管理暂行办法》) serta aturan lain yang berlaku. Anda tidak boleh menggunakan aplikasi ini untuk menyediakan kerabat virtual, pendamping virtual, atau layanan hubungan intim virtual lain kepada anak di bawah umur, mendorong ketergantungan emosional atau kecanduan, melakukan manipulasi emosional, atau melanggar hak dan kepentingan sah pihak lain.</p>
-        <p><b>5. Penggunaan yang Sah dan Tanggung Jawab Konten</b><br>Anda harus mematuhi hukum dan peraturan yang berlaku, aturan layanan pihak ketiga, dan aturan platform. Anda tidak boleh menggunakan aplikasi, ekstensi, atau konfigurasi ini untuk melakukan kegiatan melanggar hukum, melanggar hak pihak lain, mengakses sistem atau data tanpa izin, atau menyebarkan konten ilegal atau berbahaya. Anda bertanggung jawab atas konten dan tindakan yang Anda masukkan, konfigurasi, hasilkan, publikasikan, teruskan, atau operasikan. Keluaran AI dapat mengandung kesalahan, kelalaian, atau bias dan bukan nasihat medis, krisis kesehatan mental, hukum, keuangan, atau profesional lainnya. Dalam keadaan bahaya mendesak, segera hubungi layanan darurat setempat, institusi medis, atau orang tepercaya.</p>
-        <p><b>6. Perangkat Lunak Disediakan Apa Adanya</b><br>Sejauh diizinkan oleh hukum yang berlaku, perangkat lunak ini disediakan dalam kondisi "apa adanya" dan "sebagaimana tersedia". Kontributor tidak memberikan jaminan tersurat atau tersirat atas ketersediaan berkelanjutan, akurasi, keamanan, kelayakan jual, kesesuaian untuk tujuan tertentu, atau tidak adanya pelanggaran dari perangkat lunak maupun layanan pihak ketiga. Kerugian yang disebabkan oleh penggunaan perangkat lunak ini, layanan pihak ketiga, ekstensi, konfigurasi pengguna, atau modifikasi sendiri harus ditangani menurut hukum yang berlaku dan perjanjian layanan terkait.</p>
-        <p><b>7. Pembaruan Perjanjian dan Kontak</b><br>Kami dapat memperbarui perjanjian ini karena kebutuhan fitur, hukum, atau keamanan, dan menyediakan versi saat ini di dalam aplikasi. Pembaruan yang berdampak substansial pada hak pengguna akan berlaku dengan menaikkan versi perjanjian dan meminta konfirmasi ulang. Anda dapat menyampaikan pertanyaan dan masukan melalui repositori proyek, pintu masuk umpan balik dalam aplikasi, atau kanal kontak publik.</p>
-    ]]></string>
-    <string name="agreement_disclaimer">Versi mudah dipahami hanya untuk mempermudah pemahaman. Jika berbeda dari versi formal bahasa Tionghoa, versi formal bahasa Tionghoa yang berlaku.</string>
-    <string name="agreement_accept">Saya telah membaca dan menyetujui</string>
-    <string name="agreement_wait">Harap tunggu... (%1$d)</string>
+    <string name="agreement_title">Perjanjian Pengguna</string>
     <string name="sherpa_k2_ncnn_init_failed">Inisialisasi mesin pengenalan suara real-time gagal</string>
     <string name="sherpa_k2_ncnn_init_success">Inisialisasi mesin pengenalan suara real-time berhasil</string>
     <string name="files_selected">%1$d file dipilih</string>
@@ -1792,13 +1710,6 @@
     <string name="image_preview">Pratinjau Gambar</string>
     <string name="load_more_history">Klik untuk memuat riwayat lebih awal</string>
     <string name="load_newer_history">Klik untuk memuat pesan yang lebih baru</string>
-    <string name="permission_guide_intro_1_title">Otomatisasi UI Berbasis Suara</string>
-    <string name="permission_guide_intro_1_desc">Berbicara secara alami dengan AI melalui pengenalan dan sintesis suara lokal yang berjalan sepenuhnya di perangkat Anda. Suara Anda adalah perintah, dapat menginstruksikannya untuk melakukan operasi kompleks seperti klik layar, beralih aplikasi, membebaskan tangan Anda sepenuhnya.</string>
-    <string name="permission_guide_intro_2_title">Kotak Peralatan Kuat untuk Geek dan Pengembang</string>
-    <string name="permission_guide_intro_2_desc">Dilengkapi lebih dari 40 alat profesional, mencakup manajemen file, permintaan jaringan, eksekusi skrip, dan kontrol sistem. Dikombinasikan dengan sistem plugin yang kuat, Anda dapat mengotomatisasi tugas dan mengendalikan perangkat Anda secara mendalam.</string>
-    <string name="permission_guide_intro_3_title">Lepaskan Kreativitas, Siap Kapan Saja</string>
-    <string name="permission_guide_intro_3_desc">Baik merancang halaman web, memproses file media, atau membangunkan AI kapan saja melalui jendela mengambang, Operit menyediakan lingkungan kreasi dan bantuan yang kuat, fleksibel, dan aman. Data Anda, di bawah kendali Anda.</string>
-    <string name="permission_guide_intro_page_indicator">Fitur %1$d/%2$d</string>
     <string name="debugger_accessibility_fallback_title">Skema Akselerasi Aksesibilitas (Risiko Tinggi)</string>
     <string name="debugger_accessibility_fallback_description">Mode debug secara default menjalankan operasi UI melalui Shell. Mengaktifkan layanan aksesibilitas dapat mempercepat otomatisasi UI secara signifikan, tetapi akan meningkatkan risiko terdeteksi oleh beberapa aplikasi dan menyebabkan pemblokiran akun. Kecuali Anda mengejar kecepatan operasi tertinggi, tidak disarankan untuk mengaktifkannya.</string>
     <string name="accessibility_risk_warning_title">Peringatan Risiko Layanan Aksesibilitas</string>
@@ -1877,7 +1788,7 @@
     <string name="tool_permission_manager">Manajer Izin Aplikasi</string>
     <string name="tool_permission_manager_desc">Kelola izin berbagai aplikasi di ponsel, lindungi keamanan privasi</string>
     <string name="tool_user_agreement">Perjanjian Pengguna</string>
-    <string name="tool_user_agreement_desc">Lihat perjanjian pengguna dan kebijakan privasi aplikasi</string>
+    <string name="tool_user_agreement_desc">Lihat perjanjian pengguna aplikasi</string>
     <string name="tool_default_assistant_guide">Pengaturan Asisten Bawaan</string>
     <string name="tool_default_assistant_guide_desc">Atur Operit Voice Floating sebagai asisten bawaan sistem</string>
     <string name="tool_terminal">Terminal Perintah</string>
@@ -6360,15 +6271,15 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
 
     <string name="chat_summarize_failed_no_valid_summary">Ringkasan gagal: Tidak dapat menghasilkan ringkasan yang valid</string>
     <string name="chat_summarize_generation_failed">Pembuatan ringkasan gagal: %1$s</string>
-    <string name="service_operit_running">Operit sedang berjalan</string>
+    <string name="service_operit_running">Operit Kong sedang berjalan</string>
     <string name="service_chat_complete_reminder">Pengingat percakapan selesai</string>
     <string name="service_chat_complete_reminder_sound">Pengingat percakapan selesai (suara)</string>
     <string name="service_chat_complete_reminder_vibration">Pengingat percakapan selesai (getaran)</string>
     <string name="service_chat_complete_reminder_sound_vibration">Pengingat percakapan selesai (suara dan getaran)</string>
-    <string name="service_keep_background">Jaga Operit tetap berjalan di latar belakang.</string>
+    <string name="service_keep_background">Jaga Operit Kong tetap berjalan di latar belakang.</string>
     <string name="service_notify_when_complete">Ingatkan Anda setelah percakapan selesai.</string>
-    <string name="service_running_wake_pause">Operit sedang berjalan (bangun dijeda)</string>
-    <string name="service_running_wake_listening">Operit sedang berjalan (bangun sedang mendengarkan)</string>
+    <string name="service_running_wake_pause">Operit Kong sedang berjalan (bangun dijeda)</string>
+    <string name="service_running_wake_listening">Operit Kong sedang berjalan (bangun sedang mendengarkan)</string>
     <string name="service_running_stats">Percakapan berjalan %1$d · Alat dipanggil %2$d</string>
     <string name="service_running_http_listening">HTTP eksternal sedang mendengarkan port %1$d</string>
     <string name="service_running_with_http">%1$s · HTTP eksternal %2$d</string>
@@ -7501,7 +7412,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="markdown_link_not_openable">Tautan ini menunjuk ke referensi di dalam dokumen dan tidak dapat dibuka</string>
     <string name="provider_openai_codex">Codex (OpenAI)</string>
     <string name="provider_antigravity">Antigravity (Google)</string>
-    <string name="onboarding_config_codex_login_required">Masuk ke Codex terlebih dahulu</string>
     <string name="codex_login_title">Masuk ke Codex</string>
     <string name="codex_login_starting">Menyiapkan login Codex...</string>
     <string name="codex_login_waiting">Selesaikan login di browser</string>
@@ -8276,8 +8186,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
 <string name="long_pasted_text_threshold_unit">characters</string>
 <string name="long_pasted_text_to_file">Convert long pasted text to a file</string>
 <string name="long_pasted_text_to_file_desc">Pasted text longer than the configured limit is added as a text attachment</string>
-<string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users must read and confirm the updated agreement when they next enter the market.</string>
-<string name="market_agreement_subtitle">Please read and agree to this agreement before entering the plugin market. The market is for sharing and discovering plugins; authors are encouraged to open source through a public GitHub repository.</string>
+<string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users can review updated content from the market entry.</string>
 <string name="market_agreement_title">Plugin Market Agreement and Community Rules</string>
 <string name="market_agreement_version">Market agreement version: %1$s</string>
 <string name="multi_select_actions">Actions</string>
@@ -8350,4 +8259,9 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
 <string name="user_configuration_rename">Rename user configuration</string>
 <string name="user_configuration_select">Select user configuration</string>
 <string name="user_configuration_unlock_notice">This configuration was locked during migration from older settings. Saving removes the document-wide lock.</string>
+    <!-- 单页首次使用流程 -->
+    <string name="onboarding_tagline">Biarkan ide melampaui kotak dialog.</string>
+    <string name="onboarding_start">Mulai</string>
+    <string name="terminal_error_command_timeout">Eksekusi perintah terminal melewati batas waktu</string>
+    <string name="browser_error_action_timeout">Waktu tunggu operasi browser habis</string>
 </resources>

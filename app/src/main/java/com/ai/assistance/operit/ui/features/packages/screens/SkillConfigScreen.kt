@@ -64,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -328,7 +329,7 @@ fun SkillConfigScreen(
                 showActions = false
                 scope.launch {
                     refreshSkills()
-                    snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_refreshed))
+                    Toast.makeText(context, context.getString(R.string.skillmgr_refreshed), Toast.LENGTH_SHORT).show()
                 }
             }
             if (skillLoadErrors.isNotEmpty()) {
@@ -572,14 +573,14 @@ fun SkillConfigScreen(
                                 0 -> {
                                     val url = repoUrlInput.trim()
                                     if (url.isBlank()) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.enter_repo_info))
+                                        Toast.makeText(context, context.getString(R.string.enter_repo_info), Toast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     isImporting = true
                                     try {
                                         val result = skillRepository.importSkillFromGitHubRepo(url)
                                         refreshSkills()
-                                        snackbarHostState.showSnackbar(result)
+                                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
                                         showImportDialog = false
                                     } finally {
                                         isImporting = false
@@ -589,14 +590,14 @@ fun SkillConfigScreen(
                                 1 -> {
                                     val uri = zipUri
                                     if (uri == null) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.select_zip_file))
+                                        Toast.makeText(context, context.getString(R.string.select_zip_file), Toast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     isImporting = true
                                     try {
                                         val nameToUse = zipFileName.ifBlank { "skill.zip" }
                                         if (!nameToUse.endsWith(".zip", ignoreCase = true)) {
-                                            snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_only_zip_files))
+                                            Toast.makeText(context, context.getString(R.string.skillmgr_only_zip_files), Toast.LENGTH_SHORT).show()
                                             return@launch
                                         }
 
@@ -619,10 +620,10 @@ fun SkillConfigScreen(
                                         }
 
                                         refreshSkills()
-                                        snackbarHostState.showSnackbar(result)
+                                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
                                         showImportDialog = false
                                     } catch (e: Exception) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_import_failed, e.message ?: ""))
+                                        Toast.makeText(context, context.getString(R.string.skillmgr_import_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
                                     } finally {
                                         isImporting = false
                                     }
@@ -632,15 +633,15 @@ fun SkillConfigScreen(
                                     val skillId = manualSkillId.trim()
                                     val skillContent = manualSkillContent.trim()
                                     if (skillId.isBlank()) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_direct_skill_id_required))
+                                        Toast.makeText(context, context.getString(R.string.skillmgr_direct_skill_id_required), Toast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     if (!isValidSkillId(skillId)) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_direct_skill_id_invalid))
+                                        Toast.makeText(context, context.getString(R.string.skillmgr_direct_skill_id_invalid), Toast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     if (skillContent.isBlank()) {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_direct_content_required))
+                                        Toast.makeText(context, context.getString(R.string.skillmgr_direct_content_required), Toast.LENGTH_SHORT).show()
                                         return@launch
                                     }
 
@@ -653,7 +654,7 @@ fun SkillConfigScreen(
                                             attachmentUris = manualAttachments.map { it.uri }
                                         )
                                         refreshSkills()
-                                        snackbarHostState.showSnackbar(result)
+                                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
                                         showImportDialog = false
                                         manualSkillId = ""
                                         manualSkillDescription = ""
@@ -710,9 +711,9 @@ fun SkillConfigScreen(
                     val ok = skillRepository.deleteSkill(skillName)
                     if (ok) {
                         refreshSkills()
-                        snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_deleted, skillName))
+                        Toast.makeText(context, context.getString(R.string.skillmgr_deleted, skillName), Toast.LENGTH_SHORT).show()
                     } else {
-                        snackbarHostState.showSnackbar(context.getString(R.string.skillmgr_delete_failed, skillName))
+                        Toast.makeText(context, context.getString(R.string.skillmgr_delete_failed, skillName), Toast.LENGTH_SHORT).show()
                     }
                 }
                 selectedSkill = null

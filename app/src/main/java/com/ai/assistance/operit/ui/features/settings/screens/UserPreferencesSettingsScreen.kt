@@ -44,8 +44,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -63,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
@@ -92,7 +91,6 @@ fun UserPreferencesSettingsScreen(
     val repository = remember(context) { MemorySpaceProfileDocumentRepository.getInstance(context) }
     val preferencesManager = remember(context) { UserPreferencesManager.getInstance(context) }
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
     val profileIds by preferencesManager.memorySpaceListFlow.collectAsState(initial = emptyList())
     val activeProfileId by preferencesManager.activeMemorySpaceIdFlow.collectAsState(initial = "default")
 
@@ -133,7 +131,7 @@ fun UserPreferencesSettingsScreen(
             repository.initialize()
             preferencesManager.ensureDefaultMemorySpace(context.getString(R.string.default_profile))
         } catch (error: Exception) {
-            snackbarHostState.showSnackbar(error.message ?: error.javaClass.simpleName)
+            Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
         } finally {
             initialized = true
         }
@@ -147,7 +145,7 @@ fun UserPreferencesSettingsScreen(
                 selectedProfileId = activeProfileId.takeIf { it in profileIds } ?: profileIds.firstOrNull()
             }
         } catch (error: Exception) {
-            snackbarHostState.showSnackbar(error.message ?: error.javaClass.simpleName)
+            Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -167,7 +165,7 @@ fun UserPreferencesSettingsScreen(
             }
             editorScrollState.scrollTo(0)
         } catch (error: Exception) {
-            snackbarHostState.showSnackbar(error.message ?: error.javaClass.simpleName)
+            Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
         } finally {
             loadingProfile = false
         }
@@ -192,9 +190,9 @@ fun UserPreferencesSettingsScreen(
             try {
                 repository.save(profileId, markdown)
                 savedMarkdown = markdown
-                snackbarHostState.showSnackbar(context.getString(R.string.save_successful))
+                Toast.makeText(context, context.getString(R.string.save_successful), Toast.LENGTH_SHORT).show()
             } catch (error: Exception) {
-                snackbarHostState.showSnackbar(error.message ?: error.javaClass.simpleName)
+                Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
             } finally {
                 savingDocument = false
             }
@@ -216,7 +214,7 @@ fun UserPreferencesSettingsScreen(
                 profiles = profiles.map { profile ->
                     if (profile.id == previousProfile.id) previousProfile else profile
                 }
-                snackbarHostState.showSnackbar(error.message ?: error.javaClass.simpleName)
+                Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
             } finally {
                 savingPolicy = false
             }
@@ -234,7 +232,7 @@ fun UserPreferencesSettingsScreen(
 
     BackHandler(onBack = ::navigateBackSafely)
 
-    CustomScaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+    CustomScaffold { paddingValues ->
         Box(
             modifier =
                 Modifier.fillMaxSize()
@@ -386,9 +384,7 @@ fun UserPreferencesSettingsScreen(
                                                     try {
                                                         preferencesManager.setActiveMemorySpace(profileId)
                                                     } catch (error: Exception) {
-                                                        snackbarHostState.showSnackbar(
-                                                            error.message ?: error.javaClass.simpleName
-                                                        )
+                                                        Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
                                                     }
                                                 }
                                             }
@@ -704,9 +700,7 @@ fun UserPreferencesSettingsScreen(
                                 showRenameDialog = false
                                 editedName = ""
                             } catch (error: Exception) {
-                                snackbarHostState.showSnackbar(
-                                    error.message ?: error.javaClass.simpleName
-                                )
+                                Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -750,9 +744,7 @@ fun UserPreferencesSettingsScreen(
                                     preferencesManager.deleteMemorySpace(profileId)
                                     showDeleteDialog = false
                                 } catch (error: Exception) {
-                                    snackbarHostState.showSnackbar(
-                                        error.message ?: error.javaClass.simpleName
-                                    )
+                                    Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }

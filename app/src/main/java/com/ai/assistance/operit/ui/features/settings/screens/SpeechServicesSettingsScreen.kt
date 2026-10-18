@@ -45,8 +45,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -64,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,7 +128,6 @@ fun SpeechServicesSettingsScreen(
     var sttProfilePendingDeletionId by remember { mutableStateOf<String?>(null) }
     var ttsProfileError by remember { mutableStateOf<String?>(null) }
     var sttProfileError by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
     var selectedTabIndex by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initialTabIndex) }
     val settingsListState = androidx.compose.foundation.lazy.rememberLazyListState()
     LaunchedEffect(selectedTabIndex) { settingsListState.scrollToItem(0) }
@@ -139,7 +137,7 @@ fun SpeechServicesSettingsScreen(
     LaunchedEffect(ttsProfileError, sttProfileError) {
         val message = ttsProfileError ?: sttProfileError
         if (message != null) {
-            snackbarHostState.showSnackbar(message)
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -393,7 +391,6 @@ fun SpeechServicesSettingsScreen(
 
 
     CustomScaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         Box(modifier = Modifier
             .padding(paddingValues)
@@ -2394,7 +2391,7 @@ fun SpeechServicesSettingsScreen(
                         VoiceServiceFactory.resetInstance()
                         ttsProfileError = null
                         showCreateTtsProfileDialog = false
-                        snackbarHostState.showSnackbar(context.getString(R.string.speech_services_profile_created))
+                        Toast.makeText(context, context.getString(R.string.speech_services_profile_created), Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to create TTS profile", error)
                         ttsProfileError = error.message
@@ -2415,7 +2412,7 @@ fun SpeechServicesSettingsScreen(
                         SpeechServiceFactory.resetInstance()
                         sttProfileError = null
                         showCreateSttProfileDialog = false
-                        snackbarHostState.showSnackbar(context.getString(R.string.speech_services_profile_created))
+                        Toast.makeText(context, context.getString(R.string.speech_services_profile_created), Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to create STT profile", error)
                         sttProfileError = error.message
@@ -2440,7 +2437,7 @@ fun SpeechServicesSettingsScreen(
                         ttsProfileError = null
                         showRenameTtsProfileDialog = false
                         renameTtsProfileName = ""
-                        snackbarHostState.showSnackbar(context.getString(R.string.config_renamed))
+                        Toast.makeText(context, context.getString(R.string.config_renamed), Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to rename TTS profile", error)
                         ttsProfileError = error.message
@@ -2465,7 +2462,7 @@ fun SpeechServicesSettingsScreen(
                         sttProfileError = null
                         showRenameSttProfileDialog = false
                         renameSttProfileName = ""
-                        snackbarHostState.showSnackbar(context.getString(R.string.config_renamed))
+                        Toast.makeText(context, context.getString(R.string.config_renamed), Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to rename STT profile", error)
                         sttProfileError = error.message
@@ -2486,7 +2483,7 @@ fun SpeechServicesSettingsScreen(
                         profilePrefs.deleteTtsProfile(ttsProfilePendingDeletion.id)
                         ttsProfileError = null
                         ttsProfilePendingDeletionId = null
-                        snackbarHostState.showSnackbar(context.getString(R.string.config_deleted))
+                        Toast.makeText(context, context.getString(R.string.config_deleted), Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to delete TTS profile", error)
                         ttsProfileError = error.message
@@ -2507,7 +2504,7 @@ fun SpeechServicesSettingsScreen(
                         profilePrefs.deleteSttProfile(sttProfilePendingDeletion.id)
                         sttProfileError = null
                         sttProfilePendingDeletionId = null
-                        snackbarHostState.showSnackbar(context.getString(R.string.config_deleted))
+                        Toast.makeText(context, context.getString(R.string.config_deleted), Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to delete STT profile", error)
                         sttProfileError = error.message

@@ -2,10 +2,12 @@
 repo: https://github.com/3316891527/Operit
 branch: feat/distribution-a2ui
 source: https://github.com/CATMIAOZHI/Operit/tree/9902726bec086d2950e6472c14f6acb9cca85413
-status: implementation-complete-awaiting-cloud-verification
+status: implemented-user-verified
 ---
 
 # 原生 A2UI 与包体优化
+
+本次补录：用户确认目前 Bug 均已修复，本页待填写的验收说明已按用户确认同步。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
 
 本轮以包含 11 项设置及原生翻译调整的个人分支提交 `6803712c` 为基础。在本分支的 MessageSection 和长消息分片路径接入原生卡片，并减少完整 Material 图标库带来的安装包开销。
 

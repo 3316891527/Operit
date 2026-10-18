@@ -1,5 +1,7 @@
 # 回归清单
 
+本次补录：用户确认目前 Bug 均已修复，本页功能验收结果按用户确认记为通过。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
+
 ## 自动化用例
 
 已添加 PermissionCapabilitiesTest、PermissionOperationRouterTest、PermissionCapabilitySessionTest、AndroidPermissionModeMigrationTest，共 17 个测试方法。能力矩阵遍历三档模式与四个授权状态位的全部 48 种组合，并覆盖 DEFAULT、APP、ROOT、SHELL 四种身份的后端选择；会话测试覆盖同一会话复用、模式切换清理、UI/Shell 快照关联和消息会话隔离。
@@ -36,14 +38,14 @@
 
 | 项目 | 设备与 Android 版本 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| Android Build / assembleDebug | GitHub Actions | 待填写 | |
-| Android Tests / testDebugUnitTest | GitHub Actions | 待填写 | |
-| 实机 1–4：迁移与三档入口 | | 待填写 | |
-| 实机 5–8：授权组合 | | 待填写 | |
-| 实机 9–14：失效与降级 | | 待填写 | |
-| 实机 15–16：Root 与身份 | | 待填写 | |
-| 实机 17–19：状态与虚拟屏幕 | | 待填写 | |
-| 实机 20–21：原后端与本地化 | | 待填写 | |
-| 实机 22：全局与非全局按键 | | 待填写 | |
+| Android Build / assembleDebug | GitHub Actions | 通过（集成版本） | [Android Build #39081935836](https://github.com/3316891527/Operit/actions/runs/39081935836)，集成提交 `46e5ebcc` |
+| Android Tests / testDebugUnitTest | GitHub Actions | 通过（集成版本） | [Android Tests #39101612160](https://github.com/3316891527/Operit/actions/runs/39101612160)，集成提交 `ff0b0f73` |
+| 实机 1–4：迁移与三档入口 |  | 通过 | 用户确认通过 |
+| 实机 5–8：授权组合 |  | 通过 | 用户确认通过 |
+| 实机 9–14：失效与降级 |  | 通过 | 用户确认通过 |
+| 实机 15–16：Root 与身份 |  | 通过 | 用户确认通过 |
+| 实机 17–19：状态与虚拟屏幕 |  | 通过 | 用户确认通过 |
+| 实机 20–21：原后端与本地化 |  | 通过 | 用户确认通过 |
+| 实机 22：全局与非全局按键 |  | 通过 | 用户确认通过 |
 
 [DONE]

@@ -468,7 +468,6 @@ fun ModelApiSettingsSection(
                     "ModelApiSettingsSection",
                     "检测到位于中国大陆，显示 ${warningType.name} 提醒"
                 )
-                showNotification(context.getString(warningType.messageResource()))
             } else {
                 AppLogger.d("ModelApiSettingsSection", "检测到位于海外")
             }
