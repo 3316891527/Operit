@@ -1,5 +1,7 @@
 # 实现与验证
 
+本次补录：用户确认目前 Bug 均已修复，本页功能验收结果按用户确认记为通过。验证来源及现有 CI 记录见[验证结果补录](../distribution_integration/06-验证结果补录.md)。
+
 ## 正文提取
 
 新增 util/toolmarkup/ToolResultMarkup.kt。contentFromBody() 的输入限定为一个工具结果的外层 body，完整匹配外层 content 包裹并保留内部标签；contentFromBlock() 的输入限定为一个完整块。普通裸正文和自闭合结果继续保持原有读取语义，多个相邻工具结果独立处理。
@@ -39,8 +41,8 @@ Kotlin 和 C++ StreamXmlPlugin 允许合法 tool/tool_result 及其后缀标签�
 | 验证项 | 结果 |
 | --- | --- |
 | 源码差异与调用点检查 | diff --check 通过；旧提取调用已清除，静态及流式入口已核对 |
-| Android Tests / JVM 用例 | 已补充用例，工作流派发后等待结果 |
-| Android Build / assembleDebug | 工作流派发后等待结果 |
-| Android 原生仪器用例与界面复核 | 尚未执行 |
+| Android Tests / JVM 用例 | 通过（集成版本） |
+| Android Build / assembleDebug | 通过（集成版本） |
+| Android 原生仪器用例与界面复核 | 功能复核通过（用户确认）；仪器运行未补录 |
 
 [DONE] 正文解析、section 节点入口、流式边界和回归用例实现完成；运行结果以仓库工作流和设备执行记录为准。
