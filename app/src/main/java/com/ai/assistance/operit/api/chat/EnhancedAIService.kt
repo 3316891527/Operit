@@ -23,7 +23,7 @@ import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
 import com.ai.assistance.operit.ui.common.a2ui.CardReferenceExpander
 import com.ai.assistance.operit.ui.common.a2ui.CardTranscript
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
-import com.ai.assistance.operit.core.chat.hooks.appendUserTurnIfMissing
+import com.ai.assistance.operit.core.chat.hooks.applyFinalizedCurrentUserTurn
 import com.ai.assistance.operit.core.chat.hooks.buildActivePromptHookMetadata
 import com.ai.assistance.operit.core.chat.hooks.mergeAdjacentTurns
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
@@ -358,7 +358,8 @@ class EnhancedAIService private constructor(context: Context) {
         var chatModelIndexOverride: Int? = null,
         var memorySpaceIdOverride: String? = null,
         var stream: Boolean = true,
-        var disableWarning: Boolean = false
+        var disableWarning: Boolean = false,
+        var historyOnly: Boolean = false,
     )
 
     // MultiServiceManager 管理不同功能的 AIService 实例
@@ -751,31 +752,6 @@ class EnhancedAIService private constructor(context: Context) {
             "stream" to stream,
             "isSubTask" to isSubTask
         ) + buildActivePromptHookMetadata(context, chatId, roleCardId)
-    }
-
-    private fun applyFinalizedCurrentUserTurn(
-        preparedHistory: List<PromptTurn>,
-        originalCurrentMessage: String,
-        finalizedCurrentMessage: String
-    ): List<PromptTurn> {
-        if (finalizedCurrentMessage.isBlank()) {
-            return preparedHistory
-        }
-
-        val lastTurn = preparedHistory.lastOrNull()
-        return when {
-            lastTurn?.kind == PromptTurnKind.USER &&
-                lastTurn.content == finalizedCurrentMessage -> {
-                preparedHistory
-            }
-            lastTurn?.kind == PromptTurnKind.USER &&
-                lastTurn.content == originalCurrentMessage -> {
-                preparedHistory.dropLast(1) + lastTurn.copy(content = finalizedCurrentMessage)
-            }
-            else -> {
-                preparedHistory.appendUserTurnIfMissing(finalizedCurrentMessage)
-            }
-        }
     }
 
     suspend fun estimateRequestWindowSnapshotFromMemory(
@@ -1179,7 +1155,8 @@ class EnhancedAIService private constructor(context: Context) {
                         applyFinalizedCurrentUserTurn(
                             preparedHistory = finalPreparedHistory,
                             originalCurrentMessage = message,
-                            finalizedCurrentMessage = finalProcessedInput
+                            finalizedCurrentMessage = finalProcessedInput,
+                            historyOnly = options.historyOnly,
                         ).mergeAdjacentTurns { previous, current ->
                             previous.kind == PromptTurnKind.USER &&
                                 current.kind == PromptTurnKind.USER &&

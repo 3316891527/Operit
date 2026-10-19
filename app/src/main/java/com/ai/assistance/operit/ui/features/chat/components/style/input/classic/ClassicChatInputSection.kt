@@ -84,6 +84,8 @@ fun ClassicChatInputSection(
     onUserMessageChange: (TextFieldValue) -> Unit,
     enableEnterToSend: Boolean = false,
     onSendMessage: () -> Unit,
+    onContinueGeneration: () -> Unit,
+    continueGenerationEnabled: Boolean,
     onQueueMessage: () -> Unit,
     onCancelMessage: () -> Unit,
     isLoading: Boolean,
@@ -750,6 +752,8 @@ fun ClassicChatInputSection(
 
             AttachmentSelectorPanel(
                 visible = showAttachmentPanel,
+                onContinueGeneration = onContinueGeneration,
+                continueGenerationEnabled = continueGenerationEnabled && !isProcessing,
                 onAttachImage = { filePath ->
                     onAttachmentRequest(filePath)
                 },

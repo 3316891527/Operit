@@ -925,4 +925,5 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">アイデアを、対話の枠の外へ。</string>
     <string name="onboarding_start">開始</string>
+    <string name="chat_continue_generation">生成を続ける</string>
 </resources>
