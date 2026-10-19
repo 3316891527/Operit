@@ -812,7 +812,7 @@ sealed class Screen(
     }
 
     // Secondary screens - Settings
-    data object UserPreferencesSettings :
+    data class UserPreferencesSettings(val initialProfileId: String? = null) :
             Screen(navItem = NavItem.Settings, titleRes = R.string.settings_user_preferences) {
         @Composable
         override fun Content(
@@ -826,7 +826,8 @@ sealed class Screen(
         ) {
             UserProfileManagementScreen(
                 onNavigateBack = onGoBack,
-                onNavigateToMemory = { id -> navigateTo(MemorySpaceDetail(id)) }
+                onNavigateToMemory = { id -> navigateTo(MemorySpaceDetail(id)) },
+                initialProfileId = initialProfileId
             )
         }
     }
@@ -1011,7 +1012,7 @@ sealed class Screen(
                 onNavigateToMarket = { navigateTo(TagMarket) },
                 onNavigateToPersonaGeneration = { navigateTo(PersonaCardGeneration) },
                 onNavigateToChatManagement = { navigateTo(ChatHistorySettings) },
-                onNavigateToUserProfiles = { navigateTo(UserPreferencesSettings) }
+                onNavigateToUserProfiles = { id -> navigateTo(UserPreferencesSettings(id)) }
             )
         }
     }

@@ -85,7 +85,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun UserProfileManagementScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToMemory: (String) -> Unit
+    onNavigateToMemory: (String) -> Unit,
+    initialProfileId: String? = null
 ) {
     val context = LocalContext.current
     val repository = remember(context) { MemorySpaceProfileDocumentRepository.getInstance(context) }
@@ -98,7 +99,7 @@ fun UserProfileManagementScreen(
     val editorScrollState = rememberScrollState()
     val markdownSyntaxOutputTransformation = rememberMarkdownSyntaxOutputTransformation()
     var profiles by remember { mutableStateOf<List<MemorySpace>>(emptyList()) }
-    var selectedProfileId by remember { mutableStateOf<String?>(null) }
+    var selectedProfileId by remember(initialProfileId) { mutableStateOf(initialProfileId) }
     var loadedProfile by remember { mutableStateOf<MemorySpace?>(null) }
     var savedMarkdown by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -138,7 +139,7 @@ fun UserProfileManagementScreen(
     }
 
     LaunchedEffect(profileIds, initialized) {
-        if (!initialized) return@LaunchedEffect
+        if (!initialized || profileIds.isEmpty()) return@LaunchedEffect
         try {
             profiles = profileIds.map { id -> preferencesManager.getMemorySpaceFlow(id).first() }
             if (selectedProfileId !in profileIds) {
