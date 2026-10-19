@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.ScreenshotMonitor
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
@@ -67,6 +68,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -89,6 +91,8 @@ import androidx.core.content.FileProvider
 @Composable
 fun AttachmentSelectorPanel(
         visible: Boolean,
+        onContinueGeneration: () -> Unit,
+        continueGenerationEnabled: Boolean,
         onAttachImage: (String) -> Unit,
         onAttachFile: (String) -> Unit,
         onAttachScreenContent: () -> Unit,
@@ -210,6 +214,15 @@ fun AttachmentSelectorPanel(
                                         }
                                 ),
                                 AttachmentPanelItem(
+                                        icon = Icons.Default.PlayArrow,
+                                        label = context.getString(R.string.chat_continue_generation),
+                                        enabled = continueGenerationEnabled,
+                                        onClick = {
+                                            onDismiss()
+                                            onContinueGeneration()
+                                        }
+                                ),
+                                AttachmentPanelItem(
                                         icon = Icons.Default.Call,
                                         label = context.getString(R.string.floating_voice_call),
                                         onClick = {
@@ -247,7 +260,8 @@ fun AttachmentSelectorPanel(
                                     AttachmentOption(
                                             icon = item.icon,
                                             label = item.label,
-                                            onClick = item.onClick
+                                            onClick = item.onClick,
+                                            enabled = item.enabled
                                     )
                                 }
                             }
@@ -270,7 +284,8 @@ fun AttachmentSelectorPanel(
                                     AttachmentOption(
                                             icon = item.icon,
                                             label = item.label,
-                                            onClick = item.onClick
+                                            onClick = item.onClick,
+                                            enabled = item.enabled
                                     )
                                 }
                             }
@@ -333,6 +348,8 @@ fun AttachmentSelectorPanel(
 fun AttachmentSelectorPopupPanel(
         visible: Boolean,
         containerColor: Color,
+        onContinueGeneration: () -> Unit,
+        continueGenerationEnabled: Boolean,
         onAttachImage: (String) -> Unit,
         onAttachFile: (String) -> Unit,
         onAttachScreenContent: () -> Unit,
@@ -421,6 +438,15 @@ fun AttachmentSelectorPopupPanel(
                             }
                     ),
                     AttachmentPanelItem(
+                            icon = Icons.Default.PlayArrow,
+                            label = context.getString(R.string.chat_continue_generation),
+                            enabled = continueGenerationEnabled,
+                            onClick = {
+                                onDismiss()
+                                onContinueGeneration()
+                            }
+                    ),
+                    AttachmentPanelItem(
                             icon = Icons.Default.Call,
                             label = context.getString(R.string.floating_voice_call),
                             onClick = {
@@ -480,7 +506,8 @@ fun AttachmentSelectorPopupPanel(
                                 modifier =
                                         Modifier.fillMaxWidth()
                                                 .height(36.dp)
-                                                .clickable(onClick = item.onClick)
+                                                .clickable(enabled = item.enabled, onClick = item.onClick)
+                                                .alpha(if (item.enabled) 1f else 0.38f)
                                                 .padding(horizontal = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -528,7 +555,8 @@ fun AttachmentSelectorPopupPanel(
 private data class AttachmentPanelItem(
         val icon: ImageVector,
         val label: String,
-        val onClick: () -> Unit
+        val onClick: () -> Unit,
+        val enabled: Boolean = true
 )
 
 private enum class AttachmentPackageKind {
@@ -616,11 +644,12 @@ private fun getAttachmentSource(uri: Uri): String? {
 
 /** 简约的附件选项组件 */
 @Composable
-private fun AttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun AttachmentOption(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
     Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier =
-                    Modifier.clickable(onClick = onClick)
+                    Modifier.clickable(enabled = enabled, onClick = onClick)
+                            .alpha(if (enabled) 1f else 0.38f)
                             .width(70.dp)
                             .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {

@@ -1619,6 +1619,10 @@ class ChatViewModel(context: Context) : ViewModel() {
         )
     }
 
+    fun continueGeneration() {
+        messageCoordinationDelegate.continueGeneration()
+    }
+
     fun sendTextMessage(text: String, promptFunctionType: PromptFunctionType = PromptFunctionType.CHAT) {
         hideMentionSuggestionPanel()
         messageCoordinationDelegate.sendUserMessage(

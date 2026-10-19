@@ -2733,6 +2733,7 @@
     <string name="chat_pending_queue_title">전송 대기열(%1$d)</string>
     <string name="chat_queue_add_message">메시지를 대기열에 추가</string>
     <string name="chat_queue_added">대기열에 추가됨</string>
+    <string name="chat_continue_generation">계속 생성</string>
     <string name="chat_use_default_config_continue">기본 구성으로 계속</string>
     <string name="chat_default_config_incomplete">기본 구성이 불완전합니다. 필수 정보를 입력해주세요.</string>
     <string name="chat_delete_not_found">이 채팅은 더 이상 존재하지 않습니다</string>

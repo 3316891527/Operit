@@ -951,4 +951,5 @@
     <string name="attachment_image_duplicate">画像 %1$s はすでに添付されています</string>
     <string name="logcat_write_enabled">ログを記録</string>
     <string name="logcat_write_enabled_description">オフにするとアプリのログ記録を停止します。毎日自動でオンに戻ります。既存のログは引き続きエクスポートできます。</string>
+    <string name="chat_continue_generation">生成を続ける</string>
 </resources>

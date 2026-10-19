@@ -168,6 +168,8 @@ fun AgentChatInputSection(
     onUserMessageChange: (TextFieldValue) -> Unit,
     enableEnterToSend: Boolean = false,
     onSendMessage: () -> Unit,
+    onContinueGeneration: () -> Unit,
+    continueGenerationEnabled: Boolean,
     onQueueMessage: () -> Unit,
     onCancelMessage: () -> Unit,
     isLoading: Boolean,
@@ -1458,6 +1460,8 @@ fun AgentChatInputSection(
             AttachmentSelectorPopupPanel(
                 visible = showAttachmentPanel,
                 containerColor = popupContainerColor,
+                onContinueGeneration = onContinueGeneration,
+                continueGenerationEnabled = continueGenerationEnabled && !isProcessing,
                 onAttachImage = { filePath -> onAttachmentRequest(filePath) },
                 onAttachFile = { filePath -> onAttachmentRequest(filePath) },
                 onAttachScreenContent = onAttachScreenContent,
