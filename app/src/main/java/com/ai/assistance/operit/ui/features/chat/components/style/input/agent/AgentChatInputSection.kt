@@ -31,7 +31,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.DataObject
 import androidx.compose.material.icons.outlined.Hub
@@ -438,7 +437,7 @@ fun AgentChatInputSection(
     val canSendMessage = hasDraftText || attachments.isNotEmpty()
     val showQueueAction = isProcessing && hasDraftText
     val showCancelAction = isProcessing && !showQueueAction
-    val sendButtonEnabled = true
+    val sendButtonEnabled = isProcessing || canSendMessage
     val tokenLimitWarning: @Composable () -> Unit = {
         if (isOverTokenLimit && canSendMessage && !showQueueAction) {
             Text(
@@ -1017,7 +1016,7 @@ fun AgentChatInputSection(
                                     } else {
                                         MaterialTheme.colorScheme.primary
                                     }
-                                else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                             }
 
                         val actionButtonIconTint =
@@ -1030,7 +1029,7 @@ fun AgentChatInputSection(
                                     } else {
                                         MaterialTheme.colorScheme.onPrimary
                                     }
-                                else -> MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
+                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                             }
 
                         Box(
@@ -1069,14 +1068,6 @@ fun AgentChatInputSection(
                                                             setShowAttachmentPanel(false)
                                                         }
                                                     }
-                                                    else -> {
-                                                        actualViewModel.onFloatingButtonClick(
-                                                            FloatingMode.FULLSCREEN,
-                                                            voicePermissionLauncher,
-                                                            colorScheme,
-                                                            typography,
-                                                        )
-                                                    }
                                                 }
                                             },
                                         ),
@@ -1088,14 +1079,14 @@ fun AgentChatInputSection(
                                             showCancelAction -> Icons.Default.Close
                                             showQueueAction -> Icons.Default.Add
                                             canSendMessage -> Icons.AutoMirrored.Filled.Send
-                                            else -> Icons.Default.Mic
+                                            else -> Icons.AutoMirrored.Filled.Send
                                         },
                                     contentDescription =
                                         when {
                                             showCancelAction -> context.getString(R.string.cancel)
                                             showQueueAction -> context.getString(R.string.chat_queue_add_message)
                                             canSendMessage -> context.getString(R.string.send)
-                                            else -> context.getString(R.string.voice_input)
+                                            else -> context.getString(R.string.send)
                                         },
                                     tint = actionButtonIconTint,
                                     modifier = Modifier.size(18.dp),
@@ -1316,7 +1307,7 @@ fun AgentChatInputSection(
                                         } else {
                                             MaterialTheme.colorScheme.primary
                                         }
-                                    else -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                                 }
 
                             val actionButtonIconTint =
@@ -1329,7 +1320,7 @@ fun AgentChatInputSection(
                                         } else {
                                             MaterialTheme.colorScheme.onPrimary
                                         }
-                                    else -> MaterialTheme.colorScheme.onPrimary
+                                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                                 }
 
                             Box(
@@ -1368,14 +1359,6 @@ fun AgentChatInputSection(
                                                                 setShowAttachmentPanel(false)
                                                             }
                                                         }
-                                                        else -> {
-                                                            actualViewModel.onFloatingButtonClick(
-                                                                FloatingMode.FULLSCREEN,
-                                                                voicePermissionLauncher,
-                                                                colorScheme,
-                                                                typography,
-                                                            )
-                                                        }
                                                     }
                                                 },
                                             ),
@@ -1387,14 +1370,14 @@ fun AgentChatInputSection(
                                                 showCancelAction -> Icons.Default.Close
                                                 showQueueAction -> Icons.Default.Add
                                                 canSendMessage -> Icons.AutoMirrored.Filled.Send
-                                                else -> Icons.Default.Mic
+                                                else -> Icons.AutoMirrored.Filled.Send
                                             },
                                         contentDescription =
                                             when {
                                                 showCancelAction -> context.getString(R.string.cancel)
                                                 showQueueAction -> context.getString(R.string.chat_queue_add_message)
                                                 canSendMessage -> context.getString(R.string.send)
-                                                else -> context.getString(R.string.voice_input)
+                                                else -> context.getString(R.string.send)
                                             },
                                         tint = actionButtonIconTint,
                                         modifier = Modifier.size(18.dp),
@@ -1480,6 +1463,14 @@ fun AgentChatInputSection(
                 onAttachScreenContent = onAttachScreenContent,
                 onAttachNotifications = onAttachNotifications,
                 onAttachLocation = onAttachLocation,
+                onVoiceCall = {
+                    actualViewModel.onFloatingButtonClick(
+                        FloatingMode.FULLSCREEN,
+                        voicePermissionLauncher,
+                        colorScheme,
+                        typography
+                    )
+                },
                 onAttachMemory = onAttachMemory,
                 onAttachPackage = onAttachPackage,
                 onTakePhoto = onTakePhoto,

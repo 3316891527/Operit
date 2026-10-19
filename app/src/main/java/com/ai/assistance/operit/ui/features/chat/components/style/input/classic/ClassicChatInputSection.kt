@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -185,12 +184,7 @@ fun ClassicChatInputSection(
     val canSendMessage = hasDraftText || attachments.isNotEmpty()
     val showQueueAction = isProcessing && hasDraftText
     val showCancelAction = isProcessing && !showQueueAction
-    val sendButtonEnabled =
-        when {
-            isProcessing -> true // Queue / Cancel button
-            canSendMessage -> true // Send button is always enabled if there's content
-            else -> true // Mic button
-        }
+    val sendButtonEnabled = isProcessing || canSendMessage
 
     val voicePermissionLauncher =
         rememberLauncherForActivityResult(
@@ -655,10 +649,7 @@ fun ClassicChatInputSection(
                                     else
                                         MaterialTheme.colorScheme.primary
 
-                                else ->
-                                    MaterialTheme
-                                        .colorScheme
-                                        .primary
+                                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                             }
                         )
                         .clickable(
@@ -684,14 +675,6 @@ fun ClassicChatInputSection(
                                         }
                                     }
 
-                                    else -> {
-                                        actualViewModel.onFloatingButtonClick(
-                                            FloatingMode.FULLSCREEN,
-                                            voicePermissionLauncher,
-                                            colorScheme,
-                                            typography
-                                        )
-                                    }
                                 }
                             }
                         ),
@@ -707,7 +690,7 @@ fun ClassicChatInputSection(
                                 else
                                     MaterialTheme.colorScheme.onPrimary
 
-                            else -> MaterialTheme.colorScheme.onPrimary
+                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         }
                     Icon(
                         imageVector =
@@ -715,14 +698,14 @@ fun ClassicChatInputSection(
                             showCancelAction -> Icons.Default.Close
                             showQueueAction -> Icons.Default.Add
                             canSendMessage -> Icons.AutoMirrored.Filled.Send
-                            else -> Icons.Default.Mic
+                            else -> Icons.AutoMirrored.Filled.Send
                         },
                         contentDescription =
                         when {
                             showCancelAction -> context.getString(R.string.cancel)
                             showQueueAction -> context.getString(R.string.chat_queue_add_message)
                             canSendMessage -> context.getString(R.string.send)
-                            else -> context.getString(R.string.voice_input)
+                            else -> context.getString(R.string.send)
                         },
                         tint = iconTint,
                         modifier = Modifier.size(18.dp)
@@ -759,6 +742,14 @@ fun ClassicChatInputSection(
                 onAttachScreenContent = onAttachScreenContent,
                 onAttachNotifications = onAttachNotifications,
                 onAttachLocation = onAttachLocation,
+                onVoiceCall = {
+                    actualViewModel.onFloatingButtonClick(
+                        FloatingMode.FULLSCREEN,
+                        voicePermissionLauncher,
+                        colorScheme,
+                        typography
+                    )
+                },
                 onAttachMemory = onAttachMemory,
                 onAttachPackage = onAttachPackage,
                 onTakePhoto = onTakePhoto,

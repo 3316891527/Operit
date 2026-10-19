@@ -39,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -93,6 +94,7 @@ fun AttachmentSelectorPanel(
         onAttachScreenContent: () -> Unit,
         onAttachNotifications: () -> Unit = {},
         onAttachLocation: () -> Unit = {},
+        onVoiceCall: () -> Unit = {},
         onAttachMemory: () -> Unit = {},
         onAttachPackage: (String) -> Unit = {},
         onTakePhoto: (Uri) -> Unit,
@@ -205,6 +207,14 @@ fun AttachmentSelectorPanel(
                                         onClick = {
                                             onAttachLocation()
                                             onDismiss()
+                                        }
+                                ),
+                                AttachmentPanelItem(
+                                        icon = Icons.Default.Call,
+                                        label = context.getString(R.string.floating_voice_call),
+                                        onClick = {
+                                            onDismiss()
+                                            onVoiceCall()
                                         }
                                 ),
                                 AttachmentPanelItem(
@@ -328,6 +338,7 @@ fun AttachmentSelectorPopupPanel(
         onAttachScreenContent: () -> Unit,
         onAttachNotifications: () -> Unit = {},
         onAttachLocation: () -> Unit = {},
+        onVoiceCall: () -> Unit = {},
         onAttachMemory: () -> Unit = {},
         onAttachPackage: (String) -> Unit = {},
         onTakePhoto: (Uri) -> Unit,
@@ -407,6 +418,14 @@ fun AttachmentSelectorPopupPanel(
                             onClick = {
                                 onAttachLocation()
                                 onDismiss()
+                            }
+                    ),
+                    AttachmentPanelItem(
+                            icon = Icons.Default.Call,
+                            label = context.getString(R.string.floating_voice_call),
+                            onClick = {
+                                onDismiss()
+                                onVoiceCall()
                             }
                     ),
                     AttachmentPanelItem(
