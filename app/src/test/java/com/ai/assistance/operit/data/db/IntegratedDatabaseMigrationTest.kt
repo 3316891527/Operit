@@ -31,6 +31,7 @@ class IntegratedDatabaseMigrationTest {
                 AppDatabase.MIGRATION_24_25,
                 AppDatabase.MIGRATION_25_26,
                 AppDatabase.MIGRATION_26_27,
+                AppDatabase.MIGRATION_27_28,
             )
             var version = startVersion
             for (migration in migrations.filter { it.startVersion >= startVersion }) {
@@ -39,9 +40,9 @@ class IntegratedDatabaseMigrationTest {
                 version = migration.endVersion
             }
             assertEquals(AppDatabase.DATABASE_VERSION, version)
-            assertEquals(27, version)
+            assertEquals(28, version)
 
-            db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned FROM chats").use { cursor ->
+            db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned, archived FROM chats").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals("保留对话", cursor.getString(0))
                 assertFalse(cursor.isNull(1))
@@ -49,6 +50,7 @@ class IntegratedDatabaseMigrationTest {
                 assertEquals(-5L, cursor.getLong(3))
                 assertEquals(1, cursor.getInt(4))
                 assertEquals(1, cursor.getInt(5))
+                assertEquals(0, cursor.getInt(6))
                 assertFalse(cursor.moveToNext())
             }
             db.query("SELECT name FROM chat_folders").use { cursor ->

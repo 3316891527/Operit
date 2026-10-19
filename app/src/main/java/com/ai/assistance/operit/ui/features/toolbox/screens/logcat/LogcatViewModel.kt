@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,14 @@ class LogcatViewModel(private val context: Context) : ViewModel() {
     private val _exportOptions = MutableStateFlow(exportPreferences.load())
     val exportOptions: StateFlow<LogExportOptions> = _exportOptions.asStateFlow()
 
+    val logWritingEnabled = AppLogger.logWritingEnabled
+    init {
+        AppLogger.bindContext(context)
+        AppLogger.refreshLogWritingEnabled()
+    }
+    fun setLogWritingEnabled(enabled: Boolean) {
+        AppLogger.setLogWritingEnabled(enabled)
+    }
     fun clearLogs() {
         logcatManager.clearLogs()
     }

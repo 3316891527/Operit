@@ -25,10 +25,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.ui.features.github.GitHubLoginDialog
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 
@@ -38,8 +36,6 @@ private val SettingsScreenScrollPosition = mutableStateOf(0)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-        navigateToUserPreferences: () -> Unit,
-        navigateToGitHubAccount: () -> Unit,
         navigateToToolPermissions: () -> Unit,
         navigateToModelConfig: () -> Unit,
         navigateToThemeSettings: () -> Unit,
@@ -62,13 +58,9 @@ fun SettingsScreen(
         navigateToAbout: () -> Unit
 ) {
         val context = LocalContext.current
-        val githubAuth = remember { GitHubAuthPreferences.getInstance(context) }
         val scope = rememberCoroutineScope()
         var showClearCookieConfirm by remember { mutableStateOf(false) }
-        var showGitHubLogin by remember { mutableStateOf(false) }
 
-        val isGitHubLoggedIn = githubAuth.isLoggedInFlow.collectAsState(initial = false).value
-        val gitHubUser = githubAuth.userInfoFlow.collectAsState(initial = null).value
         // 创建和记住滚动状态，设置为上次保存的位置
         val scrollState = rememberScrollState(SettingsScreenScrollPosition.value)
 
@@ -86,38 +78,12 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .verticalScroll(scrollState)
         ) {
-                // ======= 账号 =======
-                SettingsSection(
-                        title = stringResource(id = R.string.settings_section_account),
-                        icon = Icons.Default.AccountCircle,
-                        containerColor = cardContainerColor
-                ) {
-                        CompactSettingsItem(
-                                title = stringResource(R.string.github_account),
-                                subtitle = if (isGitHubLoggedIn && gitHubUser != null) {
-                                        "@${gitHubUser!!.login}"
-                                } else {
-                                        stringResource(R.string.github_account_not_logged_in)
-                                },
-                                icon = Icons.Default.Person,
-                                onClick = navigateToGitHubAccount
-                        )
-
-                }
-
                 // ======= 个性化配置 =======
                 SettingsSection(
                         title = stringResource(id = R.string.settings_section_personalization),
                         icon = Icons.Default.Person,
                         containerColor = cardContainerColor
                 ) {
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_user_preferences),
-                                subtitle = stringResource(id = R.string.settings_user_preferences_subtitle),
-                                icon = Icons.Default.Face,
-                                onClick = navigateToUserPreferences
-                        )
-
                         CompactSettingsItem(
                                 title = stringResource(R.string.language_settings),
                                 subtitle = stringResource(id = R.string.settings_language_subtitle),

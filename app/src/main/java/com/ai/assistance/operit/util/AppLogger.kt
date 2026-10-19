@@ -1,6 +1,14 @@
 package com.ai.assistance.operit.util
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import androidx.core.content.ContextCompat
+import com.ai.assistance.operit.util.logging.DailyLogWritePolicy
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.util.Log
 import com.ai.assistance.operit.core.application.OperitApplication
 import java.io.File
@@ -81,6 +89,14 @@ object AppLogger {
 
     @Volatile
     private var boundContext: Context? = null
+    private val fileWriteLock = Any()
+    private val logPolicyLock = Any()
+    private val dailyWritePolicy = DailyLogWritePolicy()
+    private val _logWritingEnabled = MutableStateFlow(true)
+    val logWritingEnabled = _logWritingEnabled.asStateFlow()
+    private var logWritePreferences: SharedPreferences? = null
+    @Volatile
+    private var logWriteGeneration = 0L
     private val fileLogExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "OperitAppLogger").apply {
             isDaemon = true
@@ -89,8 +105,49 @@ object AppLogger {
 
     @JvmStatic
     fun bindContext(context: Context) {
-        if (boundContext == null) {
-            boundContext = context.applicationContext
+        synchronized(fileWriteLock) {
+            if (boundContext != null) return
+            val appContext = context.applicationContext
+            boundContext = appContext
+            val preferences = appContext.getSharedPreferences("app_log_writing", Context.MODE_PRIVATE)
+            logWritePreferences = preferences
+            synchronized(logPolicyLock) {
+                dailyWritePolicy.restore(preferences.getString("disabled_date", null))
+                refreshLogWritingEnabled()
+            }
+            ContextCompat.registerReceiver(
+                appContext,
+                object : BroadcastReceiver() {
+                    override fun onReceive(context: Context, intent: Intent) {
+                        refreshLogWritingEnabled()
+                    }
+                },
+                IntentFilter().apply {
+                    addAction(Intent.ACTION_DATE_CHANGED)
+                    addAction(Intent.ACTION_TIME_CHANGED)
+                    addAction(Intent.ACTION_TIMEZONE_CHANGED)
+                },
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        }
+    }
+
+    @JvmStatic
+    fun refreshLogWritingEnabled(): Boolean = synchronized(logPolicyLock) {
+        dailyWritePolicy.isEnabled().also { _logWritingEnabled.value = it }
+    }
+
+    @JvmStatic
+    fun setLogWritingEnabled(enabled: Boolean) {
+        synchronized(fileWriteLock) {
+            synchronized(logPolicyLock) {
+                val preferences = requireNotNull(logWritePreferences)
+                dailyWritePolicy.setEnabled(enabled)
+                // 让关闭之前排队的任务失效，重新开启也不补写这些旧日志。
+                logWriteGeneration += 1
+                preferences.edit().putString("disabled_date", dailyWritePolicy.disabledDate).apply()
+                refreshLogWritingEnabled()
+            }
         }
     }
 
@@ -165,96 +222,96 @@ object AppLogger {
     @JvmStatic
     fun v(tag: String, msg: String): Int {
         writeToFile(VERBOSE, tag, msg, null)
-        return if (enableSystemLog) Log.v(tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.v(tag, msg) else 0
     }
 
     @JvmStatic
     fun v(tag: String, msg: String, tr: Throwable): Int {
         writeToFile(VERBOSE, tag, msg, tr)
-        return if (enableSystemLog) Log.v(tag, msg, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.v(tag, msg, tr) else 0
     }
 
     @JvmStatic
     fun d(tag: String, msg: String): Int {
         writeToFile(DEBUG, tag, msg, null)
-        return if (enableSystemLog) Log.d(tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.d(tag, msg) else 0
     }
 
     @JvmStatic
     fun d(tag: String, msg: String, tr: Throwable): Int {
         writeToFile(DEBUG, tag, msg, tr)
-        return if (enableSystemLog) Log.d(tag, msg, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.d(tag, msg, tr) else 0
     }
 
     @JvmStatic
     fun i(tag: String, msg: String): Int {
         writeToFile(INFO, tag, msg, null)
-        return if (enableSystemLog) Log.i(tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.i(tag, msg) else 0
     }
 
     @JvmStatic
     fun i(tag: String, msg: String, tr: Throwable): Int {
         writeToFile(INFO, tag, msg, tr)
-        return if (enableSystemLog) Log.i(tag, msg, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.i(tag, msg, tr) else 0
     }
 
     @JvmStatic
     fun w(tag: String, msg: String): Int {
         writeToFile(WARN, tag, msg, null)
-        return if (enableSystemLog) Log.w(tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.w(tag, msg) else 0
     }
 
     @JvmStatic
     fun w(tag: String, msg: String, tr: Throwable): Int {
         writeToFile(WARN, tag, msg, tr)
-        return if (enableSystemLog) Log.w(tag, msg, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.w(tag, msg, tr) else 0
     }
 
     @JvmStatic
     fun w(tag: String, tr: Throwable): Int {
         writeToFile(WARN, tag, "", tr)
-        return if (enableSystemLog) Log.w(tag, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.w(tag, tr) else 0
     }
 
     @JvmStatic
     fun e(tag: String, msg: String): Int {
         writeToFile(ERROR, tag, msg, null)
-        return if (enableSystemLog) Log.e(tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.e(tag, msg) else 0
     }
 
     @JvmStatic
     fun e(tag: String, msg: String, tr: Throwable): Int {
         writeToFile(ERROR, tag, msg, tr)
-        return if (enableSystemLog) Log.e(tag, msg, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.e(tag, msg, tr) else 0
     }
 
     @JvmStatic
     fun wtf(tag: String, msg: String): Int {
         writeToFile(ASSERT, tag, msg, null)
-        return if (enableSystemLog) Log.wtf(tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.wtf(tag, msg) else 0
     }
 
     @JvmStatic
     fun wtf(tag: String, msg: String, tr: Throwable): Int {
         writeToFile(ASSERT, tag, msg, tr)
-        return if (enableSystemLog) Log.wtf(tag, msg, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.wtf(tag, msg, tr) else 0
     }
 
     @JvmStatic
     fun wtf(tag: String, tr: Throwable): Int {
         writeToFile(ASSERT, tag, "", tr)
-        return if (enableSystemLog) Log.wtf(tag, tr) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.wtf(tag, tr) else 0
     }
 
     @JvmStatic
     fun isLoggable(tag: String, level: Int): Boolean {
-        return enableSystemLog && Log.isLoggable(tag, level)
+        return enableSystemLog && refreshLogWritingEnabled() && Log.isLoggable(tag, level)
     }
 
     @JvmStatic
     fun println(priority: Int, tag: String, msg: String): Int {
         writeToFile(priority, tag, msg, null)
-        return if (enableSystemLog) Log.println(priority, tag, msg) else 0
+        return if (enableSystemLog && refreshLogWritingEnabled()) Log.println(priority, tag, msg) else 0
     }
 
     @JvmStatic
@@ -287,64 +344,69 @@ object AppLogger {
     // --- Internal helpers ---
 
     private fun writeToFile(priority: Int, tag: String, msg: String, tr: Throwable?) {
-        if (!enableFileLogging) return
+        val generation = synchronized(logPolicyLock) {
+            if (!enableFileLogging || !refreshLogWritingEnabled()) return
+            logWriteGeneration
+        }
         try {
             fileLogExecutor.execute {
-                writeToFileSync(priority, tag, msg, tr)
+                writeToFileSync(priority, tag, msg, tr, generation)
             }
         } catch (_: RejectedExecutionException) {
         }
     }
 
-    private fun writeToFileSync(priority: Int, tag: String, msg: String, tr: Throwable?) {
-        if (!enableFileLogging) return
-        val file = resolveLogFile() ?: return
+    private fun writeToFileSync(priority: Int, tag: String, msg: String, tr: Throwable?, generation: Long) {
+        // 切换开关与实际文件追加互斥，关闭返回后主日志和工具包日志都不会继续写入。
+        synchronized(fileWriteLock) {
+            if (!enableFileLogging || generation != logWriteGeneration || !refreshLogWritingEnabled()) return
+            val file = resolveLogFile() ?: return
 
-        val time = dateFormat.format(Date())
-        val normalizedMessage = normalizeLogMessage(msg)
-        val throwableText = tr?.let { ThrowableTextFormatter.format(it, MAX_LOG_THROWABLE_CHARS) }
-        val levelChar = when (priority) {
-            VERBOSE -> 'V'
-            DEBUG -> 'D'
-            INFO -> 'I'
-            WARN -> 'W'
-            ERROR -> 'E'
-            ASSERT -> 'A'
-            else -> '?'
-        }
-
-        val builder = StringBuilder()
-        builder.append(time)
-            .append(" ")
-            .append(levelChar)
-            .append("/")
-            .append(tag)
-            .append(": ")
-            .append(normalizedMessage)
-
-        if (throwableText != null) {
-            builder.append("\n").append(throwableText)
-        }
-
-        builder.append('\n')
-
-        try {
-            FileWriter(file, true).use { writer ->
-                writer.write(builder.toString())
+            val time = dateFormat.format(Date())
+            val normalizedMessage = normalizeLogMessage(msg)
+            val throwableText = tr?.let { ThrowableTextFormatter.format(it, MAX_LOG_THROWABLE_CHARS) }
+            val levelChar = when (priority) {
+                VERBOSE -> 'V'
+                DEBUG -> 'D'
+                INFO -> 'I'
+                WARN -> 'W'
+                ERROR -> 'E'
+                ASSERT -> 'A'
+                else -> '?'
             }
-        } catch (e: IOException) {
-            // Avoid recursive logging here; swallow to prevent crashes
+
+            val builder = StringBuilder()
+            builder.append(time)
+                .append(" ")
+                .append(levelChar)
+                .append("/")
+                .append(tag)
+                .append(": ")
+                .append(normalizedMessage)
+
+            if (throwableText != null) {
+                builder.append("\n").append(throwableText)
+            }
+
+            builder.append('\n')
+
+            try {
+                FileWriter(file, true).use { writer ->
+                    writer.write(builder.toString())
+                }
+            } catch (e: IOException) {
+                // 写盘失败时不递归记录日志，避免影响应用运行
+            }
+
+            writeToPackageLogIfNeeded(
+                tag = tag,
+                msg = normalizedMessage,
+                throwableText = throwableText,
+                time = time,
+                levelChar = levelChar
+            )
         }
-
-        writeToPackageLogIfNeeded(
-            tag = tag,
-            msg = normalizedMessage,
-            throwableText = throwableText,
-            time = time,
-            levelChar = levelChar
-        )
     }
-
     private fun writeToPackageLogIfNeeded(
         tag: String,
         msg: String,

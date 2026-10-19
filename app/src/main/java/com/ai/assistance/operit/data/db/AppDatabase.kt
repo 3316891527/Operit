@@ -27,7 +27,7 @@ import com.ai.assistance.operit.util.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 27
+private const val APP_DATABASE_VERSION = 28
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
@@ -62,6 +62,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        internal val MIGRATION_27_28 = com.ai.assistance.operit.data.chat.archive.ChatArchiveMigration
 
         /** v26 → v27：新增消息翻译缓存，保留已有聊天及统计数据。 */
         internal val MIGRATION_26_27 =
@@ -703,7 +705,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_23_24,
                     MIGRATION_24_25,
                     MIGRATION_25_26,
-                    MIGRATION_26_27
+                    MIGRATION_26_27,
+                    MIGRATION_27_28
                 )
                 .build()
 

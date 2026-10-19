@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.chat.components
 
 import android.net.Uri
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,12 +39,14 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.AttachmentInfo
+import com.ai.assistance.operit.ui.features.chat.attachments.images.AttachmentImagePreviewDialog
 import java.io.File
 
 @Composable
 fun AttachmentChip(attachmentInfo: AttachmentInfo, onRemove: () -> Unit, onInsert: () -> Unit) {
     val context = LocalContext.current
     val isImage = attachmentInfo.mimeType.startsWith("image/")
+    var previewVisible by remember(attachmentInfo.filePath) { mutableStateOf(false) }
     val icon: ImageVector = if (isImage) Icons.Default.Image else Icons.Default.Description
     val chipShape = RoundedCornerShape(13.dp)
     val imageModel =
@@ -52,11 +58,20 @@ fun AttachmentChip(attachmentInfo: AttachmentInfo, onRemove: () -> Unit, onInser
             }
         }
 
+    if (isImage && previewVisible) {
+        AttachmentImagePreviewDialog(
+            imageUri = Uri.fromFile(File(attachmentInfo.filePath)),
+            title = attachmentInfo.fileName,
+            onDismiss = { previewVisible = false },
+        )
+    }
+
     if (isImage) {
         Box(
             modifier =
-                Modifier.size(52.dp)
+                Modifier.size(80.dp)
                     .clip(RoundedCornerShape(12.dp))
+                    .clickable { previewVisible = true }
         ) {
             AsyncImage(
                 model = imageModel,

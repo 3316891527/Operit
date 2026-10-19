@@ -27,5 +27,6 @@ data class ChatHistory(
     val locked: Boolean = false,
     val folderId: String? = null,
     val lastUsedAt: Long = 0L,
-    val pinned: Boolean = false
+    val pinned: Boolean = false,
+    val archived: Boolean = false
 )

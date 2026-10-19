@@ -57,7 +57,7 @@ import com.ai.assistance.operit.ui.features.settings.screens.ExternalHttpChatSet
 import com.ai.assistance.operit.ui.features.settings.screens.FunctionalConfigScreen
 import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
 import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
-import com.ai.assistance.operit.ui.features.settings.screens.GitHubAccountScreen
+import com.ai.assistance.operit.ui.features.packages.market.account.GitHubAccountScreen
 import com.ai.assistance.operit.ui.features.settings.screens.LanguageSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.LayoutAdjustmentSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigScreen
@@ -68,7 +68,7 @@ import com.ai.assistance.operit.ui.features.settings.screens.SpeechServicesSetti
 import com.ai.assistance.operit.ui.features.settings.screens.ThemeSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScreen
-import com.ai.assistance.operit.ui.features.settings.screens.UserPreferencesSettingsScreen
+import com.ai.assistance.operit.ui.features.settings.profile.UserProfileManagementScreen
 import com.ai.assistance.operit.data.storage.StorageCategory
 import com.ai.assistance.operit.ui.features.storage.BackupExportStorageScreen
 import com.ai.assistance.operit.ui.features.storage.ChatHistoryStorageScreen
@@ -406,6 +406,7 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             UnifiedMarketManageScreen(
+                onNavigateToGitHubAccount = { navigateTo(GitHubAccount) },
                 onNavigateToEditArtifact = { issue ->
                     navigateTo(ArtifactEdit(issue))
                 },
@@ -630,9 +631,7 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             SettingsScreen(
-                    navigateToUserPreferences = { navigateTo(UserPreferencesSettings) },
                     navigateToToolPermissions = { navigateTo(ToolPermission) },
-                    navigateToGitHubAccount = { navigateTo(GitHubAccount) },
                     navigateToModelConfig = { navigateTo(ModelConfig) },
                     navigateToThemeSettings = { navigateTo(ThemeSettings) },
                     navigateToGlobalDisplaySettings = { navigateTo(GlobalDisplaySettings) },
@@ -656,7 +655,7 @@ sealed class Screen(
         }
     }
 
-    data object GitHubAccount : Screen(navItem = NavItem.Settings, titleRes = R.string.github_account) {
+    data object GitHubAccount : Screen(navItem = NavItem.Packages, titleRes = R.string.github_account) {
         @Composable
         override fun Content(
             navController: NavController,
@@ -813,7 +812,7 @@ sealed class Screen(
     }
 
     // Secondary screens - Settings
-    data object UserPreferencesSettings :
+    data class UserPreferencesSettings(val initialProfileId: String? = null) :
             Screen(navItem = NavItem.Settings, titleRes = R.string.settings_user_preferences) {
         @Composable
         override fun Content(
@@ -825,9 +824,10 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            UserPreferencesSettingsScreen(
+            UserProfileManagementScreen(
                 onNavigateBack = onGoBack,
-                onNavigateToMemory = { id -> navigateTo(MemorySpaceDetail(id)) }
+                onNavigateToMemory = { id -> navigateTo(MemorySpaceDetail(id)) },
+                initialProfileId = initialProfileId
             )
         }
     }
@@ -1011,7 +1011,8 @@ sealed class Screen(
                 onBackPressed = onGoBack,
                 onNavigateToMarket = { navigateTo(TagMarket) },
                 onNavigateToPersonaGeneration = { navigateTo(PersonaCardGeneration) },
-                onNavigateToChatManagement = { navigateTo(ChatHistorySettings) }
+                onNavigateToChatManagement = { navigateTo(ChatHistorySettings) },
+                onNavigateToUserProfiles = { id -> navigateTo(UserPreferencesSettings(id)) }
             )
         }
     }

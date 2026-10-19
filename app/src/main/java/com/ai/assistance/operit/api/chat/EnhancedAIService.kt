@@ -23,7 +23,7 @@ import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
 import com.ai.assistance.operit.ui.common.a2ui.CardReferenceExpander
 import com.ai.assistance.operit.ui.common.a2ui.CardTranscript
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
-import com.ai.assistance.operit.core.chat.hooks.appendUserTurnIfMissing
+import com.ai.assistance.operit.core.chat.hooks.applyFinalizedCurrentUserTurn
 import com.ai.assistance.operit.core.chat.hooks.buildActivePromptHookMetadata
 import com.ai.assistance.operit.core.chat.hooks.mergeAdjacentTurns
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
@@ -358,7 +358,8 @@ class EnhancedAIService private constructor(context: Context) {
         var chatModelIndexOverride: Int? = null,
         var memorySpaceIdOverride: String? = null,
         var stream: Boolean = true,
-        var disableWarning: Boolean = false
+        var disableWarning: Boolean = false,
+        var historyOnly: Boolean = false,
     )
 
     // MultiServiceManager 管理不同功能的 AIService 实例
@@ -753,31 +754,6 @@ class EnhancedAIService private constructor(context: Context) {
         ) + buildActivePromptHookMetadata(context, chatId, roleCardId)
     }
 
-    private fun applyFinalizedCurrentUserTurn(
-        preparedHistory: List<PromptTurn>,
-        originalCurrentMessage: String,
-        finalizedCurrentMessage: String
-    ): List<PromptTurn> {
-        if (finalizedCurrentMessage.isBlank()) {
-            return preparedHistory
-        }
-
-        val lastTurn = preparedHistory.lastOrNull()
-        return when {
-            lastTurn?.kind == PromptTurnKind.USER &&
-                lastTurn.content == finalizedCurrentMessage -> {
-                preparedHistory
-            }
-            lastTurn?.kind == PromptTurnKind.USER &&
-                lastTurn.content == originalCurrentMessage -> {
-                preparedHistory.dropLast(1) + lastTurn.copy(content = finalizedCurrentMessage)
-            }
-            else -> {
-                preparedHistory.appendUserTurnIfMissing(finalizedCurrentMessage)
-            }
-        }
-    }
-
     suspend fun estimateRequestWindowSnapshotFromMemory(
         message: String,
         chatHistory: List<PromptTurn>,
@@ -1045,7 +1021,6 @@ class EnhancedAIService private constructor(context: Context) {
                 )
             registerExecutionContext(execContext)
             var hadFatalError = false
-            var providerStreamCollectionStarted = false
             try {
                 // 确保所有操作都在IO线程上执行
                 withContext(Dispatchers.IO) {
@@ -1179,7 +1154,8 @@ class EnhancedAIService private constructor(context: Context) {
                         applyFinalizedCurrentUserTurn(
                             preparedHistory = finalPreparedHistory,
                             originalCurrentMessage = message,
-                            finalizedCurrentMessage = finalProcessedInput
+                            finalizedCurrentMessage = finalProcessedInput,
+                            historyOnly = options.historyOnly,
                         ).mergeAdjacentTurns { previous, current ->
                             previous.kind == PromptTurnKind.USER &&
                                 current.kind == PromptTurnKind.USER &&
@@ -1229,7 +1205,6 @@ class EnhancedAIService private constructor(context: Context) {
                     var totalChars = 0
                     var lastLogTime = messageTimingNow()
 
-                    providerStreamCollectionStarted = true
                     coroutineScope {
                         val revisionJob =
                             revisableStream?.let { carrier ->
@@ -1314,7 +1289,6 @@ class EnhancedAIService private constructor(context: Context) {
                             revisionJob?.cancelAndJoin()
                         }
                     }
-                    providerStreamCollectionStarted = false
 
                     // Update accumulated token counts and persist them
                     val inputTokens = serviceForFunction.inputTokenCount
@@ -1343,32 +1317,21 @@ class EnhancedAIService private constructor(context: Context) {
                 AppLogger.d(TAG, "sendMessage流被取消")
                 throw e
             } catch (e: Exception) {
-                // 用户取消导致的 Socket closed 是预期行为，不应作为错误处理
-                val isSocketClosed = e.message?.contains("Socket closed", ignoreCase = true) == true
-                if (isSocketClosed) {
-                    if (isExecutionContextActive(execContext)) {
-                        AppLogger.d(TAG, "Stream was cancelled by the user (Socket closed).")
-                    } else {
-                        AppLogger.d(TAG, "Stream closed after execution context was invalidated.")
-                    }
+                val cancelledSocket = e.message?.contains("Socket closed", ignoreCase = true) == true &&
+                    !isExecutionContextActive(execContext)
+                if (cancelledSocket) {
+                    AppLogger.d(TAG, "执行上下文取消后关闭连接，不显示请求错误")
                 } else {
                     hadFatalError = true
-                    // Handle any exceptions
                     AppLogger.e(TAG, "发送消息时发生错误: ${e.message}", e)
-                    if (!providerStreamCollectionStarted) {
-                        withContext(Dispatchers.Main) {
-                            _inputProcessingState.value =
-                                    InputProcessingState.Error(message = context.getString(R.string.enhanced_error_with_message, e.message ?: ""))
-                        }
+                    withContext(Dispatchers.Main) {
+                        _inputProcessingState.value = InputProcessingState.Error(
+                            message = context.getString(R.string.enhanced_error_with_message, e.message ?: ""),
+                        )
                     }
-                }
-
-                // 发生无法处理的错误时，也应停止服务，但用户取消除外
-                if (!isSocketClosed) {
                     if (!isSubTask) stopAiService()
-                    if (!providerStreamCollectionStarted) {
-                        throw e
-                    }
+                    // 即使已经进入响应流也必须抛出，保留部分输出并交由请求边界统一提示。
+                    throw e
                 }
             } finally {
                 try {

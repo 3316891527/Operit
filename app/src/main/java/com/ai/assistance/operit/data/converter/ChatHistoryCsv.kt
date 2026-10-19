@@ -44,6 +44,7 @@ object ChatHistoryCsv {
         "character_group_id",
         "locked",
         "pinned",
+        "archived",
         "message_timestamp",
         "message_order_index",
         "sender",
@@ -84,7 +85,7 @@ object ChatHistoryCsv {
     /** 识别结构化片段和旧正文格式，文件夹字段允许来自加入文件夹功能之前的备份。 */
     fun supportsHeader(header: List<String>): Boolean {
         val optionalColumns = setOf(
-            "message_sections", "variant_sections", "folder_id", "last_used_at", "folder_path",
+            "message_sections", "variant_sections", "folder_id", "last_used_at", "folder_path", "archived",
         )
         val requiredColumns = HEADER.filterNot { it in optionalColumns }
         val hasMessageColumns =
@@ -128,6 +129,7 @@ object ChatHistoryCsv {
         put(row, "character_group_id", history.characterGroupId)
         put(row, "locked", history.locked.toString())
         put(row, "pinned", history.pinned.toString())
+        put(row, "archived", history.archived.toString())
         put(row, "folder_id", history.folderId)
         put(row, "last_used_at", history.lastUsedAt.toString())
         put(row, "folder_path", Json.encodeToString(history.folderPath))
