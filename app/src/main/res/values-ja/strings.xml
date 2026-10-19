@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="chat_delete_not_found">このチャットは既に存在しません</string>
+    <string name="chat_delete_failed">チャットを削除できませんでした。もう一度お試しください。</string>
+    <string name="chat_clear_failed">チャットを消去できませんでした。もう一度お試しください。</string>
     <string name="settings_summary_structure">要約の構成</string>
     <string name="settings_summary_section_enabled_desc">オフにすると、生成される要約からこのセクションを除外します</string>
     <string name="settings_summary_section_title">セクションのタイトル</string>
@@ -925,4 +928,28 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">アイデアを、対話の枠の外へ。</string>
     <string name="onboarding_start">開始</string>
+    <string name="chat_archive">チャットをアーカイブ</string>
+    <string name="chat_unarchive">チャット一覧に戻す</string>
+    <string name="chat_archived_count">アーカイブ（%1$d）</string>
+    <string name="chat_archive_empty">アーカイブされたチャットはありません</string>
+    <string name="role_user_profile_manage">プロフィールとメモリ空間を管理</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">画像を読み込めません。ファイルにアクセスできるか確認してください。</string>
+    <string name="chat_image_picker_title">画像を選択</string>
+    <string name="chat_image_picker_permission_title">画像へのアクセスを許可</string>
+    <string name="chat_image_picker_permission_message">アクセスを許可すると、アプリ内でアルバムを閲覧して画像を添付できます。</string>
+    <string name="chat_image_picker_grant_access">アクセスを許可</string>
+    <string name="chat_image_picker_all_photos">すべての画像</string>
+    <string name="chat_image_picker_refresh">更新</string>
+    <string name="chat_image_picker_partial_access">許可された画像のみ表示しています</string>
+    <string name="chat_image_picker_manage_access">画像へのアクセスを管理</string>
+    <string name="chat_image_picker_hint">タップして選択、長押ししてプレビュー。</string>
+    <string name="chat_image_picker_load_failed">アルバムを読み込めません。更新するか写真の権限を確認してください。</string>
+    <string name="chat_image_picker_empty">表示できる画像がありません</string>
+    <string name="chat_image_picker_add_selected">追加（%1$d）</string>
+    <string name="attachment_image_duplicate">画像 %1$s はすでに添付されています</string>
+    <string name="logcat_write_enabled">ログを記録</string>
+    <string name="logcat_write_enabled_description">オフにするとアプリのログ記録を停止します。毎日自動でオンに戻ります。既存のログは引き続きエクスポートできます。</string>
+    <string name="chat_continue_generation">生成を続ける</string>
 </resources>

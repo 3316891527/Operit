@@ -3322,8 +3322,12 @@
     <string name="chat_pending_queue_title">Pending Queue (%1$d)</string>
     <string name="chat_queue_add_message">Queue Message</string>
     <string name="chat_queue_added">Added to queue</string>
+    <string name="chat_continue_generation">Continue generation</string>
     <string name="chat_use_default_config_continue">Continue with default configuration</string>
     <string name="chat_default_config_incomplete">Default configuration is incomplete. Please fill in required information.</string>
+    <string name="chat_delete_not_found">This chat no longer exists</string>
+    <string name="chat_delete_failed">Unable to delete the chat. Please try again.</string>
+    <string name="chat_clear_failed">Unable to clear the chat. Please try again.</string>
     <string name="chat_locked_cannot_delete">This chat is locked and cannot be deleted</string>
     <string name="chat_cleared">Chat history cleared</string>
     <string name="chat_branch_created">Chat branch created</string>
@@ -9179,4 +9183,27 @@
     <string name="onboarding_start">Start</string>
     <string name="terminal_error_command_timeout">Terminal command execution timed out</string>
     <string name="browser_error_action_timeout">Timed out waiting for the browser action to complete</string>
+    <string name="chat_archive">Archive chat</string>
+    <string name="chat_unarchive">Restore to chat list</string>
+    <string name="chat_archived_count">Archived (%1$d)</string>
+    <string name="chat_archive_empty">No archived chats</string>
+    <string name="role_user_profile_manage">Manage profiles and memory spaces</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Unable to load the image. Check that the file is still accessible.</string>
+    <string name="chat_image_picker_title">Select images</string>
+    <string name="chat_image_picker_permission_title">Allow access to images</string>
+    <string name="chat_image_picker_permission_message">Grant access to browse albums and attach images within the app.</string>
+    <string name="chat_image_picker_grant_access">Grant access</string>
+    <string name="chat_image_picker_all_photos">All images</string>
+    <string name="chat_image_picker_refresh">Refresh</string>
+    <string name="chat_image_picker_partial_access">Only permitted images are shown</string>
+    <string name="chat_image_picker_manage_access">Manage image access</string>
+    <string name="chat_image_picker_hint">Tap to select. Touch and hold to preview.</string>
+    <string name="chat_image_picker_load_failed">Unable to read albums. Refresh or check photo permissions.</string>
+    <string name="chat_image_picker_empty">No images to display</string>
+    <string name="chat_image_picker_add_selected">Add (%1$d)</string>
+    <string name="attachment_image_duplicate">Image %1$s is already attached</string>
+    <string name="logcat_write_enabled">Write logs</string>
+    <string name="logcat_write_enabled_description">Turn off to stop recording app logs. Automatically turns on each day. Existing logs can still be exported.</string>
 </resources>

@@ -49,7 +49,9 @@ import android.widget.Toast
 import android.content.ClipData
 import android.content.ClipboardManager
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.settings.profile.RoleUserProfileDialog
+import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
+import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepository
+import kotlinx.coroutines.CancellationException
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.CharacterGroupCard
 import com.ai.assistance.operit.data.model.GroupMemberConfig
@@ -108,7 +110,8 @@ fun ModelPromptsSettingsScreen(
         onBackPressed: () -> Unit = {},
         onNavigateToMarket: () -> Unit = {},
     onNavigateToPersonaGeneration: () -> Unit = {},
-    onNavigateToChatManagement: () -> Unit = {}
+    onNavigateToChatManagement: () -> Unit = {},
+    onNavigateToUserProfiles: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -136,7 +139,6 @@ fun ModelPromptsSettingsScreen(
     val characterCardList by characterCardManager.characterCardListFlow.collectAsState(initial = emptyList())
     var showAddCharacterCardDialog by remember { mutableStateOf(false) }
     var showEditCharacterCardDialog by remember { mutableStateOf(false) }
-    var userProfileCard by remember { mutableStateOf<CharacterCard?>(null) }
     var editingCharacterCard by remember { mutableStateOf<CharacterCard?>(null) }
     var pendingCharacterAvatarUri by remember { mutableStateOf<Uri?>(null) }
     var editingOriginalName by remember { mutableStateOf<String?>(null) }
@@ -928,7 +930,34 @@ fun ModelPromptsSettingsScreen(
                             editingCharacterCard = card.copy()
                             showEditCharacterCardDialog = true
                         },
-                        onOpenUserProfile = { card -> userProfileCard = card },
+                        onOpenUserProfile = { card ->
+                            scope.launch {
+                                try {
+                                    MemorySpaceProfileDocumentRepository.getInstance(context).initialize()
+                                    userPreferencesManager.ensureDefaultMemorySpace(context.getString(R.string.default_profile))
+                                    // 直接打开角色实际使用的资料，避免误编辑其他记忆空间。
+                                    val profileId = if (
+                                        CharacterCardMemoryProfileBindingMode.normalize(card.memoryProfileBindingMode) ==
+                                            CharacterCardMemoryProfileBindingMode.FIXED_PROFILE
+                                    ) {
+                                        requireNotNull(card.memoryProfileId?.takeIf { it.isNotBlank() }) {
+                                            context.getString(R.string.character_card_memory_profile_select)
+                                        }
+                                    } else {
+                                        userPreferencesManager.activeMemorySpaceIdFlow.first()
+                                    }
+                                    require(profileId in userPreferencesManager.memorySpaceListFlow.first()) {
+                                        context.getString(R.string.memory_settings_space_missing)
+                                    }
+                                    onNavigateToUserProfiles(profileId)
+                                } catch (error: CancellationException) {
+                                    throw error
+                                } catch (error: Exception) {
+                                    AppLogger.e("RoleUserProfile", "打开角色用户资料失败", error)
+                                    Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
                         onDeleteCharacterCard = { card -> showDeleteCharacterCardConfirm(card.id, card.name) },
                         onDuplicateCharacterCard = { card -> duplicateCharacterCard(card) },
                         onResetDefaultCharacterCard = { showResetDefaultConfirm = true },
@@ -1257,9 +1286,6 @@ fun ModelPromptsSettingsScreen(
         )
                         }
 
-    userProfileCard?.let { card ->
-        key(card.id) { RoleUserProfileDialog(card, onDismiss = { userProfileCard = null }) }
-    }
 
     if (showCharacterTagManagementDialog) {
         AlertDialog(
@@ -2359,12 +2385,14 @@ fun CharacterCardItem(
                     }
                 }
 
-                IconButton(onClick = onOpenUserProfile, modifier = Modifier.size(32.dp)) {
+                IconButton(
+                    onClick = onOpenUserProfile,
+                    modifier = Modifier.size(32.dp)
+                ) {
                     Icon(
                         Icons.Default.AssignmentInd,
                         contentDescription = stringResource(R.string.role_user_profile),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 

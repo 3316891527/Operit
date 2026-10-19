@@ -2596,8 +2596,12 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="chat_pending_queue_title">Fila a ser enviada (%1$d)</string>
     <string name="chat_queue_add_message">Adicionar à fila de envio</string>
     <string name="chat_queue_added">Adicionado à fila de envio</string>
+    <string name="chat_continue_generation">Continuar geração</string>
     <string name="chat_use_default_config_continue">Continue usando a configuração padrão</string>
     <string name="chat_default_config_incomplete">A configuração padrão está incompleta, preencha as informações necessárias</string>
+    <string name="chat_delete_not_found">Esta conversa não existe mais</string>
+    <string name="chat_delete_failed">Não foi possível excluir a conversa. Tente novamente.</string>
+    <string name="chat_clear_failed">Não foi possível limpar a conversa. Tente novamente.</string>
     <string name="chat_locked_cannot_delete">Este bate-papo está bloqueado e não pode ser excluído</string>
     <string name="chat_cleared">O histórico de bate-papo foi limpo</string>
     <string name="chat_branch_created">Ramo de conversa criado</string>
@@ -8104,4 +8108,27 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="onboarding_start">Iniciar</string>
     <string name="terminal_error_command_timeout">O tempo de execução do comando do terminal se esgotou</string>
     <string name="browser_error_action_timeout">O tempo de espera da operação do navegador se esgotou</string>
+    <string name="chat_archive">Arquivar conversa</string>
+    <string name="chat_unarchive">Restaurar à lista de conversas</string>
+    <string name="chat_archived_count">Arquivadas (%1$d)</string>
+    <string name="chat_archive_empty">Nenhuma conversa arquivada</string>
+    <string name="role_user_profile_manage">Gerenciar perfis e espaços de memória</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Não foi possível carregar a imagem. Verifique se o arquivo ainda está acessível.</string>
+    <string name="chat_image_picker_title">Selecionar imagens</string>
+    <string name="chat_image_picker_permission_title">Permitir acesso às imagens</string>
+    <string name="chat_image_picker_permission_message">Conceda acesso para navegar pelos álbuns e anexar imagens no aplicativo.</string>
+    <string name="chat_image_picker_grant_access">Conceder acesso</string>
+    <string name="chat_image_picker_all_photos">Todas as imagens</string>
+    <string name="chat_image_picker_refresh">Atualizar</string>
+    <string name="chat_image_picker_partial_access">Apenas as imagens autorizadas são exibidas</string>
+    <string name="chat_image_picker_manage_access">Gerenciar acesso às imagens</string>
+    <string name="chat_image_picker_hint">Toque para selecionar. Toque e segure para visualizar.</string>
+    <string name="chat_image_picker_load_failed">Não foi possível ler os álbuns. Atualize ou verifique as permissões de fotos.</string>
+    <string name="chat_image_picker_empty">Nenhuma imagem para exibir</string>
+    <string name="chat_image_picker_add_selected">Adicionar (%1$d)</string>
+    <string name="attachment_image_duplicate">A imagem %1$s já está anexada</string>
+    <string name="logcat_write_enabled">Gravar logs</string>
+    <string name="logcat_write_enabled_description">Desative para parar de registrar logs do aplicativo. Ativa automaticamente a cada dia. Os logs existentes ainda podem ser exportados.</string>
 </resources>

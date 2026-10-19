@@ -37,14 +37,14 @@ class ChatHistoryCsvTest {
     fun headerContainsVersionAndSeparateRecordTypes() {
         assertEquals("format_version", ChatHistoryCsv.HEADER.first())
         assertEquals("record_type", ChatHistoryCsv.HEADER[1])
-        assertEquals(51, ChatHistoryCsv.HEADER.size)
+        assertEquals(52, ChatHistoryCsv.HEADER.size)
         assertTrue(ChatHistoryCsv.HEADER.containsAll(listOf("message_sections", "variant_sections", "folder_id", "last_used_at", "folder_path")))
     }
 
     @Test
     fun recognizesLegacyMultilineCsvWithoutFolderColumns() {
         val legacyHeader = ChatHistoryCsv.HEADER
-            .filterNot { it in setOf("folder_id", "last_used_at", "folder_path") }
+            .filterNot { it in setOf("folder_id", "last_used_at", "folder_path", "archived") }
             .map { when (it) {
                 "message_sections" -> "message_content"
                 "variant_sections" -> "variant_content"

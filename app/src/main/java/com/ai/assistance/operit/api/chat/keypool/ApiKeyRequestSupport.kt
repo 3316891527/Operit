@@ -81,28 +81,31 @@ internal suspend fun handleKeyAwareRetry(
     if (exception is UserCancellationException || exception is CancellationException) {
         throw exception
     }
-    val transportError = ApiTransportError.describe(exception)
+    val retryMode = ApiRequestRetryPolicy.mode(exception)
+    val errorClass = ApiKeyFailureClassifier.classify(exception)
+    val transportError = if (retryMode == ApiRequestRetryMode.RETRY &&
+        (errorClass == ApiKeyErrorClass.NETWORK || errorClass == ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT)
+    ) ApiTransportError.describe(exception) else null
     val errorText =
         transportError?.json(
             attempt = attemptNumber,
-            retryable = enableRetry,
+            retryable = enableRetry && retryMode == ApiRequestRetryMode.RETRY,
         )
             ?: exception.message?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.provider_error_network_interrupted)
 
-    if (!enableRetry) {
+    if (!enableRetry || retryMode == ApiRequestRetryMode.STOP) {
         throw IOException(errorText, exception)
     }
 
     val session = currentApiKeySession()
-    val errorClass = ApiKeyFailureClassifier.classify(exception)
     val retryAfterMs = ApiKeyFailureClassifier.retryAfterMs(exception)
     val decision =
         session?.decideRetry(errorClass, retryAfterMs)
             ?: ApiKeyRetryDecision(
-                exhausted = attemptNumber > LlmRetryPolicy.MAX_RETRY_ATTEMPTS,
+                exhausted = retryMode == ApiRequestRetryMode.ROTATE_KEY || attemptNumber > LlmRetryPolicy.MAX_RETRY_ATTEMPTS,
                 delayMs =
-                    if (attemptNumber > LlmRetryPolicy.MAX_RETRY_ATTEMPTS) {
+                    if (retryMode == ApiRequestRetryMode.ROTATE_KEY || attemptNumber > LlmRetryPolicy.MAX_RETRY_ATTEMPTS) {
                         0L
                     } else {
                         LlmRetryPolicy.nextDelayMs(attemptNumber)
@@ -118,6 +121,8 @@ internal suspend fun handleKeyAwareRetry(
                 retryable = false,
             ) ?: if (summary != null && summary.attempted > 0) {
                 formatApiKeyPoolExhaustedMessage(context, summary, errorText)
+            } else if (retryMode == ApiRequestRetryMode.ROTATE_KEY) {
+                errorText
             } else {
                 context.getString(
                     R.string.openai_error_connection_timeout,

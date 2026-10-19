@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.sidebar
 
+import androidx.compose.foundation.background
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -42,7 +43,8 @@ fun MainChatControls(modifier: Modifier = Modifier) {
     val focus = LocalFocusManager.current
     val colorScheme = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
-    val contentColor = getTextColorForBackground(colorScheme.background)
+    val workspaceVisible = workspacePage != WorkspaceHubPage.CHAT
+    val contentColor = getTextColorForBackground(if (workspaceVisible) colorScheme.surface else colorScheme.background)
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             viewModel.launchWindowFloatingModeAfterMicPermissionGranted(
@@ -59,7 +61,8 @@ fun MainChatControls(modifier: Modifier = Modifier) {
     }
 
     Row(
-        modifier = modifier.fillMaxWidth().height(44.dp),
+        modifier = modifier.fillMaxWidth().height(44.dp)
+            .then(if (workspaceVisible) Modifier.background(colorScheme.surface.copy(alpha = 1f)) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = { dismissKeyboard(); openSidebar() }, modifier = Modifier.size(40.dp)) {
@@ -70,7 +73,12 @@ fun MainChatControls(modifier: Modifier = Modifier) {
             }
         }
         Text(
-            text = currentChat?.title ?: stringResource(R.string.new_chat),
+            // 这行在工作区覆盖层之上，必须切换标题，不能继续透出原对话名。
+            text = when (workspacePage) {
+                WorkspaceHubPage.CHAT -> currentChat?.title ?: stringResource(R.string.new_chat)
+                WorkspaceHubPage.TERMINAL -> stringResource(R.string.terminal_title)
+                else -> stringResource(R.string.workspace_hub_entry)
+            },
             modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Medium,

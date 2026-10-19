@@ -120,6 +120,7 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
         val startTime = System.currentTimeMillis()
         appStartupTimeMs = startTime
         instance = this
+        AppLogger.bindContext(this)
         com.ai.assistance.operit.terminal.TerminalManager.setUbuntuArchivePreparer { context, destination ->
             com.ai.assistance.operit.data.resources.OfflineResources.prepareUbuntuArchive(context, destination)
         }
@@ -159,7 +160,7 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
 
         // 每次应用冷启动时重置上一轮日志，避免日志无限增长
         val isCrashReportRecoveryStartup = CrashRecoveryState.consumePendingCrashReportLaunch(this)
-        if (!isCrashReportRecoveryStartup) {
+        if (!isCrashReportRecoveryStartup && AppLogger.refreshLogWritingEnabled()) {
             AppLogger.resetLogFile()
         }
 

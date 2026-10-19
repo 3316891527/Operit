@@ -29,6 +29,7 @@ import com.ai.assistance.operit.core.tools.FileOperationData
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.data.model.AITool
+import com.ai.assistance.operit.data.chat.deletion.ChatDeletionResult
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageLocatorPreview
@@ -864,23 +865,32 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatHistoryDelegate.revealMessageForCurrentChat(targetTimestamp)
 
     fun deleteChatHistory(chatId: String) {
-        chatHistoryDelegate.deleteChatHistory(chatId) { deleted ->
-            if (deleted) {
+        chatHistoryDelegate.deleteChatHistoryWithResult(chatId) { result ->
+            if (result == ChatDeletionResult.DELETED) {
                 pendingMessageQueueStore.removeChat(chatId)
             } else {
-                uiStateDelegate.showToast(context.getString(R.string.chat_locked_cannot_delete))
+                showChatDeletionFailure(result, clearing = false)
             }
         }
     }
 
     fun clearCurrentChat() {
-        chatHistoryDelegate.clearCurrentChat { deleted ->
-            if (deleted) {
+        chatHistoryDelegate.clearCurrentChatWithResult { result ->
+            if (result == ChatDeletionResult.DELETED) {
                 uiStateDelegate.showToast(context.getString(R.string.chat_cleared))
             } else {
-                uiStateDelegate.showToast(context.getString(R.string.chat_locked_cannot_delete))
+                showChatDeletionFailure(result, clearing = true)
             }
         }
+    }
+
+    private fun showChatDeletionFailure(result: ChatDeletionResult, clearing: Boolean) {
+        val message = when (result) {
+            ChatDeletionResult.LOCKED -> R.string.chat_locked_cannot_delete
+            ChatDeletionResult.NOT_FOUND -> R.string.chat_delete_not_found
+            else -> if (clearing) R.string.chat_clear_failed else R.string.chat_delete_failed
+        }
+        uiStateDelegate.showToast(context.getString(message))
     }
     fun toggleChatHistorySelector() = chatHistoryDelegate.toggleChatHistorySelector()
     fun showChatHistorySelector(show: Boolean) {
@@ -934,7 +944,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                         chatHistories.value
                             .asSequence()
                             .filter { history ->
-                                history.characterGroupId?.trim() == targetGroupId
+                                !history.archived && history.characterGroupId?.trim() == targetGroupId
                             }
                             .maxByOrNull { it.updatedAt }
                     if (latestChat != null) {
@@ -954,6 +964,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         return chatHistories.value
             .asSequence()
             .filter { history ->
+                if (history.archived) return@filter false
                 val historyGroupId = history.characterGroupId?.trim()?.takeIf { it.isNotBlank() }
                 if (!historyGroupId.isNullOrBlank()) {
                     return@filter false
@@ -1606,6 +1617,10 @@ class ChatViewModel(context: Context) : ViewModel() {
             promptFunctionType = promptFunctionType,
             preferActiveRoleCard = true,
         )
+    }
+
+    fun continueGeneration() {
+        messageCoordinationDelegate.continueGeneration()
     }
 
     fun sendTextMessage(text: String, promptFunctionType: PromptFunctionType = PromptFunctionType.CHAT) {

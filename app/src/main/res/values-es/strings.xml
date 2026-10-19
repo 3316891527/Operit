@@ -3072,8 +3072,12 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="chat_pending_queue_title">Cola de envío (%1$d)</string>
     <string name="chat_queue_add_message">Agregar a la cola de envío</string>
     <string name="chat_queue_added">Agregado a la cola de envío</string>
+    <string name="chat_continue_generation">Continuar generación</string>
     <string name="chat_use_default_config_continue">Continuar con la configuración predeterminada</string>
     <string name="chat_default_config_incomplete">La configuración predeterminada está incompleta, complete la información necesaria</string>
+    <string name="chat_delete_not_found">Este chat ya no existe</string>
+    <string name="chat_delete_failed">No se pudo eliminar el chat. Inténtalo de nuevo.</string>
+    <string name="chat_clear_failed">No se pudo vaciar el chat. Inténtalo de nuevo.</string>
     <string name="chat_locked_cannot_delete">Este chat está bloqueado, no se puede eliminar</string>
     <string name="chat_cleared">Historial de chat borrado</string>
     <string name="chat_branch_created">Rama de conversación creada</string>
@@ -8332,4 +8336,27 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="onboarding_start">Comenzar</string>
     <string name="terminal_error_command_timeout">Se agotó el tiempo de ejecución del comando del terminal</string>
     <string name="browser_error_action_timeout">Se agotó el tiempo de espera de la operación del navegador</string>
+    <string name="chat_archive">Archivar chat</string>
+    <string name="chat_unarchive">Restaurar a la lista de chats</string>
+    <string name="chat_archived_count">Archivados (%1$d)</string>
+    <string name="chat_archive_empty">No hay chats archivados</string>
+    <string name="role_user_profile_manage">Gestionar perfiles y espacios de memoria</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">No se puede cargar la imagen. Comprueba que el archivo siga siendo accesible.</string>
+    <string name="chat_image_picker_title">Seleccionar imágenes</string>
+    <string name="chat_image_picker_permission_title">Permitir acceso a imágenes</string>
+    <string name="chat_image_picker_permission_message">Concede acceso para explorar álbumes y adjuntar imágenes dentro de la aplicación.</string>
+    <string name="chat_image_picker_grant_access">Conceder acceso</string>
+    <string name="chat_image_picker_all_photos">Todas las imágenes</string>
+    <string name="chat_image_picker_refresh">Actualizar</string>
+    <string name="chat_image_picker_partial_access">Solo se muestran las imágenes autorizadas</string>
+    <string name="chat_image_picker_manage_access">Gestionar acceso a imágenes</string>
+    <string name="chat_image_picker_hint">Toca para seleccionar. Mantén pulsado para previsualizar.</string>
+    <string name="chat_image_picker_load_failed">No se pueden leer los álbumes. Actualiza o comprueba los permisos de fotos.</string>
+    <string name="chat_image_picker_empty">No hay imágenes para mostrar</string>
+    <string name="chat_image_picker_add_selected">Añadir (%1$d)</string>
+    <string name="attachment_image_duplicate">La imagen %1$s ya está adjunta</string>
+    <string name="logcat_write_enabled">Guardar registros</string>
+    <string name="logcat_write_enabled_description">Desactiva el registro de la aplicación. Se activa automáticamente cada día. Los registros existentes se pueden exportar.</string>
 </resources>

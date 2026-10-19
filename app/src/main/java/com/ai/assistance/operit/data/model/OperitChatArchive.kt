@@ -40,6 +40,7 @@ data class OperitArchivedChat(
     val characterGroupId: String? = null,
     val locked: Boolean = false,
     val pinned: Boolean = false,
+    val archived: Boolean = false,
     val folderId: String? = null,
     val lastUsedAt: Long = 0L,
     val folderPath: List<ChatFolder> = emptyList(),
@@ -63,6 +64,7 @@ data class OperitArchivedChat(
             characterGroupId = characterGroupId,
             locked = locked,
             pinned = pinned,
+            archived = archived,
             folderId = folderId,
             lastUsedAt = lastUsedAt,
         )
@@ -91,6 +93,7 @@ data class OperitArchivedChat(
                 characterGroupId = history.characterGroupId,
                 locked = history.locked,
                 pinned = history.pinned,
+                archived = history.archived,
                 folderId = history.folderId,
                 lastUsedAt = history.lastUsedAt,
             )

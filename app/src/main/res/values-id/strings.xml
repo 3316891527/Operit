@@ -2578,8 +2578,12 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="chat_pending_queue_title">Antrian Tertunda (%1$d)</string>
     <string name="chat_queue_add_message">Tambahkan ke antrian pengiriman</string>
     <string name="chat_queue_added">Ditambahkan ke antrian pengiriman</string>
+    <string name="chat_continue_generation">Lanjutkan pembuatan</string>
     <string name="chat_use_default_config_continue">Lanjutkan dengan konfigurasi default</string>
     <string name="chat_default_config_incomplete">Konfigurasi default tidak lengkap, harap isi informasi yang diperlukan</string>
+    <string name="chat_delete_not_found">Obrolan ini sudah tidak ada</string>
+    <string name="chat_delete_failed">Gagal menghapus obrolan. Coba lagi.</string>
+    <string name="chat_clear_failed">Gagal mengosongkan obrolan. Coba lagi.</string>
     <string name="chat_locked_cannot_delete">Obrolan ini terkunci, tidak dapat dihapus</string>
     <string name="chat_cleared">Riwayat obrolan telah dibersihkan</string>
     <string name="chat_branch_created">Cabang percakapan telah dibuat</string>
@@ -8264,4 +8268,27 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="onboarding_start">Mulai</string>
     <string name="terminal_error_command_timeout">Eksekusi perintah terminal melewati batas waktu</string>
     <string name="browser_error_action_timeout">Waktu tunggu operasi browser habis</string>
+    <string name="chat_archive">Arsipkan obrolan</string>
+    <string name="chat_unarchive">Kembalikan ke daftar obrolan</string>
+    <string name="chat_archived_count">Diarsipkan (%1$d)</string>
+    <string name="chat_archive_empty">Belum ada obrolan yang diarsipkan</string>
+    <string name="role_user_profile_manage">Kelola profil dan ruang memori</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Tidak dapat memuat gambar. Pastikan berkas masih dapat diakses.</string>
+    <string name="chat_image_picker_title">Pilih gambar</string>
+    <string name="chat_image_picker_permission_title">Izinkan akses gambar</string>
+    <string name="chat_image_picker_permission_message">Berikan akses untuk menjelajahi album dan melampirkan gambar di dalam aplikasi.</string>
+    <string name="chat_image_picker_grant_access">Berikan akses</string>
+    <string name="chat_image_picker_all_photos">Semua gambar</string>
+    <string name="chat_image_picker_refresh">Muat ulang</string>
+    <string name="chat_image_picker_partial_access">Hanya gambar yang diizinkan yang ditampilkan</string>
+    <string name="chat_image_picker_manage_access">Kelola akses gambar</string>
+    <string name="chat_image_picker_hint">Ketuk untuk memilih. Tekan lama untuk pratinjau.</string>
+    <string name="chat_image_picker_load_failed">Tidak dapat membaca album. Muat ulang atau periksa izin foto.</string>
+    <string name="chat_image_picker_empty">Tidak ada gambar untuk ditampilkan</string>
+    <string name="chat_image_picker_add_selected">Tambahkan (%1$d)</string>
+    <string name="attachment_image_duplicate">Gambar %1$s sudah dilampirkan</string>
+    <string name="logcat_write_enabled">Tulis log</string>
+    <string name="logcat_write_enabled_description">Nonaktifkan untuk berhenti mencatat log aplikasi. Aktif kembali setiap hari. Log yang ada tetap dapat diekspor.</string>
 </resources>

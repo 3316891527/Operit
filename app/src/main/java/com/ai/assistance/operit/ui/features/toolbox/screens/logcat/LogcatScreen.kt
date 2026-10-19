@@ -51,6 +51,7 @@ fun LogcatScreen(navController: NavController? = null) {
     val isSaving by viewModel.isSaving.collectAsState()
     val saveResult by viewModel.saveResult.collectAsState()
     val exportOptions by viewModel.exportOptions.collectAsState()
+    val logWritingEnabled by viewModel.logWritingEnabled.collectAsState()
 
     CustomScaffold(
         topBar = {
@@ -73,6 +74,17 @@ fun LogcatScreen(navController: NavController? = null) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    LogExportFilterToggle(
+                        title = stringResource(R.string.logcat_write_enabled),
+                        subtitle = stringResource(R.string.logcat_write_enabled_description),
+                        checked = logWritingEnabled,
+                        enabled = true,
+                        onCheckedChange = viewModel::setLogWritingEnabled
+                    )
+                }
+            }
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(4.dp)

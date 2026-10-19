@@ -75,6 +75,7 @@ private enum class ManageTypeTab(val kind: UnifiedMarketManageKind, val labelRes
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UnifiedMarketManageScreen(
+    onNavigateToGitHubAccount: () -> Unit,
     onNavigateToEditArtifact: (MarketV2Entry) -> Unit,
     onNavigateToEditRepo: (MarketStatsType, MarketV2Entry) -> Unit,
     onNavigateToPublishArtifactVersion: (MarketV2Entry, Boolean) -> Unit,
@@ -136,6 +137,10 @@ fun UnifiedMarketManageScreen(
         emptyDescription = stringResource(R.string.click_button_publish_first_artifact),
         emptyActionLabel = stringResource(R.string.publish_to_market),
         topContent = {
+            TextButton(
+                onClick = onNavigateToGitHubAccount,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringResource(R.string.github_account)) }
             ScrollableTabRow(
                 selectedTabIndex = selectedTab.ordinal,
                 edgePadding = 0.dp
