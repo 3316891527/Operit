@@ -3059,6 +3059,9 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="chat_queue_added">A fost adăugat în coada de trimitere</string>
     <string name="chat_use_default_config_continue">Continuați cu configurația implicită</string>
     <string name="chat_default_config_incomplete">Configurația implicită este incompletă; vă rugăm să completați informațiile necesare</string>
+    <string name="chat_delete_not_found">Această conversație nu mai există</string>
+    <string name="chat_delete_failed">Conversația nu a putut fi ștearsă. Încearcă din nou.</string>
+    <string name="chat_clear_failed">Conversația nu a putut fi golită. Încearcă din nou.</string>
     <string name="chat_locked_cannot_delete">Această conversație a fost blocată și nu poate fi ștersă</string>
     <string name="chat_cleared">Istoricul conversațiilor a fost șters</string>
     <string name="chat_branch_created">S-a creat o ramificație a conversației</string>

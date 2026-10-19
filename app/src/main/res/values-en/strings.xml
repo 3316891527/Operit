@@ -3324,6 +3324,9 @@
     <string name="chat_queue_added">Added to queue</string>
     <string name="chat_use_default_config_continue">Continue with default configuration</string>
     <string name="chat_default_config_incomplete">Default configuration is incomplete. Please fill in required information.</string>
+    <string name="chat_delete_not_found">This chat no longer exists</string>
+    <string name="chat_delete_failed">Unable to delete the chat. Please try again.</string>
+    <string name="chat_clear_failed">Unable to clear the chat. Please try again.</string>
     <string name="chat_locked_cannot_delete">This chat is locked and cannot be deleted</string>
     <string name="chat_cleared">Chat history cleared</string>
     <string name="chat_branch_created">Chat branch created</string>

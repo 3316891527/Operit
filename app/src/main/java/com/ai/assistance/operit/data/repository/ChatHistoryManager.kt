@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.data.repository
 
+import com.ai.assistance.operit.data.chat.deletion.ChatDeletionPolicy
+import com.ai.assistance.operit.data.chat.deletion.ChatDeletionResult
 import androidx.room.withTransaction
 import com.ai.assistance.operit.data.chat.folders.ChatFolder
 import com.ai.assistance.operit.data.chat.folders.ChatFolderBinding
@@ -1634,15 +1636,25 @@ class ChatHistoryManager private constructor(private val context: Context) {
         }
     }
 
-    suspend fun canDeleteChatHistory(chatId: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val chat = chatDao.getChatById(chatId)
-                chat != null && chat.locked != true && currentChatIdFlow.first() != chatId
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to check whether chat $chatId can be deleted", e)
-                false
-            }
+    suspend fun canDeleteChatHistory(chatId: String): Boolean =
+        getChatDeletionBlockReason(chatId) == null
+
+    /** 每次读取目标会话，准备删除时允许当前会话先完成切换。 */
+    suspend fun getChatDeletionBlockReason(
+        chatId: String,
+        allowCurrentChat: Boolean = false,
+    ): ChatDeletionResult? = withContext(Dispatchers.IO) {
+        try {
+            ChatDeletionPolicy.blockReason(
+                target = chatDao.getChatById(chatId),
+                currentChatId = currentChatIdFlow.first(),
+                allowCurrentChat = allowCurrentChat,
+            )
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "检查会话删除权限失败：$chatId", error)
+            ChatDeletionResult.FAILED
         }
     }
 
@@ -1650,17 +1662,12 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun deleteChatHistory(chatId: String): Boolean {
         chatMutex(chatId).withLock {
             try {
-                val chat = chatDao.getChatById(chatId)
-                if (chat == null) {
-                    return false
-                }
-                val currentChatId = currentChatIdFlow.first()
-                if (chat.locked == true) {
-                    AppLogger.w(TAG, "Chat $chatId is locked; skip deletion")
-                    return false
-                }
-                if (currentChatId == chatId) {
-                    AppLogger.w(TAG, "Chat $chatId is the current chat; skip deletion")
+                val blocked = ChatDeletionPolicy.blockReason(
+                    target = chatDao.getChatById(chatId),
+                    currentChatId = currentChatIdFlow.first(),
+                )
+                if (blocked != null) {
+                    AppLogger.w(TAG, "拒绝删除会话：$chatId，原因：$blocked")
                     return false
                 }
                 // 删除聊天实体（级联删除所有消息）
