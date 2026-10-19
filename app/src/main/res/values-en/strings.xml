@@ -9203,4 +9203,6 @@
     <string name="chat_image_picker_empty">No images to display</string>
     <string name="chat_image_picker_add_selected">Add (%1$d)</string>
     <string name="attachment_image_duplicate">Image %1$s is already attached</string>
+    <string name="logcat_write_enabled">Write logs</string>
+    <string name="logcat_write_enabled_description">Turn off to stop recording app logs. Automatically turns on each day. Existing logs can still be exported.</string>
 </resources>

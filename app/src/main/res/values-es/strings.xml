@@ -8356,4 +8356,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="chat_image_picker_empty">No hay imágenes para mostrar</string>
     <string name="chat_image_picker_add_selected">Añadir (%1$d)</string>
     <string name="attachment_image_duplicate">La imagen %1$s ya está adjunta</string>
+    <string name="logcat_write_enabled">Guardar registros</string>
+    <string name="logcat_write_enabled_description">Desactiva el registro de la aplicación. Se activa automáticamente cada día. Los registros existentes se pueden exportar.</string>
 </resources>

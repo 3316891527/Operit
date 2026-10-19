@@ -949,4 +949,6 @@
     <string name="chat_image_picker_empty">表示できる画像がありません</string>
     <string name="chat_image_picker_add_selected">追加（%1$d）</string>
     <string name="attachment_image_duplicate">画像 %1$s はすでに添付されています</string>
+    <string name="logcat_write_enabled">ログを記録</string>
+    <string name="logcat_write_enabled_description">オフにするとアプリのログ記録を停止します。毎日自動でオンに戻ります。既存のログは引き続きエクスポートできます。</string>
 </resources>

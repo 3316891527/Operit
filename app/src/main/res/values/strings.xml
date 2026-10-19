@@ -9203,4 +9203,6 @@
     <string name="chat_image_picker_empty">没有可显示的图片</string>
     <string name="chat_image_picker_add_selected">添加（%1$d）</string>
     <string name="attachment_image_duplicate">图片 %1$s 已添加，请勿重复上传</string>
+    <string name="logcat_write_enabled">写入日志</string>
+    <string name="logcat_write_enabled_description">关闭后停止记录应用日志，每天自动恢复开启。已有日志仍可导出。</string>
 </resources>

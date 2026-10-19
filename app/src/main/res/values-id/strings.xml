@@ -8288,4 +8288,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="chat_image_picker_empty">Tidak ada gambar untuk ditampilkan</string>
     <string name="chat_image_picker_add_selected">Tambahkan (%1$d)</string>
     <string name="attachment_image_duplicate">Gambar %1$s sudah dilampirkan</string>
+    <string name="logcat_write_enabled">Tulis log</string>
+    <string name="logcat_write_enabled_description">Nonaktifkan untuk berhenti mencatat log aplikasi. Aktif kembali setiap hari. Log yang ada tetap dapat diekspor.</string>
 </resources>

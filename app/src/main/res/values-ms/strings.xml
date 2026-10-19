@@ -8288,4 +8288,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="chat_image_picker_empty">Tiada imej untuk dipaparkan</string>
     <string name="chat_image_picker_add_selected">Tambah (%1$d)</string>
     <string name="attachment_image_duplicate">Imej %1$s sudah dilampirkan</string>
+    <string name="logcat_write_enabled">Tulis log</string>
+    <string name="logcat_write_enabled_description">Matikan untuk menghentikan rekod log aplikasi. Diaktifkan semula setiap hari. Log sedia ada masih boleh dieksport.</string>
 </resources>

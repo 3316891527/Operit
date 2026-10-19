@@ -8137,4 +8137,6 @@
     <string name="chat_image_picker_empty">표시할 이미지가 없습니다</string>
     <string name="chat_image_picker_add_selected">추가 (%1$d)</string>
     <string name="attachment_image_duplicate">이미지 %1$s이(가) 이미 첨부되어 있습니다</string>
+    <string name="logcat_write_enabled">로그 기록</string>
+    <string name="logcat_write_enabled_description">끄면 앱 로그 기록을 중지합니다. 매일 자동으로 켜집니다. 기존 로그는 계속 내보낼 수 있습니다.</string>
 </resources>

@@ -8881,4 +8881,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="chat_image_picker_empty">Nu există imagini de afișat</string>
     <string name="chat_image_picker_add_selected">Adăugați (%1$d)</string>
     <string name="attachment_image_duplicate">Imaginea %1$s este deja atașată</string>
+    <string name="logcat_write_enabled">Scriere jurnale</string>
+    <string name="logcat_write_enabled_description">Dezactivează înregistrarea jurnalelor aplicației. Se reactivează automat zilnic. Jurnalele existente pot fi exportate.</string>
 </resources>
