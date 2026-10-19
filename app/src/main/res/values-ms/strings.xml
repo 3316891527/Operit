@@ -8264,4 +8264,20 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="onboarding_start">Mula</string>
     <string name="terminal_error_command_timeout">Pelaksanaan arahan terminal tamat masa</string>
     <string name="browser_error_action_timeout">Masa menunggu operasi pelayar telah tamat</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Tidak dapat memuatkan imej. Pastikan fail masih boleh diakses.</string>
+    <string name="chat_image_picker_title">Pilih imej</string>
+    <string name="chat_image_picker_permission_title">Benarkan akses imej</string>
+    <string name="chat_image_picker_permission_message">Berikan akses untuk menyemak imbas album dan melampirkan imej dalam aplikasi.</string>
+    <string name="chat_image_picker_grant_access">Berikan akses</string>
+    <string name="chat_image_picker_all_photos">Semua imej</string>
+    <string name="chat_image_picker_refresh">Muat semula</string>
+    <string name="chat_image_picker_partial_access">Hanya imej yang dibenarkan dipaparkan</string>
+    <string name="chat_image_picker_manage_access">Urus akses imej</string>
+    <string name="chat_image_picker_hint">Ketik untuk memilih. Tekan lama untuk pratonton.</string>
+    <string name="chat_image_picker_load_failed">Tidak dapat membaca album. Muat semula atau semak kebenaran foto.</string>
+    <string name="chat_image_picker_empty">Tiada imej untuk dipaparkan</string>
+    <string name="chat_image_picker_add_selected">Tambah (%1$d)</string>
+    <string name="attachment_image_duplicate">Imej %1$s sudah dilampirkan</string>
 </resources>
