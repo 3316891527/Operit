@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: fix/request-error-feedback
-status: implemented
+status: verified
 ---
 # 请求终止错误传播与重试规则
 
@@ -18,3 +18,7 @@ status: implemented
 改动范围为 `EnhancedAIService`、`MessageProcessingDelegate` 及 `api/chat/keypool/`。不涉及账号、资料、归档、附件、Toast 样式或删除动画。目标分支为 `dev`。
 
 实现与完整回归清单见 [01-实现与验证](./01-实现与验证.md)。
+
+## 本轮验收结论
+
+2026-10-20，用户确认本轮测试全部通过；统一验收提交为 `1576d70ae`，构建与 JVM 回归均已通过。完整来源与发布准备见 [统一验收记录](../chat-experience-release/index.md)。本地没有重复执行编译、构建或测试。

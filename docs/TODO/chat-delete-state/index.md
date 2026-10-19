@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: fix/chat-delete-state
-status: implemented-awaiting-ci
+status: verified
 ---
 
 # 会话删除状态与锁定提示修复
@@ -11,3 +11,6 @@ status: implemented-awaiting-ci
 本轮拆分删除准备与实际删除的检查阶段，针对目标会话读取锁定状态，区分锁定、不存在、仍为当前会话及一般失败。保留原 Boolean 回调接口和底层当前会话保护，增加带原因的结果供界面使用。
 
 实现及回归见 [01-实现与验证.md](01-实现与验证.md)。本轮只处理删除状态，删除视觉效果另行安排。
+## 本轮验收结论
+
+2026-10-20，用户确认本轮测试全部通过；统一验收提交为 `1576d70ae`，构建与 JVM 回归均已通过。完整来源与发布准备见 [统一验收记录](../chat-experience-release/index.md)。本地没有重复执行编译、构建或测试。

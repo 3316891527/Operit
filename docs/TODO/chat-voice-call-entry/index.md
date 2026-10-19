@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/chat-voice-call-entry
-status: implemented-awaiting-ci
+status: verified
 ---
 # 语音通话入口调整
 
@@ -12,3 +12,7 @@ Agent 与 Classic 输入框在空闲且没有正文和附件时显示灰色禁�
 验证范围：两种输入模式、空白正文、仅附件、正常发送、取消与排队、通话授权及拒绝。语音条不在本轮范围内。构建与 JVM 验证交由仓库工作流。
 
 [DONE]
+
+## 本轮验收结论
+
+2026-10-20，用户确认本轮测试全部通过；统一验收提交为 `1576d70ae`，构建与 JVM 回归均已通过。完整来源与发布准备见 [统一验收记录](../chat-experience-release/index.md)。本地没有重复执行编译、构建或测试。

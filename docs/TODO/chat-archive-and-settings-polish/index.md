@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/chat-archive-and-settings-polish
-status: implemented-awaiting-ci
+status: verified
 ---
 
 # 工作区、聊天归档与设置入口整理
@@ -17,3 +17,7 @@ status: implemented-awaiting-ci
 实施与回归记录见 [01-实现与验证.md](01-实现与验证.md)。只提交至个人仓库，派发分支 Android Build 与 Android Tests，运行结果由用户反馈，不轮询。
 
 入口迭代见 [02-资料入口调整.md](02-资料入口调整.md)。
+
+## 本轮验收结论
+
+2026-10-20，用户确认本轮测试全部通过；统一验收提交为 `1576d70ae`，构建与 JVM 回归均已通过。完整来源与发布准备见 [统一验收记录](../chat-experience-release/index.md)。本地没有重复执行编译、构建或测试。

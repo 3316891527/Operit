@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/chat-continue-generation
-status: implemented-awaiting-ci
+status: verified
 ---
 # 手动继续生成
 
@@ -14,3 +14,7 @@ status: implemented-awaiting-ci
 当前分支的发送流程已协程化，手动续写沿用现有错误处理入口，角色与历史读取在 IO 中完成，读取后再次检查聊天和生成状态。保留 A2UI 的编辑器消费控制。
 
 [DONE]
+
+## 本轮验收结论
+
+2026-10-20，用户确认本轮测试全部通过；统一验收提交为 `1576d70ae`，构建与 JVM 回归均已通过。完整来源与发布准备见 [统一验收记录](../chat-experience-release/index.md)。本地没有重复执行编译、构建或测试。

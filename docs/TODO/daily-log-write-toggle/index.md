@@ -1,7 +1,7 @@
 ---
 fork: https://github.com/3316891527/Operit
 branch: feat/daily-log-write-toggle
-status: implemented-awaiting-ci
+status: verified
 ---
 # 每日重置的日志写入开关
 
@@ -12,3 +12,7 @@ status: implemented-awaiting-ci
 验证由 Android Build 与 Android Tests 工作流执行，本地仅检查差异与资源。每日策略的 JVM 用例覆盖同日关闭、重启恢复、跨天、重新开启及重新关闭。
 
 [DONE]
+
+## 本轮验收结论
+
+2026-10-20，用户确认本轮测试全部通过；统一验收提交为 `1576d70ae`，构建与 JVM 回归均已通过。完整来源与发布准备见 [统一验收记录](../chat-experience-release/index.md)。本地没有重复执行编译、构建或测试。
