@@ -950,21 +950,8 @@ class MessageProcessingDelegate(
                 chatRuntime.stateCollectionJob?.cancel()
                 chatRuntime.stateCollectionJob =
                     coroutineScope.launch {
-                        var lastErrorMessage: String? = null
                         service.inputProcessingState.collect { state ->
                             setChatInputProcessingState(activeChatId, state)
-
-                            if (state is EnhancedInputProcessingState.Error) {
-                                val msg = state.message
-                                if (msg != lastErrorMessage) {
-                                    lastErrorMessage = msg
-                                    withContext(Dispatchers.Main) {
-                                        showErrorMessage(msg)
-                                    }
-                                }
-                            } else {
-                                lastErrorMessage = null
-                            }
                         }
                     }
 
@@ -1433,6 +1420,11 @@ class MessageProcessingDelegate(
                 if (streamCollectionError != null) {
                     throw streamCollectionError
                 }
+                // 共享流只由主请求读取终止异常，旁观订阅者继续正常结束。
+                sharedCharStream.completionCause?.let { throw it }
+                // 直接检查服务终态，避免状态监听尚未调度时把失败标成完成。
+                val requestError = service.inputProcessingState.value as? EnhancedInputProcessingState.Error
+                if (requestError != null) throw java.io.IOException(requestError.message)
                 logMessageTiming(
                     stage = "delegate.sharedStreamComplete",
                     startTimeMs = responseStartTime,
@@ -1490,12 +1482,8 @@ class MessageProcessingDelegate(
                     syncWaifuMessageMetricsHandler?.invoke(aiMessage)
                 }
 
-                val stateAfterStream =
-                    _inputProcessingStateByChatId.value[chatKey(chatId)]
-                if (stateAfterStream !is EnhancedInputProcessingState.Error) {
-                    shouldNotifyTurnComplete = true
-                    finalInputStateAfterSend = EnhancedInputProcessingState.Completed
-                }
+                shouldNotifyTurnComplete = true
+                finalInputStateAfterSend = EnhancedInputProcessingState.Completed
 
                 if (pendingAsyncSummaryUiByChatId.containsKey(chatId)) {
                     setSuppressIdleCompletedStateForChat(chatId, true)
@@ -1519,11 +1507,12 @@ class MessageProcessingDelegate(
                 } else {
                     AppLogger.e(TAG, "发送消息时出错", e)
                     shouldFinalizeInterruptedMessage = true
-                    setChatInputProcessingState(
-                        chatId,
-                        EnhancedInputProcessingState.Error(context.getString(R.string.message_send_failed, e.message))
-                    )
-                    withContext(Dispatchers.Main) { showErrorMessage(context.getString(R.string.message_send_failed, e.message)) }
+                    shouldNotifyTurnComplete = false
+                    val error = context.getString(R.string.message_send_failed, e.message)
+                    finalInputStateAfterSend = EnhancedInputProcessingState.Error(error)
+                    setChatInputProcessingState(chatId, requireNotNull(finalInputStateAfterSend))
+                    // 状态监听仅同步状态，终止错误只在当前请求边界提示一次。
+                    withContext(Dispatchers.Main) { showErrorMessage(error) }
                 }
             } finally {
                 val finalizeMessageStartTime = messageTimingNow()
@@ -1673,21 +1662,8 @@ class MessageProcessingDelegate(
             chatRuntime.stateCollectionJob?.cancel()
             chatRuntime.stateCollectionJob =
                 coroutineScope.launch {
-                    var lastErrorMessage: String? = null
                     service.inputProcessingState.collect { state ->
                         setChatInputProcessingState(chatId, state)
-
-                        if (state is EnhancedInputProcessingState.Error) {
-                            val msg = state.message
-                            if (msg != lastErrorMessage) {
-                                lastErrorMessage = msg
-                                withContext(Dispatchers.Main) {
-                                    showErrorMessage(msg)
-                                }
-                            }
-                        } else {
-                            lastErrorMessage = null
-                        }
                     }
                 }
 
@@ -1797,6 +1773,9 @@ class MessageProcessingDelegate(
                     }
             }
 
+            sharedResponseStream.completionCause?.let { throw it }
+            val requestError = service.inputProcessingState.value as? EnhancedInputProcessingState.Error
+            if (requestError != null) throw java.io.IOException(requestError.message)
             val finalContent = resolveFinalContent(aiMessage)
             var turnInputTokens = 0L
             var turnOutputTokens = 0L
@@ -1844,12 +1823,11 @@ class MessageProcessingDelegate(
                 terminalState = EnhancedInputProcessingState.Idle
             } else {
                 AppLogger.e(TAG, "单条重新生成失败", e)
-                setChatInputProcessingState(
-                    chatId,
-                    EnhancedInputProcessingState.Error(
-                        context.getString(R.string.chat_regenerate_single_failed, e.message ?: "")
-                    ),
+                terminalState = EnhancedInputProcessingState.Error(
+                    context.getString(R.string.chat_regenerate_single_failed, e.message ?: ""),
                 )
+                shouldResetInputStateToIdle = false
+                setChatInputProcessingState(chatId, requireNotNull(terminalState))
             }
             exceptionToPropagate = e
         } finally {

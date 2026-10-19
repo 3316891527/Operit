@@ -1,7 +1,6 @@
 package com.ai.assistance.operit.api.chat.keypool
 
 import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
-import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
@@ -17,9 +16,13 @@ object ApiKeyFailureClassifier {
             }
             current = current.cause
         }
-        val message = exception.message.orEmpty()
-        classifyByMessage(message)?.let { return it }
-        return if (exception is IOException) ApiKeyErrorClass.NETWORK else ApiKeyErrorClass.NETWORK
+        // 请求层可能包装异常，内层的余额或鉴权信息同样参与错误分类。
+        current = exception
+        while (current != null) {
+            classifyByMessage(current.message.orEmpty())?.let { return it }
+            current = current.cause
+        }
+        return ApiKeyErrorClass.NETWORK
     }
 
     fun retryAfterMs(exception: Throwable): Long? {
