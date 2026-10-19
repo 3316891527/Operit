@@ -22,7 +22,8 @@ object ApiKeyRetryPlanner {
     ): ApiKeyRetryDecision {
         val switchNow = switchesKeyImmediately(errorClass, remainingCandidatesAfterExclude)
         val canRetrySameKey =
-            !switchNow && sameKeyAttempts < LlmRetryPolicy.MAX_RETRY_ATTEMPTS
+            // sameKeyAttempts 包含首次失败，等于 5 时仍应允许最后一次重试。
+            !switchNow && sameKeyAttempts <= LlmRetryPolicy.MAX_RETRY_ATTEMPTS
         val willExclude = switchNow || !canRetrySameKey
         val hasAnotherKey = remainingCandidatesAfterExclude > 0
         val canContinueOnSameKey = !willExclude && httpAttemptsIncludingThis < maxHttpAttempts
@@ -63,6 +64,8 @@ object ApiKeyRetryPlanner {
         errorClass: ApiKeyErrorClass,
         remainingCandidatesAfterExclude: Int = 0,
     ): Boolean {
-        return errorClass != ApiKeyErrorClass.NONE && remainingCandidatesAfterExclude > 0
+        // 鉴权或模型访问失败时立即排除当前密钥，包括池中最后一把，避免再次选中它。
+        return errorClass == ApiKeyErrorClass.AUTH || errorClass == ApiKeyErrorClass.MODEL ||
+            errorClass != ApiKeyErrorClass.NONE && remainingCandidatesAfterExclude > 0
     }
 }
