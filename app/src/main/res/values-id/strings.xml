@@ -2580,6 +2580,9 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="chat_queue_added">Ditambahkan ke antrian pengiriman</string>
     <string name="chat_use_default_config_continue">Lanjutkan dengan konfigurasi default</string>
     <string name="chat_default_config_incomplete">Konfigurasi default tidak lengkap, harap isi informasi yang diperlukan</string>
+    <string name="chat_delete_not_found">Obrolan ini sudah tidak ada</string>
+    <string name="chat_delete_failed">Gagal menghapus obrolan. Coba lagi.</string>
+    <string name="chat_clear_failed">Gagal mengosongkan obrolan. Coba lagi.</string>
     <string name="chat_locked_cannot_delete">Obrolan ini terkunci, tidak dapat dihapus</string>
     <string name="chat_cleared">Riwayat obrolan telah dibersihkan</string>
     <string name="chat_branch_created">Cabang percakapan telah dibuat</string>

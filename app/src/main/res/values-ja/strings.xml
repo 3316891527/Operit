@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="chat_delete_not_found">このチャットは既に存在しません</string>
+    <string name="chat_delete_failed">チャットを削除できませんでした。もう一度お試しください。</string>
+    <string name="chat_clear_failed">チャットを消去できませんでした。もう一度お試しください。</string>
     <string name="settings_summary_structure">要約の構成</string>
     <string name="settings_summary_section_enabled_desc">オフにすると、生成される要約からこのセクションを除外します</string>
     <string name="settings_summary_section_title">セクションのタイトル</string>

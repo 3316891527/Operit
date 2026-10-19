@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.data.chat.deletion.ChatDeletionResult
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.R
@@ -1049,26 +1050,38 @@ class ChatHistoryDelegate(
         return awaitCurrentChatChangeFrom(currentChat.id)
     }
 
-    /** 删除聊天历史 */
+    /** 保留 Boolean 接口供既有调用方使用，界面使用带原因的结果。 */
     fun deleteChatHistory(chatId: String, onResult: (Boolean) -> Unit = {}) {
-        coroutineScope.launch {
-            if (!chatHistoryManager.canDeleteChatHistory(chatId)) {
-                onResult(false)
-                return@launch
-            }
+        deleteChatHistoryWithResult(chatId) { onResult(it == ChatDeletionResult.DELETED) }
+    }
+
+    fun deleteChatHistoryWithResult(chatId: String, onResult: (ChatDeletionResult) -> Unit) {
+        coroutineScope.launch { onResult(deleteTargetChat(chatId)) }
+    }
+
+    private suspend fun deleteTargetChat(chatId: String): ChatDeletionResult {
+        return try {
+            val blocked = chatHistoryManager.getChatDeletionBlockReason(chatId, allowCurrentChat = true)
+            if (blocked != null) return blocked
             prepareChatForDestructiveMutation(chatId)
-            val deleted =
-                if (chatId == _currentChatId.value) {
-                    val currentChat = _chatHistories.value.firstOrNull { it.id == chatId }
-                    if (currentChat == null || !moveCurrentChatAwayBeforeDeletion(currentChat)) {
-                        false
-                    } else {
-                        chatHistoryManager.deleteChatHistory(chatId)
-                    }
-                } else {
-                    chatHistoryManager.deleteChatHistory(chatId)
+            if (chatId == _currentChatId.value) {
+                val currentChat = _chatHistories.value.firstOrNull { it.id == chatId }
+                    ?: return ChatDeletionResult.NOT_FOUND
+                if (!moveCurrentChatAwayBeforeDeletion(currentChat)) {
+                    return ChatDeletionResult.CURRENT_CHAT
                 }
-            onResult(deleted)
+            }
+            // 真正落盘前仍检查最新锁定状态和当前会话，避免切换期间误删。
+            if (chatHistoryManager.deleteChatHistory(chatId)) {
+                ChatDeletionResult.DELETED
+            } else {
+                chatHistoryManager.getChatDeletionBlockReason(chatId) ?: ChatDeletionResult.FAILED
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "删除会话失败：$chatId", error)
+            ChatDeletionResult.FAILED
         }
     }
 
@@ -1189,32 +1202,22 @@ class ChatHistoryDelegate(
         return selectedVariantIndex
     }
 
-    /** 清空当前聊天 */
+    /** 清空与删除使用相同的权限检查及切换顺序。 */
     fun clearCurrentChat(onResult: (Boolean) -> Unit = {}) {
+        clearCurrentChatWithResult { onResult(it == ChatDeletionResult.DELETED) }
+    }
+
+    fun clearCurrentChatWithResult(onResult: (ChatDeletionResult) -> Unit) {
         coroutineScope.launch {
             val chatId = _currentChatId.value
             if (chatId == null) {
                 createNewChat()
-                onResult(false)
-                return@launch
+                onResult(ChatDeletionResult.NOT_FOUND)
+            } else {
+                onResult(deleteTargetChat(chatId))
             }
-
-            if (!chatHistoryManager.canDeleteChatHistory(chatId)) {
-                onResult(false)
-                return@launch
-            }
-            prepareChatForDestructiveMutation(chatId)
-            val currentChat = _chatHistories.value.firstOrNull { it.id == chatId }
-            val deleted =
-                if (currentChat == null || !moveCurrentChatAwayBeforeDeletion(currentChat)) {
-                    false
-                } else {
-                    chatHistoryManager.deleteChatHistory(chatId)
-                }
-            onResult(deleted)
         }
     }
-
     /** 读取和写入使用同一会话 ID，避免切换中的 UI 活跃统计写入另一会话。 */
     suspend fun saveChatStatistics(chatId: String? = _currentChatId.value) {
         if (chatId == null || !isTokenStatisticsLoaded(chatId)) {

@@ -3262,6 +3262,9 @@
     <string name="chat_queue_added">已加入发送队列</string>
     <string name="chat_use_default_config_continue">使用默认配置继续</string>
     <string name="chat_default_config_incomplete">默认配置不完整，请填写必要信息</string>
+    <string name="chat_delete_not_found">该聊天已不存在</string>
+    <string name="chat_delete_failed">删除聊天失败，请稍后重试</string>
+    <string name="chat_clear_failed">清空聊天失败，请稍后重试</string>
     <string name="chat_locked_cannot_delete">该聊天已锁定，无法删除</string>
     <string name="chat_cleared">聊天记录已清空</string>
     <string name="chat_branch_created">已创建对话分支</string>

@@ -2535,6 +2535,9 @@
     <string name="chat_queue_added">Telah ditambahkan ke barisan penghantaran</string>
     <string name="chat_use_default_config_continue">Guna konfigurasi lalai untuk teruskan</string>
     <string name="chat_default_config_incomplete">Konfigurasi lalai tidak lengkap, sila isi maklumat yang diperlukan</string>
+    <string name="chat_delete_not_found">Sembang ini tidak lagi wujud</string>
+    <string name="chat_delete_failed">Gagal memadam sembang. Sila cuba lagi.</string>
+    <string name="chat_clear_failed">Gagal mengosongkan sembang. Sila cuba lagi.</string>
     <string name="chat_locked_cannot_delete">Sembang ini telah dikunci, tidak boleh dipadam</string>
     <string name="chat_cleared">Rekod sembang telah dikosongkan</string>
     <string name="chat_branch_created">Cabang perbualan telah dicipta</string>
