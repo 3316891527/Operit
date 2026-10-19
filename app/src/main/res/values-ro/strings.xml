@@ -8865,4 +8865,20 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="chat_archived_count">Arhivate (%1$d)</string>
     <string name="chat_archive_empty">Nicio conversație arhivată</string>
     <string name="role_user_profile_manage">Gestionează profilurile și spațiile de memorie</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Imaginea nu poate fi încărcată. Verificați dacă fișierul mai este accesibil.</string>
+    <string name="chat_image_picker_title">Selectați imagini</string>
+    <string name="chat_image_picker_permission_title">Permiteți accesul la imagini</string>
+    <string name="chat_image_picker_permission_message">Acordați acces pentru a răsfoi albumele și a atașa imagini în aplicație.</string>
+    <string name="chat_image_picker_grant_access">Acordați acces</string>
+    <string name="chat_image_picker_all_photos">Toate imaginile</string>
+    <string name="chat_image_picker_refresh">Reîmprospătare</string>
+    <string name="chat_image_picker_partial_access">Sunt afișate numai imaginile permise</string>
+    <string name="chat_image_picker_manage_access">Gestionați accesul la imagini</string>
+    <string name="chat_image_picker_hint">Atingeți pentru a selecta. Apăsați lung pentru previzualizare.</string>
+    <string name="chat_image_picker_load_failed">Albumele nu pot fi citite. Reîmprospătați sau verificați permisiunile pentru fotografii.</string>
+    <string name="chat_image_picker_empty">Nu există imagini de afișat</string>
+    <string name="chat_image_picker_add_selected">Adăugați (%1$d)</string>
+    <string name="attachment_image_duplicate">Imaginea %1$s este deja atașată</string>
 </resources>

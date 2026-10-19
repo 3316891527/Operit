@@ -9187,4 +9187,20 @@
     <string name="chat_archived_count">已归档（%1$d）</string>
     <string name="chat_archive_empty">暂无已归档对话</string>
     <string name="role_user_profile_manage">管理资料与记忆空间</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">无法加载图片，请检查文件是否仍可访问。</string>
+    <string name="chat_image_picker_title">选择图片</string>
+    <string name="chat_image_picker_permission_title">允许访问图片</string>
+    <string name="chat_image_picker_permission_message">授权后可在应用内浏览相册并添加图片。</string>
+    <string name="chat_image_picker_grant_access">授权访问</string>
+    <string name="chat_image_picker_all_photos">全部图片</string>
+    <string name="chat_image_picker_refresh">刷新</string>
+    <string name="chat_image_picker_partial_access">当前仅显示已授权的图片</string>
+    <string name="chat_image_picker_manage_access">管理可访问图片</string>
+    <string name="chat_image_picker_hint">点选图片，长按预览。</string>
+    <string name="chat_image_picker_load_failed">无法读取相册，请刷新或检查照片权限。</string>
+    <string name="chat_image_picker_empty">没有可显示的图片</string>
+    <string name="chat_image_picker_add_selected">添加（%1$d）</string>
+    <string name="attachment_image_duplicate">图片 %1$s 已添加，请勿重复上传</string>
 </resources>

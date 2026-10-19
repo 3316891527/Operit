@@ -8112,4 +8112,20 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="chat_archived_count">Arquivadas (%1$d)</string>
     <string name="chat_archive_empty">Nenhuma conversa arquivada</string>
     <string name="role_user_profile_manage">Gerenciar perfis e espaços de memória</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Não foi possível carregar a imagem. Verifique se o arquivo ainda está acessível.</string>
+    <string name="chat_image_picker_title">Selecionar imagens</string>
+    <string name="chat_image_picker_permission_title">Permitir acesso às imagens</string>
+    <string name="chat_image_picker_permission_message">Conceda acesso para navegar pelos álbuns e anexar imagens no aplicativo.</string>
+    <string name="chat_image_picker_grant_access">Conceder acesso</string>
+    <string name="chat_image_picker_all_photos">Todas as imagens</string>
+    <string name="chat_image_picker_refresh">Atualizar</string>
+    <string name="chat_image_picker_partial_access">Apenas as imagens autorizadas são exibidas</string>
+    <string name="chat_image_picker_manage_access">Gerenciar acesso às imagens</string>
+    <string name="chat_image_picker_hint">Toque para selecionar. Toque e segure para visualizar.</string>
+    <string name="chat_image_picker_load_failed">Não foi possível ler os álbuns. Atualize ou verifique as permissões de fotos.</string>
+    <string name="chat_image_picker_empty">Nenhuma imagem para exibir</string>
+    <string name="chat_image_picker_add_selected">Adicionar (%1$d)</string>
+    <string name="attachment_image_duplicate">A imagem %1$s já está anexada</string>
 </resources>

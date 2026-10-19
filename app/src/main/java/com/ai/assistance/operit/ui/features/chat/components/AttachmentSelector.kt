@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.chat.attachments.images.ChatImagePickerDialog
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager as ToolPackageManager
 import com.ai.assistance.operit.data.skill.SkillRepository
@@ -107,21 +108,7 @@ fun AttachmentSelectorPanel(
 
     var showPackageDialog by remember { mutableStateOf(false) }
 
-    // 图片和文件统一使用 ACTION_OPEN_DOCUMENT，避免部分厂商 Photo Picker 的临时 URI 授权失效
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris: List<Uri> ->
-        if (uris.isNotEmpty()) {
-            coroutineScope.launch {
-                uris.forEach { uri ->
-                    getAttachmentSource(uri)?.let { path ->
-                        onAttachImage(path)
-                    }
-                }
-                onDismiss()
-            }
-        }
-    }
+    var showImagePicker by remember { mutableStateOf(false) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -176,7 +163,7 @@ fun AttachmentSelectorPanel(
                                 AttachmentPanelItem(
                                         icon = Icons.Default.Image,
                                         label = context.getString(R.string.attachment_photo),
-                                        onClick = { imagePickerLauncher.launch(arrayOf("image/*")) }
+                                        onClick = { showImagePicker = true }
                                 ),
                                 AttachmentPanelItem(
                                         icon = Icons.Default.PhotoCamera,
@@ -311,6 +298,16 @@ fun AttachmentSelectorPanel(
         }
     }
 
+    if (showImagePicker) {
+        ChatImagePickerDialog(
+            onDismiss = { showImagePicker = false },
+            onImagesSelected = { uris ->
+                uris.forEach { onAttachImage(it.toString()) }
+                showImagePicker = false
+                onDismiss()
+            },
+        )
+    }
     // 包选择对话框
     PackageSelectorDialog(
         visible = showPackageDialog,
@@ -347,22 +344,7 @@ fun AttachmentSelectorPopupPanel(
 
     var showPackageDialog by remember { mutableStateOf(false) }
 
-    // 图片和文件统一使用 ACTION_OPEN_DOCUMENT，避免部分厂商 Photo Picker 的临时 URI 授权失效
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris: List<Uri> ->
-        if (uris.isNotEmpty()) {
-            coroutineScope.launch {
-                uris.forEach { uri ->
-                    getAttachmentSource(uri)?.let { path ->
-                        onAttachImage(path)
-                    }
-                }
-                onDismiss()
-            }
-        }
-    }
-
+    var showImagePicker by remember { mutableStateOf(false) }
     val filePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -383,7 +365,7 @@ fun AttachmentSelectorPopupPanel(
                     AttachmentPanelItem(
                             icon = Icons.Default.Image,
                             label = context.getString(R.string.attachment_photo),
-                            onClick = { imagePickerLauncher.launch(arrayOf("image/*")) }
+                            onClick = { showImagePicker = true }
                     ),
                     AttachmentPanelItem(
                             icon = Icons.Default.PhotoCamera,
@@ -502,6 +484,16 @@ fun AttachmentSelectorPopupPanel(
         }
     }
 
+    if (showImagePicker) {
+        ChatImagePickerDialog(
+            onDismiss = { showImagePicker = false },
+            onImagesSelected = { uris ->
+                uris.forEach { onAttachImage(it.toString()) }
+                showImagePicker = false
+                onDismiss()
+            },
+        )
+    }
     // 包选择对话框
     PackageSelectorDialog(
         visible = showPackageDialog,

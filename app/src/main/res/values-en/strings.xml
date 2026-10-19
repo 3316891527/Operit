@@ -9187,4 +9187,20 @@
     <string name="chat_archived_count">Archived (%1$d)</string>
     <string name="chat_archive_empty">No archived chats</string>
     <string name="role_user_profile_manage">Manage profiles and memory spaces</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Unable to load the image. Check that the file is still accessible.</string>
+    <string name="chat_image_picker_title">Select images</string>
+    <string name="chat_image_picker_permission_title">Allow access to images</string>
+    <string name="chat_image_picker_permission_message">Grant access to browse albums and attach images within the app.</string>
+    <string name="chat_image_picker_grant_access">Grant access</string>
+    <string name="chat_image_picker_all_photos">All images</string>
+    <string name="chat_image_picker_refresh">Refresh</string>
+    <string name="chat_image_picker_partial_access">Only permitted images are shown</string>
+    <string name="chat_image_picker_manage_access">Manage image access</string>
+    <string name="chat_image_picker_hint">Tap to select. Touch and hold to preview.</string>
+    <string name="chat_image_picker_load_failed">Unable to read albums. Refresh or check photo permissions.</string>
+    <string name="chat_image_picker_empty">No images to display</string>
+    <string name="chat_image_picker_add_selected">Add (%1$d)</string>
+    <string name="attachment_image_duplicate">Image %1$s is already attached</string>
 </resources>

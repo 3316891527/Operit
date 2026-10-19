@@ -6,6 +6,9 @@ import android.provider.OpenableColumns
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.services.core.attachments.ImageAttachmentIndex
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import com.ai.assistance.operit.util.OperitPaths
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.DirectoryListingData
@@ -42,6 +45,8 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
     private val _attachments = MutableStateFlow<List<AttachmentInfo>>(emptyList())
     val attachments: StateFlow<List<AttachmentInfo>> = _attachments
     private val attachmentListLock = Any()
+    private val imageAttachmentMutex = Mutex()
+    private val imageAttachmentIndex = ImageAttachmentIndex()
 
     // Events
     private val _toastEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
@@ -258,8 +263,24 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                                     mimeType = resolvedMimeType,
                                     fileSize = tempFile.length()
                             )
-                    val addedAttachment = appendAttachment(attachmentInfo)
-
+                    val addedAttachment =
+                        if (resolvedMimeType.startsWith("image/")) {
+                            // 不同来源的 URI 会复制出不同路径，按内容判重并串行提交，防止快速多选重复加入。
+                            imageAttachmentMutex.withLock {
+                                val currentImages = _attachments.value
+                                    .filter { it.mimeType.startsWith("image/") }
+                                    .map { File(it.filePath) }
+                                if (imageAttachmentIndex.isDuplicate(tempFile, currentImages)) null
+                                else appendAttachment(attachmentInfo)
+                            }
+                        } else {
+                            appendAttachment(attachmentInfo)
+                        }
+                    if (addedAttachment == null) {
+                        tempFile.delete()
+                        _toastEvent.emit(context.getString(R.string.attachment_image_duplicate, resolvedFileName))
+                        return@withContext
+                    }
                     _toastEvent.emit(context.getString(R.string.attachment_added, addedAttachment.fileName))
                 } catch (e: Exception) {
                     _toastEvent.emit(context.getString(R.string.attachment_add_failed, e.message ?: ""))

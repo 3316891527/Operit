@@ -8121,4 +8121,20 @@
     <string name="chat_archived_count">보관됨 (%1$d)</string>
     <string name="chat_archive_empty">보관된 채팅이 없습니다</string>
     <string name="role_user_profile_manage">프로필 및 메모리 공간 관리</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">이미지를 불러올 수 없습니다. 파일에 계속 접근할 수 있는지 확인하세요.</string>
+    <string name="chat_image_picker_title">이미지 선택</string>
+    <string name="chat_image_picker_permission_title">이미지 접근 허용</string>
+    <string name="chat_image_picker_permission_message">접근을 허용하면 앱에서 앨범을 탐색하고 이미지를 첨부할 수 있습니다.</string>
+    <string name="chat_image_picker_grant_access">접근 허용</string>
+    <string name="chat_image_picker_all_photos">모든 이미지</string>
+    <string name="chat_image_picker_refresh">새로고침</string>
+    <string name="chat_image_picker_partial_access">접근이 허용된 이미지만 표시됩니다</string>
+    <string name="chat_image_picker_manage_access">이미지 접근 관리</string>
+    <string name="chat_image_picker_hint">눌러서 선택하고 길게 눌러 미리 보세요.</string>
+    <string name="chat_image_picker_load_failed">앨범을 읽을 수 없습니다. 새로고침하거나 사진 권한을 확인하세요.</string>
+    <string name="chat_image_picker_empty">표시할 이미지가 없습니다</string>
+    <string name="chat_image_picker_add_selected">추가 (%1$d)</string>
+    <string name="attachment_image_duplicate">이미지 %1$s이(가) 이미 첨부되어 있습니다</string>
 </resources>

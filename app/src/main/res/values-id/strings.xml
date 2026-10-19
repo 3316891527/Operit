@@ -8272,4 +8272,20 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="chat_archived_count">Diarsipkan (%1$d)</string>
     <string name="chat_archive_empty">Belum ada obrolan yang diarsipkan</string>
     <string name="role_user_profile_manage">Kelola profil dan ruang memori</string>
+
+    <!-- 聊天图片选择与预览 -->
+    <string name="attachment_image_preview_failed">Tidak dapat memuat gambar. Pastikan berkas masih dapat diakses.</string>
+    <string name="chat_image_picker_title">Pilih gambar</string>
+    <string name="chat_image_picker_permission_title">Izinkan akses gambar</string>
+    <string name="chat_image_picker_permission_message">Berikan akses untuk menjelajahi album dan melampirkan gambar di dalam aplikasi.</string>
+    <string name="chat_image_picker_grant_access">Berikan akses</string>
+    <string name="chat_image_picker_all_photos">Semua gambar</string>
+    <string name="chat_image_picker_refresh">Muat ulang</string>
+    <string name="chat_image_picker_partial_access">Hanya gambar yang diizinkan yang ditampilkan</string>
+    <string name="chat_image_picker_manage_access">Kelola akses gambar</string>
+    <string name="chat_image_picker_hint">Ketuk untuk memilih. Tekan lama untuk pratinjau.</string>
+    <string name="chat_image_picker_load_failed">Tidak dapat membaca album. Muat ulang atau periksa izin foto.</string>
+    <string name="chat_image_picker_empty">Tidak ada gambar untuk ditampilkan</string>
+    <string name="chat_image_picker_add_selected">Tambahkan (%1$d)</string>
+    <string name="attachment_image_duplicate">Gambar %1$s sudah dilampirkan</string>
 </resources>
