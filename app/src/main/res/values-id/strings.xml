@@ -8264,4 +8264,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="onboarding_start">Mulai</string>
     <string name="terminal_error_command_timeout">Eksekusi perintah terminal melewati batas waktu</string>
     <string name="browser_error_action_timeout">Waktu tunggu operasi browser habis</string>
+    <string name="logcat_write_enabled">Tulis log</string>
+    <string name="logcat_write_enabled_description">Nonaktifkan untuk berhenti mencatat log aplikasi. Aktif kembali setiap hari. Log yang ada tetap dapat diekspor.</string>
 </resources>

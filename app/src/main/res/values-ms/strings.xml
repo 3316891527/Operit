@@ -8264,4 +8264,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="onboarding_start">Mula</string>
     <string name="terminal_error_command_timeout">Pelaksanaan arahan terminal tamat masa</string>
     <string name="browser_error_action_timeout">Masa menunggu operasi pelayar telah tamat</string>
+    <string name="logcat_write_enabled">Tulis log</string>
+    <string name="logcat_write_enabled_description">Matikan untuk menghentikan rekod log aplikasi. Diaktifkan semula setiap hari. Log sedia ada masih boleh dieksport.</string>
 </resources>

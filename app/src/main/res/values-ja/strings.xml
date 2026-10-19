@@ -925,4 +925,6 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">アイデアを、対話の枠の外へ。</string>
     <string name="onboarding_start">開始</string>
+    <string name="logcat_write_enabled">ログを記録</string>
+    <string name="logcat_write_enabled_description">オフにするとアプリのログ記録を停止します。毎日自動でオンに戻ります。既存のログは引き続きエクスポートできます。</string>
 </resources>

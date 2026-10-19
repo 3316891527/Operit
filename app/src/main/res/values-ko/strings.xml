@@ -8113,4 +8113,6 @@
     <string name="onboarding_start">시작</string>
     <string name="terminal_error_command_timeout">터미널 명령 실행 시간이 초과되었습니다</string>
     <string name="browser_error_action_timeout">브라우저 작업 대기 시간이 초과되었습니다</string>
+    <string name="logcat_write_enabled">로그 기록</string>
+    <string name="logcat_write_enabled_description">끄면 앱 로그 기록을 중지합니다. 매일 자동으로 켜집니다. 기존 로그는 계속 내보낼 수 있습니다.</string>
 </resources>

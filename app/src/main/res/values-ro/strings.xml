@@ -8857,4 +8857,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="onboarding_start">Începe</string>
     <string name="terminal_error_command_timeout">Execuția comenzii de terminal a depășit timpul limită</string>
     <string name="browser_error_action_timeout">Timpul de așteptare pentru operația browserului a expirat</string>
+    <string name="logcat_write_enabled">Scriere jurnale</string>
+    <string name="logcat_write_enabled_description">Dezactivează înregistrarea jurnalelor aplicației. Se reactivează automat zilnic. Jurnalele existente pot fi exportate.</string>
 </resources>

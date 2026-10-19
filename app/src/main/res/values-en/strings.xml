@@ -9179,4 +9179,6 @@
     <string name="onboarding_start">Start</string>
     <string name="terminal_error_command_timeout">Terminal command execution timed out</string>
     <string name="browser_error_action_timeout">Timed out waiting for the browser action to complete</string>
+    <string name="logcat_write_enabled">Write logs</string>
+    <string name="logcat_write_enabled_description">Turn off to stop recording app logs. Automatically turns on each day. Existing logs can still be exported.</string>
 </resources>
