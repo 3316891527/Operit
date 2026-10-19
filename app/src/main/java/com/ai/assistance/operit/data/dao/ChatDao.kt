@@ -123,6 +123,10 @@ interface ChatDao {
     @Query("UPDATE chats SET locked = :locked, updatedAt = :timestamp WHERE id = :chatId")
     suspend fun updateChatLocked(chatId: String, locked: Boolean, timestamp: Long = System.currentTimeMillis())
 
+    /** 归档只改变列表可见性，不修改最近使用时间、消息或组织信息。 */
+    @Query("UPDATE chats SET archived = :archived WHERE id = :chatId")
+    suspend fun updateChatArchived(chatId: String, archived: Boolean)
+
     /** 更新聊天置顶状态 */
     @Query("UPDATE chats SET pinned = :pinned, updatedAt = :timestamp WHERE id = :chatId")
     suspend fun updateChatPinned(chatId: String, pinned: Boolean, timestamp: Long = System.currentTimeMillis())

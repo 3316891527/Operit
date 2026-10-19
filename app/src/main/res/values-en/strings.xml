@@ -9179,4 +9179,9 @@
     <string name="onboarding_start">Start</string>
     <string name="terminal_error_command_timeout">Terminal command execution timed out</string>
     <string name="browser_error_action_timeout">Timed out waiting for the browser action to complete</string>
+    <string name="chat_archive">Archive chat</string>
+    <string name="chat_unarchive">Restore to chat list</string>
+    <string name="chat_archived_count">Archived (%1$d)</string>
+    <string name="chat_archive_empty">No archived chats</string>
+    <string name="role_user_profile_manage">Manage profiles and memory spaces</string>
 </resources>

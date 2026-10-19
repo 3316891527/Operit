@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.settings.profile
 
+import android.widget.Toast
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.rememberPagerState
@@ -37,7 +38,7 @@ import kotlinx.coroutines.withContext
 
 /** 编辑角色实际使用的记忆空间资料，保留同一份 Markdown 的实时预览。 */
 @Composable
-fun RoleUserProfileDialog(characterCard: CharacterCard, onDismiss: () -> Unit) {
+fun RoleUserProfileDialog(characterCard: CharacterCard, onDismiss: () -> Unit, onManageProfiles: () -> Unit) {
     val context = LocalContext.current
     val repository = remember(context) { MemorySpaceProfileDocumentRepository.getInstance(context) }
     val preferences = remember(context) { UserPreferencesManager.getInstance(context) }
@@ -51,9 +52,14 @@ fun RoleUserProfileDialog(characterCard: CharacterCard, onDismiss: () -> Unit) {
     var saving by remember(characterCard.id) { mutableStateOf(false) }
     var error by remember(characterCard.id) { mutableStateOf<String?>(null) }
     val exceedsLimit = draft.length > MemorySpaceProfileDocumentRepository.MAX_CONTENT_CHARS
+    var afterDismiss by remember(characterCard.id) { mutableStateOf<(() -> Unit)?>(null) }
+    fun finishDismiss() {
+        onDismiss()
+        afterDismiss?.invoke()
+    }
     fun requestDismiss() {
         if (saving) return
-        if (draft != savedMarkdown) showDiscard = true else onDismiss()
+        if (draft != savedMarkdown) showDiscard = true else finishDismiss()
     }
 
     LaunchedEffect(characterCard.id) {
@@ -93,6 +99,10 @@ fun RoleUserProfileDialog(characterCard: CharacterCard, onDismiss: () -> Unit) {
         pagerState = pagerState,
         onDismiss = ::requestDismiss,
         actions = {
+            TextButton(
+                enabled = !loading && !saving,
+                onClick = { afterDismiss = onManageProfiles; requestDismiss() },
+            ) { Text(stringResource(R.string.role_user_profile_manage)) }
             TextButton(onClick = ::requestDismiss, enabled = !saving) { Text(stringResource(R.string.cancel)) }
             Button(
                 enabled = !loading && !saving && space != null && !exceedsLimit,
@@ -108,6 +118,7 @@ fun RoleUserProfileDialog(characterCard: CharacterCard, onDismiss: () -> Unit) {
                                 repository.save(target.id, markdown)
                             }
                             savedMarkdown = markdown
+                            Toast.makeText(context, context.getString(R.string.save_successful), Toast.LENGTH_SHORT).show()
                             onDismiss()
                         } catch (failure: CancellationException) {
                             throw failure
@@ -158,13 +169,13 @@ fun RoleUserProfileDialog(characterCard: CharacterCard, onDismiss: () -> Unit) {
 
     if (showDiscard) {
         AlertDialog(
-            onDismissRequest = { showDiscard = false },
+            onDismissRequest = { showDiscard = false; afterDismiss = null },
             title = { Text(stringResource(R.string.user_md_unsaved_title)) },
             text = { Text(stringResource(R.string.user_md_unsaved_message)) },
             confirmButton = {
-                TextButton(onClick = { showDiscard = false; onDismiss() }) { Text(stringResource(R.string.user_md_discard)) }
+                TextButton(onClick = { showDiscard = false; finishDismiss() }) { Text(stringResource(R.string.user_md_discard)) }
             },
-            dismissButton = { TextButton(onClick = { showDiscard = false }) { Text(stringResource(R.string.cancel)) } },
+            dismissButton = { TextButton(onClick = { showDiscard = false; afterDismiss = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 }

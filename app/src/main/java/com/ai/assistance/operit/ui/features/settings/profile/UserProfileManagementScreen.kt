@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.ui.features.settings.screens
+package com.ai.assistance.operit.ui.features.settings.profile
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +83,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserPreferencesSettingsScreen(
+fun UserProfileManagementScreen(
     onNavigateBack: () -> Unit,
     onNavigateToMemory: (String) -> Unit
 ) {

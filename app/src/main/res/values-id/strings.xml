@@ -8264,4 +8264,9 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="onboarding_start">Mulai</string>
     <string name="terminal_error_command_timeout">Eksekusi perintah terminal melewati batas waktu</string>
     <string name="browser_error_action_timeout">Waktu tunggu operasi browser habis</string>
+    <string name="chat_archive">Arsipkan obrolan</string>
+    <string name="chat_unarchive">Kembalikan ke daftar obrolan</string>
+    <string name="chat_archived_count">Diarsipkan (%1$d)</string>
+    <string name="chat_archive_empty">Belum ada obrolan yang diarsipkan</string>
+    <string name="role_user_profile_manage">Kelola profil dan ruang memori</string>
 </resources>

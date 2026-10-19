@@ -108,7 +108,8 @@ fun ModelPromptsSettingsScreen(
         onBackPressed: () -> Unit = {},
         onNavigateToMarket: () -> Unit = {},
     onNavigateToPersonaGeneration: () -> Unit = {},
-    onNavigateToChatManagement: () -> Unit = {}
+    onNavigateToChatManagement: () -> Unit = {},
+    onNavigateToUserProfiles: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1258,7 +1259,7 @@ fun ModelPromptsSettingsScreen(
                         }
 
     userProfileCard?.let { card ->
-        key(card.id) { RoleUserProfileDialog(card, onDismiss = { userProfileCard = null }) }
+        key(card.id) { RoleUserProfileDialog(card, onDismiss = { userProfileCard = null }, onManageProfiles = onNavigateToUserProfiles) }
     }
 
     if (showCharacterTagManagementDialog) {
@@ -2359,14 +2360,6 @@ fun CharacterCardItem(
                     }
                 }
 
-                IconButton(onClick = onOpenUserProfile, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        Icons.Default.AssignmentInd,
-                        contentDescription = stringResource(R.string.role_user_profile),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
 
                 // 三点菜单
                 var showMenu by remember { mutableStateOf(false) }
@@ -2491,6 +2484,16 @@ fun CharacterCardItem(
                 }
             }
 
+            // 用户资料是角色的主要配置入口，使用带文字的整行按钮便于发现和点击。
+            FilledTonalButton(
+                onClick = onOpenUserProfile,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 48.dp),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Icon(Icons.Default.AssignmentInd, contentDescription = null, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.role_user_profile))
+            }
         // 角色设定预览
         if (characterCard.characterSetting.isNotBlank()) {
             Spacer(modifier = Modifier.height(4.dp))

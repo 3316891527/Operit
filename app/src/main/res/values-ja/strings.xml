@@ -925,4 +925,9 @@
     <!-- 单页首次使用流程 -->
     <string name="onboarding_tagline">アイデアを、対話の枠の外へ。</string>
     <string name="onboarding_start">開始</string>
+    <string name="chat_archive">チャットをアーカイブ</string>
+    <string name="chat_unarchive">チャット一覧に戻す</string>
+    <string name="chat_archived_count">アーカイブ（%1$d）</string>
+    <string name="chat_archive_empty">アーカイブされたチャットはありません</string>
+    <string name="role_user_profile_manage">プロフィールとメモリ空間を管理</string>
 </resources>

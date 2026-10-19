@@ -9179,4 +9179,9 @@
     <string name="onboarding_start">开始</string>
     <string name="terminal_error_command_timeout">终端命令执行超时</string>
     <string name="browser_error_action_timeout">浏览器操作等待超时</string>
+    <string name="chat_archive">归档对话</string>
+    <string name="chat_unarchive">恢复到聊天列表</string>
+    <string name="chat_archived_count">已归档（%1$d）</string>
+    <string name="chat_archive_empty">暂无已归档对话</string>
+    <string name="role_user_profile_manage">管理资料与记忆空间</string>
 </resources>

@@ -27,7 +27,8 @@ data class ChatEntity(
         val locked: Boolean = false,
         val folderId: String? = null,
         @ColumnInfo(defaultValue = "0") val lastUsedAt: Long = 0L,
-        val pinned: Boolean = false
+        val pinned: Boolean = false,
+        @ColumnInfo(defaultValue = "0") val archived: Boolean = false
 ) {
     /** 转换为ChatHistory对象（供UI层使用） */
     fun toChatHistory(messages: List<ChatMessage>): ChatHistory {
@@ -58,7 +59,8 @@ data class ChatEntity(
                 locked = locked,
                 folderId = folderId,
                 lastUsedAt = lastUsedAt,
-                pinned = pinned
+                pinned = pinned,
+                archived = archived
         )
     }
 
@@ -94,7 +96,8 @@ data class ChatEntity(
                     locked = chatHistory.locked,
                     folderId = chatHistory.folderId,
                     lastUsedAt = chatHistory.lastUsedAt,
-                    pinned = chatHistory.pinned
+                    pinned = chatHistory.pinned,
+                    archived = chatHistory.archived
             )
         }
     }

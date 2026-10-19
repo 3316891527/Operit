@@ -8857,4 +8857,9 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="onboarding_start">Începe</string>
     <string name="terminal_error_command_timeout">Execuția comenzii de terminal a depășit timpul limită</string>
     <string name="browser_error_action_timeout">Timpul de așteptare pentru operația browserului a expirat</string>
+    <string name="chat_archive">Arhivează conversația</string>
+    <string name="chat_unarchive">Restaurează în lista de conversații</string>
+    <string name="chat_archived_count">Arhivate (%1$d)</string>
+    <string name="chat_archive_empty">Nicio conversație arhivată</string>
+    <string name="role_user_profile_manage">Gestionează profilurile și spațiile de memorie</string>
 </resources>

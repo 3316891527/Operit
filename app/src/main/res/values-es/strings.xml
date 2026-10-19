@@ -8332,4 +8332,9 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="onboarding_start">Comenzar</string>
     <string name="terminal_error_command_timeout">Se agotó el tiempo de ejecución del comando del terminal</string>
     <string name="browser_error_action_timeout">Se agotó el tiempo de espera de la operación del navegador</string>
+    <string name="chat_archive">Archivar chat</string>
+    <string name="chat_unarchive">Restaurar a la lista de chats</string>
+    <string name="chat_archived_count">Archivados (%1$d)</string>
+    <string name="chat_archive_empty">No hay chats archivados</string>
+    <string name="role_user_profile_manage">Gestionar perfiles y espacios de memoria</string>
 </resources>

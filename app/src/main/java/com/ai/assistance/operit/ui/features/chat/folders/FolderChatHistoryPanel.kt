@@ -11,6 +11,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.ai.assistance.operit.ui.features.chat.archive.ChatArchiveFilter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -78,11 +80,24 @@ fun FolderChatHistoryPanel(
         error = context.getString(R.string.folder_operation_failed)
     } }
     val snapshot by observedSnapshots.collectAsState(initial = null)
-    val folders = snapshot?.folders.orEmpty()
-    val foldersById = remember(folders) { folders.associateBy { it.id } }
+    var showArchived by rememberSaveable { mutableStateOf(false) }
+    val allFolders = snapshot?.folders.orEmpty()
+    val foldersById = remember(allFolders) { allFolders.associateBy { it.id } }
     val eligibleIds = remember(chatHistories) { chatHistories.map { it.id }.toSet() }
-    val histories = remember(snapshot, eligibleIds) {
+    val eligibleHistories = remember(snapshot, eligibleIds) {
         snapshot?.chats.orEmpty().filter { it.id in eligibleIds }.map { it.toChatHistory(emptyList()) }
+    }
+    val histories = remember(eligibleHistories, showArchived) {
+        eligibleHistories.filter { it.archived == showArchived }
+    }
+    // 归档视图只展开含归档对话的路径，不把所有空文件夹带进来。
+    val folders = remember(allFolders, histories, showArchived) {
+        if (!showArchived) allFolders else {
+            val pathIds = histories.flatMap { chat ->
+                folderAncestors(chat.folderId, foldersById).map { it.id }
+            }.toSet()
+            allFolders.filter { it.id in pathIds }
+        }
     }
     var collapsed by rememberLocal("chat_history_collapsed_folder_ids", emptySet<String>())
     var collapsedBindings by rememberLocal("chat_history_collapsed_characters", emptySet<String>())
@@ -102,6 +117,7 @@ fun FolderChatHistoryPanel(
     var chatDelete by remember { mutableStateOf<ChatHistory?>(null) }
     var moveNode by remember { mutableStateOf<ChatFolderNode?>(null) }
     val listState = lazyListState ?: rememberLazyListState()
+    LaunchedEffect(showArchived) { listState.scrollToItem(0) }
     fun perform(onSuccess: () -> Unit = {}, operation: suspend () -> Unit) {
         coroutineScope.launch {
             try { withContext(Dispatchers.IO) { operation() }; onSuccess() }
@@ -172,8 +188,8 @@ fun FolderChatHistoryPanel(
     val bindings = (histories.map { ChatFolderBinding(it.characterCardName, it.characterGroupId) } +
         folders.map { ChatFolderBinding(it.characterCardName, it.characterGroupId) } + activeBinding).distinct().sortedBy(::label)
     val rows = remember(snapshot, histories, folders, collapsed, collapsedBindings, searchQuery, matchedIds, sort,
-        historyDisplayMode, activeBinding, activeCard?.isDefault, bindings, groups, unboundLabel) {
-        if (snapshot == null) emptyList() else when (historyDisplayMode) {
+        historyDisplayMode, activeBinding, activeCard?.isDefault, bindings, groups, unboundLabel, showArchived) {
+        if (snapshot == null || (showArchived && histories.isEmpty())) emptyList() else when (historyDisplayMode) {
             ChatHistoryDisplayMode.BY_CHARACTER_CARD -> bindings.flatMap { binding ->
                 val key = scope(binding)
                 val children = buildChatFolderTree(
@@ -317,6 +333,14 @@ fun FolderChatHistoryPanel(
                     Icon(Icons.Default.Close, stringResource(R.string.clear_search))
                 } }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
         }
+        ChatArchiveFilter(
+            archived = showArchived,
+            archivedCount = eligibleHistories.count { it.archived },
+            onChange = { showArchived = it },
+            contentColor = contentColor,
+            selectedContainerColor = selectedContainerColor,
+            selectedContentColor = selectedContentColor,
+        )
         if (showDragHint) Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.folder_drag_hint), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.75f))
@@ -326,7 +350,8 @@ fun FolderChatHistoryPanel(
         }
         if (snapshot == null) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         else if (rows.isEmpty()) Box(Modifier.weight(1f).fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-            Text(stringResource(if (searchQuery.isBlank()) R.string.folder_empty_history else R.string.folder_no_results),
+            Text(stringResource(if (searchQuery.isNotBlank()) R.string.folder_no_results
+                else if (showArchived) R.string.chat_archive_empty else R.string.folder_empty_history),
                 style = MaterialTheme.typography.bodyMedium, color = contentColor.copy(alpha = 0.75f))
         } else FolderTreeList(rows, foldersById, listState, currentId, activeStreamingChatIds, histories,
             draggingEnabled = searchQuery.isBlank(), manualSort = sort == ChatHistorySortMode.DEFAULT, collapsedBindings = collapsedBindings,
@@ -380,6 +405,10 @@ fun FolderChatHistoryPanel(
         if (chat != null) HistoryActionsDialog(chat.title, listOf(
             HistoryAction(stringResource(R.string.edit_title), Icons.Default.Edit) { chatEdit = chat; chatMenu = null },
             HistoryAction(stringResource(R.string.summarize_chat_title), Icons.Default.AutoAwesome) { onSummarizeChatTitle(chat.id); chatMenu = null },
+            HistoryAction(
+                stringResource(if (chat.archived) R.string.chat_unarchive else R.string.chat_archive),
+                if (chat.archived) Icons.Default.Restore else Icons.Default.Archive,
+            ) { perform { manager.updateChatArchived(chat.id, !chat.archived) }; chatMenu = null },
             HistoryAction(stringResource(R.string.folder_move_to), Icons.Default.Folder) { moveNode = ChatFolderNode.Chat(chat.id); chatMenu = null },
             HistoryAction(stringResource(R.string.move_up), Icons.Default.KeyboardArrowUp) { moveChatBy(chat, -1) },
             HistoryAction(stringResource(R.string.move_down), Icons.Default.KeyboardArrowDown) { moveChatBy(chat, 1) },

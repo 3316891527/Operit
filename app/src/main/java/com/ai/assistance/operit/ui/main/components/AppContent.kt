@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.main.components
 
+import androidx.compose.foundation.background
+import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubPage
+import com.ai.assistance.operit.ui.features.chat.sidebar.LocalMainChatViewModel
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -163,6 +166,10 @@ fun AppContent(
         /** 当前导航栈中仍存活的路由 screenKey（路由级 ViewModelStore 清理依据）。 */
         aliveScreenKeys: Set<String>
 ) {
+    val workspaceVisible = if (currentScreen is Screen.AiChat) {
+        val workspacePage by LocalMainChatViewModel.current.workspaceHubPage.collectAsState()
+        workspacePage != WorkspaceHubPage.CHAT
+    } else false
     // Get background image state
     val context = LocalContext.current
     val hostActivity = remember(context) { context.findActivity() }
@@ -314,6 +321,8 @@ fun AppContent(
             Surface(
                 modifier = Modifier
                     .padding(innerPadding)
+                    // 背景先于状态栏留白绘制，透明系统栏下也有完整的主题底色。
+                    .then(if (workspaceVisible) Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 1f)) else Modifier)
                     .then(if (currentScreen is Screen.AiChat) Modifier.statusBarsPadding() else Modifier)
                     .consumeWindowInsets(innerPadding)
                     .navigationBarsPadding()
@@ -326,7 +335,8 @@ fun AppContent(
                     )
                     .fillMaxSize(),
                 color =
-                if (hasBackgroundImage) Color.Transparent
+                if (workspaceVisible) MaterialTheme.colorScheme.surface.copy(alpha = 1f)
+                else if (hasBackgroundImage) Color.Transparent
                 else MaterialTheme.colorScheme.background
             ) {
                 if (isLoading) {

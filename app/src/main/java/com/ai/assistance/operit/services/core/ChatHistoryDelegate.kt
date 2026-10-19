@@ -1002,7 +1002,7 @@ class ChatHistoryDelegate(
     ): ChatHistory? {
         return _chatHistories.value
             .asSequence()
-            .filter { history -> history.id != deletingChatId }
+            .filter { history -> history.id != deletingChatId && !history.archived }
             .filter { history -> matchesDeletionReplacementTarget(history, target) }
             .maxByOrNull { history -> history.updatedAt }
     }

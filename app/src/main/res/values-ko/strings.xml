@@ -8113,4 +8113,9 @@
     <string name="onboarding_start">시작</string>
     <string name="terminal_error_command_timeout">터미널 명령 실행 시간이 초과되었습니다</string>
     <string name="browser_error_action_timeout">브라우저 작업 대기 시간이 초과되었습니다</string>
+    <string name="chat_archive">채팅 보관</string>
+    <string name="chat_unarchive">채팅 목록으로 복원</string>
+    <string name="chat_archived_count">보관됨 (%1$d)</string>
+    <string name="chat_archive_empty">보관된 채팅이 없습니다</string>
+    <string name="role_user_profile_manage">프로필 및 메모리 공간 관리</string>
 </resources>

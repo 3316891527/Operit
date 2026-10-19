@@ -934,7 +934,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                         chatHistories.value
                             .asSequence()
                             .filter { history ->
-                                history.characterGroupId?.trim() == targetGroupId
+                                !history.archived && history.characterGroupId?.trim() == targetGroupId
                             }
                             .maxByOrNull { it.updatedAt }
                     if (latestChat != null) {
@@ -954,6 +954,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         return chatHistories.value
             .asSequence()
             .filter { history ->
+                if (history.archived) return@filter false
                 val historyGroupId = history.characterGroupId?.trim()?.takeIf { it.isNotBlank() }
                 if (!historyGroupId.isNullOrBlank()) {
                     return@filter false
