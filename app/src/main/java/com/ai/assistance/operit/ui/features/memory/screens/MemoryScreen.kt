@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.memory.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -72,7 +74,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStreamReader
 import android.provider.OpenableColumns
-import android.widget.Toast
 import com.ai.assistance.operit.util.AppLogger
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.text.KeyboardActions
@@ -163,7 +164,7 @@ fun MemoryScreen(spaceId: String, onConfigureEmbedding: () -> Unit) {
 
     LaunchedEffect(uiState.message) {
         val message = uiState.message ?: return@LaunchedEffect
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        OKToast.typed(context, message, uiState.messageKind, OKToast.LENGTH_SHORT).show()
         viewModel.clearMessage()
     }
 

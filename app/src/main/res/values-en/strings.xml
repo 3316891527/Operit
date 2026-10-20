@@ -9206,4 +9206,10 @@
     <string name="attachment_image_duplicate">Image %1$s is already attached</string>
     <string name="logcat_write_enabled">Write logs</string>
     <string name="logcat_write_enabled_description">Turn off to stop recording app logs. Automatically turns on each day. Existing logs can still be exported.</string>
+    <string name="oktoast_info">Info</string>
+    <string name="oktoast_success">Success</string>
+    <string name="oktoast_warning">Warning</string>
+    <string name="oktoast_error">Error</string>
+    <string name="chat_model_configuration_invalid_key">Invalid model configuration: no valid API key. Add a key or configure a usable key pool in Model and Parameter Configuration.</string>
+    <string name="chat_model_configuration_missing_model">Invalid model configuration: model ID is empty. Select or enter a valid model in Model and Parameter Configuration.</string>
 </resources>

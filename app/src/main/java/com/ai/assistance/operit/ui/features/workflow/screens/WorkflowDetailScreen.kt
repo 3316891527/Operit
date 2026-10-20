@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.workflow.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -24,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
@@ -389,7 +390,7 @@ fun WorkflowDetailScreen(
             // 错误提示
             viewModel.error?.let { error ->
                 LaunchedEffect(error) {
-                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                    OKToast.error(context, error, OKToast.LENGTH_SHORT).show()
                     viewModel.clearError()
                 }
             }

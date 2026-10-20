@@ -1,8 +1,9 @@
 package com.ai.assistance.operit.ui.features.packages.market
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.SharedPreferences
-import android.widget.Toast
 import com.ai.assistance.operit.data.api.GitHubApiService
 import com.ai.assistance.operit.data.api.MarketV2Comment
 import com.ai.assistance.operit.data.api.MarketV2Reaction
@@ -131,7 +132,7 @@ class MarketInteractionController(
                             }
                             CommentPostSuccessBehavior.RELOAD_FROM_SERVER -> loadEntryComments(id, perPage)
                         }
-                        messages.commentPostSuccess?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                        messages.commentPostSuccess?.let { OKToast.success(context, it, OKToast.LENGTH_SHORT).show() }
                         AppLogger.d(logTag, "Posted comment to entry $id")
                     },
                     onFailure = { error ->
@@ -244,7 +245,7 @@ class MarketInteractionController(
                         _entryReactions.value = _entryReactions.value.toMutableMap().also {
                             it[id] = existing + reaction
                         }
-                        messages.reactionSuccess?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                        messages.reactionSuccess?.let { OKToast.success(context, it, OKToast.LENGTH_SHORT).show() }
                         AppLogger.d(logTag, "Added reaction to entry $id")
                     },
                     onFailure = { error ->

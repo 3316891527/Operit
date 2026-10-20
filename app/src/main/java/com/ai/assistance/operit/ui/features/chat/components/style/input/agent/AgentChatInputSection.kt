@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.agent
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.material3.HorizontalDivider
 import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageEntry
 import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageDialog
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -467,7 +468,7 @@ fun AgentChatInputSection(
             if (isGranted) {
                 actualViewModel.launchFloatingModeIn(FloatingMode.FULLSCREEN, colorScheme, typography)
             } else {
-                actualViewModel.showToast(context.getString(R.string.microphone_permission_denied_toast))
+                OKToast.warning(context, context.getString(R.string.microphone_permission_denied_toast)).show()
             }
         }
 
@@ -1731,10 +1732,10 @@ private fun AgentModelSelectorItem(
 ) {
     val context = LocalContext.current
     val showAutoGlmError: () -> Unit = {
-        Toast.makeText(
+        OKToast.warning(
             context,
             context.getString(R.string.chat_autoglm_warning),
-            Toast.LENGTH_LONG,
+            OKToast.LENGTH_LONG,
         ).show()
     }
 

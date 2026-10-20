@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.tokenstats
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -89,7 +90,7 @@ fun TokenUsageStatisticsScreen(
 
     LaunchedEffect(actionMessage) {
         actionMessage?.let { message ->
-            Toast.makeText(context, message.text, Toast.LENGTH_SHORT).show()
+            OKToast.typed(context, message.text, message.kind, OKToast.LENGTH_SHORT).show()
             viewModel.consumeActionMessage()
         }
     }
@@ -325,7 +326,7 @@ private fun TokenStatsPageContent(
                 onSaveRate = { rate ->
                     val ok = viewModel.setManualRate(rate)
                     if (!ok) {
-                        Toast.makeText(context, rateInvalidText, Toast.LENGTH_SHORT).show()
+                        OKToast.warning(context, rateInvalidText, OKToast.LENGTH_SHORT).show()
                     }
                     ok
                 },

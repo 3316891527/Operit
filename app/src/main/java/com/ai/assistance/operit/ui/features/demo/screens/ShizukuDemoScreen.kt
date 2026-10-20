@@ -1,11 +1,12 @@
 package com.ai.assistance.operit.ui.features.demo.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import com.ai.assistance.operit.util.AppLogger
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -200,7 +201,7 @@ fun ShizukuDemoScreen(
                                     )
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                            Toast.makeText(context, context.getString(R.string.cannot_open_permission_settings), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.cannot_open_permission_settings), OKToast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -213,7 +214,7 @@ fun ShizukuDemoScreen(
                                 )
                         context.startActivity(intent)
                     } catch (e: Exception) {
-                        Toast.makeText(context, context.getString(R.string.cannot_open_overlay_settings), Toast.LENGTH_SHORT).show()
+                        OKToast.error(context, context.getString(R.string.cannot_open_overlay_settings), OKToast.LENGTH_SHORT).show()
                     }
                 },
                 onBatteryOptimizationClick = {
@@ -224,12 +225,12 @@ fun ShizukuDemoScreen(
                                 }
                         context.startActivity(intent)
                     } catch (e: Exception) {
-                                                    Toast.makeText(context, context.getString(R.string.cannot_open_battery_settings), Toast.LENGTH_SHORT).show()
+                                                    OKToast.error(context, context.getString(R.string.cannot_open_battery_settings), OKToast.LENGTH_SHORT).show()
                     }
                 },
                 onSystemPermissionClick = { permission ->
                     if (!SystemPermissionSettings.open(context, permission)) {
-                        Toast.makeText(context, context.getString(R.string.shizuku_demo_permission_failed), Toast.LENGTH_SHORT).show()
+                        OKToast.error(context, context.getString(R.string.shizuku_demo_permission_failed), OKToast.LENGTH_SHORT).show()
                     }
                 },
                 onAccessibilityClick = {
@@ -237,7 +238,7 @@ fun ShizukuDemoScreen(
                         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                         context.startActivity(intent)
                     } catch (e: Exception) {
-                        Toast.makeText(context, context.getString(R.string.cannot_open_accessibility_settings), Toast.LENGTH_SHORT).show()
+                        OKToast.error(context, context.getString(R.string.cannot_open_accessibility_settings), OKToast.LENGTH_SHORT).show()
                     }
                 },
                 onInstallAccessibilityProviderClick = {
@@ -246,7 +247,7 @@ fun ShizukuDemoScreen(
                             UIHierarchyManager.launchProviderInstall(context)
                         } else {
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, context.getString(R.string.accessibility_provider_installed), Toast.LENGTH_SHORT).show()
+                                OKToast.success(context, context.getString(R.string.accessibility_provider_installed), OKToast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -375,7 +376,7 @@ fun ShizukuDemoScreen(
                             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                            Toast.makeText(context, context.getString(R.string.cannot_open_accessibility_settings), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.cannot_open_accessibility_settings), OKToast.LENGTH_SHORT).show()
                         }
                     },
                     updateNeeded = isAccessibilityUpdateNeeded,
@@ -409,7 +410,7 @@ fun ShizukuDemoScreen(
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl))
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(context, context.getString(R.string.cannot_open_root_tutorial), Toast.LENGTH_SHORT).show()
+                                OKToast.error(context, context.getString(R.string.cannot_open_root_tutorial), OKToast.LENGTH_SHORT).show()
                             }
                         }
                 )
@@ -432,12 +433,12 @@ fun ShizukuDemoScreen(
                                         Uri.parse("https://shizuku.rikka.app/zh-hans/download/")
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(
+                                OKToast.error(
                                                 context,
                                                 context.getString(
                                                         R.string.toast_download_link_failed
                                                 ),
-                                                Toast.LENGTH_SHORT
+                                                OKToast.LENGTH_SHORT
                                         )
                                         .show()
                             }
@@ -451,13 +452,13 @@ fun ShizukuDemoScreen(
                                     if (apkFile == null) {
                                         AppLogger.e("ShizukuDemo", "提取APK失败")
                                         withContext(Dispatchers.Main) {
-                                            Toast.makeText(
+                                            OKToast.error(
                                                             context,
                                                             context.getString(
                                                                     R.string
                                                                             .toast_apk_extract_failed
                                                             ),
-                                                            Toast.LENGTH_SHORT
+                                                            OKToast.LENGTH_SHORT
                                                     )
                                                     .show()
                                         }
@@ -502,25 +503,25 @@ fun ShizukuDemoScreen(
                                     // 启动安装界面
                                     withContext(Dispatchers.Main) {
                                         context.startActivity(installIntent)
-                                        Toast.makeText(
+                                        OKToast.info(
                                                         context,
                                                         context.getString(
                                                                 R.string.shizuku_demo_install_notify
                                                         ),
-                                                        Toast.LENGTH_LONG
+                                                        OKToast.LENGTH_LONG
                                                 )
                                                 .show()
                                     }
                                 } catch (e: Exception) {
                                     AppLogger.e("ShizukuDemo", "安装内置Shizuku时出错", e)
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(
+                                        OKToast.error(
                                                         context,
                                                         context.getString(
                                                                 R.string.toast_operation_failed,
                                                                 e.message ?: ""
                                                         ),
-                                                        Toast.LENGTH_SHORT
+                                                        OKToast.LENGTH_SHORT
                                                 )
                                                 .show()
                                     }
@@ -538,12 +539,12 @@ fun ShizukuDemoScreen(
                                     context.startActivity(intent)
                                 } else {
                                     AppLogger.e("ShizukuDemo", "无法找到Shizuku应用")
-                                    Toast.makeText(context, context.getString(R.string.cannot_find_shizuku_app), Toast.LENGTH_SHORT)
+                                    OKToast.warning(context, context.getString(R.string.cannot_find_shizuku_app), OKToast.LENGTH_SHORT)
                                             .show()
                                 }
                             } catch (e: Exception) {
                                 AppLogger.e("ShizukuDemo", "无法启动Shizuku应用", e)
-                                Toast.makeText(context, context.getString(R.string.cannot_start_shizuku_app), Toast.LENGTH_SHORT).show()
+                                OKToast.error(context, context.getString(R.string.cannot_start_shizuku_app), OKToast.LENGTH_SHORT).show()
                             }
                         },
                         onWatchTutorial = {
@@ -552,7 +553,7 @@ fun ShizukuDemoScreen(
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl))
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                Toast.makeText(context, context.getString(R.string.cannot_open_doc_link), Toast.LENGTH_SHORT).show()
+                                OKToast.error(context, context.getString(R.string.cannot_open_doc_link), OKToast.LENGTH_SHORT).show()
                             }
                         },
                         onRequestPermission = {
@@ -562,23 +563,23 @@ fun ShizukuDemoScreen(
                                     AppLogger.d("ShizukuDemo", "Shizuku权限请求结果: $granted")
                                     scope.launch(Dispatchers.Main) {
                                         if (granted) {
-                                            Toast.makeText(
+                                            OKToast.success(
                                                             context,
                                                             context.getString(
                                                                     R.string
                                                                             .shizuku_demo_shizuku_permission_granted
                                                             ),
-                                                            Toast.LENGTH_SHORT
+                                                            OKToast.LENGTH_SHORT
                                                     )
                                                     .show()
                                         } else {
-                                            Toast.makeText(
+                                            OKToast.warning(
                                                             context,
                                                             context.getString(
                                                                     R.string
                                                                             .shizuku_demo_shizuku_permission_denied
                                                             ),
-                                                            Toast.LENGTH_SHORT
+                                                            OKToast.LENGTH_SHORT
                                                     )
                                                     .show()
                                         }
@@ -600,13 +601,13 @@ fun ShizukuDemoScreen(
                                     if (apkFile == null) {
                                         AppLogger.e("ShizukuDemo", "提取APK失败")
                                         withContext(Dispatchers.Main) {
-                                            Toast.makeText(
+                                            OKToast.error(
                                                             context,
                                                             context.getString(
                                                                     R.string
                                                                             .toast_apk_extract_failed
                                                             ),
-                                                            Toast.LENGTH_SHORT
+                                                            OKToast.LENGTH_SHORT
                                                     )
                                                     .show()
                                         }
@@ -651,25 +652,25 @@ fun ShizukuDemoScreen(
                                     // 启动安装界面
                                     withContext(Dispatchers.Main) {
                                         context.startActivity(installIntent)
-                                        Toast.makeText(
+                                        OKToast.info(
                                                         context,
                                                         context.getString(
                                                                 R.string.shizuku_demo_update_notify
                                                         ),
-                                                        Toast.LENGTH_LONG
+                                                        OKToast.LENGTH_LONG
                                                 )
                                                 .show()
                                     }
                                 } catch (e: Exception) {
                                     AppLogger.e("ShizukuDemo", "更新Shizuku时出错", e)
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(
+                                        OKToast.error(
                                                         context,
                                                         context.getString(
                                                                 R.string.toast_operation_failed,
                                                                 e.message ?: ""
                                                         ),
-                                                        Toast.LENGTH_SHORT
+                                                        OKToast.LENGTH_SHORT
                                                 )
                                                 .show()
                                     }

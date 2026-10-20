@@ -1,12 +1,13 @@
 package com.ai.assistance.operit.ui.recovery
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Process
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -824,16 +825,16 @@ private fun ResultRow(values: List<String>, header: Boolean) {
 
 private fun restartMainApp(context: Context) {
     if (!MainProcessController.stopAndWait(context)) {
-        Toast.makeText(
+        OKToast.error(
             context,
             context.getString(R.string.data_recovery_database_main_process_stop_failed),
-            Toast.LENGTH_LONG
+            OKToast.LENGTH_LONG
         ).show()
         return
     }
     val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
     if (intent == null) {
-        Toast.makeText(context, context.getString(R.string.data_recovery_launch_failed), Toast.LENGTH_LONG).show()
+        OKToast.error(context, context.getString(R.string.data_recovery_launch_failed), OKToast.LENGTH_LONG).show()
         return
     }
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

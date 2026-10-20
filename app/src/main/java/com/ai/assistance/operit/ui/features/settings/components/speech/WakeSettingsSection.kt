@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.features.settings.components.speech
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -65,10 +66,10 @@ fun WakeSettingsSection(modifier: Modifier = Modifier) {
                     wakePrefs.saveAlwaysListeningEnabled(true)
                 }
             } else {
-                android.widget.Toast.makeText(
+                OKToast.warning(
                     context,
                     context.getString(R.string.microphone_permission_denied_toast),
-                    android.widget.Toast.LENGTH_SHORT
+                    OKToast.LENGTH_SHORT
                 )
                     .show()
             }
@@ -109,7 +110,7 @@ fun WakeSettingsSection(modifier: Modifier = Modifier) {
         if (granted) {
             personalWakeConfigDialogVisible = true
         } else {
-            android.widget.Toast.makeText(context, context.getString(R.string.microphone_permission_denied_toast), android.widget.Toast.LENGTH_SHORT).show()
+            OKToast.warning(context, context.getString(R.string.microphone_permission_denied_toast), OKToast.LENGTH_SHORT).show()
         }
     }
 
@@ -121,7 +122,7 @@ fun WakeSettingsSection(modifier: Modifier = Modifier) {
                     context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 } catch (error: Exception) {
                     AppLogger.e("WakeSettings", "打开系统助手设置失败", error)
-                    Toast.makeText(context, context.getString(R.string.cannot_open_settings), Toast.LENGTH_SHORT).show()
+                    OKToast.error(context, context.getString(R.string.cannot_open_settings), OKToast.LENGTH_SHORT).show()
                 }
             },
         ) {

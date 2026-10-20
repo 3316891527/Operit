@@ -216,6 +216,8 @@ object PatchUpdateInstaller {
             metaUrl = metaUrl,
             currentBaseSha = baseShaActual,
             targetMeta = targetMeta,
+            workDir = workDir,
+            mirrorKey = mirrorKey,
             onEvent = onEvent
         )
 
@@ -352,6 +354,8 @@ object PatchUpdateInstaller {
         metaUrl: String,
         currentBaseSha: String,
         targetMeta: JSONObject,
+        workDir: File,
+        mirrorKey: String,
         onEvent: (ProgressEvent) -> Unit
     ): List<PatchStep> {
         val targetFormat = targetMeta.optString("format", "")
@@ -413,7 +417,20 @@ object PatchUpdateInstaller {
                     ?: release.assets.firstOrNull { it.name.endsWith(".zip") }
             if (metaAsset == null || patchAsset == null) continue
 
-            val meta = parseReleaseBodyAsPatchMeta(release.body) ?: continue
+            // 旧版本正文就是补丁索引；可读说明版本从独立附件读取，保持两种发行格式兼容。
+            val meta = if (release.body?.trimStart()?.startsWith("{") == true) {
+                parseReleaseBodyAsPatchMeta(release.body) ?: continue
+            } else {
+                val indexAsset = release.assets.firstOrNull { it.name == "distribution-release.json" } ?: continue
+                val indexFile = File(workDir, "chain_release_$scannedReleases.json")
+                downloadToFile(
+                    url = selectMirrorUrl(indexAsset.browser_download_url, mirrorKey),
+                    out = indexFile,
+                    label = context.getString(R.string.patch_update_label_meta),
+                    onEvent = onEvent,
+                )
+                JSONObject(indexFile.readText())
+            }
             val candidate = parsePatchStep(
                 meta = meta,
                 patchUrl = patchAsset.browser_download_url,

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
 import androidx.compose.ui.graphics.Color
@@ -64,7 +66,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -329,7 +330,7 @@ fun SkillConfigScreen(
                 showActions = false
                 scope.launch {
                     refreshSkills()
-                    Toast.makeText(context, context.getString(R.string.skillmgr_refreshed), Toast.LENGTH_SHORT).show()
+                    OKToast.success(context, context.getString(R.string.skillmgr_refreshed), OKToast.LENGTH_SHORT).show()
                 }
             }
             if (skillLoadErrors.isNotEmpty()) {
@@ -573,14 +574,14 @@ fun SkillConfigScreen(
                                 0 -> {
                                     val url = repoUrlInput.trim()
                                     if (url.isBlank()) {
-                                        Toast.makeText(context, context.getString(R.string.enter_repo_info), Toast.LENGTH_SHORT).show()
+                                        OKToast.warning(context, context.getString(R.string.enter_repo_info), OKToast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     isImporting = true
                                     try {
-                                        val result = skillRepository.importSkillFromGitHubRepo(url)
+                                        val result = skillRepository.importSkillFromGitHubRepoDetailed(url)
                                         refreshSkills()
-                                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
+                                        OKToast.typed(context, result.message, if (result.installedDir != null) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT).show()
                                         showImportDialog = false
                                     } finally {
                                         isImporting = false
@@ -590,14 +591,14 @@ fun SkillConfigScreen(
                                 1 -> {
                                     val uri = zipUri
                                     if (uri == null) {
-                                        Toast.makeText(context, context.getString(R.string.select_zip_file), Toast.LENGTH_SHORT).show()
+                                        OKToast.warning(context, context.getString(R.string.select_zip_file), OKToast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     isImporting = true
                                     try {
                                         val nameToUse = zipFileName.ifBlank { "skill.zip" }
                                         if (!nameToUse.endsWith(".zip", ignoreCase = true)) {
-                                            Toast.makeText(context, context.getString(R.string.skillmgr_only_zip_files), Toast.LENGTH_SHORT).show()
+                                            OKToast.warning(context, context.getString(R.string.skillmgr_only_zip_files), OKToast.LENGTH_SHORT).show()
                                             return@launch
                                         }
 
@@ -610,7 +611,7 @@ fun SkillConfigScreen(
                                                     }
                                                 } ?: throw IllegalStateException(context.getString(R.string.skillmgr_cannot_read_file))
 
-                                                skillRepository.importSkillFromZip(tempFile)
+                                                skillRepository.importSkillFromZipDetailed(tempFile)
                                             } finally {
                                                 try {
                                                     tempFile.delete()
@@ -620,10 +621,10 @@ fun SkillConfigScreen(
                                         }
 
                                         refreshSkills()
-                                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
+                                        OKToast.typed(context, result.message, if (result.installedDir != null) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT).show()
                                         showImportDialog = false
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, context.getString(R.string.skillmgr_import_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
+                                        OKToast.error(context, context.getString(R.string.skillmgr_import_failed, e.message ?: ""), OKToast.LENGTH_SHORT).show()
                                     } finally {
                                         isImporting = false
                                     }
@@ -633,28 +634,28 @@ fun SkillConfigScreen(
                                     val skillId = manualSkillId.trim()
                                     val skillContent = manualSkillContent.trim()
                                     if (skillId.isBlank()) {
-                                        Toast.makeText(context, context.getString(R.string.skillmgr_direct_skill_id_required), Toast.LENGTH_SHORT).show()
+                                        OKToast.warning(context, context.getString(R.string.skillmgr_direct_skill_id_required), OKToast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     if (!isValidSkillId(skillId)) {
-                                        Toast.makeText(context, context.getString(R.string.skillmgr_direct_skill_id_invalid), Toast.LENGTH_SHORT).show()
+                                        OKToast.warning(context, context.getString(R.string.skillmgr_direct_skill_id_invalid), OKToast.LENGTH_SHORT).show()
                                         return@launch
                                     }
                                     if (skillContent.isBlank()) {
-                                        Toast.makeText(context, context.getString(R.string.skillmgr_direct_content_required), Toast.LENGTH_SHORT).show()
+                                        OKToast.warning(context, context.getString(R.string.skillmgr_direct_content_required), OKToast.LENGTH_SHORT).show()
                                         return@launch
                                     }
 
                                     isImporting = true
                                     try {
-                                        val result = skillRepository.importSkillFromDirectInput(
+                                        val result = skillRepository.importSkillFromDirectInputDetailed(
                                             skillId = skillId,
                                             description = manualSkillDescription.trim(),
                                             content = skillContent,
                                             attachmentUris = manualAttachments.map { it.uri }
                                         )
                                         refreshSkills()
-                                        Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
+                                        OKToast.typed(context, result.message, if (result.installedDir != null) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT).show()
                                         showImportDialog = false
                                         manualSkillId = ""
                                         manualSkillDescription = ""
@@ -711,9 +712,9 @@ fun SkillConfigScreen(
                     val ok = skillRepository.deleteSkill(skillName)
                     if (ok) {
                         refreshSkills()
-                        Toast.makeText(context, context.getString(R.string.skillmgr_deleted, skillName), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.skillmgr_deleted, skillName), OKToast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, context.getString(R.string.skillmgr_delete_failed, skillName), Toast.LENGTH_SHORT).show()
+                        OKToast.error(context, context.getString(R.string.skillmgr_delete_failed, skillName), OKToast.LENGTH_SHORT).show()
                     }
                 }
                 selectedSkill = null

@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -112,10 +113,10 @@ fun LinkPreviewDialog(
                             onDismiss()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.open_link_failed, e.message ?: context.getString(R.string.unknown_error)),
-                            Toast.LENGTH_LONG
+                            OKToast.LENGTH_LONG
                         ).show()
                     }
                 }

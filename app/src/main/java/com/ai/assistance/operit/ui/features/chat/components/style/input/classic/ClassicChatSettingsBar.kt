@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.classic
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageEntry
 import com.ai.assistance.operit.ui.features.chat.components.context.ChatContextUsageDialog
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
@@ -49,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import android.widget.Toast
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
@@ -1285,10 +1286,10 @@ private fun ModelSelectorItem(
 ) {
     val context = LocalContext.current
     val showAutoGlmError: () -> Unit = {
-        Toast.makeText(
+        OKToast.warning(
             context,
             context.getString(R.string.chat_autoglm_warning),
-            Toast.LENGTH_LONG
+            OKToast.LENGTH_LONG
         ).show()
     }
 

@@ -93,6 +93,7 @@ data class MemoryUiState(
         val isSearchSimulationRunning: Boolean = false,
         val searchSimulationResult: MemorySearchDebugInfo? = null,
         val searchSimulationError: String? = null,
+        val messageKind: com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Info,
         val message: String? = null
 )
 
@@ -326,6 +327,7 @@ class MemoryViewModel(
                     memorySettingsDetails = it.memorySettingsDetails.copy(policy = policy),
                     isSearchSettingsDialogVisible = false,
                     message = context.getString(R.string.settings_saved),
+                    messageKind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Success,
                 ) }
                 searchMemories()
             } catch (failure: CancellationException) {
@@ -458,6 +460,7 @@ class MemoryViewModel(
                         isEmbeddingRebuildRunning = false,
                         embeddingDimensionUsage = usage,
                         embeddingRebuildProgress = finalProgress,
+                        messageKind = if (finalProgress.total > 0) com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Success else com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Info,
                         message = if (finalProgress.total > 0) {
                             context.getString(
                                 R.string.memory_embedding_rebuild_completed,

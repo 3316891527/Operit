@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.standard
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
@@ -36,7 +38,6 @@ import android.webkit.WebResourceRequest
 import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.application.ActivityLifecycleManager
 import com.ai.assistance.operit.core.tools.StringResultData
@@ -143,7 +144,7 @@ class StandardBrowserSessionTools(internal val context: Context) : ToolExecutor 
                     refreshSessionUiOnMain(sessionId)
                 }
             },
-            onToast = { message -> showToast(message) }
+            onToast = { message -> OKToast.info(context, message).show() }
         )
     }
 

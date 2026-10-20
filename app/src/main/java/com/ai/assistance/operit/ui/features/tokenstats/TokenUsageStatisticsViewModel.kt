@@ -68,6 +68,7 @@ data class TokenStatsUiState(
 data class TokenStatsActionMessage(
     val text: String,
     val isError: Boolean = false,
+    val kind: com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind = if (isError) com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Error else com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Success,
 )
 
 @android.annotation.SuppressLint("StaticFieldLeak")
@@ -329,6 +330,7 @@ class TokenUsageStatisticsViewModel(
                 _actionMessage.value = TokenStatsActionMessage(
                     stringResolver(R.string.token_stats_custom_range_invalid),
                     isError = true,
+                    kind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Warning,
                 )
                 return false
             }
@@ -342,6 +344,7 @@ class TokenUsageStatisticsViewModel(
                 _actionMessage.value = TokenStatsActionMessage(
                     stringResolver(R.string.token_stats_custom_range_too_long),
                     isError = true,
+                    kind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Warning,
                 )
                 return false
             }

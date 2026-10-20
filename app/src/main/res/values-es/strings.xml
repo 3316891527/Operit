@@ -8359,4 +8359,10 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="attachment_image_duplicate">La imagen %1$s ya está adjunta</string>
     <string name="logcat_write_enabled">Guardar registros</string>
     <string name="logcat_write_enabled_description">Desactiva el registro de la aplicación. Se activa automáticamente cada día. Los registros existentes se pueden exportar.</string>
+    <string name="oktoast_info">Información</string>
+    <string name="oktoast_success">Éxito</string>
+    <string name="oktoast_warning">Advertencia</string>
+    <string name="oktoast_error">Error</string>
+    <string name="chat_model_configuration_invalid_key">Configuración de modelo no válida: no hay una clave de API válida. Añade una clave o configura un grupo de claves utilizables en Configuración de modelos y parámetros.</string>
+    <string name="chat_model_configuration_missing_model">Configuración de modelo no válida: el ID del modelo está vacío. Selecciona o introduce un modelo válido en Configuración de modelos y parámetros.</string>
 </resources>

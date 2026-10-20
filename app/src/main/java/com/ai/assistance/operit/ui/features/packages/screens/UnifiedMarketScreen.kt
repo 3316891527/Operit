@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
-import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -318,7 +319,7 @@ private fun UnifiedMarketListPane(
 
     errorMessage?.let { error ->
         LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            OKToast.error(context, error, OKToast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }
@@ -388,7 +389,7 @@ private fun MarketCategoryIndexPane(
 
     errorMessage?.let { error ->
         LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            OKToast.error(context, error, OKToast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }
@@ -560,7 +561,7 @@ private fun MarketNotificationsPane() {
 
     errorMessage?.let { error ->
         LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            OKToast.error(context, error, OKToast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }

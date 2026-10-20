@@ -1,11 +1,12 @@
 package com.ai.assistance.operit.ui.features.chat.viewmodel
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.api.chat.enhance.TranslationModelNotConfiguredException
 import android.Manifest
 import android.content.Context
 import com.ai.assistance.operit.util.LocaleUtils
 import android.content.Intent
-import android.widget.Toast
 import android.provider.Settings
 import com.ai.assistance.operit.util.AppLogger
 import androidx.activity.result.ActivityResultLauncher
@@ -249,14 +250,14 @@ class ChatViewModel(context: Context) : ViewModel() {
                                 val detail =
                                     error.takeIf { it.isNotBlank() }
                                         ?: context.getString(R.string.translation_failed_unknown)
-                                uiStateDelegate.showToast(
+                                OKToast.warning(context,
                                     context.getString(
                                         R.string.translation_retry_error_status,
                                         attempt,
                                         maxAttempts,
                                         detail,
                                     )
-                                )
+                                ).show()
                             },
                         )
                     if (translatedText.isBlank()) {
@@ -285,7 +286,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                             isLoading = false,
                             errorMessage = errorMessage,
                         )
-                    uiStateDelegate.showToast(errorMessage)
+                    OKToast.error(context, errorMessage).show()
                 } catch (e: Exception) {
                     AppLogger.e(TAG, "翻译消息失败", e)
                     val reason =
@@ -297,7 +298,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                             isLoading = false,
                             errorMessage = errorMessage,
                         )
-                    uiStateDelegate.showToast(errorMessage)
+                    OKToast.error(context, errorMessage).show()
                 }
             }
     }
@@ -394,6 +395,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
     val chatHistories: StateFlow<List<ChatHistory>> by lazy { chatHistoryDelegate.chatHistories }
     val currentChatId: StateFlow<String?> by lazy { chatHistoryDelegate.currentChatId }
+    val loadedChatId: StateFlow<String?> by lazy { chatHistoryDelegate.loadedChatId }
     val hasOlderDisplayHistory: StateFlow<Boolean> by lazy {
         chatHistoryDelegate.hasOlderDisplayHistory
     }
@@ -443,7 +445,6 @@ class ChatViewModel(context: Context) : ViewModel() {
     // UI状态相关
     val errorMessage: StateFlow<String?> by lazy { uiStateDelegate.errorMessage }
     val popupMessage: StateFlow<String?> by lazy { uiStateDelegate.popupMessage }
-    val toastEvent: StateFlow<ChatToastEvent?> by lazy { uiStateDelegate.toastEvent }
     val masterPermissionLevel: StateFlow<PermissionLevel> by lazy {
         uiStateDelegate.masterPermissionLevel
     }
@@ -624,9 +625,6 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     private fun setupAttachmentDelegateToastCollection() {
-        viewModelScope.launch {
-            attachmentDelegate.toastEvent.collect { message -> uiStateDelegate.showToast(message) }
-        }
     }
 
     private fun checkIfShouldCreateNewChat() {
@@ -699,7 +697,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     fun saveApiSettings() = apiConfigDelegate.saveApiSettings()
     fun useDefaultConfig() {
         if (apiConfigDelegate.useDefaultConfig()) {
-            uiStateDelegate.showToast(context.getString(R.string.chat_use_default_config_continue))
+            OKToast.info(context, context.getString(R.string.chat_use_default_config_continue)).show()
         } else {
             // 修改：使用错误弹窗而不是Toast显示配置错误
             uiStateDelegate.showErrorMessage(context.getString(R.string.chat_default_config_incomplete))
@@ -779,6 +777,8 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     // 聊天历史相关方法
+    val chatListMotion = com.ai.assistance.operit.ui.features.chat.motion.ChatListMotionState()
+
     fun createNewChat(
         characterCardName: String? = null, characterGroupId: String? = null,
         folderId: String? = null, inheritGroupFromCurrent: Boolean = true,
@@ -786,6 +786,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatHistoryDelegate.createNewChat(
             characterCardName = characterCardName, characterGroupId = characterGroupId,
             folderId = folderId, inheritGroupFromCurrent = inheritGroupFromCurrent,
+            onCreated = chatListMotion::onChatCreated,
         )
     }
 
@@ -812,6 +813,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     fun switchChat(chatId: String) {
         // 切换对话后取消旧对话的页面打开任务，避免更新错误的工作区。
         cancelWorkspaceOpen()
+        chatListMotion.newChatId.value?.let(chatListMotion::consumeIntro)
         chatHistoryDelegate.switchChat(chatId)
         chatRuntimeHolder.syncMainChatSelectionToFloating(chatId)
 
@@ -864,12 +866,20 @@ class ChatViewModel(context: Context) : ViewModel() {
     suspend fun revealMessageForCurrentChat(targetTimestamp: Long): Boolean =
         chatHistoryDelegate.revealMessageForCurrentChat(targetTimestamp)
 
-    fun deleteChatHistory(chatId: String) {
-        chatHistoryDelegate.deleteChatHistoryWithResult(chatId) { result ->
-            if (result == ChatDeletionResult.DELETED) {
-                pendingMessageQueueStore.removeChat(chatId)
-            } else {
-                showChatDeletionFailure(result, clearing = false)
+    fun deleteChatHistory(chatId: String, animate: Boolean = false) {
+        chatListMotion.delete(chatId, viewModelScope, animate) { id, completed ->
+            chatHistoryDelegate.deleteChatHistoryWithResult(id) { result ->
+                if (result == ChatDeletionResult.DELETED) {
+                    pendingMessageQueueStore.removeChat(id)
+                    viewModelScope.launch {
+                        // 等列表确实移除目标后释放效果，避免数据流更新前标题闪回。
+                        chatHistories.first { histories -> histories.none { it.id == id } }
+                        completed(true)
+                    }
+                } else {
+                    completed(false)
+                    showChatDeletionFailure(result, clearing = false)
+                }
             }
         }
     }
@@ -877,10 +887,8 @@ class ChatViewModel(context: Context) : ViewModel() {
     fun clearCurrentChat() {
         chatHistoryDelegate.clearCurrentChatWithResult { result ->
             if (result == ChatDeletionResult.DELETED) {
-                uiStateDelegate.showToast(context.getString(R.string.chat_cleared))
-            } else {
-                showChatDeletionFailure(result, clearing = true)
-            }
+                OKToast.success(context, context.getString(R.string.chat_cleared)).show()
+            } else showChatDeletionFailure(result, clearing = true)
         }
     }
 
@@ -890,7 +898,7 @@ class ChatViewModel(context: Context) : ViewModel() {
             ChatDeletionResult.NOT_FOUND -> R.string.chat_delete_not_found
             else -> if (clearing) R.string.chat_clear_failed else R.string.chat_delete_failed
         }
-        uiStateDelegate.showToast(context.getString(message))
+        OKToast.typed(context, context.getString(message), if (result == ChatDeletionResult.LOCKED || result == ChatDeletionResult.NOT_FOUND) OKToast.Kind.Warning else OKToast.Kind.Error).show()
     }
     fun toggleChatHistorySelector() = chatHistoryDelegate.toggleChatHistorySelector()
     fun showChatHistorySelector(show: Boolean) {
@@ -982,7 +990,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     /** 创建对话分支 */
     fun createBranch(upToMessageTimestamp: Long? = null) {
         chatHistoryDelegate.createBranch(upToMessageTimestamp)
-        uiStateDelegate.showToast(context.getString(R.string.chat_branch_created))
+        OKToast.success(context, context.getString(R.string.chat_branch_created)).show()
     }
 
     /** 插入总结 */
@@ -996,11 +1004,11 @@ class ChatViewModel(context: Context) : ViewModel() {
                 // 获取当前会话ID并绑定
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 if (message.sender != "user" && message.sender != "ai") {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_no_messages_to_summarize))
+                    OKToast.info(context, context.getString(R.string.chat_no_messages_to_summarize)).show()
                     return@launch
                 }
                 
@@ -1025,19 +1033,19 @@ class ChatViewModel(context: Context) : ViewModel() {
                     }
 
                 if (messagesToSummarize.isEmpty()) {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_no_messages_to_summarize))
+                    OKToast.info(context, context.getString(R.string.chat_no_messages_to_summarize)).show()
                     messageProcessingDelegate.setInputProcessingStateForChat(currentChatId, InputProcessingState.Idle)
                     return@launch
                 }
                 
                 // 显示生成中提示
-                uiStateDelegate.showToast(
+                OKToast.info(context,
                     LocaleUtils.getLocalizedContext(context).getString(R.string.chat_summarizing_generating)
-                )
+                ).show()
                 
                 // 调用AI生成总结
                 if (enhancedAiService == null) {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_ai_service_not_initialized))
+                    OKToast.warning(context, context.getString(R.string.chat_ai_service_not_initialized)).show()
                     messageProcessingDelegate.setInputProcessingStateForChat(currentChatId, InputProcessingState.Idle)
                     return@launch
                 }
@@ -1070,9 +1078,9 @@ class ChatViewModel(context: Context) : ViewModel() {
                     }
                     messageCoordinationDelegate.scheduleStableContextWindowRefresh(chatId = currentChatId)
 
-                    uiStateDelegate.showToast(context.getString(R.string.chat_summary_inserted))
+                    OKToast.success(context, context.getString(R.string.chat_summary_inserted)).show()
                 } else {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_summary_generation_failed))
+                    OKToast.error(context, context.getString(R.string.chat_summary_generation_failed)).show()
                 }
                 
                 // 清除输入处理状态
@@ -1088,7 +1096,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "插入总结时发生错误", e)
-                uiStateDelegate.showToast(context.getString(R.string.chat_insert_summary_failed, e.message ?: ""))
+                OKToast.error(context, context.getString(R.string.chat_insert_summary_failed, e.message ?: "")).show()
                 // 发生错误时也需要清除状态
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId != null) {
@@ -1125,7 +1133,7 @@ class ChatViewModel(context: Context) : ViewModel() {
             AppLogger.d(TAG, "准备批量删除消息，索引: $indices")
             val chatIdSnapshot = chatHistoryDelegate.currentChatId.value
             if (chatIdSnapshot == null) {
-                Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                 return@launch
             }
 
@@ -1265,7 +1273,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 messageCoordinationDelegate.scheduleStableContextWindowRefresh(chatId = currentChatId.value)
 
                 // 显示成功提示
-                uiStateDelegate.showToast(context.getString(R.string.chat_message_updated))
+                OKToast.success(context, context.getString(R.string.chat_message_updated)).show()
             } catch (e: Exception) {
                 AppLogger.e(TAG, "更新消息失败", e)
                 uiStateDelegate.showErrorMessage(context.getString(R.string.chat_update_message_failed, e.message ?: ""))
@@ -1500,7 +1508,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val plainText = AvatarEmotionManager.stripXmlLikeTags(targetMessage.content)
                 updateUserMessage(TextFieldValue(plainText))
 
-                uiStateDelegate.showToast(context.getString(R.string.chat_rolled_back_message_in_input))
+                OKToast.info(context, context.getString(R.string.chat_rolled_back_message_in_input)).show()
             } catch (e: Exception) {
                 AppLogger.e(TAG, "回滚到指定消息失败", e)
                 uiStateDelegate.showErrorMessage(context.getString(R.string.chat_rollback_failed, e.message ?: ""))
@@ -1761,7 +1769,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "添加 mention 包附件失败", e)
-                uiStateDelegate.showToast(context.getString(R.string.attachment_package_failed, packageName))
+                OKToast.error(context, context.getString(R.string.attachment_package_failed, packageName)).show()
             }
         }
     }
@@ -1783,7 +1791,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "添加 mention 工作区附件失败", e)
-                uiStateDelegate.showToast(context.getString(R.string.attachment_cannot_attach, relativePath))
+                OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, relativePath)).show()
             }
         }
     }
@@ -1824,8 +1832,6 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
     fun popupMessage(message: String) = uiStateDelegate.showPopupMessage(message)
     fun clearPopupMessage() = uiStateDelegate.clearPopupMessage()
-    fun showToast(message: String) = uiStateDelegate.showToast(message)
-    fun clearToastEvent(eventId: Long) = uiStateDelegate.clearToastEvent(eventId)
 
     // 悬浮窗相关方法
     fun onFloatingButtonClick(
@@ -1890,7 +1896,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 与发消息保持一致：无活跃对话时给出明确提示，而不是静默失败
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -1949,7 +1955,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         updateUserMessage(TextFieldValue(newText, selection = TextRange(newText.length)))
 
         // Show a toast to confirm insertion
-        uiStateDelegate.showToast(context.getString(R.string.chat_inserted_attachment_ref, attachment.fileName))
+        OKToast.success(context, context.getString(R.string.chat_inserted_attachment_ref, attachment.fileName)).show()
     }
 
     /** 隐藏 @ mention 建议面板 */
@@ -1965,7 +1971,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -1974,7 +1980,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                     currentChatId,
                     InputProcessingState.Processing(context.getString(R.string.chat_fetching_screen_content))
                 )
-                uiStateDelegate.showToast(context.getString(R.string.chat_fetching_screen_content))
+                OKToast.info(context, context.getString(R.string.chat_fetching_screen_content)).show()
 
                 // 直接委托给attachmentDelegate执行
                 attachmentDelegate.captureScreenContent()
@@ -2000,7 +2006,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -2009,7 +2015,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                     currentChatId,
                     InputProcessingState.Processing(context.getString(R.string.chat_fetching_notifications))
                 )
-                uiStateDelegate.showToast(context.getString(R.string.chat_fetching_notifications))
+                OKToast.info(context, context.getString(R.string.chat_fetching_notifications)).show()
 
                 // 直接委托给attachmentDelegate执行
                 attachmentDelegate.captureNotifications()
@@ -2035,7 +2041,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 
@@ -2044,7 +2050,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                     currentChatId,
                     InputProcessingState.Processing(context.getString(R.string.chat_fetching_location))
                 )
-                uiStateDelegate.showToast(context.getString(R.string.chat_fetching_location))
+                OKToast.info(context, context.getString(R.string.chat_fetching_location)).show()
 
                 // 直接委托给attachmentDelegate执行
                 attachmentDelegate.captureLocation()
@@ -2053,7 +2059,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 messageProcessingDelegate.setInputProcessingStateForChat(currentChatId, InputProcessingState.Idle)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error capturing location", e)
-                uiStateDelegate.showToast(context.getString(R.string.chat_fetch_location_failed, e.message ?: ""))
+                OKToast.error(context, context.getString(R.string.chat_fetch_location_failed, e.message ?: "")).show()
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId != null) {
                     messageProcessingDelegate.setInputProcessingStateForChat(currentChatId, InputProcessingState.Idle)
@@ -2071,7 +2077,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 无活跃对话时给出明确提示，而不是静默失败
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 // 显示记忆文件夹附着进度
@@ -2079,7 +2085,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                     currentChatId,
                     InputProcessingState.Processing(context.getString(R.string.chat_attaching_memory_folders))
                 )
-                uiStateDelegate.showToast(context.getString(R.string.chat_attaching_memory_folders))
+                OKToast.info(context, context.getString(R.string.chat_attaching_memory_folders)).show()
 
                 // 直接委托给attachmentDelegate执行
                 attachmentDelegate.captureMemoryFolders(folderPaths)
@@ -2103,7 +2109,7 @@ class ChatViewModel(context: Context) : ViewModel() {
             val currentChatId = chatHistoryDelegate.currentChatId.value
             if (currentChatId == null) {
                 // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
-                Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                 return@launch
             }
             attachmentDelegate.handleTakenPhoto(uri)
@@ -2117,13 +2123,13 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val currentChatId = chatHistoryDelegate.currentChatId.value
                 if (currentChatId == null) {
                     // 与文件/图片附件入口保持一致：无活跃对话时给出明确提示
-                    Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
                 attachmentDelegate.attachPackage(packageName)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "添加包附件失败", e)
-                uiStateDelegate.showToast(context.getString(R.string.attachment_package_failed, packageName))
+                OKToast.error(context, context.getString(R.string.attachment_package_failed, packageName)).show()
             }
         }
     }
@@ -2319,7 +2325,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 messageProcessingDelegate.setInputProcessingStateForChat(chatId, InputProcessingState.Idle)
                 
                 AppLogger.d(TAG, "Successfully processed shared files")
-                uiStateDelegate.showToast(context.getString(R.string.chat_added_files_count, uris.size))
+                OKToast.success(context, context.getString(R.string.chat_added_files_count, uris.size)).show()
             } catch (e: Exception) {
                 AppLogger.e(TAG, "处理分享文件失败", e)
                 uiStateDelegate.showErrorMessage(context.getString(R.string.chat_process_shared_files_failed, e.message ?: ""))
@@ -2652,7 +2658,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 )
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
-        showToast(context.getString(R.string.chat_need_overlay_permission_start_voice_assistant))
+        OKToast.warning(context, context.getString(R.string.chat_need_overlay_permission_start_voice_assistant)).show()
     }
 
     override fun onCleared() {
@@ -2694,17 +2700,17 @@ class ChatViewModel(context: Context) : ViewModel() {
                     message.sender == "user" && message.displayContent().isNotBlank()
                 }
                 if (source == null) {
-                    uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_empty))
+                    OKToast.warning(context, context.getString(R.string.summarize_chat_title_empty)).show()
                     return@launch
                 }
-                uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_started))
+                OKToast.info(context, context.getString(R.string.summarize_chat_title_started)).show()
                 val generatedTitle = withContext(Dispatchers.IO) {
                     EnhancedAIService.getChatInstance(context, chatId)
                         .generateConversationTitle(userText = source.displayContent().trim())
                         .trim()
                 }
                 if (generatedTitle.isBlank()) {
-                    uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_failed))
+                    OKToast.error(context, context.getString(R.string.summarize_chat_title_failed)).show()
                     return@launch
                 }
                 // 生成期间手动改名或删除对话时，不用旧请求的结果覆盖用户操作。
@@ -2715,7 +2721,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "手动总结对话标题失败", e)
-                uiStateDelegate.showToast(context.getString(R.string.summarize_chat_title_failed))
+                OKToast.error(context, context.getString(R.string.summarize_chat_title_failed)).show()
             } finally {
                 titleGenerationJobs.remove(chatId)
             }
@@ -2849,7 +2855,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         }
 
         if (workspaceCommandExecutionJob?.isActive == true) {
-            uiStateDelegate.showToast(context.getString(R.string.workspace_command_already_running))
+            OKToast.warning(context, context.getString(R.string.workspace_command_already_running)).show()
             return
         }
 
@@ -3209,7 +3215,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 if (currentVoiceService == null) {
                     _isSpeechSessionActive.value = false
                     logSpeechState("speakMessage.abort", "reason=noVoiceService")
-                    uiStateDelegate.showToast(context.getString(R.string.chat_voice_service_init_failed))
+                    OKToast.error(context, context.getString(R.string.chat_voice_service_init_failed)).show()
                     AppLogger.e(TAG, "语音服务不可用")
                     return@launch
                 }
@@ -3253,7 +3259,7 @@ class ChatViewModel(context: Context) : ViewModel() {
 
                     if (!success) {
                         logSpeechState("segmentFailed", "index=$index")
-                        uiStateDelegate.showToast(context.getString(R.string.chat_speak_failed))
+                        OKToast.error(context, context.getString(R.string.chat_speak_failed)).show()
                         break
                     }
                     isFirstSegment = false
@@ -3266,7 +3272,7 @@ class ChatViewModel(context: Context) : ViewModel() {
             } catch (e: Exception) {
                 logSpeechState("speakMessage.exception", "type=${e::class.java.simpleName} message=${e.message}")
                 AppLogger.e(TAG, "朗读消息失败", e)
-                uiStateDelegate.showToast(context.getString(R.string.chat_speak_message_failed, e.message ?: "Unknown error"))
+                OKToast.error(context, context.getString(R.string.chat_speak_message_failed, e.message ?: "Unknown error")).show()
             }
         }
     }

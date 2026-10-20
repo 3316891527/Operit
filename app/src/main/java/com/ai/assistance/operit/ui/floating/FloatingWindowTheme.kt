@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.floating
 
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -86,6 +88,9 @@ fun FloatingWindowTheme(
     // 优先使用传入的typography，如果没有则使用默认的小型typography
     val finalTypography = typography ?: defaultSmallTypography
     
+    androidx.compose.runtime.SideEffect {
+        com.ai.assistance.operit.ui.common.oktoast.OKToast.useAppearance(finalColorScheme.surface.luminance() < 0.5f, finalColorScheme.surface.toArgb(), finalColorScheme.onSurface.toArgb())
+    }
     MaterialTheme(
         colorScheme = finalColorScheme,
         typography = finalTypography,

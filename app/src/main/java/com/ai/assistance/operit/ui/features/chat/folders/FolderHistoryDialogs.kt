@@ -72,36 +72,6 @@ internal fun FolderNameDialog(
 }
 
 @Composable
-internal fun FolderMoveDialog(
-    node: ChatFolderNode, folders: Map<String, ChatFolder>, onDismiss: () -> Unit, onMove: (String?) -> Unit,
-) {
-    val rootLabel = stringResource(R.string.folder_root)
-    val destinations = remember(node, folders) {
-        folders.values.filter { node !is ChatFolderNode.Folder || canMoveFolder(node.id, it.id, folders) }
-            .sortedBy { folderAncestors(it.id, folders).joinToString(" › ") { folder -> folder.name } }
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss, title = { Text(stringResource(R.string.folder_move_to)) },
-        text = {
-            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
-                item {
-                    TextButton(onClick = { onMove(null) }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Folder, null, Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(rootLabel, Modifier.weight(1f))
-                    }
-                }
-                items(destinations, key = { it.id }) { folder ->
-                    TextButton(onClick = { onMove(folder.id) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(folderAncestors(folder.id, folders).joinToString(" › ") { it.name }, Modifier.weight(1f))
-                    }
-                }
-            }
-        }, confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
-
-@Composable
 internal fun HistoryChatEditDialog(
     chat: ChatHistory, options: List<HistoryBindingOption>, bindingLabel: (ChatFolderBinding) -> String,
     onDismiss: () -> Unit, onSave: (String, ChatFolderBinding) -> Unit,

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.workflow.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -63,7 +65,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -224,7 +225,7 @@ fun WorkflowListScreen(
 
             viewModel.error?.let { errorMessage ->
                 LaunchedEffect(errorMessage) {
-                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                    OKToast.error(context, errorMessage, OKToast.LENGTH_SHORT).show()
                     viewModel.clearError()
                 }
             }

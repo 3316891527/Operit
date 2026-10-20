@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -19,9 +20,7 @@ import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.data.skill.SkillRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import android.webkit.MimeTypeMap
@@ -48,9 +47,6 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
     private val imageAttachmentMutex = Mutex()
     private val imageAttachmentIndex = ImageAttachmentIndex()
 
-    // Events
-    private val _toastEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val toastEvent: SharedFlow<String> = _toastEvent
 
     /** Adds multiple attachments in one shot (dedup by filePath) */
     fun addAttachments(attachments: List<AttachmentInfo>): List<AttachmentInfo> {
@@ -174,13 +170,13 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                         val addedAttachment = appendAttachment(attachmentInfo)
 
-                        _toastEvent.emit(context.getString(R.string.attachment_photo_added, addedAttachment.fileName))
+                        OKToast.success(context, context.getString(R.string.attachment_photo_added, addedAttachment.fileName)).show()
                     } else {
                         AppLogger.e(TAG, "Failed to create temp file from camera URI")
-                        _toastEvent.emit(context.getString(R.string.attachment_photo_process_failed))
+                        OKToast.error(context, context.getString(R.string.attachment_photo_process_failed)).show()
                     }
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_photo_add_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_photo_add_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error adding photo attachment", e)
                 }
             }
@@ -225,13 +221,13 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     } else {
                         val localPath = if (filePath.startsWith("file://")) Uri.parse(filePath).path else filePath
                         if (localPath.isNullOrBlank()) {
-                            _toastEvent.emit(context.getString(R.string.attachment_cannot_attach, filePath))
+                            OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
                             return@withContext
                         }
 
                         val file = java.io.File(localPath)
                         if (!file.exists()) {
-                            _toastEvent.emit(context.getString(R.string.attachment_file_not_exist))
+                            OKToast.warning(context, context.getString(R.string.attachment_file_not_exist)).show()
                             return@withContext
                         }
 
@@ -244,7 +240,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     val resolvedFileName = fileName
                     val resolvedMimeType = mimeType
                     if (resolvedUri == null || resolvedFileName.isNullOrBlank() || resolvedMimeType.isNullOrBlank()) {
-                        _toastEvent.emit(context.getString(R.string.attachment_cannot_attach, filePath))
+                        OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
                         return@withContext
                     }
 
@@ -252,7 +248,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     val tempFile = createTempFileFromUri(resolvedUri, resolvedFileName)
                     if (tempFile == null || !tempFile.exists()) {
                         AppLogger.e(TAG, "Failed to create temp file from source: $resolvedUri")
-                        _toastEvent.emit(context.getString(R.string.attachment_cannot_attach, resolvedFileName))
+                        OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, resolvedFileName)).show()
                         return@withContext
                     }
 
@@ -278,12 +274,12 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         }
                     if (addedAttachment == null) {
                         tempFile.delete()
-                        _toastEvent.emit(context.getString(R.string.attachment_image_duplicate, resolvedFileName))
+                        OKToast.warning(context, context.getString(R.string.attachment_image_duplicate, resolvedFileName)).show()
                         return@withContext
                     }
-                    _toastEvent.emit(context.getString(R.string.attachment_added, addedAttachment.fileName))
+                    OKToast.success(context, context.getString(R.string.attachment_added, addedAttachment.fileName)).show()
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_add_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_add_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error adding attachment", e)
                 }
             }
@@ -313,13 +309,11 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                             fileSize = textFile.length(),
                         )
                     )
-                _toastEvent.emit(
-                    context.getString(R.string.chat_pasted_text_attached, addedAttachment.fileName)
-                )
+                OKToast.success(context, context.getString(R.string.chat_pasted_text_attached, addedAttachment.fileName)).show()
                 true
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error creating pasted text attachment", e)
-                _toastEvent.emit(context.getString(R.string.attachment_add_failed, e.message ?: ""))
+                OKToast.error(context, context.getString(R.string.attachment_add_failed, e.message ?: "")).show()
                 false
             }
         }
@@ -375,7 +369,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     private suspend fun attachPackageInternal(packageName: String) {
         if (packageName.isBlank()) {
-            _toastEvent.emit(context.getString(R.string.attachment_package_failed, packageName))
+            OKToast.error(context, context.getString(R.string.attachment_package_failed, packageName)).show()
             return
         }
 
@@ -388,7 +382,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
         val isMcpPackage = packageManager.getAvailableServerPackages().containsKey(packageName)
 
         if (!isStandardPackage && !isSkillPackage && !isMcpPackage) {
-            _toastEvent.emit(context.getString(R.string.attachment_package_failed, packageName))
+            OKToast.error(context, context.getString(R.string.attachment_package_failed, packageName)).show()
             return
         }
 
@@ -399,7 +393,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
         val packageContent = packageManager.usePackage(packageName)
         if (isPackageAttachmentError(packageName, packageContent)) {
             AppLogger.w(TAG, "添加包附件失败: $packageName, reason=$packageContent")
-            _toastEvent.emit(context.getString(R.string.attachment_package_failed, packageName))
+            OKToast.error(context, context.getString(R.string.attachment_package_failed, packageName)).show()
             return
         }
 
@@ -412,7 +406,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                 content = packageContent
             )
         replaceAttachmentByPath(attachmentInfo)
-        _toastEvent.emit(context.getString(R.string.attachment_package_added, packageName))
+        OKToast.success(context, context.getString(R.string.attachment_package_added, packageName)).show()
     }
 
     fun removePackageAttachment(packageName: String) {
@@ -435,7 +429,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
         val fullPath = buildWorkspaceChildPath(workspacePath, normalizedRelativePath)
         val existsData = readWorkspaceEntryMetadata(fullPath, workspaceEnv)
         if (existsData == null || !existsData.exists) {
-            _toastEvent.emit(context.getString(R.string.attachment_file_not_exist))
+            OKToast.warning(context, context.getString(R.string.attachment_file_not_exist)).show()
             return@withContext
         }
 
@@ -647,14 +641,14 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     val screenshotTool = AITool(name = "capture_screenshot", parameters = emptyList())
                     val screenshotResult = toolHandler.executeTool(screenshotTool)
                     if (!screenshotResult.success) {
-                        _toastEvent.emit(context.getString(R.string.attachment_screen_content_failed, screenshotResult.error ?: context.getString(R.string.attachment_screenshot_failed)))
+                        OKToast.error(context, context.getString(R.string.attachment_screen_content_failed, screenshotResult.error ?: context.getString(R.string.attachment_screenshot_failed))).show()
                         return@withContext
                     }
 
                     val screenshotPath = screenshotResult.result.toString().trim()
                     val screenshotFile = File(screenshotPath)
                     if (screenshotPath.isBlank() || !screenshotFile.exists() || screenshotFile.length() <= 0L) {
-                        _toastEvent.emit(context.getString(R.string.attachment_screen_content_failed, context.getString(R.string.attachment_screenshot_failed)))
+                        OKToast.error(context, context.getString(R.string.attachment_screen_content_failed, context.getString(R.string.attachment_screenshot_failed))).show()
                         return@withContext
                     }
 
@@ -671,9 +665,9 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                     appendAttachment(attachmentInfo)
 
-                    _toastEvent.emit(context.getString(R.string.attachment_screen_content_added))
+                    OKToast.success(context, context.getString(R.string.attachment_screen_content_added)).show()
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_screen_content_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_screen_content_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing screen content", e)
                 }
             }
@@ -713,12 +707,12 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                         appendAttachment(attachmentInfo)
 
-                        _toastEvent.emit(context.getString(R.string.attachment_notifications_added))
+                        OKToast.success(context, context.getString(R.string.attachment_notifications_added)).show()
                     } else {
-                        _toastEvent.emit(context.getString(R.string.attachment_notifications_failed, result.error ?: context.getString(R.string.attachment_unknown_error)))
+                        OKToast.error(context, context.getString(R.string.attachment_notifications_failed, result.error ?: context.getString(R.string.attachment_unknown_error))).show()
                     }
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_notifications_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_notifications_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing notifications", e)
                 }
             }
@@ -758,12 +752,12 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                         appendAttachment(attachmentInfo)
 
-                        _toastEvent.emit(context.getString(R.string.attachment_location_added))
+                        OKToast.success(context, context.getString(R.string.attachment_location_added)).show()
                     } else {
-                        _toastEvent.emit(context.getString(R.string.attachment_location_failed, result.error ?: context.getString(R.string.attachment_unknown_error)))
+                        OKToast.error(context, context.getString(R.string.attachment_location_failed, result.error ?: context.getString(R.string.attachment_unknown_error))).show()
                     }
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_location_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_location_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing location", e)
                 }
             }
@@ -788,9 +782,9 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                     appendAttachment(attachmentInfo)
 
-                    _toastEvent.emit(context.getString(R.string.attachment_time_added))
+                    OKToast.success(context, context.getString(R.string.attachment_time_added)).show()
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_time_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_time_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing current time", e)
                 }
             }
@@ -803,7 +797,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
             withContext(Dispatchers.IO) {
                 try {
                     if (folderPaths.isEmpty()) {
-                        _toastEvent.emit(context.getString(R.string.attachment_no_memory_folder))
+                        OKToast.info(context, context.getString(R.string.attachment_no_memory_folder)).show()
                         return@withContext
                     }
 
@@ -830,9 +824,9 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     } else {
                         context.getString(R.string.attachment_memory_folders_added, folderPaths.size)
                     }
-                    _toastEvent.emit(folderCountText)
+                    OKToast.success(context, folderCountText).show()
                 } catch (e: Exception) {
-                    _toastEvent.emit(context.getString(R.string.attachment_memory_folder_failed, e.message ?: ""))
+                    OKToast.error(context, context.getString(R.string.attachment_memory_folder_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing memory folders", e)
                 }
             }

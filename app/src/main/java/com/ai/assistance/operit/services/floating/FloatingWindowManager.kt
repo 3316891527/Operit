@@ -105,6 +105,7 @@ class FloatingWindowManager(
     private val TAG = "FloatingWindowManager"
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var composeView: ComposeView? = null
+    private var unregisterToastWindow: (() -> Unit)? = null
     private var statusIndicatorView: ComposeView? = null
     private var focusDismissView: View? = null
     private var isViewAdded = false
@@ -185,6 +186,7 @@ class FloatingWindowManager(
 
             val params = createLayoutParams()
             windowManager.addView(composeView, params)
+            unregisterToastWindow = com.ai.assistance.operit.ui.common.oktoast.OKToast.registerWindow(requireNotNull(composeView))
             isViewAdded = true
             AppLogger.d(TAG, "Floating view added at (${params.x}, ${params.y})")
             return true
@@ -195,6 +197,8 @@ class FloatingWindowManager(
     }
 
     fun destroy() {
+        unregisterToastWindow?.invoke()
+        unregisterToastWindow = null
         hideStatusIndicator()
         if (isViewAdded) {
             composeView?.let {

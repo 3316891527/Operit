@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
@@ -62,7 +64,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -137,7 +138,7 @@ fun SpeechServicesSettingsScreen(
     LaunchedEffect(ttsProfileError, sttProfileError) {
         val message = ttsProfileError ?: sttProfileError
         if (message != null) {
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            OKToast.warning(context, message, OKToast.LENGTH_SHORT).show()
         }
     }
 
@@ -2391,7 +2392,7 @@ fun SpeechServicesSettingsScreen(
                         VoiceServiceFactory.resetInstance()
                         ttsProfileError = null
                         showCreateTtsProfileDialog = false
-                        Toast.makeText(context, context.getString(R.string.speech_services_profile_created), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.speech_services_profile_created), OKToast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to create TTS profile", error)
                         ttsProfileError = error.message
@@ -2412,7 +2413,7 @@ fun SpeechServicesSettingsScreen(
                         SpeechServiceFactory.resetInstance()
                         sttProfileError = null
                         showCreateSttProfileDialog = false
-                        Toast.makeText(context, context.getString(R.string.speech_services_profile_created), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.speech_services_profile_created), OKToast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to create STT profile", error)
                         sttProfileError = error.message
@@ -2437,7 +2438,7 @@ fun SpeechServicesSettingsScreen(
                         ttsProfileError = null
                         showRenameTtsProfileDialog = false
                         renameTtsProfileName = ""
-                        Toast.makeText(context, context.getString(R.string.config_renamed), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.config_renamed), OKToast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to rename TTS profile", error)
                         ttsProfileError = error.message
@@ -2462,7 +2463,7 @@ fun SpeechServicesSettingsScreen(
                         sttProfileError = null
                         showRenameSttProfileDialog = false
                         renameSttProfileName = ""
-                        Toast.makeText(context, context.getString(R.string.config_renamed), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.config_renamed), OKToast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to rename STT profile", error)
                         sttProfileError = error.message
@@ -2483,7 +2484,7 @@ fun SpeechServicesSettingsScreen(
                         profilePrefs.deleteTtsProfile(ttsProfilePendingDeletion.id)
                         ttsProfileError = null
                         ttsProfilePendingDeletionId = null
-                        Toast.makeText(context, context.getString(R.string.config_deleted), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.config_deleted), OKToast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to delete TTS profile", error)
                         ttsProfileError = error.message
@@ -2504,7 +2505,7 @@ fun SpeechServicesSettingsScreen(
                         profilePrefs.deleteSttProfile(sttProfilePendingDeletion.id)
                         sttProfileError = null
                         sttProfilePendingDeletionId = null
-                        Toast.makeText(context, context.getString(R.string.config_deleted), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.config_deleted), OKToast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         AppLogger.e("SpeechServicesSettings", "Failed to delete STT profile", error)
                         sttProfileError = error.message

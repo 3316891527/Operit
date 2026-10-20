@@ -1,12 +1,13 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import com.ai.assistance.operit.util.AppLogger
-import android.widget.Toast
 import java.io.File
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -320,7 +321,7 @@ fun ChatHistorySettingsScreen() {
                     memoryRebuildProgress = memoryRebuildProgress,
                     onApply = { selectedIds, targetCharacterName, targetCharacterGroupId, targetGroupName, shouldUnbindCharacterCard, shouldUnbindCharacterGroup ->
                         if (selectedIds.isEmpty()) {
-                            Toast.makeText(context, context.getString(R.string.please_select_chats_first), Toast.LENGTH_SHORT).show()
+                            OKToast.warning(context, context.getString(R.string.please_select_chats_first), OKToast.LENGTH_SHORT).show()
                             return@ChatHistoryBatchSelectorCard false
                         }
                         try {
@@ -379,13 +380,13 @@ fun ChatHistorySettingsScreen() {
                             }
                             
                             val message = messageParts.joinToString("；")
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            OKToast.success(context, message, OKToast.LENGTH_SHORT).show()
                             true
                         } catch (e: Exception) {
-                            Toast.makeText(
+                            OKToast.error(
                                 context,
                                 context.getString(R.string.batch_update_failed, e.localizedMessage ?: e.toString()),
-                                Toast.LENGTH_LONG
+                                OKToast.LENGTH_LONG
                             ).show()
                             false
                         }
@@ -410,13 +411,13 @@ fun ChatHistorySettingsScreen() {
                                 count
                             }
 
-                            Toast.makeText(context, context.getString(R.string.deleted_unbound_workspaces, deletedCount), Toast.LENGTH_SHORT).show()
+                            OKToast.success(context, context.getString(R.string.deleted_unbound_workspaces, deletedCount), OKToast.LENGTH_SHORT).show()
 
                             // 刷新列表
                             unboundWorkspaces = unboundWorkspaces.filter { it.fullPath !in selectedWorkspacePaths }
                         } catch (e: Exception) {
                             AppLogger.e("ChatHistorySettings", "删除工作区失败", e)
-                            Toast.makeText(context, context.getString(R.string.delete_failed, e.localizedMessage ?: ""), Toast.LENGTH_LONG).show()
+                            OKToast.error(context, context.getString(R.string.delete_failed, e.localizedMessage ?: ""), OKToast.LENGTH_LONG).show()
                         }
                     }
                 )
@@ -566,16 +567,16 @@ fun ChatHistorySettingsScreen() {
                             scope.launch {
                                 try {
                                     chatHistoryManager.clearCharacterGroupBinding(missingGroupId)
-                                    Toast.makeText(
+                                    OKToast.success(
                                         context,
                                         context.getString(R.string.removed_character_group_binding, stat.chatCount),
-                                        Toast.LENGTH_SHORT
+                                        OKToast.LENGTH_SHORT
                                     ).show()
                                 } catch (e: Exception) {
-                                    Toast.makeText(
+                                    OKToast.error(
                                         context,
                                         context.getString(R.string.delete_failed, e.localizedMessage ?: e.toString()),
-                                        Toast.LENGTH_LONG
+                                        OKToast.LENGTH_LONG
                                     ).show()
                                 }
                             }
@@ -633,14 +634,14 @@ fun ChatHistorySettingsScreen() {
                                 } else {
                                     context.getString(R.string.deleted_residual_chats_count, deletedCount)
                                 }
-                                Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
+                                OKToast.success(context, toastText, OKToast.LENGTH_SHORT).show()
                                 showDeleteMissingDialog = false
                                 pendingMissingStat = null
                             } catch (e: Exception) {
-                                Toast.makeText(
+                                OKToast.error(
                                     context,
                                     context.getString(R.string.delete_failed, e.localizedMessage ?: e.toString()),
-                                    Toast.LENGTH_LONG
+                                    OKToast.LENGTH_LONG
                                 ).show()
                             } finally {
                                 deleteMissingInProgress = false
@@ -697,13 +698,13 @@ fun ChatHistorySettingsScreen() {
                 }
 
                 if (stat == null) {
-                    Toast.makeText(context, context.getString(R.string.no_chat_stats_to_assign), Toast.LENGTH_SHORT).show()
+                    OKToast.info(context, context.getString(R.string.no_chat_stats_to_assign), OKToast.LENGTH_SHORT).show()
                     showAssignCharacterDialog = false
                     return@CharacterCardAssignDialog
                 }
 
                 if (targetCard == null) {
-                    Toast.makeText(context, context.getString(R.string.please_select_a_character_card), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.please_select_a_character_card), OKToast.LENGTH_SHORT).show()
                     return@CharacterCardAssignDialog
                 }
 
@@ -714,19 +715,19 @@ fun ChatHistorySettingsScreen() {
                             sourceCharacterCardName = stat.characterCardName,
                             targetCharacterCardName = targetCard.name
                         )
-                        Toast.makeText(
+                        OKToast.success(
                             context,
                             context.getString(R.string.assigned_to_character_card, targetCard.name),
-                            Toast.LENGTH_SHORT
+                            OKToast.LENGTH_SHORT
                         ).show()
                         showAssignCharacterDialog = false
                         pendingAssignStat = null
                         selectedCharacterCardId = null
                     } catch (e: Exception) {
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.assign_failed_error, e.localizedMessage ?: e.toString()),
-                            Toast.LENGTH_LONG
+                            OKToast.LENGTH_LONG
                         ).show()
                     } finally {
                         assignInProgress = false
@@ -1866,17 +1867,17 @@ private fun ChatHistoryBatchSelectorCard(
                                             result.deletedCount
                                         )
                                     }
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                OKToast.success(context, message, OKToast.LENGTH_SHORT).show()
                                 selectedChatIds = emptySet()
                                 showDeleteConfirmDialog = false
                             } catch (e: Exception) {
-                                Toast.makeText(
+                                OKToast.error(
                                     context,
                                     context.getString(
                                         R.string.delete_failed,
                                         e.localizedMessage ?: e.toString()
                                     ),
-                                    Toast.LENGTH_LONG
+                                    OKToast.LENGTH_LONG
                                 ).show()
                             } finally {
                                 deleteInProgress = false
