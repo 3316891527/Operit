@@ -145,7 +145,7 @@ class MessageCoordinationDelegate(
         if (nonFatalErrorCollectorJob?.isActive == true) return
         nonFatalErrorCollectorJob = coroutineScope.launch {
             messageProcessingDelegate.nonFatalErrorEvent.collect { errorMessage ->
-                OKToast.error(context, errorMessage).show()
+                OKToast.requestError(context, errorMessage).show()
             }
         }
     }
@@ -880,7 +880,7 @@ class MessageCoordinationDelegate(
         }
         if (configurationError != null) {
             // 在消费草稿、附件和启动总结前返回，让配置修正后可以直接重发。
-            uiStateDelegate.showErrorMessage(configurationError)
+            OKToast.requestError(context, configurationError).show()
             return
         }
         val chatContextSettings =

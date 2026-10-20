@@ -15,7 +15,7 @@ import android.widget.TextView
 import com.ai.assistance.operit.R
 
 /** 原生轻量提示卡片可附着 Activity 或已有悬浮窗口，不依赖 Compose 生命周期所有者。 */
-internal class OKToastView(context: Context, kind: OKToast.Kind, message: String, appearance: OKToast.Appearance, maxContentHeight: Int) : LinearLayout(context) {
+internal class OKToastView(context: Context, kind: OKToast.Kind, message: String, appearance: OKToast.Appearance, maxContentHeight: Int, isRequestError: Boolean) : LinearLayout(context) {
     init {
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt()
@@ -48,8 +48,8 @@ internal class OKToastView(context: Context, kind: OKToast.Kind, message: String
             textSize = 14f
             setTextColor(appearance.text)
             contentDescription = "$statusLabel：$message"
-            gravity = Gravity.CENTER
-            textAlignment = TEXT_ALIGNMENT_CENTER
+            gravity = if (isRequestError) Gravity.START else Gravity.CENTER
+            textAlignment = if (isRequestError) TEXT_ALIGNMENT_VIEW_START else TEXT_ALIGNMENT_CENTER
             includeFontPadding = false
         }
         val scroller = object : ScrollView(context) {
@@ -60,7 +60,9 @@ internal class OKToastView(context: Context, kind: OKToast.Kind, message: String
             isFillViewport = false
             addView(text, FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
         }
-        addView(scroller, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        val textLayout = if (isRequestError) LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
+            else LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+        addView(scroller, textLayout)
     }
 }
 

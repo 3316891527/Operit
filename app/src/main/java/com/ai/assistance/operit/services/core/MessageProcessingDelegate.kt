@@ -1964,8 +1964,9 @@ class MessageProcessingDelegate(
         val error = context.getString(R.string.message_send_failed, message)
         val state = EnhancedInputProcessingState.Error(error)
         setChatInputProcessingState(chatId, state)
-        // 每个请求边界只展示一次；流收尾仍保存已有部分输出并解除加载状态。
-        withContext(Dispatchers.Main) { showErrorMessage(error) }
+        // 请求失败与 HTTP 重试共用上方提示通道，不再触发需要确认的模态对话框。
+        // 每个请求边界只发布一次；流收尾继续保存部分输出并解除加载状态。
+        _nonFatalErrorEvent.emit(error)
         return state
     }
     private suspend fun keepRequestUiAlive(chatId: String?, turnId: Long, error: String) {

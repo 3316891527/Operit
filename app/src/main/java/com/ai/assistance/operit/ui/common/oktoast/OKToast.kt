@@ -24,6 +24,7 @@ object OKToast {
     const val LENGTH_SHORT = 0
     const val LENGTH_LONG = 1
     enum class Kind { Info, Success, Warning, Error }
+    internal enum class Placement { Bottom, Top }
     data class Appearance(val dark: Boolean, val surface: Int, val text: Int)
     private var appearance = Appearance(false, android.graphics.Color.WHITE, android.graphics.Color.BLACK)
 
@@ -31,7 +32,7 @@ object OKToast {
         appearance = Appearance(dark, surface, text)
     }
 
-    class Notice internal constructor(internal val message: String, internal val kind: Kind, internal val duration: Int) {
+    class Notice internal constructor(internal val message: String, internal val kind: Kind, internal val duration: Int, internal val placement: Placement = Placement.Bottom) {
         fun show() { main.post { enqueue(this) } }
     }
 
@@ -43,6 +44,8 @@ object OKToast {
     fun warning(context: Context, @StringRes text: Int, duration: Int = LENGTH_SHORT) = warning(context, context.getText(text), duration)
     fun error(context: Context, text: CharSequence, duration: Int = LENGTH_SHORT) = Notice(text.toString(), Kind.Error, duration)
     fun error(context: Context, @StringRes text: Int, duration: Int = LENGTH_SHORT) = error(context, context.getText(text), duration)
+    /** 请求错误沿用上方卡片，普通操作提示仍在窗口下方显示。 */
+    fun requestError(context: Context, text: CharSequence, duration: Int = LENGTH_LONG) = Notice(text.toString(), Kind.Error, duration, Placement.Top)
     fun typed(context: Context, text: CharSequence, kind: Kind, duration: Int = LENGTH_SHORT) = Notice(text.toString(), kind, duration)
 
     private val main = Handler(Looper.getMainLooper())
@@ -50,6 +53,7 @@ object OKToast {
     private var activityHost: WeakReference<View>? = null
     private val windowHosts = mutableListOf<WeakReference<View>>()
     private var popup: PopupWindow? = null
+    private var popupPlacement = Placement.Bottom
     private var lastMessage = ""
     private var lastKind = Kind.Info
     private var lastAt = 0L
@@ -132,14 +136,19 @@ object OKToast {
         // 按当前窗口可见区域定位，键盘、分屏与悬浮窗口都使用各自的可用范围。
         val maxWidth = (bounds.width() * 0.9f).toInt().coerceAtLeast(1)
         val maxHeight = (bounds.height() * 0.25f).toInt().coerceAtLeast(1)
-        val card = OKToastView(context, notice.kind, notice.message, appearance, maxHeight)
+        val isRequestError = notice.placement == Placement.Top
+        val card = OKToastView(context, notice.kind, notice.message, appearance, maxHeight, isRequestError)
         card.measure(
-            View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(maxWidth, if (isRequestError) View.MeasureSpec.EXACTLY else View.MeasureSpec.AT_MOST),
             View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST),
         )
         val x = bounds.centerX() - card.measuredWidth / 2
-        val y = (bounds.top + bounds.height() * 0.9f - card.measuredHeight / 2f).toInt()
-            .coerceIn(bounds.top, (bounds.bottom - card.measuredHeight).coerceAtLeast(bounds.top))
+        val targetY = if (isRequestError) {
+            bounds.top + bounds.height() * 0.08f
+        } else {
+            bounds.top + bounds.height() * 0.9f - card.measuredHeight / 2f
+        }
+        val y = targetY.toInt().coerceIn(bounds.top, (bounds.bottom - card.measuredHeight).coerceAtLeast(bounds.top))
         val window = PopupWindow(card, card.measuredWidth, card.measuredHeight, false).apply {
             setIsLaidOutInScreen(true)
             isTouchable = true
@@ -157,6 +166,7 @@ object OKToast {
                 }
             }
         }
+        popupPlacement = notice.placement
         popup = window
         try {
             window.showAtLocation(anchor, Gravity.TOP or Gravity.LEFT, x, y)
@@ -169,7 +179,7 @@ object OKToast {
         card.announceForAccessibility(card.contentDescription)
         if (ValueAnimator.areAnimatorsEnabled()) {
             card.alpha = 0f
-            card.translationY = 8 * density
+            card.translationY = (if (isRequestError) -8 else 8) * density
             card.animate().alpha(1f).translationY(0f).setDuration(180).start()
         }
         val readingTime = (2200 + notice.message.length * 35).coerceIn(2800, 10000)
@@ -187,7 +197,7 @@ object OKToast {
         val card = window.contentView
         card.animate().cancel()
         if (animate && ValueAnimator.areAnimatorsEnabled() && card.isAttachedToWindow) {
-            card.animate().alpha(0f).translationY(6 * card.resources.displayMetrics.density).setDuration(140)
+            card.animate().alpha(0f).translationY((if (popupPlacement == Placement.Top) -6 else 6) * card.resources.displayMetrics.density).setDuration(140)
                 .withEndAction { if (popup === window) window.dismiss() }.start()
         } else {
             popup = null
