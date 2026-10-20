@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
@@ -175,7 +176,7 @@ fun UnifiedMarketDetailEntryScreen(
 
     errorMessage?.let { error ->
         LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            OKToast.error(context, error, OKToast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }

@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.codex
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -75,10 +76,10 @@ fun CodexLoginDialog(
             }
             isCompleting = true
             val state = coordinator.completeLogin(activeSession, callbackUri)
-            Toast.makeText(
+            OKToast.success(
                 context,
                 context.getString(R.string.codex_login_success),
-                Toast.LENGTH_LONG,
+                OKToast.LENGTH_LONG,
             ).show()
             onLoginSuccess?.invoke(state)
             onDismissRequest()
@@ -144,10 +145,10 @@ fun CodexLoginDialog(
 }
 
 private fun showLoginFailure(context: Context, error: Throwable) {
-    Toast.makeText(
+    OKToast.error(
         context,
         context.getString(R.string.codex_login_failed, error.message.orEmpty()),
-        Toast.LENGTH_LONG,
+        OKToast.LENGTH_LONG,
     ).show()
 }
 

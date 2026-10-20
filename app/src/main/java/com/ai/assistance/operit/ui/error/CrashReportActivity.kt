@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.error
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -13,7 +15,6 @@ import android.os.Environment
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.CrashRecoveryState
 import com.ai.assistance.operit.util.ThrowableTextFormatter
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -252,7 +253,7 @@ private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText("error_stack_trace", text)
     clipboard.setPrimaryClip(clip)
-    Toast.makeText(context, R.string.crash_report_copy_success, Toast.LENGTH_SHORT).show()
+    OKToast.success(context, R.string.crash_report_copy_success, OKToast.LENGTH_SHORT).show()
 }
 
 private fun exportToFile(context: Context, text: String) {
@@ -270,11 +271,11 @@ private fun exportToFile(context: Context, text: String) {
             it.write(text.toByteArray(StandardCharsets.UTF_8))
         }
         val successMsg = context.getString(R.string.crash_report_export_success, file.absolutePath)
-        Toast.makeText(context, successMsg, Toast.LENGTH_LONG).show()
+        OKToast.success(context, successMsg, OKToast.LENGTH_LONG).show()
 
     } catch (e: Exception) {
         val errorMsg = context.getString(R.string.crash_report_export_failed, e.localizedMessage)
-        Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+        OKToast.error(context, errorMsg, OKToast.LENGTH_LONG).show()
         AppLogger.e("CrashReportActivity", "Failed to export crash report", e)
     }
 }

@@ -228,6 +228,11 @@ fun DrawerContent(
             onOpenCharacterSettings = { handleScreenSelection(Screen.ModelPromptsSettings) },
             onCloseSidebar = closeSidebar,
             onRunChatAction = { action -> afterDrawerCloses { runMainChatAction(action) } },
+            onCreateChat = { action ->
+                dismissSidebarInput()
+                runMainChatAction(action)
+                closeSidebar()
+            },
             onSelectCharacter = { target -> afterDrawerCloses {
                 runMainChatAction {
                     mainChatViewModel.showChatPage()

@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.components.speech
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -91,7 +92,7 @@ internal fun PersonalWakeEnrollmentDialog(wakePrefs: WakeWordPreferences, onDism
                             throw error
                         } catch (error: Exception) {
                             AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
-                            Toast.makeText(context, context.getString(R.string.recognition_error, error.message.orEmpty()), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
                         } finally {
                             recordingStep = 0
                         }
@@ -107,7 +108,7 @@ internal fun PersonalWakeEnrollmentDialog(wakePrefs: WakeWordPreferences, onDism
                             throw error
                         } catch (error: Exception) {
                             AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
-                            Toast.makeText(context, context.getString(R.string.recognition_error, error.message.orEmpty()), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
                         } finally {
                             recordingStep = 0
                         }
@@ -123,7 +124,7 @@ internal fun PersonalWakeEnrollmentDialog(wakePrefs: WakeWordPreferences, onDism
                             throw error
                         } catch (error: Exception) {
                             AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
-                            Toast.makeText(context, context.getString(R.string.recognition_error, error.message.orEmpty()), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
                         } finally {
                             recordingStep = 0
                         }
@@ -149,7 +150,7 @@ internal fun PersonalWakeEnrollmentDialog(wakePrefs: WakeWordPreferences, onDism
                             throw error
                         } catch (error: Exception) {
                             AppLogger.e("PersonalWakeEnrollment", "保存个人唤醒模板失败", error)
-                            Toast.makeText(context, context.getString(R.string.recognition_error, error.message.orEmpty()), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
                         } finally {
                             saving = false
                         }

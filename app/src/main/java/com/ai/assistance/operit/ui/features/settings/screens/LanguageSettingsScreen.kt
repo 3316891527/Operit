@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.LocaleList
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -111,10 +112,10 @@ fun LanguageSettingsScreen(
                                     LocaleUtils.setAppLanguage(context, language.code)
                                     
                                     // 显示切换语言的提示
-                                    Toast.makeText(
+                                    OKToast.success(
                                         context, 
                                         context.getString(R.string.language_changed), 
-                                        Toast.LENGTH_SHORT
+                                        OKToast.LENGTH_SHORT
                                     ).show()
                                     
                                     // 延迟重启应用以确保语言设置完全生效

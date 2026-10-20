@@ -8140,4 +8140,10 @@
     <string name="attachment_image_duplicate">이미지 %1$s이(가) 이미 첨부되어 있습니다</string>
     <string name="logcat_write_enabled">로그 기록</string>
     <string name="logcat_write_enabled_description">끄면 앱 로그 기록을 중지합니다. 매일 자동으로 켜집니다. 기존 로그는 계속 내보낼 수 있습니다.</string>
+    <string name="oktoast_info">안내</string>
+    <string name="oktoast_success">성공</string>
+    <string name="oktoast_warning">경고</string>
+    <string name="oktoast_error">오류</string>
+    <string name="chat_model_configuration_invalid_key">모델 설정이 올바르지 않습니다. 유효한 API 키가 없습니다. 모델 및 매개변수 설정에서 키를 입력하거나 사용 가능한 키 풀을 설정하세요.</string>
+    <string name="chat_model_configuration_missing_model">모델 설정이 올바르지 않습니다. 모델 ID가 비어 있습니다. 모델 및 매개변수 설정에서 유효한 모델을 선택하거나 입력하세요.</string>
 </resources>

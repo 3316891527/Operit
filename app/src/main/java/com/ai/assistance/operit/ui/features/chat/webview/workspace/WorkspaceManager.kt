@@ -1,8 +1,9 @@
 package com.ai.assistance.operit.ui.features.chat.webview.workspace
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.annotation.SuppressLint
 import android.net.Uri
-import android.widget.Toast
 import com.ai.assistance.operit.util.AppLogger
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -598,7 +599,7 @@ fun WorkspaceManager(
                 throw error
             } catch (error: Exception) {
                 AppLogger.w("WorkspaceMarkdown", "定位文档链接失败", error)
-                Toast.makeText(context, error.message ?: context.getString(R.string.file_error_open_failed), Toast.LENGTH_SHORT).show()
+                OKToast.error(context, error.message ?: context.getString(R.string.file_error_open_failed), OKToast.LENGTH_SHORT).show()
             }
         }
     }
@@ -697,7 +698,7 @@ fun WorkspaceManager(
                                     onClick = {
                                         showWorkspaceMenu = false
                                         if (unsavedFiles.isNotEmpty()) {
-                                            actualViewModel.showToast(context.getString(R.string.workspace_rename_save_first))
+                                            OKToast.info(context, context.getString(R.string.workspace_rename_save_first)).show()
                                         } else {
                                             renameWorkspaceInput = File(workspacePath).name
                                             renameWorkspaceError = null
@@ -1215,12 +1216,12 @@ fun WorkspaceManager(
                                         newWorkspaceName = renameWorkspaceInput
                                     )
                                 }.onSuccess { result ->
-                                    actualViewModel.showToast(
+                                    OKToast.success(context,
                                         context.getString(
                                             R.string.workspace_rename_success,
                                             result.workspaceName
                                         )
-                                    )
+                                    ).show()
                                     showRenameWorkspaceDialog = false
                                     renameWorkspaceError = null
                                 }.onFailure { error ->
@@ -1302,7 +1303,7 @@ fun WorkspaceManager(
                 },
                 onCopyOutput = { output ->
                     clipboardManager.setText(AnnotatedString(output))
-                    actualViewModel.showToast(context.getString(R.string.copied_to_clipboard))
+                    OKToast.success(context, context.getString(R.string.copied_to_clipboard)).show()
                 }
             )
         }

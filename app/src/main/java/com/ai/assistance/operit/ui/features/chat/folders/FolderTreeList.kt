@@ -3,6 +3,8 @@ package com.ai.assistance.operit.ui.features.chat.folders
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
 
+import androidx.compose.animation.core.tween
+import com.ai.assistance.operit.ui.features.chat.motion.DissolvingChatTitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -62,6 +64,7 @@ internal fun FolderTreeList(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    deletionProgress: Map<String, Float> = emptyMap(),
 ) {
     var dragSource by remember { mutableStateOf<ChatFolderRow?>(null) }
     var pointer by remember { mutableStateOf(Offset.Zero) }
@@ -167,6 +170,7 @@ internal fun FolderTreeList(
                 items(rows, key = { it.key }, contentType = { it::class }) { row ->
                     val guideColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     val highlighted = dragSource != null && target?.key == row.key && drop != null
+                    val deleting = row is ChatFolderRow.Chat && row.history.id in deletionProgress
                     val selected = row is ChatFolderRow.Chat && row.history.id == currentId
                     val rowColor = when {
                         highlighted && zone == FolderDropZone.INSIDE -> MaterialTheme.colorScheme.secondaryContainer
@@ -179,7 +183,7 @@ internal fun FolderTreeList(
                         selected -> selectedContentColor
                         else -> contentColor
                     }
-                    Column(Modifier.fillMaxWidth().drawBehind {
+                    Column(Modifier.animateItem(fadeInSpec = null, placementSpec = tween(260), fadeOutSpec = tween(160)).fillMaxWidth().drawBehind {
                         if (row.depth > 0) {
                             val x = (8 + (row.depth.coerceAtMost(4) - 1) * 12 + 6).dp.toPx()
                             drawLine(guideColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
@@ -206,7 +210,7 @@ internal fun FolderTreeList(
                                 }
                                 // 点击区不包含操作按钮和拖动柄，避免拖动时选中对话或触发菜单。
                                 Row(
-                                    modifier = Modifier.weight(1f).heightIn(min = 36.dp).clickable(role = Role.Button) {
+                                    modifier = Modifier.weight(1f).heightIn(min = 36.dp).clickable(enabled = !deleting, role = Role.Button) {
                                         when (row) {
                                             is ChatFolderRow.Chat -> onSelectChat(row.history.id)
                                             is ChatFolderRow.Folder -> onToggleFolder(row)
@@ -227,9 +231,11 @@ internal fun FolderTreeList(
                                         Spacer(Modifier.width(6.dp))
                                     }
                                     Column(Modifier.weight(1f)) {
-                                        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                        if (row is ChatFolderRow.Chat) {
+                                            DissolvingChatTitle(title, deletionProgress[row.history.id] ?: 0f, rowContentColor)
+                                        } else Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                             style = MaterialTheme.typography.bodyMedium, color = rowContentColor,
-                                            fontWeight = if (row is ChatFolderRow.Chat) FontWeight.Normal else FontWeight.Medium)
+                                            fontWeight = FontWeight.Medium)
                                         if (row.depth > 4) {
                                             val parentId = when (row) {
                                                 is ChatFolderRow.Folder -> row.folder.parentId
@@ -260,9 +266,9 @@ internal fun FolderTreeList(
                                             is ChatFolderRow.Folder -> onFolderMenu(row)
                                             is ChatFolderRow.Binding -> onBindingCreate(row)
                                         }
-                                    }, modifier = Modifier.size(30.dp),
+                                    }, enabled = !deleting, modifier = Modifier.size(30.dp),
                                 ) { Icon(Icons.Default.MoreVert, stringResource(R.string.folder_actions), Modifier.size(16.dp), tint = rowContentColor.copy(alpha = 0.75f)) }
-                                if (row.node() != null && draggingEnabled) {
+                                if (row.node() != null && draggingEnabled && !deleting) {
                                     var coordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
                                     val description = stringResource(R.string.drag_item, title)
                                     Box(
@@ -285,7 +291,7 @@ internal fun FolderTreeList(
                                 }
                             }
                         }
-                        if (row is ChatFolderRow.Chat) {
+                        if (row is ChatFolderRow.Chat && !deleting) {
                             val edit = SwipeAction(onSwipe = { onEditChat(row.history) }, background = MaterialTheme.colorScheme.primary,
                                 icon = { Icon(Icons.Default.Edit, stringResource(R.string.edit_title), Modifier.padding(12.dp), tint = Color.White) })
                             val delete = SwipeAction(onSwipe = { onDeleteChat(row.history) }, background = MaterialTheme.colorScheme.error,

@@ -3,15 +3,9 @@ package com.ai.assistance.operit.ui.features.chat.viewmodel
 import android.content.Intent
 import com.ai.assistance.operit.data.model.AiReference
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
-import java.util.ArrayDeque
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
-data class ChatToastEvent(
-    val id: Long,
-    val message: String,
-)
 
 /** 委托类，负责管理UI状态相关功能 */
 class UiStateDelegate {
@@ -21,12 +15,6 @@ class UiStateDelegate {
 
     private val _popupMessage = MutableStateFlow<String?>(null)
     val popupMessage: StateFlow<String?> = _popupMessage.asStateFlow()
-
-    private val toastLock = Any()
-    private val toastQueue = ArrayDeque<ChatToastEvent>()
-    private var nextToastEventId = 0L
-    private val _toastEvent = MutableStateFlow<ChatToastEvent?>(null)
-    val toastEvent: StateFlow<ChatToastEvent?> = _toastEvent.asStateFlow()
 
     private val _masterPermissionLevel = MutableStateFlow(PermissionLevel.ASK)
     val masterPermissionLevel: StateFlow<PermissionLevel> = _masterPermissionLevel.asStateFlow()
@@ -53,29 +41,6 @@ class UiStateDelegate {
     /** 清除弹出消息 */
     fun clearPopupMessage() {
         _popupMessage.value = null
-    }
-
-    /** 显示Toast消息 */
-    fun showToast(message: String) {
-        synchronized(toastLock) {
-            val event = ChatToastEvent(id = ++nextToastEventId, message = message)
-            // Preserve every user-visible notice; a single String StateFlow coalesces same-text events.
-            if (_toastEvent.value == null) {
-                _toastEvent.value = event
-            } else {
-                toastQueue.addLast(event)
-            }
-        }
-    }
-
-    /** 清除Toast消息 */
-    fun clearToastEvent(eventId: Long) {
-        synchronized(toastLock) {
-            if (_toastEvent.value?.id != eventId) {
-                return
-            }
-            _toastEvent.value = if (toastQueue.isEmpty()) null else toastQueue.removeFirst()
-        }
     }
 
     /** 更新主权限级别 */

@@ -1404,7 +1404,8 @@ class MessageProcessingDelegate(
                             if (!streamCollectionResult.isCompleted) {
                                 streamCollectionResult.complete(t)
                             }
-                            throw t
+                            // 普通失败由主请求统一收尾，独立收集协程不再重复抛出。
+                            if (t is kotlinx.coroutines.CancellationException || t !is Exception) throw t
                         } finally {
                             if (!streamCollectionResult.isCompleted) {
                                 streamCollectionResult.complete(null)
@@ -1413,14 +1414,25 @@ class MessageProcessingDelegate(
                     }
 
                 val streamCollectionError = streamCollectionResult.await()
-                if (streamCollectionError != null) {
-                    throw streamCollectionError
+                val terminalFailure = streamCollectionError ?: sharedCharStream.completionCause
+                if (terminalFailure != null) {
+                    if (terminalFailure is kotlinx.coroutines.CancellationException || terminalFailure !is Exception) {
+                        throw terminalFailure
+                    }
+                    // 共享流已完成异常传递；普通请求错误直接进入终态，不在大型发送协程中再次抛出。
+                    shouldFinalizeInterruptedMessage = true
+                    shouldNotifyTurnComplete = false
+                    finalInputStateAfterSend = reportRequestFailure(chatId, terminalFailure.message.orEmpty(), terminalFailure)
+                    return@launch
                 }
-                // 共享流只由主请求读取终止异常，旁观订阅者继续正常结束。
-                sharedCharStream.completionCause?.let { throw it }
                 // 直接检查服务终态，避免状态监听尚未调度时把失败标成完成。
                 val requestError = service.inputProcessingState.value as? EnhancedInputProcessingState.Error
-                if (requestError != null) throw java.io.IOException(requestError.message)
+                if (requestError != null) {
+                    shouldFinalizeInterruptedMessage = true
+                    shouldNotifyTurnComplete = false
+                    finalInputStateAfterSend = reportRequestFailure(chatId, requestError.message)
+                    return@launch
+                }
                 logMessageTiming(
                     stage = "delegate.sharedStreamComplete",
                     startTimeMs = responseStartTime,
@@ -1501,14 +1513,9 @@ class MessageProcessingDelegate(
                     shouldNotifyTurnComplete = false
                     cancellationToPropagate = e
                 } else {
-                    AppLogger.e(TAG, "发送消息时出错", e)
                     shouldFinalizeInterruptedMessage = true
                     shouldNotifyTurnComplete = false
-                    val error = context.getString(R.string.message_send_failed, e.message)
-                    finalInputStateAfterSend = EnhancedInputProcessingState.Error(error)
-                    setChatInputProcessingState(chatId, requireNotNull(finalInputStateAfterSend))
-                    // 状态监听仅同步状态，终止错误只在当前请求边界提示一次。
-                    withContext(Dispatchers.Main) { showErrorMessage(error) }
+                    finalInputStateAfterSend = reportRequestFailure(chatId, e.message.orEmpty(), e)
                 }
             } finally {
                 val finalizeMessageStartTime = messageTimingNow()
@@ -1947,6 +1954,21 @@ class MessageProcessingDelegate(
         return false
     }
 
+    private suspend fun reportRequestFailure(
+        chatId: String,
+        message: String,
+        cause: Exception? = null,
+    ): EnhancedInputProcessingState.Error {
+        if (cause == null) AppLogger.e(TAG, "发送消息时出错: $message")
+        else AppLogger.e(TAG, "发送消息时出错", cause)
+        val error = context.getString(R.string.message_send_failed, message)
+        val state = EnhancedInputProcessingState.Error(error)
+        setChatInputProcessingState(chatId, state)
+        // 请求失败与 HTTP 重试共用上方提示通道，不再触发需要确认的模态对话框。
+        // 每个请求边界只发布一次；流收尾继续保存部分输出并解除加载状态。
+        _nonFatalErrorEvent.emit(error)
+        return state
+    }
     private suspend fun keepRequestUiAlive(chatId: String?, turnId: Long, error: String) {
         val runtime = runtimeFor(chatId)
         if (runtime.activeTurnId != turnId ||

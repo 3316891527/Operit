@@ -36,7 +36,7 @@ internal object DistributionReleaseResolver {
         }
 
         val body = latest.body.orEmpty().trim()
-        // 发布流程的 JSON 正文同时保存补丁链索引和展示文案；手动完整包发布可使用普通正文。
+        // 已发行旧版本将说明嵌入 JSON；新发行版正文直接使用 Markdown，元数据保存为附件。
         val notes = if (body.startsWith("{")) JSONObject(body).getString("releaseNotes") else body
         val patch = latest.assets.firstOrNull {
             it.name.startsWith("apkrawpatch_") && it.name.endsWith(".zip")

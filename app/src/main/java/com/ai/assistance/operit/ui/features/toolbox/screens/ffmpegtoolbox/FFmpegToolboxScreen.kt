@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.toolbox.screens.ffmpegtoolbox
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -119,7 +120,7 @@ fun FFmpegToolboxScreen(navController: NavController) {
                 Button(
                     onClick = {
                         if (ffmpegCommand.isEmpty()) {
-                            Toast.makeText(context, context.getString(R.string.please_input_command), Toast.LENGTH_SHORT).show()
+                            OKToast.warning(context, context.getString(R.string.please_input_command), OKToast.LENGTH_SHORT).show()
                             return@Button
                         }
 

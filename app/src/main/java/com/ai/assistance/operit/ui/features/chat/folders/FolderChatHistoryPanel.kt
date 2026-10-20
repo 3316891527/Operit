@@ -52,7 +52,7 @@ private data class FolderEditRequest(
 @Composable
 fun FolderChatHistoryPanel(
     modifier: Modifier, onNewChat: (String?, String?, String?) -> Unit,
-    onSelectChat: (String) -> Unit, onDeleteChat: (String) -> Unit,
+    onSelectChat: (String) -> Unit, onDeleteChat: (String, Boolean) -> Unit,
     onUpdateChatTitle: (String, String) -> Unit, onSummarizeChatTitle: (String) -> Unit,
     onUpdateChatBinding: (String, String?, String?) -> Unit,
     chatHistories: List<ChatHistory>, currentId: String?, activeStreamingChatIds: Set<String>,
@@ -62,6 +62,7 @@ fun FolderChatHistoryPanel(
     autoSwitchChatOnCharacterSelect: Boolean, onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
     onQuickScrollInteractionChange: (Boolean) -> Unit, activePrompt: ActivePrompt,
     embeddedInSidebar: Boolean = false,
+    deletionProgress: Map<String, Float> = emptyMap(),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -115,7 +116,6 @@ fun FolderChatHistoryPanel(
     var chatMenu by remember { mutableStateOf<ChatHistory?>(null) }
     var chatEdit by remember { mutableStateOf<ChatHistory?>(null) }
     var chatDelete by remember { mutableStateOf<ChatHistory?>(null) }
-    var moveNode by remember { mutableStateOf<ChatFolderNode?>(null) }
     val listState = lazyListState ?: rememberLazyListState()
     LaunchedEffect(showArchived) { listState.scrollToItem(0) }
     fun perform(onSuccess: () -> Unit = {}, operation: suspend () -> Unit) {
@@ -220,42 +220,22 @@ fun FolderChatHistoryPanel(
         }
     }
     fun promptDelete(chat: ChatHistory) {
-        if (!chat.locked) chatDelete = chat
-    }
-    fun moveChatBy(chat: ChatHistory, delta: Int) {
-        val peers = histories.filter {
-            it.folderId == chat.folderId && it.pinned == chat.pinned &&
-                (historyDisplayMode != ChatHistoryDisplayMode.BY_CHARACTER_CARD ||
-                    (it.characterCardName == chat.characterCardName && it.characterGroupId == chat.characterGroupId))
-        }.sortedWith(compareBy<ChatHistory> { it.displayOrder }.thenBy { it.id })
-        val index = peers.indexOfFirst { it.id == chat.id }
-        val target = peers.getOrNull(index + delta)
-        if (index >= 0 && target != null) move(ChatFolderMove(
-            ChatFolderNode.Chat(chat.id), chat.folderId, ChatFolderNode.Chat(target.id), afterAnchor = delta > 0,
-        ))
-        chatMenu = null
+        if (!chat.locked && chat.id !in deletionProgress) chatDelete = chat
     }
     Column(modifier) {
         if (embeddedInSidebar) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Button(onClick = { onNewChat(createBinding.characterCardName, createBinding.characterGroupId,
-                    histories.firstOrNull { it.id == currentId }?.folderId) },
-                    modifier = Modifier.weight(1f).height(36.dp), shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    colors = ButtonDefaults.buttonColors(contentColor = getTextColorForBackground(MaterialTheme.colorScheme.primary))) {
-                    Icon(Icons.Default.Add, null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.new_chat), style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                IconButton(onClick = {
-                    folderEdit = FolderEditRequest(binding = createBinding,
-                        scope = if (historyDisplayMode == ChatHistoryDisplayMode.BY_FOLDER) "folders" else scope(createBinding))
-                }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.CreateNewFolder, stringResource(R.string.folder_create),
-                        tint = contentColor, modifier = Modifier.size(18.dp))
-                }
+                HistoryCreateCapsule(
+                    onNewChat = { onNewChat(createBinding.characterCardName, createBinding.characterGroupId,
+                        histories.firstOrNull { it.id == currentId }?.folderId) },
+                    onNewFolder = {
+                        folderEdit = FolderEditRequest(binding = createBinding,
+                            scope = if (historyDisplayMode == ChatHistoryDisplayMode.BY_FOLDER) "folders" else scope(createBinding))
+                    }, modifier = Modifier.weight(1f),
+                )
+                // 保留原文件夹按钮的槽位，胶囊和右侧操作均不扩宽、不移位。
+                Spacer(Modifier.size(32.dp))
                 IconButton(onClick = {
                     showSearch = !showSearch
                     requestSearchFocus = showSearch
@@ -316,15 +296,14 @@ fun FolderChatHistoryPanel(
                 }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalButton(onClick = { onNewChat(createBinding.characterCardName, createBinding.characterGroupId,
-                    histories.firstOrNull { it.id == currentId }?.folderId) }, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Add, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.new_chat))
-                }
-                IconButton(onClick = { folderEdit = FolderEditRequest(binding = createBinding, scope = if (historyDisplayMode == ChatHistoryDisplayMode.BY_FOLDER) "folders" else scope(createBinding)) }) {
-                    Icon(Icons.Default.CreateNewFolder, stringResource(R.string.folder_create), tint = MaterialTheme.colorScheme.primary)
-                }
+                HistoryCreateCapsule(
+                    onNewChat = { onNewChat(createBinding.characterCardName, createBinding.characterGroupId,
+                        histories.firstOrNull { it.id == currentId }?.folderId) },
+                    onNewFolder = { folderEdit = FolderEditRequest(binding = createBinding,
+                        scope = if (historyDisplayMode == ChatHistoryDisplayMode.BY_FOLDER) "folders" else scope(createBinding)) },
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(Modifier.width(48.dp))
             }
             if (showSearch) OutlinedTextField(searchQuery, onSearchQueryChange, singleLine = true,
                 placeholder = { Text(stringResource(R.string.search_chat_history_hint)) },
@@ -361,7 +340,8 @@ fun FolderChatHistoryPanel(
             }, onToggleBinding = { key -> if (searchQuery.isBlank()) collapsedBindings = if (key in collapsedBindings) collapsedBindings - key else collapsedBindings + key },
             onBindingCreate = { bindingMenu = it }, onHoverExpand = { collapsed = collapsed - it.key },
             onMove = ::move, onInteractionChange = onQuickScrollInteractionChange, modifier = Modifier.weight(1f),
-            contentColor = contentColor, selectedContainerColor = selectedContainerColor, selectedContentColor = selectedContentColor)
+            contentColor = contentColor, selectedContainerColor = selectedContainerColor, selectedContentColor = selectedContentColor,
+            deletionProgress = deletionProgress)
     }
     folderEdit?.let { request ->
         FolderNameDialog(
@@ -383,7 +363,6 @@ fun FolderChatHistoryPanel(
             HistoryAction(stringResource(R.string.new_chat), Icons.Default.Add) { onNewChat(binding.characterCardName, binding.characterGroupId, row.folder.id); folderMenu = null },
             HistoryAction(stringResource(R.string.folder_create_child), Icons.Default.CreateNewFolder) { folderEdit = FolderEditRequest(parentId = row.folder.id, binding = binding, scope = row.scope); folderMenu = null },
             HistoryAction(stringResource(R.string.folder_rename), Icons.Default.Edit) { folderEdit = FolderEditRequest(row.folder, row.folder.parentId, binding, row.scope); folderMenu = null },
-            HistoryAction(stringResource(R.string.folder_move_to), Icons.Default.Folder) { moveNode = ChatFolderNode.Folder(row.folder.id); folderMenu = null },
             HistoryAction(stringResource(R.string.folder_delete), Icons.Default.Delete) { folderDelete = row.folder; folderMenu = null },
         )) { folderMenu = null }
     }
@@ -399,7 +378,6 @@ fun FolderChatHistoryPanel(
             confirmButton = { TextButton(onClick = { perform { repository.deleteKeepingContents(folder.id) }; folderDelete = null }) { Text(stringResource(R.string.delete)) } },
             dismissButton = { TextButton(onClick = { folderDelete = null }) { Text(stringResource(R.string.cancel)) } })
     }
-    moveNode?.let { node -> FolderMoveDialog(node, foldersById, { moveNode = null }) { parent -> move(ChatFolderMove(node, parent)); moveNode = null } }
     chatMenu?.let { selected ->
         val chat = histories.firstOrNull { it.id == selected.id }
         if (chat != null) HistoryActionsDialog(chat.title, listOf(
@@ -409,9 +387,6 @@ fun FolderChatHistoryPanel(
                 stringResource(if (chat.archived) R.string.chat_unarchive else R.string.chat_archive),
                 if (chat.archived) Icons.Default.Restore else Icons.Default.Archive,
             ) { perform { manager.updateChatArchived(chat.id, !chat.archived) }; chatMenu = null },
-            HistoryAction(stringResource(R.string.folder_move_to), Icons.Default.Folder) { moveNode = ChatFolderNode.Chat(chat.id); chatMenu = null },
-            HistoryAction(stringResource(R.string.move_up), Icons.Default.KeyboardArrowUp) { moveChatBy(chat, -1) },
-            HistoryAction(stringResource(R.string.move_down), Icons.Default.KeyboardArrowDown) { moveChatBy(chat, 1) },
             HistoryAction(stringResource(if (chat.pinned) R.string.unpin_chat else R.string.pin_chat), Icons.Default.PushPin) { perform { manager.updateChatPinned(chat.id, !chat.pinned) }; chatMenu = null },
             HistoryAction(stringResource(if (chat.locked) R.string.unlock_chat else R.string.lock_chat), Icons.Default.Lock) { perform { manager.updateChatLocked(chat.id, !chat.locked) }; chatMenu = null },
             HistoryAction(stringResource(R.string.delete), Icons.Default.Delete, enabled = !chat.locked) { promptDelete(chat); chatMenu = null },
@@ -424,8 +399,8 @@ fun FolderChatHistoryPanel(
     } }
     chatDelete?.let { chat -> AlertDialog(onDismissRequest = { chatDelete = null },
         title = { Text(stringResource(R.string.confirm_delete_chat)) }, text = { Text(stringResource(R.string.delete_chat_confirmation, chat.title)) },
-        confirmButton = { TextButton(onClick = { onDeleteChat(chat.id); chatDelete = null },
-            enabled = histories.any { it.id == chat.id && !it.locked }) { Text(stringResource(R.string.confirm_delete_action)) } },
+        confirmButton = { TextButton(onClick = { onDeleteChat(chat.id, android.animation.ValueAnimator.areAnimatorsEnabled()); chatDelete = null },
+            enabled = chat.id !in deletionProgress && histories.any { it.id == chat.id && !it.locked }) { Text(stringResource(R.string.confirm_delete_action)) } },
         dismissButton = { TextButton(onClick = { chatDelete = null }) { Text(stringResource(R.string.cancel)) } }) }
     if (showSettings) FolderHistorySettingsDialog(historyDisplayMode, onDisplayModeChange, sort, { sort = it },
         autoSwitchCharacterCard, onAutoSwitchCharacterCardChange, autoSwitchChatOnCharacterSelect, onAutoSwitchChatOnCharacterSelectChange,

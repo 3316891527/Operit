@@ -1,6 +1,7 @@
 """验证独立发行的版本选择、APK 身份和补丁字节还原。"""
 
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -79,6 +80,49 @@ class DistributionPublishingTest(unittest.TestCase):
             rebuilt = root / "rebuilt.apk"
             publisher.hotbuild_module("apply_patch").apply_apkraw_patch(base, patch_file, rebuilt, meta)
             self.assertEqual(target.read_bytes(), rebuilt.read_bytes())
+
+    def test_empty_or_json_notes_are_rejected_before_apk_validation(self):
+        arguments = ["publish_release.py", "--apk", "app-kong.apk", "--build-tools", "sdk",
+                     "--repository", publisher.REPOSITORY, "--commit", "a" * 40]
+        for notes in ["", "   ", '{"releaseNotes":"更新"}', '[{"version":"1.12.2+7"}]']:
+            with self.subTest(notes=notes), patch("sys.argv", arguments + ["--notes", notes]):
+                with patch.object(publisher, "inspect_apk") as inspect, self.assertRaises(ValueError):
+                    publisher.main()
+                inspect.assert_not_called()
+
+    def test_markdown_body_is_separate_from_uploaded_patch_metadata(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            apk = root / publisher.APK_NAME
+            apk.write_bytes(b"target apk")
+            patch_file, metadata = root / "apkrawpatch_test.zip", root / "patch_test.json"
+            patch_file.write_bytes(b"patch data")
+            metadata.write_text('{}')
+            output = root / "out"
+            notes = "## 更新\n\n- 四态提示与对话列表动画\n"
+            arguments = ["publish_release.py", "--apk", str(apk), "--build-tools", "sdk",
+                         "--repository", publisher.REPOSITORY, "--commit", "a" * 40,
+                         "--previous-tag", "v1.12.2+6", "--notes", notes, "--output", str(output)]
+            target = {"versionName": "1.12.2+7", "versionCode": 63, "packageName": publisher.PACKAGE_NAME}
+            baseline = {**target, "versionName": "1.12.2+6", "versionCode": 62}
+            patch_summary = {"format": "apkraw-1", "fromPatchIndex": 6, "toPatchIndex": 7,
+                             "patchFile": patch_file.name, "metaFile": metadata.name}
+            with patch("sys.argv", arguments), patch.object(publisher, "inspect_apk", side_effect=[target, baseline]):
+                with patch.object(publisher, "prepare_patch", return_value=(patch_file, metadata, patch_summary)):
+                    with patch.object(publisher, "run", side_effect=[json.dumps([release("1.12.2+6")]), "", "", ""]) as execute:
+                        publisher.main()
+            commands = [call.args for call in execute.call_args_list]
+            create = next(command for command in commands if command[:3] == ("gh", "release", "create"))
+            notes_file = Path(create[create.index("--notes-file") + 1])
+            manifest = output / "distribution-release.json"
+            self.assertEqual(notes, notes_file.read_text())
+            self.assertNotEqual(manifest, notes_file)
+            self.assertEqual(notes, json.loads(manifest.read_text())["releaseNotes"])
+            self.assertEqual(6, json.loads(manifest.read_text())["fromPatchIndex"])
+            self.assertTrue({str(apk), str(patch_file), str(metadata), str(manifest)}.issubset(create))
+            self.assertIn("--draft", create)
+            self.assertEqual(("gh", "release", "edit"), commands[-1][:3])
+            self.assertIn("--draft=false", commands[-1])
 
     def test_cross_base_or_nonincreasing_patch_is_rejected(self):
         for old, new in [("1.12.2+1", "1.12.3+1"), ("1.12.2+2", "1.12.2+2"), ("1.12.2+3", "1.12.2+2")]:

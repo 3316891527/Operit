@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -101,7 +102,7 @@ fun MessageTranslationDialog(
 
     val copyText: (String, Int) -> Unit = { text, messageResId ->
         clipboardManager.setText(AnnotatedString(text))
-        Toast.makeText(context, context.getString(messageResId), Toast.LENGTH_SHORT).show()
+        OKToast.success(context, context.getString(messageResId), OKToast.LENGTH_SHORT).show()
     }
     val translatedText = translationState.translatedText
     val hasTranslation = !translatedText.isNullOrBlank()

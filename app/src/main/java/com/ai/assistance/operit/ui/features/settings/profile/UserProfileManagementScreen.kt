@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.profile
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,7 +63,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
@@ -132,7 +133,7 @@ fun UserProfileManagementScreen(
             repository.initialize()
             preferencesManager.ensureDefaultMemorySpace(context.getString(R.string.default_profile))
         } catch (error: Exception) {
-            Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+            OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
         } finally {
             initialized = true
         }
@@ -146,7 +147,7 @@ fun UserProfileManagementScreen(
                 selectedProfileId = activeProfileId.takeIf { it in profileIds } ?: profileIds.firstOrNull()
             }
         } catch (error: Exception) {
-            Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+            OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
         }
     }
 
@@ -166,7 +167,7 @@ fun UserProfileManagementScreen(
             }
             editorScrollState.scrollTo(0)
         } catch (error: Exception) {
-            Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+            OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
         } finally {
             loadingProfile = false
         }
@@ -191,9 +192,9 @@ fun UserProfileManagementScreen(
             try {
                 repository.save(profileId, markdown)
                 savedMarkdown = markdown
-                Toast.makeText(context, context.getString(R.string.save_successful), Toast.LENGTH_SHORT).show()
+                OKToast.success(context, context.getString(R.string.save_successful), OKToast.LENGTH_SHORT).show()
             } catch (error: Exception) {
-                Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
             } finally {
                 savingDocument = false
             }
@@ -215,7 +216,7 @@ fun UserProfileManagementScreen(
                 profiles = profiles.map { profile ->
                     if (profile.id == previousProfile.id) previousProfile else profile
                 }
-                Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
             } finally {
                 savingPolicy = false
             }
@@ -385,7 +386,7 @@ fun UserProfileManagementScreen(
                                                     try {
                                                         preferencesManager.setActiveMemorySpace(profileId)
                                                     } catch (error: Exception) {
-                                                        Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                                                        OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
                                                     }
                                                 }
                                             }
@@ -701,7 +702,7 @@ fun UserProfileManagementScreen(
                                 showRenameDialog = false
                                 editedName = ""
                             } catch (error: Exception) {
-                                Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                                OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -745,7 +746,7 @@ fun UserProfileManagementScreen(
                                     preferencesManager.deleteMemorySpace(profileId)
                                     showDeleteDialog = false
                                 } catch (error: Exception) {
-                                    Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                                    OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
                                 }
                             }
                         }

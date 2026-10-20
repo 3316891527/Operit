@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.settings.components
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -247,10 +248,10 @@ fun CharacterCardDialog(
             finalToolAccessConfig.hasExternalSelections() &&
             !finalToolAccessConfig.allowedBuiltinTools.contains("use_package")
         ) {
-            Toast.makeText(
+            OKToast.warning(
                 context,
                 context.getString(R.string.character_card_tool_access_requires_use_package),
-                Toast.LENGTH_SHORT
+                OKToast.LENGTH_SHORT
             ).show()
             return null
         }

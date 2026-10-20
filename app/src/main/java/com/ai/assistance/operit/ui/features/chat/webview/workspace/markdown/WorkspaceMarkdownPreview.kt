@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.webview.workspace.markdown
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -54,15 +55,15 @@ internal fun WorkspaceMarkdownPreview(
                             when (val link = resolveWorkspaceMarkdownLink(url, fileInfo.path, fileInfo.environment)) {
                                 is WorkspaceMarkdownLink.File -> onFileLink(link.target)
                                 is WorkspaceMarkdownLink.External -> openMarkdownLink(context, link.url)
-                                WorkspaceMarkdownLink.Invalid -> Toast.makeText(
-                                    context, R.string.markdown_link_not_openable, Toast.LENGTH_SHORT
+                                WorkspaceMarkdownLink.Invalid -> OKToast.error(
+                                    context, R.string.markdown_link_not_openable, OKToast.LENGTH_SHORT
                                 ).show()
                             }
                         } catch (error: CancellationException) {
                             throw error
                         } catch (error: Exception) {
                             AppLogger.w("WorkspaceMarkdown", "处理文档链接失败：$url", error)
-                            Toast.makeText(context, R.string.markdown_link_not_openable, Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, R.string.markdown_link_not_openable, OKToast.LENGTH_SHORT).show()
                         }
                     },
                 )

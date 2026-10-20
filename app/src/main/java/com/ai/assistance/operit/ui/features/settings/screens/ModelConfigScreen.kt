@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.annotation.SuppressLint
 import androidx.compose.animation.*
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -26,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -254,9 +255,9 @@ fun ModelConfigScreen(
         }
     }
 
-    fun showNotification(message: String) {
+    fun showNotification(message: String, kind: OKToast.Kind) {
         if (message.isBlank()) return
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        OKToast.typed(context, message, kind, OKToast.LENGTH_SHORT).show()
     }
 
 
@@ -444,14 +445,14 @@ fun ModelConfigScreen(
                                                     .firstOrNull { it.groupId == selectedGroupId }
                                                     ?.id
                                                     ?: ""
-                                                showNotification(context.getString(R.string.config_deleted))
+                                                showNotification(context.getString(R.string.config_deleted), OKToast.Kind.Success)
                                             } catch (e: Exception) {
                                                 AppLogger.e(
                                                     "ModelConfigScreen",
                                                     "删除模型配置失败: $deletingConfigId",
                                                     e,
                                                 )
-                                                showNotification(context.getString(R.string.save_failed))
+                                                showNotification(context.getString(R.string.save_failed), OKToast.Kind.Error)
                                             }
                                         }
                                     },
@@ -709,7 +710,7 @@ fun ModelConfigScreen(
                         config = config,
                         configManager = configManager,
                         saveCoordinator = saveCoordinator,
-                        showNotification = { message -> showNotification(message) },
+                        showNotification = { message, kind -> showNotification(message, kind) },
                         navigateToMnnModelDownload = navigateToMnnModelDownload
                     )
                 }
@@ -719,7 +720,7 @@ fun ModelConfigScreen(
                         config = config,
                         configManager = configManager,
                         saveCoordinator = saveCoordinator,
-                        showNotification = { message -> showNotification(message) }
+                        showNotification = { message, kind -> showNotification(message, kind) }
                     )
                 }
 
@@ -727,7 +728,7 @@ fun ModelConfigScreen(
                     ModelParametersSection(
                         config = config,
                         configManager = configManager,
-                        showNotification = { message -> showNotification(message) }
+                        showNotification = { message, kind -> showNotification(message, kind) }
                     )
                 }
 
@@ -736,7 +737,7 @@ fun ModelConfigScreen(
                         config = config,
                         configManager = configManager,
                         saveCoordinator = saveCoordinator,
-                        showNotification = { message -> showNotification(message) }
+                        showNotification = { message, kind -> showNotification(message, kind) }
                     )
                 }
 
@@ -753,7 +754,7 @@ fun ModelConfigScreen(
                     AdvancedSettingsSection(
                         config = config,
                         configManager = configManager,
-                        showNotification = { message -> showNotification(message) }
+                        showNotification = { message, kind -> showNotification(message, kind) }
                     )
                 }
             }
@@ -823,7 +824,7 @@ fun ModelConfigScreen(
                                     configNameMap[selectedConfigId] = renameConfigName
                                     showRenameConfigDialog = false
                                     renameConfigName = ""
-                                    showNotification(context.getString(R.string.config_renamed))
+                                    showNotification(context.getString(R.string.config_renamed), OKToast.Kind.Success)
                                 }
                             }
                         },
@@ -898,7 +899,7 @@ private fun ThinkingConfigurationsSection(
     config: ModelConfigData,
     configManager: ModelConfigManager,
     saveCoordinator: ModelConfigSaveCoordinator,
-    showNotification: (String) -> Unit
+    showNotification: (String, OKToast.Kind) -> Unit
 ) {
     val latestConfig by rememberUpdatedState(config)
     val parsedRules = remember(config.id, config.thinkingConfigurations) {
@@ -952,7 +953,7 @@ private fun ThinkingConfigurationsSection(
         effectKey = config.id,
         valueProvider = { serializeThinkingRuleEditors(rules) },
         persist = { value -> persistConfiguration(value) },
-        onError = { e -> showNotification(e.message ?: saveFailedText) }
+        onError = { e -> showNotification(e.message ?: saveFailedText, OKToast.Kind.Error) }
     )
 
     Card(
@@ -1365,7 +1366,7 @@ private fun ConfigOrganizerDialog(
     configManager: ModelConfigManager,
     onSelectConfig: (String) -> Unit,
     onDismiss: () -> Unit,
-    showNotification: (String) -> Unit
+    showNotification: (String, OKToast.Kind) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val ungroupedName = stringResource(R.string.ungrouped)
@@ -1417,7 +1418,7 @@ private fun ConfigOrganizerDialog(
             orderedGroups = reordered
             scope.launch {
                 runCatching { configManager.reorderConfigGroups(reordered.map { it.id }) }
-                    .onFailure { showNotification(it.message ?: saveGroupOrderFailed) }
+                    .onFailure { showNotification(it.message ?: saveGroupOrderFailed, OKToast.Kind.Error) }
             }
             return@rememberReorderableLazyListState
         }
@@ -1447,7 +1448,7 @@ private fun ConfigOrganizerDialog(
             .map { it.id to it.groupId }
         scope.launch {
             runCatching { configManager.updateConfigOrganization(orderedGroups, placements) }
-                .onFailure { showNotification(it.message ?: saveConfigOrderFailed) }
+                .onFailure { showNotification(it.message ?: saveConfigOrderFailed, OKToast.Kind.Error) }
         }
     }
 
@@ -2096,7 +2097,7 @@ private fun CustomHeadersSettingsSection(
     config: ModelConfigData,
     configManager: ModelConfigManager,
     saveCoordinator: ModelConfigSaveCoordinator,
-    showNotification: (String) -> Unit
+    showNotification: (String, OKToast.Kind) -> Unit
 ) {
     val latestConfig by rememberUpdatedState(config)
     var headers by remember(config.id) { mutableStateOf(parseHeaderEntries(config.customHeaders)) }
@@ -2131,7 +2132,7 @@ private fun CustomHeadersSettingsSection(
         valueProvider = { serializeHeaderEntries(headers) },
         persist = { serializedHeaders -> persistHeaders(serializedHeaders) },
         onError = { e ->
-            showNotification(e.message ?: saveFailedText)
+            showNotification(e.message ?: saveFailedText, OKToast.Kind.Error)
         }
     )
 

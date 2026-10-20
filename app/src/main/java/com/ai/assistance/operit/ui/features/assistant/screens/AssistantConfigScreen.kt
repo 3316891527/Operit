@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.assistant.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.Activity
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -95,10 +96,10 @@ fun AssistantConfigScreen() {
     // 显示操作结果的 SnackBar
     LaunchedEffect(uiState.operationSuccess, uiState.errorMessage) {
         if (uiState.operationSuccess) {
-            Toast.makeText(context, operationSuccessString, Toast.LENGTH_SHORT).show()
+            OKToast.success(context, operationSuccessString, OKToast.LENGTH_SHORT).show()
             viewModel.clearOperationSuccess()
         } else if (uiState.errorMessage != null) {
-            Toast.makeText(context, uiState.errorMessage ?: errorOccurredString, Toast.LENGTH_SHORT).show()
+            OKToast.error(context, uiState.errorMessage ?: errorOccurredString, OKToast.LENGTH_SHORT).show()
             viewModel.clearErrorMessage()
         }
     }

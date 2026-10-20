@@ -13,7 +13,7 @@ import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMod
 fun ChatHistorySelector(
     modifier: Modifier = Modifier,
     onNewChat: (characterCardName: String?, characterGroupId: String?, folderId: String?) -> Unit,
-    onSelectChat: (String) -> Unit, onDeleteChat: (String) -> Unit,
+    onSelectChat: (String) -> Unit, onDeleteChat: (String, Boolean) -> Unit,
     onUpdateChatTitle: (chatId: String, newTitle: String) -> Unit,
     onSummarizeChatTitle: (chatId: String) -> Unit,
     onUpdateChatBinding: (chatId: String, characterCardName: String?, characterGroupId: String?) -> Unit,
@@ -24,11 +24,13 @@ fun ChatHistorySelector(
     autoSwitchCharacterCard: Boolean, onAutoSwitchCharacterCardChange: (Boolean) -> Unit,
     autoSwitchChatOnCharacterSelect: Boolean, onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
     onQuickScrollInteractionChange: (Boolean) -> Unit = {}, activePrompt: ActivePrompt,
+    deletionProgress: Map<String, Float> = emptyMap(),
 ) {
     FolderChatHistoryPanel(
         modifier, onNewChat, onSelectChat, onDeleteChat, onUpdateChatTitle, onSummarizeChatTitle, onUpdateChatBinding,
         chatHistories, currentId, activeStreamingChatIds, lazyListState, onBack, searchQuery, onSearchQueryChange,
         historyDisplayMode, onDisplayModeChange, autoSwitchCharacterCard, onAutoSwitchCharacterCardChange,
         autoSwitchChatOnCharacterSelect, onAutoSwitchChatOnCharacterSelectChange, onQuickScrollInteractionChange, activePrompt,
+        deletionProgress = deletionProgress,
     )
 }

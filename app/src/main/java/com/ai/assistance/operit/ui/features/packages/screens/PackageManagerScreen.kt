@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,7 +44,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -114,7 +115,7 @@ private suspend fun runQuickPluginCreatorSetupAndPublishResult(
     toolHandler: AIToolHandler,
     onRunningChange: (Boolean) -> Unit,
     onResult: (ToolResult?) -> Unit,
-    onMessage: suspend (String) -> Unit
+    onMessage: suspend (String, Boolean) -> Unit
 ) {
     onRunningChange(true)
     onResult(null)
@@ -133,7 +134,7 @@ private suspend fun runQuickPluginCreatorSetupAndPublishResult(
             result.result.toString()
         } else {
             result.error ?: context.getString(R.string.quick_plugin_creator_setup_failed)
-        }
+        }, result.success
     )
 }
 
@@ -331,7 +332,7 @@ fun PackageManagerScreen(
                             }
 
                         if (fileName == null) {
-                            Toast.makeText(context, context.getString(R.string.no_filename), Toast.LENGTH_SHORT).show()
+                            OKToast.warning(context, context.getString(R.string.no_filename), OKToast.LENGTH_SHORT).show()
                             return@launch
                         }
 
@@ -352,14 +353,14 @@ fun PackageManagerScreen(
                                         else -> false
                                     }
                                 if (!supported) {
-                                    Toast.makeText(context,
+                                    OKToast.warning(context,
                                             context.getString(
                                                 if (selectedTab == PackageTab.PLUGINS) {
                                                     R.string.plugin_toolpkg_only
                                                 } else {
                                                     R.string.package_script_only
                                                 }
-                                            ), Toast.LENGTH_SHORT).show()
+                                            ), OKToast.LENGTH_SHORT).show()
                                     return@launch
                                 }
 
@@ -427,7 +428,7 @@ fun PackageManagerScreen(
                                     if (marketOrigin != null) {
                                         marketOriginImportNotice = marketOrigin
                                     } else {
-                                        Toast.makeText(context, context.getString(R.string.external_package_imported), Toast.LENGTH_SHORT).show()
+                                        OKToast.success(context, context.getString(R.string.external_package_imported), OKToast.LENGTH_SHORT).show()
                                     }
                                 } else {
                                     importErrorMessage =
@@ -448,7 +449,7 @@ fun PackageManagerScreen(
                                 }
                             }
                             else -> {
-                                Toast.makeText(context, context.getString(R.string.current_tab_not_support_import), Toast.LENGTH_SHORT).show()
+                                OKToast.warning(context, context.getString(R.string.current_tab_not_support_import), OKToast.LENGTH_SHORT).show()
                             }
                         }
                     } catch (e: Exception) {
@@ -812,12 +813,12 @@ fun PackageManagerScreen(
                                             e
                                         )
                                         visibleImportedPackages.value = importedPackages.value
-                                        Toast.makeText(context,
+                                        OKToast.error(context,
                                                 if (isChecked) {
                                                     context.getString(R.string.plugin_enable_failed)
                                                 } else {
                                                     context.getString(R.string.plugin_disable_failed)
-                                                }, Toast.LENGTH_SHORT).show()
+                                                }, OKToast.LENGTH_SHORT).show()
                                     }
                                  }
                              },
@@ -890,12 +891,12 @@ fun PackageManagerScreen(
                                             e
                                         )
                                         visibleImportedPackages.value = importedPackages.value
-                                        Toast.makeText(context,
+                                        OKToast.error(context,
                                                 if (isChecked) {
                                                     context.getString(R.string.package_import_failed)
                                                 } else {
                                                     context.getString(R.string.package_remove_failed)
-                                                }, Toast.LENGTH_SHORT).show()
+                                                }, OKToast.LENGTH_SHORT).show()
                                     }
                                 }
                             }
@@ -999,7 +1000,7 @@ fun PackageManagerScreen(
                                 "Lists refreshed. Available: ${availablePackages.value.keys}, Imported: ${importedPackages.value}"
                             )
                             isLoading = false
-                            Toast.makeText(context, "Package deleted successfully.", Toast.LENGTH_SHORT).show()
+                            OKToast.success(context, "Package deleted successfully.", OKToast.LENGTH_SHORT).show()
                         }
                     }
                 )
@@ -1056,7 +1057,7 @@ fun PackageManagerScreen(
                                     packageManager.deleteExternalPackageSource(sourcePath)
                                 }
                             if (!deleted) {
-                                Toast.makeText(context, context.getString(R.string.package_conflict_delete_failed), Toast.LENGTH_SHORT).show()
+                                OKToast.error(context, context.getString(R.string.package_conflict_delete_failed), OKToast.LENGTH_SHORT).show()
                                 return@launch
                             }
 
@@ -1085,7 +1086,7 @@ fun PackageManagerScreen(
                             if (packageLoadErrorInfos.value.isEmpty()) {
                                 showPackageLoadErrorsDialog = false
                             }
-                            Toast.makeText(context, context.getString(R.string.package_conflict_delete_success), Toast.LENGTH_SHORT).show()
+                            OKToast.success(context, context.getString(R.string.package_conflict_delete_success), OKToast.LENGTH_SHORT).show()
                         }
                     },
                     onDismiss = { showPackageLoadErrorsDialog = false }
@@ -1155,7 +1156,7 @@ fun PackageManagerScreen(
                                 }
                             if (!created.success || created.file == null) {
                                 isLoading = false
-                                Toast.makeText(context,
+                                OKToast.typed(context,
                                         when (created.error) {
                                             PackageTemplateCreateError.INVALID_DISPLAY_NAME ->
                                                 context.getString(R.string.package_template_display_name_required)
@@ -1174,7 +1175,7 @@ fun PackageManagerScreen(
                                                 )
                                             else ->
                                                 context.getString(R.string.package_template_create_failed)
-                                        }, Toast.LENGTH_SHORT).show()
+                                        }, if (created.error == PackageTemplateCreateError.INVALID_DISPLAY_NAME || created.error == PackageTemplateCreateError.INVALID_PACKAGE_ID || created.error == PackageTemplateCreateError.FILE_EXISTS) OKToast.Kind.Warning else OKToast.Kind.Error, OKToast.LENGTH_SHORT).show()
                                 return@launch
                             }
 
@@ -1233,7 +1234,7 @@ fun PackageManagerScreen(
                                         )
                                     }
                             } else {
-                                Toast.makeText(context, context.getString(R.string.package_template_created), Toast.LENGTH_SHORT).show()
+                                OKToast.success(context, context.getString(R.string.package_template_created), OKToast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -1255,8 +1256,8 @@ fun PackageManagerScreen(
                                 toolHandler = toolHandler,
                                 onRunningChange = { quickPluginSetupRunning = it },
                                 onResult = { quickPluginSetupResult = it },
-                                onMessage = { message ->
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                onMessage = { message, success ->
+                                    OKToast.typed(context, message, if (success) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT).show()
                                 }
                             )
                         }
@@ -1266,7 +1267,7 @@ fun PackageManagerScreen(
                         val requirement = quickPluginRequirement.trim()
                         if (requirement.isBlank()) {
                             scope.launch {
-                                Toast.makeText(context, context.getString(R.string.quick_plugin_creator_requirement_empty), Toast.LENGTH_SHORT).show()
+                                OKToast.warning(context, context.getString(R.string.quick_plugin_creator_requirement_empty), OKToast.LENGTH_SHORT).show()
                             }
                         } else {
                             showQuickPluginCreatorDialog = false

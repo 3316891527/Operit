@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.screens.market.viewmodel
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -226,7 +227,7 @@ class UnifiedMarketManageViewModel(
                             _entries.value.map { existing ->
                                 if (existing.id == entry.id) existing.copy(stateCode = stateCode) else existing
                             }
-                        Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, successMessage, OKToast.LENGTH_SHORT).show()
                     },
                     onFailure = { error ->
                         _errorMessage.value = error.message ?: context.getString(R.string.market_error_action_failed)

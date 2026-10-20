@@ -1,8 +1,9 @@
 package com.ai.assistance.operit.ui.features.packages.screens.artifact.viewmodel
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.SharedPreferences
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -173,7 +174,7 @@ class ArtifactMarketViewModel(
         viewModelScope.launch {
             try {
                 githubAuth.logout()
-                Toast.makeText(context, "Logged out from GitHub", Toast.LENGTH_SHORT).show()
+                OKToast.info(context, "Logged out from GitHub", OKToast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Failed to logout from GitHub"
                 AppLogger.e(TAG, "Failed to logout from GitHub", e)

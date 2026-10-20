@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import com.ai.assistance.operit.util.AppLogger
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -524,17 +525,17 @@ fun ChatScreenContent(
                                                 }
                                                 if (copiedText.isNotEmpty()) {
                                                     clipboardManager.setText(AnnotatedString(copiedText))
-                                                    Toast.makeText(context, context.getString(R.string.message_copied_to_clipboard), Toast.LENGTH_SHORT).show()
+                                                    OKToast.success(context, context.getString(R.string.message_copied_to_clipboard), OKToast.LENGTH_SHORT).show()
                                                     isMultiSelectMode = false
                                                     selectedMessageIndices = emptySet()
                                                 } else {
-                                                    Toast.makeText(context, context.getString(R.string.no_text_to_copy), Toast.LENGTH_SHORT).show()
+                                                    OKToast.info(context, context.getString(R.string.no_text_to_copy), OKToast.LENGTH_SHORT).show()
                                                 }
                                             } catch (cancellation: CancellationException) {
                                                 throw cancellation
                                             } catch (error: Exception) {
                                                 AppLogger.e("ChatScreenContent", "Failed to copy selected messages", error)
-                                                Toast.makeText(context, context.getString(R.string.dialog_copy_failed, error.localizedMessage ?: error.javaClass.simpleName), Toast.LENGTH_SHORT).show()
+                                                OKToast.error(context, context.getString(R.string.dialog_copy_failed, error.localizedMessage ?: error.javaClass.simpleName), OKToast.LENGTH_SHORT).show()
                                             } finally {
                                                 if (selectedMessagesCopyJob === currentCopyJob) {
                                                     selectedMessagesCopyJob = null
@@ -819,7 +820,7 @@ fun ChatScreenContent(
                         onError = { error ->
                             isGeneratingImage = false
                             AppLogger.e("ChatScreenContent", "Generate share image failed: $error")
-                            android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, error, OKToast.LENGTH_SHORT).show()
                         }
                     )
                 }
@@ -854,7 +855,7 @@ fun ChatScreenContent(
                             sharePreviewUri = null
                         } catch (e: Exception) {
                             AppLogger.e("ChatScreenContent", "Share failed", e)
-                            android.widget.Toast.makeText(context, context.getString(R.string.share_failed), android.widget.Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.share_failed), OKToast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -862,10 +863,10 @@ fun ChatScreenContent(
                     sharePreviewUri?.let { uri ->
                         coroutineScope.launch {
                             val saved = saveShareImageToGallery(context, uri)
-                            android.widget.Toast.makeText(
+                            OKToast.typed(
                                 context,
                                 if (saved) context.getString(R.string.image_saved) else context.getString(R.string.save_failed),
-                                android.widget.Toast.LENGTH_SHORT
+                                if (saved) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT
                             ).show()
                         }
                     }
@@ -1152,7 +1153,8 @@ fun ChatHistorySelectorPanel(
                     // 切换聊天后也自动收起侧边框
                     actualViewModel.showChatHistorySelector(false)
                 },
-                onDeleteChat = { chatId -> actualViewModel.deleteChatHistory(chatId) },
+                onDeleteChat = actualViewModel::deleteChatHistory,
+                deletionProgress = actualViewModel.chatListMotion.deletions.collectAsState().value,
                 onUpdateChatTitle = { chatId, newTitle ->
                     actualViewModel.updateChatTitle(chatId, newTitle)
                 },

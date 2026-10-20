@@ -71,10 +71,10 @@ class SkillRepository private constructor(private val context: Context) {
 
     fun deleteSkill(skillName: String): Boolean = skillManager.deleteSkill(skillName)
 
-    suspend fun importSkillFromZip(zipFile: File): String {
-        return withContext(Dispatchers.IO) {
-            skillManager.importSkillFromZip(zipFile)
-        }
+    suspend fun importSkillFromZip(zipFile: File): String = importSkillFromZipDetailed(zipFile).message
+    suspend fun importSkillFromZipDetailed(zipFile: File): SkillRepoImportResult = withContext(Dispatchers.IO) {
+        val result = skillManager.importSkillFromZipDetailed(zipFile, null)
+        SkillRepoImportResult(result.message, result.installedDir)
     }
 
     suspend fun importSkillFromGitHubRepo(repoUrl: String): String {
@@ -142,43 +142,45 @@ class SkillRepository private constructor(private val context: Context) {
     }
 
     suspend fun importSkillFromDirectInput(
+        skillId: String, description: String, content: String, attachmentUris: List<Uri> = emptyList()
+    ): String = importSkillFromDirectInputDetailed(skillId, description, content, attachmentUris).message
+
+    suspend fun importSkillFromDirectInputDetailed(
         skillId: String,
         description: String,
         content: String,
         attachmentUris: List<Uri> = emptyList()
-    ): String {
+    ): SkillRepoImportResult {
         return withContext(Dispatchers.IO) {
             val trimmedId = skillId.trim()
             val trimmedDescription = description.trim()
             val trimmedContent = content.trim()
 
             if (trimmedId.isBlank()) {
-                return@withContext context.getString(R.string.skillmgr_direct_skill_id_required)
+                return@withContext SkillRepoImportResult(context.getString(R.string.skillmgr_direct_skill_id_required), null)
             }
             if (!isValidSkillId(trimmedId)) {
-                return@withContext context.getString(R.string.skillmgr_direct_skill_id_invalid)
+                return@withContext SkillRepoImportResult(context.getString(R.string.skillmgr_direct_skill_id_invalid), null)
             }
             if (trimmedContent.isBlank()) {
-                return@withContext context.getString(R.string.skillmgr_direct_content_required)
+                return@withContext SkillRepoImportResult(context.getString(R.string.skillmgr_direct_content_required), null)
             }
 
             val skillsRootDir = File(getSkillsDirectoryPath())
             if (!skillsRootDir.exists() && !skillsRootDir.mkdirs()) {
-                return@withContext context.getString(
-                    R.string.skillmgr_direct_create_dir_failed,
-                    skillsRootDir.absolutePath
-                )
+                return@withContext SkillRepoImportResult(context.getString(
+                    R.string.skillmgr_direct_create_dir_failed, skillsRootDir.absolutePath
+                ), null)
             }
 
             val finalDir = File(skillsRootDir, trimmedId)
             if (finalDir.exists()) {
-                return@withContext context.getString(R.string.skill_error_import_duplicate_name, finalDir.name)
+                return@withContext SkillRepoImportResult(context.getString(R.string.skill_error_import_duplicate_name, finalDir.name), null)
             }
             if (!finalDir.mkdirs()) {
-                return@withContext context.getString(
-                    R.string.skillmgr_direct_create_dir_failed,
-                    finalDir.absolutePath
-                )
+                return@withContext SkillRepoImportResult(context.getString(
+                    R.string.skillmgr_direct_create_dir_failed, finalDir.absolutePath
+                ), null)
             }
 
             try {
@@ -221,15 +223,16 @@ class SkillRepository private constructor(private val context: Context) {
 
                 skillManager.refreshAvailableSkills()
 
-                if (trimmedDescription.isNotBlank()) {
+                val message = if (trimmedDescription.isNotBlank()) {
                     context.getString(R.string.skill_imported_with_desc, finalDir.name, trimmedDescription)
                 } else {
                     context.getString(R.string.skill_imported, finalDir.name)
                 }
+                SkillRepoImportResult(message, finalDir)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Failed to import skill from direct input", e)
                 runCatching { finalDir.deleteRecursively() }
-                context.getString(R.string.skill_import_failed, e.message ?: "Unknown error")
+                SkillRepoImportResult(context.getString(R.string.skill_import_failed, e.message ?: "Unknown error"), null)
             }
         }
     }

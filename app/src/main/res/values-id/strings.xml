@@ -8291,4 +8291,10 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="attachment_image_duplicate">Gambar %1$s sudah dilampirkan</string>
     <string name="logcat_write_enabled">Tulis log</string>
     <string name="logcat_write_enabled_description">Nonaktifkan untuk berhenti mencatat log aplikasi. Aktif kembali setiap hari. Log yang ada tetap dapat diekspor.</string>
+    <string name="oktoast_info">Informasi</string>
+    <string name="oktoast_success">Berhasil</string>
+    <string name="oktoast_warning">Peringatan</string>
+    <string name="oktoast_error">Kesalahan</string>
+    <string name="chat_model_configuration_invalid_key">Konfigurasi model tidak valid: kunci API tidak tersedia. Tambahkan kunci atau konfigurasikan kumpulan kunci yang dapat digunakan di Konfigurasi Model dan Parameter.</string>
+    <string name="chat_model_configuration_missing_model">Konfigurasi model tidak valid: ID model kosong. Pilih atau masukkan model yang valid di Konfigurasi Model dan Parameter.</string>
 </resources>

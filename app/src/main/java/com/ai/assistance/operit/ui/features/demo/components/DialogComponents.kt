@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.demo.components
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -98,13 +99,13 @@ fun CommandResultDialog(
                                                         content
                                                 )
                                         clipboard.setPrimaryClip(clip)
-                                        Toast.makeText(context, context.getString(R.string.dialog_copied_to_clipboard), Toast.LENGTH_SHORT)
+                                        OKToast.success(context, context.getString(R.string.dialog_copied_to_clipboard), OKToast.LENGTH_SHORT)
                                                 .show()
                                     } catch (e: Exception) {
-                                        Toast.makeText(
+                                        OKToast.error(
                                                         context,
                                                         context.getString(R.string.dialog_copy_failed, e.message ?: ""),
-                                                        Toast.LENGTH_SHORT
+                                                        OKToast.LENGTH_SHORT
                                                 )
                                                 .show()
                                     }

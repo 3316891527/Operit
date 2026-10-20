@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -603,10 +604,10 @@ private fun rememberCameraCaptureLauncher(
                 if (isGranted) {
                     launchCameraCapture()
                 } else {
-                    Toast.makeText(
+                    OKToast.warning(
                                     context,
                                     context.getString(R.string.camera_permission_denied_toast),
-                                    Toast.LENGTH_SHORT
+                                    OKToast.LENGTH_SHORT
                             )
                             .show()
                 }

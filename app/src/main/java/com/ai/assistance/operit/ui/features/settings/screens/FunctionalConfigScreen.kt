@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -22,7 +24,6 @@ import com.ai.assistance.operit.ui.features.settings.functional.FunctionThinking
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.widget.Toast
 import com.ai.assistance.operit.util.AssetCopyUtils
 import com.ai.assistance.operit.api.chat.llmprovider.AIServiceFactory
 import com.ai.assistance.operit.api.chat.llmprovider.MediaCapabilityProbe
@@ -75,7 +76,7 @@ fun FunctionalConfigScreen(
     val configSelection: ModelConfigSelection? by
             modelConfigManager.configSelectionFlow.collectAsState(initial = null)
     fun showSavedToast() {
-        Toast.makeText(context, R.string.config_saved, Toast.LENGTH_SHORT).show()
+        OKToast.success(context, R.string.config_saved, OKToast.LENGTH_SHORT).show()
     }
 
     CustomScaffold() { paddingValues ->
@@ -312,10 +313,10 @@ fun FunctionConfigCard(
 
     val showAutoGlmError: () -> Unit = {
         if (functionType == FunctionType.CHAT) {
-            Toast.makeText(
+            OKToast.warning(
                 context,
                 context.getString(R.string.chat_autoglm_warning),
-                Toast.LENGTH_LONG
+                OKToast.LENGTH_LONG
             ).show()
         }
     }

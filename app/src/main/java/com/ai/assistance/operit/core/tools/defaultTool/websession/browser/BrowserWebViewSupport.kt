@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.websession.browser
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
@@ -21,7 +23,6 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.webkit.UserAgentMetadata
 import androidx.webkit.WebSettingsCompat
@@ -413,13 +414,13 @@ internal fun StandardBrowserSessionTools.configureWebView(
                 session.pendingFileChooserCallback = null
                 notifySessionStateChanged(session)
                 closeSession(session.id)
-                showToast(
+                OKToast.error(context,
                     if (detail.didCrash()) {
                         context.getString(R.string.web_session_render_process_crashed)
                     } else {
                         context.getString(R.string.web_session_render_process_gone)
                     }
-                )
+                ).show()
                 return true
             }
         }
@@ -628,13 +629,13 @@ internal fun StandardBrowserSessionTools.createBrowserHostCallbacks(
 
         override fun onOpenDownloadedFile(taskId: String) {
             if (!openDownloadedFile(taskId)) {
-                showToast(appContext.getString(R.string.web_session_download_open_failed))
+                OKToast.error(context, appContext.getString(R.string.web_session_download_open_failed)).show()
             }
         }
 
         override fun onOpenDownloadLocation(taskId: String) {
             if (!openDownloadLocation(taskId)) {
-                showToast(appContext.getString(R.string.web_session_download_location_open_failed))
+                OKToast.error(context, appContext.getString(R.string.web_session_download_location_open_failed)).show()
             }
         }
 
@@ -768,7 +769,7 @@ internal fun StandardBrowserSessionTools.handleUserscriptDownloadOnMain(
 ) {
     val session = sessionById(sessionId) ?: getActiveSessionOnMain()
     if (session == null) {
-        showToast(context.getString(R.string.web_session_userscript_download_failed))
+        OKToast.error(context, context.getString(R.string.web_session_userscript_download_failed)).show()
         return
     }
     handleRegularDownload(
@@ -1100,7 +1101,7 @@ internal fun StandardBrowserSessionTools.handleIntentSchemeOnMain(
     val intent =
         runCatching { Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME) }.getOrElse { error ->
             AppLogger.w(WEBVIEW_SUPPORT_TAG, "Failed to parse intent url: ${error.message}")
-            showToast(context.getString(R.string.web_session_external_open_failed, rawUrl))
+            OKToast.error(context, context.getString(R.string.web_session_external_open_failed, rawUrl)).show()
             return true
         }
 
@@ -1144,7 +1145,7 @@ internal fun StandardBrowserSessionTools.confirmExternalOpenRequest(requestId: S
     StandardBrowserSessionTools.pendingExternalOpenRequest = null
     refreshSessionUiOnMain()
     if (!launchBrowserExternalIntent(request.intent)) {
-        showToast(context.getString(R.string.web_session_external_open_failed, request.target))
+        OKToast.error(context, context.getString(R.string.web_session_external_open_failed, request.target)).show()
     }
 }
 
@@ -1196,7 +1197,7 @@ internal fun StandardBrowserSessionTools.handleWebPermissionRequest(request: Per
                 request.grant(grantableResources)
             } else {
                 request.deny()
-                showToast(context.getString(R.string.web_session_permission_denied))
+                OKToast.warning(context, context.getString(R.string.web_session_permission_denied)).show()
             }
         }
     }
@@ -1221,7 +1222,7 @@ internal fun StandardBrowserSessionTools.handleGeolocationPermissionRequest(
         StandardBrowserSessionTools.mainHandler.post {
             callback.invoke(origin, granted, false)
             if (!granted) {
-                showToast(context.getString(R.string.web_session_location_permission_denied))
+                OKToast.warning(context, context.getString(R.string.web_session_location_permission_denied)).show()
             }
         }
     }
@@ -1268,14 +1269,7 @@ internal fun StandardBrowserSessionTools.androidPermissionsForWebResource(
         else -> emptyList()
     }
 
-internal fun StandardBrowserSessionTools.showToast(message: String) {
-    if (message.isBlank()) {
-        return
-    }
-    StandardBrowserSessionTools.mainHandler.post {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-}
+
 
 internal fun StandardBrowserSessionTools.setDesktopModeEnabled(enabled: Boolean) {
     if (StandardBrowserSessionTools.desktopModeEnabled == enabled) {

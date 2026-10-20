@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.webview
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -21,7 +23,6 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.produceState
@@ -104,7 +105,7 @@ class WebViewHandler(private val context: Context) {
 
                 // 在主线程显示通知
                 Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(context, context.getString(R.string.download_success, cleanFileName), Toast.LENGTH_SHORT).show()
+                    OKToast.success(context, context.getString(R.string.download_success, cleanFileName), OKToast.LENGTH_SHORT).show()
 
                     // 通知媒体扫描器更新文件
                     val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
@@ -117,7 +118,7 @@ class WebViewHandler(private val context: Context) {
             } catch (e: Exception) {
                 AppLogger.e("WebViewHandler", "Blob数据下载失败", e)
                 Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(context, context.getString(R.string.download_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
+                    OKToast.error(context, context.getString(R.string.download_failed, e.localizedMessage), OKToast.LENGTH_LONG).show()
                 }
             }
         }
@@ -380,7 +381,7 @@ class WebViewHandler(private val context: Context) {
                 handleRegularDownload(url, userAgent, contentDisposition, mimetype, contentLength)
             } catch (e: Exception) {
                 AppLogger.e("WebViewHandler", "下载失败: ${e.message}", e)
-                Toast.makeText(context, context.getString(R.string.download_failed, e.message), Toast.LENGTH_LONG).show()
+                OKToast.error(context, context.getString(R.string.download_failed, e.message), OKToast.LENGTH_LONG).show()
             }
         }
     }
@@ -447,7 +448,7 @@ class WebViewHandler(private val context: Context) {
             val downloadId = downloadManager.enqueue(request)
 
             // 显示下载开始消息
-            Toast.makeText(context, context.getString(R.string.download_start, filename), Toast.LENGTH_SHORT).show()
+            OKToast.info(context, context.getString(R.string.download_start, filename), OKToast.LENGTH_SHORT).show()
 
             // 注册下载完成的广播接收器
             val onDownloadComplete =
@@ -484,19 +485,19 @@ class WebViewHandler(private val context: Context) {
                                                 val uriString = cursor.getString(uriColumnIndex)
                                                 if (uriString != null) {
                                                     val fileUri = Uri.parse(uriString)
-                                                    Toast.makeText(
+                                                    OKToast.success(
                                                                     context,
                                                                     context.getString(R.string.download_complete, filename),
-                                                                    Toast.LENGTH_SHORT
+                                                                    OKToast.LENGTH_SHORT
                                                             )
                                                             .show()
                                                 }
                                             }
                                         } else {
-                                            Toast.makeText(
+                                            OKToast.error(
                                                             context,
                                                             context.getString(R.string.download_incomplete, filename),
-                                                            Toast.LENGTH_SHORT
+                                                            OKToast.LENGTH_SHORT
                                                     )
                                                     .show()
                                         }

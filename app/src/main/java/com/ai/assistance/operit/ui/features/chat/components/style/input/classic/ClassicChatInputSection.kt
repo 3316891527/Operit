@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.classic
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -199,7 +201,7 @@ fun ClassicChatInputSection(
                     typography
                 )
             } else {
-                actualViewModel.showToast(context.getString(R.string.microphone_permission_denied_toast))
+                OKToast.warning(context, context.getString(R.string.microphone_permission_denied_toast)).show()
             }
         }
 

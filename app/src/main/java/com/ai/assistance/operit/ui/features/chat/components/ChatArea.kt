@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.material.icons.filled.Translate
 import com.ai.assistance.operit.ui.features.chat.components.timeline.ChatMessageSlice
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +15,6 @@ import com.ai.assistance.operit.data.preferences.ToolCollapseMode
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import com.ai.assistance.operit.ui.features.chat.components.timeline.LocalChatMessageSlice
 import com.ai.assistance.operit.ui.features.chat.components.timeline.rememberChatTimelineEntries
-import android.widget.Toast
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
@@ -883,10 +884,10 @@ private fun MessageItem(
                                         "chat message menu item failed: ${pluginMenuItem.id}",
                                         error
                                     )
-                                    Toast.makeText(
+                                    OKToast.error(
                                         context,
                                         context.getString(R.string.operation_failed),
-                                        Toast.LENGTH_SHORT
+                                        OKToast.LENGTH_SHORT
                                     ).show()
                                 }
                             }
@@ -1385,10 +1386,10 @@ private fun MessageCopyPreviewBottomSheet(
                     enabled = copyMode != MessageCopyMode.PLAIN_TEXT || plainText != null,
                     onClick = {
                         clipboardManager.setText(AnnotatedString(displayedText))
-                        Toast.makeText(
+                        OKToast.success(
                             context,
                             context.getString(R.string.message_copied_to_clipboard),
-                            Toast.LENGTH_SHORT
+                            OKToast.LENGTH_SHORT
                         ).show()
                     }
                 ) {

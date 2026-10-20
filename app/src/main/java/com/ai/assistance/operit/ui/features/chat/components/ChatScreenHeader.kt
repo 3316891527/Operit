@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -119,7 +121,7 @@ fun ChatScreenHeader(
                     moveTaskToBackOnReady = true
                 )
             } else {
-                actualViewModel.showToast(context.getString(R.string.microphone_permission_denied))
+                OKToast.warning(context, context.getString(R.string.microphone_permission_denied)).show()
             }
         }
 

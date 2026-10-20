@@ -126,6 +126,10 @@ def main() -> None:
         raise ValueError("发布仓库或目标提交不属于本次独立发行流程")
     if args.apk.name != APK_NAME:
         raise ValueError(f"发行 APK 必须命名为 {APK_NAME}")
+    if not args.notes.strip():
+        raise ValueError("正式发布必须提供非空的更新说明")
+    if args.notes.lstrip().startswith(("{", "[")):
+        raise ValueError("Release 正文必须使用可读文本或 Markdown，JSON 元数据仅作为附件")
     info = inspect_apk(args.apk, args.build_tools)
     version = info["versionName"]
     tag = "v" + version
@@ -160,8 +164,11 @@ def main() -> None:
     manifest = args.output / "distribution-release.json"
     manifest.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     assets.append(manifest)
+    # 页面正文与增量元数据分别保存，防止发布页再次显示机器 JSON。
+    notes_file = args.output / "release-notes.md"
+    notes_file.write_text(args.notes.rstrip() + "\n", encoding="utf-8")
     # 草稿阶段上传完整产物，所有文件到齐后再公开，避免客户端读取半成品。
-    run("gh", "release", "create", tag, "--repo", REPOSITORY, "--target", args.commit, "--draft", "--title", version, "--notes-file", str(manifest), *[str(a) for a in assets])
+    run("gh", "release", "create", tag, "--repo", REPOSITORY, "--target", args.commit, "--draft", "--title", version, "--notes-file", str(notes_file), *[str(a) for a in assets])
     run("gh", "release", "edit", tag, "--repo", REPOSITORY, "--draft=false", "--latest")
     print(f"已发布 https://github.com/{REPOSITORY}/releases/tag/{tag}", flush=True)
 

@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.sidebar
 
 import androidx.compose.foundation.background
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -51,7 +53,7 @@ fun MainChatControls(modifier: Modifier = Modifier) {
                 colorScheme, typography, moveTaskToBackOnReady = true,
             )
         } else {
-            viewModel.showToast(context.getString(R.string.microphone_permission_denied))
+            OKToast.warning(context, context.getString(R.string.microphone_permission_denied)).show()
         }
     }
     val launchFloatingWindow = useFloatingWindowLauncher(viewModel, permissionLauncher)

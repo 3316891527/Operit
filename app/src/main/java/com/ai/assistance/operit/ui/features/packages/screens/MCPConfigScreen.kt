@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
 
@@ -49,7 +51,6 @@ import com.ai.assistance.operit.ui.features.packages.screens.mcp.viewmodel.MCPDe
 import com.ai.assistance.operit.ui.features.packages.screens.mcp.viewmodel.MCPViewModel
 import com.ai.assistance.operit.data.mcp.plugins.MCPBridge
 import com.ai.assistance.operit.util.AppLogger
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.packages.management.PackageAcquisitionActions
@@ -403,7 +404,7 @@ fun MCPConfigScreen(
             }
         } catch (e: Exception) {
             AppLogger.e("MCPConfigScreen", "Error fetching tools", e)
-            Toast.makeText(context, context.getString(R.string.tools_load_error, e.message), Toast.LENGTH_SHORT).show()
+            OKToast.error(context, context.getString(R.string.tools_load_error, e.message), OKToast.LENGTH_SHORT).show()
         } finally {
             fullscreenLoadingTimeout.cancel()
             isToolsLoading = false
@@ -420,7 +421,7 @@ fun MCPConfigScreen(
     LaunchedEffect(deploymentStatus) {
         if (deploymentStatus is MCPDeployer.DeploymentStatus.Success) {
             currentDeployingPlugin?.let { pluginId ->
-                Toast.makeText(context, context.getString(R.string.plugin_deployed_success, getPluginDisplayName(pluginId, mcpRepository)), Toast.LENGTH_SHORT).show()
+                OKToast.success(context, context.getString(R.string.plugin_deployed_success, getPluginDisplayName(pluginId, mcpRepository)), OKToast.LENGTH_SHORT).show()
             }
         }
     }
@@ -446,10 +447,10 @@ fun MCPConfigScreen(
                     selectedPluginId?.let { pluginId ->
                         scope.launch {
                             val saved = mcpLocalServer.savePluginConfig(pluginId, pluginConfigJson)
-                            Toast.makeText(
+                            OKToast.typed(
                                 context,
                                 if (saved) context.getString(R.string.config_saved) else context.getString(R.string.save_failed),
-                                Toast.LENGTH_SHORT
+                                if (saved) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT
                             ).show()
                         }
                     }
@@ -549,7 +550,7 @@ fun MCPConfigScreen(
                 viewModel.updateRemoteServer(updatedServer)
                 showRemoteEditDialog = false
                 editingRemoteServer = null
-                Toast.makeText(context, context.getString(R.string.remote_service_updated, updatedServer.name), Toast.LENGTH_SHORT).show()
+                OKToast.success(context, context.getString(R.string.remote_service_updated, updatedServer.name), OKToast.LENGTH_SHORT).show()
             },
             onRegenerateDescription = { server, pluginName ->
                 viewModel.generatePluginDescription(
@@ -857,7 +858,7 @@ fun MCPConfigScreen(
                                         try {
                                             context.startActivity(android.content.Intent.createChooser(fileIntent, context.getString(R.string.mcp_open_config_file)))
                                         } catch (e2: Exception) {
-                                            Toast.makeText(context, context.getString(R.string.mcp_config_file_location, mcpLocalServer.getConfigFilePath()), Toast.LENGTH_LONG).show()
+                                            OKToast.info(context, context.getString(R.string.mcp_config_file_location, mcpLocalServer.getConfigFilePath()), OKToast.LENGTH_LONG).show()
                                         }
                                     }
                                 },
@@ -913,29 +914,29 @@ fun MCPConfigScreen(
                                         val result = mcpLocalServer.mergeConfigFromJson(configJsonInput)
                                         result.onSuccess { count ->
                                             AppLogger.i("MCPConfigScreen", "配置导入成功，合并了 $count 个服务器")
-                                            Toast.makeText(context, context.getString(R.string.mcp_merged_servers, count), Toast.LENGTH_SHORT).show()
+                                            OKToast.success(context, context.getString(R.string.mcp_merged_servers, count), OKToast.LENGTH_SHORT).show()
                                             refreshMcpScreen()
                                             configJsonInput = ""
                                             showImportDialog = false
                                         }.onFailure { error ->
                                             AppLogger.e("MCPConfigScreen", "配置导入失败: ${error.message}", error)
-                                            Toast.makeText(context, context.getString(R.string.mcp_merge_failed, error.message ?: "Unknown error"), Toast.LENGTH_LONG).show()
+                                            OKToast.error(context, context.getString(R.string.mcp_merge_failed, error.message ?: "Unknown error"), OKToast.LENGTH_LONG).show()
                                         }
                                     } catch (e: Exception) {
                                         AppLogger.e("MCPConfigScreen", "配置导入异常", e)
-                                        Toast.makeText(context, context.getString(R.string.mcp_import_exception, e.message ?: "Unknown error"), Toast.LENGTH_LONG).show()
+                                        OKToast.error(context, context.getString(R.string.mcp_import_exception, e.message ?: "Unknown error"), OKToast.LENGTH_LONG).show()
                                     } finally {
                                         isImporting = false
                                     }
                                 }
                             } else {
-                                Toast.makeText(context, context.getString(R.string.mcp_please_enter_config), Toast.LENGTH_SHORT).show()
+                                OKToast.warning(context, context.getString(R.string.mcp_please_enter_config), OKToast.LENGTH_SHORT).show()
                             }
                         } else if (isRepoImport || isZipImport || isRemoteConnect) {
                             // 检查插件ID是否冲突
                             val proposedId = pluginNameInput.replace(" ", "_").lowercase()
                             if (visiblePluginIds.contains(proposedId)) {
-                                Toast.makeText(context, context.getString(R.string.plugin_already_exists, pluginNameInput), Toast.LENGTH_SHORT).show()
+                                OKToast.warning(context, context.getString(R.string.plugin_already_exists, pluginNameInput), OKToast.LENGTH_SHORT).show()
                                 return@Button
                             }
 
@@ -965,7 +966,7 @@ fun MCPConfigScreen(
                             if(isRemote){
                                 // 对于远程服务，直接保存到仓库
                                 viewModel.addRemoteServer(server)
-                                Toast.makeText(context, context.getString(R.string.remote_service_added, server.name), Toast.LENGTH_SHORT).show()
+                                OKToast.success(context, context.getString(R.string.remote_service_added, server.name), OKToast.LENGTH_SHORT).show()
                             } else {
                                 // 本地插件走安装流程
                             if (importTabIndex == 0) {
@@ -995,7 +996,7 @@ fun MCPConfigScreen(
                                 1 -> context.getString(R.string.select_zip_and_enter_name)
                                 else -> context.getString(R.string.enter_complete_remote_info)
                             }
-                            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, errorMessage, OKToast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = !isImporting &&
@@ -1135,7 +1136,7 @@ fun MCPConfigScreen(
                     pluginLoadingState.show()
                     pluginLoadingState.initializeMCPServer(context, lifecycleScope)
                 } else {
-                    Toast.makeText(context, context.getString(R.string.mcp_start_services_failed), Toast.LENGTH_SHORT).show()
+                    OKToast.error(context, context.getString(R.string.mcp_start_services_failed), OKToast.LENGTH_SHORT).show()
                 }
             },
             onRefresh = {
@@ -1775,20 +1776,20 @@ fun RemoteServerEditDialog(
                                     onRegenerateDescription(server, name)
                                         .onSuccess { generatedDescription ->
                                             description = generatedDescription
-                                            Toast.makeText(
+                                            OKToast.success(
                                                 context,
                                                 context.getString(R.string.mcp_regenerate_description_success),
-                                                Toast.LENGTH_SHORT
+                                                OKToast.LENGTH_SHORT
                                             ).show()
                                         }
                                         .onFailure { error ->
-                                            Toast.makeText(
+                                            OKToast.error(
                                                 context,
                                                 context.getString(
                                                     R.string.mcp_regenerate_description_failed,
                                                     error.message ?: context.getString(R.string.unknown_error)
                                                 ),
-                                                Toast.LENGTH_LONG
+                                                OKToast.LENGTH_LONG
                                             ).show()
                                         }
                                 } finally {

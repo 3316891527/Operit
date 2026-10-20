@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -49,7 +51,7 @@ import com.ai.assistance.operit.ui.features.settings.DebouncedModelConfigAutoSav
 fun AdvancedSettingsSection(
     config: ModelConfigData,
     configManager: ModelConfigManager,
-    showNotification: (String) -> Unit
+    showNotification: (String, OKToast.Kind) -> Unit
 ) {
     val context = LocalContext.current
     var showRequestQueueControls by remember(config.id) { mutableStateOf(false) }
@@ -95,7 +97,7 @@ fun AdvancedSettingsSection(
             EnhancedAIService.refreshAllServices(configManager.appContext)
         },
         onError = { e ->
-            showNotification(context.getString(R.string.save_failed) + ": " + (e.message ?: ""))
+            showNotification(context.getString(R.string.save_failed) + ": " + (e.message ?: ""), OKToast.Kind.Error)
         }
     )
 
