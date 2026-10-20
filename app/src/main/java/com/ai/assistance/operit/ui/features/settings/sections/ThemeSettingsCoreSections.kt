@@ -58,6 +58,7 @@ import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.ui.features.chat.components.ChatStyle
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageBackgroundSurface
 import com.ai.assistance.operit.ui.features.chat.components.style.bubble.BubbleImageStyleConfig
+import com.ai.assistance.operit.ui.features.settings.components.bubble.BubbleImageStyleEditor
 import com.ai.assistance.operit.ui.features.settings.components.ChatStyleOption
 import com.ai.assistance.operit.ui.features.settings.components.ColorSelectionItem
 import com.ai.assistance.operit.ui.features.settings.components.ThemeModeOption
@@ -949,36 +950,16 @@ internal fun ThemeSettingsChatStyleSection(
                         )
                     },
                     repeatXStart = bubbleUserImageRepeatStartInput,
-                    onRepeatXStartChange = {
-                        val maxValue = (bubbleUserImageRepeatEndInput - 0.01f).coerceAtLeast(0.05f)
-                        editorSession.setFloat(
-                            "bubble_user_image_repeat_start",
-                            it.coerceIn(0.05f, maxValue),
-                        )
-                    },
                     repeatXEnd = bubbleUserImageRepeatEndInput,
-                    onRepeatXEndChange = {
-                        val minValue = (bubbleUserImageRepeatStartInput + 0.01f).coerceAtMost(0.95f)
-                        editorSession.setFloat(
-                            "bubble_user_image_repeat_end",
-                            it.coerceIn(minValue, 0.95f),
-                        )
-                    },
                     repeatYStart = bubbleUserImageRepeatYStartInput,
-                    onRepeatYStartChange = {
-                        val maxValue = (bubbleUserImageRepeatYEndInput - 0.01f).coerceAtLeast(0.05f)
-                        editorSession.setFloat(
-                            "bubble_user_image_repeat_y_start",
-                            it.coerceIn(0.05f, maxValue),
-                        )
-                    },
                     repeatYEnd = bubbleUserImageRepeatYEndInput,
-                    onRepeatYEndChange = {
-                        val minValue = (bubbleUserImageRepeatYStartInput + 0.01f).coerceAtMost(0.95f)
-                        editorSession.setFloat(
-                            "bubble_user_image_repeat_y_end",
-                            it.coerceIn(minValue, 0.95f),
-                        )
+                    onStretchRegionChange = { horizontal, vertical ->
+                        editorSession.update { values ->
+                            values.withFloat("bubble_user_image_repeat_start", horizontal.start)
+                                .withFloat("bubble_user_image_repeat_end", horizontal.endInclusive)
+                                .withFloat("bubble_user_image_repeat_y_start", vertical.start)
+                                .withFloat("bubble_user_image_repeat_y_end", vertical.endInclusive)
+                        }
                     },
                     imageScale = bubbleUserImageScaleInput,
                     onImageScaleChange = {
@@ -988,12 +969,12 @@ internal fun ThemeSettingsChatStyleSection(
                         )
                     },
                     contentPaddingLeft = bubbleUserContentPaddingLeftInput,
-                    onContentPaddingLeftChange = {
-                        editorSession.setFloat("bubble_content_padding_left", it)
-                    },
                     contentPaddingRight = bubbleUserContentPaddingRightInput,
-                    onContentPaddingRightChange = {
-                        editorSession.setFloat("bubble_content_padding_right", it)
+                    onContentPaddingChange = { left, right ->
+                        editorSession.update { values ->
+                            values.withFloat("bubble_content_padding_left", left)
+                                .withFloat("bubble_content_padding_right", right)
+                        }
                     },
                 )
 
@@ -1055,36 +1036,16 @@ internal fun ThemeSettingsChatStyleSection(
                         )
                     },
                     repeatXStart = bubbleAiImageRepeatStartInput,
-                    onRepeatXStartChange = {
-                        val maxValue = (bubbleAiImageRepeatEndInput - 0.01f).coerceAtLeast(0.05f)
-                        editorSession.setFloat(
-                            "bubble_ai_image_repeat_start",
-                            it.coerceIn(0.05f, maxValue),
-                        )
-                    },
                     repeatXEnd = bubbleAiImageRepeatEndInput,
-                    onRepeatXEndChange = {
-                        val minValue = (bubbleAiImageRepeatStartInput + 0.01f).coerceAtMost(0.95f)
-                        editorSession.setFloat(
-                            "bubble_ai_image_repeat_end",
-                            it.coerceIn(minValue, 0.95f),
-                        )
-                    },
                     repeatYStart = bubbleAiImageRepeatYStartInput,
-                    onRepeatYStartChange = {
-                        val maxValue = (bubbleAiImageRepeatYEndInput - 0.01f).coerceAtLeast(0.05f)
-                        editorSession.setFloat(
-                            "bubble_ai_image_repeat_y_start",
-                            it.coerceIn(0.05f, maxValue),
-                        )
-                    },
                     repeatYEnd = bubbleAiImageRepeatYEndInput,
-                    onRepeatYEndChange = {
-                        val minValue = (bubbleAiImageRepeatYStartInput + 0.01f).coerceAtMost(0.95f)
-                        editorSession.setFloat(
-                            "bubble_ai_image_repeat_y_end",
-                            it.coerceIn(minValue, 0.95f),
-                        )
+                    onStretchRegionChange = { horizontal, vertical ->
+                        editorSession.update { values ->
+                            values.withFloat("bubble_ai_image_repeat_start", horizontal.start)
+                                .withFloat("bubble_ai_image_repeat_end", horizontal.endInclusive)
+                                .withFloat("bubble_ai_image_repeat_y_start", vertical.start)
+                                .withFloat("bubble_ai_image_repeat_y_end", vertical.endInclusive)
+                        }
                     },
                     imageScale = bubbleAiImageScaleInput,
                     onImageScaleChange = {
@@ -1094,12 +1055,12 @@ internal fun ThemeSettingsChatStyleSection(
                         )
                     },
                     contentPaddingLeft = bubbleAiContentPaddingLeftInput,
-                    onContentPaddingLeftChange = {
-                        editorSession.setFloat("bubble_ai_content_padding_left", it)
-                    },
                     contentPaddingRight = bubbleAiContentPaddingRightInput,
-                    onContentPaddingRightChange = {
-                        editorSession.setFloat("bubble_ai_content_padding_right", it)
+                    onContentPaddingChange = { left, right ->
+                        editorSession.update { values ->
+                            values.withFloat("bubble_ai_content_padding_left", left)
+                                .withFloat("bubble_ai_content_padding_right", right)
+                        }
                     },
                 )
 
@@ -1318,273 +1279,6 @@ private fun BubbleFontStyleEditor(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BubbleImageStyleEditor(
-    title: String,
-    enabled: Boolean,
-    switchEnabled: Boolean = true,
-    description: String,
-    onEnabledChange: (Boolean) -> Unit,
-    imageUri: String?,
-    onPickImage: () -> Unit,
-    onClearImage: () -> Unit,
-    cropLeft: Float,
-    onCropLeftChange: (Float) -> Unit,
-    cropTop: Float,
-    onCropTopChange: (Float) -> Unit,
-    cropRight: Float,
-    onCropRightChange: (Float) -> Unit,
-    cropBottom: Float,
-    onCropBottomChange: (Float) -> Unit,
-    repeatXStart: Float,
-    onRepeatXStartChange: (Float) -> Unit,
-    repeatXEnd: Float,
-    onRepeatXEndChange: (Float) -> Unit,
-    repeatYStart: Float,
-    onRepeatYStartChange: (Float) -> Unit,
-    repeatYEnd: Float,
-    onRepeatYEndChange: (Float) -> Unit,
-    imageScale: Float,
-    onImageScaleChange: (Float) -> Unit,
-    contentPaddingLeft: Float,
-    onContentPaddingLeftChange: (Float) -> Unit,
-    contentPaddingRight: Float,
-    onContentPaddingRightChange: (Float) -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-            ),
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Switch(
-                    checked = enabled,
-                    enabled = switchEnabled,
-                    onCheckedChange = onEnabledChange,
-                )
-            }
-
-            if (enabled) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = onPickImage,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(id = R.string.chat_style_bubble_pick_image))
-                    }
-                    OutlinedButton(
-                        onClick = onClearImage,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(id = R.string.chat_style_bubble_clear_image))
-                    }
-                }
-
-                Text(
-                    text =
-                        if (imageUri.isNullOrBlank()) {
-                            stringResource(id = R.string.chat_style_bubble_no_image_selected)
-                        } else {
-                            stringResource(id = R.string.chat_style_bubble_image_selected)
-                        },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_crop_left),
-                        value = cropLeft,
-                        range = 0f..0.45f,
-                        onValueChange = onCropLeftChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_crop_top),
-                        value = cropTop,
-                        range = 0f..0.45f,
-                        onValueChange = onCropTopChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_crop_right),
-                        value = cropRight,
-                        range = 0f..0.45f,
-                        onValueChange = onCropRightChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_crop_bottom),
-                        value = cropBottom,
-                        range = 0f..0.45f,
-                        onValueChange = onCropBottomChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_repeat_x_start),
-                        value = repeatXStart,
-                        range = 0.05f..0.9f,
-                        onValueChange = onRepeatXStartChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_repeat_x_end),
-                        value = repeatXEnd,
-                        range = ((repeatXStart + 0.01f).coerceAtMost(0.95f))..0.95f,
-                        onValueChange = onRepeatXEndChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_repeat_y_start),
-                        value = repeatYStart,
-                        range = 0.05f..0.9f,
-                        onValueChange = onRepeatYStartChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                    BubbleStyleSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_repeat_y_end),
-                        value = repeatYEnd,
-                        range = ((repeatYStart + 0.01f).coerceAtMost(0.95f))..0.95f,
-                        onValueChange = onRepeatYEndChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                BubbleStyleSliderRow(
-                    label = stringResource(id = R.string.chat_style_bubble_image_scale),
-                    value = imageScale,
-                    range = 0.2f..3f,
-                    onValueChange = onImageScaleChange,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    BubbleStyleDpSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_padding_left),
-                        value = contentPaddingLeft,
-                        range = 0f..32f,
-                        onValueChange = onContentPaddingLeftChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                    BubbleStyleDpSliderRow(
-                        label = stringResource(id = R.string.chat_style_bubble_padding_right),
-                        value = contentPaddingRight,
-                        range = 0f..32f,
-                        onValueChange = onContentPaddingRightChange,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BubbleStyleSliderRow(
-    label: String,
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "${(value * 100).toInt()}%",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = range,
-        )
-    }
-}
-
-@Composable
-private fun BubbleStyleDpSliderRow(
-    label: String,
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "${value.roundToInt()}dp",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = range,
-        )
     }
 }
 
