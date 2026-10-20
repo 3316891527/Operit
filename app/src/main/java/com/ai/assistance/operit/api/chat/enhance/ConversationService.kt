@@ -1211,7 +1211,7 @@ class ConversationService(
                     enableRetry = true,
                     recordTokenUsage = recordTokenUsage,
                     onNonFatalError = { error ->
-                        // 密钥池静默换钥使用空提示，不将其误报为未知错误。
+                        // 只统计实际错误文本，空提示不计为翻译失败。
                         if (error.isNotBlank()) {
                             reportedRetryCount =
                                 (reportedRetryCount + 1).coerceAtMost(maxRetryAttempts)

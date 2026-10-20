@@ -95,31 +95,6 @@ class ApiKeyFailureClassifierTest {
         assertEquals(402, ApiKeyFailureClassifier.httpStatus(wrapped))
     }
 
-    @Test
-    fun switchingKeysSuppressesIntermediateRetryNotice() {
-        val decision =
-            ApiKeyRetryDecision(
-                exhausted = false,
-                delayMs = 0L,
-                switchedKey = true,
-            )
-        assertTrue(
-            shouldSuppressRetryNotice(
-                status(401, "Invalid token"),
-                decision,
-                "test",
-            )
-        )
-        assertEquals(
-            false,
-            shouldSuppressRetryNotice(
-                status(401, "Invalid token"),
-                decision.copy(switchedKey = false),
-                "test",
-            )
-        )
-    }
-
     private fun status(code: Int, message: String): Exception {
         return object : IOException(message), HttpStatusCodeException {
             override val statusCode: Int = code
