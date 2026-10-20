@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.storage
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,7 +66,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -142,7 +143,7 @@ fun DataStorageScreen(
                     result.failedEntryCount,
                 )
             }
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        OKToast.typed(context, message, if (result.failedEntryCount == 0) OKToast.Kind.Success else OKToast.Kind.Warning, OKToast.LENGTH_SHORT).show()
         storageViewModel.consumeCleanupResult()
     }
 
@@ -235,15 +236,17 @@ fun DataStorageScreen(
                     onClick = {
                         showClearCookieConfirm = false
                         scope.launch {
+                            var kind = OKToast.Kind.Success
                             val message =
                                 try {
                                     CookiePrivacyManager.clearAllCookies()
                                     context.getString(R.string.clear_cookies_success)
                                 } catch (error: Exception) {
+                                    kind = OKToast.Kind.Error
                                     AppLogger.e("DataStorageScreen", "Failed to clear cookies", error)
                                     context.getString(R.string.clear_cookies_failed)
                                 }
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            OKToast.typed(context, message, kind, OKToast.LENGTH_SHORT).show()
                         }
                     }
                 ) {

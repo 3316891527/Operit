@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -45,7 +47,6 @@ import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.widget.Toast
 import android.content.ClipData
 import android.content.ClipboardManager
 import com.ai.assistance.operit.R
@@ -194,17 +195,17 @@ fun ModelPromptsSettingsScreen(
                                     ActivePrompt.CharacterCard(card.id),
                                     internalUri.toString(),
                                 )
-                                Toast.makeText(context, context.getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
+                                OKToast.success(context, context.getString(R.string.avatar_updated), OKToast.LENGTH_SHORT).show()
                                 refreshTrigger++
                             } else {
-                                Toast.makeText(context, context.getString(R.string.theme_copy_failed), Toast.LENGTH_LONG).show()
+                                OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
                             }
                         }
                     }
                 }
             }
         } else if (result.error != null) {
-            Toast.makeText(context, context.getString(R.string.avatar_crop_failed, result.error!!.message), Toast.LENGTH_LONG).show()
+            OKToast.error(context, context.getString(R.string.avatar_crop_failed, result.error!!.message), OKToast.LENGTH_LONG).show()
         }
     }
 
@@ -220,16 +221,16 @@ fun ModelPromptsSettingsScreen(
                                 ActivePrompt.CharacterGroup(group.id),
                                 internalUri.toString(),
                             )
-                            Toast.makeText(context, context.getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
+                            OKToast.success(context, context.getString(R.string.avatar_updated), OKToast.LENGTH_SHORT).show()
                             refreshTrigger++
                         } else {
-                            Toast.makeText(context, context.getString(R.string.theme_copy_failed), Toast.LENGTH_LONG).show()
+                            OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
                         }
                     }
                 }
             }
         } else if (result.error != null) {
-            Toast.makeText(context, context.getString(R.string.avatar_crop_failed, result.error!!.message), Toast.LENGTH_LONG).show()
+            OKToast.error(context, context.getString(R.string.avatar_crop_failed, result.error!!.message), OKToast.LENGTH_LONG).show()
         }
     }
 
@@ -514,7 +515,7 @@ fun ModelPromptsSettingsScreen(
                         jsonContent = jsonContent,
                         promptTagManager = promptTagManager
                     )
-                    Toast.makeText(
+                    OKToast.info(
                         context,
                         context.getString(
                             R.string.tag_import_summary,
@@ -522,17 +523,17 @@ fun ModelPromptsSettingsScreen(
                             result.updatedCount,
                             result.skippedCount
                         ),
-                        Toast.LENGTH_LONG
+                        OKToast.LENGTH_LONG
                     ).show()
                 } catch (e: Exception) {
                     val errorMessage = when (e.message) {
                         "invalid format", "missing tags array" -> context.getString(R.string.tag_import_invalid_format)
                         else -> e.message ?: context.getString(R.string.unknown_error)
                     }
-                    Toast.makeText(
+                    OKToast.error(
                         context,
                         context.getString(R.string.import_failed, errorMessage),
-                        Toast.LENGTH_LONG
+                        OKToast.LENGTH_LONG
                     ).show()
                 } finally {
                     isTagImporting = false
@@ -548,13 +549,13 @@ fun ModelPromptsSettingsScreen(
             try {
                 val tags = promptTagManager.getAllTags()
                 if (tags.isEmpty()) {
-                    Toast.makeText(context, context.getString(R.string.tag_export_no_custom_tags), Toast.LENGTH_SHORT).show()
+                    OKToast.info(context, context.getString(R.string.tag_export_no_custom_tags), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
 
                 val selectedTags = tags.filter { it.id in selectedIds }
                 if (selectedTags.isEmpty()) {
-                    Toast.makeText(context, context.getString(R.string.tag_export_select_at_least_one), Toast.LENGTH_SHORT).show()
+                    OKToast.warning(context, context.getString(R.string.tag_export_select_at_least_one), OKToast.LENGTH_SHORT).show()
                     return@launch
                 }
 
@@ -570,13 +571,13 @@ fun ModelPromptsSettingsScreen(
                     exportSavedPath = "${Environment.DIRECTORY_DOWNLOADS}/Operit/exports/$fileName"
                     showExportSavedDialog = true
                 } else {
-                    Toast.makeText(context, context.getString(R.string.save_failed), Toast.LENGTH_SHORT).show()
+                    OKToast.error(context, context.getString(R.string.save_failed), OKToast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.export_failed_with_reason, e.message ?: context.getString(R.string.unknown_error)),
-                    Toast.LENGTH_LONG
+                    OKToast.LENGTH_LONG
                 ).show()
             } finally {
                 isTagExporting = false
@@ -645,7 +646,7 @@ fun ModelPromptsSettingsScreen(
                             ActivePrompt.CharacterCard(newCardId), internalUri.toString()
                         )
                     } else {
-                        Toast.makeText(context, context.getString(R.string.theme_copy_failed), Toast.LENGTH_LONG).show()
+                        OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
                     }
                 }
                 newCardId
@@ -735,7 +736,7 @@ fun ModelPromptsSettingsScreen(
             characterCardManager.resetDefaultCharacterCard()
             showResetDefaultConfirm = false
             refreshTrigger++
-            Toast.makeText(context, context.getString(R.string.reset_successful), Toast.LENGTH_SHORT).show()
+            OKToast.success(context, context.getString(R.string.reset_successful), OKToast.LENGTH_SHORT).show()
         }
     }
 
@@ -954,7 +955,7 @@ fun ModelPromptsSettingsScreen(
                                     throw error
                                 } catch (error: Exception) {
                                     AppLogger.e("RoleUserProfile", "打开角色用户资料失败", error)
-                                    Toast.makeText(context, error.message ?: error.javaClass.simpleName, Toast.LENGTH_SHORT).show()
+                                    OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
                                 }
                             }
                         },
@@ -1003,7 +1004,7 @@ fun ModelPromptsSettingsScreen(
                         onImportTags = { tagImportFilePickerLauncher.launch("*/*") },
                         onExportTags = {
                             if (customTagsForExport.isEmpty()) {
-                                Toast.makeText(context, context.getString(R.string.tag_export_no_custom_tags), Toast.LENGTH_SHORT).show()
+                                OKToast.info(context, context.getString(R.string.tag_export_no_custom_tags), OKToast.LENGTH_SHORT).show()
                             } else {
                                 selectedTagExportIds = customTagsForExport.map { it.id }.toSet()
                                 showTagExportSelectionDialog = true
@@ -1396,7 +1397,7 @@ fun ModelPromptsSettingsScreen(
                             ActivePrompt.CharacterGroup(group.id),
                             null,
                         )
-                        Toast.makeText(context, context.getString(R.string.avatar_reset), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.avatar_reset), OKToast.LENGTH_SHORT).show()
                         refreshTrigger++
                     }
                 }
@@ -1427,7 +1428,7 @@ fun ModelPromptsSettingsScreen(
                             ActivePrompt.CharacterGroup(group.id),
                             null,
                         )
-                        Toast.makeText(context, context.getString(R.string.avatar_reset), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.avatar_reset), OKToast.LENGTH_SHORT).show()
                         refreshTrigger++
                     }
                 }
@@ -1719,10 +1720,10 @@ fun ModelPromptsSettingsScreen(
                                             exportSavedPath = "${Environment.DIRECTORY_DOWNLOADS}/Operit/exports/$fileName"
                                             showExportSavedDialog = true
                                         } else {
-                                            Toast.makeText(context, context.getString(R.string.save_failed), Toast.LENGTH_SHORT).show()
+                                            OKToast.error(context, context.getString(R.string.save_failed), OKToast.LENGTH_SHORT).show()
                                         }
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, (e.message ?: context.getString(R.string.save_failed)), Toast.LENGTH_SHORT).show()
+                                        OKToast.error(context, (e.message ?: context.getString(R.string.save_failed)), OKToast.LENGTH_SHORT).show()
                                     } finally {
                                         isExportGenerating = false
                                     }
@@ -1791,10 +1792,10 @@ fun ModelPromptsSettingsScreen(
                                             exportSavedPath = "${Environment.DIRECTORY_DOWNLOADS}/Operit/exports/$fileName"
                                             showExportSavedDialog = true
                                         } else {
-                                            Toast.makeText(context, context.getString(R.string.save_failed), Toast.LENGTH_SHORT).show()
+                                            OKToast.error(context, context.getString(R.string.save_failed), OKToast.LENGTH_SHORT).show()
                                         }
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, (e.message ?: context.getString(R.string.save_failed)), Toast.LENGTH_SHORT).show()
+                                        OKToast.error(context, (e.message ?: context.getString(R.string.save_failed)), OKToast.LENGTH_SHORT).show()
                                     } finally {
                                         isExportGenerating = false
                                     }
@@ -1859,7 +1860,7 @@ fun ModelPromptsSettingsScreen(
                     onClick = {
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.setPrimaryClip(ClipData.newPlainText("export_path", exportSavedPath))
-                        Toast.makeText(context, context.getString(R.string.copy), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.copy), OKToast.LENGTH_SHORT).show()
                     }
                 ) {
                     Text(stringResource(R.string.copy))
@@ -1995,16 +1996,16 @@ fun ModelPromptsSettingsScreen(
                     onClick = {
                         val bmp = exportQrBitmap
                         if (bmp == null) {
-                            Toast.makeText(context, context.getString(R.string.image_load_failed), Toast.LENGTH_SHORT).show()
+                            OKToast.error(context, context.getString(R.string.image_load_failed), OKToast.LENGTH_SHORT).show()
                             return@Button
                         }
                         scope.launch {
                             val fileName = "character_card_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.png"
                             val ok = saveBitmapToGallery(context, bmp, fileName)
-                            Toast.makeText(
+                            OKToast.typed(
                                 context,
                                 if (ok) context.getString(R.string.image_saved) else context.getString(R.string.save_failed),
-                                Toast.LENGTH_SHORT
+                                if (ok) OKToast.Kind.Success else OKToast.Kind.Error, OKToast.LENGTH_SHORT
                             ).show()
                         }
                     },

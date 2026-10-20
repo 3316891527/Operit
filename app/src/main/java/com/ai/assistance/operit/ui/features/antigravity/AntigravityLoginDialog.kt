@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.antigravity
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,16 +79,16 @@ fun AntigravityLoginDialog(
             isCompleting = true
             stage = "exchanging_token_and_loading_account"
             val state = coordinator.completeLogin(loginSession, Uri.parse(callbackUrl))
-            Toast.makeText(
+            OKToast.success(
                 context,
                 context.getString(R.string.antigravity_login_success),
-                Toast.LENGTH_LONG,
+                OKToast.LENGTH_LONG,
             ).show()
             onLoginSuccess?.invoke(state)
             onDismissRequest()
         } catch (error: TimeoutCancellationException) {
             AppLogger.e(TAG, "Antigravity OAuth login timed out", error)
-            Toast.makeText(context, R.string.antigravity_login_timed_out, Toast.LENGTH_LONG).show()
+            OKToast.error(context, R.string.antigravity_login_timed_out, OKToast.LENGTH_LONG).show()
             onDismissRequest()
         } catch (error: CancellationException) {
             throw error
@@ -149,10 +150,10 @@ fun AntigravityLoginDialog(
 }
 
 private fun showLoginFailure(context: Context, error: Throwable) {
-    Toast.makeText(
+    OKToast.error(
         context,
         context.getString(R.string.antigravity_login_failed, error.message.orEmpty()),
-        Toast.LENGTH_LONG,
+        OKToast.LENGTH_LONG,
     ).show()
 }
 

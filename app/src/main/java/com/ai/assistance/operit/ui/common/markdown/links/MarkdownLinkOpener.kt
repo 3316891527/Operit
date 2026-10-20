@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.common.markdown.links
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger
 import java.net.URI
@@ -36,6 +37,6 @@ internal fun openMarkdownLink(context: Context, url: String): Boolean {
 }
 
 private fun showMarkdownLinkFailure(context: Context): Boolean {
-    Toast.makeText(context, R.string.markdown_link_not_openable, Toast.LENGTH_SHORT).show()
+    OKToast.warning(context, R.string.markdown_link_not_openable, OKToast.LENGTH_SHORT).show()
     return false
 }

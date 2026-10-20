@@ -8131,4 +8131,8 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="attachment_image_duplicate">A imagem %1$s já está anexada</string>
     <string name="logcat_write_enabled">Gravar logs</string>
     <string name="logcat_write_enabled_description">Desative para parar de registrar logs do aplicativo. Ativa automaticamente a cada dia. Os logs existentes ainda podem ser exportados.</string>
+    <string name="oktoast_info">Informação</string>
+    <string name="oktoast_success">Sucesso</string>
+    <string name="oktoast_warning">Aviso</string>
+    <string name="oktoast_error">Erro</string>
 </resources>

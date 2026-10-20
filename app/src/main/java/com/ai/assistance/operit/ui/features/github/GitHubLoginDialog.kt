@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.github
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -134,10 +135,10 @@ private fun GitHubEmbeddedLoginDialog(
             onSuccess = { started -> transaction = started },
             onFailure = { error ->
                 AppLogger.e(TAG, "Failed to start embedded GitHub login", error)
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.main_github_login_failed, error.message.orEmpty()),
-                    Toast.LENGTH_LONG
+                    OKToast.LENGTH_LONG
                 ).show()
                 onDismissRequest()
             }
@@ -187,20 +188,20 @@ private fun GitHubEmbeddedLoginDialog(
             scope.launch {
                 coordinator.completeLogin(completionUri).fold(
                     onSuccess = { user ->
-                        Toast.makeText(
+                        OKToast.success(
                             context,
                             context.getString(R.string.main_github_login_success, user.login),
-                            Toast.LENGTH_LONG
+                            OKToast.LENGTH_LONG
                         ).show()
                         onLoginSuccess?.invoke()
                         onDismissRequest()
                     },
                     onFailure = { error ->
                         AppLogger.e(TAG, "Failed to complete embedded GitHub login", error)
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.main_github_login_failed, error.message.orEmpty()),
-                            Toast.LENGTH_LONG
+                            OKToast.LENGTH_LONG
                         ).show()
                         onDismissRequest()
                     }
@@ -214,10 +215,10 @@ private fun GitHubEmbeddedLoginDialog(
         onFailure = { error ->
             scope.launch { coordinator.cancelLogin() }
             AppLogger.e(TAG, "Embedded GitHub browser callback failed", error)
-            Toast.makeText(
+            OKToast.error(
                 context,
                 context.getString(R.string.main_github_login_failed, error.message.orEmpty()),
-                Toast.LENGTH_LONG
+                OKToast.LENGTH_LONG
             ).show()
             onDismissRequest()
         }
@@ -263,19 +264,19 @@ private fun GitHubExternalLoginDialog(
             }
             isCompleting = true
             val user = coordinator.completeLogin(completionUri).getOrElse { error -> throw error }
-            Toast.makeText(
+            OKToast.success(
                 context,
                 context.getString(R.string.main_github_login_success, user.login),
-                Toast.LENGTH_LONG
+                OKToast.LENGTH_LONG
             ).show()
             onLoginSuccess?.invoke()
             onDismissRequest()
         } catch (error: TimeoutCancellationException) {
             AppLogger.e(TAG, "External GitHub login timed out", error)
-            Toast.makeText(
+            OKToast.error(
                 context,
                 context.getString(R.string.main_github_login_failed, error.message.orEmpty()),
-                Toast.LENGTH_LONG
+                OKToast.LENGTH_LONG
             ).show()
             onDismissRequest()
         } catch (error: CancellationException) {
@@ -286,10 +287,10 @@ private fun GitHubExternalLoginDialog(
                 return@LaunchedEffect
             }
             AppLogger.e(TAG, "External GitHub login failed", error)
-            Toast.makeText(
+            OKToast.error(
                 context,
                 context.getString(R.string.main_github_login_failed, error.message.orEmpty()),
-                Toast.LENGTH_LONG
+                OKToast.LENGTH_LONG
             ).show()
             onDismissRequest()
         } finally {

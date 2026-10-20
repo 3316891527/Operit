@@ -1,12 +1,13 @@
 package com.ai.assistance.operit.ui.features.chat.components.attachments
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Base64
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -403,17 +404,17 @@ private fun openFile(context: Context, file: File, mimeType: String, fileNameFor
 
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
-        Toast.makeText(
+        OKToast.error(
             context,
             context.getString(R.string.file_open_failed, fileNameForToast),
-            Toast.LENGTH_SHORT
+            OKToast.LENGTH_SHORT
         ).show()
     } catch (e: Exception) {
         AppLogger.e("AttachmentViewerDialog", "openFile failed", e)
-        Toast.makeText(
+        OKToast.error(
             context,
             context.getString(R.string.file_open_failed, fileNameForToast),
-            Toast.LENGTH_SHORT
+            OKToast.LENGTH_SHORT
         ).show()
     }
 }

@@ -1,8 +1,9 @@
 package com.ai.assistance.operit.ui.features.packages.screens.market.viewmodel
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.content.SharedPreferences
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -108,7 +109,7 @@ class RepoMarketPublishViewModel(
         viewModelScope.launch {
             try {
                 githubAuth.logout()
-                Toast.makeText(context, context.getString(R.string.skillmarket_logged_out), Toast.LENGTH_SHORT).show()
+                OKToast.info(context, context.getString(R.string.skillmarket_logged_out), OKToast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 _errorMessage.value = context.getString(R.string.skillmarket_logout_failed, e.message ?: "")
                 AppLogger.e(TAG, "Failed to logout from GitHub", e)

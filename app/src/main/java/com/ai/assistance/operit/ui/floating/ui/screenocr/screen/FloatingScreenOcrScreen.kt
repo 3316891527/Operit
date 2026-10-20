@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.floating.ui.screenocr.screen
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.R
-import android.widget.Toast
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
@@ -280,9 +281,7 @@ fun FloatingScreenOcrScreen(floatContext: FloatContext) {
     val density = androidx.compose.ui.platform.LocalDensity.current
     val handleRadiusPx = with(density) { 18.dp.toPx() }
     val minSizePx = with(density) { 32.dp.toPx() }
-    fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
+
 
     var overlaySize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -445,7 +444,7 @@ fun FloatingScreenOcrScreen(floatContext: FloatContext) {
                             },
                             onDragEnd = {
                                 if (points.size < 3) {
-                                    showToast(context.getString(R.string.screen_ocr_selection_too_small))
+                                    OKToast.warning(context, context.getString(R.string.screen_ocr_selection_too_small)).show()
                                     points.clear()
                                     selectionRect = null
                                     showConfirm = false
@@ -460,7 +459,7 @@ fun FloatingScreenOcrScreen(floatContext: FloatContext) {
                                 val w = maxX - minX
                                 val h = maxY - minY
                                 if (w < 10f || h < 10f) {
-                                    showToast(context.getString(R.string.screen_ocr_selection_too_small))
+                                    OKToast.warning(context, context.getString(R.string.screen_ocr_selection_too_small)).show()
                                     points.clear()
                                     selectionRect = null
                                     showConfirm = false
@@ -777,7 +776,7 @@ fun FloatingScreenOcrScreen(floatContext: FloatContext) {
                                     }
                                     
                                     if (ocrText.isBlank()) {
-                                        showToast(context.getString(R.string.screen_ocr_no_text_recognized))
+                                        OKToast.warning(context, context.getString(R.string.screen_ocr_no_text_recognized)).show()
                                     }
 
                                     val content =
@@ -806,14 +805,14 @@ fun FloatingScreenOcrScreen(floatContext: FloatContext) {
                                         ?.getAttachmentDelegate()
                                         ?.addAttachments(listOf(textAttachment))
                                     
-                                    showToast(context.getString(R.string.screen_ocr_selection_content_captured))
+                                    OKToast.success(context, context.getString(R.string.screen_ocr_selection_content_captured)).show()
                                     
                                     // Set pending flag for Auto-Check in Fullscreen
                                     floatContext.pendingScreenSelection = true
                                     
                                     floatContext.onModeChange(floatContext.previousMode)
                                 } catch (e: Exception) {
-                                    showToast(context.getString(R.string.screen_ocr_error_prefix, e.message ?: ""))
+                                    OKToast.error(context, context.getString(R.string.screen_ocr_error_prefix, e.message ?: "")).show()
                                 } finally {
                                     isBusy = false
                                 }

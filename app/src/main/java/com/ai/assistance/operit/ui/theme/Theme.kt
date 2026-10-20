@@ -124,6 +124,7 @@ fun OperitTheme(content: @Composable () -> Unit) {
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
+            com.ai.assistance.operit.ui.common.oktoast.OKToast.useAppearance(darkTheme, colorScheme.surface.toArgb(), colorScheme.onSurface.toArgb())
             val window = (view.context as Activity).window
             val insetsController = window.decorView.let { decorView ->
                 androidx.core.view.WindowCompat.getInsetsController(window, decorView)

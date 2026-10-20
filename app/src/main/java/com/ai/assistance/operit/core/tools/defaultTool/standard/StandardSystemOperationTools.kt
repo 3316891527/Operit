@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.standard
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,7 +13,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
-import android.widget.Toast
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
@@ -122,7 +123,7 @@ open class StandardSystemOperationTools(private val context: Context) {
 
         return try {
             Handler(Looper.getMainLooper()).post {
-                Toast.makeText(context.applicationContext, message, Toast.LENGTH_SHORT).show()
+                OKToast.info(context.applicationContext, message, OKToast.LENGTH_SHORT).show()
             }
             ToolResult(toolName = tool.name, success = true, result = StringResultData("OK"))
         } catch (e: Exception) {

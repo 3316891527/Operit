@@ -8359,4 +8359,8 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="attachment_image_duplicate">La imagen %1$s ya está adjunta</string>
     <string name="logcat_write_enabled">Guardar registros</string>
     <string name="logcat_write_enabled_description">Desactiva el registro de la aplicación. Se activa automáticamente cada día. Los registros existentes se pueden exportar.</string>
+    <string name="oktoast_info">Información</string>
+    <string name="oktoast_success">Éxito</string>
+    <string name="oktoast_warning">Advertencia</string>
+    <string name="oktoast_error">Error</string>
 </resources>

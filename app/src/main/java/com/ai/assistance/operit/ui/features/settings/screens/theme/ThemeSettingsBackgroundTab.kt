@@ -1,8 +1,9 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -222,25 +223,25 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                                 "background_media_type",
                                 UserPreferencesManager.MEDIA_TYPE_IMAGE,
                             )
-                            Toast.makeText(
+                            OKToast.success(
                                 context,
                                 context.getString(R.string.theme_image_saved),
-                                Toast.LENGTH_SHORT,
+                                OKToast.LENGTH_SHORT,
                             ).show()
                         } else {
-                            Toast.makeText(
+                            OKToast.error(
                                 context,
                                 context.getString(R.string.theme_copy_failed),
-                                Toast.LENGTH_LONG,
+                                OKToast.LENGTH_LONG,
                             ).show()
                         }
                     }
                 }
             } else if (result.error != null) {
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.theme_image_crop_failed, result.error!!.message),
-                    Toast.LENGTH_LONG,
+                    OKToast.LENGTH_LONG,
                 ).show()
             }
         }
@@ -321,10 +322,10 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                     val isVideoSizeAcceptable = FileUtils.checkVideoSize(context, uri, 30)
 
                     if (!isVideoSizeAcceptable) {
-                        Toast.makeText(
+                        OKToast.warning(
                             context,
                             context.getString(R.string.theme_video_too_large),
-                            Toast.LENGTH_LONG,
+                            OKToast.LENGTH_LONG,
                         ).show()
                         return@rememberLauncherForActivityResult
                     }
@@ -346,16 +347,16 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                                 "background_media_type",
                                 UserPreferencesManager.MEDIA_TYPE_VIDEO,
                             )
-                            Toast.makeText(
+                            OKToast.success(
                                 context,
                                 context.getString(R.string.theme_video_saved),
-                                Toast.LENGTH_SHORT,
+                                OKToast.LENGTH_SHORT,
                             ).show()
                         } else {
-                            Toast.makeText(
+                            OKToast.error(
                                 context,
                                 context.getString(R.string.theme_copy_failed),
-                                Toast.LENGTH_LONG,
+                                OKToast.LENGTH_LONG,
                             ).show()
                         }
                     }

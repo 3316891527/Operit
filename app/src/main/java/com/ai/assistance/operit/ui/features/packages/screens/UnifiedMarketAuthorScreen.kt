@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.packages.screens
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +84,7 @@ fun UnifiedMarketAuthorScreen(
 
     errorMessage?.let { error ->
         LaunchedEffect(error) {
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+            OKToast.error(context, error, OKToast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }

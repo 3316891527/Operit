@@ -71,6 +71,8 @@ class ChatHistoryDelegate(
     // private val apiPreferences = ApiPreferences(context)
 
     // State flows
+    private val _loadedChatId = MutableStateFlow<String?>(null)
+    val loadedChatId: StateFlow<String?> = _loadedChatId.asStateFlow()
     private val _chatHistory = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatHistory: StateFlow<List<ChatMessage>> = _chatHistory.asStateFlow()
     private val currentChatWindow = CurrentChatWindowController()
@@ -605,6 +607,7 @@ class ChatHistoryDelegate(
         tokenStatisticsLoader.ensureLoaded(chatId)
 
     private suspend fun loadChatMessages(chatId: String) {
+        _loadedChatId.value = null
         try {
             // 直接读取当前会话的持久化统计，避免依赖聊天列表 Flow 的到达顺序。
             try {
@@ -619,9 +622,9 @@ class ChatHistoryDelegate(
             val initialPageCount = latestDisplayPageCountByChatId[chatId] ?: 1
             val messages = loadLatestCurrentChatDisplayWindow(chatId, pageCount = initialPageCount)
             AppLogger.d(TAG, "加载聊天 $chatId 的消息：${messages.size} 条")
-
             // 打开历史对话时也执行开场白同步：仅当当前会话还没有用户消息时
             syncOpeningStatementIfNoUserMessage(chatId)
+            if (_currentChatId.value == chatId) _loadedChatId.value = chatId
 
         } catch (e: CancellationException) {
             throw e
@@ -772,7 +775,8 @@ class ChatHistoryDelegate(
         inheritGroupFromCurrent: Boolean = true,
         setAsCurrentChat: Boolean = true,
         characterCardId: String? = null,
-        folderId: String? = null
+        folderId: String? = null,
+        onCreated: (String) -> Unit = {},
     ) {
         coroutineScope.launch {
             saveChatStatistics()
@@ -850,6 +854,7 @@ class ChatHistoryDelegate(
                     loadChatMessages(newChat.id)
                 }
                 onTokenStatisticsLoaded(newChat.id, 0, 0, 0)
+                onCreated(newChat.id)
             }
         }
     }

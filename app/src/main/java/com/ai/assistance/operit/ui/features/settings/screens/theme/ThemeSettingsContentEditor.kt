@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -237,10 +238,10 @@ internal fun ThemeSettingsContentEditor(
                 throw e
             } catch (e: Exception) {
                 AppLogger.e("ThemeSettings", "Failed to activate theme target", e)
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.theme_target_switch_failed),
-                    Toast.LENGTH_LONG,
+                    OKToast.LENGTH_LONG,
                 ).show()
                 editorReloadToken += 1
             } finally {
@@ -317,7 +318,7 @@ internal fun ThemeSettingsContentEditor(
             } catch (e: Exception) {
                 draft.cancelSave()
                 AppLogger.e("ThemeSettings", "Failed to save theme draft", e)
-                Toast.makeText(context, context.getString(R.string.theme_save_failed), Toast.LENGTH_LONG)
+                OKToast.error(context, context.getString(R.string.theme_save_failed), OKToast.LENGTH_LONG)
                     .show()
             } finally {
                 isSaving = false
@@ -351,10 +352,10 @@ internal fun ThemeSettingsContentEditor(
                 }
                 draft.markSaved(savedValues, savedGlobalUserName)
                 showSaveSuccessMessage = true
-                Toast.makeText(
+                OKToast.success(
                     context,
                     context.getString(R.string.theme_applied_to_all_character_cards),
-                    Toast.LENGTH_SHORT,
+                    OKToast.LENGTH_SHORT,
                 ).show()
             } catch (e: CancellationException) {
                 draft.cancelSave()
@@ -362,10 +363,10 @@ internal fun ThemeSettingsContentEditor(
             } catch (e: Exception) {
                 draft.cancelSave()
                 AppLogger.e("ThemeSettings", "Failed to apply theme to all character cards", e)
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.theme_apply_to_all_character_cards_failed),
-                    Toast.LENGTH_LONG,
+                    OKToast.LENGTH_LONG,
                 ).show()
             } finally {
                 isSaving = false

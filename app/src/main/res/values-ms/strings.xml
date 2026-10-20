@@ -8291,4 +8291,8 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="attachment_image_duplicate">Imej %1$s sudah dilampirkan</string>
     <string name="logcat_write_enabled">Tulis log</string>
     <string name="logcat_write_enabled_description">Matikan untuk menghentikan rekod log aplikasi. Diaktifkan semula setiap hari. Log sedia ada masih boleh dieksport.</string>
+    <string name="oktoast_info">Maklumat</string>
+    <string name="oktoast_success">Berjaya</string>
+    <string name="oktoast_warning">Amaran</string>
+    <string name="oktoast_error">Ralat</string>
 </resources>

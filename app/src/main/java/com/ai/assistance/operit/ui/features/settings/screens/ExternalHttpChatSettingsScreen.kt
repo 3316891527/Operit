@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
@@ -138,39 +139,37 @@ adb shell am broadcast \
     val exampleContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
     val cardBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
 
-    fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
+
 
     fun copyText(text: String, label: String, successMessage: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
-        showToast(successMessage)
+        OKToast.success(context, successMessage).show()
     }
 
     fun savePort() {
         scope.launch {
             val parsedPort = portText.toIntOrNull()
             if (parsedPort == null || !ExternalHttpApiPreferences.isValidPort(parsedPort)) {
-                showToast(context.getString(R.string.external_http_chat_invalid_port))
+                OKToast.warning(context, context.getString(R.string.external_http_chat_invalid_port)).show()
                 return@launch
             }
             preferences.setPort(parsedPort)
             if (enabled) {
                 AIForegroundService.ensureRunningForExternalHttp(context)
             }
-            showToast(context.getString(R.string.external_http_chat_port_saved))
+            OKToast.success(context, context.getString(R.string.external_http_chat_port_saved)).show()
         }
     }
 
     fun saveToken() {
         scope.launch {
             if (bearerTokenText.length < 6) {
-                showToast(context.getString(R.string.external_http_chat_token_length_error))
+                OKToast.warning(context, context.getString(R.string.external_http_chat_token_length_error)).show()
                 return@launch
             }
             preferences.setBearerToken(bearerTokenText)
-            showToast(context.getString(R.string.external_http_chat_token_saved))
+            OKToast.success(context, context.getString(R.string.external_http_chat_token_saved)).show()
         }
     }
 
@@ -213,11 +212,11 @@ adb shell am broadcast \
                                     preferences.ensureBearerToken()
                                     preferences.setEnabled(true)
                                     AIForegroundService.ensureRunningForExternalHttp(context)
-                                    showToast(context.getString(R.string.external_http_chat_service_enabled))
+                                    OKToast.success(context, context.getString(R.string.external_http_chat_service_enabled)).show()
                                 } else {
                                     preferences.setEnabled(false)
                                     AIForegroundService.stopExternalHttp(context)
-                                    showToast(context.getString(R.string.external_http_chat_service_disabled))
+                                    OKToast.info(context, context.getString(R.string.external_http_chat_service_disabled)).show()
                                 }
                             }
                         }
@@ -281,7 +280,7 @@ adb shell am broadcast \
                     TextButton(
                         onClick = {
                             if (bearerToken.isBlank()) {
-                                showToast(context.getString(R.string.external_http_chat_token_not_generated))
+                                OKToast.warning(context, context.getString(R.string.external_http_chat_token_not_generated)).show()
                             } else {
                                 copyText(
                                     text = bearerToken,

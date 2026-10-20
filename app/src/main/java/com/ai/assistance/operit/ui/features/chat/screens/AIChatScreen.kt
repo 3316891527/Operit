@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.ui.features.chat.components.animateScrollToEnd
 import android.content.ClipboardManager
@@ -7,7 +9,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import com.ai.assistance.operit.util.AppLogger
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -149,10 +150,10 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                     // The actual logic is now triggered from within the ViewModel after the check.
                 } else {
                     // 权限被拒绝
-                    android.widget.Toast.makeText(
+                    OKToast.warning(
                                     context,
                                     context.getString(R.string.microphone_permission_denied),
-                                    android.widget.Toast.LENGTH_SHORT
+                                    OKToast.LENGTH_SHORT
                             )
                             .show()
                 }
@@ -241,6 +242,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     // Collect state from ViewModel
     val modelName by actualViewModel.modelName.collectAsState()
     val chatHistory by actualViewModel.chatHistory.collectAsState()
+    val newChatIntroId by actualViewModel.chatListMotion.newChatId.collectAsState()
+    val loadedChatId by actualViewModel.loadedChatId.collectAsState()
+    val introDraft by actualViewModel.userMessage.collectAsState()
     // 仅对当前会话显示处理中状态（影响“停止/发送”按钮）
     val isLoading by actualViewModel.currentChatIsLoading.collectAsState()
     val errorMessage by actualViewModel.errorMessage.collectAsState()
@@ -366,7 +370,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         onHandleSharedText = actualViewModel::handleSharedText,
         onClearSharedFiles = SharedFileHandler::clearSharedFiles,
         onClearSharedText = SharedFileHandler::clearSharedText,
-        onShowMessage = actualViewModel::showToast
+        onShowMessage = { message, kind -> OKToast.typed(context, message, kind).show() }
     )
 
     val pendingChatDraft by PendingChatDraftHandler.pendingDraft.collectAsState()
@@ -607,7 +611,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         ErrorDialog(errorMessage = message, onDismiss = { actualViewModel.dismissErrorDialog() })
     }
 
-    val toastEvent by actualViewModel.toastEvent.collectAsState()
 
     // Save chat on app exit
     DisposableEffect(Unit) {
@@ -1217,17 +1220,11 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             )
         }
 
-        ChatToastHost(
-            event = toastEvent,
-            onDismiss = actualViewModel::clearToastEvent,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(
-                    start = 16.dp,
-                    top = padding.calculateTopPadding() + 50.dp,
-                    end = 16.dp
-                ),
-            maxHeight = 280.dp
+        com.ai.assistance.operit.ui.features.chat.motion.NewChatIntro(
+            requestId = newChatIntroId, currentChatId = currentChatId,
+            ready = loadedChatId == currentChatId && currentChatId != null && !isLoading && !isLoadingDisplayWindow && !showChatHistorySelector, empty = chatHistory.isEmpty(),
+            hasDraft = introDraft.text.isNotEmpty(), onConsumed = actualViewModel.chatListMotion::consumeIntro,
+            modifier = Modifier.fillMaxSize().padding(bottom = bottomBarHeightDp),
         )
     }
 
@@ -1250,10 +1247,10 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         // If floating mode is on but no permission, turn it off
         if (isFloatingMode && !canDrawOverlays.value) {
             actualViewModel.toggleFloatingMode()
-            Toast.makeText(
+            OKToast.warning(
                             context,
                             context.getString(R.string.floating_window_permission_denied),
-                            Toast.LENGTH_SHORT
+                            OKToast.LENGTH_SHORT
                     )
                     .show()
         }
@@ -1453,7 +1450,7 @@ private fun ChatInputBottomBar(
     fun showChatInputHookMessage(message: String?) {
         val normalizedMessage = message?.trim().orEmpty()
         if (normalizedMessage.isNotBlank()) {
-            actualViewModel.showToast(normalizedMessage)
+            OKToast.info(context, normalizedMessage).show()
         }
     }
 
@@ -1482,10 +1479,10 @@ private fun ChatInputBottomBar(
 
         val chatId = latestCurrentChatId.value
         if (chatId.isNullOrBlank()) {
-            Toast.makeText(
+            OKToast.warning(
                 context,
                 context.getString(R.string.chat_please_create_new_chat),
-                Toast.LENGTH_SHORT,
+                OKToast.LENGTH_SHORT,
             ).show()
             return@LaunchedEffect
         }
@@ -1604,16 +1601,16 @@ private fun ChatInputBottomBar(
             isQueueBlocked = isQueueBlocked,
         )
         actualViewModel.updateUserMessage(TextFieldValue(""))
-        actualViewModel.showToast(context.getString(R.string.chat_queue_added))
+        OKToast.info(context, context.getString(R.string.chat_queue_added)).show()
     }
 
     val sendMessage: () -> Unit = {
         coroutineScope.launch {
             if (currentChatId.isNullOrBlank()) {
-                Toast.makeText(
+                OKToast.warning(
                     context,
                     context.getString(R.string.chat_please_create_new_chat),
-                    Toast.LENGTH_SHORT,
+                    OKToast.LENGTH_SHORT,
                 ).show()
                 return@launch
             }

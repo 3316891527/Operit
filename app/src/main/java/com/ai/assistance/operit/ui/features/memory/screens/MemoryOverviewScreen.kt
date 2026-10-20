@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.memory.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.FilledTonalIconButton
@@ -52,7 +54,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -111,7 +112,7 @@ fun MemoryOverviewScreen(onOpenSpace: (String) -> Unit) {
             try {
                 spaces = spaceIds.map { preferences.getMemorySpaceFlow(it).first() }
             } catch (error: Exception) {
-                Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show()
+                OKToast.error(context, error.toString(), OKToast.LENGTH_SHORT).show()
             }
         }
     }
@@ -120,7 +121,7 @@ fun MemoryOverviewScreen(onOpenSpace: (String) -> Unit) {
             try {
                 cards = cardManager.getAllCharacterCards().sortedBy { it.name }
             } catch (error: Exception) {
-                Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show()
+                OKToast.error(context, error.toString(), OKToast.LENGTH_SHORT).show()
             }
         }
     }
@@ -134,7 +135,7 @@ fun MemoryOverviewScreen(onOpenSpace: (String) -> Unit) {
                 spaces = preferences.memorySpaceListFlow.first().map { preferences.getMemorySpaceFlow(it).first() }
                 cards = cardManager.getAllCharacterCards().sortedBy { it.name }
             } catch (error: Exception) {
-                Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show()
+                OKToast.error(context, error.toString(), OKToast.LENGTH_SHORT).show()
             } finally {
                 busy = false
             }

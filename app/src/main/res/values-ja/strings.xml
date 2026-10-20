@@ -952,4 +952,8 @@
     <string name="logcat_write_enabled">ログを記録</string>
     <string name="logcat_write_enabled_description">オフにするとアプリのログ記録を停止します。毎日自動でオンに戻ります。既存のログは引き続きエクスポートできます。</string>
     <string name="chat_continue_generation">生成を続ける</string>
+    <string name="oktoast_info">お知らせ</string>
+    <string name="oktoast_success">成功</string>
+    <string name="oktoast_warning">警告</string>
+    <string name="oktoast_error">エラー</string>
 </resources>

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.main
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -7,7 +9,6 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import com.ai.assistance.operit.util.AppLogger
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -64,6 +65,7 @@ import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     companion object {
+        const val EXTRA_RESTORE_COMPLETED_NOTICE = "operit.restore_completed_notice"
         const val ACTION_OPEN_SETTINGS_SHORTCUT = "com.ai.assistance.operit.action.OPEN_SETTINGS_SHORTCUT"
     }
 
@@ -194,7 +196,7 @@ class MainActivity : ComponentActivity() {
         // 设置跳过加载的回调
         pluginLoadingState.setOnSkipCallback {
             AppLogger.d(TAG, "用户跳过了插件加载过程")
-            Toast.makeText(this, getString(R.string.plugin_loading_skipped), Toast.LENGTH_SHORT).show()
+            OKToast.info(this, getString(R.string.plugin_loading_skipped), OKToast.LENGTH_SHORT).show()
         }
 
         // 设置初始界面
@@ -404,10 +406,10 @@ class MainActivity : ComponentActivity() {
                 pendingSharedText = null
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Failed to process shared files", e)
-                Toast.makeText(
+                OKToast.error(
                     this@MainActivity,
                     getString(R.string.chat_process_shared_files_failed, e.message ?: ""),
-                    Toast.LENGTH_LONG
+                    OKToast.LENGTH_LONG
                 ).show()
                 pendingSharedFileUris = null
             }
@@ -425,7 +427,7 @@ class MainActivity : ComponentActivity() {
                         if (currentTime - backPressedTime > backPressedInterval) {
                             // 第一次点击，显示提示
                             backPressedTime = currentTime
-                            Toast.makeText(this@MainActivity, getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+                            OKToast.info(this@MainActivity, getString(R.string.press_back_again_to_exit), OKToast.LENGTH_SHORT).show()
                         } else {
                             // 第二次点击，退出应用
                             finish()
@@ -485,6 +487,13 @@ class MainActivity : ComponentActivity() {
                 OrientationReloadPolicy.NEVER -> showOrientationChangeDialog = false
             }
         }
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        val message = intent?.getStringExtra(EXTRA_RESTORE_COMPLETED_NOTICE) ?: return
+        intent.removeExtra(EXTRA_RESTORE_COMPLETED_NOTICE)
+        window.decorView.post { OKToast.success(this, message, OKToast.LENGTH_LONG).show() }
     }
 
     // ======== 初始化组件 ========
@@ -728,10 +737,10 @@ class MainActivity : ComponentActivity() {
         AppLogger.d(TAG, "发现新版本: $newVersion，当前版本: $currentVersion")
 
         // 显示更新提示
-        Toast.makeText(
+        OKToast.info(
             this,
             getString(R.string.main_update_available_toast, newVersion),
-            Toast.LENGTH_LONG
+            OKToast.LENGTH_LONG
         ).show()
     }
 

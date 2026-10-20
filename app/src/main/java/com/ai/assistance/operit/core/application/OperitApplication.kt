@@ -117,6 +117,7 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
 
     override fun onCreate() {
         super.onCreate()
+        com.ai.assistance.operit.ui.common.oktoast.OKToast.initialize(this)
         val startTime = System.currentTimeMillis()
         appStartupTimeMs = startTime
         instance = this

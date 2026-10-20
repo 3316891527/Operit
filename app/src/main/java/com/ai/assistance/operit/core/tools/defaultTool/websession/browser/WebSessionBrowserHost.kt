@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.websession.browser
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -18,7 +20,6 @@ import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -421,7 +422,7 @@ internal class WebSessionBrowserHost(
     private fun copyActiveWebViewSelection() {
         evaluateActiveWebViewSelectedText { selectedText ->
             if (selectedText.isEmpty()) {
-                Toast.makeText(appContext, appContext.getString(R.string.no_text_to_copy), Toast.LENGTH_SHORT).show()
+                OKToast.warning(appContext, appContext.getString(R.string.no_text_to_copy), OKToast.LENGTH_SHORT).show()
                 return@evaluateActiveWebViewSelectedText
             }
             val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

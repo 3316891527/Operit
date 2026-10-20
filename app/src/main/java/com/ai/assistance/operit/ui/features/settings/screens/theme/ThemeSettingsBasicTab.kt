@@ -1,8 +1,9 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.CardColors
@@ -90,23 +91,23 @@ private fun rememberGlobalFontPicker(
                                         UserPreferencesManager.FONT_TYPE_FILE,
                                     )
                             }
-                            Toast.makeText(
+                            OKToast.success(
                                 context,
                                 context.getString(R.string.font_file_saved, extension),
-                                Toast.LENGTH_SHORT,
+                                OKToast.LENGTH_SHORT,
                             ).show()
                         } else {
-                            Toast.makeText(
+                            OKToast.error(
                                 context,
                                 context.getString(R.string.font_file_save_failed),
-                                Toast.LENGTH_LONG,
+                                OKToast.LENGTH_LONG,
                             ).show()
                         }
                     } else {
-                        Toast.makeText(
+                        OKToast.warning(
                             context,
                             context.getString(R.string.unsupported_font_format),
-                            Toast.LENGTH_LONG,
+                            OKToast.LENGTH_LONG,
                         ).show()
                     }
                 }

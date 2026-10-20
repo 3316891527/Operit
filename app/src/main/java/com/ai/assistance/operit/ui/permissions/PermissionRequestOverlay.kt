@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.permissions
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -8,7 +10,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.widget.Toast
 import com.ai.assistance.operit.util.AppLogger
 import android.view.Gravity
 import android.view.WindowManager
@@ -366,10 +367,10 @@ class PermissionRequestOverlay(private val context: Context) {
                 
                 // 可选：使用Toast提示用户
                 Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(
+                    OKToast.warning(
                         context,
                         context.getString(R.string.overlay_permission_grant_hint),
-                        Toast.LENGTH_LONG
+                        OKToast.LENGTH_LONG
                     ).show()
                 }
             } catch (e: Exception) {

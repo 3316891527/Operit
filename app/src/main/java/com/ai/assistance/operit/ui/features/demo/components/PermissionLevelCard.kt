@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.demo.components
 
-import android.widget.Toast
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateDpAsState
@@ -228,10 +229,10 @@ fun PermissionLevelCard(
                                             "PermissionLevelCard",
                                             "Preferred permission level switched to: $displayedPermissionLevel"
                                     )
-                                    Toast.makeText(
+                                    OKToast.success(
                                                     context,
                                                     context.getString(R.string.permission_level_set_active, displayedPermissionLevel.name),
-                                                    Toast.LENGTH_SHORT
+                                                    OKToast.LENGTH_SHORT
                                             )
                                             .show()
 

@@ -53,6 +53,7 @@ fun ChatSidebarContent(
     onOpenCharacterSettings: () -> Unit,
     onCloseSidebar: () -> Unit,
     onRunChatAction: (() -> Unit) -> Unit,
+    onCreateChat: (() -> Unit) -> Unit,
     onSelectCharacter: (CharacterSelectorTarget) -> Unit,
     bottomContent: @Composable () -> Unit,
 ) {
@@ -60,6 +61,7 @@ fun ChatSidebarContent(
     val viewModel = LocalMainChatViewModel.current
     val state = LocalMainChatSidebarState.current
     val currentChatId by viewModel.currentChatId.collectAsState()
+    val deletionProgress by viewModel.chatListMotion.deletions.collectAsState()
     val streamingIds by viewModel.activeStreamingChatIds.collectAsState()
     val searchQuery by viewModel.chatHistorySearchQuery.collectAsState()
     val userPreferences = remember(context) { UserPreferencesManager.getInstance(context) }
@@ -144,7 +146,7 @@ fun ChatSidebarContent(
             Column(Modifier.fillMaxSize()) {
                 FolderChatHistoryPanel(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
-                    onNewChat = { cardName, group, folder -> onRunChatAction {
+                    onNewChat = { cardName, group, folder -> onCreateChat {
                         viewModel.showChatPage()
                         viewModel.createNewChat(cardName, group, folder, inheritGroupFromCurrent = false)
                     } },
@@ -169,6 +171,7 @@ fun ChatSidebarContent(
                     onQuickScrollInteractionChange = { GestureStateHolder.isChatScreenGestureConsumed = it },
                     activePrompt = state.activePrompt,
                     embeddedInSidebar = true,
+                    deletionProgress = deletionProgress,
                     contentColor = textColor,
                     selectedContainerColor = appearance.selectedContainerColor,
                     selectedContentColor = getTextColorForBackground(appearance.selectedContainerColor),

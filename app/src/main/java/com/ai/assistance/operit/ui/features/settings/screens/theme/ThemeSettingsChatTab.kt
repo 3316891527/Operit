@@ -1,10 +1,11 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
-import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -211,25 +212,25 @@ internal fun rememberThemeSettingsChatRuntime(
                                             )
                                 }
                             }
-                            Toast.makeText(
+                            OKToast.success(
                                 context,
                                 context.getString(R.string.chat_style_bubble_image_saved),
-                                Toast.LENGTH_SHORT,
+                                OKToast.LENGTH_SHORT,
                             ).show()
                         } else {
-                            Toast.makeText(
+                            OKToast.error(
                                 context,
                                 context.getString(R.string.theme_copy_failed),
-                                Toast.LENGTH_LONG,
+                                OKToast.LENGTH_LONG,
                             ).show()
                         }
                     }
                 }
             } else if (result.error != null) {
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.theme_image_crop_failed, result.error!!.message),
-                    Toast.LENGTH_LONG,
+                    OKToast.LENGTH_LONG,
                 ).show()
             }
         }
@@ -271,10 +272,10 @@ internal fun rememberThemeSettingsChatRuntime(
                     val internalUri =
                         FileUtils.copyFileToInternalStorage(context, uri, uniqueName)
                     if (internalUri == null) {
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.theme_copy_failed),
-                            Toast.LENGTH_LONG,
+                            OKToast.LENGTH_LONG,
                         ).show()
                         return@launch
                     }
@@ -284,10 +285,10 @@ internal fun rememberThemeSettingsChatRuntime(
                             ?: parseNinePatchBubbleParams(context, internalUri)
                     if (autoParams == null) {
                         internalUri.path?.let { path -> File(path).delete() }
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.theme_copy_failed),
-                            Toast.LENGTH_LONG,
+                            OKToast.LENGTH_LONG,
                         ).show()
                         return@launch
                     }
@@ -336,10 +337,10 @@ internal fun rememberThemeSettingsChatRuntime(
                         }
                     }
 
-                    Toast.makeText(
+                    OKToast.success(
                         context,
                         context.getString(R.string.chat_style_bubble_image_saved),
-                        Toast.LENGTH_SHORT,
+                        OKToast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -386,25 +387,25 @@ internal fun rememberThemeSettingsChatRuntime(
                                 )
                             }
                         }
-                        Toast.makeText(
+                        OKToast.success(
                             context,
                             context.getString(R.string.avatar_updated),
-                            Toast.LENGTH_SHORT,
+                            OKToast.LENGTH_SHORT,
                         ).show()
                     } else {
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.theme_copy_failed),
-                            Toast.LENGTH_LONG,
+                            OKToast.LENGTH_LONG,
                         ).show()
                     }
                 }
             }
         } else if (result.error != null) {
-            Toast.makeText(
+            OKToast.error(
                 context,
                 context.getString(R.string.avatar_crop_failed, result.error!!.message),
-                Toast.LENGTH_LONG,
+                OKToast.LENGTH_LONG,
             ).show()
         }
     }
@@ -738,23 +739,23 @@ private fun rememberBubbleFontPicker(shared: ThemeSettingsShared): BubbleFontPic
                                     )
                             }
                         }
-                        Toast.makeText(
+                        OKToast.success(
                             context,
                             context.getString(R.string.font_file_saved, extension),
-                            Toast.LENGTH_SHORT,
+                            OKToast.LENGTH_SHORT,
                         ).show()
                     } else {
-                        Toast.makeText(
+                        OKToast.error(
                             context,
                             context.getString(R.string.font_file_save_failed),
-                            Toast.LENGTH_LONG,
+                            OKToast.LENGTH_LONG,
                         ).show()
                     }
                 } else {
-                    Toast.makeText(
+                    OKToast.warning(
                         context,
                         context.getString(R.string.unsupported_font_format),
-                        Toast.LENGTH_LONG,
+                        OKToast.LENGTH_LONG,
                     ).show()
                 }
             }

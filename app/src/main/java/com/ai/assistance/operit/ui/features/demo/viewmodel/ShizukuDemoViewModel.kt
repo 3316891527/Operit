@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.demo.viewmodel
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.Application
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
-import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -110,16 +111,16 @@ class ShizukuDemoViewModel(application: Application) : AndroidViewModel(applicat
             }
 
             // 如果没有Root权限，则先请求权限
-            Toast.makeText(context, context.getString(R.string.requesting_root_permission), Toast.LENGTH_SHORT).show()
+            OKToast.info(context, context.getString(R.string.requesting_root_permission), OKToast.LENGTH_SHORT).show()
 
             RootAuthorizer.requestRootPermission { granted ->
                 viewModelScope.launch {
                     if (granted) {
-                        Toast.makeText(context, context.getString(R.string.root_permission_granted), Toast.LENGTH_SHORT).show()
+                        OKToast.success(context, context.getString(R.string.root_permission_granted), OKToast.LENGTH_SHORT).show()
                         // 权限授予后执行一个简单的测试命令
                         executeRootCommand("id", context)
                     } else {
-                        Toast.makeText(context, context.getString(R.string.root_permission_denied), Toast.LENGTH_SHORT).show()
+                        OKToast.warning(context, context.getString(R.string.root_permission_denied), OKToast.LENGTH_SHORT).show()
                     }
                     // 刷新状态
                     checkRootStatus(context)
@@ -133,10 +134,10 @@ class ShizukuDemoViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             val result = RootAuthorizer.executeRootCommand(command, context)
             if (result.first) {
-                Toast.makeText(context, context.getString(R.string.command_execution_success), Toast.LENGTH_SHORT).show()
+                OKToast.success(context, context.getString(R.string.command_execution_success), OKToast.LENGTH_SHORT).show()
                 stateManager.updateResultText("${context.getString(R.string.command_execution_success)}:\n${result.second}")
             } else {
-                Toast.makeText(context, context.getString(R.string.command_execution_failed), Toast.LENGTH_SHORT).show()
+                OKToast.error(context, context.getString(R.string.command_execution_failed), OKToast.LENGTH_SHORT).show()
                 stateManager.updateResultText("${context.getString(R.string.command_execution_failed)}:\n${result.second}")
             }
         }
@@ -192,7 +193,7 @@ class ShizukuDemoViewModel(application: Application) : AndroidViewModel(applicat
 
         // Show a toast notification for feedback
         viewModelScope.launch(Dispatchers.Main) {
-            Toast.makeText(context, context.getString(R.string.all_tools_reregistered), Toast.LENGTH_SHORT).show()
+            OKToast.success(context, context.getString(R.string.all_tools_reregistered), OKToast.LENGTH_SHORT).show()
         }
     }
 

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.websession.browser
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,7 +18,6 @@ import android.webkit.DownloadListener
 import android.webkit.JavascriptInterface
 import android.webkit.URLUtil
 import android.webkit.WebView
-import android.widget.Toast
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.defaultTool.standard.StandardBrowserSessionTools
@@ -160,10 +161,10 @@ internal fun StandardBrowserSessionTools.createDownloadListener(
             )
             AppLogger.e(EXECUTION_SUPPORT_TAG, "Download failed for session=${session.id}: ${e.message}", e)
             StandardBrowserSessionTools.mainHandler.post {
-                Toast.makeText(
+                OKToast.error(
                     context,
                     context.getString(R.string.download_failed, e.message ?: url),
-                    Toast.LENGTH_LONG
+                    OKToast.LENGTH_LONG
                 ).show()
             }
         }
@@ -1058,10 +1059,10 @@ internal fun StandardBrowserSessionTools.handleInlineDownload(
             )
         )
         StandardBrowserSessionTools.mainHandler.post {
-            Toast.makeText(
+            OKToast.error(
                 context,
                 context.getString(R.string.download_failed, error.message ?: resolvedFileName),
-                Toast.LENGTH_LONG
+                OKToast.LENGTH_LONG
             ).show()
         }
     }

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.websession.browser
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -1099,7 +1101,7 @@ internal fun StandardBrowserSessionTools.startBrowserManagedDownload(
         mimeType = mimeType,
         headers = headers
     )
-    showToast(context.getString(com.ai.assistance.operit.R.string.download_started, fileName))
+    OKToast.info(context, context.getString(com.ai.assistance.operit.R.string.download_started, fileName)).show()
 }
 
 internal fun StandardBrowserSessionTools.startInlineManagedDownload(
@@ -1121,7 +1123,7 @@ internal fun StandardBrowserSessionTools.startInlineManagedDownload(
         bytes = bytes,
         sourceUrl = sourceUrl
     )
-    showToast(context.getString(com.ai.assistance.operit.R.string.download_started, resolvedFileName))
+    OKToast.info(context, context.getString(com.ai.assistance.operit.R.string.download_started, resolvedFileName)).show()
 }
 
 internal fun StandardBrowserSessionTools.buildBrowserDownloadSummary(): BrowserDownloadSummary {

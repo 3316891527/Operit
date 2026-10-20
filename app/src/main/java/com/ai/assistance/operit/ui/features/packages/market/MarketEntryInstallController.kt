@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.packages.market
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
-import android.widget.Toast
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
@@ -56,7 +57,7 @@ class MarketEntryInstallController(
         withContext(Dispatchers.IO) {
             writeMarketInstallMarker(installedDir, entry)
         }
-        Toast.makeText(context, result.message, Toast.LENGTH_LONG).show()
+        OKToast.success(context, result.message, OKToast.LENGTH_LONG).show()
         trackEntryAssetDownload(entry, onProgress)
     }
 
@@ -96,10 +97,10 @@ class MarketEntryInstallController(
                 }
             }
             mcpRepository.refreshPluginList()
-            Toast.makeText(
+            OKToast.success(
                 context,
                 context.getString(R.string.mcp_market_config_import_success_with_count, entry.title, count),
-                Toast.LENGTH_SHORT
+                OKToast.LENGTH_SHORT
             ).show()
             trackEntryAssetDownload(entry, onProgress)
             return
@@ -126,7 +127,7 @@ class MarketEntryInstallController(
                 withContext(Dispatchers.IO) {
                     writeMarketInstallMarker(File(result.pluginPath), entry)
                 }
-                Toast.makeText(context, context.getString(R.string.mcp_market_install_success, entry.title), Toast.LENGTH_SHORT).show()
+                OKToast.success(context, context.getString(R.string.mcp_market_install_success, entry.title), OKToast.LENGTH_SHORT).show()
                 trackEntryAssetDownload(entry, onProgress)
             }
             is InstallResult.Error -> {
@@ -187,7 +188,7 @@ class MarketEntryInstallController(
         withContext(Dispatchers.IO) {
             writeMarketInstallMarker(artifactMarketMarkerRoot(packageManager, defaultVersion.runtimePackageId), entry)
         }
-        Toast.makeText(context, context.getString(R.string.external_package_imported), Toast.LENGTH_SHORT).show()
+        OKToast.success(context, context.getString(R.string.external_package_imported), OKToast.LENGTH_SHORT).show()
     }
 
     private suspend fun deleteInstalledMarkerRoot(entry: MarketV2Entry) {

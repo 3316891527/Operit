@@ -8884,4 +8884,8 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="attachment_image_duplicate">Imaginea %1$s este deja atașată</string>
     <string name="logcat_write_enabled">Scriere jurnale</string>
     <string name="logcat_write_enabled_description">Dezactivează înregistrarea jurnalelor aplicației. Se reactivează automat zilnic. Jurnalele existente pot fi exportate.</string>
+    <string name="oktoast_info">Informație</string>
+    <string name="oktoast_success">Succes</string>
+    <string name="oktoast_warning">Avertisment</string>
+    <string name="oktoast_error">Eroare</string>
 </resources>

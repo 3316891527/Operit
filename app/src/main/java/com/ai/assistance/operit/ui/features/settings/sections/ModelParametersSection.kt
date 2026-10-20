@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
@@ -46,7 +48,7 @@ import kotlinx.serialization.json.Json
 fun ModelParametersSection(
         config: ModelConfigData,
         configManager: ModelConfigManager,
-        showNotification: (String) -> Unit
+        showNotification: (String, OKToast.Kind) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var showAddParameterDialog by remember { mutableStateOf(false) }
@@ -370,7 +372,7 @@ fun ModelParametersSection(
 
                 // 保存重置后的参数
                 configManager.updateParameters(config.id, resetParams)
-                showNotification(parametersResetText)
+                showNotification(parametersResetText, OKToast.Kind.Success)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -415,13 +417,13 @@ fun ModelParametersSection(
                         // 保存到存储
                         configManager.updateParameters(config.id, updatedParameters)
 
-                        showNotification(if (parameterToEdit != null) customParameterUpdatedText else customParameterAddedText)
+                        showNotification(if (parameterToEdit != null) customParameterUpdatedText else customParameterAddedText, OKToast.Kind.Success)
                     } catch (e: Exception) {
                         e.printStackTrace()
                         showNotification(
                             addCustomParameterFailedText.format(
                                 e.message ?: "Unknown error"
-                            )
+                            ), OKToast.Kind.Error
                         )
                     } finally {
                         showAddParameterDialog = false

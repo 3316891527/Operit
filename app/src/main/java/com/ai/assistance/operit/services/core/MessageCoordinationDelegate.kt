@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
-import android.widget.Toast
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
@@ -144,7 +145,7 @@ class MessageCoordinationDelegate(
         if (nonFatalErrorCollectorJob?.isActive == true) return
         nonFatalErrorCollectorJob = coroutineScope.launch {
             messageProcessingDelegate.nonFatalErrorEvent.collect { errorMessage ->
-                uiStateDelegate.showToast(errorMessage)
+                OKToast.error(context, errorMessage).show()
             }
         }
     }
@@ -753,7 +754,7 @@ class MessageCoordinationDelegate(
         // 获取当前聊天ID和工作区路径
         val chatId = chatIdOverride ?: chatHistoryDelegate.currentChatId.value
         if (chatId == null) {
-            Toast.makeText(context, context.getString(R.string.chat_please_create_new_chat), Toast.LENGTH_SHORT).show()
+            OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
             return
         }
         val previousConfiguration = requestConfigurationFor(chatId)
@@ -1676,7 +1677,7 @@ class MessageCoordinationDelegate(
      */
     fun manuallyUpdateMemory() {
         if (_isUpdatingMemory.value) {
-            uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_memory))
+            OKToast.info(context, context.getString(R.string.chat_summarizing_memory)).show()
             return
         }
         coroutineScope.launch {
@@ -1701,13 +1702,13 @@ class MessageCoordinationDelegate(
                     .filter { it.content.isNotBlank() }
 
             if (currentChatId.isNullOrBlank()) {
-                uiStateDelegate.showToast(context.getString(R.string.chat_history_empty_no_update))
+                OKToast.info(context, context.getString(R.string.chat_history_empty_no_update)).show()
                 return@launch
             }
             if (userMessages.isEmpty()) {
-                uiStateDelegate.showToast(
+                OKToast.warning(context,
                     context.getString(R.string.chat_selected_messages_no_user_for_memory)
-                )
+                ).show()
                 return@launch
             }
 
@@ -1725,22 +1726,22 @@ class MessageCoordinationDelegate(
                         chatId = currentChatId,
                         triggerMessageTimestamps = userMessages.map { it.timestamp }
                     )
-                uiStateDelegate.showToast(
+                OKToast.success(context,
                     context.getString(
                         R.string.chat_selected_messages_added_to_memory_queue,
                         userMessages.size
                     )
-                )
+                ).show()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "选中消息加入自动记忆队列失败", e)
-                uiStateDelegate.showToast(
+                OKToast.error(context,
                     context.getString(
                         R.string.chat_selected_messages_add_to_memory_queue_failed,
                         e.message ?: ""
                     )
-                )
+                ).show()
             }
         }
     }
@@ -1753,16 +1754,16 @@ class MessageCoordinationDelegate(
     ) {
         val enhancedAiService = getEnhancedAiService()
         if (enhancedAiService == null) {
-            uiStateDelegate.showToast(context.getString(R.string.chat_ai_service_unavailable_memory))
+            OKToast.error(context, context.getString(R.string.chat_ai_service_unavailable_memory)).show()
             return
         }
         if (sourceMessages.isEmpty()) {
-            uiStateDelegate.showToast(emptyToastMessage)
+            OKToast.info(context, emptyToastMessage).show()
             return
         }
 
         _isUpdatingMemory.value = true
-        uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_memory))
+        OKToast.info(context, context.getString(R.string.chat_summarizing_memory)).show()
 
         try {
             val history = sourceMessages.map { it.sender to it.content }
@@ -1783,17 +1784,17 @@ class MessageCoordinationDelegate(
                 lastContent = lastMessageContent,
                 memorySpaceIdOverride = memorySpaceIdOverride,
                 onSuccess = {
-                    uiStateDelegate.showToast(context.getString(R.string.chat_memory_manually_updated))
+                    OKToast.success(context, context.getString(R.string.chat_memory_manually_updated)).show()
                     _isUpdatingMemory.value = false
                 },
                 onError = { e ->
                     AppLogger.e(TAG, "手动更新记忆失败", e)
-                    uiStateDelegate.showToast(
+                    OKToast.error(context,
                         context.getString(
                             R.string.chat_manual_update_memory_failed,
                             e.message ?: ""
                         )
-                    )
+                    ).show()
                     _isUpdatingMemory.value = false
                 }
             )
@@ -1803,12 +1804,12 @@ class MessageCoordinationDelegate(
         } catch (e: Exception) {
             _isUpdatingMemory.value = false
             AppLogger.e(TAG, "手动更新记忆失败", e)
-            uiStateDelegate.showToast(
+            OKToast.error(context,
                 context.getString(
                     R.string.chat_manual_update_memory_failed,
                     e.message ?: ""
                 )
-            )
+            ).show()
         }
     }
 
@@ -1817,7 +1818,7 @@ class MessageCoordinationDelegate(
      */
     fun manuallySummarizeConversation() {
         if (_isSummarizing.value) {
-            uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_please_wait))
+            OKToast.info(context, context.getString(R.string.chat_summarizing_please_wait)).show()
             return
         }
         coroutineScope.launch {
@@ -1829,7 +1830,7 @@ class MessageCoordinationDelegate(
                     isGroupChat = isGroupChatSession(currentChatId)
                 )
             if (success) {
-                uiStateDelegate.showToast(context.getString(R.string.chat_conversation_summary_generated))
+                OKToast.success(context, context.getString(R.string.chat_conversation_summary_generated)).show()
             }
         }
     }

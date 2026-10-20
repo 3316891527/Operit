@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -1558,12 +1560,10 @@ fun ChatBackupSettingsScreen() {
                                         restoreResult.restoredResourceCount,
                                         restoreResult.skippedResourceCount,
                                     )
-                                    android.widget.Toast.makeText(
-                                        context, rawSnapshotOperationMessage, android.widget.Toast.LENGTH_LONG
-                                    ).show()
-                                    // 原始快照替换了 DataStore 文件，立即重启以读取导入配置并阻止旧缓存回写。
+                                    // 立即重启读取已替换的配置；完成提示交给新 Activity，避免被进程退出吞掉。
                                     val intent = Intent(context, MainActivity::class.java).apply {
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        putExtra(MainActivity.EXTRA_RESTORE_COMPLETED_NOTICE, rawSnapshotOperationMessage)
                                     }
                                     context.startActivity(intent)
                                     exitProcess(0)

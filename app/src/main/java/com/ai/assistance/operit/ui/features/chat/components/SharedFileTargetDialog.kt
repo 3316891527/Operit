@@ -200,7 +200,7 @@ fun SharedIncomingContentHandler(
     onHandleSharedText: (String, String?) -> Unit,
     onClearSharedFiles: () -> Unit,
     onClearSharedText: () -> Unit,
-    onShowMessage: (String) -> Unit = {},
+    onShowMessage: (String, com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind) -> Unit = { _, _ -> },
     onImportSharedPackages: (suspend (List<Uri>) -> String)? = null,
 ) {
     val context = LocalContext.current
@@ -259,6 +259,7 @@ fun SharedIncomingContentHandler(
         pendingSharedFileTextForPackageChoice = null
         onClearSharedFiles()
         scope.launch {
+            var kind = com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Info
             val message = if (onImportSharedPackages != null) {
                 onImportSharedPackages(uris)
             } else {
@@ -268,6 +269,11 @@ fun SharedIncomingContentHandler(
                         AIToolHandler.getInstance(context)
                     )
                     val summary = PackageFileImportSupport.importSharedUris(context, packageManager, uris)
+                    kind = when {
+                        summary.failureCount == 0 -> com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Success
+                        summary.successCount == 0 -> com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Error
+                        else -> com.ai.assistance.operit.ui.common.oktoast.OKToast.Kind.Warning
+                    }
                     when {
                         summary.failureCount == 0 ->
                             context.getString(R.string.package_share_import_success, summary.successCount)
@@ -284,7 +290,7 @@ fun SharedIncomingContentHandler(
                 }
             }
             packageImportBusy = false
-            onShowMessage(message)
+            onShowMessage(message, kind)
         }
     }
 

@@ -1,7 +1,8 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.annotation.SuppressLint
-import android.widget.Toast
 import androidx.annotation.StringRes
 import com.ai.assistance.operit.util.AppLogger
 import androidx.compose.foundation.BorderStroke
@@ -171,7 +172,7 @@ fun ModelApiSettingsSection(
         config: ModelConfigData,
         configManager: ModelConfigManager,
         saveCoordinator: ModelConfigSaveCoordinator,
-        showNotification: (String) -> Unit,
+        showNotification: (String, OKToast.Kind) -> Unit,
         navigateToMnnModelDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -401,11 +402,11 @@ fun ModelApiSettingsSection(
             persist(state)
             AppLogger.d(TAG, "API设置保存完成并刷新服务")
             if (showSuccess) {
-                showNotification(context.getString(R.string.api_settings_saved))
+                showNotification(context.getString(R.string.api_settings_saved), OKToast.Kind.Success)
             }
         } catch (e: Exception) {
             if (showSuccess) {
-                showNotification((e.message ?: context.getString(R.string.save_failed)))
+                showNotification((e.message ?: context.getString(R.string.save_failed)), OKToast.Kind.Error)
             } else {
                 AppLogger.e(TAG, "API设置自动保存失败: ${e.message}", e)
             }
@@ -424,7 +425,7 @@ fun ModelApiSettingsSection(
         valueProvider = { buildAutoSaveState() },
         persist = { state -> persist(state) },
         onError = { e ->
-            showNotification((e.message ?: context.getString(R.string.auto_save_failed)))
+            showNotification((e.message ?: context.getString(R.string.auto_save_failed)), OKToast.Kind.Error)
         }
     )
 
@@ -736,7 +737,7 @@ fun ModelApiSettingsSection(
                             antigravityAuthManager.logout()
                             antigravityQuotaError = false
                             EnhancedAIService.refreshAllServices(configManager.appContext)
-                            showNotification(context.getString(R.string.antigravity_logout_success))
+                            showNotification(context.getString(R.string.antigravity_logout_success), OKToast.Kind.Success)
                         }
                     },
                 )
@@ -765,7 +766,7 @@ fun ModelApiSettingsSection(
                              codexAuthManager.logout()
                              codexUsageError = false
                              EnhancedAIService.refreshAllServices(configManager.appContext)
-                             showNotification(context.getString(R.string.codex_logout_success))
+                             showNotification(context.getString(R.string.codex_logout_success), OKToast.Kind.Success)
                          }
                     },
                 )
@@ -943,16 +944,16 @@ fun ModelApiSettingsSection(
                                     } else {
                                         fillEndpointKeyText
                                     }
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                OKToast.warning(context, message, OKToast.LENGTH_SHORT).show()
                                 return@IconButton
                             }
 
                             val requestGeneration = ++fetchModelsGeneration
                             fetchModelsJob?.cancel()
-                            Toast.makeText(
+                            OKToast.info(
                                 context,
                                 context.getString(R.string.getting_models_list),
-                                Toast.LENGTH_SHORT
+                                OKToast.LENGTH_SHORT
                             ).show()
                             fetchModelsJob = scope.launch {
                                 isLoadingModels = true
@@ -963,23 +964,23 @@ fun ModelApiSettingsSection(
                                         val models = result.getOrThrow()
                                         modelsList = orderedModels(models)
                                         showModelsDialog = true
-                                        Toast.makeText(
+                                        OKToast.success(
                                             context,
                                             modelsListSuccessText.format(models.size),
-                                            Toast.LENGTH_SHORT
+                                            OKToast.LENGTH_SHORT
                                         ).show()
                                     } else {
                                         val error = result.exceptionOrNull()
                                         val message = ModelFetchErrorHelper.formatError(context, error)
                                         modelLoadError = message
-                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                        OKToast.error(context, message, OKToast.LENGTH_LONG).show()
                                     }
                                 } catch (e: CancellationException) {
                                     AppLogger.d(TAG, "获取模型列表任务被取消")
                                 } catch (e: Exception) {
                                     val message = ModelFetchErrorHelper.formatError(context, e)
                                     modelLoadError = message
-                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                    OKToast.error(context, message, OKToast.LENGTH_LONG).show()
                                 } finally {
                                     if (requestGeneration == fetchModelsGeneration) {
                                         isLoadingModels = false
@@ -1104,7 +1105,7 @@ fun ModelApiSettingsSection(
                 showAntigravityLoginDialog = false
                 scope.launch {
                     EnhancedAIService.refreshAllServices(configManager.appContext)
-                    showNotification(context.getString(R.string.antigravity_login_success))
+                    showNotification(context.getString(R.string.antigravity_login_success), OKToast.Kind.Success)
                     refreshAntigravityQuota()
                 }
             },
@@ -1118,7 +1119,7 @@ fun ModelApiSettingsSection(
                 showCodexLoginDialog = false
                 scope.launch {
                     EnhancedAIService.refreshAllServices(configManager.appContext)
-                    showNotification(context.getString(R.string.codex_login_success))
+                    showNotification(context.getString(R.string.codex_login_success), OKToast.Kind.Success)
                 }
             },
         )
@@ -1184,16 +1185,16 @@ fun ModelApiSettingsSection(
                                             } else {
                                                 context.getString(R.string.fill_endpoint_and_key)
                                             }
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        OKToast.warning(context, message, OKToast.LENGTH_SHORT).show()
                                         return@FilledIconButton
                                     }
 
                                     val requestGeneration = ++fetchModelsGeneration
                                     fetchModelsJob?.cancel()
-                                    Toast.makeText(
+                                    OKToast.info(
                                         context,
                                         context.getString(R.string.getting_models_list),
-                                        Toast.LENGTH_SHORT
+                                        OKToast.LENGTH_SHORT
                                     ).show()
                                     fetchModelsJob = scope.launch {
                                         isLoadingModels = true
@@ -1202,10 +1203,10 @@ fun ModelApiSettingsSection(
                                             val result = fetchAvailableModels()
                                             if (result.isSuccess) {
                                                 modelsList = orderedModels(result.getOrThrow())
-                                                Toast.makeText(
+                                                OKToast.success(
                                                     context,
                                                     context.getString(R.string.models_list_success).format(modelsList.size),
-                                                    Toast.LENGTH_SHORT
+                                                    OKToast.LENGTH_SHORT
                                                 ).show()
                                             } else {
                                                 val message = ModelFetchErrorHelper.formatError(
@@ -1213,14 +1214,14 @@ fun ModelApiSettingsSection(
                                                     result.exceptionOrNull()
                                                 )
                                                 modelLoadError = message
-                                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                                OKToast.error(context, message, OKToast.LENGTH_LONG).show()
                                             }
                                         } catch (e: CancellationException) {
                                             AppLogger.d(TAG, "刷新模型列表任务被取消")
                                         } catch (e: Exception) {
                                             val message = ModelFetchErrorHelper.formatError(context, e)
                                             modelLoadError = message
-                                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                            OKToast.error(context, message, OKToast.LENGTH_LONG).show()
                                         } finally {
                                             if (requestGeneration == fetchModelsGeneration) {
                                                 isLoadingModels = false

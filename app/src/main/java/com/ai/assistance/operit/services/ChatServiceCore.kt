@@ -502,8 +502,6 @@ class ChatServiceCore(
     val attachments: StateFlow<List<AttachmentInfo>>
         get() = attachmentDelegate.attachments
 
-    val attachmentToastEvent: SharedFlow<String>
-        get() = attachmentDelegate.toastEvent
 
     // ========== 其他方法 ==========
 

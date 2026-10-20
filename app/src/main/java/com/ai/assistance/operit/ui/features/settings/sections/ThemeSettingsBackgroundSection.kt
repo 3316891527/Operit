@@ -1,11 +1,12 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -318,14 +319,14 @@ internal fun ThemeSettingsBackgroundSection(
                                             "video_background_loop",
                                             newLoop,
                                         )
-                                        Toast.makeText(
+                                        OKToast.info(
                                             context,
                                             if (newLoop) {
                                                 context.getString(R.string.theme_loop_enabled)
                                             } else {
                                                 context.getString(R.string.theme_loop_disabled)
                                             },
-                                            Toast.LENGTH_SHORT,
+                                            OKToast.LENGTH_SHORT,
                                         ).show()
                                     },
                                     modifier =
