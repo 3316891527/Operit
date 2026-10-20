@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
@@ -147,6 +148,14 @@ fun ChatImagePickerDialog(
         if (selectedAlbumId == null) images else images.filter { it.albumId == selectedAlbumId }
     }
     val selectedSet = remember(selectedUris) { selectedUris.toHashSet() }
+    val gridState = rememberLazyGridState()
+    LaunchedEffect(selectedAlbumId) { gridState.scrollToItem(0) }
+    val dragSelection = galleryDragSelectionModifier(
+        gridState = gridState,
+        visibleUris = remember(visibleImages) { visibleImages.map { it.uri.toString() } },
+        selectedUris = selectedUris,
+        onSelectionChanged = { selectedUris = it },
+    )
     val selectedPreview = remember(images, selectedUris) {
         val firstSelected = selectedUris.firstOrNull()
         images.firstOrNull { it.uri.toString() == firstSelected }
@@ -231,12 +240,6 @@ fun ChatImagePickerDialog(
                             TextButton(onClick = requestAccess) { Text(stringResource(R.string.chat_image_picker_manage_access)) }
                         }
                     }
-                    Text(
-                        stringResource(R.string.chat_image_picker_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
                     Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         when (loadState) {
                             GalleryLoadState.Loading -> CircularProgressIndicator()
@@ -250,10 +253,11 @@ fun ChatImagePickerDialog(
                             } else {
                                 LazyVerticalGrid(
                                     columns = GridCells.Adaptive(104.dp),
+                                    state = gridState,
                                     contentPadding = PaddingValues(4.dp),
                                     verticalArrangement = Arrangement.spacedBy(4.dp),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.fillMaxSize(),
+                                    modifier = Modifier.fillMaxSize().then(dragSelection),
                                 ) {
                                     items(visibleImages, key = { it.uri.toString() }) { image ->
                                         GalleryImageCell(

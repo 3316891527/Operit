@@ -764,6 +764,7 @@ fun AgentChatInputSection(
                     items(attachments) { attachment ->
                         AttachmentChip(
                             attachmentInfo = attachment,
+                            attachments = attachments,
                             onRemove = { onRemoveAttachment(attachment.filePath) },
                             onInsert = { onInsertAttachment(attachment) },
                         )

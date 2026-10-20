@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -525,6 +526,7 @@ private fun TokenActivityHourlyChart(
     TokenActivityTimeSeriesChart(
         points = points,
         style = TokenActivitySeriesStyle.BAR,
+        axisMode = TokenActivityAxisMode.HOUR,
         locale = locale,
         modifier = modifier,
         tapHint = stringResource(R.string.token_activity_chart_tap_hint),
@@ -552,6 +554,7 @@ private fun TokenActivityDailyBarChart(
     TokenActivityTimeSeriesChart(
         points = points,
         style = TokenActivitySeriesStyle.BAR,
+        axisMode = TokenActivityAxisMode.DAY,
         locale = locale,
         modifier = modifier,
         tapHint = stringResource(R.string.token_activity_chart_tap_hint),
@@ -585,6 +588,7 @@ private fun TokenActivityWeeklyChart(
     TokenActivityTimeSeriesChart(
         points = points,
         style = TokenActivitySeriesStyle.BAR,
+        axisMode = TokenActivityAxisMode.WEEK,
         locale = locale,
         modifier = modifier,
         tapHint = stringResource(R.string.token_activity_chart_tap_hint),
@@ -699,6 +703,7 @@ private fun TokenActivityCumulativeChart(
 private fun TokenActivityTimeSeriesChart(
     points: List<TokenActivitySeriesPoint>,
     style: TokenActivitySeriesStyle,
+    axisMode: TokenActivityAxisMode = TokenActivityAxisMode.MONTH_TRANSITIONS,
     locale: Locale,
     modifier: Modifier = Modifier,
     tapHint: String,
@@ -721,12 +726,8 @@ private fun TokenActivityTimeSeriesChart(
     val monthLabelTexts = remember(points, locale) {
         points.map { monthFormatter.format(it.startDate) }.distinct()
     }
-    // When month labels are dense (the twelve-month yearly chart is the densest
-    // case), widen the bar spacing so every label stays readable without any
-    // label being skipped or overlapping. Sparse bars (weekly 7 / monthly 4-5)
-    // get a fixed wider spacing so the bars read as thick blocks instead of thin
-    // needles. Dense bars (daily 24) keep the base width.
-    val pointWidth = if (style == TokenActivitySeriesStyle.BAR) {
+    // 年度与累计图保留原有月份刻度及间距，新刻度单独按每柱文字计算布局。
+    val legacyPointWidth = if (style == TokenActivitySeriesStyle.BAR) {
         when {
             monthLabelTexts.size >= 4 -> {
                 with(density) {
@@ -740,11 +741,20 @@ private fun TokenActivityTimeSeriesChart(
     } else {
         14.dp
     }
-    val chartWidth = (pointWidth * points.size).coerceAtLeast(280.dp)
+    val detailedAxis = axisMode != TokenActivityAxisMode.MONTH_TRANSITIONS
+    val axisLabels = remember(points, axisMode, locale) { tokenActivityAxisLabels(points, axisMode, locale) }
+    val centeredLabelPaint = remember(labelPaint) { Paint(labelPaint).apply { textAlign = Paint.Align.CENTER } }
+    val labelLineHeight = labelPaint.descent() - labelPaint.ascent()
+    val labelLines = axisLabels.maxOfOrNull { it.size } ?: 1
+    val minimumPointWidth = with(density) {
+        ((axisLabels.flatten().maxOfOrNull { labelPaint.measureText(it) } ?: 0f).toDp() + 16.dp)
+            .coerceAtLeast(40.dp)
+    }
     val plotHeight = 124.dp
-    val labelHeight = 24.dp
+    val labelHeight = if (detailedAxis) with(density) {
+        (labelLineHeight * labelLines + 8.dp.toPx()).toDp().coerceAtLeast(24.dp)
+    } else 24.dp
     val canvasHeight = plotHeight + labelHeight
-    val stepPx = with(density) { pointWidth.toPx() }
     val plotHeightPx = with(density) { plotHeight.toPx() }
     val maxTokens = points.maxOfOrNull(TokenActivitySeriesPoint::tokens)?.coerceAtLeast(1L) ?: 1L
     val monthLabels = remember(points, monthFormatter) {
@@ -760,13 +770,21 @@ private fun TokenActivityTimeSeriesChart(
     }
     var selectedPoint by remember(points, style) { mutableStateOf<TokenActivitySeriesPoint?>(null) }
 
-    LaunchedEffect(points, style) {
-        snapshotFlow { scroll.maxValue }.first { it > 0 }
-        scroll.scrollTo(scroll.maxValue)
+    LaunchedEffect(points, style, axisMode) {
+        if (detailedAxis) scroll.scrollTo(0) else {
+            snapshotFlow { scroll.maxValue }.first { it > 0 }
+            scroll.scrollTo(scroll.maxValue)
+        }
     }
-
     Column(modifier) {
-        Column(Modifier.horizontalScroll(scroll)) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val pointWidth = if (detailedAxis) {
+                maxOf(minimumPointWidth, maxWidth / points.size.coerceAtLeast(1))
+            } else legacyPointWidth
+            val chartWidth = if (detailedAxis) pointWidth * points.size.coerceAtLeast(1)
+                else (pointWidth * points.size).coerceAtLeast(280.dp)
+            val stepPx = with(density) { pointWidth.toPx() }
+            Column(Modifier.horizontalScroll(scroll)) {
             Canvas(
                 modifier = Modifier
                     .size(chartWidth, canvasHeight)
@@ -777,12 +795,16 @@ private fun TokenActivityTimeSeriesChart(
                         }
                     },
             ) {
-                drawLine(
-                    color = grid,
-                    start = Offset(0f, plotHeightPx),
-                    end = Offset(size.width, plotHeightPx),
-                    strokeWidth = with(density) { 1.dp.toPx() },
-                )
+                if (!detailedAxis || points.isNotEmpty()) {
+                    val alignToBars = axisMode == TokenActivityAxisMode.DAY || axisMode == TokenActivityAxisMode.WEEK
+                    // 周、月底线只承载首末柱之间的范围，不再被最小画布宽度拉长。
+                    drawLine(
+                        color = grid,
+                        start = Offset(if (alignToBars) stepPx * 0.2f else 0f, plotHeightPx),
+                        end = Offset(if (alignToBars) points.size * stepPx - stepPx * 0.2f else size.width, plotHeightPx),
+                        strokeWidth = with(density) { 1.dp.toPx() },
+                    )
+                }
                 if (style == TokenActivitySeriesStyle.BAR) {
                     points.forEachIndexed { index, point ->
                         val height = plotHeightPx * point.tokens.toFloat() / maxTokens.toFloat()
@@ -824,14 +846,24 @@ private fun TokenActivityTimeSeriesChart(
                 }
                 drawIntoCanvas { canvas ->
                     val baseline = plotHeightPx + with(density) { 16.dp.toPx() }
-                    monthLabels.forEach { label ->
+                    if (detailedAxis) {
+                        val firstBaseline = plotHeightPx + with(density) { 4.dp.toPx() } - labelPaint.ascent()
+                        axisLabels.forEachIndexed { index, lines ->
+                            lines.forEachIndexed { row, text ->
+                                canvas.nativeCanvas.drawText(text, (index + 0.5f) * stepPx,
+                                    firstBaseline + row * labelLineHeight, centeredLabelPaint)
+                            }
+                        }
+                    } else monthLabels.forEach { label ->
                         canvas.nativeCanvas.drawText(label.text, label.column * stepPx, baseline, labelPaint)
                     }
                 }
             }
         }
 
-        Box(Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.CenterStart) {
+        }
+        Box(if (detailedAxis) Modifier.fillMaxWidth().heightIn(min = 28.dp)
+            else Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.CenterStart) {
             Text(
                 text =
                     if (selectedPoint == null) {
@@ -841,18 +873,11 @@ private fun TokenActivityTimeSeriesChart(
                     },
                 style = MaterialTheme.typography.bodySmall,
                 color = labelColor,
-                maxLines = 1,
+                maxLines = if (detailedAxis) 2 else 1,
             )
         }
     }
 }
-
-private data class TokenActivitySeriesPoint(
-    val startDate: java.time.LocalDate,
-    val endDate: java.time.LocalDate,
-    val tokens: Long,
-    val hour: Int? = null,
-)
 
 private enum class TokenActivitySeriesStyle { BAR, LINE }
 
