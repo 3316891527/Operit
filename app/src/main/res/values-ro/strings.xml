@@ -3363,7 +3363,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <!-- Settings Screen Subtitles -->
     <string name="settings_user_preferences_subtitle">Editare și previzualizare user.md</string>
     <string name="settings_language_subtitle">Schimbarea limbii interfeței</string>
-    <string name="settings_theme_subtitle">Personalizarea temelor și a aspectului</string>
+    <string name="settings_theme_subtitle">Culori, fundaluri, fonturi și limbă</string>
     <string name="layout_adjustment">Reorganizare</string>
     <string name="layout_adjustment_subtitle">Ajustarea poziției și a marginilor elementelor din interfață</string>
     <string name="settings_model_params_subtitle">Parametrii modelului șiAPIConfigurație</string>

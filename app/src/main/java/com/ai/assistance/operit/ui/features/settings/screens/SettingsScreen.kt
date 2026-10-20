@@ -45,7 +45,7 @@ fun SettingsScreen(
         navigateToDataStorageManagement: () -> Unit,
         navigateToChatHistorySettings: () -> Unit,
         navigateToChatBackupSettings: () -> Unit,
-        navigateToLanguageSettings: () -> Unit,
+
         navigateToSpeechServicesSettings: () -> Unit,
         navigateToExternalHttpChatSettings: () -> Unit,
         navigateToWaifuModeSettings: () -> Unit,
@@ -83,12 +83,7 @@ fun SettingsScreen(
                         icon = Icons.Default.Person,
                         containerColor = cardContainerColor
                 ) {
-                        CompactSettingsItem(
-                                title = stringResource(R.string.language_settings),
-                                subtitle = stringResource(id = R.string.settings_language_subtitle),
-                                icon = Icons.Default.Language,
-                                onClick = navigateToLanguageSettings
-                        )
+
                         
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_theme_appearance),

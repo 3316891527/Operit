@@ -3623,7 +3623,7 @@
     <!-- Settings Screen Subtitles -->
     <string name="settings_user_preferences_subtitle">Manage user profiles and associated memory spaces</string>
     <string name="settings_language_subtitle">Interface language switching</string>
-    <string name="settings_theme_subtitle">Theme and appearance customization</string>
+    <string name="settings_theme_subtitle">Colors, backgrounds, fonts and language</string>
     <string name="layout_adjustment">Layout Adjustment</string>
     <string name="layout_adjustment_subtitle">Adjust UI element positions and margins</string>
     <string name="settings_model_params_subtitle">Model parameters and API configuration</string>

@@ -3202,7 +3202,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="provider_ollama">Ollama (Local)</string>
     <string name="provider_openai_local">OpenAI (Local)</string>
 
-    <string name="settings_theme_subtitle">Penyesuaian tema dan penampilan</string>
+    <string name="settings_theme_subtitle">Warna, latar, fon dan bahasa</string>
     <string name="layout_adjustment">Pelarasan susun atur</string>
     <string name="layout_adjustment_subtitle">Laraskan kedudukan dan margin elemen antara muka</string>
     <string name="settings_model_params_subtitle">Parameter model dan konfigurasi API</string>

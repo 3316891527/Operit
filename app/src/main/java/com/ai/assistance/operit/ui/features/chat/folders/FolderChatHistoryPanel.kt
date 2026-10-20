@@ -1,6 +1,13 @@
 package com.ai.assistance.operit.ui.features.chat.folders
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.outlined.Checklist
+import com.ai.assistance.operit.ui.features.chat.batch.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +68,8 @@ fun FolderChatHistoryPanel(
     autoSwitchCharacterCard: Boolean, onAutoSwitchCharacterCardChange: (Boolean) -> Unit,
     autoSwitchChatOnCharacterSelect: Boolean, onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
     onQuickScrollInteractionChange: (Boolean) -> Unit, activePrompt: ActivePrompt,
+    batchProgress: ChatBatchProgress?,
+    onRunBatch: (ChatBatchAction, List<String>) -> Unit,
     embeddedInSidebar: Boolean = false,
     deletionProgress: Map<String, Float> = emptyMap(),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -82,6 +91,10 @@ fun FolderChatHistoryPanel(
     } }
     val snapshot by observedSnapshots.collectAsState(initial = null)
     var showArchived by rememberSaveable { mutableStateOf(false) }
+    var selectionMode by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by rememberSaveable { mutableStateOf(emptySet<String>()) }
+    var batchDeleteIds by remember { mutableStateOf<List<String>?>(null) }
+    val inSelectionMode = selectionMode || batchProgress != null
     val allFolders = snapshot?.folders.orEmpty()
     val foldersById = remember(allFolders) { allFolders.associateBy { it.id } }
     val eligibleIds = remember(chatHistories) { chatHistories.map { it.id }.toSet() }
@@ -214,6 +227,25 @@ fun FolderChatHistoryPanel(
             }
         }
     }
+    val selectableChats = remember(rows, deletionProgress.keys) {
+        rows.filterIsInstance<ChatFolderRow.Chat>().map { it.history }
+            .filter { it.id !in deletionProgress }.distinctBy { it.id }
+    }
+    val selectableIds = remember(selectableChats) { selectableChats.map { it.id }.toSet() }
+    val selectedChats = selectableChats.filter { it.id in selectedIds }
+    LaunchedEffect(snapshot != null, selectableIds) {
+        // 过滤、折叠或角色范围变化后不保留隐藏选择，避免操作列表外的对话。
+        if (snapshot != null) selectedIds = selectedIds.intersect(selectableIds)
+    }
+    fun enterSelection() {
+        selectionMode = true
+        selectedIds = emptySet()
+        chatMenu = null
+        folderMenu = null
+        bindingMenu = null
+        showSettings = false
+        onQuickScrollInteractionChange(false)
+    }
     fun move(request: ChatFolderMove) {
         perform(onSuccess = { if (request.anchor != null) sort = ChatHistorySortMode.DEFAULT }) {
             repository.move(request)
@@ -223,7 +255,19 @@ fun FolderChatHistoryPanel(
         if (!chat.locked && chat.id !in deletionProgress) chatDelete = chat
     }
     Column(modifier) {
-        if (embeddedInSidebar) {
+        if (inSelectionMode) {
+            ChatBatchSelectionHeader(
+                selectedCount = selectedChats.size,
+                allSelected = selectableIds.isNotEmpty() && selectedChats.size == selectableIds.size,
+                canSelect = selectableIds.isNotEmpty(),
+                busy = batchProgress != null,
+                contentColor = contentColor,
+                onSelectAll = {
+                    selectedIds = if (selectedChats.size == selectableIds.size) emptySet() else selectableIds
+                },
+                onExit = { selectionMode = false; selectedIds = emptySet() },
+            )
+        } else if (embeddedInSidebar) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 HistoryCreateCapsule(
@@ -234,8 +278,7 @@ fun FolderChatHistoryPanel(
                             scope = if (historyDisplayMode == ChatHistoryDisplayMode.BY_FOLDER) "folders" else scope(createBinding))
                     }, modifier = Modifier.weight(1f),
                 )
-                // 保留原文件夹按钮的槽位，胶囊和右侧操作均不扩宽、不移位。
-                Spacer(Modifier.size(32.dp))
+                // 搜索和设置各左移一个槽位，最右侧留给批量操作。
                 IconButton(onClick = {
                     showSearch = !showSearch
                     requestSearchFocus = showSearch
@@ -245,6 +288,10 @@ fun FolderChatHistoryPanel(
                 }
                 IconButton(onClick = { showSettings = true }, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Tune, stringResource(R.string.chat_history_settings), tint = contentColor, modifier = Modifier.size(18.dp))
+                }
+                IconButton(onClick = ::enterSelection, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Outlined.Checklist, stringResource(R.string.chat_batch_enter),
+                        tint = contentColor, modifier = Modifier.size(18.dp))
                 }
             }
             if (showSearch) {
@@ -294,6 +341,9 @@ fun FolderChatHistoryPanel(
                 if (onBack != null) IconButton(onClick = onBack, Modifier.size(36.dp)) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), Modifier.size(20.dp))
                 }
+                IconButton(onClick = ::enterSelection, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Outlined.Checklist, stringResource(R.string.chat_batch_enter), Modifier.size(20.dp))
+                }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 HistoryCreateCapsule(
@@ -315,12 +365,29 @@ fun FolderChatHistoryPanel(
         ChatArchiveFilter(
             archived = showArchived,
             archivedCount = eligibleHistories.count { it.archived },
-            onChange = { showArchived = it },
+            onChange = {
+                if (batchProgress == null) { selectedIds = emptySet(); showArchived = it }
+            },
             contentColor = contentColor,
             selectedContainerColor = selectedContainerColor,
             selectedContentColor = selectedContentColor,
         )
-        if (showDragHint) Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        AnimatedVisibility(visible = inSelectionMode, enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()) {
+            ChatBatchActionBar(
+                selectedChats = selectedChats,
+                archived = showArchived,
+                progress = batchProgress,
+                containerColor = selectedContainerColor,
+                contentColor = selectedContentColor,
+                onAction = { action ->
+                    val ids = selectedChats.map { it.id }
+                    if (action == ChatBatchAction.DELETE) batchDeleteIds = ids
+                    else onRunBatch(action, ids)
+                },
+            )
+        }
+        if (showDragHint && !inSelectionMode) Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.folder_drag_hint), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(alpha = 0.75f))
             IconButton(onClick = { showDragHint = false }, Modifier.size(30.dp)) {
@@ -333,15 +400,28 @@ fun FolderChatHistoryPanel(
                 else if (showArchived) R.string.chat_archive_empty else R.string.folder_empty_history),
                 style = MaterialTheme.typography.bodyMedium, color = contentColor.copy(alpha = 0.75f))
         } else FolderTreeList(rows, foldersById, listState, currentId, activeStreamingChatIds, histories,
-            draggingEnabled = searchQuery.isBlank(), manualSort = sort == ChatHistorySortMode.DEFAULT, collapsedBindings = collapsedBindings,
-            onSelectChat = onSelectChat, onChatMenu = { chatMenu = it }, onEditChat = { chatEdit = it }, onDeleteChat = ::promptDelete,
+            draggingEnabled = searchQuery.isBlank() && !inSelectionMode,
+            manualSort = sort == ChatHistorySortMode.DEFAULT, collapsedBindings = collapsedBindings,
+            selectionMode = inSelectionMode, selectedIds = selectedIds, selectionEnabled = batchProgress == null,
+            onSelectChat = { id ->
+                if (inSelectionMode) {
+                    if (batchProgress == null) selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+                } else onSelectChat(id)
+            }, onChatMenu = { chatMenu = it }, onEditChat = { chatEdit = it }, onDeleteChat = ::promptDelete,
             onFolderMenu = { folderMenu = it }, onToggleFolder = { row ->
-                if (searchQuery.isBlank()) collapsed = if (row.key in collapsed) collapsed - row.key else collapsed + row.key
-            }, onToggleBinding = { key -> if (searchQuery.isBlank()) collapsedBindings = if (key in collapsedBindings) collapsedBindings - key else collapsedBindings + key },
+                if (batchProgress == null && searchQuery.isBlank()) collapsed = if (row.key in collapsed) collapsed - row.key else collapsed + row.key
+            }, onToggleBinding = { key -> if (batchProgress == null && searchQuery.isBlank()) collapsedBindings = if (key in collapsedBindings) collapsedBindings - key else collapsedBindings + key },
             onBindingCreate = { bindingMenu = it }, onHoverExpand = { collapsed = collapsed - it.key },
             onMove = ::move, onInteractionChange = onQuickScrollInteractionChange, modifier = Modifier.weight(1f),
             contentColor = contentColor, selectedContainerColor = selectedContainerColor, selectedContentColor = selectedContentColor,
             deletionProgress = deletionProgress)
+    }
+    batchDeleteIds?.let { ids ->
+        val targets = eligibleHistories.filter { it.id in ids }
+        ChatBatchDeleteDialog(targets, onDismiss = { batchDeleteIds = null }, onConfirm = {
+            onRunBatch(ChatBatchAction.DELETE, targets.map { it.id })
+            batchDeleteIds = null
+        })
     }
     folderEdit?.let { request ->
         FolderNameDialog(

@@ -58,7 +58,7 @@ import com.ai.assistance.operit.ui.features.settings.screens.FunctionalConfigScr
 import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
 import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
 import com.ai.assistance.operit.ui.features.packages.market.account.GitHubAccountScreen
-import com.ai.assistance.operit.ui.features.settings.screens.LanguageSettingsScreen
+
 import com.ai.assistance.operit.ui.features.settings.screens.LayoutAdjustmentSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ModelPromptsSettingsScreen
@@ -641,7 +641,7 @@ sealed class Screen(
                     navigateToDataStorageManagement = { navigateTo(DataStorageManagement) },
                     navigateToChatHistorySettings = { navigateTo(ChatHistorySettings) },
                     navigateToChatBackupSettings = { navigateTo(ChatBackupSettings) },
-                    navigateToLanguageSettings = { navigateTo(LanguageSettings) },
+
                     navigateToSpeechServicesSettings = { navigateTo(SpeechServicesSettings) },
                     navigateToExternalHttpChatSettings = { navigateTo(ExternalHttpChatSettings) },
                     navigateToWaifuModeSettings = { navigateTo(WaifuModeSettings) },
@@ -1293,8 +1293,9 @@ sealed class Screen(
         }
     }
 
+    // 保留已发布的语言路由标识，入口统一显示含语言下拉菜单的主题页。
     data object LanguageSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_language_settings) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_theme_settings) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1305,7 +1306,7 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            LanguageSettingsScreen(onBackPressed = onGoBack)
+            ThemeSettingsScreen()
         }
     }
 

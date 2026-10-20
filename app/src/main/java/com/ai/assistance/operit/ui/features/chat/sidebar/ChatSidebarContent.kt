@@ -62,6 +62,7 @@ fun ChatSidebarContent(
     val state = LocalMainChatSidebarState.current
     val currentChatId by viewModel.currentChatId.collectAsState()
     val deletionProgress by viewModel.chatListMotion.deletions.collectAsState()
+    val batchProgress by viewModel.chatBatchProgress.collectAsState()
     val streamingIds by viewModel.activeStreamingChatIds.collectAsState()
     val searchQuery by viewModel.chatHistorySearchQuery.collectAsState()
     val userPreferences = remember(context) { UserPreferencesManager.getInstance(context) }
@@ -172,6 +173,8 @@ fun ChatSidebarContent(
                     activePrompt = state.activePrompt,
                     embeddedInSidebar = true,
                     deletionProgress = deletionProgress,
+                    batchProgress = batchProgress,
+                    onRunBatch = viewModel::runChatBatch,
                     contentColor = textColor,
                     selectedContainerColor = appearance.selectedContainerColor,
                     selectedContentColor = getTextColorForBackground(appearance.selectedContainerColor),

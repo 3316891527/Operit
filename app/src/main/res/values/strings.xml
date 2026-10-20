@@ -3568,7 +3568,7 @@
     <!-- Settings Screen Subtitles -->
     <string name="settings_user_preferences_subtitle">管理用户资料和关联记忆库</string>
     <string name="settings_language_subtitle">界面语言切换</string>
-    <string name="settings_theme_subtitle">主题和外观定制</string>
+    <string name="settings_theme_subtitle">颜色、背景、字体与语言</string>
     <string name="layout_adjustment">布局调整</string>
     <string name="layout_adjustment_subtitle">调整界面元素位置和边距</string>
     <string name="settings_model_params_subtitle">模型参数和API配置</string>
