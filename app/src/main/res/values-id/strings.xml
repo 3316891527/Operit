@@ -8295,4 +8295,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="oktoast_success">Berhasil</string>
     <string name="oktoast_warning">Peringatan</string>
     <string name="oktoast_error">Kesalahan</string>
+    <string name="chat_model_configuration_invalid_key">Konfigurasi model tidak valid: kunci API tidak tersedia. Tambahkan kunci atau konfigurasikan kumpulan kunci yang dapat digunakan di Konfigurasi Model dan Parameter.</string>
+    <string name="chat_model_configuration_missing_model">Konfigurasi model tidak valid: ID model kosong. Pilih atau masukkan model yang valid di Konfigurasi Model dan Parameter.</string>
 </resources>

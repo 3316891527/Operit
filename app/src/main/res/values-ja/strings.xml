@@ -956,4 +956,6 @@
     <string name="oktoast_success">成功</string>
     <string name="oktoast_warning">警告</string>
     <string name="oktoast_error">エラー</string>
+    <string name="chat_model_configuration_invalid_key">モデル設定が無効です。有効な API キーがありません。「モデルとパラメータの設定」でキーを入力するか、使用可能なキープールを設定してください。</string>
+    <string name="chat_model_configuration_missing_model">モデル設定が無効です。モデル ID が空です。「モデルとパラメータの設定」で有効なモデルを選択または入力してください。</string>
 </resources>

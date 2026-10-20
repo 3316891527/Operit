@@ -8888,4 +8888,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="oktoast_success">Succes</string>
     <string name="oktoast_warning">Avertisment</string>
     <string name="oktoast_error">Eroare</string>
+    <string name="chat_model_configuration_invalid_key">Configurație de model nevalidă: nu există o cheie API validă. Adăugați o cheie sau configurați un grup de chei utilizabile în Configurare model și parametri.</string>
+    <string name="chat_model_configuration_missing_model">Configurație de model nevalidă: ID-ul modelului este gol. Selectați sau introduceți un model valid în Configurare model și parametri.</string>
 </resources>

@@ -8135,4 +8135,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="oktoast_success">Sucesso</string>
     <string name="oktoast_warning">Aviso</string>
     <string name="oktoast_error">Erro</string>
+    <string name="chat_model_configuration_invalid_key">Configuração de modelo inválida: nenhuma chave de API válida. Adicione uma chave ou configure um conjunto de chaves utilizáveis em Configuração de modelo e parâmetros.</string>
+    <string name="chat_model_configuration_missing_model">Configuração de modelo inválida: o ID do modelo está vazio. Selecione ou insira um modelo válido em Configuração de modelo e parâmetros.</string>
 </resources>

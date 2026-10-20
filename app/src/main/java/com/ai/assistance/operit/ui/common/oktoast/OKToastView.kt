@@ -1,7 +1,6 @@
 package com.ai.assistance.operit.ui.common.oktoast
 
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -10,14 +9,13 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import com.ai.assistance.operit.R
 
 /** 原生轻量提示卡片可附着 Activity 或已有悬浮窗口，不依赖 Compose 生命周期所有者。 */
-internal class OKToastView(context: Context, kind: OKToast.Kind, message: String, appearance: OKToast.Appearance, close: () -> Unit) : LinearLayout(context) {
+internal class OKToastView(context: Context, kind: OKToast.Kind, message: String, appearance: OKToast.Appearance, maxContentHeight: Int) : LinearLayout(context) {
     init {
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt()
@@ -29,10 +27,10 @@ internal class OKToastView(context: Context, kind: OKToast.Kind, message: String
             OKToast.Kind.Error -> if (dark) 0xFFFFB4AB else 0xFFB3261E
         }.toInt()
         orientation = HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        setPadding(dp(12), dp(8), dp(4), dp(8))
+        gravity = Gravity.CENTER
+        setPadding(dp(14), dp(10), dp(14), dp(10))
         background = GradientDrawable().apply {
-            cornerRadius = dp(18).toFloat()
+            cornerRadius = dp(20).toFloat()
             setColor(appearance.surface)
             setStroke(dp(1).coerceAtLeast(1), Color.argb(90, Color.red(accent), Color.green(accent), Color.blue(accent)))
         }
@@ -44,31 +42,25 @@ internal class OKToastView(context: Context, kind: OKToast.Kind, message: String
         })
         contentDescription = "$statusLabel：$message"
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
-        addView(StatusIcon(context, kind, accent), LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(10) })
+        addView(StatusIcon(context, kind, accent), LayoutParams(dp(20), dp(20)).apply { marginEnd = dp(8) })
         val text = TextView(context).apply {
             this.text = message
             textSize = 14f
             setTextColor(appearance.text)
             contentDescription = "$statusLabel：$message"
-            setPadding(0, dp(4), 0, dp(4))
+            gravity = Gravity.CENTER
+            textAlignment = TEXT_ALIGNMENT_CENTER
+            includeFontPadding = false
         }
         val scroller = object : ScrollView(context) {
             override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(dp(220), MeasureSpec.AT_MOST))
+                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) maxContentHeight else minOf(MeasureSpec.getSize(heightMeasureSpec), maxContentHeight), MeasureSpec.AT_MOST))
             }
         }.apply {
             isFillViewport = false
-            addView(text, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+            addView(text, FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
         }
-        addView(scroller, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
-        addView(ImageButton(context).apply {
-            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-            imageTintList = android.content.res.ColorStateList.valueOf(accent)
-            background = null
-            contentDescription = context.getString(R.string.close)
-            setPadding(dp(12), dp(12), dp(12), dp(12))
-            setOnClickListener { close() }
-        }, LayoutParams(dp(48), dp(48)))
+        addView(scroller, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
     }
 }
 

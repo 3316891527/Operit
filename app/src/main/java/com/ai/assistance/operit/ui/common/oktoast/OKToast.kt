@@ -124,11 +124,24 @@ object OKToast {
         val notice = queue.removeFirst()
         val context = anchor.context
         val density = context.resources.displayMetrics.density
-        val card = OKToastView(context, notice.kind, notice.message, appearance) { dismissCurrent(animate = true) }
         val bounds = android.graphics.Rect()
         anchor.getWindowVisibleDisplayFrame(bounds)
-        val width = (bounds.width() - (32 * density).toInt()).coerceAtMost((560 * density).toInt()).coerceAtLeast(1)
-        val window = PopupWindow(card, width, WindowManager.LayoutParams.WRAP_CONTENT, false).apply {
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        if (!bounds.intersect(location[0], location[1], location[0] + anchor.width, location[1] + anchor.height)) return
+        // 按当前窗口可见区域定位，键盘、分屏与悬浮窗口都使用各自的可用范围。
+        val maxWidth = (bounds.width() * 0.9f).toInt().coerceAtLeast(1)
+        val maxHeight = (bounds.height() * 0.25f).toInt().coerceAtLeast(1)
+        val card = OKToastView(context, notice.kind, notice.message, appearance, maxHeight)
+        card.measure(
+            View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST),
+        )
+        val x = bounds.centerX() - card.measuredWidth / 2
+        val y = (bounds.top + bounds.height() * 0.9f - card.measuredHeight / 2f).toInt()
+            .coerceIn(bounds.top, (bounds.bottom - card.measuredHeight).coerceAtLeast(bounds.top))
+        val window = PopupWindow(card, card.measuredWidth, card.measuredHeight, false).apply {
+            setIsLaidOutInScreen(true)
             isTouchable = true
             isOutsideTouchable = false
             inputMethodMode = PopupWindow.INPUT_METHOD_NOT_NEEDED
@@ -146,7 +159,7 @@ object OKToast {
         }
         popup = window
         try {
-            window.showAtLocation(anchor, Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, bounds.top + (16 * density).toInt())
+            window.showAtLocation(anchor, Gravity.TOP or Gravity.LEFT, x, y)
         } catch (error: WindowManager.BadTokenException) {
             popup = null
             queue.clear()
@@ -156,14 +169,14 @@ object OKToast {
         card.announceForAccessibility(card.contentDescription)
         if (ValueAnimator.areAnimatorsEnabled()) {
             card.alpha = 0f
-            card.translationY = -12 * density
+            card.translationY = 8 * density
             card.animate().alpha(1f).translationY(0f).setDuration(180).start()
         }
         val readingTime = (2200 + notice.message.length * 35).coerceIn(2800, 10000)
         val base = if (notice.duration == LENGTH_LONG) readingTime.coerceAtLeast(5000) else readingTime
         val accessibility = requireNotNull(context.getSystemService(AccessibilityManager::class.java))
         val timeout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            accessibility.getRecommendedTimeoutMillis(base, AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_CONTROLS or AccessibilityManager.FLAG_CONTENT_ICONS)
+            accessibility.getRecommendedTimeoutMillis(base, AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_ICONS)
         } else base
         main.postDelayed(dismiss, timeout.toLong())
     }
@@ -174,7 +187,7 @@ object OKToast {
         val card = window.contentView
         card.animate().cancel()
         if (animate && ValueAnimator.areAnimatorsEnabled() && card.isAttachedToWindow) {
-            card.animate().alpha(0f).translationY(-8 * card.resources.displayMetrics.density).setDuration(140)
+            card.animate().alpha(0f).translationY(6 * card.resources.displayMetrics.density).setDuration(140)
                 .withEndAction { if (popup === window) window.dismiss() }.start()
         } else {
             popup = null

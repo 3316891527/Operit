@@ -9210,4 +9210,6 @@
     <string name="oktoast_success">Success</string>
     <string name="oktoast_warning">Warning</string>
     <string name="oktoast_error">Error</string>
+    <string name="chat_model_configuration_invalid_key">Invalid model configuration: no valid API key. Add a key or configure a usable key pool in Model and Parameter Configuration.</string>
+    <string name="chat_model_configuration_missing_model">Invalid model configuration: model ID is empty. Select or enter a valid model in Model and Parameter Configuration.</string>
 </resources>

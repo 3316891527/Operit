@@ -9210,4 +9210,6 @@
     <string name="oktoast_success">成功</string>
     <string name="oktoast_warning">警告</string>
     <string name="oktoast_error">错误</string>
+    <string name="chat_model_configuration_invalid_key">模型配置无效：缺少有效的 API 密钥。请在“模型与参数配置”中填写密钥或配置可用的密钥池。</string>
+    <string name="chat_model_configuration_missing_model">模型配置无效：未填写模型 ID。请在“模型与参数配置”中选择或填写有效模型。</string>
 </resources>

@@ -872,6 +872,17 @@ class MessageCoordinationDelegate(
         val resolvedChatModelConfigIdOverride = resolvedOverrides.first
         val resolvedChatModelIndexOverride = resolvedOverrides.second
         val resolvedMemorySpaceIdOverride = resolvedOverrides.third
+        val configurationError = withContext(Dispatchers.IO) {
+            val configId = resolvedChatModelConfigIdOverride?.takeIf { it.isNotBlank() }
+                ?: FunctionalConfigManager(context).getConfigIdForFunction(FunctionType.CHAT)
+            val config = ModelConfigManager(context).getModelConfigFlow(configId).first()
+            chatModelConfigurationError(context, config)
+        }
+        if (configurationError != null) {
+            // 在消费草稿、附件和启动总结前返回，让配置修正后可以直接重发。
+            uiStateDelegate.showErrorMessage(configurationError)
+            return
+        }
         val chatContextSettings =
             withContext(Dispatchers.IO) {
                 resolveChatContextSettingsForRequest(resolvedChatModelConfigIdOverride)
