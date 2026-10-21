@@ -1155,6 +1155,8 @@ fun ChatHistorySelectorPanel(
                 },
                 onDeleteChat = actualViewModel::deleteChatHistory,
                 deletionProgress = actualViewModel.chatListMotion.deletions.collectAsState().value,
+                batchProgress = actualViewModel.chatBatchProgress.collectAsState().value,
+                onRunBatch = actualViewModel::runChatBatch,
                 onUpdateChatTitle = { chatId, newTitle ->
                     actualViewModel.updateChatTitle(chatId, newTitle)
                 },

@@ -10,8 +10,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
@@ -39,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.math.abs
 
 private const val WEBVIEW_SUPPORT_TAG = "BrowserSessionTools"
 
@@ -46,7 +49,8 @@ internal fun StandardBrowserSessionTools.createSessionOnMain(
     appContext: Context,
     sessionId: String,
     sessionName: String?,
-    customUserAgent: String?
+    customUserAgent: String?,
+    openerSessionId: String? = null,
 ): BrowserToolSession {
     val webView = WebView(resolveWebViewContext(appContext))
     val session =
@@ -54,7 +58,8 @@ internal fun StandardBrowserSessionTools.createSessionOnMain(
             id = sessionId,
             webView = webView,
             sessionName = sessionName,
-            customUserAgent = customUserAgent
+            customUserAgent = customUserAgent,
+            openerSessionId = openerSessionId,
         )
     if (StandardBrowserSessionTools.desktopModeEnabled) {
         session.viewportWidthPx = StandardBrowserSessionTools.DEFAULT_DESKTOP_VIEWPORT_WIDTH
@@ -114,9 +119,16 @@ internal fun StandardBrowserSessionTools.configureWebView(
         isLongClickable = false
         isHapticFeedbackEnabled = false
         contentDescription = context.getString(R.string.web_session_accessibility_web_content)
+        val tapSlop = ViewConfiguration.get(context).scaledTouchSlop
+        var tapDownX = 0f
+        var tapDownY = 0f
+        var isTapGesture = false
         setOnTouchListener { view, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
+                    tapDownX = event.x
+                    tapDownY = event.y
+                    isTapGesture = true
                     view.parent?.requestDisallowInterceptTouchEvent(true)
                     view.isLongClickable = false
                     view.isHapticFeedbackEnabled = false
@@ -125,11 +137,23 @@ internal fun StandardBrowserSessionTools.configureWebView(
                     }
                 }
 
+                MotionEvent.ACTION_MOVE -> {
+                    if (abs(event.x - tapDownX) > tapSlop || abs(event.y - tapDownY) > tapSlop) {
+                        isTapGesture = false
+                    }
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> isTapGesture = false
                 MotionEvent.ACTION_UP -> {
+                    // 点击后由脚本异步发起的登录跳转也可以使用一次用户操作记录。
+                    if (isTapGesture && event.eventTime - event.downTime <= ViewConfiguration.getLongPressTimeout()) {
+                        session.navigationPolicy.onUserInteraction(event.eventTime)
+                    }
+                    isTapGesture = false
                     view.parent?.requestDisallowInterceptTouchEvent(false)
                 }
 
                 MotionEvent.ACTION_CANCEL -> {
+                    isTapGesture = false
                     view.parent?.requestDisallowInterceptTouchEvent(false)
                 }
             }
@@ -156,7 +180,21 @@ internal fun StandardBrowserSessionTools.configureWebView(
             ): Boolean {
                 val message = resultMsg ?: return false
                 val transport = message.obj as? WebView.WebViewTransport ?: return false
-                val popupSession = runCatching { createPopupSessionOnMain(session) }.getOrNull() ?: return false
+                if (view !== session.webView ||
+                    !session.navigationPolicy.tryCreatePopup(
+                        hasUserGesture = isUserGesture,
+                        isActivePage = StandardBrowserSessionTools.activeSessionId == session.id &&
+                            sessionById(session.id) === session,
+                        livePopupCount = StandardBrowserSessionTools.sessions.values.count { it.openerSessionId != null },
+                        nowMillis = SystemClock.uptimeMillis(),
+                    )
+                ) return false
+                val popupSession = try {
+                    createPopupSessionOnMain(session)
+                } catch (error: Exception) {
+                    AppLogger.e(WEBVIEW_SUPPORT_TAG, "创建浏览器弹出窗口失败", error)
+                    return false
+                }
                 transport.webView = popupSession.webView
                 message.sendToTarget()
                 refreshSessionUiOnMain(popupSession.id)
@@ -299,6 +337,10 @@ internal fun StandardBrowserSessionTools.configureWebView(
         object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                session.navigationPolicy.onDocumentStarted()
+                if (StandardBrowserSessionTools.pendingExternalOpenRequest?.sessionId == session.id) {
+                    clearPendingExternalOpenRequest()
+                }
                 session.currentUrl = url
                 session.pageLoaded = false
                 session.isLoading = true
@@ -340,6 +382,7 @@ internal fun StandardBrowserSessionTools.configureWebView(
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 val scheme = uri.scheme?.lowercase()
+                val hasUserGesture = request.hasGesture()
                 if (scheme == "blob") {
                     injectBlobDownloaderScript(session, uri.toString())
                     return true
@@ -355,7 +398,12 @@ internal fun StandardBrowserSessionTools.configureWebView(
                     )
                     return true
                 }
-                return handleNavigationOverrideOnMain(session, uri)
+                return handleNavigationOverrideOnMain(
+                    session = session,
+                    uri = uri,
+                    isMainFrame = request.isForMainFrame,
+                    hasUserGesture = hasUserGesture,
+                )
             }
 
             override fun shouldInterceptRequest(
@@ -464,6 +512,7 @@ internal fun StandardBrowserSessionTools.createBrowserHostCallbacks(
                 val session = getActiveSessionOnMain() ?: return@runOnMainSync
                 ensureSessionAttachedOnMain(session.id)
                 if (session.webView.canGoBack()) {
+                    session.navigationPolicy.onExplicitNavigation()
                     session.webView.goBack()
                 }
                 refreshNavigationStateAsync(session)
@@ -475,6 +524,7 @@ internal fun StandardBrowserSessionTools.createBrowserHostCallbacks(
                 val session = getActiveSessionOnMain() ?: return@runOnMainSync
                 ensureSessionAttachedOnMain(session.id)
                 if (session.webView.canGoForward()) {
+                    session.navigationPolicy.onExplicitNavigation()
                     session.webView.goForward()
                 }
                 refreshNavigationStateAsync(session)
@@ -491,6 +541,7 @@ internal fun StandardBrowserSessionTools.createBrowserHostCallbacks(
                 } else {
                     session.pageLoaded = false
                     session.isLoading = true
+                    session.navigationPolicy.onExplicitNavigation()
                     session.webView.reload()
                 }
                 refreshNavigationStateAsync(session)
@@ -738,6 +789,7 @@ internal fun StandardBrowserSessionTools.navigateSessionOnMain(
     targetUrl: String,
     headers: Map<String, String> = emptyMap()
 ) {
+    session.navigationPolicy.onExplicitNavigation()
     session.pageLoaded = false
     session.isLoading = true
     session.currentUrl = targetUrl
@@ -816,6 +868,9 @@ internal fun StandardBrowserSessionTools.syncProjectedBrowserStateOnMain() {
     val resolvedActiveId = registry.activeSessionId
     val activeSession = resolvedActiveId?.let(::sessionById)
     StandardBrowserSessionTools.activeSessionId = resolvedActiveId
+    if (StandardBrowserSessionTools.pendingExternalOpenRequest?.sessionId != resolvedActiveId) {
+        clearPendingExternalOpenRequest()
+    }
     StandardBrowserSessionTools.browserHost?.attachActiveWebView(
         activeSession?.webView,
         activeSession?.viewportWidthPx,
@@ -1046,7 +1101,8 @@ internal fun StandardBrowserSessionTools.createPopupSessionOnMain(
             appContext = parentSession.webView.context ?: context.applicationContext,
             sessionId = UUID.randomUUID().toString(),
             sessionName = parentSession.sessionName,
-            customUserAgent = parentSession.customUserAgent
+            customUserAgent = parentSession.customUserAgent,
+            openerSessionId = parentSession.id,
         )
     StandardBrowserSessionTools.sessions[popupSession.id] = popupSession
     addSessionOrder(popupSession.id)
@@ -1062,12 +1118,17 @@ internal fun StandardBrowserSessionTools.findSessionByWebView(
 
 internal fun StandardBrowserSessionTools.handleNavigationOverrideOnMain(
     session: BrowserToolSession,
-    uri: Uri
+    uri: Uri,
+    isMainFrame: Boolean,
+    hasUserGesture: Boolean,
 ): Boolean {
     val rawUrl = uri.toString()
     val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: return false
     return when (scheme) {
         "http", "https" -> {
+            if (isMainFrame && hasUserGesture) {
+                session.navigationPolicy.onExplicitNavigation()
+            }
             if (isUserscriptInstallUri(uri)) {
                 userscriptManager.beginUrlInstall(rawUrl, UserscriptInstallSourceType.PAGE_LINK)
                 openUserscriptSheetOnMain()
@@ -1077,10 +1138,20 @@ internal fun StandardBrowserSessionTools.handleNavigationOverrideOnMain(
             }
         }
         "about" -> false
-        "intent" -> handleIntentSchemeOnMain(session, rawUrl)
         else -> {
+            if (!session.navigationPolicy.tryRequestExternalOpen(
+                    isMainFrame = isMainFrame,
+                    hasUserGesture = hasUserGesture,
+                    isActivePage = StandardBrowserSessionTools.activeSessionId == session.id &&
+                        sessionById(session.id) === session,
+                    hasPendingRequest = StandardBrowserSessionTools.pendingExternalOpenRequest != null,
+                    nowMillis = SystemClock.uptimeMillis(),
+                )
+            ) return true
+            if (scheme == "intent") return handleIntentSchemeOnMain(session, rawUrl)
             queueExternalOpenRequest(
-                Intent(Intent.ACTION_VIEW, uri).apply {
+                session = session,
+                intent = Intent(Intent.ACTION_VIEW, uri).apply {
                     addCategory(Intent.CATEGORY_BROWSABLE)
                 },
                 title = context.getString(R.string.web_session_external_open_title),
@@ -1112,14 +1183,16 @@ internal fun StandardBrowserSessionTools.handleIntentSchemeOnMain(
             selector = null
         }
     queueExternalOpenRequest(
-        sanitizedIntent,
+        session = session,
+        intent = sanitizedIntent,
         title = context.getString(R.string.web_session_external_open_title),
         target = sanitizedIntent.`package`?.takeIf { it.isNotBlank() } ?: rawUrl
     )
     return true
 }
 
-internal fun StandardBrowserSessionTools.queueExternalOpenRequest(
+private fun StandardBrowserSessionTools.queueExternalOpenRequest(
+    session: BrowserToolSession,
     intent: Intent,
     title: String,
     target: String
@@ -1127,6 +1200,7 @@ internal fun StandardBrowserSessionTools.queueExternalOpenRequest(
     StandardBrowserSessionTools.pendingExternalOpenRequest =
         PendingExternalOpenRequest(
             requestId = UUID.randomUUID().toString(),
+            sessionId = session.id,
             intent =
                 Intent(intent).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -1142,7 +1216,7 @@ internal fun StandardBrowserSessionTools.confirmExternalOpenRequest(requestId: S
     if (request.requestId != requestId) {
         return
     }
-    StandardBrowserSessionTools.pendingExternalOpenRequest = null
+    clearPendingExternalOpenRequest()
     refreshSessionUiOnMain()
     if (!launchBrowserExternalIntent(request.intent)) {
         OKToast.error(context, context.getString(R.string.web_session_external_open_failed, request.target)).show()
@@ -1154,8 +1228,14 @@ internal fun StandardBrowserSessionTools.cancelExternalOpenRequest(requestId: St
     if (request.requestId != requestId) {
         return
     }
-    StandardBrowserSessionTools.pendingExternalOpenRequest = null
+    clearPendingExternalOpenRequest()
     refreshSessionUiOnMain()
+}
+
+private fun StandardBrowserSessionTools.clearPendingExternalOpenRequest() {
+    val request = StandardBrowserSessionTools.pendingExternalOpenRequest ?: return
+    sessionById(request.sessionId)?.navigationPolicy?.onExternalRequestResolved()
+    StandardBrowserSessionTools.pendingExternalOpenRequest = null
 }
 
 private fun PendingExternalOpenRequest.toUiState(): ExternalOpenPromptState =
@@ -1300,6 +1380,7 @@ internal fun StandardBrowserSessionTools.setDesktopModeEnabled(enabled: Boolean)
         if (activeSession != null && activeSession.customUserAgent == null) {
             activeSession.pageLoaded = false
             activeSession.isLoading = true
+            activeSession.navigationPolicy.onExplicitNavigation()
             activeSession.webView.reload()
             refreshNavigationStateAsync(activeSession)
         } else {
@@ -1342,6 +1423,9 @@ internal fun StandardBrowserSessionTools.closeSession(sessionId: String): Boolea
     removeSessionOrder(sessionId)
 
     runOnMainSync<Unit> {
+        if (StandardBrowserSessionTools.pendingExternalOpenRequest?.sessionId == sessionId) {
+            clearPendingExternalOpenRequest()
+        }
         userscriptManager.detachSession(sessionId)
         if (wasActive) {
             StandardBrowserSessionTools.activeSessionId = null

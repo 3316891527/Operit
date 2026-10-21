@@ -2860,7 +2860,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="history_scroll_to_bottom">role para baixo</string>
     <string name="settings_user_preferences_subtitle">Preferências pessoais e configurações de comportamento</string>
     <string name="settings_language_subtitle">Troca de idioma da interface</string>
-    <string name="settings_theme_subtitle">Personalização de tema e aparência</string>
+    <string name="settings_theme_subtitle">Cores, fundos, fontes e idioma</string>
     <string name="layout_adjustment">ajuste de layout</string>
     <string name="layout_adjustment_subtitle">Ajuste a posição e a margem dos elementos da interface</string>
     <string name="settings_model_params_subtitle">Parâmetros de modelo e configuração de API</string>

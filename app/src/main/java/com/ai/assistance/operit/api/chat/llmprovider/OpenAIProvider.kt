@@ -1656,7 +1656,7 @@ open class OpenAIProvider(
         enableRetry: Boolean,
         onNonFatalError: suspend (String) -> Unit,
         onRetryAccepted: suspend () -> Unit,
-        buildRetryMessage: (String, Int) -> String,
+        buildRetryMessage: (String, Int, Long) -> String,
         attemptNumber: Int,
         watchdog: FirstTokenWatchdog? = null,
         stream: Boolean = true,
@@ -3538,7 +3538,7 @@ open class OpenAIProvider(
                     enableRetry = enableRetry,
                     onNonFatalError = onNonFatalError,
                     onRetryAccepted = { emitter.emitRollback(requestSavepointId) },
-                    buildRetryMessage = { errorText, retryNumber ->
+                    buildRetryMessage = { errorText, retryNumber, _ ->
                         "【${context.getString(R.string.openai_retry_with_count, errorText, retryNumber)}】"
                     },
                     attemptNumber = retryCount + 1,

@@ -104,6 +104,13 @@ object ApiKeyFailureClassifier {
         return text.contains("invalid api key") ||
             text.contains("incorrect api key") ||
             text.contains("invalid_api_key") ||
+            text.contains("api key is invalid") ||
+            text.contains("api key is not valid") ||
+            text.contains("api key not valid") ||
+            text.contains("api_key_invalid") ||
+            text.contains("expired api key") ||
+            text.contains("api key has expired") ||
+            text.contains("invalid x-api-key") ||
             text.contains("authentication") ||
             text.contains("unauthorized") ||
             text.contains("permission denied") ||

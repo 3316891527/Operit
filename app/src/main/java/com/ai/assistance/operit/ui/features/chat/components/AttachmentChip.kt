@@ -40,10 +40,16 @@ import coil.compose.AsyncImage
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.ui.features.chat.attachments.images.AttachmentImagePreviewDialog
+import com.ai.assistance.operit.ui.features.chat.attachments.images.AttachmentPreviewImage
 import java.io.File
 
 @Composable
-fun AttachmentChip(attachmentInfo: AttachmentInfo, onRemove: () -> Unit, onInsert: () -> Unit) {
+fun AttachmentChip(
+    attachmentInfo: AttachmentInfo,
+    attachments: List<AttachmentInfo>,
+    onRemove: () -> Unit,
+    onInsert: () -> Unit,
+) {
     val context = LocalContext.current
     val isImage = attachmentInfo.mimeType.startsWith("image/")
     var previewVisible by remember(attachmentInfo.filePath) { mutableStateOf(false) }
@@ -58,10 +64,16 @@ fun AttachmentChip(attachmentInfo: AttachmentInfo, onRemove: () -> Unit, onInser
             }
         }
 
-    if (isImage && previewVisible) {
+    val images = remember(attachments) {
+        attachments.filter { it.mimeType.startsWith("image/") }.map {
+            AttachmentPreviewImage(Uri.fromFile(File(it.filePath)), it.fileName)
+        }
+    }
+
+    if (isImage && previewVisible && images.any { it.uri == imageModel }) {
         AttachmentImagePreviewDialog(
-            imageUri = Uri.fromFile(File(attachmentInfo.filePath)),
-            title = attachmentInfo.fileName,
+            images = images,
+            initialImageUri = checkNotNull(imageModel),
             onDismiss = { previewVisible = false },
         )
     }

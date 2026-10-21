@@ -121,6 +121,7 @@ private fun BottomInputBar(
                 items(floatContext.attachments) { attachmentInfo ->
                     AttachmentChip(
                         attachmentInfo = attachmentInfo,
+                        attachments = floatContext.attachments,
                         onInsert = {},
                         onRemove = { floatContext.onRemoveAttachment?.invoke(attachmentInfo.filePath) }
                     )

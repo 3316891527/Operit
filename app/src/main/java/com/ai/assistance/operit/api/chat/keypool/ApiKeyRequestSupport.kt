@@ -57,24 +57,13 @@ internal fun formatApiKeyPoolExhaustedMessage(
     )
 }
 
-internal fun shouldSuppressRetryNotice(
-    exception: Exception,
-    decision: ApiKeyRetryDecision,
-    logTag: String,
-): Boolean {
-    if (!decision.switchedKey) return false
-    val errorClass = ApiKeyFailureClassifier.classify(exception)
-    AppLogger.w(logTag, "密钥池换钥，跳过中间提示。class=$errorClass", exception)
-    return true
-}
-
 internal suspend fun handleKeyAwareRetry(
     context: Context,
     exception: Exception,
     enableRetry: Boolean,
     onNonFatalError: suspend (String) -> Unit,
     onRetryAccepted: suspend () -> Unit,
-    buildRetryMessage: (String, Int) -> String,
+    buildRetryMessage: (String, Int, Long) -> String,
     logTag: String,
     attemptNumber: Int,
 ): ApiKeyRetryDecision {
@@ -135,18 +124,15 @@ internal suspend fun handleKeyAwareRetry(
     }
 
     onRetryAccepted()
+    // 换钥同样报告本次失败，不能只更新“正在重试”却隐藏具体原因。
     val retryMessage =
-        if (shouldSuppressRetryNotice(exception, decision, logTag)) {
-            ""
-        } else {
-            transportError?.json(
-                attempt = attemptNumber,
-                retry = ApiTransportErrorDescription.RetryInfo(
-                    nextAttempt = attemptNumber + 1,
-                    delayMs = decision.delayMs,
-                ),
-            ) ?: buildRetryMessage(errorText, attemptNumber + 1)
-        }
+        transportError?.json(
+            attempt = attemptNumber,
+            retry = ApiTransportErrorDescription.RetryInfo(
+                nextAttempt = attemptNumber + 1,
+                delayMs = decision.delayMs,
+            ),
+        ) ?: buildRetryMessage(errorText, attemptNumber, decision.delayMs)
     if (decision.delayMs > 0L) {
         AppLogger.w(logTag, "$errorText，将在 ${decision.delayMs}ms 后重试", exception)
         onNonFatalError(retryMessage)

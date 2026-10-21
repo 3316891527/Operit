@@ -883,7 +883,7 @@
     <!-- Settings Screen Subtitles -->
     <string name="settings_user_preferences_subtitle">Preferencias personales y configuración de comportamiento</string>
     <string name="settings_language_subtitle">Cambio de idioma de la interfaz</string>
-    <string name="settings_theme_subtitle">Personalización de tema y apariencia</string>
+    <string name="settings_theme_subtitle">Colores, fondos, fuentes e idioma</string>
     <string name="layout_adjustment">Ajuste de Diseño</string>
     <string name="layout_adjustment_subtitle">Ajustar posiciones y márgenes de elementos de UI</string>
     <string name="settings_model_params_subtitle">Parámetros del modelo y configuración de API</string>

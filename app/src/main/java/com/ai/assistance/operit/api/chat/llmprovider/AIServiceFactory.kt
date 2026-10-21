@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import android.content.Context
+import com.ai.assistance.operit.api.chat.enhance.streaming.ConfiguredStreamingAIService
 import com.ai.assistance.llama.LlamaSession
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.ModelConfigData
@@ -273,7 +274,7 @@ object AIServiceFactory {
     ): AIService {
         val rawService = buildService(config, modelConfigManager, context)
         return TokenTrackingAIService(
-            delegate = rawService,
+            delegate = ConfiguredStreamingAIService(rawService, config.enableStreamOutput),
             context = context,
             configId = config.id,
         )

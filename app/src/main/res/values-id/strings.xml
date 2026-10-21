@@ -2872,7 +2872,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="history_scroll_to_bottom">Gulir ke bawah</string>
     <string name="settings_user_preferences_subtitle">Pengaturan preferensi dan perilaku pribadi</string>
     <string name="settings_language_subtitle">Penggantian bahasa antarmuka</string>
-    <string name="settings_theme_subtitle">Kustomisasi tema dan tampilan</string>
+    <string name="settings_theme_subtitle">Warna, latar, font, dan bahasa</string>
     <string name="layout_adjustment">Penyesuaian tata letak</string>
     <string name="layout_adjustment_subtitle">Sesuaikan posisi dan margin elemen antarmuka</string>
     <string name="settings_model_params_subtitle">Konfigurasi parameter model dan API</string>

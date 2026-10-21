@@ -3069,7 +3069,7 @@
     <string name="function_type_ui_controller">UI控制器</string>
     <string name="function_type_translation">翻译功能</string>
     <string name="function_type_grep">Grep检索</string>
-    <string name="function_type_role_response_planner">群组规划</string>
+    <string name="function_type_role_response_planner">群组发言规划</string>
     <string name="function_type_image_recognition">图像识别</string>
     <string name="function_type_audio_recognition">音频识别</string>
     <string name="function_type_video_recognition">视频识别</string>
@@ -3568,7 +3568,7 @@
     <!-- Settings Screen Subtitles -->
     <string name="settings_user_preferences_subtitle">管理用户资料和关联记忆库</string>
     <string name="settings_language_subtitle">界面语言切换</string>
-    <string name="settings_theme_subtitle">主题和外观定制</string>
+    <string name="settings_theme_subtitle">颜色、背景、字体与语言</string>
     <string name="layout_adjustment">布局调整</string>
     <string name="layout_adjustment_subtitle">调整界面元素位置和边距</string>
     <string name="settings_model_params_subtitle">模型参数和API配置</string>
@@ -9212,4 +9212,37 @@
     <string name="oktoast_error">错误</string>
     <string name="chat_model_configuration_invalid_key">模型配置无效：缺少有效的 API 密钥。请在“模型与参数配置”中填写密钥或配置可用的密钥池。</string>
     <string name="chat_model_configuration_missing_model">模型配置无效：未填写模型 ID。请在“模型与参数配置”中选择或填写有效模型。</string>
+
+    <!-- 模型工作区 -->
+    <string name="model_workspace_title">模型与参数配置</string>
+    <string name="model_workspace_subtitle">连接、参数与功能模型分配</string>
+    <string name="model_workspace_connection">连接</string>
+    <string name="model_workspace_parameters">参数</string>
+    <string name="model_workspace_functions">功能分配</string>
+    <string name="model_workspace_choose">选择操作</string>
+    <string name="model_workspace_keys">API 密钥管理</string>
+    <string name="model_workspace_keys_hint">管理单密钥、密钥池与可用状态</string>
+    <string name="model_workspace_manage">管理</string>
+    <string name="model_workspace_capabilities">请求能力</string>
+    <string name="model_workspace_streaming">流式输出</string>
+    <string name="model_workspace_streaming_hint">能力随当前配置保存，并需模型支持。</string>
+    <string name="model_workspace_generation_hint">输出长度与基础生成设置</string>
+    <string name="model_workspace_sampling">采样与重复控制</string>
+    <string name="model_workspace_sampling_hint">温度、采样范围和重复惩罚</string>
+    <string name="model_workspace_custom_hint">自定义请求字段、类型和值</string>
+    <string name="model_workspace_function_hint">点选功能卡片，分配模型并调整该功能的思考偏好。配置列表按顶部当前分组显示。</string>
+    <string name="model_workspace_all_functions">全部功能</string>
+    <string name="model_workspace_current_functions">当前配置</string>
+    <string name="model_workspace_no_functions">当前配置尚未分配给任何功能。</string>
+    <string name="model_workspace_reset_functions_hint">将全部功能恢复为默认绑定，记忆向量模型恢复为未配置。</string>
+    <string name="model_workspace_tool_call">工具调用</string>
+    <string name="model_workspace_images">图片理解</string>
+    <string name="model_workspace_audio">音频理解</string>
+    <string name="model_workspace_video">视频理解</string>
+    <string name="model_workspace_media_unavailable">此服务未开放独立直传</string>
+    <string name="model_workspace_capabilities_count">%1$d / 5 已开启</string>
+    <string name="model_workspace_service">服务方式：%1$s</string>
+    <string name="model_workspace_more_actions">更多配置操作</string>
+    <string name="model_workspace_config_preview">查看配置预览</string>
+    <string name="model_workspace_config_preview_hint">仅展示当前已保存配置，密钥与请求头内容已隐藏，不会发起请求。</string>
 </resources>

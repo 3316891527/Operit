@@ -473,16 +473,6 @@ object AIMessageManager {
                 AppLogger.d(TAG, "消息处理插件未接管，使用普通模式")
             }
 
-            // 获取流式输出设置
-            val readStreamSettingStartTime = messageTimingNow()
-            val disableStreamOutput = apiPreferences.disableStreamOutputFlow.first()
-            val enableStream = !disableStreamOutput
-            logMessageTiming(
-                stage = "sendMessage.readStreamSetting",
-                startTimeMs = readStreamSettingStartTime,
-                details = "chatKey=$chatKey, enableStream=$enableStream"
-            )
-
             // 使用普通模式
             val prepareRequestStartTime = messageTimingNow()
             val responseStream = enhancedAiService.sendMessage(
@@ -509,7 +499,6 @@ object AIMessageManager {
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
                     memorySpaceIdOverride = memorySpaceIdOverride,
-                    stream = enableStream,
                     disableWarning = disableWarning,
                     historyOnly = historyOnly,
                 )
@@ -527,7 +516,7 @@ object AIMessageManager {
             logMessageTiming(
                 stage = "sendMessage.prepareRequest",
                 startTimeMs = prepareRequestStartTime,
-                details = "chatKey=$chatKey, history=${memoryForRequest.size}, stream=$enableStream, prompt=$promptFunctionType"
+                details = "chatKey=$chatKey, history=${memoryForRequest.size}, prompt=$promptFunctionType"
             )
             logMessageTiming(
                 stage = "sendMessage.total",

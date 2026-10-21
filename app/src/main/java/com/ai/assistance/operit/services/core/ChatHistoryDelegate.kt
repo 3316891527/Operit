@@ -1064,6 +1064,8 @@ class ChatHistoryDelegate(
         coroutineScope.launch { onResult(deleteTargetChat(chatId)) }
     }
 
+    suspend fun deleteChatHistoryAndAwait(chatId: String): ChatDeletionResult = deleteTargetChat(chatId)
+
     private suspend fun deleteTargetChat(chatId: String): ChatDeletionResult {
         return try {
             val blocked = chatHistoryManager.getChatDeletionBlockReason(chatId, allowCurrentChat = true)
@@ -1340,20 +1342,13 @@ class ChatHistoryDelegate(
 
     /** 更新聊天标题 */
     fun updateChatTitle(chatId: String, title: String) {
-        coroutineScope.launch {
-            // 更新数据库
-            chatHistoryManager.updateChatTitle(chatId, title)
+        coroutineScope.launch { updateChatTitleAndAwait(chatId, title) }
+    }
 
-            // 更新UI状态
-            val updatedHistories =
-                    _chatHistories.value.map {
-                        if (it.id == chatId) {
-                            it.copy(title = title, updatedAt = LocalDateTime.now())
-                        } else {
-                            it
-                        }
-                    }
-            _chatHistories.value = updatedHistories
+    suspend fun updateChatTitleAndAwait(chatId: String, title: String) {
+        chatHistoryManager.updateChatTitle(chatId, title)
+        _chatHistories.value = _chatHistories.value.map {
+            if (it.id == chatId) it.copy(title = title, updatedAt = LocalDateTime.now()) else it
         }
     }
 

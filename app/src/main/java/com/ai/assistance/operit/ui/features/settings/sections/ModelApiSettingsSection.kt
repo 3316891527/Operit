@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Api
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DragHandle
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Search
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -173,7 +175,8 @@ fun ModelApiSettingsSection(
         configManager: ModelConfigManager,
         saveCoordinator: ModelConfigSaveCoordinator,
         showNotification: (String, OKToast.Kind) -> Unit,
-        navigateToMnnModelDownload: (() -> Unit)? = null
+        navigateToMnnModelDownload: (() -> Unit)? = null,
+        keyPoolContent: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -308,6 +311,7 @@ fun ModelApiSettingsSection(
     
     // Tool Call配置状态
     var enableToolCallInput by remember(config.id) { mutableStateOf(config.enableToolCall) }
+    var enableStreamOutputInput by remember(config.id) { mutableStateOf(config.enableStreamOutput) }
 
     LaunchedEffect(selectedProviderTypeId) {
         if (isCodexProvider || isAntigravityProvider) {
@@ -336,6 +340,7 @@ fun ModelApiSettingsSection(
         val enableCodexWebSearch: Boolean,
         val enableClaude1hPromptCache: Boolean,
         val enableToolCall: Boolean,
+        val enableStreamOutput: Boolean,
     )
 
     // 保存设置的通用函数
@@ -361,6 +366,7 @@ fun ModelApiSettingsSection(
                     enableCodexWebSearch = state.enableCodexWebSearch,
                     enableClaude1hPromptCache = state.enableClaude1hPromptCache,
                     enableToolCall = state.enableToolCall,
+                    enableStreamOutput = state.enableStreamOutput,
                 )
 
                 EnhancedAIService.refreshAllServices(
@@ -389,6 +395,7 @@ fun ModelApiSettingsSection(
             enableCodexWebSearch = enableCodexWebSearchInput,
             enableClaude1hPromptCache = enableClaude1hPromptCacheInput,
             enableToolCall = enableToolCallInput,
+            enableStreamOutput = enableStreamOutputInput,
         )
     }
 
@@ -658,12 +665,24 @@ fun ModelApiSettingsSection(
 
             var showApiProviderDialog by remember { mutableStateOf(false) }
 
-            SettingsSelectorRow(
-                    title = stringResource(R.string.api_provider),
-                    subtitle = stringResource(R.string.select_api_provider),
-                    value = getProviderDisplayName(selectedProviderTypeId, context),
-                    onClick = { showApiProviderDialog = true }
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { showApiProviderDialog = true }.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                val logo = rememberProviderLogoPainter(selectedProviderTypeId, 32.dp)
+                if (logo != null) {
+                    androidx.compose.foundation.Image(painter = logo, contentDescription = null, modifier = Modifier.size(32.dp), colorFilter = providerLogoColorFilter())
+                } else {
+                    Icon(Icons.Default.Api, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+                Text(
+                    stringResource(R.string.model_workspace_service, getProviderDisplayName(selectedProviderTypeId, context)),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Icon(Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
 
             if (showApiProviderDialog) {
                 ApiProviderDialog(
@@ -887,7 +906,38 @@ fun ModelApiSettingsSection(
             val apiKeyInteractionSource = remember { MutableInteractionSource() }
             val isApiKeyFocused by apiKeyInteractionSource.collectIsFocusedAsState()
 
-            if (!isEmbeddedLocalProvider && !isAntigravityProvider) SettingsTextField(
+            var showKeysDialog by remember(config.id) { mutableStateOf(false) }
+            var savingKeysDialog by remember(config.id) { mutableStateOf(false) }
+            fun changeKeysDialog(visible: Boolean) {
+                if (savingKeysDialog) return
+                savingKeysDialog = true
+                scope.launch {
+                    try {
+                        saveCoordinator.flushAll(showSuccess = false)
+                        showKeysDialog = visible
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        AppLogger.e(TAG, "保存密钥管理窗口失败", e)
+                        showNotification(context.getString(R.string.save_failed) + ": " + e.message.orEmpty(), OKToast.Kind.Error)
+                    } finally {
+                        savingKeysDialog = false
+                    }
+                }
+            }
+            if (!isEmbeddedLocalProvider && !isAntigravityProvider) {
+                SettingsSelectorRow(
+                    title = stringResource(R.string.model_workspace_keys),
+                    subtitle = stringResource(R.string.model_workspace_keys_hint),
+                    value = stringResource(R.string.model_workspace_manage),
+                    onClick = { changeKeysDialog(true) },
+                )
+                if (showKeysDialog) {
+                    com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceDialog(
+                        title = stringResource(R.string.model_workspace_keys),
+                        onDismiss = { changeKeysDialog(false) },
+                    ) {
+                    SettingsTextField(
                         title = stringResource(R.string.api_key),
                         subtitle =
                                 if (isOptionalApiKeyProvider)
@@ -911,6 +961,10 @@ fun ModelApiSettingsSection(
                         visualTransformation = if (isApiKeyFocused || apiKeyInput.isEmpty()) VisualTransformation.None else ApiKeyVisualTransformation(),
                          interactionSource = apiKeyInteractionSource
                  )
+                        keyPoolContent()
+                    }
+                }
+            }
             SettingsTextField(
                     title = stringResource(R.string.model_name),
                     subtitle = when {
@@ -1015,57 +1069,20 @@ fun ModelApiSettingsSection(
                     }
             )
 
-             if (isAntigravityProvider) {
-                 SettingsSwitchRow(
-                     title = stringResource(R.string.codex_direct_media_processing),
-                     subtitle = stringResource(R.string.antigravity_direct_media_processing_desc),
-                     checked = enableDirectImageProcessingInput,
-                     onCheckedChange = { enableDirectImageProcessingInput = it }
-                 )
-             } else if (isCodexProvider) {
-                 SettingsSwitchRow(
-                     title = stringResource(R.string.codex_direct_media_processing),
-                     subtitle = stringResource(R.string.codex_direct_media_processing_desc),
-                     checked = enableDirectImageProcessingInput,
-                     onCheckedChange = { enableDirectImageProcessingInput = it }
-                 )
-                 SettingsSwitchRow(
-                     title = stringResource(R.string.enable_codex_web_search),
-                     subtitle = stringResource(R.string.enable_codex_web_search_desc),
-                     checked = enableCodexWebSearchInput,
-                     onCheckedChange = { enableCodexWebSearchInput = it }
-                 )
-             } else {
-                 SettingsSwitchRow(
-                     title = stringResource(R.string.enable_direct_image_processing),
-                     subtitle = stringResource(R.string.enable_direct_image_processing_desc),
-                     checked = enableDirectImageProcessingInput,
-                     onCheckedChange = { enableDirectImageProcessingInput = it }
-                 )
-
-                 if (selectedApiProvider == ApiProviderType.DEEPSEEK) {
-                     Text(
-                         text = stringResource(R.string.deepseek_files_api_hint),
-                         style = MaterialTheme.typography.bodySmall,
-                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                     )
-                 }
-
-                 SettingsSwitchRow(
-                     title = stringResource(R.string.enable_direct_audio_processing),
-                     subtitle = stringResource(R.string.enable_direct_audio_processing_desc),
-                     checked = enableDirectAudioProcessingInput,
-                     onCheckedChange = { enableDirectAudioProcessingInput = it }
-                 )
-                 SettingsSwitchRow(
-                     title = stringResource(R.string.enable_direct_video_processing),
-                     subtitle = stringResource(R.string.enable_direct_video_processing_desc),
-                     checked = enableDirectVideoProcessingInput,
-                     onCheckedChange = { enableDirectVideoProcessingInput = it }
-                 )
-             }
-            
+            if (isAntigravityProvider || isCodexProvider) {
+                SettingsInfoBanner(text = stringResource(if (isCodexProvider) R.string.codex_direct_media_processing_desc else R.string.antigravity_direct_media_processing_desc))
+            }
+            if (isCodexProvider) {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.enable_codex_web_search),
+                    subtitle = stringResource(R.string.enable_codex_web_search_desc),
+                    checked = enableCodexWebSearchInput,
+                    onCheckedChange = { enableCodexWebSearchInput = it },
+                )
+            }
+            if (selectedApiProvider == ApiProviderType.DEEPSEEK) {
+                SettingsInfoBanner(text = stringResource(R.string.deepseek_files_api_hint))
+            }
             // Google Search Grounding 开关 (仅Gemini支持)
             if (selectedApiProvider == ApiProviderType.GOOGLE ||
                 selectedApiProvider == ApiProviderType.GEMINI_GENERIC) {
@@ -1088,15 +1105,23 @@ fun ModelApiSettingsSection(
                     )
             }
             
-            // Tool Call 开关
-            SettingsSwitchRow(
-                title = stringResource(R.string.enable_tool_call),
-                subtitle = stringResource(R.string.enable_tool_call_desc),
-                checked = enableToolCallInput,
-                onCheckedChange = { enableToolCallInput = it }
-            )
+
         }
     }
+
+    com.ai.assistance.operit.ui.features.settings.model.ModelRequestCapabilities(
+        streaming = enableStreamOutputInput,
+        onStreamingChange = { enableStreamOutputInput = it },
+        toolCall = enableToolCallInput,
+        onToolCallChange = { enableToolCallInput = it },
+        images = enableDirectImageProcessingInput,
+        onImagesChange = { enableDirectImageProcessingInput = it },
+        audio = enableDirectAudioProcessingInput,
+        onAudioChange = { enableDirectAudioProcessingInput = it },
+        video = enableDirectVideoProcessingInput,
+        onVideoChange = { enableDirectVideoProcessingInput = it },
+        supportsAudioVideo = !isCodexProvider && !isAntigravityProvider,
+    )
 
     if (showAntigravityLoginDialog) {
         AntigravityLoginDialog(
@@ -2107,7 +2132,8 @@ private fun SettingsSelectorRow(
         title: String,
         subtitle: String,
         value: String,
-        onClick: () -> Unit
+        onClick: () -> Unit,
+        leadingContent: (@Composable () -> Unit)? = null,
 ) {
     Surface(
             modifier = Modifier
@@ -2121,6 +2147,7 @@ private fun SettingsSelectorRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            leadingContent?.invoke()
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                         text = title,

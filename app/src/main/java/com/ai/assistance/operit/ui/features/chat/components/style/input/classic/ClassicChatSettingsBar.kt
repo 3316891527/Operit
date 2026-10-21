@@ -268,12 +268,8 @@ fun ClassicChatSettingsBar(
             PermissionLevel.ASK -> stringResource(R.string.permission_level_ask)
             PermissionLevel.ALLOW -> stringResource(R.string.permission_level_allow)
         }
-    val behaviorSummary =
-        if (disableStreamOutput) {
-            stringResource(R.string.agent_menu_behavior_non_streaming)
-        } else {
-            stringResource(R.string.agent_menu_behavior_streaming)
-        }
+    val behaviorSummary = stringResource(R.string.auto_read_message) + " · " +
+        stringResource(if (isAutoReadEnabled) R.string.enabled else R.string.disabled)
 
     val buildMemoryAutoSaveDetail: suspend () -> String = {
         val pendingCandidateCount =
@@ -662,21 +658,6 @@ fun ClassicChatSettingsBar(
                                 expanded = showBehaviorSection,
                                 onExpandedChange = { showBehaviorSection = it }
                             ) {
-                            SettingItem(
-                                title = stringResource(R.string.disable_stream_output),
-                                icon = if (disableStreamOutput) Icons.Outlined.Block else Icons.Outlined.Speed,
-                                iconTint =
-                                        if (disableStreamOutput) MaterialTheme.colorScheme.error
-                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                isChecked = disableStreamOutput,
-                                onToggle = onToggleDisableStreamOutput,
-                                onInfoClick = {
-                                    infoPopupContent =
-                                        context.getString(R.string.disable_stream_output) to
-                                            context.getString(R.string.disable_stream_output_desc)
-                                    showMenu = false
-                                }
-                            )
                             SettingItem(
                                 title = stringResource(R.string.auto_read_message),
                                     icon =

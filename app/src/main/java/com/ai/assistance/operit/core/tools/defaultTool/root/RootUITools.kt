@@ -418,17 +418,12 @@ open class RootUITools(context: Context) : AdminUITools(context) {
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
 
-            var dumpResult = if (displayId != null) {
+            val dumpResult = if (displayId != null) {
                 val cmd = "uiautomator dump --display-id $displayId /sdcard/window_dump.xml"
                 AppLogger.d(TAG, "UI dump using explicit display-id=$displayId")
                 executeUiShellCommand(cmd)
             } else {
                 executeUiShellCommand("uiautomator dump /sdcard/window_dump.xml")
-            }
-
-            if (!dumpResult.success && displayId != null) {
-                AppLogger.w(TAG, "uiautomator dump with explicit display-id failed, falling back: ${dumpResult.stderr}")
-                dumpResult = executeUiShellCommand("uiautomator dump /sdcard/window_dump.xml")
             }
 
             if (!dumpResult.success) {

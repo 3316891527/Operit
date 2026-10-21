@@ -23,6 +23,7 @@ import com.ai.assistance.operit.ui.features.settings.components.ColorPickerDialo
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsColorCustomizationSection
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsFontSection
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsThemeModeSection
+import com.ai.assistance.operit.ui.features.settings.language.ThemeLanguageSection
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.FileUtils
 import kotlinx.coroutines.launch
@@ -31,6 +32,8 @@ import kotlinx.coroutines.launch
 internal fun ThemeSettingsBasicTab(
     shared: ThemeSettingsShared,
     cardColors: CardColors,
+    languageChangeEnabled: Boolean,
+    onLanguageSelected: (String) -> Unit,
 ) {
     val editorSession = shared.editorSession
     val values by editorSession.values.collectAsState()
@@ -63,6 +66,7 @@ internal fun ThemeSettingsBasicTab(
         fontScaleInput = values.requiredFloat("font_scale"),
         onPickFont = pickGlobalFont,
     )
+    ThemeLanguageSection(cardColors, languageChangeEnabled, onLanguageSelected)
 }
 
 @Composable
