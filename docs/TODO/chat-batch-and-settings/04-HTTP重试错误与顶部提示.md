@@ -1,22 +1,22 @@
 # HTTP 重试错误与顶部提示
 
-继续使用 `feat/chat-batch-and-settings` 和 PR #18。本轮修正请求重试及换钥时只能看到“正在重试请求...”却看不到失败原因的问题。
+继续使用 `feat/chat-batch-and-settings` 和 PR #18。错误提示与实际动作一致：结束请求时只报告失败，确实继续请求时保留重试次数和等待信息。
 
-## 原因与改动
+## 错误分类与呈现
 
-请求重试共用 `api/chat/keypool/ApiKeyRequestSupport.kt`。原实现遇到密钥池换钥会把中间错误替换为空文本，聊天服务仍更新重试状态，但不会发布空的错误事件。现在每次接受重试后都发布实际错误，HTTP 状态与服务端原因不再因换钥而丢失。
+- 余额不足与额度耗尽保留原有重试策略，用户可在等待期间补充额度；429 限流、网络中断、超时及服务端临时故障继续按原预算和退避时间重试
+- API 密钥无效或过期不在同一把密钥上反复请求；识别 `API key is invalid`、`API key not valid`、`API_KEY_INVALID`、`API key has expired`、`invalid x-api-key` 等鉴权错误。没有其他候选密钥时直接结束，只显示最终错误；密钥池仍可切换到另一把候选密钥
+- 非法、不支持、缺失的参数、无效参数值、请求正文 JSON 错误、未知字段及上下文长度超限直接结束。明确的参数错误即使包含 `model` 或 `not allowed`，也不会误判成可换钥的模型或鉴权故障；普通响应 JSON 解析错误沿用原重试流程
+- 通用 `invalid_request_error` 与 `INVALID_ARGUMENT` 不是所有错误的终止依据，不能覆盖无效密钥的候选切换，也不能覆盖额度不足、限流、超时和服务端临时故障的重试策略
 
-- 402、429、502、503 等 HTTP 错误保留原状态与服务端错误文本，并显示真实重试次数，第一次重试显示为第 1 次
-- `buildRetryMessage` 把实际等待毫秒交给提供商；Gemini 与 Claude 补齐文案的等待秒数参数，避免错误格式化异常。OpenAI 沿用既有错误与重试文案
-- 网络与首字超时仍使用原结构化错误 JSON，保留错误码、下一次请求序号、等待时间和 300 秒首字期限
-- 错误继续经 `MessageProcessingDelegate.nonFatalErrorEvent` 送至 `MessageCoordinationDelegate`，使用已有 `OKToast.requestError`。该入口在可见窗口上方显示，浅深色、长文本滚动和悬浮窗口使用同一实现
+`ApiKeyRequestSupport.kt` 保留既有重试提示构造与请求回滚：只有重试决策接受后才发布重试次数，终止分类和耗尽分支在此前抛出最终错误。OpenAI、Gemini 与 Claude 沿用各自的真实重试文案；网络和首字超时保留原结构化元数据及 300 秒首字期限。
 
-重试次数限制、退避时间、密钥选择和最终失败处理未变。仅恢复失败原因的可见性，不改 HTTP 请求或数据库格式。
+错误继续通过 `MessageProcessingDelegate.nonFatalErrorEvent` 送到 `MessageCoordinationDelegate`，使用窗口上方的 `OKToast.requestError`。本次调整没有修改重试次数预算、等待时长、余额不足策略、密钥选择算法或数据库格式。
 
 ## 验证记录
 
-新增三个 JVM 回归用例，覆盖四类常规 HTTP 错误换钥时仍发布原文、回滚后再提示、同密钥退避前发布原因与等待时间、换钥时保留 5004 的结构化元数据。移除原来断言换钥应静默的用例。
+`ApiRequestRetryPolicyTest.kt` 扩充参数和密钥错误样本，保留余额不足、限流、网络、超时、临时服务故障与正常换钥的全部回归。`ApiKeyRetryNoticeTest.kt` 保留原有三个回归，新增三个场景：明确参数错误不构造重试提示、无其他密钥时鉴权失败直接结束、余额不足仍发布第 1 次重试并保留退避时间。
 
-本地仅做差异、调用点、字符串参数和文档静态核对，不运行编译、构建或测试。顶部位置、真实服务端响应和触摸体验仍待真机填写；完整范围见 [完整验收清单](02-完整验收清单.md)。提交后派发远端 Android Build 与 Android Tests，不轮询结果。
+[完整验收清单](02-完整验收清单.md) 保留此前 348 项，新增两个终止错误场景及对应结果行，共 350 项。本地仅完成差异空白、调用点和清单完整性的静态检查，未执行编译、构建或测试。远端 Android Build 使用 `assembleDebug`，Android Tests 执行 JVM 回归；派发和结果记录在 PR，新错误分类与提示尚待构建产物复验。
 
 [DONE]

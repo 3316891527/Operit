@@ -15,6 +15,15 @@ class ApiRequestRetryPolicyTest {
         listOf(
             HttpFailure(400, "invalid_request_error: unsupported parameter temperature"),
             HttpFailure(422, "request validation failed"),
+            HttpFailure(400, "invalid parameter temperature: not supported by model"),
+            HttpFailure(403, "unsupported parameter: not allowed for this model"),
+            HttpFailure(500, "unsupported_parameter: invalid value for model"),
+            HttpFailure(400, "invalid_request_error: Unsupported value: temperature does not support 0 with this model"),
+            HttpFailure(400, "invalid_request_error: invalid type for max_tokens"),
+            IOException("INVALID_ARGUMENT: invalid request body"),
+            IOException("missing required field: model"),
+            IOException("invalid JSON in request body"),
+            IOException("unknown field: response_format"),
             IOException("invalid_argument: 参数错误"),
             IOException("context_length_exceeded: maximum context length is 8192"),
             IOException("request failed", IOException("unsupported_parameter")),
@@ -28,8 +37,13 @@ class ApiRequestRetryPolicyTest {
         listOf(
             HttpFailure(401, "invalid_request_error: invalid API key"),
             HttpFailure(400, "invalid_request_error: incorrect API key"),
+            HttpFailure(400, "INVALID_ARGUMENT: API key not valid. Please pass a valid API key. API_KEY_INVALID"),
             HttpFailure(403, "permission denied"),
             IOException("request failed", IOException("invalid_api_key")),
+            IOException("API key is invalid"),
+            IOException("API key is not valid"),
+            IOException("API key has expired"),
+            IOException("invalid x-api-key"),
         ).forEach { error ->
             assertEquals(error.message, ApiRequestRetryMode.ROTATE_KEY, ApiRequestRetryPolicy.mode(error))
         }
@@ -58,18 +72,24 @@ class ApiRequestRetryPolicyTest {
 
     @Test
     fun transientHttpFailuresKeepRetriesDespiteGenericRequestErrors() {
-        listOf(408, 409, 425, 429, 500, 503).forEach { status ->
-            assertEquals(
-                "HTTP $status",
-                ApiRequestRetryMode.RETRY,
-                ApiRequestRetryPolicy.mode(HttpFailure(status, "invalid_request_error")),
-            )
+        listOf("invalid_request_error", "INVALID_ARGUMENT").forEach { type ->
+            listOf(408, 409, 425, 429, 500, 503).forEach { status ->
+                assertEquals(
+                    "$type HTTP $status",
+                    ApiRequestRetryMode.RETRY,
+                    ApiRequestRetryPolicy.mode(HttpFailure(status, type)),
+                )
+            }
         }
     }
 
     @Test
-    fun transportAndFirstTokenTimeoutsKeepRetries() {
-        listOf(SocketTimeoutException("timeout"), FirstTokenTimeoutException()).forEach { error ->
+    fun transportAndResponseFailuresKeepRetries() {
+        listOf(
+            SocketTimeoutException("timeout"),
+            FirstTokenTimeoutException(),
+            IOException("invalid JSON in response body"),
+        ).forEach { error ->
             assertEquals(ApiRequestRetryMode.RETRY, ApiRequestRetryPolicy.mode(error))
         }
     }

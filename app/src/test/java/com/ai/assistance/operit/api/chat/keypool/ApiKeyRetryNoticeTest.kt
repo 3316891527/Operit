@@ -37,7 +37,10 @@ class ApiKeyRetryNoticeTest {
     @Test
     fun keySwitchPublishesEveryHttpFailureAfterRollback() = runTest {
         val failures = mapOf(
+            400 to "INVALID_ARGUMENT: API key not valid. Please pass a valid API key. API_KEY_INVALID",
+            401 to "Unauthorized",
             402 to "Insufficient Balance",
+            404 to "model_not_found",
             429 to "Too Many Requests",
             502 to "Bad Gateway",
             503 to "Service Unavailable",
@@ -112,6 +115,100 @@ class ApiKeyRetryNoticeTest {
         assertEquals(300_000L, error.getLong("timeoutMs"))
         assertEquals(2, error.getJSONObject("retry").getInt("nextAttempt"))
         assertEquals(0L, error.getJSONObject("retry").getLong("delayMs"))
+    }
+
+    @Test
+    fun invalidParametersNeverPublishARetryEvenWhenTheErrorMentionsModelAccess() = runTest {
+        listOf(
+            httpFailure(400, "invalid_request_error: unsupported parameter temperature"),
+            httpFailure(400, "invalid parameter temperature: not supported by model"),
+            httpFailure(403, "unsupported parameter: not allowed for this model"),
+            httpFailure(500, "unsupported_parameter: invalid value for model"),
+            httpFailure(400, "invalid_request_error: Unsupported value: temperature does not support 0 with this model"),
+        ).forEach { failureError ->
+            val events = mutableListOf<String>()
+            val decision = ApiKeyRetryDecision(exhausted = false, delayMs = 0L, switchedKey = true)
+            val failure = runCatching {
+                withContext(ApiKeyRequestElement(RetrySession(decision))) {
+                    handleKeyAwareRetry(
+                        context = context,
+                        exception = failureError,
+                        enableRetry = true,
+                        onNonFatalError = { events += it },
+                        onRetryAccepted = { events += "rollback" },
+                        buildRetryMessage = { _, _, _ -> error("参数错误不应构造重试提示") },
+                        logTag = "test",
+                        attemptNumber = 1,
+                    )
+                }
+            }.exceptionOrNull()
+            assertEquals(failureError.message, failure?.message)
+            assertEquals(emptyList<String>(), events)
+        }
+    }
+
+    @Test
+    fun invalidCredentialsStopWithoutARetryNoticeWhenNoOtherKeysRemain() = runTest {
+        listOf(
+            httpFailure(401, "HTTP 401: Unauthorized"),
+            httpFailure(400, "INVALID_ARGUMENT: API key not valid. Please pass a valid API key. API_KEY_INVALID"),
+            IOException("API key is invalid"),
+            IOException("API key is not valid"),
+            IOException("API key has expired"),
+        ).forEach { failureError ->
+            val decision = ApiKeyRetryPlanner.decide(
+                errorClass = ApiKeyFailureClassifier.classify(failureError),
+                sameKeyAttempts = 1,
+                remainingCandidatesAfterExclude = 0,
+                httpAttemptsIncludingThis = 1,
+                maxHttpAttempts = 6,
+            )
+            val events = mutableListOf<String>()
+            val failure = runCatching {
+                withContext(ApiKeyRequestElement(RetrySession(decision))) {
+                    handleKeyAwareRetry(
+                        context = context,
+                        exception = failureError,
+                        enableRetry = true,
+                        onNonFatalError = { events += it },
+                        onRetryAccepted = { events += "rollback" },
+                        buildRetryMessage = { _, _, _ -> error("无可用密钥时不应构造重试提示") },
+                        logTag = "test",
+                        attemptNumber = 1,
+                    )
+                }
+            }.exceptionOrNull()
+            assertEquals(true, decision.exhausted)
+            assertEquals(failureError.message, failure?.message)
+            assertEquals(emptyList<String>(), events)
+        }
+    }
+
+    @Test
+    fun balanceFailureRetainsItsRetryNoticeAndBackoff() = runTest {
+        val decision = ApiKeyRetryPlanner.decide(
+            errorClass = ApiKeyErrorClass.QUOTA,
+            sameKeyAttempts = 1,
+            remainingCandidatesAfterExclude = 0,
+            httpAttemptsIncludingThis = 1,
+            maxHttpAttempts = 6,
+        )
+        val events = mutableListOf<String>()
+        withContext(ApiKeyRequestElement(RetrySession(decision))) {
+            handleKeyAwareRetry(
+                context = context,
+                exception = httpFailure(402, "HTTP 402: Insufficient Balance"),
+                enableRetry = true,
+                onNonFatalError = { events += it },
+                onRetryAccepted = { events += "rollback" },
+                buildRetryMessage = { text, retry, delay -> "$text; retry=$retry; delayMs=$delay" },
+                logTag = "test",
+                attemptNumber = 1,
+            )
+        }
+        assertEquals(false, decision.exhausted)
+        assertEquals(listOf("rollback", "HTTP 402: Insufficient Balance; retry=1; delayMs=1000"), events)
+        assertEquals(1_000L, testScheduler.currentTime)
     }
 
     private fun httpFailure(code: Int, message: String): Exception =
