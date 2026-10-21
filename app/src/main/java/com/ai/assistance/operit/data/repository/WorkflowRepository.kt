@@ -8,8 +8,11 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.core.workflow.NodeExecutionState
 import com.ai.assistance.operit.core.workflow.WorkflowExecutionRetryableException
+import com.ai.assistance.operit.core.workflow.WorkflowExecutionCancelledException
 import com.ai.assistance.operit.core.workflow.WorkflowExecutor
 import com.ai.assistance.operit.core.workflow.WorkflowScheduler
+import com.ai.assistance.operit.core.workflow.runtime.ScheduledWorkflowQueue
+import com.ai.assistance.operit.core.workflow.runtime.classifyWorkflowIssue
 import com.ai.assistance.operit.data.model.ExecutionStatus
 import com.ai.assistance.operit.data.model.Workflow
 import com.ai.assistance.operit.data.model.WorkflowExecutionFailureStage
@@ -97,13 +100,14 @@ class WorkflowRepository(private val context: Context) {
             _runningWorkflowIds.value = runningWorkflowJobs.keys.toSet()
         }
 
-        private fun registerRunningWorkflow(workflowId: String, job: Job) {
+        private fun registerRunningWorkflow(workflowId: String, job: Job): Boolean =
             synchronized(runningWorkflowLock) {
+                publishRunningWorkflowIdsLocked()
+                if (runningWorkflowJobs[workflowId].orEmpty().any { it.isActive }) return@synchronized false
                 runningWorkflowJobs.getOrPut(workflowId) { mutableSetOf() }.add(job)
                 publishRunningWorkflowIdsLocked()
+                true
             }
-        }
-
         private fun unregisterRunningWorkflow(workflowId: String, job: Job) {
             synchronized(runningWorkflowLock) {
                 runningWorkflowJobs[workflowId]?.remove(job)
@@ -338,6 +342,25 @@ class WorkflowRepository(private val context: Context) {
         }
     }
 
+    suspend fun getExecutionRecords(workflowId: String): Result<List<WorkflowExecutionRecord>> = withContext(Dispatchers.IO) {
+        try {
+            val dir = getExecutionLogDirectory(workflowId, createIfMissing = false)
+            val records = dir.listFiles { file -> file.isFile && file.extension == "json" }
+                .orEmpty().sortedByDescending { it.name }.take(MAX_EXECUTION_LOG_FILES_PER_WORKFLOW)
+                .map { file -> json.decodeFromString<WorkflowExecutionRecord>(file.readText()) }
+                .sortedByDescending { it.startedAt }
+            Result.success(records)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "读取工作流执行历史失败: $workflowId", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun triggerScheduledWorkflow(id: String, triggerNodeId: String?): Result<String> =
+        ScheduledWorkflowQueue.run(id) { triggerWorkflow(id, triggerNodeId) }
+
     suspend fun getLatestExecutionRecord(workflowId: String): Result<WorkflowExecutionRecord?> = withContext(Dispatchers.IO) {
         try {
             val dir = getExecutionLogDirectory(workflowId, createIfMissing = false)
@@ -513,7 +536,8 @@ class WorkflowRepository(private val context: Context) {
                 )
             ),
             failureStage = failureStage,
-            failureReason = failureReason
+            failureReason = failureReason,
+            issue = classifyWorkflowIssue(failureReason),
         )
     }
 
@@ -685,13 +709,13 @@ class WorkflowRepository(private val context: Context) {
             return@withContext Result.failure(Exception(context.getString(R.string.workflow_disabled_message, workflow.name)))
         }
 
-        if (getRunningWorkflowJobs(id).isNotEmpty()) {
-            return@withContext Result.failure(Exception(context.getString(R.string.workflow_already_running, workflow.name)))
-        }
-
         val workflowJob = currentCoroutineContext().job
-        registerRunningWorkflow(id, workflowJob)
-
+        if (!registerRunningWorkflow(id, workflowJob)) {
+            // 同一工作流仍在执行时让定时 Worker 重试，不产生失败记录或失败计数。
+            return@withContext Result.failure(
+                WorkflowExecutionRetryableException(context.getString(R.string.workflow_already_running, workflow.name))
+            )
+        }
         try {
             AppLogger.d(TAG, "Triggering workflow: ${workflow.name} (${workflow.id})")
             if (triggerNodeId != null) {
@@ -721,15 +745,19 @@ class WorkflowRepository(private val context: Context) {
         } catch (e: CancellationException) {
             AppLogger.d(TAG, "Workflow execution cancelled: $id")
             withContext(NonCancellable) {
-                // Cancellation can happen before the executor creates its run record. Persist it here
-                // so workflow status never points to an execution that has no diagnostic evidence.
-                persistPreExecutionFailure(
-                    workflow = workflow,
-                    triggerNodeId = triggerNodeId,
-                    failureStage = WorkflowExecutionFailureStage.CANCELLATION,
-                    failureReason = e.toString(),
-                    logLevel = WorkflowLogLevel.WARN
-                )
+                if (e is WorkflowExecutionCancelledException) {
+                    saveExecutionRecord(e.record)
+                    updateExecutionStatistics(id, ExecutionStatus.FAILED, e.record.finishedAt)
+                } else {
+                    // 执行器建立报告前的取消单独记录，已执行节点的报告由上面的分支保存。
+                    persistPreExecutionFailure(
+                        workflow = workflow,
+                        triggerNodeId = triggerNodeId,
+                        failureStage = WorkflowExecutionFailureStage.CANCELLATION,
+                        failureReason = e.toString(),
+                        logLevel = WorkflowLogLevel.WARN,
+                    )
+                }
             }
             throw e
         } catch (e: Exception) {

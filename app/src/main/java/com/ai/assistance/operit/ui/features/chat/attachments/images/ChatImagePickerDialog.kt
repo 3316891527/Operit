@@ -8,6 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -315,7 +318,10 @@ private fun GalleryImageCell(
         Checkbox(
             checked = selected,
             onCheckedChange = { onToggle() },
-            modifier = Modifier.align(Alignment.TopEnd).background(Color.Black.copy(alpha = 0.25f)),
+            // 减淡圆形衬底，保留勾选对比度并让图片细节透出来。
+            modifier = Modifier.align(Alignment.TopEnd).padding(2.dp).clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.08f)),
+            colors = CheckboxDefaults.colors(uncheckedColor = Color.White),
         )
     }
 }

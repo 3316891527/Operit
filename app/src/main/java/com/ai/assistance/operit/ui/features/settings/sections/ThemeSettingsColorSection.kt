@@ -34,11 +34,6 @@ internal fun ThemeSettingsColorCustomizationSection(
     onColorModeInput: String,
     onShowColorPicker: (String) -> Unit,
 ) {
-    ThemeSettingsSectionTitle(
-        title = stringResource(id = R.string.theme_title_color),
-        icon = Icons.Default.ColorLens,
-    )
-
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), colors = cardColors) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(

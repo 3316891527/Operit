@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.workflow.screens
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material3.FilledTonalIconButton
+
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import android.content.Context
@@ -9,6 +13,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import com.ai.assistance.operit.core.workflow.runtime.ScheduledWorkflowQueue
+import com.ai.assistance.operit.ui.features.workflow.components.WorkflowRunDetailsDialog
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -53,6 +59,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -376,62 +383,66 @@ private fun WorkflowListHeader(
     onCreateFromTemplate: () -> Unit,
     onCreate: () -> Unit,
     onEnterSelection: () -> Unit,
-    hasWorkflows: Boolean
+    hasWorkflows: Boolean,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
+    // 手机上收为一行图标操作，足够宽时才显示新建按钮文字。
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        val showCreateLabel = maxWidth >= 440.dp * LocalDensity.current.fontScale
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = stringResource(R.string.workflow_list_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold
+                stringResource(R.string.workflow_list_title),
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.workflow_automation_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
             IconButton(onClick = onImport) {
                 Icon(
-                    imageVector = Icons.Default.FileOpen,
-                    contentDescription = stringResource(R.string.workflow_import_title)
+                    Icons.Default.FileOpen,
+                    stringResource(R.string.workflow_import_title),
+                    Modifier.size(20.dp),
                 )
             }
             IconButton(onClick = onCreateFromTemplate) {
                 Icon(
-                    imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = stringResource(R.string.workflow_create_from_template)
+                    Icons.Default.AutoAwesome,
+                    stringResource(R.string.workflow_create_from_template),
+                    Modifier.size(20.dp),
                 )
             }
-            FilledTonalButton(
-                onClick = onCreate,
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                modifier = Modifier.height(40.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(R.string.workflow_new))
-            }
-            if (hasWorkflows) {
-                IconButton(onClick = { onShowMoreMenuChange(true) }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.menu))
+            if (showCreateLabel)
+                FilledTonalButton(
+                    onClick = onCreate,
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                ) {
+                    Icon(Icons.Default.Add, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.workflow_new))
                 }
-            }
+            else
+                FilledTonalIconButton(onClick = onCreate) {
+                    Icon(
+                        Icons.Default.Add,
+                        stringResource(R.string.workflow_new),
+                        Modifier.size(20.dp),
+                    )
+                }
+            if (hasWorkflows)
+                IconButton(onClick = { onShowMoreMenuChange(true) }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        stringResource(R.string.menu),
+                        Modifier.size(20.dp),
+                    )
+                }
         }
     }
     if (showMoreMenu && hasWorkflows) {
-        ActionSheet(stringResource(R.string.menu), onDismissRequest = { onShowMoreMenuChange(false) }) {
+        ActionSheet(
+            stringResource(R.string.menu),
+            onDismissRequest = { onShowMoreMenuChange(false) },
+        ) {
             ActionSheetItem(stringResource(R.string.multi_select), Icons.Default.CheckCircle) {
                 onShowMoreMenuChange(false)
                 onEnterSelection()
@@ -545,6 +556,12 @@ fun WorkflowCard(
     onOpen: () -> Unit = onClick,
     onDuplicate: () -> Unit = {}
 ) {
+    var showRunDetails by remember(workflow.id) { mutableStateOf(false) }
+    val waitingWorkflowIds by ScheduledWorkflowQueue.waitingWorkflowIds.collectAsState()
+    val isQueued = workflow.id in waitingWorkflowIds && workflow.lastExecutionStatus != ExecutionStatus.RUNNING
+    if (showRunDetails) {
+        WorkflowRunDetailsDialog(workflowId = workflow.id, onDismiss = { showRunDetails = false })
+    }
     val borderColor = if (isSelected) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -648,10 +665,13 @@ fun WorkflowCard(
                 )
             }
 
-            workflow.lastExecutionStatus?.let { status ->
+            val status = workflow.lastExecutionStatus
+            if (status != null || isQueued) {
                 Spacer(modifier = Modifier.height(12.dp))
                 ExecutionStatusBar(
-                    status = status,
+                    status = status ?: ExecutionStatus.RUNNING,
+                    isQueued = isQueued,
+                    onClick = if (isSelectionMode) null else ({ showRunDetails = true }),
                     lastExecutionTime = workflow.lastExecutionTime,
                     totalExecutions = workflow.totalExecutions,
                     successRate = if (workflow.totalExecutions > 0) {
@@ -722,9 +742,13 @@ fun ExecutionStatusBar(
     status: ExecutionStatus,
     lastExecutionTime: Long?,
     totalExecutions: Int,
-    successRate: Int
+    successRate: Int,
+    isQueued: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
-    val (statusColor, statusIcon, statusText) = when (status) {
+    val (statusColor, statusIcon, statusText) = if (isQueued) {
+        Triple(MaterialTheme.colorScheme.primary, Icons.Outlined.PlayCircle, stringResource(R.string.workflow_run_queued))
+    } else when (status) {
         ExecutionStatus.SUCCESS -> Triple(
             MaterialTheme.colorScheme.tertiary,
             Icons.Default.CheckCircle,
@@ -747,6 +771,7 @@ fun ExecutionStatusBar(
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
             .background(statusColor.copy(alpha = 0.08f))
+            .clickable(enabled = onClick != null && !isQueued && status != ExecutionStatus.RUNNING) { onClick?.invoke() }
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -758,7 +783,7 @@ fun ExecutionStatusBar(
                 style = MaterialTheme.typography.labelMedium,
                 color = statusColor
             )
-            lastExecutionTime?.let {
+            lastExecutionTime?.takeUnless { isQueued }?.let {
                 Text(
                     text = formatDate(it),
                     style = MaterialTheme.typography.labelSmall,
@@ -766,7 +791,7 @@ fun ExecutionStatusBar(
                 )
             }
         }
-        if (totalExecutions > 0 && status != ExecutionStatus.RUNNING) {
+        if (totalExecutions > 0 && status != ExecutionStatus.RUNNING && !isQueued) {
             Text(
                 text = "$successRate%",
                 style = MaterialTheme.typography.labelLarge,

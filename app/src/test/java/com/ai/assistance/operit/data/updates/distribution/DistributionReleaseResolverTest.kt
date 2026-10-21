@@ -16,6 +16,7 @@ class DistributionReleaseResolverTest {
         status as UpdateStatus.PatchAvailable
         assertEquals("1.12.2+2", status.newVersion)
         assertTrue(status.patchUrl.contains("3316891527/Operit/releases/"))
+        assertTrue(requireNotNull(status.fullApkUrl).endsWith("app-kong.apk"))
     }
 
     @Test

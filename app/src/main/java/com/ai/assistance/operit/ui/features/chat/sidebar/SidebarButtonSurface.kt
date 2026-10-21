@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.chat.sidebar
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CornerBasedShape
@@ -29,6 +30,7 @@ internal fun SidebarButtonSurface(
             shape = shape,
             containerColor = containerColor,
             enableLens = false,
+            region = GlassRegion.SIDEBAR_BUTTONS,
         ),
         shape = shape,
         color = if (appearance.buttonLiquidGlassEnabled) Color.Transparent else containerColor,

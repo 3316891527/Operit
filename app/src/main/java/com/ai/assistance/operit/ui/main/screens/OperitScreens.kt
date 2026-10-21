@@ -58,7 +58,6 @@ import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettin
 import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
 import com.ai.assistance.operit.ui.features.packages.market.account.GitHubAccountScreen
 
-import com.ai.assistance.operit.ui.features.settings.screens.LayoutAdjustmentSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceTab
 import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ModelPromptsSettingsScreen
@@ -647,7 +646,6 @@ sealed class Screen(
                     navigateToTokenUsageStatistics = { navigateTo(TokenUsageStatistics) },
                     navigateToPerformanceMonitor = { navigateTo(PerformanceMonitor) },
                     navigateToContextSummarySettings = { navigateTo(ContextSummarySettings) },
-                    navigateToLayoutAdjustmentSettings = { navigateTo(LayoutAdjustmentSettings) },
                     navigateToLogcat = { navigateTo(Logcat) },
                     navigateToAbout = { navigateTo(About) }
             )
@@ -1064,22 +1062,6 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             GlobalDisplaySettingsScreen(onBackPressed = onGoBack)
-        }
-    }
-
-    data object LayoutAdjustmentSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_layout_adjustment) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            LayoutAdjustmentSettingsScreen(onNavigateBack = onGoBack)
         }
     }
 

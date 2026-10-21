@@ -98,6 +98,22 @@ object MediaLinkParser {
         return ids
     }
 
+    /** 关联模型图片链接后紧邻的附件说明，展示时只保留同一张图的一份缩略图。 */
+    fun extractImageAttachmentBindings(message: String): Map<String, String> = buildMap {
+        for (link in matchesForType(message, "image")) {
+            val id = link.groupValues[2]
+            if (id == "error") continue
+            val remaining = message.substring(link.range.last + 1).trimStart()
+            val attachment = com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataTag.find(remaining)
+                ?.takeIf { it.range.first == 0 }
+                ?: com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
+                    ?.takeIf { it.range.first == 0 }
+            if (attachment != null && attachment.groupValues[3].startsWith("image/", ignoreCase = true)) {
+                put(attachment.groupValues[1], id)
+            }
+        }
+    }
+
     fun removeImageLinks(message: String): String =
         LINK_PATTERN.replace(message) { match ->
             if (match.groupValues[1].equals("image", ignoreCase = true)) "" else match.value

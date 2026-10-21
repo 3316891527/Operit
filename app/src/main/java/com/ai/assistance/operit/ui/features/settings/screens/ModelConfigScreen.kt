@@ -53,6 +53,10 @@ import com.ai.assistance.operit.data.model.ModelConfigGroup
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
+import com.ai.assistance.operit.data.preferences.ActivePromptManager
+import com.ai.assistance.operit.data.preferences.CharacterCardManager
+import com.ai.assistance.operit.data.model.ActivePrompt
+import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.ui.features.settings.DebouncedModelConfigAutoSaveEffect
 import com.ai.assistance.operit.ui.features.settings.ModelConfigSaveCoordinator
 import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveAction
@@ -70,6 +74,7 @@ import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -180,18 +185,13 @@ fun ModelConfigScreen(
     }
     var savingSelection by remember { mutableStateOf(false) }
     val saveCoordinator = rememberModelConfigSaveCoordinator()
-    // 配置状态
-    val configList = configManager.configListFlow.collectAsState(initial = listOf("default")).value
-    val configSummaries by configManager.configSummariesFlow.collectAsState(initial = emptyList())
-    val configGroups by configManager.configGroupsFlow.collectAsState(initial = emptyList())
-    var selectedGroupId by remember { mutableStateOf<String?>(null) }
-    val visibleConfigIds = remember(configList, configSummaries, selectedGroupId) {
-        val groupedIds = configSummaries
-            .filter { it.groupId == selectedGroupId }
-            .map { it.id }
-            .toSet()
-        configList.filter { it in groupedIds }
-    }
+    // 分组、候选和编辑记忆使用同一次持久化快照，避免异步列表将选择重置为首项。
+    var workspaceSelection by remember { mutableStateOf<com.ai.assistance.operit.data.model.ModelConfigSelection?>(null) }
+    val configSummaries = workspaceSelection?.allConfigs.orEmpty()
+    val configList = configSummaries.map { it.id }
+    val configGroups = workspaceSelection?.groups.orEmpty()
+    val selectedGroupId = workspaceSelection?.selectedGroupId
+    val visibleConfigIds = workspaceSelection?.availableConfigs.orEmpty().map { it.id }
     // 进入页面时默认选中“对话功能”当前绑定的模型配置
     var selectedConfigId by remember { mutableStateOf("") }
     val selectedConfig = remember { mutableStateOf<ModelConfigData?>(null) }
@@ -222,36 +222,33 @@ fun ModelConfigScreen(
         onDispose { keyAvailabilityTester.close() }
     }
 
-    // 进入页面时使用已保存的分组，并在组内定位当前配置。
     LaunchedEffect(Unit) {
-        val chatConfigId = functionalConfigManager.getConfigIdForFunction(FunctionType.CHAT)
-        val restoredGroupId = configManager.selectedConfigGroupFlow.first()
-        val summaries = configManager.configSummariesFlow.first()
-        val groupedConfigIds =
-            summaries.filter { it.groupId == restoredGroupId }.mapTo(linkedSetOf()) { it.id }
-
-        selectedGroupId = restoredGroupId
-        selectedConfigId =
-            chatConfigId.takeIf { it in groupedConfigIds }
-                ?: groupedConfigIds.firstOrNull()
-                ?: ""
-        hasInitializedSelection = true
-    }
-
-    LaunchedEffect(hasInitializedSelection) {
-        if (!hasInitializedSelection) return@LaunchedEffect
-        configManager.selectedConfigGroupFlow.collectLatest { selectedGroupId = it }
-    }
-
-    // 导入、移动或删除配置后，保持当前选择属于已选分组。
-    LaunchedEffect(hasInitializedSelection, selectedGroupId, visibleConfigIds) {
-        if (!hasInitializedSelection) return@LaunchedEffect
-        when {
-            visibleConfigIds.isEmpty() -> selectedConfigId = ""
-            selectedConfigId !in visibleConfigIds -> selectedConfigId = visibleConfigIds.first()
+        configManager.configSelectionFlow.collectLatest { selection ->
+            val enteringGroup = workspaceSelection == null || workspaceSelection?.selectedGroupId != selection.selectedGroupId
+            val prompt = ActivePromptManager.getInstance(context).getActivePrompt()
+            val card = (prompt as? ActivePrompt.CharacterCard)?.let {
+                CharacterCardManager.getInstance(context).getCharacterCard(it.id)
+            }
+            val fixedConfigId = card?.takeIf {
+                CharacterCardChatModelBindingMode.normalize(it.chatModelBindingMode) == CharacterCardChatModelBindingMode.FIXED_CONFIG
+            }?.chatModelConfigId?.takeIf { it.isNotBlank() }
+            val chatConfigId = fixedConfigId ?: functionalConfigManager.getConfigIdForFunction(FunctionType.CHAT)
+            val candidateIds = selection.availableConfigs.map { it.id }
+            selectedConfigId = com.ai.assistance.operit.ui.features.settings.model.resolveWorkspaceConfig(
+                candidateIds = candidateIds,
+                currentConfigId = selectedConfigId.takeUnless { enteringGroup },
+                activeConfigId = chatConfigId,
+                rememberedConfigId = selection.workspaceConfigId,
+            )
+            workspaceSelection = selection
+            hasInitializedSelection = true
         }
     }
-
+    LaunchedEffect(hasInitializedSelection, selectedGroupId, selectedConfigId) {
+        if (hasInitializedSelection && selectedConfigId.isNotEmpty()) {
+            configManager.setWorkspaceSelectedConfig(selectedGroupId, selectedConfigId)
+        }
+    }
     // 加载所有配置名称
     LaunchedEffect(configList) {
         configList.forEach { id ->
@@ -697,7 +694,6 @@ fun ModelConfigScreen(
                 selectedGroupId = selectedGroupId,
                 onGroupConfirmed = { groupId ->
                     afterSaving {
-                        selectedGroupId = groupId
                         scope.launch { configManager.setSelectedConfigGroup(groupId) }
                     }
                 },
@@ -1282,7 +1278,11 @@ private fun ConfigOrganizerDialog(
     val saveConfigOrderFailed = stringResource(R.string.model_config_save_order_failed)
     var rows by remember { mutableStateOf(emptyList<ConfigOrganizerRow>()) }
     var orderedGroups by remember(groups) { mutableStateOf(groups) }
-    var collapsedGroupIds by remember { mutableStateOf<Set<String?>>(emptySet()) }
+    var collapsedGroups by remember { mutableStateOf<Set<String?>?>(null) }
+    LaunchedEffect(configManager) {
+        configManager.collapsedConfigGroupsFlow.collect { collapsedGroups = it }
+    }
+    val collapsedGroupIds = collapsedGroups.orEmpty()
     var pendingGroupId by remember(selectedGroupId) { mutableStateOf(selectedGroupId) }
     var editingGroup by remember { mutableStateOf<ModelConfigGroup?>(null) }
     var targetGroupForConfig by remember { mutableStateOf<String?>(null) }
@@ -1308,7 +1308,9 @@ private fun ConfigOrganizerDialog(
         }
     }
 
-    LaunchedEffect(summaries, orderedGroups) { rows = buildRows() }
+    LaunchedEffect(summaries, orderedGroups, collapsedGroups) {
+        if (collapsedGroups != null) rows = buildRows()
+    }
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
         val moving = rows.getOrNull(from.index) ?: return@rememberReorderableLazyListState
@@ -1427,12 +1429,11 @@ private fun ConfigOrganizerDialog(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clickable {
-                                            collapsedGroupIds = if (row.groupId in collapsedGroupIds) {
-                                                collapsedGroupIds - row.groupId
-                                            } else {
-                                                collapsedGroupIds + row.groupId
+                                            scope.launch {
+                                                configManager.setConfigGroupCollapsed(
+                                                    row.groupId, row.groupId !in collapsedGroupIds
+                                                )
                                             }
-                                            rows = buildRows()
                                         }
                                 )
                                 Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(22.dp))
@@ -1549,10 +1550,8 @@ private fun ConfigOrganizerDialog(
                     Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            val groupConfigs = summaries.filter { it.groupId == pendingGroupId }
+                            // 确认分组只改变筛选；由页面按当前绑定和组内记忆选择配置。
                             onGroupConfirmed(pendingGroupId)
-                            val firstConfigId = groupConfigs.firstOrNull()?.id
-                            if (firstConfigId != null) onSelectConfig(firstConfigId)
                             onDismiss()
                         }
                     ) { Text(stringResource(R.string.confirm_action)) }

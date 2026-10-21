@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.main.layout
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
@@ -127,6 +128,7 @@ fun TabletLayout(
                                                 containerColor = drawerAppearance.containerColor,
                                                 // 侧栏保留已调整的低强度折射，聊天区域单独恢复原有效果。
                                                 subtleRefraction = true,
+                                            region = GlassRegion.SIDEBAR,
                                         )
                                         .zIndex(2f), // 确保侧边栏在主内容之上
                         shadowElevation = if (drawerAppearance.waterGlassEnabled) 0.dp else 4.dp,

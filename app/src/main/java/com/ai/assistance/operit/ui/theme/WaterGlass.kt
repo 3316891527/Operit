@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.theme
 
 import android.os.Build
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,13 +30,18 @@ fun Modifier.waterGlass(
     containerColor: Color,
     subtleRefraction: Boolean = false,
     backgroundOpacity: Float? = null,
+    region: GlassRegion = GlassRegion.GLOBAL,
 ): Modifier {
     if (!enabled || backgroundOpacity == 0f) {
         return this
     }
 
-    val appearance = rememberGlassAppearance()
-    val tintOpacity = backgroundOpacity?.coerceIn(0f, 1f) ?: appearance.tintOpacity
+    val appearance = rememberGlassAppearance(region)
+    val customParameters = region.isCustom(LocalThemePreferenceSnapshot.current.values)
+    // 独立染色强度与区域背景透明度共同生效；跟随全局时保持既有透明度语义。
+    val tintOpacity = if (customParameters) {
+        appearance.tintOpacity * (backgroundOpacity?.coerceIn(0f, 1f) ?: 1f)
+    } else backgroundOpacity?.coerceIn(0f, 1f) ?: appearance.tintOpacity
     val liquidState = if (isWaterGlassSupported()) LocalWaterGlassState.current else null
     val isLightGlass = containerColor.luminance() >= 0.5f
     if (liquidState == null) {

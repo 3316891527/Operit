@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.packages.screens
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
@@ -277,7 +278,9 @@ private fun PackageListItemWithTag(
             onClick = onPackageClick,
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = if (glassEnabled) 8.dp else 0.dp, vertical = if (glassEnabled) 3.dp else 0.dp)
-                .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer),
+                .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer,
+                    region = GlassRegion.PACKAGE_CARDS,
+                ),
             color = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,

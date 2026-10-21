@@ -1,8 +1,5 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
-
-import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -18,12 +15,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.features.settings.components.ColorPickerDialog
-import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsAvatarSection
-import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsChatStyleSection
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.*
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.ThemeSettingsChatStyleSection
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsDisplayOptionsSection
 import com.ai.assistance.operit.ui.theme.getTextColorForBackground
 import com.ai.assistance.operit.util.AppLogger
@@ -108,56 +108,60 @@ private suspend fun parseNinePatchBubbleParams(
 ): NinePatchBubbleAutoParams? =
     withContext(Dispatchers.IO) {
         runCatching {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                BitmapFactory.decodeStream(input)
-            }
-        }.getOrNull()?.let { bitmap ->
-            val width = bitmap.width
-            val height = bitmap.height
-            if (width < 3 || height < 3) return@let null
-
-            val innerWidth = width - 2
-            val innerHeight = height - 2
-            if (innerWidth <= 0 || innerHeight <= 0) return@let null
-
-            val topMarkers = mutableListOf<Int>()
-            val leftMarkers = mutableListOf<Int>()
-            for (x in 0 until innerWidth) {
-                if (isNinePatchMarker(bitmap.getPixel(x + 1, 0))) {
-                    topMarkers.add(x)
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    BitmapFactory.decodeStream(input)
                 }
             }
-            for (y in 0 until innerHeight) {
-                if (isNinePatchMarker(bitmap.getPixel(0, y + 1))) {
-                    leftMarkers.add(y)
+            .getOrNull()
+            ?.let { bitmap ->
+                val width = bitmap.width
+                val height = bitmap.height
+                if (width < 3 || height < 3) return@let null
+
+                val innerWidth = width - 2
+                val innerHeight = height - 2
+                if (innerWidth <= 0 || innerHeight <= 0) return@let null
+
+                val topMarkers = mutableListOf<Int>()
+                val leftMarkers = mutableListOf<Int>()
+                for (x in 0 until innerWidth) {
+                    if (isNinePatchMarker(bitmap.getPixel(x + 1, 0))) {
+                        topMarkers.add(x)
+                    }
                 }
+                for (y in 0 until innerHeight) {
+                    if (isNinePatchMarker(bitmap.getPixel(0, y + 1))) {
+                        leftMarkers.add(y)
+                    }
+                }
+
+                val xRange = buildStretchRange(topMarkers, innerWidth) ?: (0.35f to 0.65f)
+                val yRange = buildStretchRange(leftMarkers, innerHeight) ?: (0.35f to 0.65f)
+
+                NinePatchBubbleAutoParams(
+                    cropLeftRatio = (1f / width.toFloat()).coerceIn(0f, 0.45f),
+                    cropTopRatio = (1f / height.toFloat()).coerceIn(0f, 0.45f),
+                    cropRightRatio = (1f / width.toFloat()).coerceIn(0f, 0.45f),
+                    cropBottomRatio = (1f / height.toFloat()).coerceIn(0f, 0.45f),
+                    repeatXStartRatio = xRange.first,
+                    repeatXEndRatio = xRange.second,
+                    repeatYStartRatio = yRange.first,
+                    repeatYEndRatio = yRange.second,
+                )
             }
-
-            val xRange = buildStretchRange(topMarkers, innerWidth) ?: (0.35f to 0.65f)
-            val yRange = buildStretchRange(leftMarkers, innerHeight) ?: (0.35f to 0.65f)
-
-            NinePatchBubbleAutoParams(
-                cropLeftRatio = (1f / width.toFloat()).coerceIn(0f, 0.45f),
-                cropTopRatio = (1f / height.toFloat()).coerceIn(0f, 0.45f),
-                cropRightRatio = (1f / width.toFloat()).coerceIn(0f, 0.45f),
-                cropBottomRatio = (1f / height.toFloat()).coerceIn(0f, 0.45f),
-                repeatXStartRatio = xRange.first,
-                repeatXEndRatio = xRange.second,
-                repeatYStartRatio = yRange.first,
-                repeatYEndRatio = yRange.second,
-            )
-        }
     }
 
 private fun resolveDisplayName(context: android.content.Context, uri: Uri): String? {
     return runCatching {
-        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
-            ?.use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
-                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (index >= 0) cursor.getString(index) else null
-            }
-    }.getOrNull()
+            context.contentResolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor ->
+                    if (!cursor.moveToFirst()) return@use null
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) cursor.getString(index) else null
+                }
+        }
+        .getOrNull()
 }
 
 private fun isNinePatchPngUri(context: android.content.Context, uri: Uri): Boolean {
@@ -171,7 +175,7 @@ private fun isNinePatchPngUri(context: android.content.Context, uri: Uri): Boole
 
 @Composable
 internal fun rememberThemeSettingsChatRuntime(
-    state: ThemeSettingsChatRuntimeState,
+    state: ThemeSettingsChatRuntimeState
 ): ThemeSettingsChatRuntime {
     val context = state.context
     var bubbleImagePickerTarget by remember { mutableStateOf(ThemeSettingsBubbleTarget.USER) }
@@ -198,8 +202,12 @@ internal fun rememberThemeSettingsChatRuntime(
                                             .withString("bubble_ai_image_uri", internalUriString)
                                             .withBoolean(
                                                 "bubble_ai_use_image",
-                                                !values.requiredBoolean("bubble_ai_bubble_liquid_glass") &&
-                                                    !values.requiredBoolean("bubble_ai_bubble_water_glass"),
+                                                !values.requiredBoolean(
+                                                    "bubble_ai_bubble_liquid_glass"
+                                                ) &&
+                                                    !values.requiredBoolean(
+                                                        "bubble_ai_bubble_water_glass"
+                                                    ),
                                             )
 
                                     ThemeSettingsBubbleTarget.USER ->
@@ -207,31 +215,38 @@ internal fun rememberThemeSettingsChatRuntime(
                                             .withString("bubble_user_image_uri", internalUriString)
                                             .withBoolean(
                                                 "bubble_user_use_image",
-                                                !values.requiredBoolean("bubble_user_bubble_liquid_glass") &&
-                                                    !values.requiredBoolean("bubble_user_bubble_water_glass"),
+                                                !values.requiredBoolean(
+                                                    "bubble_user_bubble_liquid_glass"
+                                                ) &&
+                                                    !values.requiredBoolean(
+                                                        "bubble_user_bubble_water_glass"
+                                                    ),
                                             )
                                 }
                             }
                             OKToast.success(
-                                context,
-                                context.getString(R.string.chat_style_bubble_image_saved),
-                                OKToast.LENGTH_SHORT,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.chat_style_bubble_image_saved),
+                                    OKToast.LENGTH_SHORT,
+                                )
+                                .show()
                         } else {
                             OKToast.error(
-                                context,
-                                context.getString(R.string.theme_copy_failed),
-                                OKToast.LENGTH_LONG,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.theme_copy_failed),
+                                    OKToast.LENGTH_LONG,
+                                )
+                                .show()
                         }
                     }
                 }
             } else if (result.error != null) {
                 OKToast.error(
-                    context,
-                    context.getString(R.string.theme_image_crop_failed, result.error!!.message),
-                    OKToast.LENGTH_LONG,
-                ).show()
+                        context,
+                        context.getString(R.string.theme_image_crop_failed, result.error!!.message),
+                        OKToast.LENGTH_LONG,
+                    )
+                    .show()
             }
         }
 
@@ -256,7 +271,8 @@ internal fun rememberThemeSettingsChatRuntime(
     }
 
     val bubbleImagePickerLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+            uri: Uri? ->
             if (uri != null) {
                 if (!isNinePatchPngUri(context, uri)) {
                     launchBubbleImageCrop(uri)
@@ -269,14 +285,14 @@ internal fun rememberThemeSettingsChatRuntime(
                             ThemeSettingsBubbleTarget.AI -> "bubble_ai"
                             ThemeSettingsBubbleTarget.USER -> "bubble_user"
                         }
-                    val internalUri =
-                        FileUtils.copyFileToInternalStorage(context, uri, uniqueName)
+                    val internalUri = FileUtils.copyFileToInternalStorage(context, uri, uniqueName)
                     if (internalUri == null) {
                         OKToast.error(
-                            context,
-                            context.getString(R.string.theme_copy_failed),
-                            OKToast.LENGTH_LONG,
-                        ).show()
+                                context,
+                                context.getString(R.string.theme_copy_failed),
+                                OKToast.LENGTH_LONG,
+                            )
+                            .show()
                         return@launch
                     }
 
@@ -286,10 +302,11 @@ internal fun rememberThemeSettingsChatRuntime(
                     if (autoParams == null) {
                         internalUri.path?.let { path -> File(path).delete() }
                         OKToast.error(
-                            context,
-                            context.getString(R.string.theme_copy_failed),
-                            OKToast.LENGTH_LONG,
-                        ).show()
+                                context,
+                                context.getString(R.string.theme_copy_failed),
+                                OKToast.LENGTH_LONG,
+                            )
+                            .show()
                         return@launch
                     }
 
@@ -307,14 +324,35 @@ internal fun rememberThemeSettingsChatRuntime(
                                         !values.requiredBoolean("bubble_ai_bubble_liquid_glass") &&
                                             !values.requiredBoolean("bubble_ai_bubble_water_glass"),
                                     )
-                                    .withFloat("bubble_ai_image_crop_left", autoParams.cropLeftRatio)
+                                    .withFloat(
+                                        "bubble_ai_image_crop_left",
+                                        autoParams.cropLeftRatio,
+                                    )
                                     .withFloat("bubble_ai_image_crop_top", autoParams.cropTopRatio)
-                                    .withFloat("bubble_ai_image_crop_right", autoParams.cropRightRatio)
-                                    .withFloat("bubble_ai_image_crop_bottom", autoParams.cropBottomRatio)
-                                    .withFloat("bubble_ai_image_repeat_start", autoParams.repeatXStartRatio)
-                                    .withFloat("bubble_ai_image_repeat_end", autoParams.repeatXEndRatio)
-                                    .withFloat("bubble_ai_image_repeat_y_start", autoParams.repeatYStartRatio)
-                                    .withFloat("bubble_ai_image_repeat_y_end", autoParams.repeatYEndRatio)
+                                    .withFloat(
+                                        "bubble_ai_image_crop_right",
+                                        autoParams.cropRightRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_ai_image_crop_bottom",
+                                        autoParams.cropBottomRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_ai_image_repeat_start",
+                                        autoParams.repeatXStartRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_ai_image_repeat_end",
+                                        autoParams.repeatXEndRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_ai_image_repeat_y_start",
+                                        autoParams.repeatYStartRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_ai_image_repeat_y_end",
+                                        autoParams.repeatYEndRatio,
+                                    )
                                     .withFloat("bubble_ai_image_scale", 1f)
 
                             ThemeSettingsBubbleTarget.USER ->
@@ -322,93 +360,129 @@ internal fun rememberThemeSettingsChatRuntime(
                                     .withString("bubble_user_image_uri", internalUriString)
                                     .withBoolean(
                                         "bubble_user_use_image",
-                                        !values.requiredBoolean("bubble_user_bubble_liquid_glass") &&
-                                            !values.requiredBoolean("bubble_user_bubble_water_glass"),
+                                        !values.requiredBoolean(
+                                            "bubble_user_bubble_liquid_glass"
+                                        ) &&
+                                            !values.requiredBoolean(
+                                                "bubble_user_bubble_water_glass"
+                                            ),
                                     )
-                                    .withFloat("bubble_user_image_crop_left", autoParams.cropLeftRatio)
-                                    .withFloat("bubble_user_image_crop_top", autoParams.cropTopRatio)
-                                    .withFloat("bubble_user_image_crop_right", autoParams.cropRightRatio)
-                                    .withFloat("bubble_user_image_crop_bottom", autoParams.cropBottomRatio)
-                                    .withFloat("bubble_user_image_repeat_start", autoParams.repeatXStartRatio)
-                                    .withFloat("bubble_user_image_repeat_end", autoParams.repeatXEndRatio)
-                                    .withFloat("bubble_user_image_repeat_y_start", autoParams.repeatYStartRatio)
-                                    .withFloat("bubble_user_image_repeat_y_end", autoParams.repeatYEndRatio)
+                                    .withFloat(
+                                        "bubble_user_image_crop_left",
+                                        autoParams.cropLeftRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_crop_top",
+                                        autoParams.cropTopRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_crop_right",
+                                        autoParams.cropRightRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_crop_bottom",
+                                        autoParams.cropBottomRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_repeat_start",
+                                        autoParams.repeatXStartRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_repeat_end",
+                                        autoParams.repeatXEndRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_repeat_y_start",
+                                        autoParams.repeatYStartRatio,
+                                    )
+                                    .withFloat(
+                                        "bubble_user_image_repeat_y_end",
+                                        autoParams.repeatYEndRatio,
+                                    )
                                     .withFloat("bubble_user_image_scale", 1f)
                         }
                     }
 
                     OKToast.success(
-                        context,
-                        context.getString(R.string.chat_style_bubble_image_saved),
-                        OKToast.LENGTH_SHORT,
-                    ).show()
+                            context,
+                            context.getString(R.string.chat_style_bubble_image_saved),
+                            OKToast.LENGTH_SHORT,
+                        )
+                        .show()
                 }
             }
         }
 
     var avatarPickerMode by remember { mutableStateOf(ThemeSettingsAvatarPickerMode.USER) }
-    val cropAvatarLauncher = rememberLauncherForActivityResult(CropImageContract()) { result ->
-        if (result.isSuccessful) {
-            val croppedUri = result.uriContent
-            if (croppedUri != null) {
-                state.scope.launch {
-                    val internalUri =
-                        FileUtils.copyFileToInternalStorage(
-                            context,
-                            croppedUri,
-                            avatarPickerMode.uniqueName,
-                        )
-                    if (internalUri != null) {
-                        when (avatarPickerMode) {
-                            ThemeSettingsAvatarPickerMode.USER -> {
-                                AppLogger.d("ThemeSettings", "User avatar saved to: $internalUri")
-                                state.editorSession.registerStagedAsset(internalUri.toString())
-                                state.editorSession.setOptionalString(
-                                    "custom_user_avatar_uri",
-                                    internalUri.toString(),
-                                )
+    val cropAvatarLauncher =
+        rememberLauncherForActivityResult(CropImageContract()) { result ->
+            if (result.isSuccessful) {
+                val croppedUri = result.uriContent
+                if (croppedUri != null) {
+                    state.scope.launch {
+                        val internalUri =
+                            FileUtils.copyFileToInternalStorage(
+                                context,
+                                croppedUri,
+                                avatarPickerMode.uniqueName,
+                            )
+                        if (internalUri != null) {
+                            when (avatarPickerMode) {
+                                ThemeSettingsAvatarPickerMode.USER -> {
+                                    AppLogger.d(
+                                        "ThemeSettings",
+                                        "User avatar saved to: $internalUri",
+                                    )
+                                    state.editorSession.registerStagedAsset(internalUri.toString())
+                                    state.editorSession.setOptionalString(
+                                        "custom_user_avatar_uri",
+                                        internalUri.toString(),
+                                    )
+                                }
+                                ThemeSettingsAvatarPickerMode.AI -> {
+                                    AppLogger.d("ThemeSettings", "AI avatar saved to: $internalUri")
+                                    state.editorSession.registerStagedAsset(internalUri.toString())
+                                    state.editorSession.setOptionalString(
+                                        "custom_ai_avatar_uri",
+                                        internalUri.toString(),
+                                    )
+                                }
+                                ThemeSettingsAvatarPickerMode.GLOBAL_USER -> {
+                                    AppLogger.d(
+                                        "ThemeSettings",
+                                        "Global user avatar saved to: $internalUri",
+                                    )
+                                    state.onGlobalUserAvatarUriInputChange(internalUri.toString())
+                                    state.displayPreferencesManager.saveDisplaySettings(
+                                        globalUserAvatarUri = internalUri.toString()
+                                    )
+                                }
                             }
-                            ThemeSettingsAvatarPickerMode.AI -> {
-                                AppLogger.d("ThemeSettings", "AI avatar saved to: $internalUri")
-                                state.editorSession.registerStagedAsset(internalUri.toString())
-                                state.editorSession.setOptionalString(
-                                    "custom_ai_avatar_uri",
-                                    internalUri.toString(),
+                            OKToast.success(
+                                    context,
+                                    context.getString(R.string.avatar_updated),
+                                    OKToast.LENGTH_SHORT,
                                 )
-                            }
-                            ThemeSettingsAvatarPickerMode.GLOBAL_USER -> {
-                                AppLogger.d(
-                                    "ThemeSettings",
-                                    "Global user avatar saved to: $internalUri",
+                                .show()
+                        } else {
+                            OKToast.error(
+                                    context,
+                                    context.getString(R.string.theme_copy_failed),
+                                    OKToast.LENGTH_LONG,
                                 )
-                                state.onGlobalUserAvatarUriInputChange(internalUri.toString())
-                                state.displayPreferencesManager.saveDisplaySettings(
-                                    globalUserAvatarUri = internalUri.toString(),
-                                )
-                            }
+                                .show()
                         }
-                        OKToast.success(
-                            context,
-                            context.getString(R.string.avatar_updated),
-                            OKToast.LENGTH_SHORT,
-                        ).show()
-                    } else {
-                        OKToast.error(
-                            context,
-                            context.getString(R.string.theme_copy_failed),
-                            OKToast.LENGTH_LONG,
-                        ).show()
                     }
                 }
+            } else if (result.error != null) {
+                OKToast.error(
+                        context,
+                        context.getString(R.string.avatar_crop_failed, result.error!!.message),
+                        OKToast.LENGTH_LONG,
+                    )
+                    .show()
             }
-        } else if (result.error != null) {
-            OKToast.error(
-                context,
-                context.getString(R.string.avatar_crop_failed, result.error!!.message),
-                OKToast.LENGTH_LONG,
-            ).show()
         }
-    }
 
     fun launchAvatarCrop(uri: Uri) {
         val cropOptions =
@@ -431,7 +505,8 @@ internal fun rememberThemeSettingsChatRuntime(
     }
 
     val avatarImagePicker =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+            uri: Uri? ->
             if (uri != null) {
                 launchAvatarCrop(uri)
             }
@@ -455,9 +530,7 @@ internal fun rememberThemeSettingsChatRuntime(
             state.editorSession.setBoolean("bubble_ai_use_image", false)
         },
         avatarImagePicker = avatarImagePicker,
-        onAvatarPickerModeChange = {
-            avatarPickerMode = ThemeSettingsAvatarPickerMode.fromKey(it)
-        },
+        onAvatarPickerModeChange = { avatarPickerMode = ThemeSettingsAvatarPickerMode.fromKey(it) },
     )
 }
 
@@ -484,18 +557,49 @@ internal fun ThemeSettingsChatTab(
     val bubbleUserBubbleWaterGlassInput = values.requiredBoolean("bubble_user_bubble_water_glass")
     val bubbleAiBubbleLiquidGlassInput = values.requiredBoolean("bubble_ai_bubble_liquid_glass")
     val bubbleAiBubbleWaterGlassInput = values.requiredBoolean("bubble_ai_bubble_water_glass")
-    val cursorUserBubbleColorInput = Color(values.int("cursor_user_bubble_color") ?: defaultCursorUserBubbleColor).let { color ->
-        color.copy(alpha = ThemeTransparencyPreferences.opacity(values, ThemeTransparencyPreferences.CURSOR_USER, color.alpha)).toArgb()
-    }
-    val bubbleUserBubbleColorInput = Color(values.int("bubble_user_bubble_color") ?: defaultBubbleUserBubbleColor).let { color ->
-        color.copy(alpha = ThemeTransparencyPreferences.opacity(values, ThemeTransparencyPreferences.BUBBLE_USER, color.alpha)).toArgb()
-    }
-    val bubbleAiBubbleColorInput = Color(values.int("bubble_ai_bubble_color") ?: defaultBubbleAiBubbleColor).let { color ->
-        color.copy(alpha = ThemeTransparencyPreferences.opacity(values, ThemeTransparencyPreferences.BUBBLE_AI, color.alpha)).toArgb()
-    }
+    val cursorUserBubbleColorInput =
+        Color(values.int("cursor_user_bubble_color") ?: defaultCursorUserBubbleColor).let { color ->
+            color
+                .copy(
+                    alpha =
+                        ThemeTransparencyPreferences.opacity(
+                            values,
+                            ThemeTransparencyPreferences.CURSOR_USER,
+                            color.alpha,
+                        )
+                )
+                .toArgb()
+        }
+    val bubbleUserBubbleColorInput =
+        Color(values.int("bubble_user_bubble_color") ?: defaultBubbleUserBubbleColor).let { color ->
+            color
+                .copy(
+                    alpha =
+                        ThemeTransparencyPreferences.opacity(
+                            values,
+                            ThemeTransparencyPreferences.BUBBLE_USER,
+                            color.alpha,
+                        )
+                )
+                .toArgb()
+        }
+    val bubbleAiBubbleColorInput =
+        Color(values.int("bubble_ai_bubble_color") ?: defaultBubbleAiBubbleColor).let { color ->
+            color
+                .copy(
+                    alpha =
+                        ThemeTransparencyPreferences.opacity(
+                            values,
+                            ThemeTransparencyPreferences.BUBBLE_AI,
+                            color.alpha,
+                        )
+                )
+                .toArgb()
+        }
     val bubbleUserTextColorInput =
         values.int("bubble_user_text_color")
-            ?: getTextColorForBackground(Color(bubbleUserBubbleColorInput).copy(alpha = 1f)).toArgb()
+            ?: getTextColorForBackground(Color(bubbleUserBubbleColorInput).copy(alpha = 1f))
+                .toArgb()
     val bubbleAiTextColorInput =
         values.int("bubble_ai_text_color")
             ?: getTextColorForBackground(Color(bubbleAiBubbleColorInput).copy(alpha = 1f)).toArgb()
@@ -530,16 +634,20 @@ internal fun ThemeSettingsChatTab(
     val bubbleAiImageRepeatYEndInput = values.requiredFloat("bubble_ai_image_repeat_y_end")
     val bubbleAiImageScaleInput = values.requiredFloat("bubble_ai_image_scale")
     val bubbleImageRenderModeInput = values.requiredString("bubble_image_render_mode")
-    val bubbleUserRoundedCornersEnabledInput = values.requiredBoolean("bubble_rounded_corners_enabled")
-    val bubbleAiRoundedCornersEnabledInput = values.requiredBoolean("bubble_ai_rounded_corners_enabled")
+    val bubbleUserRoundedCornersEnabledInput =
+        values.requiredBoolean("bubble_rounded_corners_enabled")
+    val bubbleAiRoundedCornersEnabledInput =
+        values.requiredBoolean("bubble_ai_rounded_corners_enabled")
     val bubbleUserContentPaddingLeftInput = values.requiredFloat("bubble_content_padding_left")
     val bubbleUserContentPaddingRightInput = values.requiredFloat("bubble_content_padding_right")
     val bubbleAiContentPaddingLeftInput = values.requiredFloat("bubble_ai_content_padding_left")
     val bubbleAiContentPaddingRightInput = values.requiredFloat("bubble_ai_content_padding_right")
     val userAvatarUriInput = values.string("custom_user_avatar_uri")
     val aiAvatarUriInput = values.string("custom_ai_avatar_uri")
-    val globalUserAvatarUri by displayPreferencesManager.globalUserAvatarUri.collectAsState(initial = null)
-    var globalUserAvatarUriInput by remember(globalUserAvatarUri) { mutableStateOf(globalUserAvatarUri) }
+    val globalUserAvatarUri by
+        displayPreferencesManager.globalUserAvatarUri.collectAsState(initial = null)
+    var globalUserAvatarUriInput by
+        remember(globalUserAvatarUri) { mutableStateOf(globalUserAvatarUri) }
     val globalUserNameInput by editorSession.globalUserNameFlow.collectAsState()
     val avatarShapeInput = values.requiredString("avatar_shape")
     val avatarCornerRadiusInput = values.requiredFloat("avatar_corner_radius")
@@ -561,16 +669,19 @@ internal fun ThemeSettingsChatTab(
     var currentColorPickerMode by remember { mutableStateOf("bubbleUserBubble") }
 
     val bubbleFontPicker = rememberBubbleFontPicker(shared = shared)
-    val runtime = rememberThemeSettingsChatRuntime(
-        state = ThemeSettingsChatRuntimeState(
-            context = shared.context,
-            scope = shared.scope,
-            editorSession = editorSession,
-            displayPreferencesManager = displayPreferencesManager,
-            onGlobalUserAvatarUriInputChange = { globalUserAvatarUriInput = it },
-        ),
-    )
+    val runtime =
+        rememberThemeSettingsChatRuntime(
+            state =
+                ThemeSettingsChatRuntimeState(
+                    context = shared.context,
+                    scope = shared.scope,
+                    editorSession = editorSession,
+                    displayPreferencesManager = displayPreferencesManager,
+                    onGlobalUserAvatarUriInputChange = { globalUserAvatarUriInput = it },
+                )
+        )
 
+    var showAvatarSettings by remember { mutableStateOf(false) }
     ThemeSettingsChatStyleSection(
         cardColors = cardColors,
         editorSession = editorSession,
@@ -640,24 +751,30 @@ internal fun ThemeSettingsChatTab(
         bubbleAiContentPaddingLeftInput = bubbleAiContentPaddingLeftInput,
         bubbleAiContentPaddingRightInput = bubbleAiContentPaddingRightInput,
         showInputStyleControls = false,
+        onAvatarSettings = { showAvatarSettings = true },
     )
 
-    ThemeSettingsAvatarSection(
-        cardColors = cardColors,
-        editorSession = editorSession,
-        scope = shared.scope,
-        displayPreferencesManager = displayPreferencesManager,
-        userAvatarUriInput = userAvatarUriInput,
-        globalUserAvatarUriInput = globalUserAvatarUriInput,
-        onGlobalUserAvatarUriInputChange = { globalUserAvatarUriInput = it },
-        globalUserNameInput = globalUserNameInput,
-        onGlobalUserNameInputChange = editorSession::setGlobalUserName,
-        avatarShapeInput = avatarShapeInput,
-        avatarCornerRadiusInput = avatarCornerRadiusInput,
-        avatarImagePicker = runtime.avatarImagePicker,
-        onAvatarPickerModeChange = runtime.onAvatarPickerModeChange,
-    )
-
+    if (showAvatarSettings)
+        ThemeWorkbenchDialog(
+            stringResource(R.string.theme_workbench_avatar_identity),
+            { showAvatarSettings = false },
+        ) {
+            ThemeWorkbenchAvatarEditor(
+                editorSession = editorSession,
+                scope = shared.scope,
+                displayPreferencesManager = displayPreferencesManager,
+                userAvatarUriInput = userAvatarUriInput,
+                aiAvatarUriInput = aiAvatarUriInput,
+                globalUserAvatarUriInput = globalUserAvatarUriInput,
+                onGlobalUserAvatarUriInputChange = { globalUserAvatarUriInput = it },
+                globalUserNameInput = globalUserNameInput,
+                onGlobalUserNameInputChange = editorSession::setGlobalUserName,
+                avatarShapeInput = avatarShapeInput,
+                avatarCornerRadiusInput = avatarCornerRadiusInput,
+                avatarImagePicker = runtime.avatarImagePicker,
+                onAvatarPickerModeChange = runtime.onAvatarPickerModeChange,
+            )
+        }
     ThemeSettingsDisplayOptionsSection(
         cardColors = cardColors,
         editorSession = editorSession,
@@ -712,55 +829,68 @@ private data class BubbleFontPicker(
 private fun rememberBubbleFontPicker(shared: ThemeSettingsShared): BubbleFontPicker {
     val context = shared.context
     var targetName by remember { mutableStateOf("bubble_user_font") }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            shared.scope.launch {
-                val extension = FileUtils.getFileExtension(context, uri)?.lowercase()
-                if (extension != null && (extension == "ttf" || extension == "otf" || extension == "ttc")) {
-                    val internalUri = FileUtils.copyFileToInternalStorage(context, uri, targetName)
-                    if (internalUri != null) {
-                        val isUser = targetName == "bubble_user_font"
-                        val internalUriString = internalUri.toString()
-                        shared.editorSession.registerStagedAsset(internalUriString)
-                        shared.editorSession.update { values ->
-                            if (isUser) {
-                                values
-                                    .withString("bubble_user_custom_font_path", internalUriString)
-                                    .withString(
-                                        "bubble_user_font_type",
-                                        UserPreferencesManager.FONT_TYPE_FILE,
-                                    )
-                            } else {
-                                values
-                                    .withString("bubble_ai_custom_font_path", internalUriString)
-                                    .withString(
-                                        "bubble_ai_font_type",
-                                        UserPreferencesManager.FONT_TYPE_FILE,
-                                    )
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                shared.scope.launch {
+                    val extension = FileUtils.getFileExtension(context, uri)?.lowercase()
+                    if (
+                        extension != null &&
+                            (extension == "ttf" || extension == "otf" || extension == "ttc")
+                    ) {
+                        val internalUri =
+                            FileUtils.copyFileToInternalStorage(context, uri, targetName)
+                        if (internalUri != null) {
+                            val isUser = targetName == "bubble_user_font"
+                            val internalUriString = internalUri.toString()
+                            shared.editorSession.registerStagedAsset(internalUriString)
+                            shared.editorSession.update { values ->
+                                if (isUser) {
+                                    values
+                                        .withString(
+                                            "bubble_user_custom_font_path",
+                                            internalUriString,
+                                        )
+                                        .withString(
+                                            "bubble_user_font_type",
+                                            UserPreferencesManager.FONT_TYPE_FILE,
+                                        )
+                                        .withBoolean("bubble_user_use_custom_font", true)
+                                } else {
+                                    values
+                                        .withString("bubble_ai_custom_font_path", internalUriString)
+                                        .withString(
+                                            "bubble_ai_font_type",
+                                            UserPreferencesManager.FONT_TYPE_FILE,
+                                        )
+                                        .withBoolean("bubble_ai_use_custom_font", true)
+                                }
                             }
+                            OKToast.success(
+                                    context,
+                                    context.getString(R.string.font_file_saved, extension),
+                                    OKToast.LENGTH_SHORT,
+                                )
+                                .show()
+                        } else {
+                            OKToast.error(
+                                    context,
+                                    context.getString(R.string.font_file_save_failed),
+                                    OKToast.LENGTH_LONG,
+                                )
+                                .show()
                         }
-                        OKToast.success(
-                            context,
-                            context.getString(R.string.font_file_saved, extension),
-                            OKToast.LENGTH_SHORT,
-                        ).show()
                     } else {
-                        OKToast.error(
-                            context,
-                            context.getString(R.string.font_file_save_failed),
-                            OKToast.LENGTH_LONG,
-                        ).show()
+                        OKToast.warning(
+                                context,
+                                context.getString(R.string.unsupported_font_format),
+                                OKToast.LENGTH_LONG,
+                            )
+                            .show()
                     }
-                } else {
-                    OKToast.warning(
-                        context,
-                        context.getString(R.string.unsupported_font_format),
-                        OKToast.LENGTH_LONG,
-                    ).show()
                 }
             }
         }
-    }
     return BubbleFontPicker(
         onPickBubbleUserFont = {
             targetName = "bubble_user_font"
@@ -782,33 +912,41 @@ private fun setSelectedChatColor(
     bubbleUserTextColor: Int?,
     bubbleAiTextColor: Int?,
 ) {
-    val selectedColor = cursorUserBubbleColor ?: bubbleUserBubbleColor ?: bubbleAiBubbleColor
-        ?: bubbleUserTextColor ?: bubbleAiTextColor
+    val selectedColor =
+        cursorUserBubbleColor
+            ?: bubbleUserBubbleColor
+            ?: bubbleAiBubbleColor
+            ?: bubbleUserTextColor
+            ?: bubbleAiTextColor
     selectedColor?.let { shared.scope.launch { shared.editorSession.addRecentColor(it) } }
     when (currentColorPickerMode) {
-        "cursorUserBubble" -> cursorUserBubbleColor?.let {
-            shared.editorSession.update { values ->
-                values.withInt("cursor_user_bubble_color", it)
-                    .withFloat(ThemeTransparencyPreferences.CURSOR_USER, Color(it).alpha)
+        "cursorUserBubble" ->
+            cursorUserBubbleColor?.let {
+                shared.editorSession.update { values ->
+                    values
+                        .withInt("cursor_user_bubble_color", it)
+                        .withFloat(ThemeTransparencyPreferences.CURSOR_USER, Color(it).alpha)
+                }
             }
-        }
-        "bubbleUserBubble" -> bubbleUserBubbleColor?.let {
-            shared.editorSession.update { values ->
-                values.withInt("bubble_user_bubble_color", it)
-                    .withFloat(ThemeTransparencyPreferences.BUBBLE_USER, Color(it).alpha)
+        "bubbleUserBubble" ->
+            bubbleUserBubbleColor?.let {
+                shared.editorSession.update { values ->
+                    values
+                        .withInt("bubble_user_bubble_color", it)
+                        .withFloat(ThemeTransparencyPreferences.BUBBLE_USER, Color(it).alpha)
+                }
             }
-        }
-        "bubbleAiBubble" -> bubbleAiBubbleColor?.let {
-            shared.editorSession.update { values ->
-                values.withInt("bubble_ai_bubble_color", it)
-                    .withFloat(ThemeTransparencyPreferences.BUBBLE_AI, Color(it).alpha)
+        "bubbleAiBubble" ->
+            bubbleAiBubbleColor?.let {
+                shared.editorSession.update { values ->
+                    values
+                        .withInt("bubble_ai_bubble_color", it)
+                        .withFloat(ThemeTransparencyPreferences.BUBBLE_AI, Color(it).alpha)
+                }
             }
-        }
-        "bubbleUserText" -> bubbleUserTextColor?.let {
-            shared.editorSession.setInt("bubble_user_text_color", it)
-        }
-        "bubbleAiText" -> bubbleAiTextColor?.let {
-            shared.editorSession.setInt("bubble_ai_text_color", it)
-        }
+        "bubbleUserText" ->
+            bubbleUserTextColor?.let { shared.editorSession.setInt("bubble_user_text_color", it) }
+        "bubbleAiText" ->
+            bubbleAiTextColor?.let { shared.editorSession.setInt("bubble_ai_text_color", it) }
     }
 }

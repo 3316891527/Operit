@@ -21,14 +21,16 @@ import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.ui.graphics.vector.ImageVector
 
-public val Icons.Filled.Brightness4: ImageVector
+public val Icons.Filled.Brightness6: ImageVector
     get() {
-        if (_brightness4 != null) {
-            return _brightness4!!
+        if (_brightness6 != null) {
+            return _brightness6!!
         }
-        _brightness4 = materialIcon(name = "Filled.Brightness4") {
+        _brightness6 = materialIcon(name = "Filled.Brightness6") {
             materialPath {
-                moveTo(20.0f, 8.69f)
+                moveTo(20.0f, 15.31f)
+                lineTo(23.31f, 12.0f)
+                lineTo(20.0f, 8.69f)
                 verticalLineTo(4.0f)
                 horizontalLineToRelative(-4.69f)
                 lineTo(12.0f, 0.69f)
@@ -43,20 +45,15 @@ public val Icons.Filled.Brightness4: ImageVector
                 lineTo(15.31f, 20.0f)
                 horizontalLineTo(20.0f)
                 verticalLineToRelative(-4.69f)
-                lineTo(23.31f, 12.0f)
-                lineTo(20.0f, 8.69f)
                 close()
                 moveTo(12.0f, 18.0f)
-                curveToRelative(-0.89f, 0.0f, -1.74f, -0.2f, -2.5f, -0.55f)
-                curveTo(11.56f, 16.5f, 13.0f, 14.42f, 13.0f, 12.0f)
-                reflectiveCurveToRelative(-1.44f, -4.5f, -3.5f, -5.45f)
-                curveTo(10.26f, 6.2f, 11.11f, 6.0f, 12.0f, 6.0f)
+                verticalLineTo(6.0f)
                 curveToRelative(3.31f, 0.0f, 6.0f, 2.69f, 6.0f, 6.0f)
                 reflectiveCurveToRelative(-2.69f, 6.0f, -6.0f, 6.0f)
                 close()
             }
         }
-        return _brightness4!!
+        return _brightness6!!
     }
 
-private var _brightness4: ImageVector? = null
+private var _brightness6: ImageVector? = null

@@ -1,9 +1,10 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.cursor
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
+import com.ai.assistance.operit.ui.features.chat.attachments.images.SentImageGroup
+import com.ai.assistance.operit.ui.features.chat.attachments.images.sentImageSources
 
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
-import android.graphics.Bitmap
-import android.util.Base64
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -73,8 +74,6 @@ import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported
 import com.ai.assistance.operit.ui.theme.isWaterGlassSupported
 import com.ai.assistance.operit.ui.theme.liquidGlass
 import com.ai.assistance.operit.ui.theme.waterGlass
-import com.ai.assistance.operit.util.ImageBitmapLimiter
-import com.ai.assistance.operit.util.ImagePoolManager
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -110,8 +109,7 @@ fun UserMessageComposable(
     val selectedChatAttachment = remember { mutableStateOf<ChatAttachment?>(null) }
 
     // 添加状态控制图片预览
-    val showImagePreview = remember { mutableStateOf(false) }
-    val selectedImageBitmap = remember { mutableStateOf<Bitmap?>(null) }
+
 
     // Parse message content to separate text and attachments
     val parseResult =
@@ -123,7 +121,10 @@ fun UserMessageComposable(
             }
         }
     val textContent = parseResult.processedText
-    val trailingAttachments = parseResult.trailingAttachments
+    val trailingAttachments = parseResult.trailingAttachments.filterNot { it.type.startsWith("image/", ignoreCase = true) }
+    val sentImages = remember(message.content, isHiddenPlaceholder) {
+        if (isHiddenPlaceholder) emptyList() else sentImageSources(message.content)
+    }
     val replyInfo = parseResult.replyInfo
     val imageLinks = parseResult.imageLinks
     val proxySenderName = if (isHiddenPlaceholder) null else parseResult.proxySenderName
@@ -180,41 +181,18 @@ fun UserMessageComposable(
             }
         }
 
-        // Display trailing attachments and image links together in one row above the message bubble
-        if (trailingAttachments.isNotEmpty() || imageLinks.isNotEmpty()) {
-            // Display attachment row above the bubble
+        if (sentImages.isNotEmpty()) {
+            // 图片组与用户消息右侧对齐，两种聊天样式保持相同位置。
+            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.End) {
+                SentImageGroup(sources = sentImages, enabled = enableDialogs)
+            }
+        }
+        if (trailingAttachments.isNotEmpty()) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                 horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Display image links as tags
-                imageLinks.forEach { imageLink ->
-                    val displayText = if (imageLink.bitmap != null) context.getString(R.string.image) else context.getString(R.string.image_expired)
-                    AttachmentTag(
-                        attachment = AttachmentData(
-                            id = imageLink.id,
-                            filename = displayText,
-                            type = "image/*",
-                            size = 0L,
-                            content = ""
-                        ),
-                        textColor = effectiveTextColor,
-                        backgroundColor = effectiveBackgroundColor,
-                        enabled = enableDialogs,
-                        onClick = { _ ->
-                            // 当点击图片链接时，如果图片未过期则显示预览
-                            if (imageLink.bitmap != null) {
-                                selectedImageBitmap.value = imageLink.bitmap
-                                showImagePreview.value = true
-                            }
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-
                 // Display other trailing attachments
                 trailingAttachments.forEach { attachment ->
                     AttachmentTag(
@@ -259,6 +237,7 @@ fun UserMessageComposable(
                     shape = RoundedCornerShape(8.dp),
                     containerColor = effectiveBackgroundColor,
                     backgroundOpacity = backgroundOpacity,
+                    region = GlassRegion.USER_MESSAGE,
                 )
                 .liquidGlass(
                     enabled = liquidGlassEnabled,
@@ -266,6 +245,7 @@ fun UserMessageComposable(
                     containerColor = effectiveBackgroundColor,
                     backgroundOpacity = backgroundOpacity,
                     enableLens = false,
+                    region = GlassRegion.USER_MESSAGE,
                 ),
             colors = CardDefaults.cardColors(
                 containerColor =
@@ -322,74 +302,7 @@ fun UserMessageComposable(
         )
     }
 
-    // 图片预览对话框
-    if (enableDialogs && showImagePreview.value && selectedImageBitmap.value != null) {
-        Dialog(onDismissRequest = { showImagePreview.value = false }) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 4.dp
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // 头部
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.image_preview),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        IconButton(onClick = { showImagePreview.value = false }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.close),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    // 图片显示区域
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 500.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    ) {
-                        selectedImageBitmap.value?.let { bitmap ->
-                            Image(
-                                bitmap = bitmap.asImageBitmap(),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentScale = ContentScale.Fit
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
-
-/** Result of parsing message content, containing processed text and trailing attachments */
 data class MessageParseResult(
     val processedText: String,
     val trailingAttachments: List<AttachmentData>,
@@ -406,10 +319,7 @@ data class ReplyInfo(
 )
 
 /** Data class for image link information */
-data class ImageLinkData(
-    val id: String,
-    val bitmap: Bitmap? // null表示图片已过期
-)
+data class ImageLinkData(val id: String)
 
 /**
  * Parses the message content to extract text and attachments Keeps inline attachments as @filename
@@ -429,17 +339,7 @@ private fun parseMessageContent(context: android.content.Context, content: Strin
     // Extract image link tags and load from pool
     val imageLinks = mutableListOf<ImageLinkData>()
     MediaLinkParser.extractImageLinkIds(cleanedContent).forEach { id ->
-        val imageData = ImagePoolManager.getImage(id)
-        val bitmap = imageData?.let {
-            try {
-                val bytes = Base64.decode(it.base64, Base64.DEFAULT)
-                ImageBitmapLimiter.decodeDownsampledBitmap(bytes)
-            } catch (e: Exception) {
-                com.ai.assistance.operit.util.AppLogger.e("UserMessageComposable", "Failed to decode image: $id", e)
-                null
-            }
-        }
-        imageLinks.add(ImageLinkData(id, bitmap))
+        imageLinks.add(ImageLinkData(id))
     }
     cleanedContent = MediaLinkParser.removeImageLinks(cleanedContent).trim()
 
@@ -626,7 +526,8 @@ private fun parseMessageContent(context: android.content.Context, content: Strin
                 trailingAttachments.add(attachment)
             } else {
                 // This is an inline attachment, keep it in the text as @filename
-                messageText.append("@${filename}")
+                // 图片统一由缩略图组展示，正文不再重复显示文件名标签。
+                if (!type.startsWith("image/", ignoreCase = true)) messageText.append("@${filename}")
                 // Also add to general attachments list for reference
                 attachments.add(attachment)
             }

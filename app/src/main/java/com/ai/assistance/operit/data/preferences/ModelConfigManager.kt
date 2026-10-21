@@ -79,6 +79,8 @@ class ModelConfigManager(
         val CONFIG_LIST_KEY = stringPreferencesKey("config_list")
         val CONFIG_GROUPS_KEY = stringPreferencesKey("config_groups")
         val SELECTED_CONFIG_GROUP_KEY = stringPreferencesKey("selected_config_group")
+        private val COLLAPSED_CONFIG_GROUPS_KEY = stringSetPreferencesKey("workspace_collapsed_groups")
+        private const val UNGROUPED_WORKSPACE_KEY = "__ungrouped__"
 
         // 默认值
         const val DEFAULT_CONFIG_ID = "default"
@@ -509,9 +511,35 @@ class ModelConfigManager(
                 ModelConfigSelection(
                         allConfigs = readConfigSummariesFromPrefs(preferences),
                         groups = groups,
-                        selectedGroupId = selectedGroupId
+                        selectedGroupId = selectedGroupId,
+                        workspaceConfigId = preferences[workspaceConfigKey(selectedGroupId)],
                 )
             }
+
+    private fun workspaceConfigKey(groupId: String?) =
+        stringPreferencesKey("workspace_selected_config_${groupId.orEmpty()}")
+
+    suspend fun setWorkspaceSelectedConfig(groupId: String?, configId: String) {
+        configDataStore.edit { preferences ->
+            if (readConfigSummariesFromPrefs(preferences).any { it.id == configId && it.groupId == groupId }) {
+                preferences[workspaceConfigKey(groupId)] = configId
+            }
+        }
+    }
+
+    val collapsedConfigGroupsFlow: Flow<Set<String?>> = configDataStore.data.map { preferences ->
+        preferences[COLLAPSED_CONFIG_GROUPS_KEY].orEmpty().mapTo(linkedSetOf()) {
+            if (it == UNGROUPED_WORKSPACE_KEY) null else it
+        }
+    }
+
+    suspend fun setConfigGroupCollapsed(groupId: String?, collapsed: Boolean) {
+        configDataStore.edit { preferences ->
+            val key = groupId ?: UNGROUPED_WORKSPACE_KEY
+            val previous = preferences[COLLAPSED_CONFIG_GROUPS_KEY].orEmpty()
+            preferences[COLLAPSED_CONFIG_GROUPS_KEY] = if (collapsed) previous + key else previous - key
+        }
+    }
 
     suspend fun setSelectedConfigGroup(groupId: String?) {
         val normalizedGroupId = normalizeConfigGroupId(groupId)
