@@ -1021,6 +1021,8 @@ class EnhancedAIService private constructor(context: Context) {
                 )
             registerExecutionContext(execContext)
             var hadFatalError = false
+            // 完成处理位于 finally，流式状态需由本次消息共享，并在取得配置快照后更新。
+            var stream = requestedStream
             try {
                 // 确保所有操作都在IO线程上执行
                 withContext(Dispatchers.IO) {
@@ -1046,7 +1048,7 @@ class EnhancedAIService private constructor(context: Context) {
                             chatModelConfigIdOverride,
                             chatModelIndexOverride
                         )
-                    val stream = requestedStream && modelSnapshot.config.enableStreamOutput
+                    stream = requestedStream && modelSnapshot.config.enableStreamOutput
 
                     // Prepare conversation history with system prompt
                     val preparedHistory =
