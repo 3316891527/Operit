@@ -34,7 +34,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
-/** 网格只负责浏览，绑定与测试继续使用原功能编辑器，避免改动十二类功能的行为。 */
+/** 列表只调整排列，绑定与测试继续使用原功能编辑器。 */
 @Composable
 fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConfigSaveCoordinator) {
     val context = LocalContext.current
@@ -80,33 +80,35 @@ fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConf
             FilterChip(selected = !onlyCurrent, onClick = { onlyCurrent = false }, label = { Text(stringResource(R.string.model_workspace_all_functions)) })
             FilterChip(selected = onlyCurrent, onClick = { onlyCurrent = true }, label = { Text(stringResource(R.string.model_workspace_current_functions)) })
         }
-        visibleFunctions.chunked(2).forEach { functions ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                functions.forEach { function ->
-                    val mapping = mappings[function]
-                        ?: FunctionConfigMapping(if (function == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
-                    val config = currentSelection.allConfigs.find { it.id == mapping.configId }
-                    Surface(
-                        modifier = Modifier.weight(1f).clickable { editingFunction = function },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (config?.id == currentConfigId) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f) else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
-                    ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                            Icon(functionIcon(function), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                            Text(getFunctionDisplayName(function), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                            Text(config?.name ?: stringResource(R.string.not_configured), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                config?.let { getModelByIndex(it.modelName, getValidModelIndex(it.modelName, mapping.modelIndex)) }.orEmpty(),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+        visibleFunctions.forEach { function ->
+            val mapping = mappings[function]
+                ?: FunctionConfigMapping(if (function == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
+            val config = currentSelection.allConfigs.find { it.id == mapping.configId }
+            Surface(
+                modifier = Modifier.fillMaxWidth().clickable { editingFunction = function },
+                shape = RoundedCornerShape(14.dp),
+                color = if (config?.id == currentConfigId) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f) else MaterialTheme.colorScheme.surface,
+                border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 84.dp).padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(functionIcon(function), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(getFunctionDisplayName(function), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(config?.name ?: stringResource(R.string.not_configured), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            config?.let { getModelByIndex(it.modelName, getValidModelIndex(it.modelName, mapping.modelIndex)) }.orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
+                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                if (functions.size == 1) Spacer(Modifier.weight(1f))
             }
         }
         if (visibleFunctions.isEmpty()) Text(stringResource(R.string.model_workspace_no_functions), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

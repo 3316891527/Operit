@@ -33,6 +33,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -40,7 +43,7 @@ import org.json.JSONObject
 private val Context.modelConfigDataStore: DataStore<Preferences> by
         versionedPreferencesDataStore(
                 name = "model_configs",
-                currentVersion = 5,
+                currentVersion = 6,
         ) { appContext ->
             preferenceSchemaMigration { version, preferences ->
                 when (version) {
@@ -49,6 +52,10 @@ private val Context.modelConfigDataStore: DataStore<Preferences> by
                     2 -> ModelConfigManager.migratePreferencesFromVersionTwo(preferences)
                     3 -> ModelConfigManager.migratePreferencesFromVersionThree(preferences)
                     4 -> ModelConfigManager.migratePreferencesFromVersionFour(preferences)
+                    5 -> ModelConfigManager.migratePreferencesFromVersionFive(
+                        preferences,
+                        enableStreamOutput = !ApiPreferences.getInstance(appContext).readLegacyDisableStreamOutput(),
+                    )
                     else -> missingPreferencesSchemaMigration(version)
                 }
             }
@@ -297,6 +304,25 @@ class ModelConfigManager(
                 else -> JSONArray(text)
             }
         }
+
+        // 升级时只迁移一次旧全局选择；迁移完成后请求只读取配置自己的值。
+        internal fun migratePreferencesFromVersionFive(
+            preferences: MutablePreferences,
+            enableStreamOutput: Boolean,
+        ) {
+            val configIds = readConfigIdsForStreamMigration(preferences)
+            configIds.forEach { configId ->
+                val key = stringPreferencesKey("config_${configId}")
+                val original = preferences[key] ?: return@forEach
+                val fields = json.parseToJsonElement(original).jsonObject
+                if ("enableStreamOutput" !in fields) {
+                    preferences[key] = JsonObject(fields + ("enableStreamOutput" to JsonPrimitive(enableStreamOutput))).toString()
+                }
+            }
+        }
+
+        private fun readConfigIdsForStreamMigration(preferences: Preferences): List<String> =
+            preferences[CONFIG_LIST_KEY]?.let { json.decodeFromString<List<String>>(it) } ?: emptyList()
 
         internal fun migratePreferencesFromVersionFour(preferences: MutablePreferences) {
             val configIds = preferences[CONFIG_LIST_KEY]?.let { json.decodeFromString<List<String>>(it) }
@@ -967,7 +993,8 @@ class ModelConfigManager(
             enableGoogleSearch: Boolean,
             enableCodexWebSearch: Boolean,
             enableClaude1hPromptCache: Boolean,
-            enableToolCall: Boolean
+            enableToolCall: Boolean,
+            enableStreamOutput: Boolean,
     ): ModelConfigData {
         return updateConfigInternal(configId) {
             it.copy(
@@ -989,7 +1016,8 @@ class ModelConfigManager(
                     enableGoogleSearch = enableGoogleSearch,
                     enableCodexWebSearch = enableCodexWebSearch,
                     enableClaude1hPromptCache = enableClaude1hPromptCache,
-                    enableToolCall = enableToolCall
+                    enableToolCall = enableToolCall,
+                    enableStreamOutput = enableStreamOutput,
             )
         }
     }
@@ -1142,6 +1170,10 @@ class ModelConfigManager(
             it.copy(enableClaude1hPromptCache = enableClaude1hPromptCache)
         }
     }
+
+    // 更新当前配置的流式输出选择
+    suspend fun updateStreamOutput(configId: String, enableStreamOutput: Boolean): ModelConfigData =
+        updateConfigInternal(configId) { it.copy(enableStreamOutput = enableStreamOutput) }
 
     // 更新 Tool Call 配置
     suspend fun updateToolCall(configId: String, enableToolCall: Boolean): ModelConfigData {

@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Api
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DragHandle
@@ -32,7 +33,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -180,17 +180,6 @@ fun ModelApiSettingsSection(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val apiPreferences = remember { com.ai.assistance.operit.data.preferences.ApiPreferences.getInstance(context) }
-    val disableStreamOutput by apiPreferences.disableStreamOutputFlow.collectAsState(initial = false)
-    var streamOutputEdited by remember { mutableStateOf(false) }
-    var disableStreamOutputInput by remember { mutableStateOf(false) }
-    val streamOutputSaveMutex = remember { Mutex() }
-    suspend fun persistStreamOutput() {
-        streamOutputSaveMutex.withLock {
-            if (streamOutputEdited) apiPreferences.saveDisableStreamOutput(disableStreamOutputInput)
-        }
-    }
-    RegisterModelConfigSaveAction(saveCoordinator, "stream-output:${config.id}") { _ -> persistStreamOutput() }
     val codexAuthManager = remember { CodexAuthManager.getInstance(context) }
     val codexAuthState by codexAuthManager.authState.collectAsState()
     val persistedCodexUsage by codexAuthManager.usageSnapshotFlow.collectAsState(initial = null)
@@ -322,6 +311,7 @@ fun ModelApiSettingsSection(
     
     // Tool Call配置状态
     var enableToolCallInput by remember(config.id) { mutableStateOf(config.enableToolCall) }
+    var enableStreamOutputInput by remember(config.id) { mutableStateOf(config.enableStreamOutput) }
 
     LaunchedEffect(selectedProviderTypeId) {
         if (isCodexProvider || isAntigravityProvider) {
@@ -350,6 +340,7 @@ fun ModelApiSettingsSection(
         val enableCodexWebSearch: Boolean,
         val enableClaude1hPromptCache: Boolean,
         val enableToolCall: Boolean,
+        val enableStreamOutput: Boolean,
     )
 
     // 保存设置的通用函数
@@ -375,6 +366,7 @@ fun ModelApiSettingsSection(
                     enableCodexWebSearch = state.enableCodexWebSearch,
                     enableClaude1hPromptCache = state.enableClaude1hPromptCache,
                     enableToolCall = state.enableToolCall,
+                    enableStreamOutput = state.enableStreamOutput,
                 )
 
                 EnhancedAIService.refreshAllServices(
@@ -403,6 +395,7 @@ fun ModelApiSettingsSection(
             enableCodexWebSearch = enableCodexWebSearchInput,
             enableClaude1hPromptCache = enableClaude1hPromptCacheInput,
             enableToolCall = enableToolCallInput,
+            enableStreamOutput = enableStreamOutputInput,
         )
     }
 
@@ -672,21 +665,24 @@ fun ModelApiSettingsSection(
 
             var showApiProviderDialog by remember { mutableStateOf(false) }
 
-            SettingsSelectorRow(
-                    title = stringResource(R.string.api_provider),
-                    subtitle = stringResource(R.string.select_api_provider),
-                    value = getProviderDisplayName(selectedProviderTypeId, context),
-                    onClick = { showApiProviderDialog = true },
-                    leadingContent = {
-                        val logo = rememberProviderLogoPainter(selectedProviderTypeId, 32.dp)
-                        if (logo != null) {
-                            androidx.compose.foundation.Image(painter = logo, contentDescription = null, modifier = Modifier.size(32.dp), colorFilter = providerLogoColorFilter())
-                        } else {
-                            Icon(Icons.Default.Api, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
-                        }
-                        Spacer(Modifier.width(12.dp))
-                    }
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { showApiProviderDialog = true }.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                val logo = rememberProviderLogoPainter(selectedProviderTypeId, 32.dp)
+                if (logo != null) {
+                    androidx.compose.foundation.Image(painter = logo, contentDescription = null, modifier = Modifier.size(32.dp), colorFilter = providerLogoColorFilter())
+                } else {
+                    Icon(Icons.Default.Api, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+                }
+                Text(
+                    stringResource(R.string.model_workspace_service, getProviderDisplayName(selectedProviderTypeId, context)),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Icon(Icons.Default.ExpandMore, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
 
             if (showApiProviderDialog) {
                 ApiProviderDialog(
@@ -1073,34 +1069,6 @@ fun ModelApiSettingsSection(
                     }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            SettingsSectionHeader(icon = Icons.Default.Tune, title = stringResource(R.string.model_workspace_capabilities))
-            com.ai.assistance.operit.ui.features.settings.model.ModelRequestCapabilities(
-                streaming = if (streamOutputEdited) !disableStreamOutputInput else !disableStreamOutput,
-                onStreamingChange = { enabled ->
-                    streamOutputEdited = true
-                    disableStreamOutputInput = !enabled
-                    scope.launch {
-                        try {
-                            persistStreamOutput()
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            AppLogger.e(TAG, "保存流式输出偏好失败", e)
-                            showNotification(context.getString(R.string.save_failed), OKToast.Kind.Error)
-                        }
-                    }
-                },
-                toolCall = enableToolCallInput,
-                onToolCallChange = { enableToolCallInput = it },
-                images = enableDirectImageProcessingInput,
-                onImagesChange = { enableDirectImageProcessingInput = it },
-                audio = enableDirectAudioProcessingInput,
-                onAudioChange = { enableDirectAudioProcessingInput = it },
-                video = enableDirectVideoProcessingInput,
-                onVideoChange = { enableDirectVideoProcessingInput = it },
-                supportsAudioVideo = !isCodexProvider && !isAntigravityProvider,
-            )
             if (isAntigravityProvider || isCodexProvider) {
                 SettingsInfoBanner(text = stringResource(if (isCodexProvider) R.string.codex_direct_media_processing_desc else R.string.antigravity_direct_media_processing_desc))
             }
@@ -1140,6 +1108,20 @@ fun ModelApiSettingsSection(
 
         }
     }
+
+    com.ai.assistance.operit.ui.features.settings.model.ModelRequestCapabilities(
+        streaming = enableStreamOutputInput,
+        onStreamingChange = { enableStreamOutputInput = it },
+        toolCall = enableToolCallInput,
+        onToolCallChange = { enableToolCallInput = it },
+        images = enableDirectImageProcessingInput,
+        onImagesChange = { enableDirectImageProcessingInput = it },
+        audio = enableDirectAudioProcessingInput,
+        onAudioChange = { enableDirectAudioProcessingInput = it },
+        video = enableDirectVideoProcessingInput,
+        onVideoChange = { enableDirectVideoProcessingInput = it },
+        supportsAudioVideo = !isCodexProvider && !isAntigravityProvider,
+    )
 
     if (showAntigravityLoginDialog) {
         AntigravityLoginDialog(

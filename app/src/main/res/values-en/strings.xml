@@ -2945,11 +2945,11 @@
     <string name="function_type_chat">Chat Function</string>
     <string name="function_type_title_generation">AI title summary</string>
     <string name="function_type_summary">Conversation Summary</string>
-    <string name="function_type_memory">Memory Management</string>
+    <string name="function_type_memory">Memory updates</string>
     <string name="function_type_file_binding">File Binding Processing</string>
     <string name="function_type_ui_controller">UI Controller</string>
     <string name="function_type_grep">Grep Retrieval</string>
-    <string name="function_type_role_response_planner">Group Planner</string>
+    <string name="function_type_role_response_planner">Group speaking planner</string>
 
     <!-- Function Descriptions -->
     <string name="function_desc_chat">Main chat function for daily conversation interaction with users</string>
@@ -9214,7 +9214,7 @@
     <string name="chat_model_configuration_missing_model">Invalid model configuration: model ID is empty. Select or enter a valid model in Model and Parameter Configuration.</string>
 
     <!-- 模型工作区 -->
-    <string name="model_workspace_title">Model workspace</string>
+    <string name="model_workspace_title">Model and parameter settings</string>
     <string name="model_workspace_subtitle">Connections, parameters and function assignments</string>
     <string name="model_workspace_connection">Connection</string>
     <string name="model_workspace_parameters">Parameters</string>
@@ -9225,7 +9225,7 @@
     <string name="model_workspace_manage">Manage</string>
     <string name="model_workspace_capabilities">Request capabilities</string>
     <string name="model_workspace_streaming">Streaming output</string>
-    <string name="model_workspace_streaming_hint">Applies globally: show replies as they arrive; when off, wait for the complete reply</string>
+    <string name="model_workspace_streaming_hint">Capabilities are saved with this configuration and require model support.</string>
     <string name="model_workspace_generation_hint">Output length and basic generation settings</string>
     <string name="model_workspace_sampling">Sampling and repetition</string>
     <string name="model_workspace_sampling_hint">Temperature, sampling range and repetition penalties</string>
@@ -9235,10 +9235,14 @@
     <string name="model_workspace_current_functions">Current config</string>
     <string name="model_workspace_no_functions">No functions are assigned to this configuration.</string>
     <string name="model_workspace_reset_functions_hint">Reset all function assignments to defaults and leave the memory embedding model unconfigured.</string>
-    <string name="model_workspace_global">Global setting</string>
     <string name="model_workspace_tool_call">Tool calling</string>
     <string name="model_workspace_images">Images</string>
     <string name="model_workspace_audio">Audio</string>
     <string name="model_workspace_video">Video</string>
     <string name="model_workspace_media_unavailable">Direct input unavailable for this provider</string>
+    <string name="model_workspace_capabilities_count">%1$d / 5 enabled</string>
+    <string name="model_workspace_service">Service: %1$s</string>
+    <string name="model_workspace_more_actions">More configuration actions</string>
+    <string name="model_workspace_config_preview">View configuration preview</string>
+    <string name="model_workspace_config_preview_hint">Current saved configuration only. Keys and header values are hidden. No request is sent.</string>
 </resources>

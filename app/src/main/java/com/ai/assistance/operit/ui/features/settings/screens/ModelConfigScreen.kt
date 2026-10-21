@@ -59,6 +59,8 @@ import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveActi
 import com.ai.assistance.operit.ui.features.settings.rememberModelConfigSaveCoordinator
 import com.ai.assistance.operit.ui.features.settings.keypool.ApiKeyPoolSettingsSection
 import com.ai.assistance.operit.ui.features.settings.sections.AdvancedSettingsSection
+import com.ai.assistance.operit.ui.features.settings.model.ModelConfigPreviewDialog
+import com.ai.assistance.operit.ui.features.settings.model.buildModelConfigPreview
 import com.ai.assistance.operit.ui.features.settings.sections.ModelApiSettingsSection
 import com.ai.assistance.operit.ui.features.settings.sections.ModelParametersSection
 import com.ai.assistance.operit.ui.features.settings.sections.SettingsInfoBanner
@@ -205,6 +207,8 @@ fun ModelConfigScreen(
     // UI状态
     var showRenameConfigDialog by remember { mutableStateOf(false) }
     var showConfigOrganizer by remember { mutableStateOf(false) }
+    var showMoreActions by remember { mutableStateOf(false) }
+    var configPreview by remember { mutableStateOf<String?>(null) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var renameConfigName by remember { mutableStateOf("") }
 
@@ -289,7 +293,7 @@ fun ModelConfigScreen(
     }
 
     // 标签、配置或分组切换前完成保存，避免输入区离开组合时取消尚未写入的操作。
-    fun afterSaving(change: () -> Unit) {
+    fun afterSaving(change: suspend () -> Unit) {
         if (savingSelection) return
         savingSelection = true
         scope.launch {
@@ -357,6 +361,13 @@ fun ModelConfigScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            IconButton(
+                                onClick = { showMoreActions = true },
+                                enabled = selectedConfigId.isNotEmpty() && !savingSelection,
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(Icons.Default.MoreVert, stringResource(R.string.model_workspace_more_actions))
+                            }
                             if (selectedConfigId.isNotEmpty() &&
                                 selectedConfigId != ModelConfigManager.DEFAULT_CONFIG_ID
                             ) {
@@ -664,6 +675,21 @@ fun ModelConfigScreen(
             }
         }
 
+        ModelWorkspaceMenu(expanded = showMoreActions, onDismissRequest = { showMoreActions = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.model_workspace_config_preview)) },
+                onClick = {
+                    afterSaving {
+                        val config = requireNotNull(configManager.getModelConfig(selectedConfigId))
+                        configPreview = buildModelConfigPreview(config)
+                        showMoreActions = false
+                    }
+                },
+            )
+        }
+        configPreview?.let { preview ->
+            ModelConfigPreviewDialog(preview = preview, onDismiss = { configPreview = null })
+        }
         if (showConfigOrganizer) {
             ConfigOrganizerDialog(
                 summaries = configSummaries,

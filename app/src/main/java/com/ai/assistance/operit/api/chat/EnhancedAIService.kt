@@ -844,7 +844,7 @@ class EnhancedAIService private constructor(context: Context) {
                         workspacePath = workspacePath,
                         workspaceEnv = workspaceEnv,
                         enableThinking = enableThinking,
-                        stream = stream,
+                        stream = stream && modelConfig.enableStreamOutput,
                         isSubTask = isSubTask
                     )
                 ),
@@ -965,7 +965,7 @@ class EnhancedAIService private constructor(context: Context) {
         val chatModelConfigIdOverride = options.chatModelConfigIdOverride
         val chatModelIndexOverride = options.chatModelIndexOverride
         val memorySpaceIdOverride = options.memorySpaceIdOverride
-        val stream = options.stream
+        val requestedStream = options.stream
         val disableWarning = options.disableWarning
         val onNonFatalError: suspend (error: String) -> Unit = { error ->
             if (!isSubTask) {
@@ -1046,6 +1046,7 @@ class EnhancedAIService private constructor(context: Context) {
                             chatModelConfigIdOverride,
                             chatModelIndexOverride
                         )
+                    val stream = requestedStream && modelSnapshot.config.enableStreamOutput
 
                     // Prepare conversation history with system prompt
                     val preparedHistory =

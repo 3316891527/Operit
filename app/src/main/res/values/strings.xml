@@ -3069,7 +3069,7 @@
     <string name="function_type_ui_controller">UI控制器</string>
     <string name="function_type_translation">翻译功能</string>
     <string name="function_type_grep">Grep检索</string>
-    <string name="function_type_role_response_planner">群组规划</string>
+    <string name="function_type_role_response_planner">群组发言规划</string>
     <string name="function_type_image_recognition">图像识别</string>
     <string name="function_type_audio_recognition">音频识别</string>
     <string name="function_type_video_recognition">视频识别</string>
@@ -9214,7 +9214,7 @@
     <string name="chat_model_configuration_missing_model">模型配置无效：未填写模型 ID。请在“模型与参数配置”中选择或填写有效模型。</string>
 
     <!-- 模型工作区 -->
-    <string name="model_workspace_title">模型工作区</string>
+    <string name="model_workspace_title">模型与参数配置</string>
     <string name="model_workspace_subtitle">连接、参数与功能模型分配</string>
     <string name="model_workspace_connection">连接</string>
     <string name="model_workspace_parameters">参数</string>
@@ -9225,7 +9225,7 @@
     <string name="model_workspace_manage">管理</string>
     <string name="model_workspace_capabilities">请求能力</string>
     <string name="model_workspace_streaming">流式输出</string>
-    <string name="model_workspace_streaming_hint">全局生效：逐步显示模型回复，关闭后等待完整回复</string>
+    <string name="model_workspace_streaming_hint">能力随当前配置保存，并需模型支持。</string>
     <string name="model_workspace_generation_hint">输出长度与基础生成设置</string>
     <string name="model_workspace_sampling">采样与重复控制</string>
     <string name="model_workspace_sampling_hint">温度、采样范围和重复惩罚</string>
@@ -9235,10 +9235,14 @@
     <string name="model_workspace_current_functions">当前配置</string>
     <string name="model_workspace_no_functions">当前配置尚未分配给任何功能。</string>
     <string name="model_workspace_reset_functions_hint">将全部功能恢复为默认绑定，记忆向量模型恢复为未配置。</string>
-    <string name="model_workspace_global">全局设置</string>
     <string name="model_workspace_tool_call">工具调用</string>
     <string name="model_workspace_images">图片理解</string>
     <string name="model_workspace_audio">音频理解</string>
     <string name="model_workspace_video">视频理解</string>
     <string name="model_workspace_media_unavailable">此服务未开放独立直传</string>
+    <string name="model_workspace_capabilities_count">%1$d / 5 已开启</string>
+    <string name="model_workspace_service">服务方式：%1$s</string>
+    <string name="model_workspace_more_actions">更多配置操作</string>
+    <string name="model_workspace_config_preview">查看配置预览</string>
+    <string name="model_workspace_config_preview_hint">仅展示当前已保存配置，密钥与请求头内容已隐藏，不会发起请求。</string>
 </resources>

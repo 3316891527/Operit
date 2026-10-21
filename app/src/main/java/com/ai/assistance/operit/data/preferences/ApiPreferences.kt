@@ -24,6 +24,8 @@ import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistry
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -311,11 +313,22 @@ class ApiPreferences private constructor(private val context: Context) {
             }.getOrElse { emptyList() }
         }
 
-    // Flow for Disable Stream Output
-    val disableStreamOutputFlow: Flow<Boolean> =
-        context.apiDataStore.data.map { preferences ->
-            preferences[DISABLE_STREAM_OUTPUT] ?: DEFAULT_DISABLE_STREAM_OUTPUT
+    // 保留旧聊天设置接口的字段名，值随当前聊天绑定的模型配置变化。
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val disableStreamOutputFlow: Flow<Boolean>
+        get() {
+            val modelManager = ModelConfigManager(context)
+            return FunctionalConfigManager(context).functionConfigMappingFlow
+                .map { mapping -> mapping.getValue(FunctionType.CHAT) }
+                .distinctUntilChanged()
+                .flatMapLatest { configId -> modelManager.getModelConfigFlow(configId) }
+                .map { config -> !config.enableStreamOutput }
+                .distinctUntilChanged()
         }
+
+    // 仅供模型配置的版本迁移读取，运行时不再使用旧全局键。
+    internal suspend fun readLegacyDisableStreamOutput(): Boolean =
+        context.apiDataStore.data.first()[DISABLE_STREAM_OUTPUT] ?: DEFAULT_DISABLE_STREAM_OUTPUT
 
     // Flow for Disable User Preference Description
     val disableUserPreferenceDescriptionFlow: Flow<Boolean> =
@@ -459,9 +472,10 @@ class ApiPreferences private constructor(private val context: Context) {
         }.getOrElse { emptyList() }
     }
 
-    // Save Disable Stream Output setting
+    // 通过旧聊天设置接口修改当前聊天绑定配置的流式选择
     suspend fun saveDisableStreamOutput(isDisabled: Boolean) {
-        context.apiDataStore.edit { preferences -> preferences[DISABLE_STREAM_OUTPUT] = isDisabled }
+        val configId = FunctionalConfigManager(context).getConfigIdForFunction(FunctionType.CHAT)
+        ModelConfigManager(context).updateStreamOutput(configId, !isDisabled)
     }
 
     // Save Disable User Preference Description setting
