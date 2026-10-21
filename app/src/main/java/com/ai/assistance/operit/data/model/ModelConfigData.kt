@@ -99,6 +99,7 @@ object ModelConfigDefaults {
         const val DEFAULT_MAX_CONTEXT_LENGTH = 1000.0f
         const val DEFAULT_ENABLE_MAX_CONTEXT_MODE = false
         const val DEFAULT_ENABLE_TOOL_CALL = true
+        const val DEFAULT_ENABLE_STREAM_OUTPUT = true
         const val DEFAULT_SUMMARY_TOKEN_THRESHOLD = 0.70f
         const val DEFAULT_ENABLE_SUMMARY = true
         const val DEFAULT_ENABLE_SUMMARY_BY_MESSAGE_COUNT = true
@@ -244,6 +245,9 @@ data class ModelConfigData(
 
         // Claude特定配置
         val enableClaude1hPromptCache: Boolean = false, // 是否启用1小时提示缓存TTL (仅Claude支持)
+
+        // 每份配置独立控制流式输出，调用方仍可明确请求非流式。
+        val enableStreamOutput: Boolean = ModelConfigDefaults.DEFAULT_ENABLE_STREAM_OUTPUT,
 
         // Tool Call配置
         val enableToolCall: Boolean = ModelConfigDefaults.DEFAULT_ENABLE_TOOL_CALL, // 是否启用Tool Call接口调用工具（使用模型原生工具调用而非XML格式）

@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.ui.features.settings.screens
+package com.ai.assistance.operit.ui.features.settings.model
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -6,18 +6,14 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.ai.assistance.operit.ui.components.CustomScaffold
 import androidx.compose.ui.platform.LocalContext
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.settings.functional.FunctionThinkingControls
@@ -29,8 +25,6 @@ import com.ai.assistance.operit.api.chat.llmprovider.AIServiceFactory
 import com.ai.assistance.operit.api.chat.llmprovider.MediaCapabilityProbe
 import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkBuilder
 import com.ai.assistance.operit.api.chat.llmprovider.ModelConnectionTestOutcome
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.ui.features.settings.components.ExpandableStatusText
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
@@ -39,7 +33,6 @@ import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.data.embedding.MemoryEmbeddingModelResolver
 import com.ai.assistance.operit.services.CloudEmbeddingService
 import com.ai.assistance.operit.data.model.FunctionType
-import com.ai.assistance.operit.data.model.ModelConfigSelection
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getModelList
@@ -57,199 +50,7 @@ import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FunctionalConfigScreen(
-        onBackPressed: () -> Unit = {},
-        onNavigateToModelConfig: () -> Unit = {}
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    // 配置管理器
-    val functionalConfigManager = remember { FunctionalConfigManager(context) }
-    val modelConfigManager = remember { ModelConfigManager(context) }
-
-    // 配置映射状态
-    val configMappingWithIndex =
-            functionalConfigManager.functionConfigMappingWithIndexFlow.collectAsState(initial = emptyMap())
-
-    // Keep candidates live when the selected group changes or a configuration moves between groups.
-    val configSelection: ModelConfigSelection? by
-            modelConfigManager.configSelectionFlow.collectAsState(initial = null)
-    fun showSavedToast() {
-        OKToast.success(context, R.string.config_saved, OKToast.LENGTH_SHORT).show()
-    }
-
-    CustomScaffold() { paddingValues ->
-        val selection = configSelection
-        if (selection == null) {
-            Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator() }
-        } else {
-            val selectedGroupName = selection.selectedGroup?.name ?: stringResource(R.string.ungrouped)
-            LazyColumn(
-                    modifier =
-                            Modifier.fillMaxSize()
-                                    .padding(paddingValues)
-                                    .padding(horizontal = 16.dp)
-            ) {
-                item {
-                    Card(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors =
-                                    CardDefaults.cardColors(
-                                            containerColor =
-                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
-                                                            alpha = 0.7f
-                                                    )
-                                    )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
-                                Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                        text = stringResource(id = R.string.functional_model_config_title),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Text(
-                                    text = stringResource(id = R.string.functional_model_config_desc),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            Text(
-                                    text = stringResource(R.string.model_config_current_group, selectedGroupName),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                            )
-
-                            Row(
-                                    modifier =
-                                            Modifier.fillMaxWidth()
-                                                    .clickable { onNavigateToModelConfig() }
-                                                    .padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                    Text(
-                                            text = stringResource(id = R.string.manage_all_model_configs),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium
-                                    )
-                                    Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                            contentDescription = stringResource(id = R.string.manage_model_configs_desc),
-                                            tint = MaterialTheme.colorScheme.primary
-                                    )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                // 功能类型列表
-                items(FunctionType.values()) { functionType ->
-                    val currentConfigMapping =
-                            configMappingWithIndex.value[functionType]
-                                    ?: FunctionConfigMapping(if (functionType == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
-                    val currentConfig = selection.allConfigs.find { it.id == currentConfigMapping.configId }
-                    val boundConfigGroupName =
-                        if (currentConfig != null && currentConfig.groupId != selection.selectedGroupId) {
-                            selection.groups.firstOrNull { it.id == currentConfig.groupId }?.name
-                                ?: stringResource(R.string.ungrouped)
-                        } else {
-                            null
-                        }
-
-                    FunctionConfigCard(
-                            functionType = functionType,
-                            currentConfig = currentConfig,
-                            currentModelIndex = currentConfigMapping.modelIndex,
-                            currentMapping = currentConfigMapping,
-                            availableConfigs = selection.availableConfigs,
-                            selectedGroupName = selectedGroupName,
-                            boundConfigGroupName = boundConfigGroupName,
-                            onConfigSelected = { configId, modelIndex ->
-                                scope.launch {
-                                    functionalConfigManager.setConfigForFunction(
-                                            functionType,
-                                            configId,
-                                            modelIndex
-                                    )
-                                    // 刷新服务实例
-                                    if (functionType != FunctionType.MEMORY_EMBEDDING) {
-                                        EnhancedAIService.refreshServiceForFunction(context, functionType)
-                                    }
-                                    showSavedToast()
-                                }
-                            },
-                            onThinkingChanged = { enableThinking, optionId ->
-                                scope.launch {
-                                    functionalConfigManager.setThinkingForFunction(
-                                            functionType,
-                                            enableThinking,
-                                            optionId
-                                    )
-                                    showSavedToast()
-                                }
-                            }
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                item {
-                    // 重置按钮
-                    OutlinedButton(
-                            onClick = {
-                                scope.launch {
-                                    functionalConfigManager.resetAllFunctionConfigs()
-                                    // 刷新所有服务实例
-                                    EnhancedAIService.refreshAllServices(context)
-                                    showSavedToast()
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                    ) {
-                        Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(id = R.string.reset_all_functions_to_default))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FunctionConfigCard(
+fun ModelFunctionEditor(
         functionType: FunctionType,
         currentConfig: ModelConfigSummary?,
         currentModelIndex: Int,
@@ -258,9 +59,9 @@ fun FunctionConfigCard(
         selectedGroupName: String,
         boundConfigGroupName: String?,
         onConfigSelected: (String, Int) -> Unit,
-        onThinkingChanged: (Boolean, String) -> Unit = { _, _ -> }
+        onThinkingChanged: (Boolean, String) -> Unit = { _, _ -> },
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(true) }
     var expandedConfigId by remember(availableConfigs) { mutableStateOf<String?>(null) } // 记录当前展开的配置的模型列表
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

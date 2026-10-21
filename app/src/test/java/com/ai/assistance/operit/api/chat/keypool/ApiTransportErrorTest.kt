@@ -50,7 +50,8 @@ class ApiTransportErrorTest {
         val error = json.getJSONObject("error")
 
         assertEquals(5004, error.getInt("code"))
-        assertEquals(LlmRetryPolicy.FIRST_TOKEN_TIMEOUT_MS, error.getLong("timeoutMs"))
+        assertEquals(300_000L, LlmRetryPolicy.FIRST_TOKEN_TIMEOUT_MS)
+        assertEquals(300_000L, error.getLong("timeoutMs"))
         assertEquals("stream was reset: CANCEL", error.getString("detail"))
     }
 

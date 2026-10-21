@@ -625,6 +625,7 @@ class ApiConfigDelegate(
         configScope.launch {
             val newValue = !_disableStreamOutput.value
             apiPreferences.saveDisableStreamOutput(newValue)
+            com.ai.assistance.operit.api.chat.EnhancedAIService.refreshAllServices(context)
             _disableStreamOutput.value = newValue
         }
     }

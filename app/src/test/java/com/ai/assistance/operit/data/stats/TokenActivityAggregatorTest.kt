@@ -106,6 +106,19 @@ class TokenActivityAggregatorTest {
     }
 
     @Test
+    fun `range data keeps 24 empty hourly buckets without usage`() {
+        val date = LocalDate.of(2026, 8, 2)
+        val result = TokenActivityAggregator.rangeData(
+            TokenActivitySnapshot(zone = zone, dayTotals = emptyMap()),
+            dateRange("2026-08-02", "2026-08-02"),
+        )
+
+        assertEquals((0..23).toList(), result.hourly.map(TokenActivityHour::hour))
+        assertEquals(List(24) { 0L }, result.hourly.map(TokenActivityHour::tokens))
+        assertEquals(List(24) { date }, result.hourly.map(TokenActivityHour::startDate))
+    }
+
+    @Test
     fun `range data calculates streaks and cumulative totals inside the selected range`() {
         val range = dateRange("2026-08-01", "2026-08-05")
         val snapshot = TokenActivitySnapshot(

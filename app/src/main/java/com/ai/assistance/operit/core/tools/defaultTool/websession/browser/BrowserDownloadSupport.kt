@@ -1051,6 +1051,7 @@ internal data class BrowserDownloadSummary(
 
 internal data class PendingExternalOpenRequest(
     val requestId: String,
+    val sessionId: String,
     val intent: Intent,
     val title: String,
     val target: String,

@@ -2,7 +2,12 @@ package com.ai.assistance.operit.ui.features.settings.screens.theme
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
+import android.content.Intent
 import android.net.Uri
+import com.ai.assistance.operit.ui.main.MainActivity
+import com.ai.assistance.operit.util.LocaleUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -89,6 +94,7 @@ private sealed interface ThemeEditorPendingAction {
     data object ActiveTargetChanged : ThemeEditorPendingAction
 
     data object LeaveScreen : ThemeEditorPendingAction
+    data class ChangeLanguage(val code: String) : ThemeEditorPendingAction
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,6 +161,7 @@ internal fun ThemeSettingsContentEditor(
     var pendingAction by remember { mutableStateOf<ThemeEditorPendingAction?>(null) }
     var exitContinuation by remember { mutableStateOf<CancellableContinuation<Boolean>?>(null) }
     var isSaving by remember { mutableStateOf(false) }
+    var isChangingLanguage by remember { mutableStateOf(false) }
     var showApplyToAllConfirm by remember { mutableStateOf(false) }
     var targetSwitchesInFlight by remember { mutableStateOf(0) }
     val scrollState = androidx.compose.foundation.rememberScrollState()
@@ -250,6 +257,28 @@ internal fun ThemeSettingsContentEditor(
         }
     }
 
+    fun changeLanguage(code: String) {
+        if (isChangingLanguage) return
+        isChangingLanguage = true
+        scope.launch {
+            try {
+                // 先等待全局语言落盘；重启和系统语言应用都基于同一份已保存的配置。
+                withContext(Dispatchers.IO) { preferencesManager.saveAppLanguage(code) }
+                LocaleUtils.applyAppLanguage(context, code)
+                val intent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                context.startActivity(intent)
+            } catch (cause: CancellationException) {
+                throw cause
+            } catch (cause: Exception) {
+                AppLogger.e("ThemeSettings", "切换应用语言失败", cause)
+                OKToast.error(context, context.getString(R.string.language_change_failed)).show()
+            } finally {
+                isChangingLanguage = false
+            }
+        }
+    }
     fun finishPendingAction(allowNavigation: Boolean) {
         val action = pendingAction
         pendingAction = null
@@ -280,10 +309,12 @@ internal fun ThemeSettingsContentEditor(
                 }
             }
 
+            is ThemeEditorPendingAction.ChangeLanguage -> {
+                if (allowNavigation) changeLanguage(action.code)
+            }
             null -> Unit
         }
     }
-
     fun saveCurrentDraft() {
         val state = editorState ?: return
         val draft = state.session
@@ -448,6 +479,11 @@ internal fun ThemeSettingsContentEditor(
                         ThemeSettingsBasicTab(
                             shared = shared,
                             cardColors = cardColors,
+                            languageChangeEnabled = !isSaving && !isChangingLanguage && pendingAction == null,
+                            onLanguageSelected = { code ->
+                                if (hasUnsavedChanges) pendingAction = ThemeEditorPendingAction.ChangeLanguage(code)
+                                else changeLanguage(code)
+                            },
                         )
                     },
                     backgroundContent = {
@@ -493,6 +529,19 @@ internal fun ThemeSettingsContentEditor(
         }
     }
 
+    if (isChangingLanguage) {
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    CircularProgressIndicator(Modifier.size(24.dp))
+                    Text(stringResource(R.string.language_changing))
+                }
+            },
+        )
+    }
     if (showApplyToAllConfirm) {
         AlertDialog(
             onDismissRequest = {

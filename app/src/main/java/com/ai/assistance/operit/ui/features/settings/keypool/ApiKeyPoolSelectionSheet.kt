@@ -28,10 +28,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceDialog
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ApiKeyAvailabilityStatus
 import com.ai.assistance.operit.data.model.ApiKeyInfo
@@ -88,7 +87,6 @@ internal fun ApiKeyPoolSelectionSheet(
     onDismiss: () -> Unit,
     onConfirm: (List<ApiKeyInfo>) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
 
     LaunchedEffect(keys.map { it.id }) {
@@ -102,146 +100,116 @@ internal fun ApiKeyPoolSelectionSheet(
     val selectedChipLabelColor =
         if (destructive) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
+    ModelWorkspaceDialog(
+        title = stringResource(if (destructive) R.string.api_key_pool_delete_keys else R.string.export_keys),
+        onDismiss = onDismiss,
+        scrollable = false,
     ) {
-        Column(
+        Text(
+            stringResource(R.string.api_key_pool_selected_count, selectedIds.size, keys.size),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ApiKeyPoolSelectionPreset.entries.forEach { preset ->
+                val targetIds = keys.idsForPreset(preset)
+                val selected = selectedIds == targetIds && targetIds.isNotEmpty()
+                FilterChip(
+                    selected = selected,
+                    onClick = {
+                        selectedIds =
+                            if (selected || targetIds.isEmpty()) {
+                                emptySet()
+                            } else {
+                                targetIds
+                            }
+                    },
+                    enabled = targetIds.isNotEmpty() || preset == ApiKeyPoolSelectionPreset.ALL,
+                    label = { Text(stringResource(preset.labelRes())) },
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = selectedChipColor,
+                            selectedLabelColor = selectedChipLabelColor
+                        )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
+                    .weight(1f, fill = false).heightIn(max = 360.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            items(keys, key = { it.id }) { keyInfo ->
+                ApiKeyPoolSelectableRow(
+                    keyInfo = keyInfo,
+                    checked = keyInfo.id in selectedIds,
+                    destructive = destructive,
+                    onCheckedChange = { checked ->
+                        selectedIds =
+                            if (checked) {
+                                selectedIds + keyInfo.id
+                            } else {
+                                selectedIds - keyInfo.id
+                            }
+                    }
+                )
+            }
+        }
+
+        if (destructive) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.api_key_pool_delete_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel_action))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = { onConfirm(selectedKeys) },
+                enabled = selectedKeys.isNotEmpty(),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.widthIn(min = 148.dp),
+                colors =
+                    if (destructive) {
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        )
+                    } else {
+                        ButtonDefaults.buttonColors()
+                    }
             ) {
                 Text(
                     text =
                         stringResource(
                             if (destructive) {
-                                R.string.api_key_pool_delete_keys
+                                R.string.api_key_pool_delete_n
                             } else {
-                                R.string.export_keys
-                            }
-                        ),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                                R.string.api_key_pool_export_n
+                            },
+                            selectedKeys.size
+                        )
                 )
-                Text(
-                    text =
-                        stringResource(
-                            R.string.api_key_pool_selected_count,
-                            selectedIds.size,
-                            keys.size
-                        ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ApiKeyPoolSelectionPreset.entries.forEach { preset ->
-                    val targetIds = keys.idsForPreset(preset)
-                    val selected = selectedIds == targetIds && targetIds.isNotEmpty()
-                    FilterChip(
-                        selected = selected,
-                        onClick = {
-                            selectedIds =
-                                if (selected || targetIds.isEmpty()) {
-                                    emptySet()
-                                } else {
-                                    targetIds
-                                }
-                        },
-                        enabled = targetIds.isNotEmpty() || preset == ApiKeyPoolSelectionPreset.ALL,
-                        label = { Text(stringResource(preset.labelRes())) },
-                        colors =
-                            FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = selectedChipColor,
-                                selectedLabelColor = selectedChipLabelColor
-                            )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 360.dp)
-            ) {
-                items(keys, key = { it.id }) { keyInfo ->
-                    ApiKeyPoolSelectableRow(
-                        keyInfo = keyInfo,
-                        checked = keyInfo.id in selectedIds,
-                        destructive = destructive,
-                        onCheckedChange = { checked ->
-                            selectedIds =
-                                if (checked) {
-                                    selectedIds + keyInfo.id
-                                } else {
-                                    selectedIds - keyInfo.id
-                                }
-                        }
-                    )
-                }
-            }
-
-            if (destructive) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.api_key_pool_delete_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.cancel_action))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = { onConfirm(selectedKeys) },
-                    enabled = selectedKeys.isNotEmpty(),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.widthIn(min = 148.dp),
-                    colors =
-                        if (destructive) {
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            )
-                        } else {
-                            ButtonDefaults.buttonColors()
-                        }
-                ) {
-                    Text(
-                        text =
-                            stringResource(
-                                if (destructive) {
-                                    R.string.api_key_pool_delete_n
-                                } else {
-                                    R.string.api_key_pool_export_n
-                                },
-                                selectedKeys.size
-                            )
-                    )
-                }
             }
         }
     }

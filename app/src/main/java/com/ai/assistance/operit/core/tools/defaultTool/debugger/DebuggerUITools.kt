@@ -26,6 +26,7 @@ import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.core.tools.system.uiautomator.UiAutomatorDumpGuard
 
 /** 调试级别的UI工具，通过Shell命令实现UI操作，继承无障碍版本 */
 open class DebuggerUITools(context: Context) : AccessibilityUITools(context) {
@@ -37,6 +38,12 @@ open class DebuggerUITools(context: Context) : AccessibilityUITools(context) {
     protected open val uiShellIdentity: ShellIdentity? = null
 
     protected suspend fun executeUiShellCommand(command: String): AndroidShellExecutor.CommandResult {
+        // 读取页面和按元素点击共用入口；Root 子类也必须保存并恢复调用前的旋转设置。
+        if (command.startsWith("uiautomator dump ")) {
+            return UiAutomatorDumpGuard.execute(command) { protectedCommand ->
+                AndroidShellExecutor.executeShellCommand(protectedCommand, uiShellIdentity)
+            }
+        }
         return AndroidShellExecutor.executeShellCommand(command, uiShellIdentity)
     }
 
@@ -627,17 +634,12 @@ open class DebuggerUITools(context: Context) : AccessibilityUITools(context) {
                 ?.takeIf { it.isNotEmpty() }
 
             // 执行UI dump命令，只有在显式提供 display 参数时才使用 --display-id
-            var dumpResult = if (displayId != null) {
+            val dumpResult = if (displayId != null) {
                 val cmd = "uiautomator dump --display-id $displayId /sdcard/window_dump.xml"
                 AppLogger.d(TAG, "UI dump using explicit display-id=$displayId")
                 executeUiShellCommand(cmd)
             } else {
                 executeUiShellCommand("uiautomator dump /sdcard/window_dump.xml")
-            }
-
-            if (!dumpResult.success && displayId != null) {
-                AppLogger.w(TAG, "uiautomator dump with explicit display-id failed, falling back: ${dumpResult.stderr}")
-                dumpResult = executeUiShellCommand("uiautomator dump /sdcard/window_dump.xml")
             }
 
             if (!dumpResult.success) {

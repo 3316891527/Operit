@@ -41,11 +41,10 @@ fun SettingsScreen(
         navigateToGlobalDisplaySettings: () -> Unit,
         navigateToModelPrompts: () -> Unit,
         navigateToMemory: () -> Unit,
-        navigateToFunctionalConfig: () -> Unit,
         navigateToDataStorageManagement: () -> Unit,
         navigateToChatHistorySettings: () -> Unit,
         navigateToChatBackupSettings: () -> Unit,
-        navigateToLanguageSettings: () -> Unit,
+
         navigateToSpeechServicesSettings: () -> Unit,
         navigateToExternalHttpChatSettings: () -> Unit,
         navigateToWaifuModeSettings: () -> Unit,
@@ -83,12 +82,7 @@ fun SettingsScreen(
                         icon = Icons.Default.Person,
                         containerColor = cardContainerColor
                 ) {
-                        CompactSettingsItem(
-                                title = stringResource(R.string.language_settings),
-                                subtitle = stringResource(id = R.string.settings_language_subtitle),
-                                icon = Icons.Default.Language,
-                                onClick = navigateToLanguageSettings
-                        )
+
                         
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_theme_appearance),
@@ -119,19 +113,12 @@ fun SettingsScreen(
                         containerColor = cardContainerColor
                 ) {
                         CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_model_parameters),
-                                subtitle = stringResource(id = R.string.settings_model_params_subtitle),
+                                title = stringResource(id = R.string.model_workspace_title),
+                                subtitle = stringResource(id = R.string.model_workspace_subtitle),
                                 icon = Icons.Default.Api,
                                 onClick = navigateToModelConfig
                         )
                         
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_functional_model),
-                                subtitle = stringResource(id = R.string.settings_functional_model_subtitle),
-                                icon = Icons.Default.Tune,
-                                onClick = navigateToFunctionalConfig
-                        )
-
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_section_context_summary),
                                 subtitle = stringResource(id = R.string.settings_context_summary_subtitle),

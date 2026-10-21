@@ -1101,7 +1101,7 @@ open class GeminiProvider(
         enableRetry: Boolean,
         onNonFatalError: suspend (String) -> Unit,
         onRetryAccepted: suspend () -> Unit,
-        buildRetryMessage: (String, Int) -> String,
+        buildRetryMessage: (String, Int, Long) -> String,
         attemptNumber: Int,
         watchdog: FirstTokenWatchdog? = null,
         stream: Boolean = true,
@@ -1333,8 +1333,13 @@ open class GeminiProvider(
                     enableRetry = enableRetry,
                     onNonFatalError = onNonFatalError,
                     onRetryAccepted = { emitRollback(requestSavepointId) },
-                    buildRetryMessage = { errorText, retryNumber ->
-                        context.getString(R.string.provider_error_retry_message, errorText, retryNumber)
+                    buildRetryMessage = { errorText, retryNumber, delayMs ->
+                        context.getString(
+                            R.string.provider_error_retry_message,
+                            errorText,
+                            retryNumber,
+                            (delayMs + 999L) / 1000L,
+                        )
                     },
                     attemptNumber = retryCount + 1,
                     watchdog = watchdog,

@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import com.ai.assistance.operit.ui.features.chat.motion.DissolvingChatTitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -64,6 +65,9 @@ internal fun FolderTreeList(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    selectionMode: Boolean = false,
+    selectedIds: Set<String> = emptySet(),
+    selectionEnabled: Boolean = true,
     deletionProgress: Map<String, Float> = emptyMap(),
 ) {
     var dragSource by remember { mutableStateOf<ChatFolderRow?>(null) }
@@ -120,6 +124,9 @@ internal fun FolderTreeList(
         latestInteraction(false)
         hostView.parent?.requestDisallowInterceptTouchEvent(false)
     }
+    LaunchedEffect(draggingEnabled) {
+        if (!draggingEnabled && dragSource != null) finishDrag(false)
+    }
     DisposableEffect(Unit) {
         onDispose {
             latestInteraction(false)
@@ -171,7 +178,8 @@ internal fun FolderTreeList(
                     val guideColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     val highlighted = dragSource != null && target?.key == row.key && drop != null
                     val deleting = row is ChatFolderRow.Chat && row.history.id in deletionProgress
-                    val selected = row is ChatFolderRow.Chat && row.history.id == currentId
+                    val selected = row is ChatFolderRow.Chat &&
+                        if (selectionMode) row.history.id in selectedIds else row.history.id == currentId
                     val rowColor = when {
                         highlighted && zone == FolderDropZone.INSIDE -> MaterialTheme.colorScheme.secondaryContainer
                         selected -> selectedContainerColor
@@ -210,13 +218,18 @@ internal fun FolderTreeList(
                                 }
                                 // 点击区不包含操作按钮和拖动柄，避免拖动时选中对话或触发菜单。
                                 Row(
-                                    modifier = Modifier.weight(1f).heightIn(min = 36.dp).clickable(enabled = !deleting, role = Role.Button) {
-                                        when (row) {
-                                            is ChatFolderRow.Chat -> onSelectChat(row.history.id)
-                                            is ChatFolderRow.Folder -> onToggleFolder(row)
-                                            is ChatFolderRow.Binding -> onToggleBinding(row.key)
+                                    modifier = Modifier.weight(1f).heightIn(min = 36.dp).then(
+                                        if (selectionMode && row is ChatFolderRow.Chat) Modifier.toggleable(
+                                            value = selected, enabled = !deleting && selectionEnabled,
+                                            role = Role.Checkbox, onValueChange = { onSelectChat(row.history.id) },
+                                        ) else Modifier.clickable(enabled = !deleting && selectionEnabled, role = Role.Button) {
+                                            when (row) {
+                                                is ChatFolderRow.Chat -> onSelectChat(row.history.id)
+                                                is ChatFolderRow.Folder -> onToggleFolder(row)
+                                                is ChatFolderRow.Binding -> onToggleBinding(row.key)
+                                            }
                                         }
-                                    },
+                                    ),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     val icon = when (row) {
@@ -224,7 +237,15 @@ internal fun FolderTreeList(
                                         is ChatFolderRow.Binding -> if (row.key in collapsedBindings) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown
                                         is ChatFolderRow.Chat -> Icons.Default.ChatBubbleOutline
                                     }
-                                    Icon(icon, null, Modifier.size(18.dp), tint = rowContentColor.copy(alpha = 0.75f))
+                                    if (selectionMode && row is ChatFolderRow.Chat) {
+                                        Checkbox(checked = selected, onCheckedChange = null,
+                                            enabled = !deleting && selectionEnabled, modifier = Modifier.size(20.dp),
+                                            colors = CheckboxDefaults.colors(
+                                                checkedColor = rowContentColor,
+                                                checkmarkColor = rowColor,
+                                                uncheckedColor = rowContentColor.copy(alpha = 0.75f),
+                                            ))
+                                    } else Icon(icon, null, Modifier.size(18.dp), tint = rowContentColor.copy(alpha = 0.75f))
                                     Spacer(Modifier.width(6.dp))
                                     if (row is ChatFolderRow.Folder) {
                                         Icon(Icons.Default.Folder, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
@@ -259,7 +280,7 @@ internal fun FolderTreeList(
                                         if (row.history.locked) Icon(Icons.Default.Lock, stringResource(R.string.lock_chat), Modifier.size(14.dp), tint = rowContentColor)
                                     }
                                 }
-                                IconButton(
+                                if (!selectionMode) IconButton(
                                     onClick = {
                                         when (row) {
                                             is ChatFolderRow.Chat -> onChatMenu(row.history)
@@ -291,7 +312,7 @@ internal fun FolderTreeList(
                                 }
                             }
                         }
-                        if (row is ChatFolderRow.Chat && !deleting) {
+                        if (row is ChatFolderRow.Chat && !deleting && !selectionMode) {
                             val edit = SwipeAction(onSwipe = { onEditChat(row.history) }, background = MaterialTheme.colorScheme.primary,
                                 icon = { Icon(Icons.Default.Edit, stringResource(R.string.edit_title), Modifier.padding(12.dp), tint = Color.White) })
                             val delete = SwipeAction(onSwipe = { onDeleteChat(row.history) }, background = MaterialTheme.colorScheme.error,

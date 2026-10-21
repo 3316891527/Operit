@@ -97,6 +97,9 @@ import androidx.annotation.RequiresApi
 import java.io.File
 // 使用 services/core 的 Delegate 类
 import com.ai.assistance.operit.services.core.MessageProcessingDelegate
+import com.ai.assistance.operit.ui.features.chat.batch.ChatBatchAction
+import com.ai.assistance.operit.ui.features.chat.batch.ChatBatchController
+import com.ai.assistance.operit.ui.features.chat.batch.ChatBatchItemResult
 import com.ai.assistance.operit.services.core.ChatHistoryDelegate
 import com.ai.assistance.operit.services.core.ApiConfigDelegate
 import com.ai.assistance.operit.services.core.TokenStatisticsDelegate
@@ -2686,45 +2689,103 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatHistoryDelegate.updateChatTitle(chatId, newTitle)
     }
 
-    private val titleGenerationJobs = mutableMapOf<String, Job>()
+    private enum class TitleSummaryResult { UPDATED, EMPTY, SKIPPED, FAILED }
+    private val activeTitleGenerations = mutableSetOf<String>()
+    private val chatBatchController = ChatBatchController(
+        scope = viewModelScope,
+        process = ::processChatBatchItem,
+        onFailure = { id, cause -> AppLogger.e(TAG, "批量操作对话失败：$id", cause) },
+        onComplete = { summary ->
+            val message = context.getString(R.string.chat_batch_result,
+                summary.succeeded, summary.skipped, summary.failed)
+            val kind = when {
+                summary.failed > 0 -> OKToast.Kind.Error
+                summary.skipped > 0 -> OKToast.Kind.Warning
+                else -> OKToast.Kind.Success
+            }
+            OKToast.typed(context, message, kind).show()
+        },
+    )
+    val chatBatchProgress = chatBatchController.progress
+
+    fun runChatBatch(action: ChatBatchAction, ids: List<String>) {
+        chatBatchController.start(action, ids)
+    }
+
+    private suspend fun processChatBatchItem(action: ChatBatchAction, chatId: String): ChatBatchItemResult {
+        if (chatId in chatListMotion.deletions.value) return ChatBatchItemResult.SKIPPED
+        return when (action) {
+            ChatBatchAction.SUMMARIZE_TITLES -> when (generateChatTitle(chatId, notifyStarted = false)) {
+                TitleSummaryResult.UPDATED -> ChatBatchItemResult.SUCCEEDED
+                TitleSummaryResult.FAILED -> ChatBatchItemResult.FAILED
+                TitleSummaryResult.EMPTY, TitleSummaryResult.SKIPPED -> ChatBatchItemResult.SKIPPED
+            }
+            ChatBatchAction.DELETE -> {
+                // 复用单条删除的停止回复、切换当前聊天和最终锁定检查，成功后清理待发消息。
+                when (chatHistoryDelegate.deleteChatHistoryAndAwait(chatId)) {
+                    ChatDeletionResult.DELETED -> {
+                        pendingMessageQueueStore.removeChat(chatId)
+                        ChatBatchItemResult.SUCCEEDED
+                    }
+                    ChatDeletionResult.LOCKED, ChatDeletionResult.NOT_FOUND -> ChatBatchItemResult.SKIPPED
+                    else -> ChatBatchItemResult.FAILED
+                }
+            }
+            else -> withContext(Dispatchers.IO) {
+                val manager = ChatHistoryManager.getInstance(context)
+                if (manager.getChatTitle(chatId) == null) return@withContext ChatBatchItemResult.SKIPPED
+                when (action) {
+                    ChatBatchAction.ARCHIVE -> manager.updateChatArchived(chatId, true)
+                    ChatBatchAction.UNARCHIVE -> manager.updateChatArchived(chatId, false)
+                    ChatBatchAction.LOCK -> manager.updateChatLocked(chatId, true)
+                    ChatBatchAction.UNLOCK -> manager.updateChatLocked(chatId, false)
+                    else -> error("不支持的批量操作：$action")
+                }
+                ChatBatchItemResult.SUCCEEDED
+            }
+        }
+    }
 
     fun summarizeChatTitle(chatId: String) {
-        // 同一条对话只发起一次请求，失败后允许重新点击。
-        if (titleGenerationJobs[chatId]?.isActive == true) return
-        titleGenerationJobs[chatId] = viewModelScope.launch {
-            try {
-                val manager = ChatHistoryManager.getInstance(context)
-                val originalTitle = manager.getChatTitle(chatId) ?: return@launch
-                val messages = manager.loadChatMessages(chatId)
-                val source = messages.firstOrNull { message ->
-                    message.sender == "user" && message.displayContent().isNotBlank()
-                }
-                if (source == null) {
-                    OKToast.warning(context, context.getString(R.string.summarize_chat_title_empty)).show()
-                    return@launch
-                }
-                OKToast.info(context, context.getString(R.string.summarize_chat_title_started)).show()
-                val generatedTitle = withContext(Dispatchers.IO) {
-                    EnhancedAIService.getChatInstance(context, chatId)
-                        .generateConversationTitle(userText = source.displayContent().trim())
-                        .trim()
-                }
-                if (generatedTitle.isBlank()) {
-                    OKToast.error(context, context.getString(R.string.summarize_chat_title_failed)).show()
-                    return@launch
-                }
-                // 生成期间手动改名或删除对话时，不用旧请求的结果覆盖用户操作。
-                if (manager.getChatTitle(chatId) == originalTitle) {
-                    chatHistoryDelegate.updateChatTitle(chatId, generatedTitle)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "手动总结对话标题失败", e)
-                OKToast.error(context, context.getString(R.string.summarize_chat_title_failed)).show()
-            } finally {
-                titleGenerationJobs.remove(chatId)
+        viewModelScope.launch {
+            when (generateChatTitle(chatId, notifyStarted = true)) {
+                TitleSummaryResult.EMPTY -> OKToast.warning(context,
+                    context.getString(R.string.summarize_chat_title_empty)).show()
+                TitleSummaryResult.FAILED -> OKToast.error(context,
+                    context.getString(R.string.summarize_chat_title_failed)).show()
+                else -> Unit
             }
+        }
+    }
+
+    private suspend fun generateChatTitle(chatId: String, notifyStarted: Boolean): TitleSummaryResult {
+        // 单条和批量共用占用标记，避免同一对话同时产生两个总结请求。
+        if (!activeTitleGenerations.add(chatId)) return TitleSummaryResult.SKIPPED
+        try {
+            val manager = ChatHistoryManager.getInstance(context)
+            val originalTitle = manager.getChatTitle(chatId) ?: return TitleSummaryResult.SKIPPED
+            val source = manager.loadChatMessages(chatId).firstOrNull { message ->
+                message.sender == "user" && message.displayContent().isNotBlank()
+            } ?: return TitleSummaryResult.EMPTY
+            if (notifyStarted) {
+                OKToast.info(context, context.getString(R.string.summarize_chat_title_started)).show()
+            }
+            val generatedTitle = withContext(Dispatchers.IO) {
+                EnhancedAIService.getChatInstance(context, chatId)
+                    .generateConversationTitle(userText = source.displayContent().trim()).trim()
+            }
+            if (generatedTitle.isBlank()) return TitleSummaryResult.FAILED
+            // 生成期间手动改名或删除对话时，不用旧请求覆盖用户操作。
+            if (manager.getChatTitle(chatId) != originalTitle) return TitleSummaryResult.SKIPPED
+            chatHistoryDelegate.updateChatTitleAndAwait(chatId, generatedTitle)
+            return TitleSummaryResult.UPDATED
+        } catch (cause: CancellationException) {
+            throw cause
+        } catch (cause: Exception) {
+            AppLogger.e(TAG, "手动总结对话标题失败", cause)
+            return TitleSummaryResult.FAILED
+        } finally {
+            activeTitleGenerations.remove(chatId)
         }
     }
 

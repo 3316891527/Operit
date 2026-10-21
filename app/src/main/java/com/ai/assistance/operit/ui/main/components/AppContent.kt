@@ -58,6 +58,7 @@ import com.ai.assistance.operit.ui.main.navigation.LocalRouteInstanceId
 import com.ai.assistance.operit.ui.main.navigation.ScreenRouteViewModelStoreOwnerManager
 import com.ai.assistance.operit.ui.main.navigation.retainedRouteKeysOnContentAttach
 import com.ai.assistance.operit.ui.main.screens.Screen
+import com.ai.assistance.operit.ui.features.settings.navigation.usesOpaqueSettingsAppBar
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import kotlinx.coroutines.CoroutineScope
@@ -188,7 +189,9 @@ fun AppContent(
     val backgroundImageUri = themeSnapshot.backgroundImageUri
     val hasBackgroundImage = useBackgroundImage && backgroundImageUri != null
 
-    // 透明顶部的标题和操作按页面背景取色，不沿用强调色按钮上的文字颜色。
+    // 设置页顶部连同状态栏下方使用不透明主题底色，与正文和 onBackground 配对。
+    val appBarContainerColor = if (currentScreen.usesOpaqueSettingsAppBar())
+        MaterialTheme.colorScheme.background.copy(alpha = 1f) else Color.Transparent
     val appBarContentColor = MaterialTheme.colorScheme.onBackground
 
     // 屏幕缓存 Map - 保存已访问过的屏幕，使其状态得以保留
@@ -305,8 +308,8 @@ fun AppContent(
                         actions = actions,
                         colors =
                         TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            scrolledContainerColor = Color.Transparent,
+                            containerColor = appBarContainerColor,
+                            scrolledContainerColor = appBarContainerColor,
                             titleContentColor = appBarContentColor,
                             navigationIconContentColor = appBarContentColor,
                             actionIconContentColor = appBarContentColor

@@ -764,6 +764,7 @@ fun AgentChatInputSection(
                     items(attachments) { attachment ->
                         AttachmentChip(
                             attachmentInfo = attachment,
+                            attachments = attachments,
                             onRemove = { onRemoveAttachment(attachment.filePath) },
                             onInsert = { onInsertAttachment(attachment) },
                         )
@@ -2207,8 +2208,6 @@ private fun AgentExtraSettingsPopup(
                     )
 
                     AgentBehaviorSettingsGroupItem(
-                        disableStreamOutput = disableStreamOutput,
-                        onToggleDisableStreamOutput = onToggleDisableStreamOutput,
                         isAutoReadEnabled = isAutoReadEnabled,
                         onToggleAutoRead = onToggleAutoRead,
                         expanded = showBehaviorDropdown,
@@ -2216,12 +2215,7 @@ private fun AgentExtraSettingsPopup(
                         onInfoClick = {
                             infoPopupContent =
                                 context.getString(R.string.agent_menu_behavior) to
-                                    context.getString(R.string.disable_stream_output_desc)
-                        },
-                        onDisableStreamOutputInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.disable_stream_output) to
-                                    context.getString(R.string.disable_stream_output_desc)
+                                    context.getString(R.string.auto_read_desc)
                         },
                         onAutoReadInfoClick = {
                             infoPopupContent =
@@ -2621,22 +2615,15 @@ private fun AgentPermissionSegmentedControl(
 
 @Composable
 private fun AgentBehaviorSettingsGroupItem(
-    disableStreamOutput: Boolean,
-    onToggleDisableStreamOutput: () -> Unit,
     isAutoReadEnabled: Boolean,
     onToggleAutoRead: () -> Unit,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onInfoClick: () -> Unit,
-    onDisableStreamOutputInfoClick: () -> Unit,
     onAutoReadInfoClick: () -> Unit,
 ) {
-    val valueText =
-        if (disableStreamOutput) {
-            stringResource(R.string.agent_menu_behavior_non_streaming)
-        } else {
-            stringResource(R.string.agent_menu_behavior_streaming)
-        }
+    val valueText = stringResource(R.string.auto_read_message) + " · " +
+        stringResource(if (isAutoReadEnabled) R.string.enabled else R.string.disabled)
 
     AgentSettingsGroupHeader(
         title = stringResource(R.string.agent_menu_behavior),
@@ -2655,13 +2642,6 @@ private fun AgentBehaviorSettingsGroupItem(
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
                     .padding(horizontal = 12.dp),
         ) {
-            AgentSimpleToggleSettingItem(
-                title = stringResource(R.string.disable_stream_output),
-                icon = if (disableStreamOutput) Icons.Outlined.Block else Icons.Outlined.Speed,
-                isChecked = disableStreamOutput,
-                onToggle = onToggleDisableStreamOutput,
-                onInfoClick = onDisableStreamOutputInfoClick,
-            )
             AgentSimpleToggleSettingItem(
                 title = stringResource(R.string.auto_read_message),
                 icon =

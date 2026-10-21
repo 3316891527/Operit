@@ -985,6 +985,7 @@ private fun AttachmentsList(floatContext: FloatContext) {
         floatContext.attachments.forEach { attachment ->
             AttachmentChip(
                 attachmentInfo = attachment,
+                attachments = floatContext.attachments,
                 onRemove = { floatContext.onRemoveAttachment?.invoke(attachment.filePath) },
                 onInsert = { }
             )

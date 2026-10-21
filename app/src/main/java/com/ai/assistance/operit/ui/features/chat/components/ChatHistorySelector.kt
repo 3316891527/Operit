@@ -2,6 +2,8 @@ package com.ai.assistance.operit.ui.features.chat.components
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import com.ai.assistance.operit.ui.features.chat.batch.ChatBatchAction
+import com.ai.assistance.operit.ui.features.chat.batch.ChatBatchProgress
 import androidx.compose.ui.Modifier
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.model.ChatHistory
@@ -24,6 +26,8 @@ fun ChatHistorySelector(
     autoSwitchCharacterCard: Boolean, onAutoSwitchCharacterCardChange: (Boolean) -> Unit,
     autoSwitchChatOnCharacterSelect: Boolean, onAutoSwitchChatOnCharacterSelectChange: (Boolean) -> Unit,
     onQuickScrollInteractionChange: (Boolean) -> Unit = {}, activePrompt: ActivePrompt,
+    batchProgress: ChatBatchProgress?,
+    onRunBatch: (ChatBatchAction, List<String>) -> Unit,
     deletionProgress: Map<String, Float> = emptyMap(),
 ) {
     FolderChatHistoryPanel(
@@ -31,6 +35,7 @@ fun ChatHistorySelector(
         chatHistories, currentId, activeStreamingChatIds, lazyListState, onBack, searchQuery, onSearchQueryChange,
         historyDisplayMode, onDisplayModeChange, autoSwitchCharacterCard, onAutoSwitchCharacterCardChange,
         autoSwitchChatOnCharacterSelect, onAutoSwitchChatOnCharacterSelectChange, onQuickScrollInteractionChange, activePrompt,
+        batchProgress = batchProgress, onRunBatch = onRunBatch,
         deletionProgress = deletionProgress,
     )
 }

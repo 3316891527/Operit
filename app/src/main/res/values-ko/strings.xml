@@ -3024,7 +3024,7 @@
     <string name="history_scroll_to_bottom">맨 아래로 스크롤</string>
     <string name="settings_user_preferences_subtitle">개인 취향 및 행동 설정</string>
     <string name="settings_language_subtitle">인터페이스 언어 전환</string>
-    <string name="settings_theme_subtitle">테마 및 모양 사용자 정의</string>
+    <string name="settings_theme_subtitle">색상, 배경, 글꼴 및 언어</string>
     <string name="layout_adjustment">레이아웃 조정</string>
     <string name="layout_adjustment_subtitle">UI 요소 위치 및 여백 조정</string>
     <string name="settings_model_params_subtitle">모델 매개변수 및 API 구성</string>

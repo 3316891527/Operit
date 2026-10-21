@@ -158,8 +158,10 @@ class StandardBrowserSessionTools(internal val context: Context) : ToolExecutor 
         val webView: WebView,
         val sessionName: String?,
         val customUserAgent: String? = null,
-        val createdAt: Long = System.currentTimeMillis()
+        val createdAt: Long = System.currentTimeMillis(),
+        val openerSessionId: String? = null,
     ) {
+        val navigationPolicy = BrowserNavigationPolicy()
         @Volatile var currentUrl: String = "about:blank"
         @Volatile var pageTitle: String = ""
         @Volatile var pageLoaded: Boolean = false

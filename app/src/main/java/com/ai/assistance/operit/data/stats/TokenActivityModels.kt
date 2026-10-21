@@ -151,7 +151,8 @@ object TokenActivityAggregator {
 
         // Hourly buckets are only meaningful for single-day views (24 bars). Keep the
         // range short to avoid wasteful computation for weekly/monthly/yearly ranges.
-        val hourly = if (dayCount <= 2 && hourTotals.isNotEmpty()) {
+        // 空日期也保留完整小时轴，避免零用量时二十四个时间刻度一起消失。
+        val hourly = if (dayCount <= 2) {
             val hourEntries = buildList {
                 var current = start.atStartOfDay()
                 val endExclusive = end.plusDays(1L).atStartOfDay()
