@@ -33,10 +33,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ai.assistance.operit.ui.features.settings.model.*
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceMenu
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.AIService
@@ -155,17 +156,27 @@ private fun serializeHeaderEntries(headers: List<Pair<String, String>>): String 
 }
 
 @SuppressLint("LocalContextGetResourceValueCall")
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ModelConfigScreen(
-    navigateToMnnModelDownload: (() -> Unit)? = null
+    navigateToMnnModelDownload: (() -> Unit)? = null,
+    initialTab: ModelWorkspaceTab = ModelWorkspaceTab.CONNECTION,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val configManager = remember { ModelConfigManager(context) }
     val functionalConfigManager = remember { FunctionalConfigManager(context) }
     val scope = rememberCoroutineScope()
-    val listState = rememberLazyListState()
+    var workspaceTab by rememberSaveable { mutableStateOf(initialTab) }
+    val connectionListState = rememberLazyListState()
+    val parameterListState = rememberLazyListState()
+    val functionListState = rememberLazyListState()
+    val listState = when (workspaceTab) {
+        ModelWorkspaceTab.CONNECTION -> connectionListState
+        ModelWorkspaceTab.PARAMETERS -> parameterListState
+        ModelWorkspaceTab.FUNCTIONS -> functionListState
+    }
+    var savingSelection by remember { mutableStateOf(false) }
     val saveCoordinator = rememberModelConfigSaveCoordinator()
     // 配置状态
     val configList = configManager.configListFlow.collectAsState(initial = listOf("default")).value
@@ -277,6 +288,25 @@ fun ModelConfigScreen(
         }
     }
 
+    // 标签、配置或分组切换前完成保存，避免输入区离开组合时取消尚未写入的操作。
+    fun afterSaving(change: () -> Unit) {
+        if (savingSelection) return
+        savingSelection = true
+        scope.launch {
+            try {
+                saveCoordinator.flushAll(showSuccess = false)
+                change()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.e("ModelConfigScreen", "切换模型工作区前保存失败", e)
+                showNotification(context.getString(R.string.save_failed) + ": " + e.message.orEmpty(), OKToast.Kind.Error)
+            } finally {
+                savingSelection = false
+            }
+        }
+    }
+
     // 主界面内容
     CustomScaffold(
     ) { paddingValues ->
@@ -303,96 +333,27 @@ fun ModelConfigScreen(
                         ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                stringResource(R.string.select_model_config),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-
-                            IconButton(
-                                    onClick = { showConfigOrganizer = true },
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Folder,
-                                        contentDescription = stringResource(
-                                            R.string.model_config_manage_organization
-                                        ),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                        }
-                        val selectedGroupName =
-                            configGroups.firstOrNull { it.id == selectedGroupId }?.name
-                                ?: stringResource(R.string.ungrouped)
-                        val selectedConfigName =
-                            configNameMap[selectedConfigId]
-                                ?: stringResource(R.string.no_config_selected)
-
-                        Text(
-                            text = stringResource(
-                                R.string.model_config_current_group,
-                                selectedGroupName
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = visibleConfigIds.isNotEmpty()) {
-                                    isDropdownExpanded = true
-                                },
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            tonalElevation = 0.5.dp,
-                        ) {
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 12.dp, horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        val selectedGroupName = configGroups.firstOrNull { it.id == selectedGroupId }?.name
+                            ?: stringResource(R.string.ungrouped)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { afterSaving { showConfigOrganizer = true } }) {
+                                Icon(Icons.Default.Folder, stringResource(R.string.model_config_manage_organization), tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Column(
+                                Modifier.weight(1f)
+                                    .clickable(enabled = visibleConfigIds.isNotEmpty() && !savingSelection) { isDropdownExpanded = true }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
-                                Text(
-                                    text = selectedConfigName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                @OptIn(ExperimentalAnimationApi::class)
-                                AnimatedContent(
-                                    targetState = isDropdownExpanded,
-                                    transitionSpec = {
-                                        fadeIn() + scaleIn() with fadeOut() + scaleOut()
-                                    }
-                                ) { expanded ->
-                                    Icon(
-                                        if (expanded) Icons.Default.KeyboardArrowUp
-                                        else Icons.Default.KeyboardArrowDown,
-                                        contentDescription = stringResource(R.string.select_config),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Text(selectedGroupName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(configNameMap[selectedConfigId] ?: stringResource(R.string.no_config_selected), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            }
+                            IconButton(onClick = { isDropdownExpanded = true }, enabled = visibleConfigIds.isNotEmpty() && !savingSelection) {
+                                Icon(Icons.Default.ExpandMore, stringResource(R.string.select_config))
                             }
                         }
-
                         FlowRow(
-                            modifier = Modifier.padding(top = 12.dp),
+                            modifier = Modifier.padding(top = 2.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -645,117 +606,60 @@ fun ModelConfigScreen(
                         }
                     }
 
-                    DropdownMenu(
-                        expanded = isDropdownExpanded,
-                        onDismissRequest = { isDropdownExpanded = false },
-                        modifier = Modifier.width(280.dp),
-                        properties = PopupProperties(focusable = true)
-                    ) {
-                        visibleConfigIds.forEach { configId ->
-                            val configName =
-                                configNameMap[configId] ?: stringResource(R.string.unnamed_profile)
-                            val isSelected = configId == selectedConfigId
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = configName,
-                                        fontWeight =
-                                            if (isSelected) FontWeight.SemiBold
-                                            else FontWeight.Normal,
-                                        color =
-                                            if (isSelected)
-                                                MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
-                                leadingIcon =
-                                    if (isSelected) {
-                                        {
-                                            Icon(
-                                                Icons.Default.Check,
-                                                contentDescription = stringResource(R.string.selected_desc),
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    } else null,
-                                onClick = {
-                                    selectedConfigId = configId
-                                    isDropdownExpanded = false
-                                },
-                                colors =
-                                    MenuDefaults.itemColors(
-                                        textColor =
-                                            if (isSelected)
-                                                MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.onSurface
-                                    ),
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            )
-
-                            if (configId != visibleConfigIds.lastOrNull()) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    thickness = 0.5.dp
-                                )
-                            }
-                        }
+                    if (isDropdownExpanded) {
+                        ModelWorkspaceChoiceDialog(
+                            title = stringResource(R.string.select_model_config),
+                            value = selectedConfigId,
+                            choices = visibleConfigIds.map { it to (configNameMap[it] ?: context.getString(R.string.unnamed_profile)) },
+                            onDismiss = { isDropdownExpanded = false },
+                            onSelected = { configId -> afterSaving { selectedConfigId = configId; isDropdownExpanded = false } },
+                        )
                     }
                 }
             }
 
-            selectedConfig.value?.let { config ->
-                item {
-                    ModelApiSettingsSection(
-                        config = config,
-                        configManager = configManager,
-                        saveCoordinator = saveCoordinator,
-                        showNotification = { message, kind -> showNotification(message, kind) },
-                        navigateToMnnModelDownload = navigateToMnnModelDownload
-                    )
-                }
-
-                item {
-                    ThinkingConfigurationsSection(
-                        config = config,
-                        configManager = configManager,
-                        saveCoordinator = saveCoordinator,
-                        showNotification = { message, kind -> showNotification(message, kind) }
-                    )
-                }
-
-                item {
-                    ModelParametersSection(
-                        config = config,
-                        configManager = configManager,
-                        showNotification = { message, kind -> showNotification(message, kind) }
-                    )
-                }
-
-                item {
-                    CustomHeadersSettingsSection(
-                        config = config,
-                        configManager = configManager,
-                        saveCoordinator = saveCoordinator,
-                        showNotification = { message, kind -> showNotification(message, kind) }
-                    )
-                }
-
-                item {
-                    ApiKeyPoolSettingsSection(
-                        config = config,
-                        configManager = configManager,
-                        saveCoordinator = saveCoordinator,
-                        keyAvailabilityTester = keyAvailabilityTester,
-                    )
-                }
-
-                item {
-                    AdvancedSettingsSection(
-                        config = config,
-                        configManager = configManager,
-                        showNotification = { message, kind -> showNotification(message, kind) }
-                    )
+            stickyHeader(key = "workspace-tabs") {
+                ModelWorkspaceTabs(selected = workspaceTab, onSelect = { tab ->
+                    if (workspaceTab != tab) afterSaving { workspaceTab = tab }
+                })
+            }
+            item(key = "workspace-editor:$selectedConfigId:$workspaceTab") {
+                // 同一页签的编辑器保持在一个组合内，滚动不会销毁正在编辑的分区。
+                key(selectedConfigId, workspaceTab) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (workspaceTab == ModelWorkspaceTab.FUNCTIONS) {
+                            ModelFunctionAssignments(currentConfigId = selectedConfigId, saveCoordinator = saveCoordinator)
+                        } else {
+                            selectedConfig.value?.takeIf { it.id == selectedConfigId }?.let { config ->
+                                when (workspaceTab) {
+                                    ModelWorkspaceTab.CONNECTION -> {
+                                        ModelApiSettingsSection(
+                                            config = config,
+                                            configManager = configManager,
+                                            saveCoordinator = saveCoordinator,
+                                            showNotification = ::showNotification,
+                                            navigateToMnnModelDownload = navigateToMnnModelDownload,
+                                            keyPoolContent = {
+                                                ApiKeyPoolSettingsSection(config, configManager, saveCoordinator, keyAvailabilityTester)
+                                            },
+                                        )
+                                        CustomHeadersSettingsSection(config, configManager, saveCoordinator, ::showNotification)
+                                    }
+                                    ModelWorkspaceTab.PARAMETERS -> {
+                                        ModelParametersSection(
+                                            config = config,
+                                            configManager = configManager,
+                                            saveCoordinator = saveCoordinator,
+                                            showNotification = ::showNotification,
+                                            thinkingContent = { ThinkingConfigurationsSection(config, configManager, saveCoordinator, ::showNotification) },
+                                        )
+                                        AdvancedSettingsSection(config, configManager, saveCoordinator, ::showNotification)
+                                    }
+                                    ModelWorkspaceTab.FUNCTIONS -> Unit
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -765,12 +669,14 @@ fun ModelConfigScreen(
                 summaries = configSummaries,
                 groups = configGroups,
                 selectedGroupId = selectedGroupId,
-                onGroupConfirmed = {
-                    selectedGroupId = it
-                    scope.launch { configManager.setSelectedConfigGroup(it) }
+                onGroupConfirmed = { groupId ->
+                    afterSaving {
+                        selectedGroupId = groupId
+                        scope.launch { configManager.setSelectedConfigGroup(groupId) }
+                    }
                 },
                 configManager = configManager,
-                onSelectConfig = { selectedConfigId = it },
+                onSelectConfig = { configId -> afterSaving { selectedConfigId = configId } },
                 onDismiss = { showConfigOrganizer = false },
                 showNotification = ::showNotification
             )
@@ -911,7 +817,6 @@ private fun ThinkingConfigurationsSection(
     var configurationError by remember(config.id, config.thinkingConfigurations) {
         mutableStateOf(parsedRules.exceptionOrNull()?.message)
     }
-    var sectionExpanded by rememberSaveable(config.id) { mutableStateOf(false) }
     var editingRuleIndex by rememberSaveable(config.id) { mutableStateOf<Int?>(null) }
     var editingRule by remember(config.id) { mutableStateOf<ThinkingRuleEditor?>(null) }
     val saveFailedText = stringResource(R.string.save_failed)
@@ -956,94 +861,71 @@ private fun ThinkingConfigurationsSection(
         onError = { e -> showNotification(e.message ?: saveFailedText, OKToast.Kind.Error) }
     )
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ModelWorkspaceSection(
+        title = stringResource(R.string.thinking_config_title),
+        subtitle = stringResource(R.string.thinking_config_subtitle),
+        stateKey = "thinking:${config.id}",
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable { sectionExpanded = !sectionExpanded },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.thinking_config_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(stringResource(R.string.thinking_config_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Icon(
-                    imageVector = if (sectionExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (sectionExpanded) "收起" else "展开",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            AnimatedVisibility(visible = sectionExpanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "$enabledRuleCount/${rules.size} 条启用 · $controlSummary",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    SettingsInfoBanner(text = stringResource(R.string.thinking_config_rule_order_hint))
-                    configurationError?.let { message ->
-                        Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    }
-                    if (rules.isEmpty()) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
-                        ) {
-                            Text("当前模型配置没有思考规则。", modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    } else {
-                        rules.forEachIndexed { index, rule ->
-                            ThinkingRulePreviewCard(
-                                index = index,
-                                totalCount = rules.size,
-                                rule = rule,
-                                onClick = {
-                                    editingRuleIndex = index
-                                    editingRule = rule
-                                },
-                                onMoveUp = {
-                                    if (index > 0) {
-                                        rules = rules.toMutableList().also {
-                                            val movedRule = it.removeAt(index)
-                                            it.add(index - 1, movedRule)
-                                        }
-                                    }
-                                },
-                                onMoveDown = {
-                                    if (index < rules.lastIndex) {
-                                        rules = rules.toMutableList().also {
-                                            val movedRule = it.removeAt(index)
-                                            it.add(index + 1, movedRule)
-                                        }
-                                    }
-                                },
-                            )
-                        }
-                    }
-                    TextButton(
-                        onClick = {
-                            editingRuleIndex = null
-                            editingRule = ThinkingRuleEditor(
-                                id = "custom-thinking-${rules.size + 1}",
-                                parameterLabel = "reasoning_effort"
-                            )
-                        },
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("添加思考配置")
-                    }
-                }
-            }
+    Text(
+        text = "$enabledRuleCount/${rules.size} 条启用 · $controlSummary",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    SettingsInfoBanner(text = stringResource(R.string.thinking_config_rule_order_hint))
+    configurationError?.let { message ->
+        Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+    }
+    if (rules.isEmpty()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
+        ) {
+            Text("当前模型配置没有思考规则。", modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    } else {
+        rules.forEachIndexed { index, rule ->
+            ThinkingRulePreviewCard(
+                index = index,
+                totalCount = rules.size,
+                rule = rule,
+                onClick = {
+                    editingRuleIndex = index
+                    editingRule = rule
+                },
+                onMoveUp = {
+                    if (index > 0) {
+                        rules = rules.toMutableList().also {
+                            val movedRule = it.removeAt(index)
+                            it.add(index - 1, movedRule)
+                        }
+                    }
+                },
+                onMoveDown = {
+                    if (index < rules.lastIndex) {
+                        rules = rules.toMutableList().also {
+                            val movedRule = it.removeAt(index)
+                            it.add(index + 1, movedRule)
+                        }
+                    }
+                },
+            )
+        }
+    }
+    TextButton(
+        onClick = {
+            editingRuleIndex = null
+            editingRule = ThinkingRuleEditor(
+                id = "custom-thinking-${rules.size + 1}",
+                parameterLabel = "reasoning_effort"
+            )
+        },
+        modifier = Modifier.align(Alignment.End)
+    ) {
+        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text("添加思考配置")
+    }
     }
 
     val currentEditingIndex = editingRuleIndex
@@ -1298,7 +1180,7 @@ private fun ThinkingChoiceField(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             }
         }
-        ExposedDropdownMenu(
+        ModelWorkspaceMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
@@ -2227,7 +2109,7 @@ private fun CustomHeadersSettingsSection(
                             }
                         }
 
-                        DropdownMenu(
+                        ModelWorkspaceMenu(
                             expanded = showHeaderPresetsMenu,
                             onDismissRequest = { showHeaderPresetsMenu = false }
                         ) {

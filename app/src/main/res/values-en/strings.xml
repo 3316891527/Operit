@@ -9212,4 +9212,33 @@
     <string name="oktoast_error">Error</string>
     <string name="chat_model_configuration_invalid_key">Invalid model configuration: no valid API key. Add a key or configure a usable key pool in Model and Parameter Configuration.</string>
     <string name="chat_model_configuration_missing_model">Invalid model configuration: model ID is empty. Select or enter a valid model in Model and Parameter Configuration.</string>
+
+    <!-- 模型工作区 -->
+    <string name="model_workspace_title">Model workspace</string>
+    <string name="model_workspace_subtitle">Connections, parameters and function assignments</string>
+    <string name="model_workspace_connection">Connection</string>
+    <string name="model_workspace_parameters">Parameters</string>
+    <string name="model_workspace_functions">Functions</string>
+    <string name="model_workspace_choose">Choose an action</string>
+    <string name="model_workspace_keys">API key management</string>
+    <string name="model_workspace_keys_hint">Manage a single key, the key pool and availability</string>
+    <string name="model_workspace_manage">Manage</string>
+    <string name="model_workspace_capabilities">Request capabilities</string>
+    <string name="model_workspace_streaming">Streaming output</string>
+    <string name="model_workspace_streaming_hint">Applies globally: show replies as they arrive; when off, wait for the complete reply</string>
+    <string name="model_workspace_generation_hint">Output length and basic generation settings</string>
+    <string name="model_workspace_sampling">Sampling and repetition</string>
+    <string name="model_workspace_sampling_hint">Temperature, sampling range and repetition penalties</string>
+    <string name="model_workspace_custom_hint">Custom request fields, types and values</string>
+    <string name="model_workspace_function_hint">Tap a function to assign a model and adjust its thinking preferences. Configurations follow the selected group above.</string>
+    <string name="model_workspace_all_functions">All functions</string>
+    <string name="model_workspace_current_functions">Current config</string>
+    <string name="model_workspace_no_functions">No functions are assigned to this configuration.</string>
+    <string name="model_workspace_reset_functions_hint">Reset all function assignments to defaults and leave the memory embedding model unconfigured.</string>
+    <string name="model_workspace_global">Global setting</string>
+    <string name="model_workspace_tool_call">Tool calling</string>
+    <string name="model_workspace_images">Images</string>
+    <string name="model_workspace_audio">Audio</string>
+    <string name="model_workspace_video">Video</string>
+    <string name="model_workspace_media_unavailable">Direct input unavailable for this provider</string>
 </resources>

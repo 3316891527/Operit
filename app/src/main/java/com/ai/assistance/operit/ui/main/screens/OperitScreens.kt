@@ -54,12 +54,12 @@ import com.ai.assistance.operit.ui.features.settings.screens.ChatBackupSettingsS
 import com.ai.assistance.operit.ui.features.settings.screens.ChatHistorySettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ContextSummarySettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ExternalHttpChatSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.FunctionalConfigScreen
 import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
 import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
 import com.ai.assistance.operit.ui.features.packages.market.account.GitHubAccountScreen
 
 import com.ai.assistance.operit.ui.features.settings.screens.LayoutAdjustmentSettingsScreen
+import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceTab
 import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ModelPromptsSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.TagMarketScreen
@@ -637,7 +637,6 @@ sealed class Screen(
                     navigateToGlobalDisplaySettings = { navigateTo(GlobalDisplaySettings) },
                     navigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
                     navigateToMemory = { navigateTo(MemoryBase) },
-                    navigateToFunctionalConfig = { navigateTo(FunctionalConfig) },
                     navigateToDataStorageManagement = { navigateTo(DataStorageManagement) },
                     navigateToChatHistorySettings = { navigateTo(ChatHistorySettings) },
                     navigateToChatBackupSettings = { navigateTo(ChatBackupSettings) },
@@ -849,7 +848,7 @@ sealed class Screen(
     }
 
     data object ModelConfig :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_model_config) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.model_workspace_title) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1018,7 +1017,7 @@ sealed class Screen(
     }
 
     data object FunctionalConfig :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_functional_config) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.model_workspace_title) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1029,9 +1028,9 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            FunctionalConfigScreen(
-                    onBackPressed = onGoBack,
-                    onNavigateToModelConfig = { navigateTo(ModelConfig) }
+            ModelConfigScreen(
+                navigateToMnnModelDownload = { navigateTo(MnnModelDownload) },
+                initialTab = ModelWorkspaceTab.FUNCTIONS,
             )
         }
     }

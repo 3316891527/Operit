@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceMenu
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
@@ -62,7 +63,7 @@ internal fun FunctionThinkingControls(
                             Text(label, style = MaterialTheme.typography.labelMedium)
                             Icon(Icons.Default.KeyboardArrowDown, stringResource(R.string.function_summary_thinking_level), Modifier.size(18.dp))
                         }
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        ModelWorkspaceMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                             mapping.options.forEach { option ->
                                 DropdownMenuItem(
                                     text = { Text(option.displayLabel) },

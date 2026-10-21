@@ -3,12 +3,10 @@ package com.ai.assistance.operit.ui.features.settings.sections
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,18 +23,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceMenu
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ParameterCategory
 import com.ai.assistance.operit.data.model.ParameterValueType
 import com.ai.assistance.operit.data.model.StandardModelParameters
-import com.ai.assistance.operit.data.preferences.ApiPreferences
+import com.ai.assistance.operit.ui.features.settings.ModelConfigSaveCoordinator
+import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveAction
+import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceSection
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -48,13 +48,26 @@ import kotlinx.serialization.json.Json
 fun ModelParametersSection(
         config: ModelConfigData,
         configManager: ModelConfigManager,
-        showNotification: (String, OKToast.Kind) -> Unit
+        saveCoordinator: ModelConfigSaveCoordinator,
+        showNotification: (String, OKToast.Kind) -> Unit,
+        thinkingContent: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var showAddParameterDialog by remember { mutableStateOf(false) }
 
     // 参数状态
-    var parameters by remember { mutableStateOf<List<ModelParameter<*>>>(emptyList()) }
+    var parameters by remember(config.id) { mutableStateOf<List<ModelParameter<*>>>(emptyList()) }
+    var initialized by remember(config.id) { mutableStateOf(false) }
+    val parameterSaveMutex = remember(config.id) { Mutex() }
+    suspend fun persistParameters() {
+        parameterSaveMutex.withLock {
+            if (initialized) configManager.updateParameters(config.id, parameters)
+        }
+    }
+    // 显式保存覆盖最新参数；切换页签时等待写入，避免组合协程取消导致最后一次修改丢失。
+    RegisterModelConfigSaveAction(saveCoordinator, "parameters:${config.id}") { _ ->
+        persistParameters()
+    }
 
     // 参数错误状态
     val parameterErrors = remember { mutableStateMapOf<String, String>() }
@@ -89,7 +102,7 @@ fun ModelParametersSection(
     val customParameterUpdatedText = stringResource(R.string.custom_parameter_updated)
 
     // 初始化参数
-    LaunchedEffect(config) {
+    LaunchedEffect(config.id) {
         val context = configManager.appContext
 
         val standardParams =
@@ -242,6 +255,7 @@ fun ModelParametersSection(
 
         // 更新参数列表
         parameters = paramList
+        initialized = true
     }
 
     // 更新参数值
@@ -279,7 +293,7 @@ fun ModelParametersSection(
                     }
                 }
         parameters = newParameters
-        scope.launch { configManager.updateParameters(config.id, newParameters) }
+        scope.launch { persistParameters() }
     }
 
     // 切换参数启用状态
@@ -317,7 +331,7 @@ fun ModelParametersSection(
                     }
                 }
         parameters = newParameters
-        scope.launch { configManager.updateParameters(config.id, newParameters) }
+        scope.launch { persistParameters() }
     }
 
     // 重置所有参数
@@ -371,7 +385,7 @@ fun ModelParametersSection(
                 parameters = resetParams
 
                 // 保存重置后的参数
-                configManager.updateParameters(config.id, resetParams)
+                persistParameters()
                 showNotification(parametersResetText, OKToast.Kind.Success)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -415,7 +429,7 @@ fun ModelParametersSection(
                         parameters = updatedParameters
 
                         // 保存到存储
-                        configManager.updateParameters(config.id, updatedParameters)
+                        persistParameters()
 
                         showNotification(if (parameterToEdit != null) customParameterUpdatedText else customParameterAddedText, OKToast.Kind.Success)
                     } catch (e: Exception) {
@@ -434,223 +448,72 @@ fun ModelParametersSection(
         )
     }
 
-    // UI部分
-    var parametersExpanded by rememberSaveable { mutableStateOf(false) }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // 标题
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { parametersExpanded = !parametersExpanded }
-            ) {
-                Icon(
-                        imageVector = Icons.Default.Tune,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.model_parameters_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                        imageVector = if (parametersExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (parametersExpanded) stringResource(id = R.string.model_config_collapse) else stringResource(id = R.string.model_config_expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            AnimatedVisibility(
-                    visible = parametersExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // 参数描述
-                    Text(
-                        text = stringResource(R.string.parameters_description),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    val parameterTabs = listOf(
-                            ParameterTab(
-                                    id = "generation",
-                                    title = stringResource(R.string.generation_parameters),
-                                    icon = Icons.Default.AutoFixHigh,
-                                    category = ParameterCategory.GENERATION
-                            ),
-                            ParameterTab(
-                                    id = "creativity",
-                                    title = stringResource(R.string.creativity_parameters),
-                                    icon = Icons.Default.Lightbulb,
-                                    category = ParameterCategory.CREATIVITY
-                            ),
-                            ParameterTab(
-                                    id = "repetition",
-                                    title = stringResource(R.string.repetition_parameters),
-                                    icon = Icons.Default.Repeat,
-                                    category = ParameterCategory.REPETITION
-                            ),
-                            ParameterTab(
-                                    id = "custom",
-                                    title = customParametersSectionText,
-                                    icon = Icons.Default.Settings,
-                                    category = ParameterCategory.OTHER,
-                                    isCustom = true
-                            )
-                    )
-
-                    var selectedTabIndex by remember(config.id) { mutableStateOf(0) }
-
-                    ScrollableTabRow(
-                            selectedTabIndex = selectedTabIndex,
-                            edgePadding = 0.dp,
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                            indicator = { tabPositions ->
-                                TabRowDefaults.SecondaryIndicator(
-                                        Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                                        color = MaterialTheme.colorScheme.primary
-                                )
+    // 参数状态保留在折叠区外；各区只负责呈现，不改变现有参数数据格式。
+    @Composable
+    fun ParameterList(items: List<ModelParameter<*>>, emptyMessage: String) {
+        if (items.isEmpty()) {
+            ParametersEmptyState(message = emptyMessage)
+        } else {
+            items.forEach { parameter ->
+                key(parameter.id) {
+                    ParameterItem(
+                        parameter = parameter,
+                        onValueChange = { updateParameterValue(parameter, it) },
+                        onToggle = { toggleParameter(parameter, it) },
+                        onEditClick = {
+                            if (parameter.isCustom) parameterToEdit = modelParameterToCustomParameterData(parameter)
+                        },
+                        onDeleteClick = {
+                            if (parameter.isCustom) {
+                                val updated = parameters.filterNot { it.id == parameter.id }
+                                parameters = updated
+                                scope.launch { persistParameters() }
                             }
-                    ) {
-                        parameterTabs.forEachIndexed { index, tab ->
-                            Tab(
-                                    selected = selectedTabIndex == index,
-                                    onClick = { selectedTabIndex = index },
-                                    text = {
-                                        Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                    imageVector = tab.icon,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(16.dp)
-                                            )
-                                            Text(
-                                                    text = tab.title,
-                                                    style = MaterialTheme.typography.labelLarge
-                                            )
-                                        }
-                                    }
-                            )
-                        }
-                    }
-
-                    Crossfade(targetState = parameterTabs[selectedTabIndex].id, modifier = Modifier.fillMaxWidth()) { tabId ->
-                        val currentTab = parameterTabs.first { it.id == tabId }
-                        val displayedParams =
-                                when {
-                                    currentTab.isCustom -> customParams
-                                    currentTab.category == ParameterCategory.GENERATION -> generationParams
-                                    currentTab.category == ParameterCategory.CREATIVITY -> creativityParams
-                                    currentTab.category == ParameterCategory.REPETITION -> repetitionParams
-                                    else -> emptyList()
-                                }
-
-                        if (displayedParams.isEmpty()) {
-                            ParametersEmptyState(
-                                    message =
-                                            if (currentTab.isCustom)
-                                                stringResource(R.string.parameters_empty_custom)
-                                            else
-                                                stringResource(R.string.parameters_empty_category)
-                            )
-                        } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                displayedParams.forEach { parameter ->
-                                    ParameterItem(
-                                            parameter = parameter,
-                                            onValueChange = { newValue ->
-                                                updateParameterValue(parameter, newValue)
-                                            },
-                                            onToggle = { isEnabled -> toggleParameter(parameter, isEnabled) },
-                                            onEditClick = {
-                                                if (parameter.isCustom) {
-                                                    parameterToEdit =
-                                                            modelParameterToCustomParameterData(parameter)
-                                                }
-                                            },
-                                            onDeleteClick = {
-                                                if (parameter.isCustom) {
-                                                    scope.launch {
-                                                        val updatedParameters =
-                                                                parameters.filterNot { it.id == parameter.id }
-                                                        parameters = updatedParameters
-                                                        configManager.updateParameters(
-                                                                config.id,
-                                                                updatedParameters
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            error = parameterErrors[parameter.id],
-                                            onErrorChange = { error ->
-                                                if (error != null) {
-                                                    parameterErrors[parameter.id] = error
-                                                } else {
-                                                    parameterErrors.remove(parameter.id)
-                                                }
-                                            }
-                                    )
-
-                                    if (parameter.apiName == "temperature") {
-                                        TemperatureRecommendationRow()
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 操作按钮
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(
-                            onClick = { resetParameters() },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(resetParametersText)
-                        }
-                        
-                        Button(
-                            onClick = { showAddParameterDialog = true },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(addCustomParameterText)
-                        }
-                    }
+                        },
+                        error = parameterErrors[parameter.id],
+                        onErrorChange = { error ->
+                            if (error == null) parameterErrors.remove(parameter.id) else parameterErrors[parameter.id] = error
+                        },
+                    )
+                    if (parameter.apiName == "temperature") TemperatureRecommendationRow()
                 }
             }
         }
     }
+    Column {
+        ModelWorkspaceSection(
+            title = stringResource(R.string.generation_parameters),
+            subtitle = stringResource(R.string.model_workspace_generation_hint),
+            stateKey = "generation:${config.id}",
+        ) {
+            ParameterList(generationParams, stringResource(R.string.parameters_empty_category))
+        }
+        thinkingContent()
+        ModelWorkspaceSection(
+            title = stringResource(R.string.model_workspace_sampling),
+            subtitle = stringResource(R.string.model_workspace_sampling_hint),
+            stateKey = "sampling:${config.id}",
+        ) {
+            ParameterList(creativityParams + repetitionParams, stringResource(R.string.parameters_empty_category))
+        }
+        ModelWorkspaceSection(
+            title = customParametersSectionText,
+            subtitle = stringResource(R.string.model_workspace_custom_hint),
+            stateKey = "custom:${config.id}",
+        ) {
+            ParameterList(customParams, stringResource(R.string.parameters_empty_custom))
+            TextButton(onClick = { showAddParameterDialog = true }) {
+                Icon(Icons.Default.Add, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(addCustomParameterText)
+            }
+        }
+        TextButton(onClick = { resetParameters() }, modifier = Modifier.align(Alignment.End)) {
+            Text(resetParametersText)
+        }
+    }
 }
-
-// Helper function to convert CustomParameterData to ModelParameter<*>
+// 自定义参数与原数据模型间的转换继续沿用现有实现。
 private fun convertCustomParameterDataToModelParameter(
     customParam: com.ai.assistance.operit.data.model.CustomParameterData
 ): ModelParameter<*> {
@@ -864,7 +727,7 @@ private fun AddCustomParameterDialog(
                             .menuAnchor()
                             .fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
+                    ModelWorkspaceMenu(
                         expanded = valueTypeExpanded,
                         onDismissRequest = { valueTypeExpanded = false }
                     ) {
@@ -996,7 +859,7 @@ private fun AddCustomParameterDialog(
                             .menuAnchor()
                             .fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
+                    ModelWorkspaceMenu(
                         expanded = categoryExpanded,
                         onDismissRequest = { categoryExpanded = false }
                     ) {
@@ -1130,14 +993,6 @@ private fun ParameterCategory.toDisplayString(): String {
         ParameterCategory.OTHER -> stringResource(R.string.other_parameters)
     }
 }
-
-private data class ParameterTab(
-        val id: String,
-        val title: String,
-        val icon: ImageVector,
-        val category: ParameterCategory?,
-        val isCustom: Boolean = false
-)
 
 @Composable
 private fun ParametersEmptyState(message: String) {
