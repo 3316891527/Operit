@@ -1042,7 +1042,7 @@ class ConversationService(
         if (waifuEnableEmoticons) {
             // 动态获取当前可用的表情分组
             val availableCategories = try {
-                customEmojiRepository.initializeBuiltinEmojis(activePrompt)
+                customEmojiRepository.initializeStorage()
                 customEmojiRepository.getAllCategories(activePrompt).first()
             } catch (e: Exception) {
                 com.ai.assistance.operit.util.AppLogger.e("ConversationService", "获取表情分组失败", e)

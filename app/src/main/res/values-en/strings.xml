@@ -4932,11 +4932,6 @@
     <string name="category_delete_failed">Deletion failed, see logs for details</string>
     <string name="category_already_exists">Category already exists</string>
     <string name="invalid_category_name">Category name can only contain lowercase letters, numbers, and underscores</string>
-    <string name="emoji_reset_success">Reset to default emojis</string>
-    <string name="emoji_reset_failed">Reset failed: %1$s</string>
-    <string name="reset_to_default_emoji">Reset to Default Emojis</string>
-    <string name="reset_emoji_warning">This action will delete all custom emojis and restore to default emojis. This action cannot be undone, are you sure you want to continue?</string>
-    <string name="confirm_reset_emoji">Confirm Reset</string>
     <string name="tap_button_add_emoji">Tap the button in the bottom right corner to add emojis</string>
     <string name="emoji_preview">Emoji Preview</string>
     <string name="create_group">Create Group</string>
@@ -9447,4 +9442,5 @@
     <string name="chat_batch_move_message">Move %1$d chats to a location below. Character bindings and archive status are preserved.</string>
     <string name="chat_batch_move_success">Moved %1$d chats</string>
     <string name="chat_batch_move_failed">Move failed. Check the selected chats and destination folder, then try again.</string>
+    <string name="emoji_create_category_first">Create a group before adding emojis</string>
 </resources>

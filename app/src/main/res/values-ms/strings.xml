@@ -4065,12 +4065,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="mcp_plugin_detail_title">Butiran Plugin</string>
     <string name="mcp_plugin_author">Pengarang: %1$s</string>
     <string name="mcp_plugin_shared_by">Dikongsi oleh: %1$s</string>
-
-    <string name="emoji_reset_success">Telah ditetapkan semula kepada emoji lalai</string>
-    <string name="emoji_reset_failed">Tetapan semula gagal: %1$s</string>
-    <string name="reset_to_default_emoji">Tetapkan semula kepada emoji lalai</string>
-    <string name="reset_emoji_warning">Tindakan ini akan memadam semua emoji tersuai dan memulihkan kepada emoji lalai. Tindakan ini tidak boleh dibatalkan, adakah anda pasti ingin meneruskan?</string>
-    <string name="confirm_reset_emoji">Sahkan tetapan semula</string>
     <string name="tap_button_add_emoji">Ketik butang di sudut kanan bawah untuk menambah emoji</string>
     <string name="emoji_preview">Pratonton emoji</string>
     <string name="create_group">Buat kumpulan</string>
@@ -8499,4 +8493,5 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="chat_batch_move_message">Pindahkan %1$d sembang ke lokasi di bawah. Ikatan watak dan status arkib dikekalkan.</string>
     <string name="chat_batch_move_success">%1$d sembang dipindahkan</string>
     <string name="chat_batch_move_failed">Gagal memindahkan. Semak sembang dan folder destinasi, kemudian cuba lagi.</string>
+    <string name="emoji_create_category_first">Cipta kumpulan sebelum menambah emoji</string>
 </resources>

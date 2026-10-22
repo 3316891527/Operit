@@ -4974,11 +4974,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="category_delete_failed">Ștergerea a eșuat; pentru detalii, consultați jurnalul</string>
     <string name="category_already_exists">Categoria există deja</string>
     <string name="invalid_category_name">Numele categoriei poate conține doar litere mici, cifre și linii de subliniere</string>
-    <string name="emoji_reset_success">A fost resetat la emoji-ul implicit</string>
-    <string name="emoji_reset_failed">Eșecul resetării: %1$s</string>
-    <string name="reset_to_default_emoji">Resetare la emoticoanele implicite</string>
-    <string name="reset_emoji_warning">Această acțiune va șterge toate emoticoanele personalizate și va restabili emoticoanele implicite. Această acțiune este ireversibilă. Sunteți sigur că doriți să continuați?</string>
-    <string name="confirm_reset_emoji">Confirmare resetare</string>
     <string name="tap_button_add_emoji">Fă clic pe butonul din colțul din dreapta jos pentru a adăuga o emoție</string>
     <string name="emoji_preview">Previzualizare emoji</string>
     <string name="create_group">Crearea unui grup</string>
@@ -9092,4 +9087,5 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="chat_batch_move_message">Mută %1$d conversații într-o locație de mai jos. Asocierile de personaje și starea arhivării se păstrează.</string>
     <string name="chat_batch_move_success">%1$d conversații mutate</string>
     <string name="chat_batch_move_failed">Mutarea a eșuat. Verifică conversațiile selectate și dosarul destinație, apoi încearcă din nou.</string>
+    <string name="emoji_create_category_first">Creează un grup înainte de a adăuga emojiuri</string>
 </resources>

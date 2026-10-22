@@ -4187,11 +4187,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="category_delete_failed">Penghapusan gagal, lihat log untuk detail</string>
     <string name="category_already_exists">Kategori sudah ada</string>
     <string name="invalid_category_name">Nama kategori hanya boleh berisi huruf kecil, angka, dan garis bawah</string>
-    <string name="emoji_reset_success">Telah direset ke emoji default</string>
-    <string name="emoji_reset_failed">Reset gagal: %1$s</string>
-    <string name="reset_to_default_emoji">Reset ke Emoji Default</string>
-    <string name="reset_emoji_warning">Tindakan ini akan menghapus semua emoji kustom dan mengembalikan ke emoji default. Tindakan ini tidak dapat dibatalkan, yakin ingin melanjutkan?</string>
-    <string name="confirm_reset_emoji">Konfirmasi Reset</string>
     <string name="tap_button_add_emoji">Klik tombol di kanan bawah untuk menambahkan emoji</string>
     <string name="emoji_preview">Pratinjau Emoji</string>
     <string name="create_group">Buat Grup</string>
@@ -8499,4 +8494,5 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="chat_batch_move_message">Pindahkan %1$d obrolan ke lokasi di bawah. Ikatan karakter dan status arsip tetap sama.</string>
     <string name="chat_batch_move_success">%1$d obrolan dipindahkan</string>
     <string name="chat_batch_move_failed">Gagal memindahkan. Periksa obrolan dan folder tujuan, lalu coba lagi.</string>
+    <string name="emoji_create_category_first">Buat grup sebelum menambahkan emoji</string>
 </resources>

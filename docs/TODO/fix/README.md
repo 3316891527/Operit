@@ -48,6 +48,7 @@
 - [插件页面生命周期与聊天草稿](plugin-page-lifecycle-and-drafts/index.md) · `plugin-page-lifecycle-and-drafts`
 - [断网中断消息保留修复](preserve_interrupted_ai_output_20260814/index.md) · `preserve_interrupted_ai_output_20260814`
 - [Publish Asset Source Selector](publish_asset_source_selector_20260729/index.md) · `publish_asset_source_selector_20260729`
+- [移除内置表情与恢复默认](remove-builtin-emoji/index.md) · `remove-builtin-emoji`
 - [预编译删除思考正则](remove_thinking_regex_anr_20260913/index.md) · `remove_thinking_regex_anr_20260913`
 - [替换资源后的私有文件清理](replaced-resource-cleanup/index.md) · `replaced-resource-cleanup`
 - [请求终止错误传播与重试规则](request-error-feedback/index.md) · `request-error-feedback`

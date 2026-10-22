@@ -1160,4 +1160,5 @@
     <string name="chat_batch_move_message">%1$d 件のチャットの移動先を選んでください。キャラクターの関連付けとアーカイブ状態は保持します。</string>
     <string name="chat_batch_move_success">%1$d 件のチャットを移動しました</string>
     <string name="chat_batch_move_failed">移動できませんでした。選択したチャットと移動先を確認して再試行してください。</string>
+    <string name="emoji_create_category_first">絵文字を追加する前にグループを作成してください</string>
 </resources>

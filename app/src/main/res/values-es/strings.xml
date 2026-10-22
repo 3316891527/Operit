@@ -4118,11 +4118,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="category_delete_failed">Error al eliminar, consulta el registro para más detalles</string>
     <string name="category_already_exists">La categoría ya existe</string>
     <string name="invalid_category_name">El nombre de la categoría solo puede contener letras minúsculas, números y guiones bajos</string>
-    <string name="emoji_reset_success">Restablecido a emoji predeterminado</string>
-    <string name="emoji_reset_failed">Error al restablecer: %1$s</string>
-    <string name="reset_to_default_emoji">Restablecer a emoji predeterminado</string>
-    <string name="reset_emoji_warning">Esta acción eliminará todos los emojis personalizados y los restaurará a los predeterminados. Esta operación no se puede deshacer. ¿Estás seguro de continuar?</string>
-    <string name="confirm_reset_emoji">Confirmar restablecimiento</string>
     <string name="tap_button_add_emoji">Toca el botón en la esquina inferior derecha para añadir un emoji</string>
     <string name="emoji_preview">Vista previa del emoji</string>
     <string name="create_group">Crear grupo</string>
@@ -8567,4 +8562,5 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="chat_batch_move_message">Mueve %1$d chats a una ubicación de abajo. Se conservan los vínculos de personaje y el estado de archivo.</string>
     <string name="chat_batch_move_success">Se movieron %1$d chats</string>
     <string name="chat_batch_move_failed">No se pudo mover. Revisa los chats seleccionados y la carpeta de destino e inténtalo de nuevo.</string>
+    <string name="emoji_create_category_first">Crea un grupo antes de añadir emojis</string>
 </resources>
