@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.*
@@ -57,8 +58,10 @@ internal fun ChatBatchActionBar(
     containerColor: Color,
     contentColor: Color,
     onAction: (ChatBatchAction) -> Unit,
+    onMove: () -> Unit,
+    moving: Boolean,
 ) {
-    val busy = progress != null
+    val busy = progress != null || moving
     val enabled = selectedChats.isNotEmpty() && !busy
     val unlock = selectedChats.isNotEmpty() && selectedChats.all { it.locked }
     Surface(
@@ -79,6 +82,8 @@ internal fun ChatBatchActionBar(
                     stringResource(if (unlock) R.string.unlock_chat else R.string.lock_chat), enabled) {
                     onAction(if (unlock) ChatBatchAction.UNLOCK else ChatBatchAction.LOCK)
                 }
+                ChatBatchButton(Modifier.weight(1f), Icons.Default.DriveFileMove,
+                    stringResource(R.string.chat_batch_move), enabled, onMove)
                 ChatBatchButton(Modifier.weight(1f), Icons.Default.Delete, stringResource(R.string.delete),
                     enabled && selectedChats.any { !it.locked }) { onAction(ChatBatchAction.DELETE) }
             }

@@ -26,7 +26,6 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.CustomEmoji
-import com.ai.assistance.operit.data.preferences.CustomEmojiPreferences
 import com.ai.assistance.operit.ui.features.settings.viewmodels.CustomEmojiViewModel
 import kotlinx.coroutines.launch
 
@@ -54,7 +53,10 @@ fun CustomEmojiManagementScreen(
     var showDeleteCategoryDialog by remember { mutableStateOf(false) }
     var showDeleteEmojiDialog by remember { mutableStateOf<CustomEmoji?>(null) }
     var showImagePreview by remember { mutableStateOf<Uri?>(null) }
-    var showResetDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedCategory) {
+        showDeleteCategoryDialog = false
+    }
 
     // 图片选择器
     // ACTION_OPEN_DOCUMENT with EXTRA_ALLOW_MULTIPLE keeps the per-URI grant of
@@ -79,7 +81,13 @@ fun CustomEmojiManagementScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { imagePickerLauncher.launch(arrayOf("image/*")) }
+                onClick = {
+                    if (selectedCategory in categories) {
+                        imagePickerLauncher.launch(arrayOf("image/*"))
+                    } else {
+                        showCreateCategoryDialog = true
+                    }
+                }
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_emoji))
             }
@@ -136,54 +144,30 @@ fun CustomEmojiManagementScreen(
                 modifier = Modifier.padding(16.dp)
             )
             
-            // 分组管理和重置按钮
+            // 保留完整分组管理；没有分组时仅允许创建。
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左侧：分组管理按钮
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                OutlinedButton(
+                    onClick = { showCreateCategoryDialog = true },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    // 创建分组按钮
-                    OutlinedButton(
-                        onClick = { showCreateCategoryDialog = true },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.create_group),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.create_group), fontSize = 12.sp)
-                    }
-
-                    // 删除分组按钮
-                    OutlinedButton(
-                        onClick = { showDeleteCategoryDialog = true },
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete_group),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.delete_group), fontSize = 12.sp)
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.create_group),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.create_group), fontSize = 12.sp)
                 }
 
-                // 右侧：重置按钮
                 OutlinedButton(
-                    onClick = { showResetDialog = true },
+                    onClick = { showDeleteCategoryDialog = true },
+                    enabled = selectedCategory in categories && !isLoading,
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     ),
@@ -191,12 +175,12 @@ fun CustomEmojiManagementScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Restore,
-                        contentDescription = stringResource(R.string.reset_to_default),
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.delete_group),
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.reset_to_default), fontSize = 12.sp)
+                    Text(stringResource(R.string.delete_group), fontSize = 12.sp)
                 }
             }
 
@@ -207,7 +191,10 @@ fun CustomEmojiManagementScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.tap_button_add_emoji),
+                        text = stringResource(
+                            if (categories.isEmpty()) R.string.emoji_create_category_first
+                            else R.string.tap_button_add_emoji
+                        ),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -251,7 +238,7 @@ fun CustomEmojiManagementScreen(
     }
 
     // 删除类别确认对话框
-    if (showDeleteCategoryDialog) {
+    if (showDeleteCategoryDialog && selectedCategory in categories) {
         AlertDialog(
             onDismissRequest = { showDeleteCategoryDialog = false },
             title = { Text(stringResource(R.string.delete_category)) },
@@ -292,33 +279,6 @@ fun CustomEmojiManagementScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteEmojiDialog = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-
-    // 重置确认对话框
-    if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text(stringResource(R.string.reset_to_default_emoji)) },
-            text = { Text(stringResource(R.string.reset_emoji_warning)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.resetToDefault()
-                        showResetDialog = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text(stringResource(R.string.confirm_reset_emoji))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -385,13 +345,14 @@ private fun CategorySelector(
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
+        expanded = expanded && categories.isNotEmpty(),
+        onExpandedChange = { expanded = it && categories.isNotEmpty() },
         modifier = modifier
     ) {
         OutlinedTextField(
             value = selectedCategory,
             onValueChange = {},
+            enabled = categories.isNotEmpty(),
             readOnly = true,
             label = { Text(stringResource(R.string.select_category)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -402,25 +363,12 @@ private fun CategorySelector(
         )
 
         ExposedDropdownMenu(
-            expanded = expanded,
+            expanded = expanded && categories.isNotEmpty(),
             onDismissRequest = { expanded = false }
         ) {
             categories.forEach { category ->
                 DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(category)
-                            if (category !in CustomEmojiPreferences.BUILTIN_EMOTIONS) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    Icons.Default.Star,
-                                    contentDescription = stringResource(R.string.custom),
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    },
+                    text = { Text(category) },
                     onClick = {
                         onCategorySelected(category)
                         expanded = false
@@ -556,4 +504,3 @@ private fun CreateCategoryDialog(
         }
     )
 }
-

@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.packages.screens
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
@@ -144,7 +145,9 @@ fun PluginTabContent(
                         onClick = { onPluginClick(packageName) },
                         modifier = Modifier.fillMaxWidth()
                             .padding(vertical = if (glassEnabled) 3.dp else 0.dp)
-                            .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer)
+                            .liquidGlass(glassEnabled, RoundedCornerShape(12.dp), MaterialTheme.colorScheme.surfaceContainer,
+                                region = GlassRegion.PACKAGE_CARDS,
+                            )
                             .longPressDraggableHandle().then(
                             if (isDragging) Modifier.shadow(8.dp, RoundedCornerShape(12.dp)) else Modifier
                         ),

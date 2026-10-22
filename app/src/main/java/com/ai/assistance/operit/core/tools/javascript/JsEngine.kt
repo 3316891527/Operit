@@ -16,6 +16,7 @@ import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_MESSAGE_PROCESSING
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgApiCompatibility
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgApiVersion
+import com.ai.assistance.operit.core.tools.packTool.ToolPkgComposeDslRenderResult
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgRuntimeMonitor
 import com.ai.assistance.operit.ui.main.navigation.AppRouteDiscoveryGateway
 import com.ai.assistance.operit.ui.main.navigation.AppRouterGateway
@@ -57,6 +58,7 @@ class JsEngine(private val context: Context) {
         private const val DIRECT_SCRIPT_EXECUTION_FUNCTION = "__operit_run_inline_code__"
     }
 
+    private val pendingComposeActionIds = mutableMapOf<String, Int>()
     private val bitmapRegistry = ConcurrentHashMap<String, Bitmap>()
     private val binaryDataRegistry = ConcurrentHashMap<String, ByteArray>()
     private val javaObjectRegistry = ConcurrentHashMap<String, Any>()
@@ -886,7 +888,7 @@ class JsEngine(private val context: Context) {
 
             val buildExecutionScriptStartTime = if (shouldLogTiming) messageTimingNow() else 0L
             val paramsObject = JSONObject(effectiveParams)
-            val paramsJson = paramsObject.toString()
+            // 参数只随执行参数序列化一次，避免总结等大上下文为计时日志再复制一份 JSON。
             val safeTimeoutMillis = timeoutMillis?.let { if (it <= 0L) 1L else it }
             val safeTimeoutSec =
                 safeTimeoutMillis?.let { milliseconds ->
@@ -916,7 +918,7 @@ class JsEngine(private val context: Context) {
                 logMessageTiming(
                     stage = "toolpkg.jsEngine.buildExecutionScript",
                     startTimeMs = buildExecutionScriptStartTime,
-                    details = "function=$functionName, plugin=$timingPluginId, scriptLength=${script.length}, paramsLength=${paramsJson.length}, argsLength=${executionArgsJson.length}, directInvoke=true"
+                    details = "function=$functionName, plugin=$timingPluginId, scriptLength=${script.length}, paramsKeys=${paramsObject.length()}, argsLength=${executionArgsJson.length}, directInvoke=true"
                 )
             }
 
@@ -1147,6 +1149,42 @@ class JsEngine(private val context: Context) {
         )
     }
 
+    private fun retainPendingComposeAction(actionId: String) {
+        synchronized(pendingComposeActionIds) {
+            pendingComposeActionIds[actionId] = (pendingComposeActionIds[actionId] ?: 0) + 1
+        }
+    }
+
+    private fun releasePendingComposeAction(actionId: String) {
+        synchronized(pendingComposeActionIds) {
+            val count = pendingComposeActionIds[actionId] ?: return
+            if (count <= 1) pendingComposeActionIds.remove(actionId)
+            else pendingComposeActionIds[actionId] = count - 1
+        }
+    }
+
+    fun retainComposeDslActions(result: ToolPkgComposeDslRenderResult) {
+        val snapshot = result.actionSnapshot ?: return
+        val snapshotJson = JSONObject()
+            .put("contextId", snapshot.contextId)
+            .put("generation", snapshot.generation)
+            .put("counter", snapshot.counter)
+        val actionIdsJson = JSONArray(collectComposeDslActionIds(result))
+        // 回收与执行共用 QuickJS 队列，并在实际回收时读取待执行回调，避免界面切换抢先删除它们。
+        launchQuickJsEvaluation(
+            script = """
+                (function() {
+                    var bundle = globalThis.__operit_compose_bundle;
+                    if (!bundle) return;
+                    var ids = $actionIdsJson;
+                    var pending = JSON.parse(NativeInterface.getPendingComposeActionIds());
+                    bundle.retainActions($snapshotJson, ids.concat(pending));
+                })();
+            """.trimIndent(),
+            fileName = "quickjs/runtime/compose-action-retention.js"
+        )
+    }
+
     fun executeComposeDslAction(
             actionId: String,
             payload: Any? = null,
@@ -1164,14 +1202,19 @@ class JsEngine(private val context: Context) {
         if (payload != null) {
             params["__action_payload"] = payload
         }
-        return executeScriptFunction(
+        retainPendingComposeAction(normalizedActionId)
+        return try {
+            executeScriptFunction(
                 script = "",
                 functionName = "__operit_dispatch_compose_dsl_action",
                 params = params,
                 envOverrides = envOverrides,
                 onIntermediateResult = onIntermediateResult,
                 timeoutSec = timeoutSec
-        )
+            )
+        } finally {
+            releasePendingComposeAction(normalizedActionId)
+        }
     }
 
     fun rerenderComposeDslTree(
@@ -1205,39 +1248,45 @@ class JsEngine(private val context: Context) {
             return false
         }
 
+        // 在启动线程前登记，已排队但尚未进入 JS 的界面事件也必须保留回调。
+        retainPendingComposeAction(normalizedActionId)
         Thread {
-            val result =
-                try {
-                    executeComposeDslAction(
-                        actionId = normalizedActionId,
-                        payload = payload,
-                        runtimeOptions = runtimeOptions,
-                        envOverrides = envOverrides,
-                        onIntermediateResult = onIntermediateResult,
-                        timeoutSec = timeoutSec
-                    )
-                } catch (e: Exception) {
-                    val errorText = e.message?.trim().orEmpty().ifBlank { "compose action dispatch failed" }
-                    AppLogger.e(TAG, "dispatch compose action failed: actionId=$normalizedActionId, error=$errorText", e)
-                    ContextCompat.getMainExecutor(context).execute {
-                        onError?.invoke(errorText)
-                        onComplete?.invoke()
+            try {
+                val result =
+                    try {
+                        executeComposeDslAction(
+                            actionId = normalizedActionId,
+                            payload = payload,
+                            runtimeOptions = runtimeOptions,
+                            envOverrides = envOverrides,
+                            onIntermediateResult = onIntermediateResult,
+                            timeoutSec = timeoutSec
+                        )
+                    } catch (e: Exception) {
+                        val errorText = e.message?.trim().orEmpty().ifBlank { "compose action dispatch failed" }
+                        AppLogger.e(TAG, "dispatch compose action failed: actionId=$normalizedActionId, error=$errorText", e)
+                        ContextCompat.getMainExecutor(context).execute {
+                            onError?.invoke(errorText)
+                            onComplete?.invoke()
+                        }
+                        return@Thread
                     }
-                    return@Thread
-                }
 
-            val errorText = extractJsExecutionErrorMessage(result)
-            ContextCompat.getMainExecutor(context).execute {
-                if (errorText != null) {
-                    AppLogger.e(
-                        TAG,
-                        "dispatch compose action failed: actionId=$normalizedActionId, error=$errorText"
-                    )
-                    onError?.invoke(errorText)
-                } else if (result != null) {
-                    onFinalResult?.invoke(result)
+                val errorText = extractJsExecutionErrorMessage(result)
+                ContextCompat.getMainExecutor(context).execute {
+                    if (errorText != null) {
+                        AppLogger.e(
+                            TAG,
+                            "dispatch compose action failed: actionId=$normalizedActionId, error=$errorText"
+                        )
+                        onError?.invoke(errorText)
+                    } else if (result != null) {
+                        onFinalResult?.invoke(result)
+                    }
+                    onComplete?.invoke()
                 }
-                onComplete?.invoke()
+            } finally {
+                releasePendingComposeAction(normalizedActionId)
             }
         }.start()
 
@@ -2212,6 +2261,11 @@ class JsEngine(private val context: Context) {
         }
 
         @JavascriptInterface
+        fun getPendingComposeActionIds(): String = synchronized(pendingComposeActionIds) {
+            JSONArray(pendingComposeActionIds.keys.toList()).toString()
+        }
+
+        @JavascriptInterface
         fun javaNewInstance(className: String, argsJson: String): String {
             return JsJavaBridgeDelegates.newInstance(
                     className = className,
@@ -2516,14 +2570,12 @@ class JsEngine(private val context: Context) {
             }
             try {
                 ensureQuickJs()
-                val jsCode =
-                    JsNativeInterfaceDelegates.buildToolResultCallbackScript(
-                        callbackId = callbackId,
-                        result = result,
-                        isError = isError
-                    )
-                launchQuickJsEvaluation(
-                    script = jsCode,
+                val argsJson = buildToolResultCallbackArgs(callbackId, result, isError)
+                // 大结果只作为函数参数传递，不再生成包含结果正文的脚本源码。
+                launchQuickJsFunctionCall(
+                    functionName = TOOL_RESULT_CALLBACK_FUNCTION,
+                    argsJson = argsJson,
+                    callSite = "quickjs/runtime/tool-result.call",
                     onError = { e ->
                         AppLogger.e(TAG, "Error sending tool result to JavaScript: ${e.message}", e)
                     }
@@ -2533,21 +2585,18 @@ class JsEngine(private val context: Context) {
             }
         }
 
-        /** ToolPkg.ipc uses a JSON string envelope, so its callback must receive a string. */
+        /** ToolPkg.ipc 的 JSON 信封必须继续以字符串交给回调。 */
         private fun sendToolPkgIpcResult(callbackId: String, result: String, isError: Boolean) {
             if (!canScheduleQuickJsWork()) {
                 return
             }
             try {
                 ensureQuickJs()
-                val jsCode =
-                    JsNativeInterfaceDelegates.buildStringResultCallbackScript(
-                        callbackId = callbackId,
-                        result = result,
-                        isError = isError
-                    )
-                launchQuickJsEvaluation(
-                    script = jsCode,
+                val argsJson = buildStringResultCallbackArgs(callbackId, result, isError)
+                launchQuickJsFunctionCall(
+                    functionName = STRING_RESULT_CALLBACK_FUNCTION,
+                    argsJson = argsJson,
+                    callSite = "quickjs/runtime/string-result.call",
                     onError = { e ->
                         AppLogger.e(TAG, "Error sending ToolPkg.ipc result to JavaScript: ${e.message}", e)
                     }

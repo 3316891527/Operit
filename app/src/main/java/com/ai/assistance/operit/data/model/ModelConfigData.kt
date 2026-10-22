@@ -276,7 +276,8 @@ data class ModelConfigSummary(
 data class ModelConfigSelection(
         val allConfigs: List<ModelConfigSummary> = emptyList(),
         val groups: List<ModelConfigGroup> = emptyList(),
-        val selectedGroupId: String? = null
+        val selectedGroupId: String? = null,
+        val workspaceConfigId: String? = null,
 ) {
     val selectedGroup: ModelConfigGroup? = groups.firstOrNull { it.id == selectedGroupId }
     val availableConfigs: List<ModelConfigSummary> =

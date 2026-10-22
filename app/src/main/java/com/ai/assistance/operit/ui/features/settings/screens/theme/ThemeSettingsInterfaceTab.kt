@@ -8,11 +8,9 @@ import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsSideb
 import com.ai.assistance.operit.ui.features.settings.sections.glass.GlassSettingsSection
 
 @Composable
-internal fun ThemeSettingsInterfaceTab(
-    shared: ThemeSettingsShared,
-    cardColors: CardColors,
-) {
+internal fun ThemeSettingsInterfaceTab(shared: ThemeSettingsShared, cardColors: CardColors) {
     val values by shared.editorSession.values.collectAsState()
+    ThemeSettingsInputTab(shared = shared, cardColors = cardColors)
     ThemeSettingsSidebarSection(
         cardColors = cardColors,
         editorSession = shared.editorSession,

@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.preferences
 
+import com.ai.assistance.operit.data.preferences.layout.ChatLayoutSettings
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.data.preferences.glass.GlassThemePreferences
 
@@ -589,6 +590,18 @@ class UserPreferencesManager private constructor(private val context: Context) {
             preferences[KEY_SOFTWARE_IDENTITY] ?: SOFTWARE_IDENTITY_OPERIT
         }
 
+    // 全局布局聚合读取与原五项 Flow 使用同一份偏好，已有配置无需迁移。
+    val chatLayoutSettings: Flow<ChatLayoutSettings> =
+        context.userPreferencesDataStore.data.map { preferences ->
+            ChatLayoutSettings(
+                chatSettingsButtonEndPadding = preferences[CHAT_SETTINGS_BUTTON_END_PADDING] ?: 2f,
+                chatAreaHorizontalPadding = preferences[CHAT_AREA_HORIZONTAL_PADDING] ?: 16f,
+                aiMarkdownLineHeightMultiplier = preferences[AI_MARKDOWN_LINE_HEIGHT_MULTIPLIER] ?: 1f,
+                aiMarkdownLetterSpacing = preferences[AI_MARKDOWN_LETTER_SPACING] ?: 0f,
+                aiMarkdownParagraphSpacing = preferences[AI_MARKDOWN_PARAGRAPH_SPACING] ?: 12f,
+            )
+        }
+
     // 布局调整设置
     val chatSettingsButtonEndPadding: Flow<Float> =
         context.userPreferencesDataStore.data.map { preferences ->
@@ -657,6 +670,18 @@ class UserPreferencesManager private constructor(private val context: Context) {
             val trimmedColors = currentColors.take(14)
 
             preferences[RECENT_COLORS] = trimmedColors.joinToString(",")
+        }
+    }
+
+    /** 五项布局在同一次 DataStore 编辑中落盘，避免预览参数只保存一部分。 */
+    suspend fun saveChatLayoutSettings(settings: ChatLayoutSettings) {
+        settings.validate()
+        context.userPreferencesDataStore.edit { preferences ->
+            preferences[CHAT_SETTINGS_BUTTON_END_PADDING] = settings.chatSettingsButtonEndPadding
+            preferences[CHAT_AREA_HORIZONTAL_PADDING] = settings.chatAreaHorizontalPadding
+            preferences[AI_MARKDOWN_LINE_HEIGHT_MULTIPLIER] = settings.aiMarkdownLineHeightMultiplier
+            preferences[AI_MARKDOWN_LETTER_SPACING] = settings.aiMarkdownLetterSpacing
+            preferences[AI_MARKDOWN_PARAGRAPH_SPACING] = settings.aiMarkdownParagraphSpacing
         }
     }
 

@@ -10,7 +10,6 @@ import com.ai.assistance.operit.data.model.CustomEmoji
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
-import com.ai.assistance.operit.data.preferences.CustomEmojiPreferences
 import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,13 +63,13 @@ class CustomEmojiViewModel(context: Context) : ViewModel() {
             initialValue = ""
         )
 
-    private val _selectedCategory = MutableStateFlow(CustomEmojiPreferences.BUILTIN_EMOTIONS.first())
+    private val _selectedCategory = MutableStateFlow("")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     val categories: StateFlow<List<String>> = activePrompt
         .flatMapLatest { prompt ->
             flow {
-                repository.initializeBuiltinEmojis(prompt)
+                repository.initializeStorage()
                 emitAll(repository.getAllCategories(prompt))
             }
         }
@@ -103,9 +102,11 @@ class CustomEmojiViewModel(context: Context) : ViewModel() {
     init {
         viewModelScope.launch {
             categories.collect { currentCategories ->
-                val fallbackCategory = currentCategories.firstOrNull()
-                if (!fallbackCategory.isNullOrBlank() && _selectedCategory.value !in currentCategories) {
-                    _selectedCategory.value = fallbackCategory
+                // 空库或删除最后一个分组时清空选择，避免继续使用已删除的分组。
+                if (currentCategories.isEmpty()) {
+                    _selectedCategory.value = ""
+                } else if (_selectedCategory.value !in currentCategories) {
+                    _selectedCategory.value = currentCategories.first()
                 }
             }
         }
@@ -116,6 +117,10 @@ class CustomEmojiViewModel(context: Context) : ViewModel() {
     }
 
     fun addEmojis(category: String, uris: List<Uri>) {
+        if (category !in categories.value) {
+            _errorMessage.value = appContext.getString(R.string.emoji_create_category_first)
+            return
+        }
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -215,33 +220,11 @@ class CustomEmojiViewModel(context: Context) : ViewModel() {
         return repository.getEmojiUri(activePrompt.value, emoji)
     }
 
-    fun isCustomCategory(_category: String): Boolean {
-        return true
-    }
-
     fun clearErrorMessage() {
         _errorMessage.value = null
     }
 
     fun clearSuccessMessage() {
         _successMessage.value = null
-    }
-
-    fun resetToDefault() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-            _successMessage.value = null
-
-            try {
-                repository.resetToDefault(activePrompt.value)
-                _isLoading.value = false
-                _successMessage.value = appContext.getString(R.string.emoji_reset_success)
-            } catch (e: Exception) {
-                _isLoading.value = false
-                AppLogger.e(tag, "Failed to reset emojis", e)
-                _errorMessage.value = appContext.getString(R.string.emoji_reset_failed, e.message ?: "Unknown error")
-            }
-        }
     }
 }

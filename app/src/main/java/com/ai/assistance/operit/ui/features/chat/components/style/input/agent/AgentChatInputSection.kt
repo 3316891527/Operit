@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.agent
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -822,6 +823,7 @@ fun AgentChatInputSection(
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
                                 backgroundOpacity = chatInputOpacity,
+                                region = GlassRegion.INPUT,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
@@ -830,6 +832,7 @@ fun AgentChatInputSection(
                                 backgroundOpacity = chatInputOpacity,
                                 // 保留输入框原有透镜，避免共享默认值变化移除折射。
                                 enableLens = true,
+                                region = GlassRegion.INPUT,
                             )
                             .clip(inputCardShape)
                             .background(
@@ -1114,6 +1117,7 @@ fun AgentChatInputSection(
                                 enabled = inputWaterGlassEnabled,
                                 shape = inputCardShape,
                                 containerColor = inputLiquidGlassTint,
+                                region = GlassRegion.INPUT,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
@@ -1121,6 +1125,7 @@ fun AgentChatInputSection(
                                 containerColor = inputLiquidGlassTint,
                                 // 保留输入框原有透镜，避免共享默认值变化移除折射。
                                 enableLens = true,
+                                region = GlassRegion.INPUT,
                             )
                             .clip(inputCardShape)
                             .background(

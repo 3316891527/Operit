@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.main.layout
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.LocalFocusManager
@@ -265,6 +266,7 @@ fun PhoneLayout(
                                                 containerColor = drawerAppearance.containerColor,
                                                 // 侧栏保留已调整的低强度折射，聊天区域单独恢复原有效果。
                                                 subtleRefraction = true,
+                                            region = GlassRegion.SIDEBAR,
                                         )
                                         .zIndex(2f),
                         shape = drawerShape,

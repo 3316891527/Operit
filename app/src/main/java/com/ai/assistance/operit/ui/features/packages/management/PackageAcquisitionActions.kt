@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.packages.management
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,7 +44,9 @@ fun PackageAcquisitionActions(
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         FilledTonalButton(
             onClick = onMarketClick,
-            modifier = Modifier.weight(1f).heightIn(min = 48.dp).liquidGlass(glassEnabled, shape, marketColor),
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).liquidGlass(glassEnabled, shape, marketColor,
+                region = GlassRegion.PACKAGE_CARDS,
+            ),
             shape = shape,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
             colors = ButtonDefaults.filledTonalButtonColors(
@@ -57,7 +60,9 @@ fun PackageAcquisitionActions(
         }
         FilledTonalButton(
             onClick = onImportClick,
-            modifier = Modifier.weight(1f).heightIn(min = 48.dp).liquidGlass(glassEnabled, shape, addColor),
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).liquidGlass(glassEnabled, shape, addColor,
+                region = GlassRegion.PACKAGE_CARDS,
+            ),
             shape = shape,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
             colors = ButtonDefaults.filledTonalButtonColors(

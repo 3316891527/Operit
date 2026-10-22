@@ -939,3 +939,8 @@ dependencies {
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
 }
+
+// 向 JVM 回归提供明确的源码根目录，供 Compose DSL 运行时用例读取宿主脚本。
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    systemProperty("operit.repositoryRoot", rootProject.projectDir.absolutePath)
+}

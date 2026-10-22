@@ -28,6 +28,7 @@ import com.ai.assistance.operit.core.tools.packTool.ToolPkgComposeDslParser
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgComposeDslRenderResult
 import com.ai.assistance.operit.ui.common.composedsl.LocalComposeDslXmlStream
 import com.ai.assistance.operit.ui.common.composedsl.RenderToolPkgComposeDslNode
+import com.ai.assistance.operit.ui.common.composedsl.RetainToolPkgComposeDslActions
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.stream.Stream
 import java.util.concurrent.CopyOnWriteArrayList
@@ -554,6 +555,7 @@ object XmlRenderPluginRegistry {
             isRenderLoading = false
         }
 
+        RetainToolPkgComposeDslActions(jsEngine, renderResult)
         Box(modifier = modifier) {
             when {
                 renderResult?.tree != null -> {

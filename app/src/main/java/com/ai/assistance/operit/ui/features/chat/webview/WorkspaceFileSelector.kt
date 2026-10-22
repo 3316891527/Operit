@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.chat.webview
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import android.content.Context
 import androidx.compose.foundation.background
@@ -213,6 +214,7 @@ fun MentionSuggestionPanel(
                     enabled = panelWaterGlassEnabled,
                     shape = panelShape,
                     containerColor = panelGlassTint,
+                    region = GlassRegion.INPUT,
                 )
                 .liquidGlass(
                     enabled = panelLiquidGlassEnabled,
@@ -220,6 +222,7 @@ fun MentionSuggestionPanel(
                     containerColor = panelGlassTint,
                     // 保留提及面板原有透镜，避免共享默认值变化移除折射。
                     enableLens = true,
+                    region = GlassRegion.INPUT,
                 )
                 .clip(panelShape)
                 .background(

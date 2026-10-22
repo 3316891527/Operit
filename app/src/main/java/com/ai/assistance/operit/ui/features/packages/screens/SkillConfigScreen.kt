@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.packages.screens
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -1043,7 +1044,9 @@ private fun SkillListItem(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth()
-            .liquidGlass(glassEnabled, RoundedCornerShape(14.dp), MaterialTheme.colorScheme.surfaceContainer),
+            .liquidGlass(glassEnabled, RoundedCornerShape(14.dp), MaterialTheme.colorScheme.surfaceContainer,
+                region = GlassRegion.PACKAGE_CARDS,
+            ),
         shape = RoundedCornerShape(14.dp),
         color = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface,
         tonalElevation = if (glassEnabled) 0.dp else 1.dp

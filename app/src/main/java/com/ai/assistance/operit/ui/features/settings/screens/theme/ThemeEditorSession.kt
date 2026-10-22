@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.settings.screens.theme
 import android.net.Uri
 import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.data.preferences.layout.ChatLayoutSettings
 import java.io.File
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,12 +14,15 @@ internal class ThemeEditorSession(
     private val persistentPreferences: UserPreferencesManager,
     initialValues: ThemePreferenceValues,
     initialGlobalUserName: String,
+    initialLayout: ChatLayoutSettings,
 ) {
     private val _values = MutableStateFlow(initialValues)
     private val _hasUnsavedChanges = MutableStateFlow(false)
     private var baselineValues = initialValues
     private val _globalUserName = MutableStateFlow(initialGlobalUserName)
     private var baselineGlobalUserName = initialGlobalUserName
+    private val _layout = MutableStateFlow(initialLayout)
+    private var baselineLayout = initialLayout
     private var resetRequested = false
     private val stagedAssetUris = mutableSetOf<String>()
     private var inFlightSavedValues: ThemePreferenceValues? = null
@@ -26,6 +30,7 @@ internal class ThemeEditorSession(
 
     val values: StateFlow<ThemePreferenceValues> = _values.asStateFlow()
     val globalUserNameFlow: StateFlow<String> = _globalUserName.asStateFlow()
+    val layout: StateFlow<ChatLayoutSettings> = _layout.asStateFlow()
     val hasUnsavedChangesFlow: StateFlow<Boolean> = _hasUnsavedChanges.asStateFlow()
     val recentColorsFlow: Flow<List<Int>> = persistentPreferences.recentColorsFlow
 
@@ -35,6 +40,12 @@ internal class ThemeEditorSession(
     val currentGlobalUserName: String
         get() = _globalUserName.value
 
+    val currentLayout: ChatLayoutSettings
+        get() = _layout.value
+
+    val hasLayoutChanges: Boolean
+        get() = currentLayout != baselineLayout
+
     val hasThemeChanges: Boolean
         get() = resetRequested || currentValues != baselineValues
 
@@ -42,7 +53,7 @@ internal class ThemeEditorSession(
         get() = currentGlobalUserName != baselineGlobalUserName
 
     val hasUnsavedChanges: Boolean
-        get() = hasThemeChanges || hasGlobalUserNameChanges
+        get() = hasThemeChanges || hasGlobalUserNameChanges || hasLayoutChanges
 
     // 全局名字参与编辑会话的保存和放弃，但不进入角色主题字段。
     fun setGlobalUserName(value: String) {
@@ -50,6 +61,17 @@ internal class ThemeEditorSession(
         _globalUserName.value = value
         updateDirtyState()
     }
+
+    fun updateLayout(transform: (ChatLayoutSettings) -> ChatLayoutSettings) {
+        if (disposed) return
+        val updated = transform(currentLayout)
+        updated.validate()
+        if (updated == currentLayout) return
+        _layout.value = updated
+        updateDirtyState()
+    }
+
+    fun resetLayout() = updateLayout { ChatLayoutSettings() }
 
     val isResetRequested: Boolean
         get() = resetRequested
@@ -76,41 +98,51 @@ internal class ThemeEditorSession(
         update { current ->
             var updated = current.withBoolean(name, value)
             if (value) {
-                updated = when (name) {
-                    "chat_input_liquid_glass" ->
-                        updated.withBoolean("chat_input_water_glass", false)
+                updated =
+                    when (name) {
+                        "chat_input_liquid_glass" ->
+                            updated.withBoolean("chat_input_water_glass", false)
 
-                    "chat_input_water_glass" ->
-                        updated.withBoolean("chat_input_liquid_glass", false)
+                        "chat_input_water_glass" ->
+                            updated.withBoolean("chat_input_liquid_glass", false)
 
-                    "cursor_user_bubble_liquid_glass" ->
-                        updated.withBoolean("cursor_user_bubble_water_glass", false)
+                        "cursor_user_bubble_liquid_glass" ->
+                            updated.withBoolean("cursor_user_bubble_water_glass", false)
 
-                    "cursor_user_bubble_water_glass" ->
-                        updated.withBoolean("cursor_user_bubble_liquid_glass", false)
+                        "cursor_user_bubble_water_glass" ->
+                            updated.withBoolean("cursor_user_bubble_liquid_glass", false)
 
-                    "bubble_user_bubble_liquid_glass" ->
-                        updated
-                            .withBoolean("bubble_user_bubble_water_glass", false)
-                            .withBoolean("bubble_user_use_image", false)
+                        "bubble_user_bubble_liquid_glass" ->
+                            updated
+                                .withBoolean("bubble_user_bubble_water_glass", false)
+                                .withBoolean("bubble_user_use_image", false)
 
-                    "bubble_user_bubble_water_glass" ->
-                        updated
-                            .withBoolean("bubble_user_bubble_liquid_glass", false)
-                            .withBoolean("bubble_user_use_image", false)
+                        "bubble_user_bubble_water_glass" ->
+                            updated
+                                .withBoolean("bubble_user_bubble_liquid_glass", false)
+                                .withBoolean("bubble_user_use_image", false)
 
-                    "bubble_ai_bubble_liquid_glass" ->
-                        updated
-                            .withBoolean("bubble_ai_bubble_water_glass", false)
-                            .withBoolean("bubble_ai_use_image", false)
+                        "bubble_ai_bubble_liquid_glass" ->
+                            updated
+                                .withBoolean("bubble_ai_bubble_water_glass", false)
+                                .withBoolean("bubble_ai_use_image", false)
 
-                    "bubble_ai_bubble_water_glass" ->
-                        updated
-                            .withBoolean("bubble_ai_bubble_liquid_glass", false)
-                            .withBoolean("bubble_ai_use_image", false)
+                        "bubble_ai_bubble_water_glass" ->
+                            updated
+                                .withBoolean("bubble_ai_bubble_liquid_glass", false)
+                                .withBoolean("bubble_ai_use_image", false)
 
-                    else -> updated
-                }
+                        else -> updated
+                    }
+            }
+            if (value && (name == "chat_input_liquid_glass" || name == "chat_input_water_glass")) {
+                // 开启玻璃时同步启用透明背景，避免开关开启而输入框仍按不透明区域绘制。
+                updated = updated.withBoolean("chat_input_transparent", true)
+                val key =
+                    com.ai.assistance.operit.data.preferences.transparency
+                        .ThemeTransparencyPreferences
+                        .INPUT
+                if (updated.float(key) == 1f) updated = updated.copy(floats = updated.floats - key)
             }
             updated
         }
@@ -139,6 +171,7 @@ internal class ThemeEditorSession(
         deleteStagedAssets(stagedAssetUris.toSet())
         _values.value = baselineValues
         _globalUserName.value = baselineGlobalUserName
+        _layout.value = baselineLayout
         resetRequested = false
         updateDirtyState()
     }
@@ -147,12 +180,14 @@ internal class ThemeEditorSession(
         inFlightSavedValues = savedValues
     }
 
-    fun markSaved(savedValues: ThemePreferenceValues, savedGlobalUserName: String) {
+    fun markSaved(savedValues: ThemePreferenceValues, savedGlobalUserName: String, savedLayout: ChatLayoutSettings) {
         stagedAssetUris.removeAll(savedValues.strings.values)
         inFlightSavedValues = null
         baselineValues = savedValues
         // 保存期间继续输入的名字保留为草稿，只更新本次保存的基线。
         baselineGlobalUserName = savedGlobalUserName
+        // 只推进已完成保存的布局基线，保存期间继续调整的数值仍属于未保存草稿。
+        baselineLayout = savedLayout
         resetRequested = false
         if (disposed) {
             deleteStagedAssets(stagedAssetUris.toSet())

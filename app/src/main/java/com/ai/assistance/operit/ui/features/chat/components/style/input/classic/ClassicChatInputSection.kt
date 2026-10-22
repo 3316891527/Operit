@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.input.classic
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -281,6 +282,7 @@ fun ClassicChatInputSection(
                     shape = containerShape,
                     containerColor = MaterialTheme.colorScheme.surface,
                     backgroundOpacity = chatInputOpacity,
+                    region = GlassRegion.INPUT,
                 )
                 .liquidGlass(
                     enabled = inputLiquidGlassEnabled,
@@ -289,6 +291,7 @@ fun ClassicChatInputSection(
                     backgroundOpacity = chatInputOpacity,
                     // 保留输入框原有透镜，避免共享默认值变化移除折射。
                     enableLens = true,
+                    region = GlassRegion.INPUT,
                 )
                 .clip(containerShape)
                 .background(
@@ -321,9 +324,9 @@ fun ClassicChatInputSection(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
-                        
+
                         Spacer(modifier = Modifier.width(8.dp))
-                        
+
                         val previewText = message.content
                             .replace(Regex("<[^>]*>"), "") // 移除XML标签
                             .trim()
@@ -336,7 +339,7 @@ fun ClassicChatInputSection(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
-                        
+
                         IconButton(
                             onClick = { onClearReply?.invoke() },
                             modifier = Modifier.size(24.dp)
