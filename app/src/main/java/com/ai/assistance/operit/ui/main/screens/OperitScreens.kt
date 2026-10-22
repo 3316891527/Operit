@@ -1050,7 +1050,12 @@ sealed class Screen(
     }
 
     data object GlobalDisplaySettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_global_display_settings) {
+            Screen(
+                    navItem = NavItem.Settings,
+                    titleRes = R.string.screen_title_global_display_settings,
+                    // 本页自带标题栏，跨页淡出会让旧页面按已移除的宿主栏留白重新排版。
+                    participatesInCrossfadeTransition = false
+            ) {
         @Composable
         override fun Content(
                 navController: NavController,

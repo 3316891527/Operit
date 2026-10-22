@@ -226,7 +226,7 @@ class ConversationService(
             )
 
             data class Stage(
-                val matchers: List<(String) -> Boolean>,
+                val matchers: List<(CharSequence) -> Boolean>,
                 val progress: Float,
                 val message: String
             )
@@ -267,10 +267,10 @@ class ConversationService(
             var lastStageIndex = -1
             fun updateStageIfNeeded() {
                 if (lastStageIndex + 1 >= stages.size) return
-                val snapshot = contentBuilder.toString()
+                // 进度检索直接读取缓冲，长摘要逐块到达时不再反复复制全部已收内容。
                 while (lastStageIndex + 1 < stages.size) {
                     val next = stages[lastStageIndex + 1]
-                    val matched = next.matchers.any { it(snapshot) }
+                    val matched = next.matchers.any { it(contentBuilder) }
                     if (!matched) break
                     lastStageIndex += 1
                     ToolProgressBus.update(

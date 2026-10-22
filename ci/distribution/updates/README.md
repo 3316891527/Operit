@@ -45,4 +45,4 @@ Release 正文使用非空的可读文本或 Markdown，发布脚本拒绝将原
 
 新增发布脚本回归覆盖版本格式、基线选择、APK 包名与签名、原始记录复用和逐字节还原。客户端 JVM 用例覆盖同基础版本增量、跨基础版本完整包、数字版本排序、无更新、草稿与预发布过滤、资源配对和文案提取。
 
-本地仅进行源码、Python 语法、YAML 和 diff 检查，未运行构建或测试。上一版的验收记录见 [统一验收记录](../../../docs/TODO/chat-experience-release/index.md)，本版功能和待验收范围见 [本轮记录](../../../docs/TODO/chat-list-motion-and-oktoast/index.md)。`+7` 正式签名、APK 与补丁校验由发布工作流执行，其结果不与之前已通过的调试验收混记。
+本地仅进行源码、Python 语法、YAML 和 diff 检查，未运行构建或测试。上一版的验收记录见 [统一验收记录](../../../docs/TODO/chore/chat-experience-release/index.md)，本版功能和待验收范围见 [本轮记录](../../../docs/TODO/feat/chat-list-motion-and-oktoast/index.md)。`+7` 正式签名、APK 与补丁校验由发布工作流执行，其结果不与之前已通过的调试验收混记。

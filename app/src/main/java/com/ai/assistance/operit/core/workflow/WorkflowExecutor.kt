@@ -1335,8 +1335,10 @@ class WorkflowExecutor(private val context: Context) {
                     } else {
                         resultData.toString()
                     }
+                // 完整结果供下游节点使用，日志只保留预览，避免再次复制并持有整段输出。
+                val resultPreview = resultMessage.take(800) + if (resultMessage.length > 800) "…" else ""
                 runLogger.d(
-                    context.getString(R.string.workflow_log_node_success, node.name, resultMessage),
+                    context.getString(R.string.workflow_log_node_success, node.name, resultPreview),
                     nodeId = node.id,
                     nodeName = node.name
                 )

@@ -650,7 +650,13 @@ class WorkflowRepository(private val context: Context) {
         triggerNodeId = triggerNodeId,
         triggerExtras = triggerExtras
     ) { nodeId, state ->
-        AppLogger.d(TAG, "Node $nodeId state: $state")
+        // 先缩小成功结果再格式化日志，避免状态的 toString 复制完整节点输出。
+        val loggedState =
+            if (state is NodeExecutionState.Success) {
+                val preview = state.result.take(800) + if (state.result.length > 800) "…" else ""
+                state.copy(result = preview)
+            } else state
+        AppLogger.d(TAG, "Node $nodeId state: $loggedState")
     }
     
     /**

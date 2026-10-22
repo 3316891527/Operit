@@ -1480,6 +1480,7 @@ fun ToolPkgComposeDslToolScreen(
         }
     }
 
+    RetainToolPkgComposeDslActions(jsEngine, renderResult)
     CustomScaffold { paddingValues ->
         val rootNode = renderResult?.tree
         val rootOnLoadActionId =
@@ -1939,6 +1940,7 @@ fun ToolPkgComposeDslDialogHost(
         }
     }
 
+    RetainToolPkgComposeDslActions(jsEngine, renderResult)
     val rootNode = renderResult?.tree
     val rootOnLoadActionId =
         remember(rootNode) {
