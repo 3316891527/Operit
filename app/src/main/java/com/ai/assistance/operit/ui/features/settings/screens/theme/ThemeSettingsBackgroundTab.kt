@@ -1,7 +1,5 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
-
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -17,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsBackgroundSection
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.FileUtils
@@ -75,17 +74,18 @@ internal fun ThemeSettingsBackgroundTab(
         backgroundBlurRadiusInput = backgroundBlurRadius
     }
 
-    val runtime = rememberThemeSettingsBackgroundRuntime(
-        context = shared.context,
-        scope = shared.scope,
-        editorSession = editorSession,
-        backgroundImageUriInput = backgroundImageUriInput,
-        onBackgroundImageUriInputChange = { backgroundImageUriInput = it },
-        backgroundMediaTypeInput = backgroundMediaTypeInput,
-        onBackgroundMediaTypeInputChange = { backgroundMediaTypeInput = it },
-        videoBackgroundMutedInput = videoBackgroundMutedInput,
-        videoBackgroundLoopInput = videoBackgroundLoopInput,
-    )
+    val runtime =
+        rememberThemeSettingsBackgroundRuntime(
+            context = shared.context,
+            scope = shared.scope,
+            editorSession = editorSession,
+            backgroundImageUriInput = backgroundImageUriInput,
+            onBackgroundImageUriInputChange = { backgroundImageUriInput = it },
+            backgroundMediaTypeInput = backgroundMediaTypeInput,
+            onBackgroundMediaTypeInputChange = { backgroundMediaTypeInput = it },
+            videoBackgroundMutedInput = videoBackgroundMutedInput,
+            videoBackgroundLoopInput = videoBackgroundLoopInput,
+        )
 
     ThemeSettingsBackgroundSection(
         cardColors = cardColors,
@@ -138,21 +138,21 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                     .setBufferDurationsMs(5000, 10000, 500, 1000)
                     .setTargetBufferBytes(5 * 1024 * 1024)
                     .setPrioritizeTimeOverSizeThresholds(true)
-                    .build(),
+                    .build()
             )
             .build()
             .apply {
                 repeatMode = Player.REPEAT_MODE_ALL
                 volume = if (videoBackgroundMutedInput) 0f else 1f
-                playWhenReady = true
+                playWhenReady = false
 
-                if (!backgroundImageUriInput.isNullOrEmpty() &&
-                    backgroundMediaTypeInput == UserPreferencesManager.MEDIA_TYPE_VIDEO
+                if (
+                    !backgroundImageUriInput.isNullOrEmpty() &&
+                        backgroundMediaTypeInput == UserPreferencesManager.MEDIA_TYPE_VIDEO
                 ) {
                     try {
-                        val mediaItem = MediaItem.Builder()
-                            .setUri(Uri.parse(backgroundImageUriInput))
-                            .build()
+                        val mediaItem =
+                            MediaItem.Builder().setUri(Uri.parse(backgroundImageUriInput)).build()
                         setMediaItem(mediaItem)
                         prepare()
                     } catch (e: Exception) {
@@ -175,17 +175,18 @@ internal fun rememberThemeSettingsBackgroundRuntime(
     }
 
     LaunchedEffect(backgroundImageUriInput, backgroundMediaTypeInput) {
-        if (!backgroundImageUriInput.isNullOrEmpty() &&
-            backgroundMediaTypeInput == UserPreferencesManager.MEDIA_TYPE_VIDEO
+        if (
+            !backgroundImageUriInput.isNullOrEmpty() &&
+                backgroundMediaTypeInput == UserPreferencesManager.MEDIA_TYPE_VIDEO
         ) {
             try {
                 exoPlayer.stop()
                 exoPlayer.clearMediaItems()
                 exoPlayer.setMediaItem(
-                    MediaItem.Builder().setUri(Uri.parse(backgroundImageUriInput)).build(),
+                    MediaItem.Builder().setUri(Uri.parse(backgroundImageUriInput)).build()
                 )
                 exoPlayer.prepare()
-                exoPlayer.play()
+                exoPlayer.pause()
             } catch (e: Exception) {
                 AppLogger.e("ThemeSettings", "更新视频来源错误", e)
             }
@@ -214,7 +215,9 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                             AppLogger.d("ThemeSettings", "Background image saved to: $internalUri")
                             editorSession.registerStagedAsset(internalUri.toString())
                             onBackgroundImageUriInputChange(internalUri.toString())
-                            onBackgroundMediaTypeInputChange(UserPreferencesManager.MEDIA_TYPE_IMAGE)
+                            onBackgroundMediaTypeInputChange(
+                                UserPreferencesManager.MEDIA_TYPE_IMAGE
+                            )
                             editorSession.setOptionalString(
                                 "background_image_uri",
                                 internalUri.toString(),
@@ -224,25 +227,28 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                                 UserPreferencesManager.MEDIA_TYPE_IMAGE,
                             )
                             OKToast.success(
-                                context,
-                                context.getString(R.string.theme_image_saved),
-                                OKToast.LENGTH_SHORT,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.theme_image_saved),
+                                    OKToast.LENGTH_SHORT,
+                                )
+                                .show()
                         } else {
                             OKToast.error(
-                                context,
-                                context.getString(R.string.theme_copy_failed),
-                                OKToast.LENGTH_LONG,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.theme_copy_failed),
+                                    OKToast.LENGTH_LONG,
+                                )
+                                .show()
                         }
                     }
                 }
             } else if (result.error != null) {
                 OKToast.error(
-                    context,
-                    context.getString(R.string.theme_image_crop_failed, result.error!!.message),
-                    OKToast.LENGTH_LONG,
-                ).show()
+                        context,
+                        context.getString(R.string.theme_image_crop_failed, result.error!!.message),
+                        OKToast.LENGTH_LONG,
+                    )
+                    .show()
             }
         }
 
@@ -314,7 +320,7 @@ internal fun rememberThemeSettingsBackgroundRuntime(
     // photo pickers hide. See issue #1054.
     val mediaPickerLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
-                uri: Uri? ->
+            uri: Uri? ->
             if (uri != null) {
                 val isVideo = FileUtils.isVideoFile(context, uri)
 
@@ -323,10 +329,11 @@ internal fun rememberThemeSettingsBackgroundRuntime(
 
                     if (!isVideoSizeAcceptable) {
                         OKToast.warning(
-                            context,
-                            context.getString(R.string.theme_video_too_large),
-                            OKToast.LENGTH_LONG,
-                        ).show()
+                                context,
+                                context.getString(R.string.theme_video_too_large),
+                                OKToast.LENGTH_LONG,
+                            )
+                            .show()
                         return@rememberLauncherForActivityResult
                     }
 
@@ -338,7 +345,9 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                             AppLogger.d("ThemeSettings", "Background video saved to: $internalUri")
                             editorSession.registerStagedAsset(internalUri.toString())
                             onBackgroundImageUriInputChange(internalUri.toString())
-                            onBackgroundMediaTypeInputChange(UserPreferencesManager.MEDIA_TYPE_VIDEO)
+                            onBackgroundMediaTypeInputChange(
+                                UserPreferencesManager.MEDIA_TYPE_VIDEO
+                            )
                             editorSession.setOptionalString(
                                 "background_image_uri",
                                 internalUri.toString(),
@@ -348,16 +357,18 @@ internal fun rememberThemeSettingsBackgroundRuntime(
                                 UserPreferencesManager.MEDIA_TYPE_VIDEO,
                             )
                             OKToast.success(
-                                context,
-                                context.getString(R.string.theme_video_saved),
-                                OKToast.LENGTH_SHORT,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.theme_video_saved),
+                                    OKToast.LENGTH_SHORT,
+                                )
+                                .show()
                         } else {
                             OKToast.error(
-                                context,
-                                context.getString(R.string.theme_copy_failed),
-                                OKToast.LENGTH_LONG,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.theme_copy_failed),
+                                    OKToast.LENGTH_LONG,
+                                )
+                                .show()
                         }
                     }
                 } else {

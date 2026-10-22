@@ -1280,7 +1280,7 @@ object WaifuMessageProcessor {
                 customEmojiRepository?.let { repo ->
                     runBlocking {
                         val activePrompt = activePromptManager?.getActivePrompt() ?: return@runBlocking null
-                        repo.initializeBuiltinEmojis(activePrompt)
+                        repo.initializeStorage()
                         val emojis = repo.getEmojisForCategory(activePrompt, emotion).first()
                         if (emojis.isNotEmpty()) {
                             val randomEmoji = emojis.random()

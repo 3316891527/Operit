@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.chat.folders
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
@@ -204,7 +205,9 @@ internal fun FolderTreeList(
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(start = (8 + row.depth.coerceAtMost(4) * 12).dp)
                                     .padding(vertical = if (glassEnabled) 3.dp else 0.dp)
-                                    .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), glassColor)
+                                    .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), glassColor,
+                                        region = GlassRegion.CONVERSATION_LIST,
+                                    )
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(if (glassEnabled) Color.Transparent else rowColor)
                                     .heightIn(min = 44.dp)

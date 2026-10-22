@@ -78,6 +78,29 @@ class DisplayPreferencesManager private constructor(private val context: Context
 
         // 工具折叠设置（多个只读工具 / 多个任意工具 / 全部工具）
         private val KEY_TOOL_COLLAPSE_MODE = stringPreferencesKey("tool_collapse_mode")
+
+        /** 恢复本页显示选项，保留用户资料及不属于本页的键。 */
+        internal fun resetDisplaySettingsValues(preferences: MutablePreferences) {
+            preferences[KEY_SHOW_FPS_COUNTER] = false
+            preferences[KEY_ENABLE_REPLY_NOTIFICATION] = true
+            preferences[KEY_ENABLE_REPLY_NOTIFICATION_SOUND] = false
+            preferences[KEY_ENABLE_REPLY_NOTIFICATION_VIBRATION] = false
+            preferences[KEY_ENABLE_ENTER_TO_SEND] = false
+            preferences.remove(KEY_ENABLE_NAVIGATION_ANIMATION)
+            preferences.remove(KEY_ORIENTATION_RELOAD_POLICY)
+            preferences[KEY_START_WITH_NEW_CHAT] = false
+            // 用户资料由主题与头像入口管理，本页恢复默认时保留。
+            preferences[KEY_ENABLE_BACKGROUND_KEEP_ALIVE] = false
+            preferences[KEY_ENABLE_EXPERIMENTAL_VIRTUAL_DISPLAY] = true
+            preferences[KEY_HIDE_RUNTIME_TASK_VIEW] = false
+            preferences.remove(KEY_SCREENSHOT_FORMAT)
+            preferences.remove(KEY_SCREENSHOT_QUALITY)
+            preferences.remove(KEY_SCREENSHOT_SCALE_PERCENT)
+            preferences.remove(KEY_VISIT_WEB_WAIT_SECONDS)
+            preferences.remove(KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS)
+            preferences.remove(KEY_VIRTUAL_DISPLAY_BITRATE_KBPS)
+            preferences.remove(KEY_TOOL_COLLAPSE_MODE)
+        }
     }
 
     /**
@@ -327,28 +350,7 @@ class DisplayPreferencesManager private constructor(private val context: Context
      * 重置所有显示设置为默认值
      */
     suspend fun resetDisplaySettings() {
-        editResourcePreferences { preferences ->
-            preferences[KEY_SHOW_FPS_COUNTER] = false
-            preferences[KEY_ENABLE_REPLY_NOTIFICATION] = true
-            preferences[KEY_ENABLE_REPLY_NOTIFICATION_SOUND] = false
-            preferences[KEY_ENABLE_REPLY_NOTIFICATION_VIBRATION] = false
-            preferences[KEY_ENABLE_ENTER_TO_SEND] = false
-            preferences.remove(KEY_ENABLE_NAVIGATION_ANIMATION)
-            preferences.remove(KEY_ORIENTATION_RELOAD_POLICY)
-            preferences[KEY_START_WITH_NEW_CHAT] = false
-            preferences.remove(KEY_GLOBAL_USER_AVATAR_URI)
-            preferences.remove(KEY_GLOBAL_USER_NAME)
-            preferences[KEY_ENABLE_BACKGROUND_KEEP_ALIVE] = false
-            preferences[KEY_ENABLE_EXPERIMENTAL_VIRTUAL_DISPLAY] = true
-            preferences[KEY_HIDE_RUNTIME_TASK_VIEW] = false
-            preferences.remove(KEY_SCREENSHOT_FORMAT)
-            preferences.remove(KEY_SCREENSHOT_QUALITY)
-            preferences.remove(KEY_SCREENSHOT_SCALE_PERCENT)
-            preferences.remove(KEY_VISIT_WEB_WAIT_SECONDS)
-            preferences.remove(KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS)
-            preferences.remove(KEY_VIRTUAL_DISPLAY_BITRATE_KBPS)
-            preferences.remove(KEY_TOOL_COLLAPSE_MODE)
-        }
+        editResourcePreferences { preferences -> resetDisplaySettingsValues(preferences) }
     }
 
     internal suspend fun storedResourceReferences(): Set<String> {

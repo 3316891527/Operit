@@ -11,10 +11,17 @@ data class ToolPkgComposeDslNode(
     val slots: Map<String, List<ToolPkgComposeDslNode>> = emptyMap()
 )
 
+data class ToolPkgComposeDslActionSnapshot(
+    val contextId: String,
+    val generation: Long,
+    val counter: Long
+)
+
 data class ToolPkgComposeDslRenderResult(
     val tree: ToolPkgComposeDslNode,
     val state: Map<String, Any?>,
-    val memo: Map<String, Any?>
+    val memo: Map<String, Any?>,
+    val actionSnapshot: ToolPkgComposeDslActionSnapshot? = null
 )
 
 object ToolPkgComposeDslParser {
@@ -24,8 +31,18 @@ object ToolPkgComposeDslParser {
         return ToolPkgComposeDslRenderResult(
             tree = treeNode,
             state = asMap(root.opt("state")),
-            memo = asMap(root.opt("memo"))
+            memo = asMap(root.opt("memo")),
+            actionSnapshot = parseActionSnapshot(root.optJSONObject("__composeActions"))
         )
+    }
+
+    private fun parseActionSnapshot(value: JSONObject?): ToolPkgComposeDslActionSnapshot? {
+        if (value == null) return null
+        val contextId = value.opt("contextId") as? String ?: return null
+        val generation = value.opt("generation") as? Number ?: return null
+        val counter = value.opt("counter") as? Number ?: return null
+        if (contextId.isBlank() || generation.toLong() <= 0L || counter.toLong() < 0L) return null
+        return ToolPkgComposeDslActionSnapshot(contextId, generation.toLong(), counter.toLong())
     }
 
     fun extractActionId(value: Any?): String? {

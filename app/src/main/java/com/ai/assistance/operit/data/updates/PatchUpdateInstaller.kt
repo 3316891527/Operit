@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.data.updates
+import com.ai.assistance.operit.data.updates.patch.resolvePatchPath
 
 import android.content.Context
 import android.content.Intent
@@ -260,7 +261,7 @@ object PatchUpdateInstaller {
             if (stepBaseExpected.isNotBlank()) {
                 val stepBaseActual = sha256Hex(currentApk)
                 if (!stepBaseActual.equals(stepBaseExpected, ignoreCase = true)) {
-                    throw IllegalStateException("Base sha256 mismatch")
+                    throw IllegalStateException(context.getString(R.string.patch_update_base_changed))
                 }
             }
 
@@ -374,6 +375,15 @@ object PatchUpdateInstaller {
         val repo = parseRepoFromReleaseAssetUrl(metaUrl) ?: parseRepoFromReleaseAssetUrl(patchUrl)
             ?: throw IllegalStateException("Unsupported patch source URL")
 
+        val targetCandidate = parsePatchStep(
+            meta = targetMeta,
+            patchUrl = patchUrl,
+            metaUrl = metaUrl,
+            tag = targetMeta.optString("tag", ""),
+        ) ?: throw IllegalStateException(context.getString(R.string.patch_update_no_matching_chain))
+        if (targetCandidate.baseSha256 == currentBaseSha.trim().lowercase()) {
+            return listOf(targetCandidate)
+        }
         val api = GitHubApiService(context)
         val releases = api.getRepositoryReleases(
             owner = repo.first,
@@ -385,24 +395,16 @@ object PatchUpdateInstaller {
         }
 
         val stepsByEdge = LinkedHashMap<String, PatchStep>()
-        val scannableReleases = releases.filterNot { it.draft }
+        val scannableReleases = releases.filter {
+            !it.draft && it.tag_name.removePrefix("v").substringBefore('+') == targetToVersion
+        }
         if (scannableReleases.isNotEmpty()) {
             onEvent(ProgressEvent.ChainScanProgress(scanned = 0, total = scannableReleases.size))
         }
 
-        val targetCandidate = parsePatchStep(
-            meta = targetMeta,
-            patchUrl = patchUrl,
-            metaUrl = metaUrl,
-            tag = targetMeta.optString("tag", "")
-        )
-        if (targetCandidate != null) {
-            val edge = "${targetCandidate.baseSha256}->${targetCandidate.targetSha256}"
-            stepsByEdge[edge] = targetCandidate
-        }
-
+        stepsByEdge["${targetCandidate.baseSha256}->${targetCandidate.targetSha256}"] = targetCandidate
         var scannedReleases = 0
-        for (release in releases) {
+        for (release in scannableReleases) {
             coroutineContext.ensureActive()
             if (release.draft) continue
 
@@ -411,26 +413,22 @@ object PatchUpdateInstaller {
 
             val metaAsset =
                 release.assets.firstOrNull { it.name.startsWith("patch_") && it.name.endsWith(".json") }
-                    ?: release.assets.firstOrNull { it.name.endsWith(".json") }
+
             val patchAsset =
                 release.assets.firstOrNull { it.name.startsWith("apkrawpatch_") && it.name.endsWith(".zip") }
-                    ?: release.assets.firstOrNull { it.name.endsWith(".zip") }
-            if (metaAsset == null || patchAsset == null) continue
 
-            // 旧版本正文就是补丁索引；可读说明版本从独立附件读取，保持两种发行格式兼容。
-            val meta = if (release.body?.trimStart()?.startsWith("{") == true) {
-                parseReleaseBodyAsPatchMeta(release.body) ?: continue
-            } else {
-                val indexAsset = release.assets.firstOrNull { it.name == "distribution-release.json" } ?: continue
-                val indexFile = File(workDir, "chain_release_$scannedReleases.json")
-                downloadToFile(
-                    url = selectMirrorUrl(indexAsset.browser_download_url, mirrorKey),
-                    out = indexFile,
-                    label = context.getString(R.string.patch_update_label_meta),
-                    onEvent = onEvent,
-                )
-                JSONObject(indexFile.readText())
-            }
+            if (metaAsset == null || patchAsset == null) continue
+            if (metaAsset.browser_download_url == metaUrl && patchAsset.browser_download_url == patchUrl) continue
+
+            // 每个补丁附件是权威元数据；正文改为可读说明后仍可发现中间补丁。
+            val indexFile = File(workDir, "chain_release_$scannedReleases.json")
+            downloadToFile(
+                url = selectMirrorUrl(metaAsset.browser_download_url, mirrorKey),
+                out = indexFile,
+                label = context.getString(R.string.patch_update_label_meta),
+                onEvent = onEvent,
+            )
+            val meta = JSONObject(indexFile.readText())
             val candidate = parsePatchStep(
                 meta = meta,
                 patchUrl = patchAsset.browser_download_url,
@@ -452,57 +450,20 @@ object PatchUpdateInstaller {
             }
         }
 
-        var currentSha = currentBaseSha.trim().lowercase()
-        val chain = mutableListOf<PatchStep>()
-        val seenEdges = HashSet<String>()
-
-        while (currentSha != targetSha) {
-            coroutineContext.ensureActive()
-            val candidates = stepsByEdge.values.filter { step ->
-                step.baseSha256 == currentSha &&
-                    (targetToVersion.isBlank() || step.toVersion.isBlank() || step.toVersion == targetToVersion) &&
-                    (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex <= targetToPatchIndex)
-            }
-            if (candidates.isEmpty()) {
-                val direct = stepsByEdge.values.filter { step ->
-                    step.targetSha256 == targetSha &&
-                        (targetToVersion.isBlank() || step.toVersion.isBlank() || step.toVersion == targetToVersion) &&
-                        (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex == targetToPatchIndex)
-                }
-                if (direct.size == 1 && chain.isEmpty()) {
-                    // 已安装包与发布补丁记录的上一版哈希不一致时，仍允许使用唯一的目标补丁。
-                    chain.add(direct.first())
-                    break
-                }
-                throw IllegalStateException("No applicable next patch for base sha ${currentSha.take(12)}")
-            }
-
-            var selected = candidates.first()
-            for (candidate in candidates.drop(1)) {
-                val betterByIndex = candidate.toPatchIndex > selected.toPatchIndex
-                val betterByVersion =
-                    candidate.toPatchIndex == selected.toPatchIndex &&
-                        UpdateManager.compareVersions(candidate.targetVersionLabel, selected.targetVersionLabel) > 0
-                if (betterByIndex || betterByVersion) {
-                    selected = candidate
-                }
-            }
-
-            val edge = "${selected.baseSha256}->${selected.targetSha256}"
-            if (!seenEdges.add(edge)) {
-                throw IllegalStateException("Patch chain loop detected")
-            }
-
-            chain.add(selected)
-            currentSha = selected.targetSha256
-            if (chain.size > MAX_CHAIN_STEPS) {
-                throw IllegalStateException("Patch chain exceeds $MAX_CHAIN_STEPS steps")
-            }
+        // 必须从已安装 APK 的真实哈希连通到目标，不可把不匹配的目标补丁当作起点。
+        val applicableSteps = stepsByEdge.values.filter { step ->
+            (targetToVersion.isBlank() || step.toVersion == targetToVersion) &&
+                (targetToPatchIndex < 0 || step.toPatchIndex < 0 || step.toPatchIndex <= targetToPatchIndex)
         }
-
-        return chain
+        return resolvePatchPath(
+            steps = applicableSteps,
+            currentSha = currentBaseSha.trim().lowercase(),
+            targetSha = targetSha,
+            maxSteps = MAX_CHAIN_STEPS,
+            baseSha = { it.baseSha256 },
+            nextSha = { it.targetSha256 },
+        ) ?: throw IllegalStateException(context.getString(R.string.patch_update_no_matching_chain))
     }
-
     private fun parsePatchStep(
         meta: JSONObject,
         patchUrl: String,
@@ -538,19 +499,6 @@ object PatchUpdateInstaller {
     private fun parseRepoFromReleaseAssetUrl(url: String): Pair<String, String>? {
         val match = releaseAssetUrlRegex.find(url.trim()) ?: return null
         return match.groupValues[1] to match.groupValues[2]
-    }
-
-    private fun parseReleaseBodyAsPatchMeta(body: String?): JSONObject? {
-        val text = body?.trim().orEmpty()
-        if (text.isBlank()) {
-            return null
-        }
-        return try {
-            JSONObject(text)
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "Skip patch release with invalid JSON body", e)
-            null
-        }
     }
 
     private fun cleanupPatchWorkDir(workDir: File, keepFile: File) {

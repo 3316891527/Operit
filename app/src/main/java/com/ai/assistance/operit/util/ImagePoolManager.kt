@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.util
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -36,6 +38,8 @@ data class ImageRegistrationOptions(
  */
 object ImagePoolManager {
     private const val TAG = "ImagePoolManager"
+    private val poolRevision = MutableStateFlow(0L)
+    val revision = poolRevision.asStateFlow()
     private const val DEFAULT_SCALE_PERCENT = 100
     private const val DEFAULT_JPEG_QUALITY = 85
     private const val DEFAULT_MAX_LONG_EDGE = 2048
@@ -217,6 +221,17 @@ object ImagePoolManager {
 
         AppLogger.w(TAG, "图片不存在: $id")
         return null
+    }
+
+    /** 预览文件随池中标准图一起过期，不额外保留失效图片。 */
+    @Synchronized
+    fun getPreviewFile(id: String): File? {
+        val image = getImage(id) ?: return null
+        val dir = cacheDir ?: return null
+        val safeId = id.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+        val file = File(dir, "$safeId.preview")
+        if (!file.exists()) file.writeBytes(Base64.decode(image.base64, Base64.DEFAULT))
+        return file
     }
 
     @Synchronized
@@ -667,11 +682,13 @@ object ImagePoolManager {
     }
 
     private fun deleteFromDisk(id: String) {
+        poolRevision.value += 1
         val dir = cacheDir ?: return
 
         try {
             File(dir, "$id.dat").delete()
             File(dir, "$id.meta").delete()
+            File(dir, "${id.replace(Regex("[^a-zA-Z0-9_-]"), "_")}.preview").delete()
             AppLogger.d(TAG, "从磁盘删除图片: $id")
         } catch (e: Exception) {
             AppLogger.e(TAG, "从磁盘删除图片失败: $id", e)
@@ -679,6 +696,7 @@ object ImagePoolManager {
     }
 
     private fun clearDiskCache() {
+        poolRevision.value += 1
         val dir = cacheDir ?: return
         if (!dir.exists()) return
 

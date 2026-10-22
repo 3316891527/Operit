@@ -486,21 +486,25 @@ private constructor(
         }
 
         return try {
-            // Read the file into a byte array to serve it directly.
-            // This avoids the GZIP streaming issue with WebView that causes "Broken pipe".
-            val bytes = file.readBytes()
-
             if (mimeType == "text/html") {
-                val htmlContent = String(bytes, Charsets.UTF_8)
+                val htmlContent = file.readText(Charsets.UTF_8)
                 val injectedHtml = injectErudaIntoHtml(htmlContent)
                 return newFixedLengthResponse(Response.Status.OK, mimeType, injectedHtml).addCorsHeaders()
             }
 
-            // Serve the file from a byte array input stream. This is the robust way to avoid GZIP issues.
-            val inputStream = ByteArrayInputStream(bytes)
-            val response = newFixedLengthResponse(Response.Status.OK, mimeType, inputStream, bytes.size.toLong())
-            response.addCorsHeaders()
-            response
+            // 以定长文件流发送音视频，由响应关闭流，避免每个请求都复制整份 WAV。
+            val inputStream = file.inputStream()
+            try {
+                newFixedLengthResponse(
+                    Response.Status.OK,
+                    mimeType,
+                    inputStream,
+                    inputStream.channel.size()
+                ).addCorsHeaders()
+            } catch (error: Exception) {
+                inputStream.close()
+                throw error
+            }
         } catch (ioe: IOException) {
             newFixedLengthResponse(
                 Response.Status.INTERNAL_ERROR,

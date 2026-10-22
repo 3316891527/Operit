@@ -14,11 +14,11 @@
 
 在个人仓库的 Android Build 工作流中选择 `main` 分支，任务选择 `:app:verifyCiPreviewRelease`，勾选 `publish_release` 并填写 `release_notes`。`previous_tag` 留空时选择同一基础版本中版本号最高且早于目标的正式 Release；也可指定符合条件的标签。普通构建的 `publish_release` 默认为 false。
 
-本轮准备 `versionName = 1.12.2+7`、`versionCode = 63`。调试包使用 `com.ai.assistance.operit.debug`，与 Kong 正式版的数据独立。正式发布从 main 执行上述任务，指定 `previous_tag=v1.12.2+6`；内部版本号 63 高于上一正式版的 62。功能提交的构建与 JVM 回归已通过，发行准备的新提交和正式签名、补丁还原结果以对应工作流为准。
+本轮准备 `versionName = 1.12.2+9`、`versionCode = 65`。调试包使用 `com.ai.assistance.operit.debug`，与 Kong 正式版的数据独立。正式发布从 main 执行上述任务，指定 `previous_tag=v1.12.2+8`；内部版本号 65 高于上一正式版的 64。[发行说明](releases/1.12.2+9.md)随源码保存，正式签名、资源打包和补丁还原结果以发布工作流为准。
 
-增量发布选择同一基础版本且展示版本低于目标的正式 APK，本次使用 `+6` 作为 `+7` 的基础包。客户端还需匹配已安装 APK 的哈希及完整补丁链；无法使用对应补丁链时可下载 Release 中的完整 APK 覆盖安装，不生成版本号倒序或相等的增量包。既有客户端的渠道与更新源行为由其安装版本决定。
+增量发布选择同一基础版本且展示版本低于目标的正式 APK，本次使用 `+8` 作为 `+9` 的基础包。客户端还需匹配已安装 APK 的哈希及完整补丁链；无法使用对应补丁链时可下载 Release 中的完整 APK 覆盖安装，不生成版本号倒序或相等的增量包。既有客户端的渠道与更新源行为由其安装版本决定。
 
-仓库已有 `v1.12.2+6` 的正式完整 APK，发布工作流将校验该基线并生成增量包。应使用仓库工作流验证过的源码提交；Android Build 本身执行发布脚本回归和 APK 验证，Android Tests 另行覆盖应用 JVM 用例。开发验证继续使用与 Kong 发行版并存的调试包，不发布测试 Release。
+仓库已有 `v1.12.2+8` 的正式完整 APK，发布工作流将校验该基线并生成增量包。应使用仓库工作流验证过的源码提交；Android Build 本身执行发布脚本回归和 APK 验证，Android Tests 另行覆盖应用 JVM 用例。开发验证继续使用与 Kong 发行版并存的调试包，不发布测试 Release。
 
 工作流读取 APK 内的实际版本并创建对应 `v1.12.2+n` 标签，目标固定为本次构建提交。已有 Release 不会被覆盖。发布先创建草稿并上传全部文件，文件到齐后再公开。仓库的工作流 Token 需要 `contents: write`，由工作流配置声明。
 
@@ -45,4 +45,4 @@ Release 正文使用非空的可读文本或 Markdown，发布脚本拒绝将原
 
 新增发布脚本回归覆盖版本格式、基线选择、APK 包名与签名、原始记录复用和逐字节还原。客户端 JVM 用例覆盖同基础版本增量、跨基础版本完整包、数字版本排序、无更新、草稿与预发布过滤、资源配对和文案提取。
 
-本地仅进行源码、Python 语法、YAML 和 diff 检查，未运行构建或测试。上一版的验收记录见 [统一验收记录](../../../docs/TODO/chat-experience-release/index.md)，本版功能和待验收范围见 [本轮记录](../../../docs/TODO/chat-list-motion-and-oktoast/index.md)。`+7` 正式签名、APK 与补丁校验由发布工作流执行，其结果不与之前已通过的调试验收混记。
+功能提交 `20b02178` 的 [Android Build / assembleDebug](https://github.com/3316891527/Operit/actions/runs/39811364726) 和 [Android Tests](https://github.com/3316891527/Operit/actions/runs/39811370125) 均已通过。发行准备仅调整版本和文档，本地不执行构建或测试。功能范围见[配置、工作流与附件记录](../../../docs/TODO/feat/config-workflow-attachments/03-实现说明.md)，表情设备回归见[独立清单](../../../docs/TODO/fix/remove-builtin-emoji/02-完整回归清单.md)。`+9` 正式签名、APK、资源和补丁校验由发布工作流执行；原始设备 OOM 待独立复现，不与构建和 JVM 成功结果混记。

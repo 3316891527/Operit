@@ -9,7 +9,7 @@ import java.util.UUID
  * @property id 唯一标识符（UUID）
  * @property emotionCategory 情绪类别（如 "happy", "sad" 或用户自定义）
  * @property fileName 文件名（如 "uuid.jpg"），不包含路径
- * @property isBuiltInCategory 是否为内置类别
+ * @property isBuiltInCategory 旧版内置类别标记，仅为读取已有表情库保留
  * @property createdAt 创建时间戳
  * 
  * 注意：只存储fileName，完整路径在使用时会根据当前角色目标动态构建。
@@ -19,7 +19,6 @@ data class CustomEmoji(
     val id: String = UUID.randomUUID().toString(),
     val emotionCategory: String,
     val fileName: String,
-    val isBuiltInCategory: Boolean,
+    val isBuiltInCategory: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )
-

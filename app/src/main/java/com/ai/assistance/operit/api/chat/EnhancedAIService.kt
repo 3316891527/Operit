@@ -1237,16 +1237,21 @@ class EnhancedAIService private constructor(context: Context) {
  
                         try {
                             responseStream.collect { rawContent ->
-                                // 第一次收到响应，更新状态
-                                if (isFirstChunk) {
-                                    if (!isSubTask) {
+                                // 中途重试恢复后也要更新状态，不能只依赖首块响应标记。
+                                if (!isSubTask && rawContent.isNotEmpty() &&
+                                    _inputProcessingState.value is InputProcessingState.Connecting
+                                ) {
                                     withContext(Dispatchers.Main) {
-                                        _inputProcessingState.value =
+                                        if (_inputProcessingState.value is InputProcessingState.Connecting) {
+                                            _inputProcessingState.value =
                                                 InputProcessingState.Receiving(
-                                                LocaleUtils.getLocalizedContext(context).getString(R.string.enhanced_receiving_response)
-                                            )
+                                                    LocaleUtils.getLocalizedContext(context)
+                                                        .getString(R.string.enhanced_receiving_response)
+                                                )
                                         }
                                     }
+                                }
+                                if (isFirstChunk) {
                                     isFirstChunk = false
                                     logMessageTiming(
                                         stage = "enhanced.sendMessage.firstResponseChunk",
@@ -2546,6 +2551,20 @@ class EnhancedAIService private constructor(context: Context) {
 
                     try {
                         responseStream.collect { rawContent ->
+                            // 工具后续回复恢复输出时，同步清除中途重试留下的连接状态。
+                            if (!isSubTask && rawContent.isNotEmpty() &&
+                                _inputProcessingState.value is InputProcessingState.Connecting
+                            ) {
+                                withContext(Dispatchers.Main) {
+                                    if (_inputProcessingState.value is InputProcessingState.Connecting) {
+                                        _inputProcessingState.value =
+                                            InputProcessingState.Receiving(
+                                                LocaleUtils.getLocalizedContext(this@EnhancedAIService.context)
+                                                    .getString(R.string.enhanced_receiving_tool_result)
+                                            )
+                                    }
+                                }
+                            }
                             if (isFirstChunk) {
                                 isFirstChunk = false
                                 logMessageTiming(

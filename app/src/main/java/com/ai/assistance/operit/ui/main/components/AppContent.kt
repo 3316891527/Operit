@@ -246,7 +246,7 @@ fun AppContent(
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
-                if (currentScreen !is Screen.AiChat) {
+                if (currentScreen !is Screen.AiChat && currentScreen !is Screen.GlobalDisplaySettings) {
                     // 单一工具栏 - 使用小型化的设计
                     // 使用 windowInsets 参数让 TopAppBar 自己处理状态栏的 insets
                     TopAppBar(

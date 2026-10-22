@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.main.components
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -275,7 +276,8 @@ fun CollapsedDrawerContent(
                                                 enabled = appearance.buttonLiquidGlassEnabled,
                                                 shape = CircleShape,
                                                 containerColor = appearance.buttonContainerColor,
-                                                enableLens = false
+                                                enableLens = false,
+                                            region = GlassRegion.SIDEBAR_BUTTONS,
                                         )
                                         .clip(CircleShape),
                         color = Color.Transparent,
@@ -315,7 +317,8 @@ fun CollapsedDrawerContent(
                                                         shape = CircleShape,
                                                         containerColor =
                                                                 appearance.buttonContainerColor,
-                                                        enableLens = false
+                                                        enableLens = false,
+                                                    region = GlassRegion.SIDEBAR_BUTTONS,
                                                 )
                                                 .clip(CircleShape)
                                                 .background(selectedGlassOverlayColor),
@@ -371,7 +374,8 @@ fun CollapsedDrawerContent(
                                                                 enabled = appearance.buttonLiquidGlassEnabled,
                                                                 shape = CircleShape,
                                                                 containerColor = appearance.buttonContainerColor,
-                                                                enableLens = false
+                                                                enableLens = false,
+                                                            region = GlassRegion.SIDEBAR_BUTTONS,
                                                         )
                                                         .clip(CircleShape)
                                                         .background(selectedGlassOverlayColor),

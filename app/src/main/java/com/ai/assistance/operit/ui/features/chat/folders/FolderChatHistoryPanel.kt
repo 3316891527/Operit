@@ -41,6 +41,7 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.ui.common.rememberLocal
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatHistoryDisplayMode
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
@@ -94,7 +95,11 @@ fun FolderChatHistoryPanel(
     var selectionMode by rememberSaveable { mutableStateOf(false) }
     var selectedIds by rememberSaveable { mutableStateOf(emptySet<String>()) }
     var batchDeleteIds by remember { mutableStateOf<List<String>?>(null) }
-    val inSelectionMode = selectionMode || batchProgress != null
+    var batchMoveIds by remember { mutableStateOf<List<String>?>(null) }
+    var movingChats by remember { mutableStateOf(false) }
+    var moveError by remember { mutableStateOf<String?>(null) }
+    val batchBusy = batchProgress != null || movingChats
+    val inSelectionMode = selectionMode || batchBusy
     val allFolders = snapshot?.folders.orEmpty()
     val foldersById = remember(allFolders) { allFolders.associateBy { it.id } }
     val eligibleIds = remember(chatHistories) { chatHistories.map { it.id }.toSet() }
@@ -260,7 +265,7 @@ fun FolderChatHistoryPanel(
                 selectedCount = selectedChats.size,
                 allSelected = selectableIds.isNotEmpty() && selectedChats.size == selectableIds.size,
                 canSelect = selectableIds.isNotEmpty(),
-                busy = batchProgress != null,
+                busy = batchBusy,
                 contentColor = contentColor,
                 onSelectAll = {
                     selectedIds = if (selectedChats.size == selectableIds.size) emptySet() else selectableIds
@@ -366,7 +371,7 @@ fun FolderChatHistoryPanel(
             archived = showArchived,
             archivedCount = eligibleHistories.count { it.archived },
             onChange = {
-                if (batchProgress == null) { selectedIds = emptySet(); showArchived = it }
+                if (!batchBusy) { selectedIds = emptySet(); showArchived = it }
             },
             contentColor = contentColor,
             selectedContainerColor = selectedContainerColor,
@@ -378,6 +383,11 @@ fun FolderChatHistoryPanel(
                 selectedChats = selectedChats,
                 archived = showArchived,
                 progress = batchProgress,
+                moving = movingChats,
+                onMove = {
+                    batchMoveIds = selectedChats.map { it.id }
+                    moveError = null
+                },
                 containerColor = selectedContainerColor,
                 contentColor = selectedContentColor,
                 onAction = { action ->
@@ -402,19 +412,49 @@ fun FolderChatHistoryPanel(
         } else FolderTreeList(rows, foldersById, listState, currentId, activeStreamingChatIds, histories,
             draggingEnabled = searchQuery.isBlank() && !inSelectionMode,
             manualSort = sort == ChatHistorySortMode.DEFAULT, collapsedBindings = collapsedBindings,
-            selectionMode = inSelectionMode, selectedIds = selectedIds, selectionEnabled = batchProgress == null,
+            selectionMode = inSelectionMode, selectedIds = selectedIds, selectionEnabled = !batchBusy,
             onSelectChat = { id ->
                 if (inSelectionMode) {
-                    if (batchProgress == null) selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+                    if (!batchBusy) selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
                 } else onSelectChat(id)
             }, onChatMenu = { chatMenu = it }, onEditChat = { chatEdit = it }, onDeleteChat = ::promptDelete,
             onFolderMenu = { folderMenu = it }, onToggleFolder = { row ->
-                if (batchProgress == null && searchQuery.isBlank()) collapsed = if (row.key in collapsed) collapsed - row.key else collapsed + row.key
-            }, onToggleBinding = { key -> if (batchProgress == null && searchQuery.isBlank()) collapsedBindings = if (key in collapsedBindings) collapsedBindings - key else collapsedBindings + key },
+                if (!batchBusy && searchQuery.isBlank()) collapsed = if (row.key in collapsed) collapsed - row.key else collapsed + row.key
+            }, onToggleBinding = { key -> if (!batchBusy && searchQuery.isBlank()) collapsedBindings = if (key in collapsedBindings) collapsedBindings - key else collapsedBindings + key },
             onBindingCreate = { bindingMenu = it }, onHoverExpand = { collapsed = collapsed - it.key },
             onMove = ::move, onInteractionChange = onQuickScrollInteractionChange, modifier = Modifier.weight(1f),
             contentColor = contentColor, selectedContainerColor = selectedContainerColor, selectedContentColor = selectedContentColor,
             deletionProgress = deletionProgress)
+    }
+    batchMoveIds?.let { ids ->
+        ChatBatchMoveDialog(
+            selectedCount = ids.size,
+            folders = allFolders,
+            moving = movingChats,
+            error = moveError,
+            onDismiss = { if (!movingChats) { batchMoveIds = null; moveError = null } },
+            onMove = { folderId ->
+                if (batchProgress == null && !movingChats) {
+                    movingChats = true
+                    moveError = null
+                    coroutineScope.launch {
+                        try {
+                            val count = withContext(Dispatchers.IO) { repository.moveSelectedChats(ids, folderId) }
+                            selectedIds = selectedIds - ids.toSet()
+                            batchMoveIds = null
+                            OKToast.success(context, context.getString(R.string.chat_batch_move_success, count)).show()
+                        } catch (cause: CancellationException) {
+                            throw cause
+                        } catch (cause: Exception) {
+                            AppLogger.e("ChatFolders", "批量移动对话失败", cause)
+                            moveError = context.getString(R.string.chat_batch_move_failed)
+                        } finally {
+                            movingChats = false
+                        }
+                    }
+                }
+            },
+        )
     }
     batchDeleteIds?.let { ids ->
         val targets = eligibleHistories.filter { it.id in ids }

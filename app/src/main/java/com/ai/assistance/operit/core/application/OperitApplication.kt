@@ -242,11 +242,11 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
             .also { it.start() }
         AppLogger.d(TAG, "【启动计时】长期记忆自动保存轮询器启动完成 - ${System.currentTimeMillis() - startTime}ms")
 
-        // 初始化当前活跃角色目标的自定义表情
+        // 整理自定义表情存储，不再预置图片和分组
         applicationScope.launch {
             val emojiStartTime = System.currentTimeMillis()
-            CustomEmojiRepository.getInstance(applicationContext).initializeBuiltinEmojis()
-            AppLogger.d(TAG, "【启动计时】当前角色自定义表情初始化完成（异步） - ${System.currentTimeMillis() - emojiStartTime}ms")
+            CustomEmojiRepository.getInstance(applicationContext).initializeStorage()
+            AppLogger.d(TAG, "【启动计时】自定义表情存储整理完成（异步） - ${System.currentTimeMillis() - emojiStartTime}ms")
         }
 
         // 初始化AndroidShellExecutor上下文

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.ThemeWorkbenchSlider
 
 import android.content.Context
 import android.net.Uri
@@ -9,12 +9,13 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Loop
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material3.Button
@@ -32,8 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,11 +54,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.features.settings.components.MediaTypeOption
+import com.ai.assistance.operit.ui.features.settings.components.transparency.BackgroundTransparencySlider
 import com.ai.assistance.operit.ui.features.settings.screens.theme.ThemeEditorSession
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.*
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.exoplayer2.ui.StyledPlayerView
@@ -92,11 +97,188 @@ internal fun ThemeSettingsBackgroundSection(
     backgroundBlurRadiusInput: Float,
     onBackgroundBlurRadiusInputChange: (Float) -> Unit,
 ) {
-    ThemeSettingsSectionTitle(
-        title = stringResource(id = R.string.theme_title_background),
-        icon = Icons.Default.Image,
-    )
+    var showDetails by remember { mutableStateOf(false) }
+    LaunchedEffect(showDetails, exoPlayer, backgroundImageUriInput, backgroundMediaTypeInput) {
+        exoPlayer.playWhenReady =
+            showDetails && backgroundMediaTypeInput == UserPreferencesManager.MEDIA_TYPE_VIDEO
+    }
+    ThemeWorkbenchCard(stringResource(R.string.theme_bg_media), icon = Icons.Default.Image) {
+        ThemeWorkbenchSwitchRow(
+            stringResource(R.string.theme_use_custom_bg),
+            useBackgroundImageInput,
+            subtitle = stringResource(R.string.theme_custom_bg_desc),
+        ) {
+            onUseBackgroundImageInputChange(it)
+            editorSession.setBoolean("use_background_image", it)
+        }
+        if (useBackgroundImageInput) {
+            if (!backgroundImageUriInput.isNullOrBlank()) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .height(152.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .clickable { showDetails = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (backgroundMediaTypeInput == UserPreferencesManager.MEDIA_TYPE_IMAGE) {
+                        AsyncImage(
+                            backgroundImageUriInput,
+                            null,
+                            Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                        IconButton(
+                            onClick = { launchImageCrop(Uri.parse(backgroundImageUriInput)) },
+                            modifier =
+                                Modifier.align(Alignment.BottomEnd)
+                                    .padding(8.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                                        CircleShape,
+                                    ),
+                        ) {
+                            Icon(Icons.Default.Crop, stringResource(R.string.theme_crop_image))
+                        }
+                    } else {
+                        Icon(
+                            Icons.Default.Videocam,
+                            stringResource(R.string.theme_media_video),
+                            Modifier.size(40.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { mediaPickerLauncher.launch(arrayOf("image/*")) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Default.Image, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.theme_media_image))
+                }
+                OutlinedButton(
+                    onClick = { mediaPickerLauncher.launch(arrayOf("video/*")) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Default.Videocam, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.theme_media_video))
+                }
+            }
+            ThemeWorkbenchDivider()
+            ThemeWorkbenchRow(
+                title = stringResource(R.string.theme_workbench_background_editor),
+                value =
+                    backgroundImageUriInput?.let { Uri.parse(it).lastPathSegment }
+                        ?: stringResource(R.string.theme_no_bg_selected),
+                onClick = { showDetails = true },
+            )
+        }
+    }
+    if (useBackgroundImageInput)
+        ThemeWorkbenchCard(
+            stringResource(R.string.theme_workbench_background_effects),
+            icon = Icons.Default.Tune,
+        ) {
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                BackgroundTransparencySlider(
+                    title = stringResource(R.string.theme_workbench_background_opacity),
+                    opacity = backgroundImageOpacityInput,
+                    onOpacityChange = {
+                        onBackgroundImageOpacityInputChange(it)
+                        editorSession.setFloat("background_image_opacity", it)
+                    },
+                )
+            }
+            ThemeWorkbenchDivider()
+            ThemeWorkbenchSwitchRow(
+                stringResource(R.string.theme_background_blur),
+                useBackgroundBlurInput,
+            ) {
+                onUseBackgroundBlurInputChange(it)
+                editorSession.setBoolean("use_background_blur", it)
+            }
+            if (useBackgroundBlurInput)
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Text(
+                        stringResource(R.string.glass_value_dp, backgroundBlurRadiusInput),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    ThemeWorkbenchSlider(
+                        value = backgroundBlurRadiusInput.coerceIn(0f, 25f),
+                        valueRange = 0f..25f,
+                        onValueChange = {
+                            onBackgroundBlurRadiusInputChange(it)
+                            editorSession.setFloat("background_blur_radius", it)
+                        },
+                    )
+                }
+        }
+    if (showDetails)
+        ThemeWorkbenchDialog(
+            stringResource(R.string.theme_workbench_background_editor),
+            { showDetails = false },
+        ) {
+            ThemeSettingsBackgroundDetails(
+                cardColors = cardColors,
+                context = context,
+                editorSession = editorSession,
+                exoPlayer = exoPlayer,
+                launchImageCrop = launchImageCrop,
+                mediaPickerLauncher = mediaPickerLauncher,
+                scrollState = scrollState,
+                useBackgroundImageInput = useBackgroundImageInput,
+                onUseBackgroundImageInputChange = onUseBackgroundImageInputChange,
+                backgroundMediaTypeInput = backgroundMediaTypeInput,
+                onBackgroundMediaTypeInputChange = onBackgroundMediaTypeInputChange,
+                backgroundImageUriInput = backgroundImageUriInput,
+                backgroundImageOpacityInput = backgroundImageOpacityInput,
+                onBackgroundImageOpacityInputChange = onBackgroundImageOpacityInputChange,
+                videoBackgroundMutedInput = videoBackgroundMutedInput,
+                onVideoBackgroundMutedInputChange = onVideoBackgroundMutedInputChange,
+                videoBackgroundLoopInput = videoBackgroundLoopInput,
+                onVideoBackgroundLoopInputChange = onVideoBackgroundLoopInputChange,
+                useBackgroundBlurInput = useBackgroundBlurInput,
+                onUseBackgroundBlurInputChange = onUseBackgroundBlurInputChange,
+                backgroundBlurRadiusInput = backgroundBlurRadiusInput,
+                onBackgroundBlurRadiusInputChange = onBackgroundBlurRadiusInputChange,
+            )
+        }
+}
 
+@Composable
+private fun ThemeSettingsBackgroundDetails(
+    cardColors: CardColors,
+    context: Context,
+    editorSession: ThemeEditorSession,
+    exoPlayer: ExoPlayer,
+    launchImageCrop: (Uri) -> Unit,
+    mediaPickerLauncher: ManagedActivityResultLauncher<Array<String>, Uri?>,
+    scrollState: ScrollState,
+    useBackgroundImageInput: Boolean,
+    onUseBackgroundImageInputChange: (Boolean) -> Unit,
+    backgroundMediaTypeInput: String,
+    onBackgroundMediaTypeInputChange: (String) -> Unit,
+    backgroundImageUriInput: String?,
+    backgroundImageOpacityInput: Float,
+    onBackgroundImageOpacityInputChange: (Float) -> Unit,
+    videoBackgroundMutedInput: Boolean,
+    onVideoBackgroundMutedInputChange: (Boolean) -> Unit,
+    videoBackgroundLoopInput: Boolean,
+    onVideoBackgroundLoopInputChange: (Boolean) -> Unit,
+    useBackgroundBlurInput: Boolean,
+    onUseBackgroundBlurInputChange: (Boolean) -> Unit,
+    backgroundBlurRadiusInput: Float,
+    onBackgroundBlurRadiusInputChange: (Float) -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), colors = cardColors) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -462,19 +644,13 @@ internal fun ThemeSettingsBackgroundSection(
                 }
 
                 Box(modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 8.dp)) {
-                    Slider(
+                    ThemeWorkbenchSlider(
                         value = backgroundImageOpacityInput,
                         onValueChange = updateOpacity,
                         onValueChangeFinished = onValueChangeFinished,
                         valueRange = 0.1f..1f,
                         interactionSource = interactionSource,
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                            SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            ),
                     )
                 }
 
@@ -540,7 +716,7 @@ internal fun ThemeSettingsBackgroundSection(
                     Box(
                         modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 8.dp),
                     ) {
-                        Slider(
+                        ThemeWorkbenchSlider(
                             value = backgroundBlurRadiusInput,
                             onValueChange = onBlurValueChange,
                             onValueChangeFinished = onBlurValueChangeFinished,

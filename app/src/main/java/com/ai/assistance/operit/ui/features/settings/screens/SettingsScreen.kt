@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.settings.screens
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
@@ -51,7 +52,6 @@ fun SettingsScreen(
         navigateToTokenUsageStatistics: () -> Unit,
         navigateToPerformanceMonitor: () -> Unit,
         navigateToContextSummarySettings: () -> Unit,
-        navigateToLayoutAdjustmentSettings: () -> Unit,
         navigateToLogcat: () -> Unit,
         navigateToAbout: () -> Unit
 ) {
@@ -83,27 +83,21 @@ fun SettingsScreen(
                         containerColor = cardContainerColor
                 ) {
 
-                        
+
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_theme_appearance),
                                 subtitle = stringResource(id = R.string.settings_theme_subtitle),
                                 icon = Icons.Default.Palette,
                                 onClick = navigateToThemeSettings
                         )
-                        
+
                         CompactSettingsItem(
                                 title = stringResource(R.string.settings_global_display),
                                 subtitle = stringResource(R.string.settings_global_display_subtitle),
                                 icon = Icons.Default.Visibility,
                                 onClick = navigateToGlobalDisplaySettings
                         )
-                        
-                        CompactSettingsItem(
-                                title = stringResource(R.string.layout_adjustment),
-                                subtitle = stringResource(R.string.layout_adjustment_subtitle),
-                                icon = Icons.Default.AspectRatio,
-                                onClick = navigateToLayoutAdjustmentSettings
-                        )
+
                 }
 
                 // ======= AI模型配置 =======
@@ -118,21 +112,21 @@ fun SettingsScreen(
                                 icon = Icons.Default.Api,
                                 onClick = navigateToModelConfig
                         )
-                        
+
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_section_context_summary),
                                 subtitle = stringResource(id = R.string.settings_context_summary_subtitle),
                                 icon = Icons.Default.Tune,
                                 onClick = navigateToContextSummarySettings
                         )
-                        
+
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_speech_services),
                                 subtitle = stringResource(id = R.string.settings_speech_services_subtitle),
                                 icon = Icons.Default.RecordVoiceOver,
                                 onClick = navigateToSpeechServicesSettings
                         )
-                        
+
                 }
 
                 // ======= 提示词配置 =======
@@ -183,7 +177,7 @@ fun SettingsScreen(
                                 icon = Icons.Default.CloudUpload,
                                 onClick = navigateToChatBackupSettings
                         )
-                        
+
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_chat_history_management),
                                 subtitle = stringResource(id = R.string.settings_chat_history_management_subtitle),
@@ -285,7 +279,9 @@ private fun SettingsSection(
                 Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(vertical = 6.dp)
-                            .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), containerColor)
+                            .liquidGlass(glassEnabled, RoundedCornerShape(10.dp), containerColor,
+                                region = GlassRegion.SETTINGS_CARDS,
+                            )
                             .padding(if (glassEnabled) 8.dp else 0.dp)
                 ) {
                         Icon(
@@ -302,11 +298,13 @@ private fun SettingsSection(
                                 color = sectionTitleColor
                         )
                 }
-                
+
                 // 内容区域
                 Card(
                         modifier = Modifier.fillMaxWidth()
-                            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, containerColor),
+                            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, containerColor,
+                                region = GlassRegion.SETTINGS_CARDS,
+                            ),
                         colors = CardDefaults.cardColors(
                                 containerColor = if (glassEnabled) Color.Transparent else containerColor,
                                 contentColor = MaterialTheme.colorScheme.onSurface
@@ -341,9 +339,9 @@ private fun CompactSettingsItem(
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                         Text(
                                 text = title,
@@ -361,7 +359,7 @@ private fun CompactSettingsItem(
                                 overflow = TextOverflow.Ellipsis
                         )
                 }
-                
+
                 Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,

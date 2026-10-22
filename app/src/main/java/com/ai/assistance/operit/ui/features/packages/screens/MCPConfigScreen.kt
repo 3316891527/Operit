@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.packages.screens
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -1457,7 +1458,9 @@ private fun PluginListItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, MaterialTheme.colorScheme.surfaceContainer)
+            .liquidGlass(glassEnabled, MaterialTheme.shapes.medium, MaterialTheme.colorScheme.surfaceContainer,
+                region = GlassRegion.PACKAGE_CARDS,
+            )
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (glassEnabled) Color.Transparent else MaterialTheme.colorScheme.surface

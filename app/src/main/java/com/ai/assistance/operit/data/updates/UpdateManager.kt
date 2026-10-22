@@ -27,7 +27,8 @@ sealed class UpdateStatus {
             val updateUrl: String,
             val releaseNotes: String,
             val patchUrl: String,
-            val metaUrl: String
+            val metaUrl: String,
+            val fullApkUrl: String? = null,
     ) : UpdateStatus()
     object UpToDate : UpdateStatus()
     data class Error(val message: String) : UpdateStatus()

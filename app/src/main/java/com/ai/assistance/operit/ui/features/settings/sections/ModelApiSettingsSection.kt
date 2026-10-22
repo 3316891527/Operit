@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.sections
 
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import android.annotation.SuppressLint
@@ -17,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -903,66 +904,54 @@ fun ModelApiSettingsSection(
                     )
                 }
 
-            val apiKeyInteractionSource = remember { MutableInteractionSource() }
-            val isApiKeyFocused by apiKeyInteractionSource.collectIsFocusedAsState()
-
-            var showKeysDialog by remember(config.id) { mutableStateOf(false) }
-            var savingKeysDialog by remember(config.id) { mutableStateOf(false) }
-            fun changeKeysDialog(visible: Boolean) {
-                if (savingKeysDialog) return
-                savingKeysDialog = true
+            var showKeyPoolDialog by remember(config.id) { mutableStateOf(false) }
+            var savingKeyPoolDialog by remember(config.id) { mutableStateOf(false) }
+            fun changeKeyPoolDialog(visible: Boolean) {
+                if (savingKeyPoolDialog) return
+                savingKeyPoolDialog = true
                 scope.launch {
                     try {
+                        // 打开密钥池前先保存内联输入，避免池窗口使用旧的单密钥。
                         saveCoordinator.flushAll(showSuccess = false)
-                        showKeysDialog = visible
+                        showKeyPoolDialog = visible
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         AppLogger.e(TAG, "保存密钥管理窗口失败", e)
                         showNotification(context.getString(R.string.save_failed) + ": " + e.message.orEmpty(), OKToast.Kind.Error)
                     } finally {
-                        savingKeysDialog = false
+                        savingKeyPoolDialog = false
                     }
                 }
             }
             if (!isEmbeddedLocalProvider && !isAntigravityProvider) {
-                SettingsSelectorRow(
-                    title = stringResource(R.string.model_workspace_keys),
-                    subtitle = stringResource(R.string.model_workspace_keys_hint),
-                    value = stringResource(R.string.model_workspace_manage),
-                    onClick = { changeKeysDialog(true) },
-                )
-                if (showKeysDialog) {
-                    com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceDialog(
-                        title = stringResource(R.string.model_workspace_keys),
-                        onDismiss = { changeKeysDialog(false) },
-                    ) {
-                    SettingsTextField(
-                        title = stringResource(R.string.api_key),
-                        subtitle =
-                                if (isOptionalApiKeyProvider)
-                                        stringResource(R.string.api_key_optional_local)
-                                else if (isUsingDefaultApiKey)
-                                        stringResource(R.string.api_key_placeholder_default)
-                                else
-                                        stringResource(R.string.api_key_placeholder_custom),
-                        value = if (isUsingDefaultApiKey) "" else apiKeyInput,
-                        onValueChange = {
-                            if (!isOptionalApiKeyProvider) {
-                                val filteredInput = it.replace("\n", "").replace("\r", "").replace(" ", "")
-                                apiKeyInput = filteredInput
+                SettingsTextField(
+                    title = stringResource(R.string.api_key),
+                    subtitle = when {
+                        isOptionalApiKeyProvider -> stringResource(R.string.api_key_optional_local)
+                        isUsingDefaultApiKey -> stringResource(R.string.api_key_placeholder_default)
+                        else -> stringResource(R.string.api_key_placeholder_custom)
+                    },
+                    value = apiKeyInput,
+                    onValueChange = {
+                        if (!isOptionalApiKeyProvider) apiKeyInput = it.replace("\n", "").replace("\r", "").replace(" ", "")
+                    },
+                    enabled = !isOptionalApiKeyProvider,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                    visualTransformation = PasswordVisualTransformation(),
+                    trailingContent = {
+                        if (selectedApiProvider?.supportsApiKeyPool() != false) {
+                            IconButton(onClick = { changeKeyPoolDialog(true) }, enabled = !savingKeyPoolDialog) {
+                                Icon(Icons.Default.ExpandMore, stringResource(R.string.model_workspace_open_key_pool))
                             }
-                        },
-                        enabled = !isOptionalApiKeyProvider,
-                        keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                        ),
-                        visualTransformation = if (isApiKeyFocused || apiKeyInput.isEmpty()) VisualTransformation.None else ApiKeyVisualTransformation(),
-                         interactionSource = apiKeyInteractionSource
-                 )
-                        keyPoolContent()
-                    }
+                        }
+                    },
+                )
+                if (showKeyPoolDialog) {
+                    com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceDialog(
+                        title = stringResource(R.string.model_workspace_open_key_pool),
+                        onDismiss = { changeKeyPoolDialog(false) },
+                    ) { keyPoolContent() }
                 }
             }
             SettingsTextField(

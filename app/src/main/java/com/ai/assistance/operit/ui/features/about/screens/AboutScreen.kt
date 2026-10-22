@@ -717,6 +717,18 @@ fun AboutScreen(
             }
     }
 
+    fun chooseFullPackageUpdate() {
+        val patch = updateStatus as? UpdateStatus.PatchAvailable ?: return
+        val apkUrl = patch.fullApkUrl ?: return
+        showUpdateDialog = false
+        patchUpdateStateFlow.value = null
+        pendingFullUpdateMethod = UpdateStatus.Available(
+            newVersion = patch.newVersion,
+            updateUrl = patch.updateUrl,
+            releaseNotes = patch.releaseNotes,
+            downloadUrl = apkUrl,
+        )
+    }
     // 处理下载更新 - 自动测速并选择最快下载源
     fun handleDownload() {
         when (val status = updateStatus) {
@@ -750,6 +762,7 @@ fun AboutScreen(
     if (patchUpdateState != null) {
         PatchUpdateProgressDialog(
             state = patchUpdateState!!,
+            onFullPackage = if ((updateStatus as? UpdateStatus.PatchAvailable)?.fullApkUrl != null) ::chooseFullPackageUpdate else null,
             onCancel = {
                 patchUpdateJob?.cancel()
                 patchUpdateJob = null
@@ -834,6 +847,7 @@ fun AboutScreen(
         UpdateDialog(
             updateStatus = updateStatus,
             appVersion = appVersion,
+            onFullPackage = if ((updateStatus as? UpdateStatus.PatchAvailable)?.fullApkUrl != null) ::chooseFullPackageUpdate else null,
             onDismiss = { showUpdateDialog = false },
             onConfirm = {
                 if (updateStatus is UpdateStatus.Available || updateStatus is UpdateStatus.PatchAvailable) {
@@ -1101,7 +1115,8 @@ fun UpdateDialog(
     updateStatus: UpdateStatus,
     appVersion: String,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    onFullPackage: (() -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1183,8 +1198,13 @@ fun UpdateDialog(
             }
         },
         dismissButton = {
-            if (updateStatus !is UpdateStatus.Checking) {
-                TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.close)) }
+            Row {
+                if (onFullPackage != null) {
+                    TextButton(onClick = onFullPackage) { Text(stringResource(R.string.full_update)) }
+                }
+                if (updateStatus !is UpdateStatus.Checking) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+                }
             }
         }
     )
@@ -1193,7 +1213,8 @@ fun UpdateDialog(
 @Composable
 private fun PatchUpdateProgressDialog(
     state: PatchUpdateDialogState,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onFullPackage: (() -> Unit)? = null,
 ) {
     val isError = state.phase == PatchUpdatePhase.ERROR
     val showCancel = !isError
@@ -1380,6 +1401,9 @@ private fun PatchUpdateProgressDialog(
                             Text(stringResource(id = R.string.cancel))
                         }
                     } else if (isError) {
+                        if (onFullPackage != null) {
+                            TextButton(onClick = onFullPackage) { Text(stringResource(R.string.full_update)) }
+                        }
                         TextButton(onClick = onCancel) {
                             Text(stringResource(id = R.string.close))
                         }

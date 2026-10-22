@@ -51,7 +51,8 @@ internal object DistributionReleaseResolver {
                 updateUrl = latest.html_url,
                 releaseNotes = notes,
                 patchUrl = patch.browser_download_url,
-                metaUrl = meta.browser_download_url
+                metaUrl = meta.browser_download_url,
+                fullApkUrl = latest.assets.single { it.name == APK_NAME }.browser_download_url,
             )
         }
         val apk = latest.assets.single { it.name == APK_NAME }

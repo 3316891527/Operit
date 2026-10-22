@@ -66,6 +66,17 @@ class ChatFolderRepository(private val database: AppDatabase) {
         chats.assignChatFolder(chatIds, folderId, name)
     }
 
+    /** 批量移动在同一事务内完成；有对话被删除时整批回滚，避免只移动一部分。 */
+    suspend fun moveSelectedChats(chatIds: List<String>, folderId: String?): Int = database.withTransaction {
+        val ids = chatIds.distinct()
+        require(ids.isNotEmpty()) { "未选择对话" }
+        val name = folderId?.let { getFolder(it).name }
+        // 每批控制绑定参数数目，完整事务仍覆盖全部所选对话。
+        val moved = ids.chunked(900).sumOf { chats.assignChatFolder(it, folderId, name) }
+        check(moved == ids.size) { "所选对话已发生变化，请重新选择" }
+        moved
+    }
+
     private data class Sibling(val node: ChatFolderNode, val order: Long)
 
     suspend fun move(request: ChatFolderMove) = database.withTransaction {

@@ -1,11 +1,15 @@
 package com.ai.assistance.operit.ui.features.settings.screens.theme
 
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
-
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -14,16 +18,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.features.settings.components.ColorPickerDialog
+import com.ai.assistance.operit.ui.features.settings.language.ThemeLanguageSection
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.*
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsColorCustomizationSection
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsFontSection
 import com.ai.assistance.operit.ui.features.settings.sections.ThemeSettingsThemeModeSection
-import com.ai.assistance.operit.ui.features.settings.language.ThemeLanguageSection
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.FileUtils
 import kotlinx.coroutines.launch
@@ -37,10 +46,7 @@ internal fun ThemeSettingsBasicTab(
 ) {
     val editorSession = shared.editorSession
     val values by editorSession.values.collectAsState()
-    val pickGlobalFont = rememberGlobalFontPicker(
-        context = shared.context,
-        shared = shared,
-    )
+    val pickGlobalFont = rememberGlobalFontPicker(context = shared.context, shared = shared)
 
     ThemeSettingsThemeModeSection(
         cardColors = cardColors,
@@ -49,38 +55,98 @@ internal fun ThemeSettingsBasicTab(
         themeModeInput = values.requiredString("theme_mode"),
     )
 
-    ThemeSettingsBasicColorPanel(
-        shared = shared,
-        cardColors = cardColors,
-        values = values,
-    )
-
-    ThemeSettingsFontSection(
-        cardColors = cardColors,
-        context = shared.context,
-        editorSession = editorSession,
-        useCustomFontInput = values.requiredBoolean("use_custom_font"),
-        fontTypeInput = values.requiredString("font_type"),
-        systemFontNameInput = values.requiredString("system_font_name"),
-        customFontPathInput = values.string("custom_font_path"),
-        fontScaleInput = values.requiredFloat("font_scale"),
-        onPickFont = pickGlobalFont,
-    )
+    var showColors by remember { mutableStateOf(false) }
+    var showFont by remember { mutableStateOf(false) }
+    ThemeWorkbenchCard(stringResource(R.string.theme_title_color), icon = Icons.Default.Palette) {
+        ThemeWorkbenchRow(
+            title = stringResource(R.string.theme_custom_color),
+            value =
+                stringResource(
+                    if (values.requiredBoolean("use_custom_colors")) R.string.theme_workbench_custom
+                    else R.string.theme_workbench_default
+                ),
+            trailing = {
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Box(
+                        Modifier.size(18.dp)
+                            .background(
+                                Color(
+                                    values.int("custom_primary_color")
+                                        ?: MaterialTheme.colorScheme.primary.toArgb()
+                                ),
+                                CircleShape,
+                            )
+                    )
+                    Box(
+                        Modifier.size(18.dp)
+                            .background(
+                                Color(
+                                    values.int("custom_secondary_color")
+                                        ?: MaterialTheme.colorScheme.secondary.toArgb()
+                                ),
+                                CircleShape,
+                            )
+                    )
+                }
+            },
+            onClick = { showColors = true },
+        )
+    }
+    ThemeWorkbenchCard(
+        stringResource(R.string.theme_font_settings),
+        icon = Icons.Default.TextFields,
+    ) {
+        ThemeWorkbenchRow(
+            title = stringResource(R.string.theme_font_settings),
+            subtitle =
+                themeWorkbenchFontLabel(
+                    values.requiredBoolean("use_custom_font"),
+                    values.requiredString("font_type"),
+                    values.requiredString("system_font_name"),
+                    values.string("custom_font_path"),
+                ),
+            value =
+                stringResource(
+                    R.string.theme_workbench_font_scale,
+                    (values.requiredFloat("font_scale") * 100).toInt(),
+                ),
+            onClick = { showFont = true },
+        )
+    }
+    if (showColors)
+        ThemeWorkbenchDialog(stringResource(R.string.theme_custom_color), { showColors = false }) {
+            ThemeSettingsBasicColorPanel(shared, cardColors, values)
+        }
+    if (showFont)
+        ThemeWorkbenchDialog(stringResource(R.string.theme_font_settings), { showFont = false }) {
+            ThemeSettingsFontSection(
+                cardColors = cardColors,
+                context = shared.context,
+                editorSession = editorSession,
+                useCustomFontInput = values.requiredBoolean("use_custom_font"),
+                fontTypeInput = values.requiredString("font_type"),
+                systemFontNameInput = values.requiredString("system_font_name"),
+                customFontPathInput = values.string("custom_font_path"),
+                fontScaleInput = values.requiredFloat("font_scale"),
+                onPickFont = pickGlobalFont,
+            )
+        }
     ThemeLanguageSection(cardColors, languageChangeEnabled, onLanguageSelected)
 }
 
 @Composable
-private fun rememberGlobalFontPicker(
-    context: Context,
-    shared: ThemeSettingsShared,
-): () -> Unit {
+private fun rememberGlobalFontPicker(context: Context, shared: ThemeSettingsShared): () -> Unit {
     val editorSession = shared.editorSession
     val fontPickerLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+            uri: Uri? ->
             if (uri != null) {
                 shared.scope.launch {
                     val extension = FileUtils.getFileExtension(context, uri)?.lowercase()
-                    if (extension != null && (extension == "ttf" || extension == "otf" || extension == "ttc")) {
+                    if (
+                        extension != null &&
+                            (extension == "ttf" || extension == "otf" || extension == "ttc")
+                    ) {
                         val internalUri =
                             FileUtils.copyFileToInternalStorage(context, uri, "custom_font")
                         if (internalUri != null) {
@@ -90,29 +156,30 @@ private fun rememberGlobalFontPicker(
                             editorSession.update { current ->
                                 current
                                     .withString("custom_font_path", internalUriString)
-                                    .withString(
-                                        "font_type",
-                                        UserPreferencesManager.FONT_TYPE_FILE,
-                                    )
+                                    .withString("font_type", UserPreferencesManager.FONT_TYPE_FILE)
+                                    .withBoolean("use_custom_font", true)
                             }
                             OKToast.success(
-                                context,
-                                context.getString(R.string.font_file_saved, extension),
-                                OKToast.LENGTH_SHORT,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.font_file_saved, extension),
+                                    OKToast.LENGTH_SHORT,
+                                )
+                                .show()
                         } else {
                             OKToast.error(
-                                context,
-                                context.getString(R.string.font_file_save_failed),
-                                OKToast.LENGTH_LONG,
-                            ).show()
+                                    context,
+                                    context.getString(R.string.font_file_save_failed),
+                                    OKToast.LENGTH_LONG,
+                                )
+                                .show()
                         }
                     } else {
                         OKToast.warning(
-                            context,
-                            context.getString(R.string.unsupported_font_format),
-                            OKToast.LENGTH_LONG,
-                        ).show()
+                                context,
+                                context.getString(R.string.unsupported_font_format),
+                                OKToast.LENGTH_LONG,
+                            )
+                            .show()
                     }
                 }
             }
@@ -127,8 +194,8 @@ private fun ThemeSettingsBasicColorPanel(
     values: ThemePreferenceValues,
 ) {
     val editorSession = shared.editorSession
-    val defaultPrimaryColor = Color.Magenta.toArgb()
-    val defaultSecondaryColor = Color.Blue.toArgb()
+    val defaultPrimaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val defaultSecondaryColor = MaterialTheme.colorScheme.secondary.toArgb()
     val useCustomColorsInput = values.requiredBoolean("use_custom_colors")
     val primaryColorInput = values.int("custom_primary_color") ?: defaultPrimaryColor
     val secondaryColorInput = values.int("custom_secondary_color") ?: defaultSecondaryColor
@@ -162,13 +229,7 @@ private fun ThemeSettingsBasicColorPanel(
             bubbleUserTextColorInput = MaterialTheme.colorScheme.onPrimaryContainer.toArgb(),
             bubbleAiTextColorInput = MaterialTheme.colorScheme.onSurface.toArgb(),
             recentColors = recentColors,
-            onColorSelected = { primary,
-                secondary,
-                _,
-                _,
-                _,
-                _,
-                _ ->
+            onColorSelected = { primary, secondary, _, _, _, _, _ ->
                 updateDraftThemeColor(
                     shared = shared,
                     currentColorPickerMode = currentColorPickerMode,
@@ -193,7 +254,5 @@ private fun updateDraftThemeColor(
         "primary" -> primaryColor?.let { editorSession.setInt("custom_primary_color", it) }
         "secondary" -> secondaryColor?.let { editorSession.setInt("custom_secondary_color", it) }
     }
-    selectedColor?.let { color ->
-        shared.scope.launch { editorSession.addRecentColor(color) }
-    }
+    selectedColor?.let { color -> shared.scope.launch { editorSession.addRecentColor(color) } }
 }

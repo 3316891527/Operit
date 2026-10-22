@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.features.workflow.screens
+import com.ai.assistance.operit.ui.features.workflow.components.WorkflowRunDetailsDialog
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
@@ -43,8 +44,6 @@ import com.ai.assistance.operit.data.model.ExtractNode
 import com.ai.assistance.operit.data.model.ExtractMode
 import com.ai.assistance.operit.data.model.ParameterValue
 import com.ai.assistance.operit.data.model.ToolParameterSchema
-import com.ai.assistance.operit.data.model.WorkflowExecutionFailureStage
-import com.ai.assistance.operit.data.model.WorkflowExecutionRecord
 import com.ai.assistance.operit.ui.components.CustomScaffold
 import com.ai.assistance.operit.ui.features.workflow.viewmodel.WorkflowViewModel
 import com.ai.assistance.operit.ui.features.workflow.components.GridWorkflowCanvas
@@ -109,20 +108,6 @@ private fun ExtractMode.toDisplayText(): String {
     }
 }
 
-@Composable
-private fun WorkflowExecutionFailureStage.toDisplayText(): String {
-    return when (this) {
-        WorkflowExecutionFailureStage.WORKFLOW_STARTUP ->
-            stringResource(R.string.workflow_execution_failure_stage_startup)
-        WorkflowExecutionFailureStage.RUNTIME_INITIALIZATION ->
-            stringResource(R.string.workflow_execution_failure_stage_runtime_initialization)
-        WorkflowExecutionFailureStage.WORKFLOW_EXECUTION ->
-            stringResource(R.string.workflow_execution_failure_stage_execution)
-        WorkflowExecutionFailureStage.CANCELLATION ->
-            stringResource(R.string.workflow_execution_failure_stage_cancellation)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkflowDetailScreen(
@@ -149,7 +134,6 @@ fun WorkflowDetailScreen(
     val workflow = viewModel.currentWorkflow
     val nodeExecutionStates by viewModel.nodeExecutionStates.collectAsState()
     val runningWorkflowIds by viewModel.runningWorkflowIds.collectAsState()
-    val latestExecutionRecord = viewModel.latestExecutionRecord
     val isWorkflowRunning = runningWorkflowIds.contains(workflowId)
     val setTopBarActions = LocalTopBarActions.current
     val isCurrentScreen = LocalIsCurrentScreen.current
@@ -177,7 +161,6 @@ fun WorkflowDetailScreen(
             }
             IconButton(
                 onClick = {
-                    viewModel.loadLatestExecutionRecord(workflowId)
                     showExecutionLogsForNodeId = null
                     showExecutionLogDialog = true
                 }
@@ -373,13 +356,9 @@ fun WorkflowDetailScreen(
             }
 
             if (showExecutionLogDialog) {
-                val targetNode = showExecutionLogsForNodeId?.let { targetNodeId ->
-                    workflow?.nodes?.find { it.id == targetNodeId }
-                }
-                WorkflowExecutionLogDialog(
-                    record = latestExecutionRecord,
-                    nodeId = targetNode?.id,
-                    nodeName = targetNode?.name,
+                WorkflowRunDetailsDialog(
+                    workflowId = workflowId,
+                    nodeId = showExecutionLogsForNodeId,
                     onDismiss = {
                         showExecutionLogDialog = false
                         showExecutionLogsForNodeId = null
@@ -456,8 +435,7 @@ fun WorkflowDetailScreen(
                             showNodeActionMenu = null
                         },
                         onViewLogs = {
-                            viewModel.loadLatestExecutionRecord(workflowId)
-                            showExecutionLogsForNodeId = nodeId
+                                    showExecutionLogsForNodeId = nodeId
                             showExecutionLogDialog = true
                             showNodeActionMenu = null
                         },
@@ -562,102 +540,6 @@ private fun WorkflowEditorHeader(
         )
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-}
-
-@Composable
-private fun WorkflowExecutionLogDialog(
-    record: WorkflowExecutionRecord?,
-    nodeId: String? = null,
-    nodeName: String? = null,
-    onDismiss: () -> Unit
-) {
-    val dateTimeFormatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
-    val timeFormatter = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
-    val filteredLogs = remember(record, nodeId) {
-        val allLogs = record?.logs.orEmpty()
-        if (nodeId.isNullOrBlank()) {
-            allLogs
-        } else {
-            allLogs.filter { it.nodeId == nodeId }
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (nodeName.isNullOrBlank()) {
-                    stringResource(R.string.workflow_execution_log_title)
-                } else {
-                    stringResource(R.string.workflow_execution_log_node_title, nodeName)
-                }
-            )
-        },
-        text = {
-            if (record == null) {
-                Text(stringResource(R.string.workflow_execution_log_empty))
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 420.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "${dateTimeFormatter.format(Date(record.startedAt))} - ${if (record.success) stringResource(R.string.operation_success) else stringResource(R.string.operation_failed)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    record.failureStage?.let { failureStage ->
-                        Text(
-                            text = stringResource(
-                                R.string.workflow_execution_log_failure_stage,
-                                failureStage.toDisplayText()
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    record.failureReason?.let { failureReason ->
-                        Text(
-                            text = stringResource(
-                                R.string.workflow_execution_log_failure_reason,
-                                failureReason
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    if (filteredLogs.isEmpty()) {
-                        Text(
-                            text = if (nodeName.isNullOrBlank()) {
-                                stringResource(R.string.workflow_execution_log_empty)
-                            } else {
-                                stringResource(R.string.workflow_execution_log_empty_for_node, nodeName)
-                            },
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(filteredLogs) { item ->
-                                Text(
-                                    text = "${timeFormatter.format(Date(item.timestamp))} [${item.level}] ${item.message}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.confirm))
-            }
-        }
-    )
 }
 
 /**

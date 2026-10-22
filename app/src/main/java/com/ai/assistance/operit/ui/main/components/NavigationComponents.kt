@@ -1,4 +1,5 @@
 package com.ai.assistance.operit.ui.main.components
+import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
@@ -61,7 +62,8 @@ fun CompactNavigationDrawerItem(
                                     enabled = appearance.buttonLiquidGlassEnabled,
                                     shape = itemShape,
                                     containerColor = glassBaseColor,
-                                    enableLens = false
+                                    enableLens = false,
+                                region = GlassRegion.SIDEBAR_BUTTONS,
                             )
                             .clip(itemShape)
                             .background(selectedGlassOverlayColor),

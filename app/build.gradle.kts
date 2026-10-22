@@ -418,8 +418,8 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 64
-        versionName = "1.12.2+8"
+        versionCode = 65
+        versionName = "1.12.2+9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -938,4 +938,9 @@ dependencies {
     // Glance for Widgets (Compose for Widgets)
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
+}
+
+// 向 JVM 回归提供明确的源码根目录，供 Compose DSL 运行时用例读取宿主脚本。
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    systemProperty("operit.repositoryRoot", rootProject.projectDir.absolutePath)
 }
