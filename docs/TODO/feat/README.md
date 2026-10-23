@@ -69,3 +69,5 @@
 - [Withdrawn Entry Republish](withdrawn_entry_republish_20260811/index.md) · `withdrawn_entry_republish_20260811`
 - [工作台终端与资源入口界面整理](workspace-ui-polish/index.md) · `workspace-ui-polish`
 - [World Book Group Merge](worldbook_group_merge/index.md) · `worldbook_group_merge`
+- [工具权限界面](tool-permissions/index.md) · `tool-permissions`
+- [角色卡操作菜单](character-card-menu/index.md) · `character-card-menu`

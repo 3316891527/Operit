@@ -49,6 +49,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.content.ClipData
 import android.content.ClipboardManager
+import com.ai.assistance.operit.ui.features.settings.components.character.CharacterCardActionsMenu
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepository
@@ -2406,117 +2407,23 @@ fun CharacterCardItem(
                     ) {
                         Icon(
                             Icons.Outlined.MoreVert,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.more),
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 
-                    DropdownMenu(
+                    CharacterCardActionsMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false },
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
-                    ) {
-                        if (!isActive) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.set_active)) },
-                                onClick = {
-                                    onSetActive()
-                                    showMenu = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            )
-                        }
-                    
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit)) },
-                            onClick = {
-                                onEdit()
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-                    
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.duplicate)) },
-                            onClick = {
-                                onDuplicate()
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.ContentCopy,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.export)) },
-                            onClick = {
-                                onExport()
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Share,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-                    
-                        if (characterCard.isDefault) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.reset)) },
-                                onClick = {
-                                    onReset()
-                                    showMenu = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Restore,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            )
-                        }
-                    
-                        if (!characterCard.isDefault) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete)) },
-                                onClick = {
-                                    onDelete()
-                                    showMenu = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = MaterialTheme.colorScheme.error
-                                )
-                            )
-                        }
-                    }
+                        isActive = isActive,
+                        isDefault = characterCard.isDefault,
+                        onDismiss = { showMenu = false },
+                        onSetActive = onSetActive,
+                        onEdit = onEdit,
+                        onDuplicate = onDuplicate,
+                        onExport = onExport,
+                        onReset = onReset,
+                        onDelete = onDelete,
+                    )
                 }
             }
 

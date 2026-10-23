@@ -5070,7 +5070,7 @@
     <string name="tool_permissions_title">Tool Permissions</string>
     <string name="tool_permissions_description">By default, all tools require you to \'Ask\'. You can add exceptions below.</string>
     <string name="global_permission_switch">Global Permission Switch</string>
-    <string name="global_permission_switch_description">This setting acts as a master control and can override individual tool permissions.</string>
+    <string name="global_permission_switch_description">Used by tools without an individual rule; existing individual rules take priority.</string>
     <string name="permission_level_allow">Allowed</string>
     <string name="permission_level_allow_description">These tools will run automatically.</string>
     <string name="permission_level_forbid">Forbidden</string>

@@ -476,6 +476,16 @@
             </intent-filter>
         </receiver>
         
+        <!-- 系统时间与时区变化后重新计算工作流日历计划。 -->
+        <receiver
+            android:name=".core.workflow.scheduling.WorkflowScheduleTimeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Boot Completed Receiver for rescheduling workflows -->
         <receiver
             android:name=".integrations.tasker.WorkflowBootReceiver"

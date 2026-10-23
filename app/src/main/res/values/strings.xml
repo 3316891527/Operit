@@ -5575,7 +5575,7 @@
     <string name="tool_permissions_title">工具权限</string>
     <string name="tool_permissions_description">默认情况下，所有工具都需要您"询问"。您可以在下面添加例外。</string>
     <string name="global_permission_switch">全局权限开关</string>
-    <string name="global_permission_switch_description">此设置作为主控制，可以覆盖单个工具权限。</string>
+    <string name="global_permission_switch_description">未单独设置权限的工具使用此默认方式，不覆盖已有单项规则。</string>
     <string name="permission_level_allow">允许</string>
     <string name="permission_level_allow_description">这些工具将自动运行。</string>
     <string name="permission_level_forbid">禁止</string>
