@@ -74,3 +74,5 @@
 - [角色卡发言设置与存储入口](character-card-speech/index.md) · `character-card-speech`
 - [离线资源与本地模型](offline-resource-hub/index.md) · `offline-resource-hub`
 - [模型工作区四标签设计](model-settings-hub/index.md) · `model-settings-hub`
+
+- [模型设置与工具修复统一联调](settings-tools-integration/index.md)
