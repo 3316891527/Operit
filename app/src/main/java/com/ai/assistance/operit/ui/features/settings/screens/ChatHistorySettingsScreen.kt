@@ -29,7 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
 import androidx.compose.material3.*
-import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog as AlertDialog
+import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.text.KeyboardOptions
@@ -451,7 +451,7 @@ fun ChatHistorySettingsScreen(header: @Composable () -> Unit = {}) {
     if (showMissingActionDialog && pendingMissingStat != null) {
         val stat = pendingMissingStat!!
         val displayName = stat.characterCardName ?: context.getString(R.string.unbound_character_card)
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = {
                 showMissingActionDialog = false
                 pendingMissingStat = null
@@ -517,7 +517,7 @@ fun ChatHistorySettingsScreen(header: @Composable () -> Unit = {}) {
         } else {
             context.getString(R.string.missing_character_group_id, missingGroupId)
         }
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = {
                 showMissingGroupActionDialog = false
                 pendingMissingGroupStat = null
@@ -594,7 +594,7 @@ fun ChatHistorySettingsScreen(header: @Composable () -> Unit = {}) {
     if (showDeleteMissingDialog && pendingMissingStat != null) {
         val stat = pendingMissingStat!!
         val displayName = stat.characterCardName ?: context.getString(R.string.unbound_character_card)
-        AlertDialog(
+        DataBackupDialog(
             dismissEnabled = !deleteMissingInProgress,
             onDismissRequest = {
                 if (!deleteMissingInProgress) {
@@ -1670,7 +1670,6 @@ private fun ChatHistoryBatchSelectorCard(
                             }
                         },
                         enabled = canSubmit,
-                        modifier = Modifier.weight(1f)
                     ) {
                         if (submitting) {
                             CircularProgressIndicator(
@@ -1697,7 +1696,7 @@ private fun ChatHistoryBatchSelectorCard(
 
 
     if (showDeleteConfirmDialog) {
-        AlertDialog(
+        DataBackupDialog(
             dismissEnabled = !deleteInProgress,
             onDismissRequest = {
                 if (!deleteInProgress) {
@@ -1787,7 +1786,7 @@ private fun ChatHistoryBatchSelectorCard(
                 MemoryRebuildTimeScopeMode.ENTIRE -> true
                 MemoryRebuildTimeScopeMode.RANGE -> hasCompleteRange
             }
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = { showMemoryRebuildConfirmDialog = false },
             title = { Text(stringResource(R.string.chat_memory_rebuild_confirm_title)) },
             text = {

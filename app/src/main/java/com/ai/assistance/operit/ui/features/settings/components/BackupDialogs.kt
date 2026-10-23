@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog as AlertDialog
+import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -56,7 +56,7 @@ fun MemoryImportStrategyDialog(
     var selectedStrategy by remember { mutableStateOf(ImportStrategy.SKIP) }
     val texts = rememberMemoryImportStrategyTexts()
 
-    AlertDialog(
+    DataBackupDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_memory_import_strategy_title)) },
         text = {
@@ -163,7 +163,7 @@ fun ProfileSelectionDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    DataBackupDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -232,7 +232,7 @@ fun ChatHistoryExportSelectionDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
+    DataBackupDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_select_chat_records)) },
         text = {
@@ -367,7 +367,7 @@ fun ExportFormatDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    DataBackupDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_select_export_format)) },
         text = {
@@ -455,7 +455,7 @@ fun ImportFormatDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    DataBackupDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_select_import_format)) },
         text = {
@@ -633,7 +633,7 @@ fun ModelConfigExportWarningDialog(
     exportPath: String,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    DataBackupDialog(
         onDismissRequest = onDismiss,
         icon = {
             Icon(

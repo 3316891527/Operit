@@ -38,7 +38,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
-import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog as AlertDialog
+import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
@@ -1386,7 +1386,7 @@ ModelConfigManagementCard(
             ?: pendingRoomDbRestoreUri?.lastPathSegment
             ?: "-"
 
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = {
                 showRoomDbRestoreConfirmDialog = false
                 pendingRoomDbRestoreUri = null
@@ -1454,7 +1454,7 @@ ModelConfigManagementCard(
     if (showRawSnapshotRestoreConfirmDialog) {
         val targetName = pendingRawSnapshotRestoreUri?.lastPathSegment ?: "-"
 
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = {
                 showRawSnapshotRestoreConfirmDialog = false
                 pendingRawSnapshotRestoreUri = null
@@ -1563,7 +1563,7 @@ ModelConfigManagementCard(
     }
 
     if (showRoomDbRestoreRestartDialog) {
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = { showRoomDbRestoreRestartDialog = false },
             title = { Text(stringResource(R.string.backup_room_db_restart_title)) },
             text = { Text(stringResource(R.string.backup_room_db_restart_message)) },
@@ -1589,4 +1589,42 @@ ModelConfigManagementCard(
         )
     }
 
+}
+
+private suspend fun exportMemories(_context: Context, memoryRepository: MemoryRepository): String? =
+    withContext(Dispatchers.IO) {
+        try {
+            val jsonString = memoryRepository.exportMemoriesToJson()
+
+            val exportDir = OperitBackupDirs.memoryDir()
+
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
+            val timestamp = dateFormat.format(Date())
+            val exportFile = File(exportDir, "memory_backup_$timestamp.json")
+
+            exportFile.writeText(jsonString)
+
+            return@withContext exportFile.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return@withContext null
+        }
+    }
+
+private suspend fun importMemoriesFromUri(
+    context: Context,
+    memoryRepository: MemoryRepository,
+    uri: Uri,
+    strategy: ImportStrategy
+) = withContext(Dispatchers.IO) {
+    val inputStream = context.contentResolver.openInputStream(uri)
+        ?: throw Exception(context.getString(R.string.backup_open_file_failed))
+    val jsonString = inputStream.bufferedReader().use { it.readText() }
+    inputStream.close()
+
+    if (jsonString.isBlank()) {
+        throw Exception(context.getString(R.string.backup_import_file_empty))
+    }
+
+    memoryRepository.importMemoriesFromJson(jsonString, strategy)
 }
