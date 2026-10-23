@@ -5589,7 +5589,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="backup_room_db_last_error">Eroarea anterioară:%1$s</string>
     <string name="backup_files_location_hint">Notă: Fișierul de rezervă este salvat în Download/Operit Dosar</string>
 
-    <string name="backup_raw_snapshot_title">Copie de rezervă a instantaneelor de fișiere (experimental)</string>
+    <string name="backup_raw_snapshot_title">Copie de rezervă a instantaneelor de fișiere</string>
     <string name="backup_raw_snapshot_subtitle">pe baza documentului/Copierea de rezervă și restaurarea integrală, pe unități de index</string>
     <string name="backup_raw_snapshot_desc">Datele aplicației care vor fi șterse odată cu opțiunea „Ștergere date”: interne files/shared_prefs/datastore/databases, precum și Android/data/Numele pachetului/files(Terminal Linux Volumul de date este foarte mare (implicit, nu se face o copie de rezervă). Restaurarea va suprascrie datele actuale și necesită repornirea aplicației pentru a intra în vigoare. O parte din datele criptate vor fi pierdute la schimbarea dispozitivului/Este posibil ca acesta să nu mai funcționeze după reinstalare.</string>
     <string name="backup_raw_snapshot_backup_now">Fă o copie de rezervă imediat</string>

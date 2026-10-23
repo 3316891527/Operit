@@ -10,6 +10,8 @@ import com.ai.assistance.operit.core.workflow.NodeExecutionState
 import com.ai.assistance.operit.core.workflow.WorkflowExecutionRetryableException
 import com.ai.assistance.operit.core.workflow.WorkflowExecutionCancelledException
 import com.ai.assistance.operit.core.workflow.WorkflowExecutor
+import com.ai.assistance.operit.core.workflow.scheduling.WorkflowSchedulePlan
+import com.ai.assistance.operit.core.workflow.scheduling.WorkflowScheduleObsoleteException
 import com.ai.assistance.operit.core.workflow.WorkflowScheduler
 import com.ai.assistance.operit.core.workflow.runtime.ScheduledWorkflowQueue
 import com.ai.assistance.operit.core.workflow.runtime.classifyWorkflowIssue
@@ -358,8 +360,19 @@ class WorkflowRepository(private val context: Context) {
         }
     }
 
-    suspend fun triggerScheduledWorkflow(id: String, triggerNodeId: String?): Result<String> =
-        ScheduledWorkflowQueue.run(id) { triggerWorkflow(id, triggerNodeId) }
+    suspend fun triggerScheduledWorkflow(id: String, triggerNodeId: String?, scheduleSignature: String? = null): Result<String> =
+        ScheduledWorkflowQueue.run(id) {
+            val workflow = getWorkflowById(id).getOrThrow()
+            val plan = workflow?.let { WorkflowSchedulePlan.from(it) }
+            // 排队期间配置可能改变，真正执行前再次核对触发节点、开关及计划签名。
+            if (plan == null || plan.triggerId != triggerNodeId || plan.expired(System.currentTimeMillis()) ||
+                (scheduleSignature != null && scheduleSignature != plan.signature)) {
+                Result.failure(WorkflowScheduleObsoleteException())
+            } else {
+                AppLogger.d(TAG, "Scheduled workflow passed queue: $id, executionStartedAt=${System.currentTimeMillis()}")
+                triggerWorkflow(id, triggerNodeId)
+            }
+        }
 
     suspend fun getLatestExecutionRecord(workflowId: String): Result<WorkflowExecutionRecord?> = withContext(Dispatchers.IO) {
         try {
@@ -454,6 +467,7 @@ class WorkflowRepository(private val context: Context) {
     suspend fun createWorkflow(workflow: Workflow): Result<Workflow> = withContext(Dispatchers.IO) {
         try {
             require(workflow.id.isNotBlank()) { "Workflow id cannot be empty" }
+            WorkflowSchedulePlan.from(workflow)
             withWorkflowStoreLock {
                 val file = getWorkflowFile(workflow.id)
                 val content = json.encodeToString(workflow)
@@ -470,6 +484,8 @@ class WorkflowRepository(private val context: Context) {
             notifyWorkflowsChanged()
             
             Result.success(workflow)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to create workflow", e)
             Result.failure(e)
@@ -483,27 +499,25 @@ class WorkflowRepository(private val context: Context) {
         try {
             require(workflow.id.isNotBlank()) { "Workflow id cannot be empty" }
             val updatedWorkflow = workflow.copy(updatedAt = System.currentTimeMillis())
-            withWorkflowStoreLock {
+            WorkflowSchedulePlan.from(updatedWorkflow)
+            val previous = withWorkflowStoreLock {
                 val file = getWorkflowFile(updatedWorkflow.id)
-                val content = json.encodeToString(updatedWorkflow)
-                writeTextAtomically(file, content)
+                val previous = if (hasAtomicReadableFile(file)) readWorkflowFile(file, updatedWorkflow.id) else null
+                writeTextAtomically(file, json.encodeToString(updatedWorkflow))
+                previous
             }
-            
-            AppLogger.d(TAG, "Workflow updated: ${updatedWorkflow.id}")
-            
-            // Keep WorkManager in sync with the latest workflow state.
-            if (updatedWorkflow.enabled && hasScheduleTrigger(updatedWorkflow)) {
-                rescheduleWorkflow(updatedWorkflow.id)
-            } else {
-                unscheduleWorkflow(updatedWorkflow.id)
+            // 名称、描述和节点位置变化不重置计时，也不取消已经排队的执行。
+            if (previous?.let { WorkflowSchedulePlan.identity(it) } != WorkflowSchedulePlan.identity(updatedWorkflow)) {
+                if (updatedWorkflow.enabled && hasScheduleTrigger(updatedWorkflow)) rescheduleWorkflow(updatedWorkflow.id)
+                else unscheduleWorkflow(updatedWorkflow.id)
             }
-
             notifyWorkflowsChanged()
-            
             Result.success(updatedWorkflow)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to update workflow", e)
-            Result.failure(e)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "Failed to update workflow", error)
+            Result.failure(error)
         }
     }
 
@@ -563,6 +577,7 @@ class WorkflowRepository(private val context: Context) {
     suspend fun setWorkflowEnabled(id: String, enabled: Boolean): Result<Workflow> = withContext(Dispatchers.IO) {
         try {
             require(id.isNotBlank()) { "Workflow id cannot be empty" }
+            var enabledChanged = false
             val updatedWorkflow = withWorkflowStoreLock {
                 val file = getWorkflowFile(id)
                 if (!hasAtomicReadableFile(file)) {
@@ -570,7 +585,9 @@ class WorkflowRepository(private val context: Context) {
                 }
 
                 val workflow = readWorkflowFile(file, id)
+                enabledChanged = workflow.enabled != enabled
                 val nextWorkflow = workflow.copy(enabled = enabled)
+                WorkflowSchedulePlan.from(nextWorkflow)
                 val content = json.encodeToString(nextWorkflow)
                 writeTextAtomically(file, content)
                 nextWorkflow
@@ -580,7 +597,7 @@ class WorkflowRepository(private val context: Context) {
             AppLogger.d(TAG, "Workflow enabled state updated: ${updatedWorkflow.id} -> $enabled")
 
             if (updatedWorkflow.enabled && hasScheduleTrigger(updatedWorkflow)) {
-                rescheduleWorkflow(updatedWorkflow.id)
+                scheduleWorkflow(updatedWorkflow.id, replaceExisting = enabledChanged)
             } else {
                 unscheduleWorkflow(updatedWorkflow.id)
             }
@@ -588,6 +605,8 @@ class WorkflowRepository(private val context: Context) {
             notifyWorkflowsChanged()
 
             Result.success(updatedWorkflow)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to update workflow enabled state", e)
             Result.failure(e)
@@ -860,9 +879,9 @@ class WorkflowRepository(private val context: Context) {
     /**
      * Schedule a workflow
      */
-    fun scheduleWorkflow(id: String): Boolean {
+    suspend fun scheduleWorkflow(id: String, replaceExisting: Boolean = false, preserveRunning: Boolean = false): Boolean {
         return try {
-            val workflowResult = kotlinx.coroutines.runBlocking { getWorkflowById(id) }
+            val workflowResult = getWorkflowById(id)
             val workflow = workflowResult.getOrNull()
             
             if (workflow == null) {
@@ -871,15 +890,19 @@ class WorkflowRepository(private val context: Context) {
             }
             
             if (!workflow.enabled) {
+                scheduler.cancelWorkflow(id)
                 AppLogger.d(TAG, "Workflow is disabled, not scheduling: $id")
                 return false
             }
 
             if (!hasScheduleTrigger(workflow)) {
+                scheduler.cancelWorkflow(id)
                 return false
             }
             
-            scheduler.scheduleWorkflow(workflow)
+            scheduler.scheduleWorkflow(workflow, replaceExisting, preserveRunning)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to schedule workflow: $id", e)
             false
@@ -889,10 +912,12 @@ class WorkflowRepository(private val context: Context) {
     /**
      * Unschedule a workflow
      */
-    fun unscheduleWorkflow(id: String) {
+    suspend fun unscheduleWorkflow(id: String) {
         try {
             scheduler.cancelWorkflow(id)
             AppLogger.d(TAG, "Workflow unscheduled: $id")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to unschedule workflow: $id", e)
         }
@@ -901,9 +926,8 @@ class WorkflowRepository(private val context: Context) {
     /**
      * Reschedule a workflow (cancel + schedule)
      */
-    fun rescheduleWorkflow(id: String): Boolean {
-        unscheduleWorkflow(id)
-        return scheduleWorkflow(id)
+    suspend fun rescheduleWorkflow(id: String, preserveRunning: Boolean = false): Boolean {
+        return scheduleWorkflow(id, replaceExisting = true, preserveRunning = preserveRunning)
     }
     
     /**

@@ -49,6 +49,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.content.ClipData
 import android.content.ClipboardManager
+import com.ai.assistance.operit.ui.features.settings.components.character.CharacterCardActionsMenu
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepository
@@ -64,6 +65,8 @@ import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.preferences.PromptTagManager
+import com.ai.assistance.operit.data.preferences.WaifuPreferences
+import com.ai.assistance.operit.data.preferences.WaifuSettings
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.util.FileUtils
 import com.canhub.cropper.CropImageContract
@@ -118,6 +121,7 @@ fun ModelPromptsSettingsScreen(
     val scope = rememberCoroutineScope()
     var showTagSavedHighlight by remember { mutableStateOf(false) }
     var showSaveSuccessMessage by remember { mutableStateOf(false) }
+    var isSavingCharacterCard by remember { mutableStateOf(false) }
     var showDuplicateSuccessMessage by remember { mutableStateOf(false) }
 
     // 管理器
@@ -625,7 +629,9 @@ fun ModelPromptsSettingsScreen(
     }
 
     // 保存角色卡
-    fun saveCharacterCard(card: CharacterCard, onSaved: ((String, String) -> Unit)? = null) {
+    fun saveCharacterCard(card: CharacterCard, speech: WaifuSettings, onSaved: ((String, String) -> Unit)? = null) {
+        if (isSavingCharacterCard) return
+        isSavingCharacterCard = true
         val originalNameSnapshot = editingOriginalName
         val isExistingCard = card.id.isNotEmpty()
         val nameChanged = isExistingCard &&
@@ -633,42 +639,50 @@ fun ModelPromptsSettingsScreen(
                 originalNameSnapshot != card.name
 
         scope.launch {
-            val savedId = if (!isExistingCard) {
-                val newCardId = characterCardManager.createCharacterCard(card)
-                activePromptManager.saveCustomChatTitleForPrompt(
-                    ActivePrompt.CharacterCard(newCardId),
-                    card.name.ifEmpty { null },
-                )
-                pendingCharacterAvatarUri?.let { uri ->
-                    val internalUri = FileUtils.copyFileToInternalStorage(context, uri, "avatar_$newCardId")
-                    if (internalUri != null) {
-                        activePromptManager.saveAiAvatarForPrompt(
-                            ActivePrompt.CharacterCard(newCardId), internalUri.toString()
-                        )
-                    } else {
-                        OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
+            try {
+                val savedId = if (!isExistingCard) {
+                    val newCardId = characterCardManager.createCharacterCard(card)
+                    activePromptManager.saveCustomChatTitleForPrompt(
+                        ActivePrompt.CharacterCard(newCardId),
+                        card.name.ifEmpty { null },
+                    )
+                    pendingCharacterAvatarUri?.let { uri ->
+                        val internalUri = FileUtils.copyFileToInternalStorage(context, uri, "avatar_$newCardId")
+                        if (internalUri != null) {
+                            activePromptManager.saveAiAvatarForPrompt(
+                                ActivePrompt.CharacterCard(newCardId), internalUri.toString()
+                            )
+                        } else {
+                            OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
+                        }
                     }
+                    newCardId
+                } else {
+                    characterCardManager.updateCharacterCard(card)
+                    activePromptManager.saveCustomChatTitleForPrompt(
+                        ActivePrompt.CharacterCard(card.id),
+                        card.name.ifEmpty { null },
+                    )
+                    card.id
                 }
-                newCardId
-            } else {
-                characterCardManager.updateCharacterCard(card)
-                activePromptManager.saveCustomChatTitleForPrompt(
-                    ActivePrompt.CharacterCard(card.id),
-                    card.name.ifEmpty { null },
-                )
-                card.id
-            }
-            showAddCharacterCardDialog = false
-            showEditCharacterCardDialog = false
-            pendingCharacterAvatarUri = null
-            editingCharacterCard = null
-            editingOriginalName = null
-            showSaveSuccessMessage = true
-            refreshTrigger++
-            if (nameChanged) {
-                showChatManagementPrompt = true
-            }
-            onSaved?.invoke(savedId, card.name)
+                WaifuPreferences.getInstance(context).saveCharacterCardSettings(savedId, speech)
+                showAddCharacterCardDialog = false
+                showEditCharacterCardDialog = false
+                pendingCharacterAvatarUri = null
+                editingCharacterCard = null
+                editingOriginalName = null
+                showSaveSuccessMessage = true
+                refreshTrigger++
+                if (nameChanged) {
+                    showChatManagementPrompt = true
+                }
+                onSaved?.invoke(savedId, card.name)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e("ModelPromptsSettings", "保存角色卡和发言设置失败", error)
+                OKToast.error(context, context.getString(R.string.save_failed), OKToast.LENGTH_LONG).show()
+            } finally { isSavingCharacterCard = false }
         }
     }
 
@@ -1225,16 +1239,17 @@ fun ModelPromptsSettingsScreen(
             ),
             allTags = allTags,
             userPreferencesManager = userPreferencesManager,
+            isSaving = isSavingCharacterCard,
             avatarPreviewUri = pendingCharacterAvatarUri,
             onDismiss = {
                 showAddCharacterCardDialog = false
                 pendingCharacterAvatarUri = null
                 editingCharacterCard = null
             },
-            onSave = { card ->
-                saveCharacterCard(card)
+            onSave = { card, speech ->
+                saveCharacterCard(card, speech)
             },
-            onExport = { card -> saveCharacterCard(card, ::openCharacterCardExport) },
+            onExport = { card, speech -> saveCharacterCard(card, speech, ::openCharacterCardExport) },
             onManageTags = { showCharacterTagManagementDialog = true },
             onAvatarChange = {
                 avatarImagePicker.launch("image/*")
@@ -1260,15 +1275,16 @@ fun ModelPromptsSettingsScreen(
             ),
             allTags = allTags,
             userPreferencesManager = userPreferencesManager,
+            isSaving = isSavingCharacterCard,
             onDismiss = {
                 showEditCharacterCardDialog = false
                 editingCharacterCard = null
                 editingOriginalName = null
             },
-            onSave = { card ->
-                saveCharacterCard(card)
+            onSave = { card, speech ->
+                saveCharacterCard(card, speech)
             },
-            onExport = { card -> saveCharacterCard(card, ::openCharacterCardExport) },
+            onExport = { card, speech -> saveCharacterCard(card, speech, ::openCharacterCardExport) },
             onManageTags = { showCharacterTagManagementDialog = true },
             onAvatarChange = {
                 avatarImagePicker.launch("image/*")
@@ -2406,117 +2422,23 @@ fun CharacterCardItem(
                     ) {
                         Icon(
                             Icons.Outlined.MoreVert,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.more),
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 
-                    DropdownMenu(
+                    CharacterCardActionsMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false },
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
-                    ) {
-                        if (!isActive) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.set_active)) },
-                                onClick = {
-                                    onSetActive()
-                                    showMenu = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            )
-                        }
-                    
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit)) },
-                            onClick = {
-                                onEdit()
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-                    
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.duplicate)) },
-                            onClick = {
-                                onDuplicate()
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.ContentCopy,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.export)) },
-                            onClick = {
-                                onExport()
-                                showMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Share,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        )
-                    
-                        if (characterCard.isDefault) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.reset)) },
-                                onClick = {
-                                    onReset()
-                                    showMenu = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Restore,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            )
-                        }
-                    
-                        if (!characterCard.isDefault) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.delete)) },
-                                onClick = {
-                                    onDelete()
-                                    showMenu = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = MaterialTheme.colorScheme.error
-                                )
-                            )
-                        }
-                    }
+                        isActive = isActive,
+                        isDefault = characterCard.isDefault,
+                        onDismiss = { showMenu = false },
+                        onSetActive = onSetActive,
+                        onEdit = onEdit,
+                        onDuplicate = onDuplicate,
+                        onExport = onExport,
+                        onReset = onReset,
+                        onDelete = onDelete,
+                    )
                 }
             }
 

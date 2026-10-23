@@ -4838,7 +4838,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="backup_room_db_last_error">Ralat terakhir: %1$s</string>
     <string name="backup_files_location_hint">Petunjuk: Fail sandaran disimpan dalam folder Download/Operit</string>
 
-    <string name="backup_raw_snapshot_title">Sandaran Snapshot Fail (Eksperimen)</string>
+    <string name="backup_raw_snapshot_title">Sandaran Snapshot Fail</string>
     <string name="backup_raw_snapshot_subtitle">Sandaran dan pemulihan mampatan keseluruhan berdasarkan unit fail/direktori</string>
     <string name="backup_raw_snapshot_desc">Akan membungkus direktori data dalaman aplikasi files/shared_prefs/datastore/databases (persekitaran terminal Linux sangat besar, tidak disandarkan secara lalai). Pemulihan akan menimpa data semasa, dan memerlukan aplikasi dimulakan semula untuk berkuat kuasa. Sebahagian data yang disulitkan mungkin tidak dapat digunakan selepas menukar peranti/memasang semula.</string>
     <string name="backup_raw_snapshot_backup_now">Sandar Sekarang</string>

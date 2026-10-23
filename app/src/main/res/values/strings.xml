@@ -5575,7 +5575,7 @@
     <string name="tool_permissions_title">工具权限</string>
     <string name="tool_permissions_description">默认情况下，所有工具都需要您"询问"。您可以在下面添加例外。</string>
     <string name="global_permission_switch">全局权限开关</string>
-    <string name="global_permission_switch_description">此设置作为主控制，可以覆盖单个工具权限。</string>
+    <string name="global_permission_switch_description">未单独设置权限的工具使用此默认方式，不覆盖已有单项规则。</string>
     <string name="permission_level_allow">允许</string>
     <string name="permission_level_allow_description">这些工具将自动运行。</string>
     <string name="permission_level_forbid">禁止</string>
@@ -5989,7 +5989,7 @@
     <string name="backup_room_db_last_error">上次错误：%1$s</string>
     <string name="backup_files_location_hint">提示：备份文件保存在 Download/Operit 文件夹</string>
 
-    <string name="backup_raw_snapshot_title">文件快照备份（实验）</string>
+    <string name="backup_raw_snapshot_title">文件快照备份</string>
     <string name="backup_raw_snapshot_subtitle">以文件/目录为单位的整体压缩备份与恢复</string>
     <string name="backup_raw_snapshot_desc">将打包会随“清除数据”一起删除的应用数据：内部 files/shared_prefs/datastore/databases，以及 Android/data/包名/files（终端 Linux 环境体积很大，默认不备份）。恢复会覆盖当前数据，并且需要重启应用生效。部分加密数据在换机/重装后可能无法使用。</string>
     <string name="backup_raw_snapshot_include_logs">在快照中包含日志</string>
@@ -9442,4 +9442,52 @@
     <string name="chat_batch_move_success">已移动 %1$d 条对话</string>
     <string name="chat_batch_move_failed">移动失败，请检查所选对话和目标文件夹后重试。</string>
     <string name="emoji_create_category_first">还没有表情分组，请先创建分组</string>
+
+    <!-- 主题导入与导出 -->
+    <string name="theme_transfer_title">主题设置</string>
+    <string name="theme_transfer_export">导出主题</string>
+    <string name="theme_transfer_import">导入主题</string>
+    <string name="theme_transfer_generated">分享码已生成</string>
+    <string name="theme_transfer_preview">预览主题</string>
+    <string name="theme_transfer_name">主题名称</string>
+    <string name="theme_transfer_author">作者</string>
+    <string name="theme_transfer_code">分享码</string>
+    <string name="theme_transfer_file">主题文件 .oktheme</string>
+    <string name="theme_transfer_full_contents">包含主题参数、背景图片或视频、双方气泡图片、自定义字体、头像及素材调整。</string>
+    <string name="theme_transfer_paste">分享码或主题链接</string>
+    <string name="theme_transfer_choose_file">选择主题文件</string>
+    <string name="theme_transfer_generate">生成分享码</string>
+    <string name="theme_transfer_export_file">导出主题文件</string>
+    <string name="theme_transfer_validate">校验并预览</string>
+    <string name="theme_transfer_copy">复制分享码</string>
+    <string name="theme_transfer_copied">分享码已复制</string>
+    <string name="theme_transfer_target">选择目标角色卡</string>
+    <string name="theme_transfer_apply">应用主题</string>
+    <string name="theme_transfer_global_layout">同时应用聊天布局（全局）</string>
+    <string name="theme_transfer_preview_user">我</string>
+    <string name="theme_transfer_overwrite_title">覆盖角色主题？</string>
+    <string name="theme_transfer_overwrite_message">角色卡“%1$s”已有主题配置，是否覆盖？</string>
+    <string name="theme_transfer_overwrite">覆盖主题</string>
+    <string name="theme_transfer_success">主题操作已完成</string>
+    <string name="theme_transfer_error_code">分享码无效或已损坏</string>
+    <string name="theme_transfer_error_config">主题配置不完整或参数无效</string>
+    <string name="theme_transfer_error_version">暂不支持此主题版本</string>
+    <string name="theme_transfer_error_manifest">主题包缺少 manifest.json</string>
+    <string name="theme_transfer_error_archive">主题包格式无效或文件已损坏</string>
+    <string name="theme_transfer_error_asset">主题引用的素材缺失或无法读取</string>
+    <string name="theme_transfer_error_size">主题超过允许的大小</string>
+    <string name="theme_transfer_error_target">目标角色卡已不存在，请重新选择</string>
+    <string name="theme_transfer_error_io">无法读写主题文件</string>
+
+    <!-- 主题分享界面组件 -->
+    <string name="theme_transfer_entry_subtitle">外观参数与完整主题包</string>
+    <string name="theme_transfer_file_tab">主题文件</string>
+    <string name="theme_transfer_source">导出来源</string>
+    <string name="theme_transfer_code_length">%1$d 个字符</string>
+    <string name="theme_transfer_apply_to">应用到</string>
+    <string name="theme_transfer_back_preview">返回主题预览</string>
+    <string name="theme_target_search">搜索名称</string>
+    <string name="theme_target_no_matches">没有匹配项</string>
+    <string name="theme_target_character_label">角色卡</string>
+    <string name="theme_target_group_label">群组</string>
 </resources>

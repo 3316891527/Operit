@@ -51,6 +51,11 @@ import com.ai.assistance.operit.core.config.SystemToolPrompts
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
+import com.ai.assistance.operit.data.preferences.WaifuPreferences
+import com.ai.assistance.operit.data.preferences.WaifuSettings
+import com.ai.assistance.operit.ui.features.settings.components.character.speech.CharacterSpeechSettings
+import com.ai.assistance.operit.util.AppLogger
+import kotlinx.coroutines.CancellationException
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.skill.SkillRepository
 import com.ai.assistance.operit.api.chat.EnhancedAIService
@@ -67,11 +72,12 @@ fun CharacterCardDialog(
     userPreferencesManager: UserPreferencesManager,
     avatarPreviewUri: Uri? = null,
     onDismiss: () -> Unit,
-    onSave: (CharacterCard) -> Unit,
-    onExport: (CharacterCard) -> Unit,
+    onSave: (CharacterCard, WaifuSettings) -> Unit,
+    onExport: (CharacterCard, WaifuSettings) -> Unit,
     onManageTags: () -> Unit,
     onAvatarChange: () -> Unit,
-    onAvatarReset: () -> Unit
+    onAvatarReset: () -> Unit,
+    isSaving: Boolean = false,
 ) {
     var name by remember(characterCard.id) { mutableStateOf(characterCard.name) }
     var description by remember(characterCard.id) { mutableStateOf(characterCard.description) }
@@ -104,7 +110,7 @@ fun CharacterCardDialog(
     var popupExpandedFixedConfigId by remember(characterCard.id) { mutableStateOf<String?>(null) }
     var showFixedMemoryProfilePickerDialog by remember(characterCard.id) { mutableStateOf(false) }
     var showToolAccessDialog by remember(characterCard.id) { mutableStateOf(false) }
-    val pagerState = key(characterCard.id) { rememberPagerState(pageCount = { 3 }) }
+    val pagerState = key(characterCard.id) { rememberPagerState(pageCount = { 4 }) }
     
     // 翻译相关状态
     var isTranslating by remember { mutableStateOf(false) }
@@ -117,6 +123,22 @@ fun CharacterCardDialog(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val waifuPreferences = remember { WaifuPreferences.getInstance(context) }
+    var speechSettings by remember(characterCard.id) { mutableStateOf<WaifuSettings?>(null) }
+    var speechLoadFailed by remember(characterCard.id) { mutableStateOf(false) }
+    var speechLoadVersion by remember(characterCard.id) { mutableIntStateOf(0) }
+    LaunchedEffect(characterCard.id, speechLoadVersion) {
+        speechLoadFailed = false
+        try {
+            speechSettings = waifuPreferences.loadCharacterCardSettings(characterCard.id)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLogger.e("CharacterCardDialog", "读取角色卡发言设置失败", error)
+            speechLoadFailed = true
+        }
+    }
+
     val useEnglish = remember(context) {
         !LocaleUtils.usesChineseContent(context)
     }
@@ -291,15 +313,22 @@ fun CharacterCardDialog(
         tabTitles = listOf(
             stringResource(R.string.character_card_tab_basic),
             stringResource(R.string.character_card_tab_content),
+            stringResource(R.string.character_card_tab_speech),
             stringResource(R.string.character_card_tab_binding),
         ),
         pagerState = pagerState,
-        onDismiss = onDismiss,
+        onDismiss = { if (!isSaving) onDismiss() },
         actions = {
-            TextButton(onClick = { draftCard()?.let(onExport) }) { Text(stringResource(R.string.export)) }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(enabled = speechSettings != null && !isSaving, onClick = {
+                val speech = speechSettings ?: return@TextButton
+                draftCard()?.let { onExport(it, speech) }
+            }) { Text(stringResource(R.string.export)) }
+            TextButton(enabled = !isSaving, onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
             Spacer(Modifier.width(8.dp))
-            Button(onClick = { draftCard()?.let(onSave) }) { Text(stringResource(R.string.save)) }
+            Button(enabled = speechSettings != null && !isSaving, onClick = {
+                val speech = speechSettings ?: return@Button
+                draftCard()?.let { onSave(it, speech) }
+            }) { Text(stringResource(R.string.save)) }
         },
     ) { page ->
         if (page == 0) {
@@ -553,6 +582,23 @@ fun CharacterCardDialog(
         }
         }
         if (page == 2) {
+            val speech = speechSettings
+            if (speech != null) CharacterSpeechSettings(
+                characterCardId = characterCard.id,
+                settings = speech,
+                onChange = { speechSettings = it },
+                onExpandPrompt = { selfie ->
+                    fullScreenEditTitle = context.getString(if (selfie) R.string.appearance_prompt else R.string.waifu_custom_prompt)
+                    fullScreenEditValue = if (selfie) speech.selfiePrompt else speech.customPrompt
+                    fullScreenEditField = if (selfie) "waifuSelfiePrompt" else "waifuCustomPrompt"
+                    showFullScreenEdit = true
+                },
+            ) else if (speechLoadFailed) {
+                Text(stringResource(R.string.character_speech_load_failed), color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = { speechLoadVersion++ }) { Text(stringResource(R.string.action_retry)) }
+            } else CircularProgressIndicator(modifier = Modifier.size(24.dp))
+        }
+        if (page == 3) {
             val selectedFixedConfig = configSummaries.find { it.id == fixedChatModelConfigId }
             val effectiveFixedModelIndex = if (selectedFixedConfig != null) {
                 getValidModelIndex(selectedFixedConfig.modelName, fixedChatModelIndex)
@@ -942,6 +988,8 @@ fun CharacterCardDialog(
                     "otherContentVoice" -> otherContentVoice = newValue
                     "advancedCustomPrompt" -> advancedCustomPrompt = newValue
                     "marks" -> marks = newValue
+                    "waifuCustomPrompt" -> speechSettings = speechSettings?.copy(customPrompt = newValue)
+                    "waifuSelfiePrompt" -> speechSettings = speechSettings?.copy(selfiePrompt = newValue)
                 }
                 showFullScreenEdit = false
             }

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.ThemeWorkbenchSlider
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
@@ -276,7 +277,7 @@ fun WaifuModeSettingsScreen(
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Slider(
+                    ThemeWorkbenchSlider(
                         value = mergeSendDelayMs.toFloat(),
                         onValueChange = { newDelay ->
                             saveSettings {
@@ -331,7 +332,7 @@ fun WaifuModeSettingsScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.width(30.dp)
                             )
-                            Slider(
+                            ThemeWorkbenchSlider(
                                 value = charDelay.toFloat(),
                                 onValueChange = { newDelay ->
                                     saveSettings {

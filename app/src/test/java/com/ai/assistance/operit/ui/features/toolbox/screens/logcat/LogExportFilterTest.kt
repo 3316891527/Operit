@@ -103,4 +103,20 @@ class LogExportFilterTest {
         )
         assertEquals(listOf("I/ToolPkg: package loaded"), result.lines)
     }
+
+    @Test
+    fun sensitiveMarkersInExceptionMessagesUseTheSameRules() {
+        val raw = "2026-10-23 13:59:35.001 E/Example: java.lang.IllegalStateException: Request body: PRIVATE_REQUEST"
+        val text = LogExportFilter.filterText(raw, LogExportOptions(hideSensitive = true)).lines.joinToString("\n")
+        assertFalse(text.contains("PRIVATE_REQUEST"))
+        assertTrue(text.contains("[redacted,"))
+    }
+
+    @Test
+    fun sensitiveMarkersInContinuationsAreHidden() {
+        val raw = "2026-10-23 13:59:35.001 E/Example: failure\n请求体JSON: PRIVATE_REQUEST"
+        val text = LogExportFilter.filterText(raw, LogExportOptions(hideSensitive = true)).lines.joinToString("\n")
+        assertFalse(text.contains("PRIVATE_REQUEST"))
+        assertTrue(text.contains("[redacted,"))
+    }
 }

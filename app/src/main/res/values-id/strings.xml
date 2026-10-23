@@ -4879,7 +4879,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="backup_room_db_last_success">Cadangan berhasil terakhir: %1$s</string>
     <string name="backup_room_db_last_error">Kesalahan terakhir: %1$s</string>
     <string name="backup_files_location_hint">Petunjuk: File cadangan disimpan di folder Download/Operit</string>
-    <string name="backup_raw_snapshot_title">Cadangan Snapshot File (Eksperimental)</string>
+    <string name="backup_raw_snapshot_title">Cadangan Snapshot File</string>
     <string name="backup_raw_snapshot_subtitle">Cadangan dan pemulihan kompresi keseluruhan berbasis file/direktori</string>
     <string name="backup_raw_snapshot_desc">Akan mengemas direktori data internal aplikasi seperti files/shared_prefs/datastore/databases (lingkungan terminal Linux volumenya sangat besar, tidak dicadangkan secara default). Pemulihan akan menimpa data saat ini dan memerlukan restart aplikasi untuk berlaku. Beberapa data terenkripsi mungkin tidak dapat digunakan setelah pindah perangkat/instal ulang.</string>
     <string name="backup_raw_snapshot_backup_now">Cadangkan Sekarang</string>

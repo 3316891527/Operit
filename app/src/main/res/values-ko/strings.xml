@@ -4870,7 +4870,7 @@
     <string name="backup_room_db_last_success">마지막으로 성공한 백업: %1$s</string>
     <string name="backup_room_db_last_error">마지막 오류: %1$s</string>
     <string name="backup_files_location_hint">팁: 백업 파일은 Download/Operit 폴더에 저장됩니다.</string>
-    <string name="backup_raw_snapshot_title">파일 스냅샷 백업(실험적)</string>
+    <string name="backup_raw_snapshot_title">파일 스냅샷 백업</string>
     <string name="backup_raw_snapshot_subtitle">파일 및 디렉터리별로 앱 데이터 보관/복원</string>
     <string name="backup_raw_snapshot_desc">Clear data로 제거되는 앱 데이터인 internal files/shared_prefs/datastore/databases 및 Android/data/package/files를 보관합니다(터미널 Linux 환경은 매우 클 수 있으므로 기본적으로 제외됩니다). 복원하면 현재 데이터를 덮어쓰며 앱을 다시 시작해야 합니다. 일부 암호화된 데이터는 기기 마이그레이션 또는 재설치 후 작동하지 않을 수 있습니다.</string>
     <string name="backup_raw_snapshot_backup_now">지금 백업</string>
