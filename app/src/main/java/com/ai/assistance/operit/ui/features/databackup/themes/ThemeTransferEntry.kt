@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.databackup.themes
 
+import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
@@ -32,9 +34,16 @@ import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.The
 
 /** 单项导入导出中的主题入口，所有操作通过独立抽屉完成。 */
 @Composable
-internal fun ThemeTransferEntry(vm: ThemeTransferViewModel = viewModel()) {
-    val state by vm.state.collectAsState()
+internal fun ThemeTransferEntry() {
     val context = LocalContext.current
+    // 路由容器不提供 AndroidViewModel 工厂，显式传入 Application 才能创建主题分享状态。
+    val factory = remember(context) {
+        ViewModelProvider.AndroidViewModelFactory.getInstance(
+            context.applicationContext as Application
+        )
+    }
+    val vm: ThemeTransferViewModel = viewModel(factory = factory)
+    val state by vm.state.collectAsState()
     var launchedArchive by rememberSaveable { mutableStateOf<String?>(null) }
     val saveLauncher =
         rememberLauncherForActivityResult(

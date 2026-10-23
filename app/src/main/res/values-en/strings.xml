@@ -5455,7 +5455,7 @@
     <string name="backup_room_db_last_success">Last successful backup: %1$s</string>
     <string name="backup_room_db_last_error">Last error: %1$s</string>
 
-    <string name="backup_raw_snapshot_title">File Snapshot Backup (Experimental)</string>
+    <string name="backup_raw_snapshot_title">File Snapshot Backup</string>
     <string name="backup_raw_snapshot_subtitle">Archive/restore app data by file &amp; directory</string>
     <string name="backup_raw_snapshot_desc">This archives app data that is removed by Clear data: internal files/shared_prefs/datastore/databases and Android/data/package/files (the terminal Linux environment can be very large, so it is excluded by default). Restoring overwrites current data and requires an app restart. Some encrypted data may not work after device migration or reinstall.</string>
     <string name="backup_raw_snapshot_include_logs">Include logs in snapshot</string>

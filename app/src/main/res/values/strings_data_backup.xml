@@ -15,7 +15,7 @@
     <string name="data_backup_never">尚无备份</string>
     <string name="data_backup_recent">最近备份 · %1$s</string>
     <string name="data_backup_files">备份文件</string>
-    <string name="data_backup_snapshot_title">文件快照 · 实验</string>
+    <string name="data_backup_snapshot_title">文件快照</string>
     <string name="data_backup_snapshot_desc">打包应用文件与配置，恢复后需重启。</string>
     <string name="data_backup_snapshot_export">导出快照</string>
     <string name="data_backup_snapshot_restore">恢复快照</string>

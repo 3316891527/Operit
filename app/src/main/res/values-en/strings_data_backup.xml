@@ -15,7 +15,7 @@
     <string name="data_backup_never">No backups yet</string>
     <string name="data_backup_recent">Last backup · %1$s</string>
     <string name="data_backup_files">Backup files</string>
-    <string name="data_backup_snapshot_title">File snapshot · Experimental</string>
+    <string name="data_backup_snapshot_title">File snapshot</string>
     <string name="data_backup_snapshot_desc">Bundle app files and settings. Restart after restoring.</string>
     <string name="data_backup_snapshot_export">Export snapshot</string>
     <string name="data_backup_snapshot_restore">Restore snapshot</string>

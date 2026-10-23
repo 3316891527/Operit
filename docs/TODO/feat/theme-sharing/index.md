@@ -24,3 +24,9 @@ status: implemented-awaiting-ci
 [协议与作用范围](protocol.md)
 
 [DONE] Android 实现、协议用例与全量设备清单已完成；仓库 CI 与设备验收结果另行记录。
+
+## 角色主题与单项入口修正
+
+主题分享入口显式使用带 Application 的 AndroidViewModel 工厂，并继续使用原路由的 ViewModelStore。主题页角色选择与页签共用连续底色，取消角色选择的独立卡片外框和外侧留白。文件快照的新旧标题及已有翻译统一移除实验标记。
+
+[DONE] 本轮实现完成，沿用完整设备验收清单，新增第 50—52 项；工作分支派发 Debug 和 Android Tests，结果另行记录。

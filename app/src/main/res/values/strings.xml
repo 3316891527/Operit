@@ -5989,7 +5989,7 @@
     <string name="backup_room_db_last_error">上次错误：%1$s</string>
     <string name="backup_files_location_hint">提示：备份文件保存在 Download/Operit 文件夹</string>
 
-    <string name="backup_raw_snapshot_title">文件快照备份（实验）</string>
+    <string name="backup_raw_snapshot_title">文件快照备份</string>
     <string name="backup_raw_snapshot_subtitle">以文件/目录为单位的整体压缩备份与恢复</string>
     <string name="backup_raw_snapshot_desc">将打包会随“清除数据”一起删除的应用数据：内部 files/shared_prefs/datastore/databases，以及 Android/data/包名/files（终端 Linux 环境体积很大，默认不备份）。恢复会覆盖当前数据，并且需要重启应用生效。部分加密数据在换机/重装后可能无法使用。</string>
     <string name="backup_raw_snapshot_include_logs">在快照中包含日志</string>
