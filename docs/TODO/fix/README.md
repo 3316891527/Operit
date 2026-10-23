@@ -17,6 +17,7 @@
 - [超大聊天消息读取修复](chat_large_message_io_20260806/index.md) · `chat_large_message_io_20260806`
 - [Claude 工具结果配对修复](claude_tool_result_pairing_repair_20260907/index.md) · `claude_tool_result_pairing_repair_20260907`
 - [Codex Auth Keystore Restore Crash](codex_auth_keystore_restore_20260904/index.md) · `codex_auth_keystore_restore_20260904`
+- [崩溃报告自动换行开关反馈](crash-report-wrap-feedback/index.md)
 - [DeepSeek Responses Reasoning Replay](deepseek_responses_reasoning_replay_20260907/index.md) · `deepseek_responses_reasoning_replay_20260907`
 - [悬浮窗 NaN 崩溃修复](floating_window_nan_crash_20260917/index.md) · `floating_window_nan_crash_20260917`
 - [Gemini tool history and thinking repair](gemini_tool_history_and_thinking_repair_20260907/index.md) · `gemini_tool_history_and_thinking_repair_20260907`
