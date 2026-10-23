@@ -1,4 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.bubble
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessagePlayer
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.ui.features.chat.attachments.images.SentImageGroup
 import com.ai.assistance.operit.ui.features.chat.attachments.images.sentImageSources
@@ -120,11 +122,17 @@ fun BubbleUserMessageComposable(
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
 
+    val voiceMessage = remember(message.content, isHiddenPlaceholder) {
+        if (isHiddenPlaceholder) null else VoiceMessageMarkup.parseMessage(message.content)
+    }
+
     // Parse message content to separate text and attachments
     val parseResult =
         remember(message.content, isHiddenPlaceholder) {
             if (isHiddenPlaceholder) {
                 MessageParseResult(processedText = "", trailingAttachments = emptyList())
+            } else if (voiceMessage != null) {
+                MessageParseResult(processedText = voiceMessage.transcript, trailingAttachments = emptyList())
             } else {
                 parseMessageContent(context, message.content)
             }
@@ -389,11 +397,16 @@ fun BubbleUserMessageComposable(
                                     subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
                                 )
                             } else {
-                                Text(
-                                    text = textContent,
-                                    color = effectiveTextColor,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                                if (voiceMessage != null) {
+                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                        voiceMessage.waveform, voiceMessage.transcript)
+                                } else {
+                                    Text(
+                                        text = textContent,
+                                        color = effectiveTextColor,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -445,18 +458,23 @@ fun BubbleUserMessageComposable(
                                     )
                                 }
                             } else {
-                                Text(
-                                    text = textContent,
-                                    modifier =
+                                if (voiceMessage != null) {
+                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                        voiceMessage.waveform, voiceMessage.transcript)
+                                } else {
+                                    Text(
+                                        text = textContent,
+                                        modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
                                             top = 12.dp,
                                             end = bubbleContentPaddingRight.dp,
                                             bottom = 12.dp,
                                         ),
-                                    color = effectiveTextColor,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                                        color = effectiveTextColor,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
                             }
                         }
                     }
@@ -527,11 +545,16 @@ fun BubbleUserMessageComposable(
                                     subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
                                 )
                             } else {
-                                Text(
-                                    text = textContent,
-                                    color = effectiveTextColor,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                                if (voiceMessage != null) {
+                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                        voiceMessage.waveform, voiceMessage.transcript)
+                                } else {
+                                    Text(
+                                        text = textContent,
+                                        color = effectiveTextColor,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -583,18 +606,23 @@ fun BubbleUserMessageComposable(
                                     )
                                 }
                             } else {
-                                Text(
-                                    text = textContent,
-                                    modifier =
+                                if (voiceMessage != null) {
+                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                        voiceMessage.waveform, voiceMessage.transcript)
+                                } else {
+                                    Text(
+                                        text = textContent,
+                                        modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
                                             top = 12.dp,
                                             end = bubbleContentPaddingRight.dp,
                                             bottom = 12.dp,
                                         ),
-                                    color = effectiveTextColor,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                        color = effectiveTextColor,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             }
                         }
                     }

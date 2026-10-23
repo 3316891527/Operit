@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.chat
 
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+
 import com.ai.assistance.operit.core.chat.context.RequestWindowSnapshot
 
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
@@ -144,13 +146,20 @@ object AIMessageManager {
     ): String {
         val totalStartTime = messageTimingNow()
         val promptInputStartTime = messageTimingNow()
-        val processedMessageText = InputProcessor.processUserInput(
+        val voiceMessage = VoiceMessageMarkup.parse(messageText)
+        val processedInput = InputProcessor.processUserInput(
             context = context,
-            input = messageText,
+            input = voiceMessage?.transcript ?: messageText,
             chatId = chatId,
             roleCardId = roleCardId,
             onHookTimeout = onHookTimeout
         )
+        // 钩子处理转写文字，重新封装后保留录音，避免钩子破坏语音条结构。
+        val processedMessageText = if (voiceMessage != null) {
+            VoiceMessageMarkup.encode(voiceMessage.copy(transcript = processedInput))
+        } else {
+            processedInput
+        }
         logMessageTiming(
             stage = "buildUserMessageContent.processUserInput",
             startTimeMs = promptInputStartTime,
@@ -376,6 +385,7 @@ object AIMessageManager {
         historyOnly: Boolean = false,
     ): SharedStream<String> {
         val totalStartTime = messageTimingNow()
+        val voiceNormalizedMessage = VoiceMessageMarkup.toModelText(messageContent)
         val chatKey = chatId ?: DEFAULT_CHAT_KEY
         lastActiveChatKey = chatKey
         activeEnhancedAiServiceByChatId[chatKey] = enhancedAiService
@@ -383,7 +393,7 @@ object AIMessageManager {
         return withContext(Dispatchers.IO) {
             val buildMemoryStartTime = messageTimingNow()
             val memory = getMemoryFromMessages(
-                messages = chatHistory,
+                messages = chatHistory.map { it.copy(content = VoiceMessageMarkup.toModelText(it.content)) },
                 splitByRole = splitHistoryByRole,
                 targetRoleName = currentRoleName,
                 groupOrchestrationMode = groupOrchestrationMode
@@ -437,7 +447,7 @@ object AIMessageManager {
                     context = context,
                     enhancedAIService = enhancedAiService,
                     chatId = chatId,
-                    messageContent = messageContent,
+                    messageContent = voiceNormalizedMessage,
                     chatHistory = memoryForRequest,
                     workspacePath = workspacePath,
                     maxTokens = maxTokens,
@@ -477,7 +487,7 @@ object AIMessageManager {
             val prepareRequestStartTime = messageTimingNow()
             val responseStream = enhancedAiService.sendMessage(
                 EnhancedAIService.SendMessageOptions(
-                    message = messageContent,
+                    message = voiceNormalizedMessage,
                     chatId = chatId,
                     chatHistory = memoryForRequest,
                     workspacePath = workspacePath,
@@ -588,7 +598,7 @@ object AIMessageManager {
     ): RequestWindowSnapshot {
         val memory =
             getMemoryFromMessages(
-                messages = chatHistory,
+                messages = chatHistory.map { it.copy(content = VoiceMessageMarkup.toModelText(it.content)) },
                 splitByRole = splitHistoryByRole,
                 targetRoleName = currentRoleName,
                 groupOrchestrationMode = groupOrchestrationMode
@@ -600,7 +610,7 @@ object AIMessageManager {
             limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns)
 
         return enhancedAiService.estimateRequestWindowSnapshotFromMemory(
-            message = messageContent,
+            message = VoiceMessageMarkup.toModelText(messageContent),
             chatHistory = memoryForRequest,
             chatId = chatId,
             workspacePath = workspacePath,

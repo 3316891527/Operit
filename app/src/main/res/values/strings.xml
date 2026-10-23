@@ -9503,4 +9503,25 @@
     <string name="model_workspace_summary_model_scope">此项为全局功能分配，修改后应用于所有配置</string>
     <string name="model_workspace_function_search">搜索功能、配置或模型</string>
     <string name="model_workspace_function_count">%1$d / %2$d 项</string>
+
+    <!-- 语音条与录音面板 -->
+    <string name="voice_message_record_title">录制语音</string>
+    <string name="voice_message_confirm_title">确认语音消息</string>
+    <string name="voice_message_silence_hint">连续 3 秒无声自动结束，最长 60 秒</string>
+    <string name="voice_message_done">说完了</string>
+    <string name="voice_message_transcribing">正在转写语音…</string>
+    <string name="voice_message_rerecord">重新录制</string>
+    <string name="voice_message_retry">重试转写</string>
+    <string name="voice_message_permission">需要麦克风权限才能录制语音</string>
+    <string name="voice_message_record_failed">录音失败，请重试</string>
+    <string name="voice_message_no_speech">没有检测到人声，请重新录制</string>
+    <string name="voice_message_stt_busy">语音识别服务正在使用，请先结束其他语音任务</string>
+    <string name="voice_message_stt_failed">语音转写失败，请检查语音服务配置</string>
+    <string name="voice_message_no_text">没有识别到文字，可以重试或重新录制</string>
+    <string name="voice_message_play">播放语音</string>
+    <string name="voice_message_pause">暂停语音</string>
+    <string name="voice_message_play_failed">无法播放语音，请检查音频文件是否仍然存在</string>
+    <string name="voice_message_show_text">查看文字</string>
+    <string name="voice_message_hide_text">收起文字</string>
+    <string name="voice_message_standalone">语音消息需单独发送，请保持当前对话、空草稿且没有附件或引用</string>
 </resources>

@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.chat.screens
 
+import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessageSheet
+import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
+
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
@@ -1679,6 +1682,66 @@ private fun ChatInputBottomBar(
         }
     }
 
+    var voiceRecordingChatId by remember { mutableStateOf<String?>(null) }
+    var prepareVoiceChat by remember { mutableStateOf(false) }
+    val voiceKeyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    LaunchedEffect(currentChatId) {
+        if (prepareVoiceChat && !currentChatId.isNullOrBlank()) {
+            prepareVoiceChat = false
+            if (canStartVoiceMessage(userMessage.text, attachments.size, isLoading, replyToMessage != null)) {
+                voiceRecordingChatId = currentChatId
+            }
+        } else if (voiceRecordingChatId != currentChatId) {
+            voiceRecordingChatId = null
+        }
+    }
+    val recordVoiceMessage: () -> Unit = {
+        if (canStartVoiceMessage(userMessage.text, attachments.size,
+                isLoading || (inputState !is InputProcessingState.Idle && inputState !is InputProcessingState.Completed && inputState !is InputProcessingState.Error),
+                replyToMessage != null)) {
+            actualViewModel.resetAttachmentPanelState()
+            focusManager.clearFocus()
+            voiceKeyboardController?.hide()
+            val chatId = currentChatId
+            if (chatId.isNullOrBlank()) {
+                if (!prepareVoiceChat) {
+                    prepareVoiceChat = true
+                    actualViewModel.createNewChat()
+                }
+            } else {
+                voiceRecordingChatId = chatId
+            }
+        }
+    }
+    voiceRecordingChatId?.let { originChatId ->
+        key(originChatId) {
+            VoiceMessageSheet(onDismiss = { voiceRecordingChatId = null }, onSend = { message, onPersisted ->
+                val decision = ChatInputHookRegistry.dispatchSubmitRequested(
+                    buildChatInputHookContext(eventName = ChatInputEvents.SUBMIT_REQUESTED,
+                        text = message.transcript, selectionStart = message.transcript.length,
+                        selectionEnd = message.transcript.length, submitSource = "voice")
+                )
+                if (decision.action == ChatInputSubmitActions.BLOCK || decision.action == ChatInputSubmitActions.CONSUME) {
+                    showChatInputHookMessage(decision.message)
+                    false
+                } else {
+                    showChatInputHookMessage(decision.noticeMessage)
+                    val finalTranscript = decision.text ?: message.transcript
+                    val accepted = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
+                    if (accepted) {
+                        onRequestAutoScrollToBottom()
+                        ChatInputHookRegistry.dispatchNotification(
+                            buildChatInputHookContext(eventName = ChatInputEvents.SUBMITTED,
+                                text = finalTranscript, selectionStart = finalTranscript.length,
+                                selectionEnd = finalTranscript.length, submitSource = "voice")
+                        )
+                    } else OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
+                    accepted
+                }
+            })
+        }
+    }
+
     if (inputStyle == UserPreferencesManager.INPUT_STYLE_AGENT) {
         AgentChatInputSection(
                 actualViewModel = actualViewModel,
@@ -1686,6 +1749,7 @@ private fun ChatInputBottomBar(
                 onUserMessageChange = { value -> handleUserMessageChange(value) },
                 enableEnterToSend = enableEnterToSend,
                 onSendMessage = sendMessage,
+                onRecordVoiceMessage = recordVoiceMessage,
                 onContinueGeneration = continueGeneration,
                 continueGenerationEnabled = continueGenerationEnabled,
                 onQueueMessage = { enqueueDraftToPendingQueue() },
@@ -1783,6 +1847,7 @@ private fun ChatInputBottomBar(
                 onUserMessageChange = { value -> handleUserMessageChange(value) },
                 enableEnterToSend = enableEnterToSend,
                 onSendMessage = sendMessage,
+                onRecordVoiceMessage = recordVoiceMessage,
                 onContinueGeneration = continueGeneration,
                 continueGenerationEnabled = continueGenerationEnabled,
                 onQueueMessage = { enqueueDraftToPendingQueue() },

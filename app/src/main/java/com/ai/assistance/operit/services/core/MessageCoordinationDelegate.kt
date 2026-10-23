@@ -45,6 +45,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -503,6 +504,55 @@ class MessageCoordinationDelegate(
         }
     }
 
+    private val pendingVoiceChats = ConcurrentHashMap.newKeySet<String>()
+
+    /** 等到用户消息落库再关闭录音面板，请求回复继续由现有发送任务处理。 */
+    suspend fun sendVoiceMessage(
+        chatId: String,
+        content: String,
+        canSubmit: () -> Boolean,
+        onPersisted: () -> Unit,
+    ): Boolean {
+        if (!canSubmit() || !pendingVoiceChats.add(chatId)) return false
+        val persisted = kotlinx.coroutines.CompletableDeferred<Boolean>()
+        var sendJob: Job? = null
+        try {
+            val activeSendJob = sendMessageInternal(
+                promptFunctionType = PromptFunctionType.CHAT,
+                preferActiveRoleCard = true,
+                chatIdOverride = chatId,
+                messageTextOverride = content,
+                consumeComposerState = false,
+                canSubmitVoice = canSubmit,
+                onUserMessagePersisted = {
+                    onPersisted()
+                    persisted.complete(true)
+                },
+            ) ?: return false
+            sendJob = activeSendJob
+            val completion = activeSendJob.invokeOnCompletion { cause ->
+                if (cause != null) persisted.completeExceptionally(cause)
+                else persisted.complete(false)
+            }
+            try {
+                return persisted.await()
+            } finally {
+                completion.dispose()
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            reportSendFailure(error)
+            return false
+        } finally {
+            // 面板取消时先结束尚未落库的任务，再允许会话清理录音文件。
+            if (!persisted.isCompleted || persisted.isCancelled) {
+                withContext(kotlinx.coroutines.NonCancellable) { sendJob?.cancelAndJoin() }
+            }
+            pendingVoiceChats.remove(chatId)
+        }
+    }
+
     private val pendingManualContinuationChats = ConcurrentHashMap.newKeySet<String>()
 
     private fun canContinueGeneration(chatId: String): Boolean =
@@ -744,7 +794,9 @@ class MessageCoordinationDelegate(
         turnOptions: ChatTurnOptions = ChatTurnOptions(),
         consumeComposerState: Boolean = true,
         a2uiOwner: com.ai.assistance.operit.ui.common.a2ui.A2uiOwner? = null,
-    ) {
+        canSubmitVoice: (() -> Boolean)? = null,
+        onUserMessagePersisted: (() -> Unit)? = null,
+    ): Job? {
         val isAutoContinuation = sendMode.usesPreviousTurnConfiguration
         val isBackgroundSend =
             !chatIdOverride.isNullOrBlank() && chatIdOverride != chatHistoryDelegate.currentChatId.value
@@ -755,7 +807,7 @@ class MessageCoordinationDelegate(
         val chatId = chatIdOverride ?: chatHistoryDelegate.currentChatId.value
         if (chatId == null) {
             OKToast.warning(context, context.getString(R.string.chat_please_create_new_chat), OKToast.LENGTH_SHORT).show()
-            return
+            return null
         }
         val previousConfiguration = requestConfigurationFor(chatId)
         if (!isAutoContinuation) {
@@ -808,7 +860,7 @@ class MessageCoordinationDelegate(
                     )
                 }
             }
-            return
+            return null
         }
         val currentChat = chatHistoryDelegate.chatHistories.value.find { it.id == chatId }
         val workspacePath = currentChat?.workspace
@@ -957,10 +1009,11 @@ class MessageCoordinationDelegate(
         }
 
         // 异步读取配置期间可能发生聊天切换、删除或新请求，提交前核对原卡片身份。
-        if (a2uiOwner != null && !canSubmitA2ui(a2uiOwner)) return
+        if (a2uiOwner != null && !canSubmitA2ui(a2uiOwner)) return null
+        if (canSubmitVoice != null && !canSubmitVoice()) return null
 
         // 调用messageProcessingDelegate发送消息，并传递附件信息和工作区路径
-        messageProcessingDelegate.sendUserMessage(
+        val sendJob = messageProcessingDelegate.sendUserMessage(
             attachments = currentAttachments,
             chatId = chatId,
             messageTextOverride = effectiveMessageTextOverride,
@@ -983,7 +1036,8 @@ class MessageCoordinationDelegate(
             suppressUserMessageInHistory = suppressUserMessageInHistory,
             isGroupOrchestrationTurn = isGroupOrchestrationTurn,
             groupParticipantNamesText = groupParticipantNamesText,
-            turnOptions = turnOptions
+            turnOptions = turnOptions,
+            onUserMessagePersisted = onUserMessagePersisted,
         )
 
         // 只有在非续写（即用户主动发送）时才清空附件和UI状态
@@ -994,6 +1048,7 @@ class MessageCoordinationDelegate(
             uiBridge.resetAttachmentPanelState()
             uiBridge.clearReplyToMessage()
         }
+        return sendJob
     }
 
     private suspend fun shouldRunGroupOrchestration(

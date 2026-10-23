@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.chat.viewmodel
 
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
+
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import com.ai.assistance.operit.api.chat.enhance.TranslationModelNotConfiguredException
@@ -1627,6 +1631,30 @@ class ChatViewModel(context: Context) : ViewModel() {
         messageCoordinationDelegate.sendUserMessage(
             promptFunctionType = promptFunctionType,
             preferActiveRoleCard = true,
+        )
+    }
+
+    /** 固定原会话发送，等待保存并交接录音所有权后才返回。 */
+    suspend fun sendVoiceMessage(
+        message: VoiceMessageData,
+        originChatId: String,
+        onPersisted: () -> Unit,
+    ): Boolean {
+        fun canSubmit(): Boolean {
+            val state = currentChatInputProcessingState.value
+            val processing = messageProcessingDelegate.isChatLoading(originChatId) ||
+                (state !is InputProcessingState.Idle && state !is InputProcessingState.Completed && state !is InputProcessingState.Error)
+            return currentChatId.value == originChatId &&
+                canStartVoiceMessage(userMessage.value.text, attachments.value.size, processing, replyToMessage.value != null) &&
+                message.transcript.isNotBlank() && java.io.File(message.attachment.filePath).isFile
+        }
+        if (!canSubmit()) return false
+        hideMentionSuggestionPanel()
+        return messageCoordinationDelegate.sendVoiceMessage(
+            chatId = originChatId,
+            content = VoiceMessageMarkup.encode(message),
+            canSubmit = ::canSubmit,
+            onPersisted = onPersisted,
         )
     }
 

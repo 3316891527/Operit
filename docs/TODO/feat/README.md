@@ -76,3 +76,5 @@
 - [模型工作区四标签设计](model-settings-hub/index.md) · `model-settings-hub`
 
 - [模型设置与工具修复统一联调](settings-tools-integration/index.md)
+
+- [单独发送的语音条与 STT 输入](voice-messages/index.md)

@@ -1,4 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.cursor
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessagePlayer
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.ui.features.chat.attachments.images.SentImageGroup
 import com.ai.assistance.operit.ui.features.chat.attachments.images.sentImageSources
@@ -111,11 +113,17 @@ fun UserMessageComposable(
     // 添加状态控制图片预览
 
 
+    val voiceMessage = remember(message.content, isHiddenPlaceholder) {
+        if (isHiddenPlaceholder) null else VoiceMessageMarkup.parseMessage(message.content)
+    }
+
     // Parse message content to separate text and attachments
     val parseResult =
         remember(message.content, isHiddenPlaceholder) {
             if (isHiddenPlaceholder) {
                 MessageParseResult(processedText = "", trailingAttachments = emptyList())
+            } else if (voiceMessage != null) {
+                MessageParseResult(processedText = voiceMessage.transcript, trailingAttachments = emptyList())
             } else {
                 parseMessageContent(context, message.content)
             }
@@ -283,11 +291,16 @@ fun UserMessageComposable(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    Text(
-                        text = textContent,
-                        color = effectiveTextColor,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    if (voiceMessage != null) {
+                        VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                            voiceMessage.waveform, voiceMessage.transcript)
+                    } else {
+                        Text(
+                            text = textContent,
+                            color = effectiveTextColor,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }

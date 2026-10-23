@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -941,9 +943,10 @@ class EnhancedAIService private constructor(context: Context) {
     suspend fun sendMessage(
         options: SendMessageOptions
     ): Stream<String> {
-        val message = options.message
+        val message = VoiceMessageMarkup.toModelText(options.message)
         val chatId = options.chatId
-        val chatHistory = options.chatHistory
+        // 历史语音同样只提交转写，不把语音条附件再次送入音频理解路径。
+        val chatHistory = options.chatHistory.map { it.copy(content = VoiceMessageMarkup.toModelText(it.content)) }
         val workspacePath = options.workspacePath
         val workspaceEnv = options.workspaceEnv
         val functionType = options.functionType

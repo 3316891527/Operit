@@ -9504,4 +9504,25 @@
     <string name="model_workspace_summary_model_scope">This function assignment applies to every configuration</string>
     <string name="model_workspace_function_search">Search functions, configurations or models</string>
     <string name="model_workspace_function_count">%1$d / %2$d functions</string>
+
+    <!-- 语音条与录音面板 -->
+    <string name="voice_message_record_title">Record voice message</string>
+    <string name="voice_message_confirm_title">Review voice message</string>
+    <string name="voice_message_silence_hint">Stops after 3 seconds of silence, up to 60 seconds</string>
+    <string name="voice_message_done">Done speaking</string>
+    <string name="voice_message_transcribing">Transcribing voice…</string>
+    <string name="voice_message_rerecord">Record again</string>
+    <string name="voice_message_retry">Retry transcription</string>
+    <string name="voice_message_permission">Microphone permission is required to record voice</string>
+    <string name="voice_message_record_failed">Recording failed. Please try again</string>
+    <string name="voice_message_no_speech">No speech detected. Please record again</string>
+    <string name="voice_message_stt_busy">Speech recognition is busy. Finish the other voice task first</string>
+    <string name="voice_message_stt_failed">Transcription failed. Check speech service settings</string>
+    <string name="voice_message_no_text">No text recognized. Retry or record again</string>
+    <string name="voice_message_play">Play voice message</string>
+    <string name="voice_message_pause">Pause voice message</string>
+    <string name="voice_message_play_failed">Unable to play voice. Check that the audio file is available</string>
+    <string name="voice_message_show_text">Show transcript</string>
+    <string name="voice_message_hide_text">Hide transcript</string>
+    <string name="voice_message_standalone">Voice messages must be sent alone in the same chat with no draft, attachments or reply</string>
 </resources>
