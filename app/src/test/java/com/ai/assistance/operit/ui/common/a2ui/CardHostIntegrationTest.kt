@@ -18,7 +18,7 @@ class CardHostIntegrationTest {
         val original = "$hidden\nBefore\n$block\nAfter"
         val result = CardTranscript.forModel(original)
         assertTrue(result.startsWith(hidden))
-        assertTrue(result.endsWith("Before\n[Dynamic UI card shown to the user here. Visible content: Visible]\nAfter"))
+        assertTrue(result.endsWith("Before\nHistorical A2UI summary (context only; do not output this text as a card). Visible content: Visible\nAfter"))
     }
 
     @Test fun outerCodeFenceAndIncompleteCardStayVerbatim() {

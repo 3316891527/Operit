@@ -47,7 +47,7 @@ internal data class CardChartSeries(val label: String, val points: List<CardChar
 private const val PIE_RING = .4f
 
 /** Runtime validation also covers values supplied through bindings. */
-internal fun cardChartSeries(value: Any?, labels: List<String>, type: String): List<CardChartSeries> {
+internal fun cardChartSeries(value: Any?, labels: List<String>, type: String, strict: Boolean = false): List<CardChartSeries> {
     require(type in setOf("line", "bar", "pie", "scatter"))
     val raw = value as? List<*> ?: error("Expected chart series")
     require(raw.size <= if (type == "pie") 1 else 4)
@@ -56,12 +56,19 @@ internal fun cardChartSeries(value: Any?, labels: List<String>, type: String): L
     } ?: error("Invalid chart number")
     return raw.map { item ->
         val series = item as? Map<*, *> ?: error("Invalid series")
+        // 新 Express 严格校验字段；已有消息继续按原协议读取，避免破坏历史卡片。
+        if (strict) {
+            val fields = if (type == "scatter") setOf("label", "points") else setOf("label", "values")
+            require(series.keys.all { it in fields }) { "Unknown series field; use label and ${if (type == "scatter") "points" else "values"}, not name or data" }
+            require("label" !in series || series["label"] is String) { "Series label must be a string" }
+        }
         val name = (series["label"] as? String).orEmpty().take(120)
         val points = if (type == "scatter") {
             val data = series["points"] as? List<*> ?: error("Missing points")
             require(data.size <= 128)
             data.mapIndexed { i, v ->
                 val p = v as? Map<*, *> ?: error("Invalid point")
+                if (strict) require(p.keys.all { it in setOf("x", "y", "label") } && ("label" !in p || p["label"] is String)) { "Scatter points use numeric x/y and an optional string label" }
                 CardChartPoint((p["label"] as? String) ?: (i + 1).toString(), finite(p["x"]), finite(p["y"]))
             }
         } else {

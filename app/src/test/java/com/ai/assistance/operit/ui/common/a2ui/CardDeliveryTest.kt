@@ -73,17 +73,17 @@ class CardDeliveryTest {
         ).joinToString("\n")
         val message = "Before\n```a2ui\n$document\n```\nAfter\n```a2ui-ref\ncard-9\n```"
         assertEquals(
-            "Before\n[Dynamic UI card shown to the user here. Visible content: 20 Issues; #, Title #1, Crash | #2, Hang]\nAfter\n```a2ui-ref\ncard-9\n```",
+            "Before\nHistorical A2UI summary (context only; do not output this text as a card). Visible content: 20 Issues; #, Title #1, Crash | #2, Hang\nAfter\n```a2ui-ref\ncard-9\n```",
             CardTranscript.forModel(message),
         )
         assertSame("plain", CardTranscript.forModel("plain"))
     }
     @Test fun htmlCardsKeepTheirTextAndLearningKeepsTheWholeCard() {
         val html = """{"version":"v0.9","updateComponents":{"surfaceId":"c","components":[{"id":"root","component":"Html","html":"<style>.a{color:red}</style><h1>Glass</h1><script>alert(1)</script><p>Live <b>preview</b></p>","css":".b{}"}]}}"""
-        assertEquals("[Dynamic UI card shown to the user here. Visible content: Glass Live preview]",
+        assertEquals("Historical A2UI summary (context only; do not output this text as a card). Visible content: Glass Live preview",
             CardTranscript.forModel("```a2ui\n$html\n```"))
         val long = """{"version":"v0.9","updateComponents":{"surfaceId":"c","components":[{"id":"root","component":"Text","text":"${"x".repeat(3000)}"}]}}"""
-        assertTrue(CardTranscript.forModel("```a2ui\n$long\n```").endsWith("x…]"))
-        assertTrue(CardTranscript.forModel("```a2ui\n$long\n```", Int.MAX_VALUE).endsWith("x".repeat(3000) + "]"))
+        assertTrue(CardTranscript.forModel("```a2ui\n$long\n```").endsWith("x…"))
+        assertTrue(CardTranscript.forModel("```a2ui\n$long\n```", Int.MAX_VALUE).endsWith("x".repeat(3000)))
     }
 }

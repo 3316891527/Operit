@@ -82,3 +82,5 @@
 - [Workflow Runtime Initialization](workflow_runtime_init_20260731/index.md) · `workflow_runtime_init_20260731`
 - [工作流存储稳定性](workflow_storage_stability_20260828/index.md) · `workflow_storage_stability_20260828`
 - [工作流定时执行](workflow-scheduling/index.md) · `workflow-scheduling`
+
+- [A2UI 编译说明与消息投递](a2ui-generation-delivery/index.md)
