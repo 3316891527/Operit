@@ -24,7 +24,7 @@ data class LogcatExportResult(
 object LogcatExportHelper {
     suspend fun exportLogs(
         context: Context,
-        options: LogExportOptions = LogExportOptions()
+        options: LogExportOptions = LogExportPreferences(context).load()
     ): LogcatExportResult = withContext(Dispatchers.IO) {
         try {
             val logFile = AppLogger.getLogFile()
@@ -79,7 +79,7 @@ object LogcatExportHelper {
             if (options.isIdentity) {
                 val lines = reader.lineSequence().map { it.trimEnd('\r') }.filter { it.isNotBlank() }.toList()
                 if (lines.isEmpty()) return null
-                return PreparedExport(lines = lines, recordCount = lines.size.toLong())
+                return PreparedExport(lines = lines, recordCount = lines.size.toLong(), includeTimestamp = true)
             }
             val result = LogExportFilter.filter(reader.lineSequence(), options)
             if (result.exportedRecordCount == 0 || result.lines.isEmpty()) {
@@ -87,7 +87,8 @@ object LogcatExportHelper {
             }
             return PreparedExport(
                 lines = result.lines,
-                recordCount = result.exportedRecordCount.toLong()
+                recordCount = result.exportedRecordCount.toLong(),
+                includeTimestamp = !options.stripTimestamp,
             )
         }
     }
@@ -97,9 +98,11 @@ object LogcatExportHelper {
         writer: Writer,
         export: PreparedExport
     ) {
-        val exportTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
         writer.appendLine(context.getString(R.string.logcat_header))
-        writer.appendLine(context.getString(R.string.logcat_date, exportTime))
+        if (export.includeTimestamp) {
+            val exportTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+            writer.appendLine(context.getString(R.string.logcat_date, exportTime))
+        }
         writer.appendLine(context.getString(R.string.logcat_total_count, export.recordCount))
         writer.appendLine("===================================")
         writer.appendLine()
@@ -168,6 +171,7 @@ object LogcatExportHelper {
 
     private data class PreparedExport(
         val lines: List<String>,
-        val recordCount: Long
+        val recordCount: Long,
+        val includeTimestamp: Boolean,
     )
 }

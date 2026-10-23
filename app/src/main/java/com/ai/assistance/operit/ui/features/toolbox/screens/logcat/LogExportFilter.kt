@@ -193,11 +193,22 @@ object LogExportFilter {
         return record.copy(message = redactedMessage, continuationLines = redactedContinuations)
     }
 
+    private val throwableMessagePrefix = Regex(
+        """^(?:(?:caused by|suppressed):\s*)?[\w.$]*(?:exception|error):\s*""",
+        RegexOption.IGNORE_CASE,
+    )
+
     private fun isSensitiveHeader(record: ExportRecord): Boolean {
-        val message = record.message.lowercase()
-        if (sensitiveHeaderPrefixes.any { message.startsWith(it) }) return true
-        if (containsSensitiveToken(record.message)) return true
-        return record.continuationLines.any { containsSensitiveToken(it) }
+        if (hasSensitiveHeaderPrefix(record.message) || containsSensitiveToken(record.message)) return true
+        return record.continuationLines.any {
+            hasSensitiveHeaderPrefix(it) || containsSensitiveToken(it)
+        }
+    }
+
+    private fun hasSensitiveHeaderPrefix(text: String): Boolean {
+        // 异常类型包装及续行仍使用同一份敏感前缀表，不让崩溃消息绕过请求体遮盖。
+        val message = throwableMessagePrefix.replaceFirst(text.trimStart().lowercase(), "")
+        return sensitiveHeaderPrefixes.any { message.startsWith(it) }
     }
 
     private fun isSensitiveContinuation(line: String): Boolean {
