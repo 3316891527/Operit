@@ -51,7 +51,6 @@ import com.ai.assistance.operit.ui.features.packages.market.ArtifactPublishClust
 import com.ai.assistance.operit.ui.features.packages.market.MarketStatsType
 import com.ai.assistance.operit.ui.features.packages.market.PluginCreationIntent
 import com.ai.assistance.operit.ui.features.databackup.DataAndBackupScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ContextSummarySettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ExternalHttpChatSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
 import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
@@ -640,7 +639,6 @@ sealed class Screen(
                     navigateToSpeechServicesSettings = { navigateTo(SpeechServicesSettings) },
                     navigateToExternalHttpChatSettings = { navigateTo(ExternalHttpChatSettings) },
                     navigateToPerformanceMonitor = { navigateTo(PerformanceMonitor) },
-                    navigateToContextSummarySettings = { navigateTo(ContextSummarySettings) },
                     navigateToAbout = { navigateTo(About) }
             )
         }
@@ -1332,7 +1330,7 @@ sealed class Screen(
     }
 
     data object ContextSummarySettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_context_summary_settings) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.model_workspace_title) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1343,7 +1341,10 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            ContextSummarySettingsScreen(onBackPressed = onGoBack)
+            ModelConfigScreen(
+                navigateToMnnModelDownload = { navigateTo(MnnModelDownload) },
+                initialTab = ModelWorkspaceTab.SUMMARY,
+            )
         }
     }
 

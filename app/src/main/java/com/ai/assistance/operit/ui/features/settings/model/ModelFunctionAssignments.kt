@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.ui.features.settings.model
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +23,6 @@ import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ModelConfigSelection
 import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getValidModelIndex
-import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
@@ -43,7 +44,9 @@ fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConf
     val modelManager = remember { ModelConfigManager(context) }
     val mappings by functionalManager.functionConfigMappingWithIndexFlow.collectAsState(initial = emptyMap())
     val selection by modelManager.configSelectionFlow.collectAsState(initial = ModelConfigSelection())
-    var onlyCurrent by remember { mutableStateOf(false) }
+    var onlyCurrent by rememberSaveable { mutableStateOf(false) }
+    var searching by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
     var editingFunction by remember { mutableStateOf<FunctionType?>(null) }
     var showReset by remember { mutableStateOf(false) }
     val pendingUpdates = remember { mutableListOf<Job>() }
@@ -70,82 +73,66 @@ fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConf
         job.invokeOnCompletion { pendingUpdates.remove(job) }
         job.start()
     }
-    val currentSelection = selection
+    val names = FunctionType.values().associateWith { getFunctionDisplayName(it) }
     val visibleFunctions = FunctionType.values().filter { function ->
-        !onlyCurrent || mappings[function]?.configId == currentConfigId
+        val mapping = mappings[function]
+        val config = selection.allConfigs.find { it.id == mapping?.configId }
+        val boundModel = if (config != null && mapping != null) getModelByIndex(config.modelName, getValidModelIndex(config.modelName, mapping.modelIndex)) else ""
+        (!onlyCurrent || mapping?.configId == currentConfigId) &&
+            (query.isBlank() || (names.getValue(function) + " " + config?.name.orEmpty() + " " + boundModel).contains(query, ignoreCase = true))
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.model_workspace_function_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = !onlyCurrent, onClick = { onlyCurrent = false }, label = { Text(stringResource(R.string.model_workspace_all_functions)) })
             FilterChip(selected = onlyCurrent, onClick = { onlyCurrent = true }, label = { Text(stringResource(R.string.model_workspace_current_functions)) })
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
+                Icon(if (searching) Icons.Default.Close else Icons.Default.Search, stringResource(R.string.model_workspace_function_search))
+            }
         }
-        visibleFunctions.forEach { function ->
-            val mapping = mappings[function]
-                ?: FunctionConfigMapping(if (function == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
-            val config = currentSelection.allConfigs.find { it.id == mapping.configId }
-            Surface(
-                modifier = Modifier.fillMaxWidth().clickable { editingFunction = function },
-                shape = RoundedCornerShape(14.dp),
-                color = if (config?.id == currentConfigId) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f) else MaterialTheme.colorScheme.surface,
-                border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 84.dp).padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(functionIcon(function), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(getFunctionDisplayName(function), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text(config?.name ?: stringResource(R.string.not_configured), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            config?.let { getModelByIndex(it.modelName, getValidModelIndex(it.modelName, mapping.modelIndex)) }.orEmpty(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+        if (searching) {
+            OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                label = { Text(stringResource(R.string.model_workspace_function_search)) })
+        }
+        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))) {
+            Column {
+                visibleFunctions.forEachIndexed { index, function ->
+                    val mapping = mappings[function]
+                    val config = selection.allConfigs.find { it.id == mapping?.configId }
+                    val isCurrent = config?.id == currentConfigId
+                    if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                    Row(
+                        Modifier.fillMaxWidth().background(if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface)
+                            .clickable { editingFunction = function }.heightIn(min = 76.dp).padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(functionIcon(function), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(names.getValue(function), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text(config?.name ?: stringResource(R.string.not_configured), modifier = Modifier.widthIn(max = 132.dp), style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            Text(if (config != null && mapping != null) getModelByIndex(config.modelName, getValidModelIndex(config.modelName, mapping.modelIndex)) else "",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                        Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (visibleFunctions.isEmpty()) {
+                    Text(stringResource(R.string.model_workspace_no_functions), Modifier.padding(18.dp), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
-        if (visibleFunctions.isEmpty()) Text(stringResource(R.string.model_workspace_no_functions), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.model_workspace_function_count, visibleFunctions.size, FunctionType.values().size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         TextButton(onClick = { showReset = true }, modifier = Modifier.align(Alignment.End)) {
             Text(stringResource(R.string.reset_all_functions_to_default))
         }
     }
     editingFunction?.let { function ->
-        val mapping = mappings[function]
-            ?: FunctionConfigMapping(if (function == FunctionType.MEMORY_EMBEDDING) "" else FunctionalConfigManager.DEFAULT_CONFIG_ID, 0)
-        val config = currentSelection.allConfigs.find { it.id == mapping.configId }
-        val groupName = currentSelection.selectedGroup?.name ?: stringResource(R.string.ungrouped)
-        val boundGroup = if (config != null && config.groupId != currentSelection.selectedGroupId) {
-            currentSelection.groups.find { it.id == config.groupId }?.name ?: stringResource(R.string.ungrouped)
-        } else null
-        ModelWorkspaceDialog(title = getFunctionDisplayName(function), onDismiss = { editingFunction = null }) {
-            ModelFunctionEditor(
-                functionType = function,
-                currentConfig = config,
-                currentModelIndex = mapping.modelIndex,
-                currentMapping = mapping,
-                availableConfigs = currentSelection.availableConfigs,
-                selectedGroupName = groupName,
-                boundConfigGroupName = boundGroup,
-                onConfigSelected = { configId, modelIndex ->
-                    updateAssignment {
-                        functionalManager.setConfigForFunction(function, configId, modelIndex)
-                        if (function != FunctionType.MEMORY_EMBEDDING) EnhancedAIService.refreshServiceForFunction(context, function)
-                    }
-                },
-                onThinkingChanged = { enabled, option ->
-                    updateAssignment {
-                        functionalManager.setThinkingForFunction(function, enabled, option)
-                    }
-                },
-            )
-        }
+        ModelFunctionAssignmentDialog(function, saveCoordinator) { editingFunction = null }
     }
     if (showReset) {
         AlertDialog(

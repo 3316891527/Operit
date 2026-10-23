@@ -27,13 +27,14 @@ import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
 
 /** 页面状态和呈现单独收纳，业务编辑器继续使用原有配置与保存流程。 */
-enum class ModelWorkspaceTab { CONNECTION, PARAMETERS, FUNCTIONS }
+enum class ModelWorkspaceTab { CONNECTION, PARAMETERS, SUMMARY, FUNCTIONS }
 
 @Composable
 fun ModelWorkspaceTabs(selected: ModelWorkspaceTab, onSelect: (ModelWorkspaceTab) -> Unit) {
     val titles = listOf(
         R.string.model_workspace_connection,
         R.string.model_workspace_parameters,
+        R.string.model_workspace_summary,
         R.string.model_workspace_functions,
     )
     TabRow(
@@ -45,7 +46,7 @@ fun ModelWorkspaceTabs(selected: ModelWorkspaceTab, onSelect: (ModelWorkspaceTab
             Tab(
                 selected = selected == tab,
                 onClick = { onSelect(tab) },
-                text = { Text(stringResource(titles[index]), fontWeight = if (selected == tab) FontWeight.SemiBold else FontWeight.Normal) },
+                text = { Text(stringResource(titles[index]), style = MaterialTheme.typography.labelLarge, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = if (selected == tab) FontWeight.SemiBold else FontWeight.Normal) },
             )
         }
     }

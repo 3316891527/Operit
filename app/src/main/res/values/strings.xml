@@ -9210,7 +9210,7 @@
 
     <!-- 模型工作区 -->
     <string name="model_workspace_title">模型与参数配置</string>
-    <string name="model_workspace_subtitle">连接、参数与功能模型分配</string>
+    <string name="model_workspace_subtitle">连接、参数、上下文总结与功能模型分配</string>
     <string name="model_workspace_connection">连接</string>
     <string name="model_workspace_parameters">参数</string>
     <string name="model_workspace_functions">功能分配</string>
@@ -9225,7 +9225,7 @@
     <string name="model_workspace_sampling">采样与重复控制</string>
     <string name="model_workspace_sampling_hint">温度、采样范围和重复惩罚</string>
     <string name="model_workspace_custom_hint">自定义请求字段、类型和值</string>
-    <string name="model_workspace_function_hint">点选功能卡片，分配模型并调整该功能的思考偏好。配置列表按顶部当前分组显示。</string>
+    <string name="model_workspace_function_hint">为功能分配配置与模型，并调整思考偏好。分配对应用全局生效。</string>
     <string name="model_workspace_all_functions">全部功能</string>
     <string name="model_workspace_current_functions">当前配置</string>
     <string name="model_workspace_no_functions">当前配置尚未分配给任何功能。</string>
@@ -9490,4 +9490,17 @@
     <string name="theme_target_no_matches">没有匹配项</string>
     <string name="theme_target_character_label">角色卡</string>
     <string name="theme_target_group_label">群组</string>
+    <string name="model_workspace_summary">上下文总结</string>
+    <string name="model_workspace_summary_scope">正在编辑：%1$s · 随配置保存</string>
+    <string name="model_workspace_summary_threshold">上下文使用比例</string>
+    <string name="model_workspace_summary_threshold_hint">达到这一比例时触发总结</string>
+    <string name="model_workspace_summary_threshold_error">请输入大于 0 且小于 100 的总结触发比例</string>
+    <string name="model_workspace_summary_context_limit">上下文长度不能超过最大上下文长度</string>
+    <string name="model_workspace_summary_history_error">历史媒体保留回合数请输入非负整数</string>
+    <string name="model_workspace_summary_history_scope">全局设置：历史媒体保留对所有模型配置生效</string>
+    <string name="model_workspace_summary_reset_history">恢复历史媒体默认值</string>
+    <string name="model_workspace_summary_model">总结使用的模型</string>
+    <string name="model_workspace_summary_model_scope">此项为全局功能分配，修改后应用于所有配置</string>
+    <string name="model_workspace_function_search">搜索功能、配置或模型</string>
+    <string name="model_workspace_function_count">%1$d / %2$d 项</string>
 </resources>

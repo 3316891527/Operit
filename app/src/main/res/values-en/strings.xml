@@ -9210,7 +9210,7 @@
 
     <!-- 模型工作区 -->
     <string name="model_workspace_title">Model and parameter settings</string>
-    <string name="model_workspace_subtitle">Connections, parameters and function assignments</string>
+    <string name="model_workspace_subtitle">Connections, parameters, context summaries and function assignments</string>
     <string name="model_workspace_connection">Connection</string>
     <string name="model_workspace_parameters">Parameters</string>
     <string name="model_workspace_functions">Functions</string>
@@ -9225,7 +9225,7 @@
     <string name="model_workspace_sampling">Sampling and repetition</string>
     <string name="model_workspace_sampling_hint">Temperature, sampling range and repetition penalties</string>
     <string name="model_workspace_custom_hint">Custom request fields, types and values</string>
-    <string name="model_workspace_function_hint">Tap a function to assign a model and adjust its thinking preferences. Configurations follow the selected group above.</string>
+    <string name="model_workspace_function_hint">Assign a configuration and model to each function and adjust thinking preferences. Assignments apply globally.</string>
     <string name="model_workspace_all_functions">All functions</string>
     <string name="model_workspace_current_functions">Current config</string>
     <string name="model_workspace_no_functions">No functions are assigned to this configuration.</string>
@@ -9491,4 +9491,17 @@
     <string name="theme_target_no_matches">No matches</string>
     <string name="theme_target_character_label">Character card</string>
     <string name="theme_target_group_label">Group</string>
+    <string name="model_workspace_summary">Context &amp; summary</string>
+    <string name="model_workspace_summary_scope">Editing: %1$s · saved per configuration</string>
+    <string name="model_workspace_summary_threshold">Context usage percentage</string>
+    <string name="model_workspace_summary_threshold_hint">Generate a summary when this percentage is reached</string>
+    <string name="model_workspace_summary_threshold_error">Enter a summary threshold greater than 0 and less than 100</string>
+    <string name="model_workspace_summary_context_limit">Context length must not exceed the maximum context length</string>
+    <string name="model_workspace_summary_history_error">Enter non-negative whole numbers for history media retention</string>
+    <string name="model_workspace_summary_history_scope">Global setting: history media retention applies to every configuration</string>
+    <string name="model_workspace_summary_reset_history">Reset history media retention</string>
+    <string name="model_workspace_summary_model">Model used for summaries</string>
+    <string name="model_workspace_summary_model_scope">This function assignment applies to every configuration</string>
+    <string name="model_workspace_function_search">Search functions, configurations or models</string>
+    <string name="model_workspace_function_count">%1$d / %2$d functions</string>
 </resources>
