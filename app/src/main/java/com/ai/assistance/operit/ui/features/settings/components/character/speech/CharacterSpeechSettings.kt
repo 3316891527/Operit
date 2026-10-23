@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.ThemeWorkbenchSlider
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.preferences.WaifuSettings
 import com.ai.assistance.operit.ui.features.settings.components.CompactTextFieldWithExpand
@@ -75,7 +76,7 @@ fun CharacterSpeechSettings(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(stringResource(R.string.speed_fast), style = MaterialTheme.typography.labelSmall)
-            Slider(
+            ThemeWorkbenchSlider(
                 value = settings.charDelay.toFloat(),
                 onValueChange = { onChange(settings.copy(charDelay = it.toInt())) },
                 valueRange = 200f..1000f,
@@ -116,7 +117,7 @@ fun CharacterSpeechSettings(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Slider(
+            ThemeWorkbenchSlider(
                 value = settings.mergeSendDelayMs.toFloat(),
                 onValueChange = { onChange(settings.copy(mergeSendDelayMs = it.toInt())) },
                 valueRange = 500f..10000f,

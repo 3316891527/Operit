@@ -18,3 +18,4 @@
 - [LLM 模块目录迁移](relocate_llm_modules/index.md) · `relocate_llm_modules`
 - [ToolPkg API 本地声明与版本变体](toolpkg_api_capability_dispatch/index.md) · `toolpkg_api_capability_dispatch`
 - [Tools 目录重整](tools_directory_reorganization/index.md) · `tools_directory_reorganization`
+- [1.12.2+10 发布同步](release-1.12.2-plus-10/index.md) · `release-1.12.2-plus-10`

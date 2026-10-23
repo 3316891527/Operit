@@ -21,15 +21,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.main.LocalTopBarTitleContent
 import com.ai.assistance.operit.ui.main.TopBarTitleContent
 import com.ai.assistance.operit.ui.main.components.LocalAppBarContentColor
 import com.ai.assistance.operit.ui.main.components.LocalIsCurrentScreen
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
+import com.ai.assistance.operit.ui.permissions.ToolPermissionChange
 import com.ai.assistance.operit.ui.permissions.ToolPermissionSystem
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @Composable
@@ -39,8 +40,7 @@ fun ToolPermissionPage() {
     val system = remember { ToolPermissionSystem.getInstance(context) }
     val settings by system.settingsFlow.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
-    val snackbar = remember { SnackbarHostState() }
-    var undoJob by remember { mutableStateOf<Job?>(null) }
+    var lastChange by remember { mutableStateOf<ToolPermissionChange?>(null) }
     var saving by remember { mutableStateOf(false) }
     var help by remember { mutableStateOf(false) }
     var add by remember { mutableStateOf(false) }
@@ -94,51 +94,42 @@ fun ToolPermissionPage() {
         )
             return
         saving = true
-        undoJob?.cancel()
-        snackbar.currentSnackbarData?.dismiss()
         scope.launch {
             try {
                 val previous = system.updateSettings(master, changes)
-                if (!previous.isEmpty)
-                    undoJob =
-                        scope.launch {
-                            val result =
-                                snackbar.showSnackbar(
-                                    context.getString(R.string.tp_saved),
-                                    actionLabel = context.getString(R.string.tp_undo),
-                                    withDismissAction = true,
-                                    duration = SnackbarDuration.Long,
-                                )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                saving = true
-                                try {
-                                    system.updateSettings(previous.master, previous.overrides)
-                                } catch (error: CancellationException) {
-                                    throw error
-                                } catch (error: Exception) {
-                                    AppLogger.e("ToolPermissions", "撤销工具权限设置失败", error)
-                                    snackbar.showSnackbar(
-                                        context.getString(R.string.tp_save_failed)
-                                    )
-                                } finally {
-                                    saving = false
-                                }
-                            }
-                        }
+                if (!previous.isEmpty) {
+                    lastChange = previous
+                    OKToast.success(context, R.string.tp_saved).show()
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
                 AppLogger.e("ToolPermissions", "保存工具权限设置失败", error)
-                undoJob =
-                    scope.launch {
-                        snackbar.showSnackbar(context.getString(R.string.tp_save_failed))
-                    }
+                OKToast.error(context, R.string.tp_save_failed).show()
             } finally {
                 saving = false
             }
         }
     }
-
+    fun undoLastChange() {
+        if (saving) return
+        val previous = lastChange ?: return
+        saving = true
+        scope.launch {
+            try {
+                system.updateSettings(previous.master, previous.overrides)
+                lastChange = null
+                OKToast.success(context, R.string.tp_restored).show()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e("ToolPermissions", "撤销工具权限设置失败", error)
+                OKToast.error(context, R.string.tp_save_failed).show()
+            } finally {
+                saving = false
+            }
+        }
+    }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLowest)) {
         val current = settings
         if (current == null) {
@@ -170,7 +161,7 @@ fun ToolPermissionPage() {
                         start = 16.dp,
                         end = 16.dp,
                         top = 16.dp,
-                        bottom = if (batch) 170.dp else 90.dp,
+                        bottom = if (batch) 170.dp else 24.dp,
                     ),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
@@ -234,6 +225,13 @@ fun ToolPermissionPage() {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (lastChange != null) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            TextButton(enabled = !saving, onClick = ::undoLastChange) {
+                                Text(stringResource(R.string.tp_undo_last))
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     PermissionSearch(query, onQuery = { query = it })
                     PermissionFilters(filter, current.overrides, onSelect = { filter = it })
@@ -311,7 +309,6 @@ fun ToolPermissionPage() {
                 }
             }
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-                SnackbarHost(snackbar)
                 if (batch)
                     Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 6.dp) {
                         Row(
