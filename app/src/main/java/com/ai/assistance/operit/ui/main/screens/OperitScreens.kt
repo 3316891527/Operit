@@ -639,7 +639,6 @@ sealed class Screen(
 
                     navigateToSpeechServicesSettings = { navigateTo(SpeechServicesSettings) },
                     navigateToExternalHttpChatSettings = { navigateTo(ExternalHttpChatSettings) },
-                    navigateToWaifuModeSettings = { navigateTo(WaifuModeSettings) },
                     navigateToPerformanceMonitor = { navigateTo(PerformanceMonitor) },
                     navigateToContextSummarySettings = { navigateTo(ContextSummarySettings) },
                     navigateToAbout = { navigateTo(About) }

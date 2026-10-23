@@ -71,3 +71,4 @@
 - [World Book Group Merge](worldbook_group_merge/index.md) · `worldbook_group_merge`
 - [工具权限界面](tool-permissions/index.md) · `tool-permissions`
 - [角色卡操作菜单](character-card-menu/index.md) · `character-card-menu`
+- [角色卡发言设置与存储入口](character-card-speech/index.md) · `character-card-speech`

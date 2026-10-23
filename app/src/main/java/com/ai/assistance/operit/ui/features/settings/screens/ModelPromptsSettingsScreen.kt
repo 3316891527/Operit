@@ -65,6 +65,9 @@ import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.preferences.PromptTagManager
+import com.ai.assistance.operit.data.preferences.WaifuPreferences
+import com.ai.assistance.operit.data.preferences.WaifuSettings
+import kotlinx.coroutines.CancellationException
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.util.FileUtils
 import com.canhub.cropper.CropImageContract
@@ -119,6 +122,7 @@ fun ModelPromptsSettingsScreen(
     val scope = rememberCoroutineScope()
     var showTagSavedHighlight by remember { mutableStateOf(false) }
     var showSaveSuccessMessage by remember { mutableStateOf(false) }
+    var isSavingCharacterCard by remember { mutableStateOf(false) }
     var showDuplicateSuccessMessage by remember { mutableStateOf(false) }
 
     // 管理器
@@ -626,7 +630,9 @@ fun ModelPromptsSettingsScreen(
     }
 
     // 保存角色卡
-    fun saveCharacterCard(card: CharacterCard, onSaved: ((String, String) -> Unit)? = null) {
+    fun saveCharacterCard(card: CharacterCard, speech: WaifuSettings, onSaved: ((String, String) -> Unit)? = null) {
+        if (isSavingCharacterCard) return
+        isSavingCharacterCard = true
         val originalNameSnapshot = editingOriginalName
         val isExistingCard = card.id.isNotEmpty()
         val nameChanged = isExistingCard &&
@@ -634,42 +640,50 @@ fun ModelPromptsSettingsScreen(
                 originalNameSnapshot != card.name
 
         scope.launch {
-            val savedId = if (!isExistingCard) {
-                val newCardId = characterCardManager.createCharacterCard(card)
-                activePromptManager.saveCustomChatTitleForPrompt(
-                    ActivePrompt.CharacterCard(newCardId),
-                    card.name.ifEmpty { null },
-                )
-                pendingCharacterAvatarUri?.let { uri ->
-                    val internalUri = FileUtils.copyFileToInternalStorage(context, uri, "avatar_$newCardId")
-                    if (internalUri != null) {
-                        activePromptManager.saveAiAvatarForPrompt(
-                            ActivePrompt.CharacterCard(newCardId), internalUri.toString()
-                        )
-                    } else {
-                        OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
+            try {
+                val savedId = if (!isExistingCard) {
+                    val newCardId = characterCardManager.createCharacterCard(card)
+                    activePromptManager.saveCustomChatTitleForPrompt(
+                        ActivePrompt.CharacterCard(newCardId),
+                        card.name.ifEmpty { null },
+                    )
+                    pendingCharacterAvatarUri?.let { uri ->
+                        val internalUri = FileUtils.copyFileToInternalStorage(context, uri, "avatar_$newCardId")
+                        if (internalUri != null) {
+                            activePromptManager.saveAiAvatarForPrompt(
+                                ActivePrompt.CharacterCard(newCardId), internalUri.toString()
+                            )
+                        } else {
+                            OKToast.error(context, context.getString(R.string.theme_copy_failed), OKToast.LENGTH_LONG).show()
+                        }
                     }
+                    newCardId
+                } else {
+                    characterCardManager.updateCharacterCard(card)
+                    activePromptManager.saveCustomChatTitleForPrompt(
+                        ActivePrompt.CharacterCard(card.id),
+                        card.name.ifEmpty { null },
+                    )
+                    card.id
                 }
-                newCardId
-            } else {
-                characterCardManager.updateCharacterCard(card)
-                activePromptManager.saveCustomChatTitleForPrompt(
-                    ActivePrompt.CharacterCard(card.id),
-                    card.name.ifEmpty { null },
-                )
-                card.id
-            }
-            showAddCharacterCardDialog = false
-            showEditCharacterCardDialog = false
-            pendingCharacterAvatarUri = null
-            editingCharacterCard = null
-            editingOriginalName = null
-            showSaveSuccessMessage = true
-            refreshTrigger++
-            if (nameChanged) {
-                showChatManagementPrompt = true
-            }
-            onSaved?.invoke(savedId, card.name)
+                WaifuPreferences.getInstance(context).saveCharacterCardSettings(savedId, speech)
+                showAddCharacterCardDialog = false
+                showEditCharacterCardDialog = false
+                pendingCharacterAvatarUri = null
+                editingCharacterCard = null
+                editingOriginalName = null
+                showSaveSuccessMessage = true
+                refreshTrigger++
+                if (nameChanged) {
+                    showChatManagementPrompt = true
+                }
+                onSaved?.invoke(savedId, card.name)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e("ModelPromptsSettings", "保存角色卡和发言设置失败", error)
+                OKToast.error(context, context.getString(R.string.save_failed), OKToast.LENGTH_LONG).show()
+            } finally { isSavingCharacterCard = false }
         }
     }
 
@@ -1226,16 +1240,17 @@ fun ModelPromptsSettingsScreen(
             ),
             allTags = allTags,
             userPreferencesManager = userPreferencesManager,
+            isSaving = isSavingCharacterCard,
             avatarPreviewUri = pendingCharacterAvatarUri,
             onDismiss = {
                 showAddCharacterCardDialog = false
                 pendingCharacterAvatarUri = null
                 editingCharacterCard = null
             },
-            onSave = { card ->
-                saveCharacterCard(card)
+            onSave = { card, speech ->
+                saveCharacterCard(card, speech)
             },
-            onExport = { card -> saveCharacterCard(card, ::openCharacterCardExport) },
+            onExport = { card, speech -> saveCharacterCard(card, speech, ::openCharacterCardExport) },
             onManageTags = { showCharacterTagManagementDialog = true },
             onAvatarChange = {
                 avatarImagePicker.launch("image/*")
@@ -1261,15 +1276,16 @@ fun ModelPromptsSettingsScreen(
             ),
             allTags = allTags,
             userPreferencesManager = userPreferencesManager,
+            isSaving = isSavingCharacterCard,
             onDismiss = {
                 showEditCharacterCardDialog = false
                 editingCharacterCard = null
                 editingOriginalName = null
             },
-            onSave = { card ->
-                saveCharacterCard(card)
+            onSave = { card, speech ->
+                saveCharacterCard(card, speech)
             },
-            onExport = { card -> saveCharacterCard(card, ::openCharacterCardExport) },
+            onExport = { card, speech -> saveCharacterCard(card, speech, ::openCharacterCardExport) },
             onManageTags = { showCharacterTagManagementDialog = true },
             onAvatarChange = {
                 avatarImagePicker.launch("image/*")

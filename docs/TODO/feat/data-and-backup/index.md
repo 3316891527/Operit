@@ -35,3 +35,7 @@ status: 已实现，等待仓库工作流和设备验收
 ## 定时与权限界面迭代
 
 本分支继续包含 [工作流定时修复](../../fix/workflow-scheduling/index.md)、[工具权限重构](../tool-permissions/index.md) 和 [角色卡操作菜单](../character-card-menu/index.md)。角色卡主体本轮保持原范围，完整设备验收保留原有 77 项并增加本轮检查。
+
+## 角色卡发言与存储入口
+
+[角色卡发言设置](../character-card-speech/index.md) 将 Waifu 配置合并到现有编辑弹窗，基础、内容、发言、绑定按序显示；数据与存储入口归入数据和权限分组。完整验收保留前 116 项并扩到 133 项。

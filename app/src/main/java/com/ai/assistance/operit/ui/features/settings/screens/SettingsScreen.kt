@@ -47,7 +47,6 @@ fun SettingsScreen(
 
         navigateToSpeechServicesSettings: () -> Unit,
         navigateToExternalHttpChatSettings: () -> Unit,
-        navigateToWaifuModeSettings: () -> Unit,
         navigateToPerformanceMonitor: () -> Unit,
         navigateToContextSummarySettings: () -> Unit,
         navigateToAbout: () -> Unit
@@ -145,14 +144,6 @@ fun SettingsScreen(
                                 icon = Icons.Default.DeviceHub,
                                 onClick = navigateToMemory
                         )
-
-                        // 新增：Waifu模式设置
-                        CompactSettingsItem(
-                                title = stringResource(R.string.waifu_mode_settings),
-                                subtitle = stringResource(R.string.waifu_mode_settings_desc),
-                                icon = Icons.Default.EmojiEmotions,
-                                onClick = navigateToWaifuModeSettings
-                        )
                 }
 
                 // ======= 数据和权限 =======
@@ -173,6 +164,13 @@ fun SettingsScreen(
                                 subtitle = stringResource(id = R.string.data_backup_settings_desc),
                                 icon = Icons.Default.CloudUpload,
                                 onClick = navigateToDataAndBackup
+                        )
+
+                        CompactSettingsItem(
+                                title = stringResource(id = R.string.settings_data_storage),
+                                subtitle = stringResource(id = R.string.settings_data_storage_subtitle),
+                                icon = Icons.Default.Storage,
+                                onClick = navigateToDataStorageManagement
                         )
 
 
@@ -208,12 +206,7 @@ fun SettingsScreen(
                                         context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java))
                                 }
                         )
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_data_storage),
-                                subtitle = stringResource(id = R.string.settings_data_storage_subtitle),
-                                icon = Icons.Default.Storage,
-                                onClick = navigateToDataStorageManagement
-                        )
+
                 }
 
                 // ======= 外部调用 =======
