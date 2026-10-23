@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import android.content.Context
+import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.stream.TextStreamEvent
 import com.ai.assistance.operit.util.stream.MutableSharedStreamImpl
 import java.io.BufferedReader
@@ -12,11 +13,31 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONObject
+import org.junit.After
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 
 class OpenAIToolArgumentStreamingTest {
+    private var previousSystemLogEnabled = true
+    private var previousFileLogEnabled = true
+
+    // 真实流解析会写日志；纯 JVM 关闭 Android 日志调用，结束后恢复以免影响其他测试。
+    @Before
+    fun disableAndroidLogging() {
+        previousSystemLogEnabled = AppLogger.enableSystemLog
+        previousFileLogEnabled = AppLogger.enableFileLogging
+        AppLogger.enableSystemLog = false
+        AppLogger.enableFileLogging = false
+    }
+
+    @After
+    fun restoreAndroidLogging() {
+        AppLogger.enableSystemLog = previousSystemLogEnabled
+        AppLogger.enableFileLogging = previousFileLogEnabled
+    }
+
     private fun provider(responses: Boolean = false) = object : OpenAIProvider(
         apiEndpoint = "https://example.test/v1/chat/completions",
         apiKeyProvider = SingleApiKeyProvider("test-key"),
