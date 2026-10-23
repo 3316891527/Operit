@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,7 +54,8 @@ fun CharacterGroupAssignDialog(
     inProgress: Boolean
 ) {
     val context = LocalContext.current
-    AlertDialog(
+    DataBackupDialog(
+        dismissEnabled = !inProgress,
         onDismissRequest = onDismiss,
         title = { Text(context.getString(R.string.assign_to_character_group_title)) },
         text = {

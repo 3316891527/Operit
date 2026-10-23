@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.ai.assistance.operit.R
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.model.CustomEmoji
 import com.ai.assistance.operit.ui.features.settings.viewmodels.CustomEmojiViewModel
 import kotlinx.coroutines.launch
@@ -35,10 +39,20 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomEmojiManagementScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    target: ActivePrompt? = null,
 ) {
     val context = LocalContext.current
-    val viewModel = remember { CustomEmojiViewModel(context) }
+    // 表情管理可嵌套在角色编辑中，显式固定目标并在关闭面板时释放观察协程。
+    val store = remember(target) { ViewModelStore() }
+    val viewModel = remember(store) {
+        ViewModelProvider(store, object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                CustomEmojiViewModel(context.applicationContext, target) as T
+        })[CustomEmojiViewModel::class.java]
+    }
+    DisposableEffect(store) { onDispose { store.clear() } }
     val scope = rememberCoroutineScope()
 
     val categories by viewModel.categories.collectAsState()

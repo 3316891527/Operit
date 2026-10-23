@@ -29,7 +29,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.PlaylistAddCheck
 import androidx.compose.material3.*
+import com.ai.assistance.operit.ui.features.databackup.components.DataBackupDialog
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.CoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +51,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.databackup.components.*
 import com.ai.assistance.operit.ui.features.memory.settings.ChatMemoryRebuildDateRangeDialog
 import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
 import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
@@ -86,7 +92,7 @@ data class UnboundWorkspaceInfo(
 )
 
 @Composable
-fun ChatHistorySettingsScreen() {
+fun ChatHistorySettingsScreen(header: @Composable () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val memoryRebuildManager = remember { ChatMemoryRebuildManager.getInstance(context) }
@@ -142,7 +148,7 @@ fun ChatHistorySettingsScreen() {
             totalChatCount = histories.size
         }
     }
-    
+
     // 获取无绑定的工作区文件夹
     var unboundWorkspaces by remember { mutableStateOf<List<UnboundWorkspaceInfo>>(emptyList()) }
     LaunchedEffect(chatHistories) {
@@ -241,7 +247,7 @@ fun ChatHistorySettingsScreen() {
 
     val profileIds by userPreferencesManager.memorySpaceListFlow.collectAsState(initial = listOf("default"))
     var allProfiles by remember { mutableStateOf<List<MemorySpace>>(emptyList()) }
-    
+
     LaunchedEffect(profileIds) {
         val profiles = profileIds.mapNotNull { profileId ->
             try {
@@ -252,7 +258,7 @@ fun ChatHistorySettingsScreen() {
         }
         allProfiles = profiles
     }
-    
+
     val activeProfileName =
         allProfiles.find { it.id == activeProfileId }?.name ?: context.getString(R.string.default_profile_name)
 
@@ -282,16 +288,12 @@ fun ChatHistorySettingsScreen() {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item(key = "header") { Column(verticalArrangement = Arrangement.spacedBy(16.dp)) { header() } }
             item {
-                ChatManagementOverviewCard(
-                    totalChatCount = totalChatCount,
-                    activeProfileName = activeProfileName
-                )
-            }
-            item {
-                CharacterCardStatsCard(
+                DataBackupCard {
+                    CharacterCardStatsCard(
                     stats = characterCardStats,
                     characterCards = availableCharacterCards,
                     isLoading = isCharacterCardStatsLoading || characterCardsLoading,
@@ -300,9 +302,8 @@ fun ChatHistorySettingsScreen() {
                         showMissingActionDialog = true
                     }
                 )
-            }
-            item {
-                CharacterGroupStatsCard(
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    CharacterGroupStatsCard(
                     stats = characterGroupStats,
                     characterGroups = availableCharacterGroups,
                     isLoading = isCharacterGroupStatsLoading || characterGroupsLoading,
@@ -311,9 +312,10 @@ fun ChatHistorySettingsScreen() {
                         showMissingGroupActionDialog = true
                     }
                 )
+                }
             }
-            item {
-                ChatHistoryBatchSelectorCard(
+            item(key = "chat_selection") { ChatHistoryBatchSelectorCard(
+                    operationScope = scope,
                     chatHistories = chatHistories,
                     characterCards = availableCharacterCards,
                     characterGroups = availableCharacterGroups,
@@ -326,7 +328,7 @@ fun ChatHistorySettingsScreen() {
                         }
                         try {
                             var messageParts = mutableListOf<String>()
-                            
+
                             // 更新角色卡绑定（仅在明确指定时更新）
                             // shouldUnbindCharacterCard 为 true 表示移除绑定
                             // targetCharacterName 不为 null 表示设置新的角色卡
@@ -334,7 +336,7 @@ fun ChatHistorySettingsScreen() {
                             val shouldUpdateCharacterGroup = shouldUnbindCharacterGroup || targetCharacterGroupId != null
                             val shouldUpdateCharacterCard =
                                 !shouldUpdateCharacterGroup && (shouldUnbindCharacterCard || targetCharacterName != null)
-                            
+
                             if (shouldUpdateCharacterCard) {
                                 chatHistoryManager.assignCharacterCardToChats(
                                     chatIds = selectedIds,
@@ -369,7 +371,7 @@ fun ChatHistorySettingsScreen() {
                                     )
                                 }
                             }
-                            
+
                             // 更新分组
                             if (targetGroupName != null) {
                                 chatHistoryManager.assignGroupToChats(
@@ -378,7 +380,7 @@ fun ChatHistorySettingsScreen() {
                                 )
                                 messageParts.add(context.getString(R.string.assigned_chats_to_group, selectedIds.size, targetGroupName))
                             }
-                            
+
                             val message = messageParts.joinToString("；")
                             OKToast.success(context, message, OKToast.LENGTH_SHORT).show()
                             true
@@ -391,12 +393,9 @@ fun ChatHistorySettingsScreen() {
                             false
                         }
                     }
-                )
-            }
-            
-            // 无绑定工作区管理卡片
-            item {
-                UnboundWorkspaceCard(
+                ) }
+            item(key = "workspaces") { UnboundWorkspaceCard(
+                    operationScope = scope,
                     unboundWorkspaces = unboundWorkspaces,
                     onDelete = { selectedWorkspacePaths ->
                         try {
@@ -420,8 +419,8 @@ fun ChatHistorySettingsScreen() {
                             OKToast.error(context, context.getString(R.string.delete_failed, e.localizedMessage ?: ""), OKToast.LENGTH_LONG).show()
                         }
                     }
-                )
-            }
+                ) }
+            item { ClearAllChatsAction(chatHistories, scope) }
         }
 
         AnimatedVisibility(
@@ -452,7 +451,7 @@ fun ChatHistorySettingsScreen() {
     if (showMissingActionDialog && pendingMissingStat != null) {
         val stat = pendingMissingStat!!
         val displayName = stat.characterCardName ?: context.getString(R.string.unbound_character_card)
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = {
                 showMissingActionDialog = false
                 pendingMissingStat = null
@@ -518,7 +517,7 @@ fun ChatHistorySettingsScreen() {
         } else {
             context.getString(R.string.missing_character_group_id, missingGroupId)
         }
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = {
                 showMissingGroupActionDialog = false
                 pendingMissingGroupStat = null
@@ -595,7 +594,8 @@ fun ChatHistorySettingsScreen() {
     if (showDeleteMissingDialog && pendingMissingStat != null) {
         val stat = pendingMissingStat!!
         val displayName = stat.characterCardName ?: context.getString(R.string.unbound_character_card)
-        AlertDialog(
+        DataBackupDialog(
+            dismissEnabled = !deleteMissingInProgress,
             onDismissRequest = {
                 if (!deleteMissingInProgress) {
                     showDeleteMissingDialog = false
@@ -737,75 +737,35 @@ fun ChatHistorySettingsScreen() {
             inProgress = assignInProgress
         )
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ChatManagementOverviewCard(
-    totalChatCount: Int,
-    activeProfileName: String
-) {
-    val context = LocalContext.current
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                    text = context.getString(R.string.chat_history_overview),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = context.getString(R.string.current_config_label, activeProfileName),
-                style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            StatChip(
-                icon = Icons.Default.History,
-                title = "$totalChatCount",
-                subtitle = context.getString(R.string.chat_records_label)
-            )
-        }
+    if (showAssignGroupDialog && pendingAssignGroupStat != null) {
+        CharacterGroupAssignDialog(
+            missingChatCount = pendingAssignGroupStat?.chatCount ?: 0,
+            characterGroups = availableCharacterGroups,
+            selectedGroupId = selectedCharacterGroupId,
+            onGroupSelected = { selectedCharacterGroupId = it },
+            onDismiss = { if (!assignGroupInProgress) { showAssignGroupDialog = false; pendingAssignGroupStat = null } },
+            onConfirm = {
+                val stat = pendingAssignGroupStat
+                val target = availableCharacterGroups.firstOrNull { it.id == selectedCharacterGroupId }
+                if (stat != null && target != null && !assignGroupInProgress) {
+                    assignGroupInProgress = true
+                    scope.launch {
+                        try {
+                            val count = chatHistoryManager.reassignChatsToCharacterGroup(stat.characterGroupId, target.id)
+                            OKToast.success(context, context.getString(R.string.assigned_chats_to_character_group, count, target.name), OKToast.LENGTH_SHORT).show()
+                            showAssignGroupDialog = false
+                            pendingAssignGroupStat = null
+                        } catch (e: Exception) {
+                            AppLogger.e("DataAndBackup", "修复角色群关联失败", e)
+                            OKToast.error(context, context.getString(R.string.assign_failed_error, e.localizedMessage ?: e.toString()), OKToast.LENGTH_LONG).show()
+                        } finally { assignGroupInProgress = false }
+                    }
+                }
+            },
+            inProgress = assignGroupInProgress,
+        )
     }
-}
 
-@Composable
-private fun StatChip(
-    icon: ImageVector,
-    title: String,
-    subtitle: String
-) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -818,16 +778,12 @@ private fun CharacterCardStatsCard(
     val context = LocalContext.current
     val userPreferencesManager = remember { UserPreferencesManager.getInstance(context) }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = context.getString(R.string.character_card_statistics),
-                subtitle = context.getString(R.string.character_card_statistics_subtitle),
-                icon = Icons.Default.AssignmentInd
-            )
+        DataBackupExpandableSection(
+        title = stringResource(R.string.character_card_statistics),
+        subtitle = stringResource(R.string.character_card_statistics_subtitle),
+        icon = Icons.Default.AssignmentInd,
+    ) {
+
 
             if (isLoading) {
                 Column(
@@ -877,9 +833,7 @@ private fun CharacterCardStatsCard(
                     }
                 }
             }
-        }
-    }
-}
+         }}
 
 @Composable
 private fun CharacterGroupStatsCard(
@@ -894,16 +848,12 @@ private fun CharacterGroupStatsCard(
         characterGroups.associateBy { it.id }
     }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = context.getString(R.string.character_group_statistics),
-                subtitle = context.getString(R.string.character_group_statistics_subtitle),
-                icon = Icons.Default.Groups
-            )
+        DataBackupExpandableSection(
+        title = stringResource(R.string.character_group_statistics),
+        subtitle = stringResource(R.string.character_group_statistics_subtitle),
+        icon = Icons.Default.Groups,
+    ) {
+
 
             if (isLoading) {
                 Column(
@@ -959,9 +909,7 @@ private fun CharacterGroupStatsCard(
                     }
                 }
             }
-        }
-    }
-}
+         }}
 
 @Composable
 private fun CharacterGroupStatRow(
@@ -1193,6 +1141,7 @@ private fun CharacterCardStatRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatHistoryBatchSelectorCard(
+    operationScope: CoroutineScope,
     chatHistories: List<ChatHistory>,
     characterCards: List<CharacterCard>,
     characterGroups: List<CharacterGroupCard>,
@@ -1208,9 +1157,17 @@ private fun ChatHistoryBatchSelectorCard(
     ) -> Boolean
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedChatIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val scope = operationScope
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var messageCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    LaunchedEffect(chatHistories) {
+        try {
+            messageCounts = ChatHistoryManager.getInstance(context).getMessageCountsByChatId()
+        } catch (e: Exception) {
+            AppLogger.e("DataAndBackup", "读取聊天消息数量失败", e)
+        }
+    }
+    var selectedChatIds by rememberSaveable { mutableStateOf<Set<String>>(emptySet()) }
     var dropdownExpanded by remember { mutableStateOf(false) }
     var selectedTargetName by remember { mutableStateOf<String?>(null) }
     var targetIsUnbind by remember { mutableStateOf(false) }
@@ -1221,12 +1178,10 @@ private fun ChatHistoryBatchSelectorCard(
     var submitting by remember { mutableStateOf(false) }
     var deleteInProgress by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showSelectedChatActionsDialog by remember { mutableStateOf(false) }
     var showBatchManagementSheet by remember { mutableStateOf(false) }
-    var memoryWindowSizeMenuExpanded by remember { mutableStateOf(false) }
-    var selectedMemoryWindowSize by remember {
-        mutableIntStateOf(ChatMemoryWindowPlanner.DEFAULT_WINDOW_MESSAGE_COUNT)
-    }
+    var memoryWindowInput by rememberSaveable { mutableStateOf(ChatMemoryWindowPlanner.DEFAULT_WINDOW_MESSAGE_COUNT.toString()) }
+    val selectedMemoryWindowSize = memoryWindowInput.toIntOrNull()
+    val validMemoryWindow = selectedMemoryWindowSize != null && selectedMemoryWindowSize in ChatMemoryWindowPlanner.MIN_WINDOW_MESSAGE_COUNT..ChatMemoryWindowPlanner.MAX_WINDOW_MESSAGE_COUNT
     var showMemoryRebuildConfirmDialog by remember { mutableStateOf(false) }
     var memoryTimeScopeMode by remember { mutableStateOf(MemoryRebuildTimeScopeMode.ENTIRE) }
     var memoryRangeStartDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -1307,14 +1262,14 @@ private fun ChatHistoryBatchSelectorCard(
             !deleteInProgress &&
             !isMemoryRebuildRunning
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    DataBackupCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SectionHeader(
-                title = stringResource(R.string.chat_history_batch_operations_title),
-                subtitle = stringResource(R.string.chat_history_batch_operations_subtitle),
+                title = stringResource(R.string.data_backup_chat_records),
+                subtitle = stringResource(R.string.data_backup_chat_records_desc),
                 icon = Icons.AutoMirrored.Filled.PlaylistAddCheck
             )
 
@@ -1324,7 +1279,6 @@ private fun ChatHistoryBatchSelectorCard(
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 placeholder = { Text(context.getString(R.string.search_by_title_group_card)) },
-                label = { Text(context.getString(R.string.filter_chat_history)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -1388,14 +1342,13 @@ private fun ChatHistoryBatchSelectorCard(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 320.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        .heightIn(max = 480.dp)
                 ) {
                     itemsIndexed(filteredHistories, key = { _, history -> history.id }) { index, history ->
                         val groupName = history.characterGroupId?.let { characterGroupNameById[it] }
                         ChatHistorySelectableRow(
                             history = history,
+                            messageCount = messageCounts[history.id],
                             characterGroupName = groupName,
                             selected = selectedChatIds.contains(history.id),
                             enabled = !submitting && !deleteInProgress && !isMemoryRebuildRunning,
@@ -1500,64 +1453,33 @@ private fun ChatHistoryBatchSelectorCard(
                 }
             }
 
-            if (!isMemoryRebuildRunning && hasSelection) {
-                Button(
-                    onClick = { showSelectedChatActionsDialog = true },
-                    enabled = !submitting && !deleteInProgress,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.PlaylistAddCheck, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.chat_history_selected_actions, selectedChatIds.size))
+            Surface(color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f), shape = RoundedCornerShape(10.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    val actionsEnabled = hasSelection && !submitting && !deleteInProgress && !isMemoryRebuildRunning
+                    TextButton(onClick = { showBatchManagementSheet = true }, enabled = actionsEnabled, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Link, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.data_backup_manage_links), maxLines = 1)
+                    }
+                    TextButton(onClick = { showMemoryRebuildConfirmDialog = true }, enabled = actionsEnabled, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Psychology, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.data_backup_build_memory), maxLines = 1)
+                    }
+                    TextButton(onClick = { showDeleteConfirmDialog = true }, enabled = actionsEnabled, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error), modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Delete, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.delete), maxLines = 1)
+                    }
                 }
             }
         }
     }
 
     if (showBatchManagementSheet) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = {
-                if (!submitting) {
-                    showBatchManagementSheet = false
-                }
-            },
-            sheetState = sheetState
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 720.dp)
-                        .heightIn(max = 640.dp)
-                        .verticalScroll(rememberScrollState())
-                        .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.PlaylistAddCheck,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.chat_history_batch_management),
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(start = 10.dp).weight(1f)
-                    )
-                    IconButton(
-                        onClick = { showBatchManagementSheet = false },
-                        enabled = !submitting
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.cancel)
-                        )
-                    }
-                }
+        DataBackupDialog(
+            dismissEnabled = !submitting,
+            onDismissRequest = { if (!submitting) showBatchManagementSheet = false },
+            title = { Text(stringResource(R.string.data_backup_manage_links)) },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
                 Text(
                     text = context.getString(
                         R.string.selected_chats_count,
@@ -1701,7 +1623,27 @@ private fun ChatHistoryBatchSelectorCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Button(
+
+                }
+                HorizontalDivider()
+                TextButton(
+                    onClick = {
+                        showBatchManagementSheet = false
+                        showDeleteConfirmDialog = true
+                    },
+                    enabled = selectedChatIds.isNotEmpty() && !submitting && !deleteInProgress,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(context.getString(R.string.delete_selected_chats, selectedChatIds.size))
+                }
+             } },
+            dismissButton = { TextButton(onClick = { showBatchManagementSheet = false }, enabled = !submitting) { Text(stringResource(R.string.cancel)) } },
+            confirmButton = {                 Button(
                         onClick = {
                             if (!canSubmit) return@Button
                             scope.launch {
@@ -1728,7 +1670,6 @@ private fun ChatHistoryBatchSelectorCard(
                             }
                         },
                         enabled = canSubmit,
-                        modifier = Modifier.weight(1f)
                     ) {
                         if (submitting) {
                             CircularProgressIndicator(
@@ -1748,90 +1689,15 @@ private fun ChatHistoryBatchSelectorCard(
                             else -> context.getString(R.string.apply_character_card)
                         }
                         Text(buttonText)
-                    }
-                }
-                HorizontalDivider()
-                TextButton(
-                    onClick = {
-                        showBatchManagementSheet = false
-                        showDeleteConfirmDialog = true
-                    },
-                    enabled = selectedChatIds.isNotEmpty() && !submitting && !deleteInProgress,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.delete_selected_chats, selectedChatIds.size))
-                }
-            }
-        }
+                    } },
+        )
     }
 
-    if (showSelectedChatActionsDialog) {
-        ModalBottomSheet(onDismissRequest = { showSelectedChatActionsDialog = false }) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.chat_history_selected_actions_title),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = context.getString(
-                        R.string.selected_chats_count,
-                        selectedChatIds.size,
-                        filteredHistories.size
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.chat_history_batch_management)) },
-                    supportingContent = { Text(stringResource(R.string.batch_assign_subtitle)) },
-                    leadingContent = {
-                        Icon(Icons.AutoMirrored.Filled.PlaylistAddCheck, contentDescription = null)
-                    },
-                    trailingContent = {
-                        Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                selectedTargetName = null
-                                targetIsUnbind = false
-                                selectedTargetGroupId = null
-                                targetGroupIsUnbind = false
-                                targetGroupName = ""
-                                showSelectedChatActionsDialog = false
-                                showBatchManagementSheet = true
-                            }
-                )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.chat_memory_rebuild_title)) },
-                    supportingContent = { Text(stringResource(R.string.chat_memory_rebuild_subtitle)) },
-                    leadingContent = { Icon(Icons.Default.Memory, contentDescription = null) },
-                    trailingContent = {
-                        Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                showSelectedChatActionsDialog = false
-                                showMemoryRebuildConfirmDialog = true
-                            }
-                )
-            }
-        }
-    }
+
 
     if (showDeleteConfirmDialog) {
-        AlertDialog(
+        DataBackupDialog(
+            dismissEnabled = !deleteInProgress,
             onDismissRequest = {
                 if (!deleteInProgress) {
                     showDeleteConfirmDialog = false
@@ -1920,133 +1786,43 @@ private fun ChatHistoryBatchSelectorCard(
                 MemoryRebuildTimeScopeMode.ENTIRE -> true
                 MemoryRebuildTimeScopeMode.RANGE -> hasCompleteRange
             }
-        AlertDialog(
+        DataBackupDialog(
             onDismissRequest = { showMemoryRebuildConfirmDialog = false },
             title = { Text(stringResource(R.string.chat_memory_rebuild_confirm_title)) },
             text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ExposedDropdownMenuBox(
-                        expanded = memoryWindowSizeMenuExpanded,
-                        onExpandedChange = { memoryWindowSizeMenuExpanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = context.getString(
-                                R.string.chat_memory_rebuild_window_size_value,
-                                selectedMemoryWindowSize
-                            ),
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.chat_memory_rebuild_window_size)) },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(
-                                    expanded = memoryWindowSizeMenuExpanded
-                                )
-                            },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
-                            colors = ExposedDropdownMenuDefaults.textFieldColors()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = memoryWindowSizeMenuExpanded,
-                            onDismissRequest = { memoryWindowSizeMenuExpanded = false }
-                        ) {
-                            memoryWindowMessageCounts.forEach { size ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            context.getString(
-                                                R.string.chat_memory_rebuild_window_size_value,
-                                                size
-                                            )
-                                        )
-                                    },
-                                    onClick = {
-                                        selectedMemoryWindowSize = size
-                                        memoryWindowSizeMenuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        text = stringResource(R.string.chat_memory_rebuild_time_scope),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(stringResource(R.string.data_backup_memory_build_desc, selectedChatIds.size), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = memoryWindowInput,
+                        onValueChange = { memoryWindowInput = it },
+                        label = { Text(stringResource(R.string.chat_memory_rebuild_window_size)) },
+                        supportingText = { Text(stringResource(R.string.data_backup_memory_window_hint)) },
+                        isError = !validMemoryWindow,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = memoryTimeScopeMode == MemoryRebuildTimeScopeMode.ENTIRE,
-                            onClick = { memoryTimeScopeMode = MemoryRebuildTimeScopeMode.ENTIRE },
-                            label = { Text(stringResource(R.string.chat_memory_rebuild_time_scope_all)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        FilterChip(
-                            selected = memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE,
-                            onClick = {
-                                memoryTimeScopeMode = MemoryRebuildTimeScopeMode.RANGE
-                                showMemoryDateRangePicker = true
-                            },
-                            label = { Text(stringResource(R.string.chat_memory_rebuild_time_scope_range)) },
-                            modifier = Modifier.weight(1f)
-                        )
+                    Text(stringResource(R.string.chat_memory_rebuild_time_scope), style = MaterialTheme.typography.labelLarge)
+                    DataBackupCard {
+                        Row(Modifier.fillMaxWidth().clickable { memoryTimeScopeMode = MemoryRebuildTimeScopeMode.ENTIRE }.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = memoryTimeScopeMode == MemoryRebuildTimeScopeMode.ENTIRE, onClick = { memoryTimeScopeMode = MemoryRebuildTimeScopeMode.ENTIRE })
+                            Text(stringResource(R.string.chat_memory_rebuild_time_scope_all), style = MaterialTheme.typography.bodyMedium)
+                        }
+                        HorizontalDivider()
+                        Row(Modifier.fillMaxWidth().clickable { memoryTimeScopeMode = MemoryRebuildTimeScopeMode.RANGE; showMemoryDateRangePicker = true }.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE, onClick = { memoryTimeScopeMode = MemoryRebuildTimeScopeMode.RANGE; showMemoryDateRangePicker = true })
+                            Text(stringResource(R.string.chat_memory_rebuild_time_scope_range), style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                     if (memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE) {
-                    if (memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE) {
-                        val rangeLabel =
-                            if (rangeStart != null && rangeEnd != null) {
-                                context.getString(
-                                    R.string.chat_memory_rebuild_time_scope_value,
-                                    rangeStart.format(memoryDateFormatter),
-                                    rangeEnd.format(memoryDateFormatter)
-                                )
-                            } else {
-                                context.getString(R.string.chat_memory_rebuild_time_scope_pick)
-                            }
-                        OutlinedButton(
-                            onClick = { showMemoryDateRangePicker = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                Icons.Default.DateRange,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(rangeLabel)
-                        }
-                    }
-                    }
-                    when {
-                        memoryTimeScopeMode == MemoryRebuildTimeScopeMode.RANGE &&
-                            rangeStart != null &&
-                            rangeEnd != null -> {
-                            Text(
-                                context.getString(
-                                    R.string.chat_memory_rebuild_confirm_message_range,
-                                    selectedChatIds.size,
-                                    rangeStart.format(memoryDateFormatter),
-                                    rangeEnd.format(memoryDateFormatter),
-                                    selectedMemoryWindowSize
-                                )
-                            )
-                        }
-                        memoryTimeScopeMode == MemoryRebuildTimeScopeMode.ENTIRE -> {
-                            Text(
-                                context.getString(
-                                    R.string.chat_memory_rebuild_confirm_message,
-                                    selectedChatIds.size,
-                                    selectedMemoryWindowSize
-                                )
-                            )
-                        }
+                        val rangeLabel = if (rangeStart != null && rangeEnd != null) context.getString(R.string.chat_memory_rebuild_time_scope_value, rangeStart.format(memoryDateFormatter), rangeEnd.format(memoryDateFormatter)) else context.getString(R.string.chat_memory_rebuild_time_scope_pick)
+                        OutlinedButton(onClick = { showMemoryDateRangePicker = true }, modifier = Modifier.fillMaxWidth()) { Text(rangeLabel) }
                     }
                 }
             },
             confirmButton = {
                 TextButton(
-                    enabled = canConfirmMemoryRebuild,
+                    enabled = validMemoryWindow && canConfirmMemoryRebuild && !isMemoryRebuildRunning && selectedChatIds.isNotEmpty(),
                     onClick = {
                         val timeScope =
                             when (memoryTimeScopeMode) {
@@ -2067,7 +1843,7 @@ private fun ChatHistoryBatchSelectorCard(
                             }
                         memoryRebuildManager.start(
                             chatIds = selectedChatIds.toList(),
-                            windowMessageCount = selectedMemoryWindowSize,
+                            windowMessageCount = selectedMemoryWindowSize ?: return@TextButton,
                             timeScope = timeScope
                         )
                         showMemoryRebuildConfirmDialog = false
@@ -2104,11 +1880,11 @@ private enum class MemoryRebuildTimeScopeMode {
     RANGE
 }
 
-private val memoryWindowMessageCounts = listOf(16, 24, 32, 48)
 
 @Composable
 private fun ChatHistorySelectableRow(
     history: ChatHistory,
+    messageCount: Int?,
     characterGroupName: String?,
     selected: Boolean,
     enabled: Boolean,
@@ -2116,54 +1892,20 @@ private fun ChatHistorySelectableRow(
 ) {
     val context = LocalContext.current
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) { onSelectionChange(!selected) }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onSelectionChange(!selected) }.padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(
-            checked = selected,
-            onCheckedChange = { onSelectionChange(it) },
-            enabled = enabled
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = history.title.ifBlank { context.getString(R.string.unnamed_conversation) },
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            val subtitle = buildString {
-                history.group?.let { group ->
-                    append(context.getString(R.string.group_label, group))
-                    append(" · ")
-                }
-                val groupId = history.characterGroupId?.trim()
-                if (!groupId.isNullOrBlank()) {
-                    val resolvedGroupName =
-                        characterGroupName
-                            ?: context.getString(R.string.missing_character_group_id, groupId)
-                    append(context.getString(R.string.character_group_label, resolvedGroupName))
-                    return@buildString
-                }
-
-                val cardInfo =
-                    if (history.characterCardName.isNullOrBlank()) {
-                        context.getString(R.string.unbound_character_card)
-                    } else {
-                        context.getString(R.string.character_card_label, history.characterCardName)
-                    }
-                append(cardInfo)
+        Checkbox(checked = selected, onCheckedChange = onSelectionChange, enabled = enabled)
+        Column(Modifier.weight(1f).padding(start = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val roleName = if (!history.characterGroupId.isNullOrBlank()) characterGroupName ?: context.getString(R.string.missing_character_group_id, history.characterGroupId) else history.characterCardName ?: context.getString(R.string.unbound_character_card)
+            val countText = if (messageCount != null) context.getString(R.string.data_backup_message_count_suffix, messageCount) else ""
+            val updatedText = history.updatedAt.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(history.title.ifBlank { context.getString(R.string.unnamed_conversation) }, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (history.locked) Icon(Icons.Default.Lock, stringResource(R.string.data_backup_locked_chat), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(roleName + countText, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Text((history.group ?: context.getString(R.string.data_backup_ungrouped)) + " · " + updatedText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -2209,165 +1951,66 @@ private fun SectionHeader(
  */
 @Composable
 private fun UnboundWorkspaceCard(
+    operationScope: CoroutineScope,
     unboundWorkspaces: List<UnboundWorkspaceInfo>,
     onDelete: suspend (Set<String>) -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var selectedWorkspaces by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var deleteInProgress by remember { mutableStateOf(false) }
-    
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = context.getString(R.string.unbound_workspaces_title),
-                subtitle = context.getString(R.string.unbound_workspaces_subtitle),
-                icon = Icons.Default.FolderOff
-            )
-            
-            if (unboundWorkspaces.isEmpty()) {
-                Text(
-                    text = context.getString(R.string.no_unbound_workspaces),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                // 选择控制栏
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = context.getString(R.string.selected_workspaces_count, selectedWorkspaces.size, unboundWorkspaces.size),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(
-                            onClick = { selectedWorkspaces = unboundWorkspaces.map { it.fullPath }.toSet() },
-                            enabled = unboundWorkspaces.isNotEmpty() && !deleteInProgress
-                        ) {
-                            Text(context.getString(R.string.select_all_current_list))
-                        }
-                        TextButton(
-                            onClick = { selectedWorkspaces = emptySet() },
-                            enabled = selectedWorkspaces.isNotEmpty() && !deleteInProgress
-                        ) {
-                            Text(context.getString(R.string.clear_all))
-                        }
-                    }
-                }
-                
-                // 工作区列表
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 320.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                ) {
-                    itemsIndexed(unboundWorkspaces, key = { _, workspace -> workspace.fullPath }) { index, workspace ->
-                        UnboundWorkspaceRow(
-                            workspaceInfo = workspace,
-                            selected = selectedWorkspaces.contains(workspace.fullPath),
-                            onSelectionChange = { selected ->
-                                if (!deleteInProgress) {
-                                    selectedWorkspaces = if (selected) {
-                                        selectedWorkspaces + workspace.fullPath
-                                    } else {
-                                        selectedWorkspaces - workspace.fullPath
-                                    }
-                                }
-                            }
-                        )
-                        if (index < unboundWorkspaces.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.surface, thickness = 1.dp)
-                        }
-                    }
-                }
-                
-                // 删除按钮
-                Button(
-                    onClick = { showDeleteConfirmDialog = true },
-                    enabled = selectedWorkspaces.isNotEmpty() && !deleteInProgress,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                ) {
-                    if (deleteInProgress) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onError
-                        )
-                    } else {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.delete_selected_workspaces, selectedWorkspaces.size))
-                }
-            }
-        }
+    val scope = operationScope
+    var showSelection by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
+    LaunchedEffect(unboundWorkspaces) {
+        selected = selected.intersect(unboundWorkspaces.map { it.fullPath }.toSet())
     }
-    
-    // 删除确认对话框
-    if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                if (!deleteInProgress) {
-                    showDeleteConfirmDialog = false
-                }
-            },
-            title = { Text(context.getString(R.string.confirm_delete)) },
-            text = { 
-                Text(context.getString(R.string.delete_workspaces_confirmation, selectedWorkspaces.size)) 
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val targets = selectedWorkspaces
-                        scope.launch {
-                            deleteInProgress = true
-                            try {
-                                onDelete(targets)
-                                selectedWorkspaces = emptySet()
-                                showDeleteConfirmDialog = false
-                            } finally {
-                                deleteInProgress = false
-                            }
+    DataBackupCard {
+        DataBackupRow(stringResource(R.string.unbound_workspaces_title), stringResource(R.string.unbound_workspaces_subtitle), Icons.Default.FolderOff, onClick = { showSelection = true }, trailing = stringResource(R.string.data_backup_workspace_count, unboundWorkspaces.size))
+    }
+    if (showSelection && !showDeleteConfirm) {
+        DataBackupDialog(
+            onDismissRequest = { if (!deleting) showSelection = false },
+            title = { Text(stringResource(R.string.unbound_workspaces_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.data_backup_workspace_desc), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.selected_workspaces_count, selected.size, unboundWorkspaces.size), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                        TextButton(onClick = { selected = unboundWorkspaces.map { it.fullPath }.toSet() }) { Text(stringResource(R.string.select_all_current_list)) }
+                        TextButton(onClick = { selected = emptySet() }) { Text(stringResource(R.string.clear_selection)) }
+                    }
+                    if (unboundWorkspaces.isEmpty()) Text(stringResource(R.string.no_unbound_workspaces))
+                    else DataBackupCard {
+                        unboundWorkspaces.forEachIndexed { index, workspace ->
+                            if (index > 0) HorizontalDivider()
+                            UnboundWorkspaceRow(workspace, workspace.fullPath in selected) { checked -> selected = if (checked) selected + workspace.fullPath else selected - workspace.fullPath }
                         }
-                    },
-                    enabled = !deleteInProgress,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    if (deleteInProgress) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    } else {
-                        Text(context.getString(R.string.delete))
                     }
                 }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteConfirmDialog = false },
-                    enabled = !deleteInProgress
-                ) {
-                    Text(context.getString(R.string.cancel))
-                }
-            }
+            dismissButton = { TextButton(onClick = { showSelection = false }) { Text(stringResource(R.string.cancel)) } },
+            confirmButton = {
+                Button(onClick = { showDeleteConfirm = true }, enabled = selected.isNotEmpty(), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.delete_selected_workspaces, selected.size)) }
+            },
+        )
+    }
+    if (showDeleteConfirm) {
+        DataBackupDialog(
+            dismissEnabled = !deleting,
+            onDismissRequest = { if (!deleting) showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.confirm_delete)) },
+            text = { Text(stringResource(R.string.delete_workspaces_confirmation, selected.size)) },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }, enabled = !deleting) { Text(stringResource(R.string.cancel)) } },
+            confirmButton = {
+                Button(onClick = {
+                    val targets = selected
+                    scope.launch {
+                        deleting = true
+                        try { onDelete(targets); selected = emptySet(); showDeleteConfirm = false; showSelection = false }
+                        finally { deleting = false }
+                    }
+                }, enabled = !deleting, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.delete)) }
+            },
         )
     }
 }
@@ -2461,3 +2104,41 @@ private suspend fun deleteSelectedChatHistories(
         )
     }
 
+
+@Composable
+private fun ClearAllChatsAction(chatHistories: List<ChatHistory>, operationScope: CoroutineScope) {
+    val context = LocalContext.current
+    val scope = operationScope
+    var confirm by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.data_backup_locked_notice), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextButton(onClick = { confirm = true }, enabled = chatHistories.isNotEmpty() && !deleting, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.data_backup_clear_chats)) }
+    }
+    if (confirm) {
+        DataBackupDialog(
+            dismissEnabled = !deleting,
+            onDismissRequest = { if (!deleting) confirm = false },
+            title = { Text(stringResource(R.string.data_backup_clear_chats)) },
+            text = { Text(stringResource(R.string.data_backup_clear_chats_confirm)) },
+            dismissButton = { TextButton(onClick = { confirm = false }, enabled = !deleting) { Text(stringResource(R.string.cancel)) } },
+            confirmButton = {
+                Button(onClick = {
+                    val ids = chatHistories.map { it.id }
+                    scope.launch {
+                        deleting = true
+                        try {
+                            val result = deleteSelectedChatHistories(context, ids)
+                            val message = context.getString(R.string.deleted_selected_chats_with_skipped_locked, result.deletedCount, result.skippedLockedCount)
+                            OKToast.success(context, message, OKToast.LENGTH_SHORT).show()
+                            confirm = false
+                        } catch (e: Exception) {
+                            AppLogger.e("DataAndBackup", "清空聊天记录失败", e)
+                            OKToast.error(context, context.getString(R.string.delete_failed, e.localizedMessage ?: e.toString()), OKToast.LENGTH_LONG).show()
+                        } finally { deleting = false }
+                    }
+                }, enabled = !deleting, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.delete)) }
+            },
+        )
+    }
+}

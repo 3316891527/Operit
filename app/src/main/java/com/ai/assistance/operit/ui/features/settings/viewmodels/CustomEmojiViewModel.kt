@@ -28,9 +28,9 @@ import kotlinx.coroutines.launch
 /**
  * 自定义表情管理 ViewModel
  *
- * 管理当前活跃角色目标的自定义表情 UI 状态和业务逻辑。
+ * 管理指定角色或当前活跃目标的自定义表情 UI 状态和业务逻辑。
  */
-class CustomEmojiViewModel(context: Context) : ViewModel() {
+class CustomEmojiViewModel(context: Context, target: ActivePrompt? = null) : ViewModel() {
 
     private val repository = CustomEmojiRepository.getInstance(context)
     private val activePromptManager = ActivePromptManager.getInstance(context)
@@ -39,7 +39,8 @@ class CustomEmojiViewModel(context: Context) : ViewModel() {
     private val appContext = context.applicationContext
     private val tag = "CustomEmojiViewModel"
 
-    val activePrompt: StateFlow<ActivePrompt> = activePromptManager.activePromptFlow
+    val activePrompt: StateFlow<ActivePrompt> = if (target != null) MutableStateFlow(target).asStateFlow()
+        else activePromptManager.activePromptFlow
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

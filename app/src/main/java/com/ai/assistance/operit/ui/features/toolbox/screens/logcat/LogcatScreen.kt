@@ -41,11 +41,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.databackup.components.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ai.assistance.operit.ui.components.CustomScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogcatScreen(navController: NavController? = null) {
+fun LogcatScreen(navController: NavController? = null, header: @Composable () -> Unit = {}) {
     val context = LocalContext.current
     val viewModel: LogcatViewModel = viewModel(factory = LogcatViewModel.Factory(context))
     val isSaving by viewModel.isSaving.collectAsState()
@@ -53,109 +61,63 @@ fun LogcatScreen(navController: NavController? = null) {
     val exportOptions by viewModel.exportOptions.collectAsState()
     val logWritingEnabled by viewModel.logWritingEnabled.collectAsState()
 
-    CustomScaffold(
-        topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.logcat_export_title)) })
-        },
-        snackbarHost = {
-            saveResult?.let {
-                Snackbar(modifier = Modifier.padding(16.dp)) {
-                    Text(it)
-                }
+    var showFilters by remember { mutableStateOf(false) }
+    var showClearConfirm by remember { mutableStateOf(false) }
+    val filterCount = listOf(exportOptions.excludeDebug, exportOptions.excludeSystem, exportOptions.errorContextOnly, exportOptions.hideSensitive, exportOptions.stripTimestamp).count { it }
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) { header() }
+        DataBackupCard {
+            Column(Modifier.padding(16.dp)) {
+                LogExportFilterToggle(
+                    title = stringResource(R.string.logcat_write_enabled),
+                    subtitle = stringResource(R.string.logcat_write_enabled_description),
+                    checked = logWritingEnabled,
+                    enabled = true,
+                    onCheckedChange = viewModel::setLogWritingEnabled,
+                )
             }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    LogExportFilterToggle(
-                        title = stringResource(R.string.logcat_write_enabled),
-                        subtitle = stringResource(R.string.logcat_write_enabled_description),
-                        checked = logWritingEnabled,
-                        enabled = true,
-                        onCheckedChange = viewModel::setLogWritingEnabled
-                    )
+        DataBackupCard {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                DataBackupSectionHeader(stringResource(R.string.data_backup_export_app_logs), stringResource(R.string.data_backup_export_app_logs_desc), Icons.Default.Description)
+                Text(stringResource(R.string.data_backup_log_format), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Button(onClick = viewModel::saveLogsToFile, enabled = !isSaving, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+                    if (isSaving) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Icon(Icons.Default.Save, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.data_backup_export_logs))
                 }
             }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.logcat_management),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = stringResource(R.string.logcat_description),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Button(
-                        onClick = { viewModel.saveLogsToFile() },
-                        enabled = !isSaving,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (isSaving) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.logcat_save_to_file))
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = { viewModel.clearLogs() },
-                        enabled = !isSaving,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.logcat_clear_all))
-                    }
-                }
+            HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+            DataBackupRow(
+                title = stringResource(R.string.data_backup_log_filters),
+                subtitle = if (filterCount == 0) stringResource(R.string.data_backup_filters_none) else stringResource(R.string.data_backup_filters_count, filterCount),
+                icon = Icons.Default.FilterAlt,
+                onClick = { showFilters = true },
+            )
+        }
+        saveResult?.let { result ->
+            Text(result, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.data_backup_log_directory), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { showClearConfirm = true }, enabled = !isSaving, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                Icon(Icons.Default.DeleteForever, null, Modifier.size(18.dp)); Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.data_backup_clear_logs))
             }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.logcat_export_filters_title),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = stringResource(R.string.logcat_export_filters_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LogExportFilterToggle(
+        }
+    }
+    if (showFilters) {
+        DataBackupDialog(
+            onDismissRequest = { showFilters = false },
+            title = { Text(stringResource(R.string.data_backup_log_filters)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.logcat_export_filters_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        LogExportFilterToggle(
                         title = stringResource(R.string.logcat_filter_exclude_debug),
                         subtitle = stringResource(R.string.logcat_filter_exclude_debug_desc),
                         checked = exportOptions.excludeDebug,
@@ -201,8 +163,20 @@ fun LogcatScreen(navController: NavController? = null) {
                         }
                     )
                 }
-            }
-        }
+            },
+            confirmButton = { TextButton(onClick = { showFilters = false }) { Text(stringResource(R.string.data_backup_done)) } },
+        )
+    }
+    if (showClearConfirm) {
+        DataBackupDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text(stringResource(R.string.data_backup_clear_logs)) },
+            text = { Text(stringResource(R.string.data_backup_clear_logs_confirm)) },
+            dismissButton = { TextButton(onClick = { showClearConfirm = false }) { Text(stringResource(R.string.cancel)) } },
+            confirmButton = {
+                Button(onClick = { showClearConfirm = false; viewModel.clearLogs() }, enabled = !isSaving, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.data_backup_clear_logs)) }
+            },
+        )
     }
 }
 

@@ -49,6 +49,7 @@
 - [对话回顾自定义与折叠编辑器](summary-dialogue-review-customization_20260909/index.md) · `summary-dialogue-review-customization_20260909`
 - [Summary Section Overrides](summary-section-overrides/index.md) · `summary-section-overrides`
 - [主题布局页签与对话批量移动](theme-layout-batch-move/index.md) · `theme-layout-batch-move`
+- [主题导入与导出](theme-sharing/index.md) · `theme-sharing`
 - [主题背景透明度](theme-transparency/index.md) · `theme-transparency`
 - [主题设置工作区](theme-workbench/index.md) · `theme-workbench`
 - [Theme Target Menu Avatars](theme_target_menu_avatars_20260805/index.md) · `theme_target_menu_avatars_20260805`
@@ -68,3 +69,6 @@
 - [Withdrawn Entry Republish](withdrawn_entry_republish_20260811/index.md) · `withdrawn_entry_republish_20260811`
 - [工作台终端与资源入口界面整理](workspace-ui-polish/index.md) · `workspace-ui-polish`
 - [World Book Group Merge](worldbook_group_merge/index.md) · `worldbook_group_merge`
+- [工具权限界面](tool-permissions/index.md) · `tool-permissions`
+- [角色卡操作菜单](character-card-menu/index.md) · `character-card-menu`
+- [角色卡发言设置与存储入口](character-card-speech/index.md) · `character-card-speech`
