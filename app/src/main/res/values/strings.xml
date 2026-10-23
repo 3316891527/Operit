@@ -9447,7 +9447,7 @@
     <string name="theme_transfer_title">主题设置</string>
     <string name="theme_transfer_export">导出主题</string>
     <string name="theme_transfer_import">导入主题</string>
-    <string name="theme_transfer_generated">主题分享码已生成</string>
+    <string name="theme_transfer_generated">分享码已生成</string>
     <string name="theme_transfer_preview">预览主题</string>
     <string name="theme_transfer_name">主题名称</string>
     <string name="theme_transfer_author">作者</string>
@@ -9478,4 +9478,14 @@
     <string name="theme_transfer_error_size">主题超过允许的大小</string>
     <string name="theme_transfer_error_target">目标角色卡已不存在，请重新选择</string>
     <string name="theme_transfer_error_io">无法读写主题文件</string>
+
+    <!-- 主题分享界面组件 -->
+    <string name="theme_transfer_entry_subtitle">外观参数与完整主题包</string>
+    <string name="theme_transfer_file_tab">主题文件</string>
+    <string name="theme_transfer_source">导出来源</string>
+    <string name="theme_transfer_code_length">%1$d 个字符</string>
+    <string name="theme_transfer_search_characters">搜索角色卡</string>
+    <string name="theme_transfer_no_characters">没有匹配的角色卡</string>
+    <string name="theme_transfer_apply_to">应用到</string>
+    <string name="theme_transfer_back_preview">返回主题预览</string>
 </resources>

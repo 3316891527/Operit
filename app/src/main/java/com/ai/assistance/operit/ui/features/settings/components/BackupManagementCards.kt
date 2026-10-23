@@ -435,14 +435,21 @@ fun FaqItem(question: String, answer: String) {
 }
 
 @Composable
-private fun ImportExportRow(title: String, subtitle: String, icon: ImageVector, onExport: () -> Unit, onImport: () -> Unit) {
+internal fun ImportExportRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+    enabled: Boolean = true,
+) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TextButton(onClick = onExport) { Text(stringResource(R.string.backup_export)) }
-        TextButton(onClick = onImport) { Text(stringResource(R.string.backup_import)) }
+        TextButton(onClick = onExport, enabled = enabled) { Text(stringResource(R.string.backup_export)) }
+        TextButton(onClick = onImport, enabled = enabled) { Text(stringResource(R.string.backup_import)) }
     }
 }

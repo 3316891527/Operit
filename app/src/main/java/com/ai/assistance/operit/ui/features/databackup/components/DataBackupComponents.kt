@@ -185,8 +185,10 @@ fun DataBackupDialog(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                dismissButton?.invoke()
-                Spacer(Modifier.width(12.dp))
+                if (dismissButton != null) {
+                    dismissButton()
+                    Spacer(Modifier.width(12.dp))
+                }
                 confirmButton()
             }
         }

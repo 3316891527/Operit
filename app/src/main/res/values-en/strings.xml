@@ -9448,7 +9448,7 @@
     <string name="theme_transfer_title">Theme settings</string>
     <string name="theme_transfer_export">Export theme</string>
     <string name="theme_transfer_import">Import theme</string>
-    <string name="theme_transfer_generated">Theme code generated</string>
+    <string name="theme_transfer_generated">Share code generated</string>
     <string name="theme_transfer_preview">Theme preview</string>
     <string name="theme_transfer_name">Theme name</string>
     <string name="theme_transfer_author">Author</string>
@@ -9479,4 +9479,14 @@
     <string name="theme_transfer_error_size">Theme exceeds the size limit</string>
     <string name="theme_transfer_error_target">The target character no longer exists. Choose another character.</string>
     <string name="theme_transfer_error_io">Unable to read or write the theme file</string>
+
+    <!-- 主题分享界面组件 -->
+    <string name="theme_transfer_entry_subtitle">Appearance parameters and complete theme packages</string>
+    <string name="theme_transfer_file_tab">Theme file</string>
+    <string name="theme_transfer_source">Source</string>
+    <string name="theme_transfer_code_length">%1$d characters</string>
+    <string name="theme_transfer_search_characters">Search characters</string>
+    <string name="theme_transfer_no_characters">No matching characters</string>
+    <string name="theme_transfer_apply_to">Apply to</string>
+    <string name="theme_transfer_back_preview">Back to theme preview</string>
 </resources>

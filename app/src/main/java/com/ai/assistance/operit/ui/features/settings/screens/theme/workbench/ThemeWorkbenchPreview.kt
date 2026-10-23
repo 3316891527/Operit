@@ -48,6 +48,7 @@ internal fun ThemeWorkbenchPreview(
     full: Boolean = false,
     layoutPreview: Boolean = false,
     showDescription: Boolean = true,
+    showSidebar: Boolean = true,
 ) {
     val values by editorSession.values.collectAsState()
     val userName by editorSession.globalUserNameFlow.collectAsState()
@@ -120,7 +121,7 @@ internal fun ThemeWorkbenchPreview(
                             ThemePreviewMessage(values, user = true, userName = userName)
                             ThemePreviewMessage(values, user = false, userName = userName)
                             ThemePreviewInput(values)
-                            if (full) ThemePreviewSidebar(values)
+                            if (full && showSidebar) ThemePreviewSidebar(values)
                         }
                     }
                 }
