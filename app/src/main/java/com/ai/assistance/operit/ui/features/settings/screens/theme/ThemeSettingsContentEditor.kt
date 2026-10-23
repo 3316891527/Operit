@@ -16,16 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,6 +36,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +56,8 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
+import com.ai.assistance.operit.ui.common.themetarget.ThemeTargetOption
+import com.ai.assistance.operit.ui.common.themetarget.ThemeTargetPickerSheet
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.ui.main.MainActivity
 import com.ai.assistance.operit.ui.main.navigation.RegisterRouteBackGuard
@@ -661,7 +660,7 @@ private fun ThemeSettingsTargetSelector(
     enabled: Boolean,
     onTargetSelected: (ActivePrompt) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val targetTypeLabel =
         if (selectedTarget is ActivePrompt.CharacterGroup) {
             stringResource(R.string.theme_edit_target_group)
@@ -733,93 +732,29 @@ private fun ThemeSettingsTargetSelector(
                     },
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            val defaultTarget =
-                ActivePrompt.CharacterCard(CharacterCardManager.DEFAULT_CHARACTER_CARD_ID)
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.theme_default_character_card)) },
-                leadingIcon = { ThemeSettingsTargetMenuAvatar(defaultTarget) },
-                trailingIcon = {
-                    if (selectedTarget == defaultTarget) {
-                        Icon(Icons.Default.Check, contentDescription = null)
-                    }
-                },
-                onClick = {
-                    expanded = false
-                    onTargetSelected(defaultTarget)
-                },
-            )
-            characterCards
-                .filter { it.id != CharacterCardManager.DEFAULT_CHARACTER_CARD_ID }
-                .forEach { card ->
-                    val target = ActivePrompt.CharacterCard(card.id)
-                    DropdownMenuItem(
-                        text = { Text(card.name) },
-                        leadingIcon = { ThemeSettingsTargetMenuAvatar(target) },
-                        trailingIcon = {
-                            if (selectedTarget == target) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                            }
-                        },
-                        onClick = {
-                            expanded = false
-                            onTargetSelected(target)
-                        },
-                    )
-                }
-            if (characterGroups.isNotEmpty()) {
-                HorizontalDivider()
-                characterGroups.forEach { group ->
-                    val target = ActivePrompt.CharacterGroup(group.id)
-                    DropdownMenuItem(
-                        text = { Text(group.name) },
-                        leadingIcon = { ThemeSettingsTargetMenuAvatar(target) },
-                        trailingIcon = {
-                            if (selectedTarget == target) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                            }
-                        },
-                        onClick = {
-                            expanded = false
-                            onTargetSelected(target)
-                        },
-                    )
-                }
-            }
-        }
     }
-}
-
-@Composable
-private fun ThemeSettingsTargetMenuAvatar(target: ActivePrompt) {
-    val context = LocalContext.current
-    val userPreferencesManager = remember { UserPreferencesManager.getInstance(context) }
-    val avatarUriFlow =
-        remember(target, userPreferencesManager) {
-            when (target) {
-                is ActivePrompt.CharacterCard ->
-                    userPreferencesManager.getAiAvatarForCharacterCardFlow(target.id)
-
-                is ActivePrompt.CharacterGroup ->
-                    userPreferencesManager.getAiAvatarForCharacterGroupFlow(target.id)
+    if (expanded) {
+        val defaultLabel = stringResource(R.string.theme_default_character_card)
+        val options = remember(characterCards, characterGroups, defaultLabel) {
+            buildList {
+                add(ThemeTargetOption(
+                    ActivePrompt.CharacterCard(CharacterCardManager.DEFAULT_CHARACTER_CARD_ID),
+                    defaultLabel,
+                ))
+                characterCards.filter { it.id != CharacterCardManager.DEFAULT_CHARACTER_CARD_ID }
+                    .forEach { add(ThemeTargetOption(ActivePrompt.CharacterCard(it.id), it.name)) }
+                characterGroups.forEach { add(ThemeTargetOption(ActivePrompt.CharacterGroup(it.id), it.name)) }
             }
         }
-    val avatarUri by avatarUriFlow.collectAsState(initial = null)
-
-    Box(
-        modifier =
-            Modifier.size(28.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (!avatarUri.isNullOrBlank()) {
-            Image(
-                painter = rememberAsyncImagePainter(Uri.parse(avatarUri)),
-                contentDescription = stringResource(R.string.character_avatar),
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-        }
+        ThemeTargetPickerSheet(
+            targets = options,
+            selectedTarget = selectedTarget,
+            enabled = enabled,
+            onDismissRequest = { expanded = false },
+            onSelect = { target ->
+                expanded = false
+                onTargetSelected(target)
+            },
+        )
     }
 }

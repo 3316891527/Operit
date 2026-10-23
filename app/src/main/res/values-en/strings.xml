@@ -9485,8 +9485,10 @@
     <string name="theme_transfer_file_tab">Theme file</string>
     <string name="theme_transfer_source">Source</string>
     <string name="theme_transfer_code_length">%1$d characters</string>
-    <string name="theme_transfer_search_characters">Search characters</string>
-    <string name="theme_transfer_no_characters">No matching characters</string>
     <string name="theme_transfer_apply_to">Apply to</string>
     <string name="theme_transfer_back_preview">Back to theme preview</string>
+    <string name="theme_target_search">Search by name</string>
+    <string name="theme_target_no_matches">No matches</string>
+    <string name="theme_target_character_label">Character card</string>
+    <string name="theme_target_group_label">Group</string>
 </resources>

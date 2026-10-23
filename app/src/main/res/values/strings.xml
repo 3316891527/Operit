@@ -9484,8 +9484,10 @@
     <string name="theme_transfer_file_tab">主题文件</string>
     <string name="theme_transfer_source">导出来源</string>
     <string name="theme_transfer_code_length">%1$d 个字符</string>
-    <string name="theme_transfer_search_characters">搜索角色卡</string>
-    <string name="theme_transfer_no_characters">没有匹配的角色卡</string>
     <string name="theme_transfer_apply_to">应用到</string>
     <string name="theme_transfer_back_preview">返回主题预览</string>
+    <string name="theme_target_search">搜索名称</string>
+    <string name="theme_target_no_matches">没有匹配项</string>
+    <string name="theme_target_character_label">角色卡</string>
+    <string name="theme_target_group_label">群组</string>
 </resources>
