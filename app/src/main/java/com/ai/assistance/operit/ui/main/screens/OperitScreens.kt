@@ -50,8 +50,7 @@ import com.ai.assistance.operit.ui.features.packages.screens.toArtifactPublishCl
 import com.ai.assistance.operit.ui.features.packages.market.ArtifactPublishClusterContext
 import com.ai.assistance.operit.ui.features.packages.market.MarketStatsType
 import com.ai.assistance.operit.ui.features.packages.market.PluginCreationIntent
-import com.ai.assistance.operit.ui.features.settings.screens.ChatBackupSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ChatHistorySettingsScreen
+import com.ai.assistance.operit.ui.features.databackup.DataAndBackupScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ContextSummarySettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.ExternalHttpChatSettingsScreen
 import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
@@ -79,7 +78,6 @@ import com.ai.assistance.operit.ui.features.storage.MemoryLibraryStorageScreen
 import com.ai.assistance.operit.ui.features.storage.WorkspaceMediaStorageScreen
 import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.LogcatToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.ShellExecutorToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalAutoConfigToolScreen
@@ -637,16 +635,13 @@ sealed class Screen(
                     navigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
                     navigateToMemory = { navigateTo(MemoryBase) },
                     navigateToDataStorageManagement = { navigateTo(DataStorageManagement) },
-                    navigateToChatHistorySettings = { navigateTo(ChatHistorySettings) },
-                    navigateToChatBackupSettings = { navigateTo(ChatBackupSettings) },
+                    navigateToDataAndBackup = { navigateTo(ChatBackupSettings) },
 
                     navigateToSpeechServicesSettings = { navigateTo(SpeechServicesSettings) },
                     navigateToExternalHttpChatSettings = { navigateTo(ExternalHttpChatSettings) },
                     navigateToWaifuModeSettings = { navigateTo(WaifuModeSettings) },
-                    navigateToTokenUsageStatistics = { navigateTo(TokenUsageStatistics) },
                     navigateToPerformanceMonitor = { navigateTo(PerformanceMonitor) },
                     navigateToContextSummarySettings = { navigateTo(ContextSummarySettings) },
-                    navigateToLogcat = { navigateTo(Logcat) },
                     navigateToAbout = { navigateTo(About) }
             )
         }
@@ -1248,7 +1243,7 @@ sealed class Screen(
     }
 
     data object ChatHistorySettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_chat_history_settings) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.data_backup_title, usesRouteViewModelStore = true) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1259,12 +1254,12 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            ChatHistorySettingsScreen()
+            DataAndBackupScreen(initialTab = 1, onNavigateToTokenStatistics = { navigateTo(TokenUsageStatistics) })
         }
     }
 
     data object ChatBackupSettings :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_chat_backup_settings) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.data_backup_title, usesRouteViewModelStore = true) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1275,7 +1270,7 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            ChatBackupSettingsScreen()
+            DataAndBackupScreen(onNavigateToTokenStatistics = { navigateTo(TokenUsageStatistics) })
         }
     }
 
@@ -1516,7 +1511,7 @@ sealed class Screen(
     }
 
     data object Logcat :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_logcat) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.data_backup_title, usesRouteViewModelStore = true) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1527,7 +1522,7 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            LogcatToolScreen(navController = navController)
+            DataAndBackupScreen(initialTab = 2, onNavigateToTokenStatistics = { navigateTo(TokenUsageStatistics) })
         }
     }
 

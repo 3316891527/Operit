@@ -43,16 +43,13 @@ fun SettingsScreen(
         navigateToModelPrompts: () -> Unit,
         navigateToMemory: () -> Unit,
         navigateToDataStorageManagement: () -> Unit,
-        navigateToChatHistorySettings: () -> Unit,
-        navigateToChatBackupSettings: () -> Unit,
+        navigateToDataAndBackup: () -> Unit,
 
         navigateToSpeechServicesSettings: () -> Unit,
         navigateToExternalHttpChatSettings: () -> Unit,
         navigateToWaifuModeSettings: () -> Unit,
-        navigateToTokenUsageStatistics: () -> Unit,
         navigateToPerformanceMonitor: () -> Unit,
         navigateToContextSummarySettings: () -> Unit,
-        navigateToLogcat: () -> Unit,
         navigateToAbout: () -> Unit
 ) {
         val context = LocalContext.current
@@ -172,25 +169,15 @@ fun SettingsScreen(
                         )
 
                         CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_data_backup),
-                                subtitle = stringResource(id = R.string.settings_data_backup_desc),
+                                title = stringResource(id = R.string.data_backup_title),
+                                subtitle = stringResource(id = R.string.data_backup_settings_desc),
                                 icon = Icons.Default.CloudUpload,
-                                onClick = navigateToChatBackupSettings
+                                onClick = navigateToDataAndBackup
                         )
 
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_chat_history_management),
-                                subtitle = stringResource(id = R.string.settings_chat_history_management_subtitle),
-                                icon = Icons.Default.ManageHistory,
-                                onClick = navigateToChatHistorySettings
-                        )
 
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_token_usage_stats),
-                                subtitle = stringResource(id = R.string.settings_token_usage_subtitle),
-                                icon = Icons.Default.Analytics,
-                                onClick = navigateToTokenUsageStatistics
-                        )
+
+
 
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_performance_monitor),
@@ -204,20 +191,6 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.settings_about_subtitle),
                                 icon = Icons.Default.Info,
                                 onClick = navigateToAbout
-                        )
-                }
-
-                // 日志入口保留在设置，开发工具不再占用设置列表。
-                SettingsSection(
-                        title = stringResource(R.string.settings_diagnostics),
-                        icon = Icons.Default.BugReport,
-                        containerColor = cardContainerColor
-                ) {
-                        CompactSettingsItem(
-                                title = stringResource(R.string.tool_log_viewer),
-                                subtitle = stringResource(R.string.logcat_description),
-                                icon = Icons.Default.Description,
-                                onClick = navigateToLogcat
                         )
                 }
 

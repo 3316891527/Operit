@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import androidx.compose.material3.TextButton
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -51,46 +52,9 @@ fun CharacterCardManagementCard(
     onImport: () -> Unit
 ) {
     val characterCardsTitle = stringResource(R.string.backup_character_cards_title)
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = characterCardsTitle,
-                subtitle = stringResource(R.string.backup_character_cards_subtitle),
-                icon = Icons.Default.Person
-            )
-
-            Text(
-                text = stringResource(
-                    R.string.backup_character_cards_current_count,
-                    totalCharacterCardCount
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ManagementButton(
-                    text = stringResource(R.string.backup_export),
-                    icon = Icons.Default.CloudDownload,
-                    onClick = onExport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                ManagementButton(
-                    text = stringResource(R.string.backup_import),
-                    icon = Icons.Default.CloudUpload,
-                    onClick = onImport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-            }
-
-            AnimatedVisibility(visible = operationState != CharacterCardOperation.IDLE) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ImportExportRow(title = characterCardsTitle, subtitle = stringResource(R.string.backup_character_cards_subtitle), icon = Icons.Default.Person, onExport = onExport, onImport = onImport)
+        AnimatedVisibility(visible = operationState != CharacterCardOperation.IDLE) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when (operationState) {
                         CharacterCardOperation.EXPORTING ->
@@ -126,7 +90,6 @@ fun CharacterCardManagementCard(
                     }
                 }
             }
-        }
     }
 }
 
@@ -141,55 +104,12 @@ fun DataManagementCard(
     longTextExportProcessedCharacters: Long,
     longTextExportTotalCharacters: Long,
     onExport: () -> Unit,
-    onImport: () -> Unit,
-    onDelete: () -> Unit
+    onImport: () -> Unit
 ) {
     val chatTitle = stringResource(R.string.backup_chat_history)
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = chatTitle,
-                subtitle = stringResource(R.string.backup_chat_history_subtitle),
-                icon = Icons.Default.History
-            )
-
-            Text(
-                text = stringResource(R.string.backup_chat_current_count, totalChatCount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ManagementButton(
-                    text = stringResource(R.string.backup_export),
-                    icon = Icons.Default.CloudDownload,
-                    onClick = onExport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                ManagementButton(
-                    text = stringResource(R.string.backup_import),
-                    icon = Icons.Default.CloudUpload,
-                    onClick = onImport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                ManagementButton(
-                    text = stringResource(R.string.backup_delete_all),
-                    icon = Icons.Default.Delete,
-                    onClick = onDelete,
-                    isDestructive = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            AnimatedVisibility(visible = operationState != ChatHistoryOperation.IDLE) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ImportExportRow(title = chatTitle, subtitle = stringResource(R.string.backup_chat_history_subtitle), icon = Icons.Default.History, onExport = onExport, onImport = onImport)
+        AnimatedVisibility(visible = operationState != ChatHistoryOperation.IDLE) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when (operationState) {
                         ChatHistoryOperation.EXPORTING ->
@@ -238,7 +158,6 @@ fun DataManagementCard(
                     }
                 }
             }
-        }
     }
 }
 
@@ -253,44 +172,9 @@ fun MemoryManagementCard(
     onImport: () -> Unit
 ) {
     val memoryTitle = stringResource(R.string.backup_memory_library)
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = memoryTitle,
-                subtitle = stringResource(R.string.backup_memory_library_subtitle),
-                icon = Icons.Default.Psychology
-            )
-
-            Text(
-                text = stringResource(R.string.backup_memory_current_count, totalMemoryCount, totalLinkCount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ManagementButton(
-                    text = stringResource(R.string.backup_export),
-                    icon = Icons.Default.CloudDownload,
-                    onClick = onExport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                ManagementButton(
-                    text = stringResource(R.string.backup_import),
-                    icon = Icons.Default.CloudUpload,
-                    onClick = onImport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-            }
-
-            AnimatedVisibility(visible = operationState != MemoryOperation.IDLE) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ImportExportRow(title = memoryTitle, subtitle = stringResource(R.string.backup_memory_library_subtitle), icon = Icons.Default.Psychology, onExport = onExport, onImport = onImport)
+        AnimatedVisibility(visible = operationState != MemoryOperation.IDLE) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when (operationState) {
                         MemoryOperation.EXPORTING ->
@@ -322,7 +206,6 @@ fun MemoryManagementCard(
                     }
                 }
             }
-        }
     }
 }
 
@@ -336,44 +219,9 @@ fun ModelConfigManagementCard(
     onImport: () -> Unit
 ) {
     val modelConfigTitle = stringResource(R.string.backup_model_config)
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SectionHeader(
-                title = modelConfigTitle,
-                subtitle = stringResource(R.string.backup_model_config_subtitle),
-                icon = Icons.Default.Settings
-            )
-
-            Text(
-                text = stringResource(R.string.backup_model_config_current_count, totalConfigCount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ManagementButton(
-                    text = stringResource(R.string.backup_export),
-                    icon = Icons.Default.CloudDownload,
-                    onClick = onExport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                ManagementButton(
-                    text = stringResource(R.string.backup_import),
-                    icon = Icons.Default.CloudUpload,
-                    onClick = onImport,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-            }
-
-            AnimatedVisibility(visible = operationState != ModelConfigOperation.IDLE) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ImportExportRow(title = modelConfigTitle, subtitle = stringResource(R.string.backup_model_config_subtitle), icon = Icons.Default.Settings, onExport = onExport, onImport = onImport)
+        AnimatedVisibility(visible = operationState != ModelConfigOperation.IDLE) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     when (operationState) {
                         ModelConfigOperation.EXPORTING ->
@@ -405,7 +253,6 @@ fun ModelConfigManagementCard(
                     }
                 }
             }
-        }
     }
 }
 
@@ -584,5 +431,18 @@ fun FaqItem(question: String, answer: String) {
             text = answer,
             style = MaterialTheme.typography.bodySmall
         )
+    }
+}
+
+@Composable
+private fun ImportExportRow(title: String, subtitle: String, icon: ImageVector, onExport: () -> Unit, onImport: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        TextButton(onClick = onExport) { Text(stringResource(R.string.backup_export)) }
+        TextButton(onClick = onImport) { Text(stringResource(R.string.backup_import)) }
     }
 }
