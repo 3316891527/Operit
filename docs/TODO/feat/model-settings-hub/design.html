@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Operit · 模型与对话设置设计稿</title>
+<style>
+:root{color-scheme:dark;--bg:#0e1417;--surface:#161d21;--raised:#20292f;--field:#29343c;--line:#303c44;--text:#e4edf2;--muted:#9baab4;--primary:#8cd0f3;--tint:#173748;--good:#9bd5b0;--warn:#f0c887;--danger:#ffb4ab;--radius:18px;--shadow:0 18px 70px #0007}
+:root[data-theme=light]{color-scheme:light;--bg:#f7fafc;--surface:#fff;--raised:#edf3f7;--field:#e5edf2;--line:#d6e0e6;--text:#19262e;--muted:#5a6c77;--primary:#16678e;--tint:#dceef9;--good:#316c46;--warn:#8d5b15;--danger:#af332f;--shadow:0 18px 70px #18334920}
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif}button,input,select,textarea{font:inherit}button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}button,a{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:default;opacity:.4}a{color:inherit;text-decoration:none}button{color:inherit;background:none;border:0}button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--primary);outline-offset:3px}input:focus,textarea:focus,select:focus{outline:2px solid var(--primary);outline-offset:1px}svg{width:22px;height:22px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}h1,h2,h3,p{margin:0}h1{font-size:21px;line-height:1.35;letter-spacing:-.3px}h2{font-size:21px;font-weight:650}h3{font-size:15px;font-weight:650}.muted{color:var(--muted)}.small{font-size:12px;line-height:1.55}.accent{color:var(--primary)}.good{color:var(--good)}.warning{color:var(--warn)}.danger{color:var(--danger)}.row{display:flex;align-items:center;gap:12px}.between{justify-content:space-between}.grow{flex:1;min-width:0}.wrap{flex-wrap:wrap}.stack{display:grid;gap:14px}.break{overflow-wrap:anywhere}.icon{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}.icon:hover,.text-button:hover{background:var(--raised)}.symbol{width:40px;height:40px;background:var(--tint);color:var(--primary);border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 17px;border:1px solid var(--line);border-radius:24px;font-size:14px;font-weight:600;white-space:normal}.button.primary{background:var(--primary);border-color:var(--primary);color:var(--bg)}.button.tonal{background:var(--tint);border-color:transparent;color:var(--primary)}.text-button{min-height:44px;padding:9px 12px;color:var(--primary);border-radius:12px;font-weight:600;font-size:14px}.pill{display:inline-flex;align-items:center;gap:5px;min-width:0;padding:3px 9px;border-radius:8px;font-size:11px;background:var(--raised);color:var(--muted);overflow-wrap:anywhere}.pill.active{background:var(--tint);color:var(--primary)}.pill.warn{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)}.shell{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:248px minmax(0,780px);gap:52px;padding:36px 30px 80px}.rail{position:sticky;top:36px;align-self:start}.brand{font-size:20px;font-weight:750;letter-spacing:.4px}.rail-caption{margin:5px 0 32px;color:var(--muted);font-size:12px}.rail-nav{display:grid;gap:6px;margin-top:22px}.rail-nav a{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:24px;font-weight:550}.rail-nav a.active{background:var(--tint);color:var(--primary)}.rail-note{margin-top:36px;padding:18px 0;border-top:1px solid var(--line);font-size:12px;color:var(--muted);line-height:1.8}.rail-note strong{display:block;color:var(--text);font-size:13px;margin-bottom:8px}.workspace{min-width:0}.preview-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;font-size:11px;color:var(--muted);gap:12px}.preview-bar button{display:flex;gap:6px;align-items:center;min-height:36px;padding:5px 9px;border:1px solid var(--line);border-radius:18px;font-size:11px}.preview-bar svg{width:16px;height:16px}.appbar{display:flex;align-items:center;gap:8px;min-height:64px;margin:0 -8px 14px}.appbar .grow p{margin-top:4px}.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:26px}.tab{position:relative;flex:1;min-width:0;min-height:54px;padding:10px 5px;color:var(--muted);font-size:14px;font-weight:600;line-height:1.35}.tab[aria-selected=true]{color:var(--primary)}.tab[aria-selected=true]:after{content:"";position:absolute;bottom:-1px;left:16%;right:16%;height:3px;background:var(--primary);border-radius:3px 3px 0 0}.intro{margin-bottom:22px}.intro p{color:var(--muted);margin-top:7px;font-size:13px;max-width:570px}.section-heading{margin:26px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:650}.section-heading small{font-weight:400;color:var(--muted);font-size:12px}.card{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}.card-pad{padding:18px}.list-item{width:100%;padding:17px 18px;text-align:left;display:flex;align-items:center;gap:14px;min-width:0}.list-item+.list-item{border-top:1px solid var(--line)}button.list-item:hover,a.list-item:hover{background:var(--raised)}.list-item p{margin-top:4px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}.list-item .chevron{color:var(--muted);width:18px;height:18px}.model-name{font-size:13px;color:var(--primary);line-height:1.55;margin-top:6px;overflow-wrap:anywhere}.metadata{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.filters{display:flex;gap:7px;overflow:auto;scrollbar-width:none;padding:2px 0 8px;margin:14px 0 8px}.filter{flex-shrink:0;min-height:40px;padding:7px 13px;border:1px solid var(--line);border-radius:21px;font-size:12px;color:var(--muted)}.filter.selected{color:var(--primary);border-color:var(--primary);background:var(--tint)}.search{display:flex;align-items:center;gap:10px;background:var(--raised);border-radius:26px;padding:0 15px;min-height:48px;min-width:0}.search svg{color:var(--muted);width:20px}.search input{border:0;background:transparent;outline:none;min-width:0;flex:1;color:var(--text);padding:12px 0;font-size:13px}.search input:focus{outline:none}.search:focus-within{outline:2px solid var(--primary)}.scope-note{padding:13px 15px;border-radius:12px;background:var(--tint);font-size:12px;line-height:1.7;color:var(--primary);margin-bottom:20px;display:flex;align-items:flex-start;gap:10px}.scope-note svg{width:18px;margin-top:2px}.summary-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.function-line{padding:16px;display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left}.function-line+.function-line{border-top:1px solid var(--line)}.function-line:hover{background:var(--raised)}.function-line .symbol{width:34px;height:34px;border-radius:10px;margin-top:2px;background:var(--raised);color:var(--muted)}.function-line .symbol svg{width:19px;height:19px}.function-binding{font-size:12px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}.function-extra{font-size:11px;color:var(--muted);margin-top:5px}.notice{font-size:12px;line-height:1.6;color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent);border-radius:12px;padding:12px 14px}.inline-warning{color:var(--warn);font-size:11px;margin-top:7px;display:flex;gap:6px;align-items:flex-start}.inline-warning svg{width:14px;height:14px;margin-top:2px}.field{display:grid;gap:7px;min-width:0;margin-bottom:15px}.field:last-child{margin-bottom:0}.field label{font-size:13px;font-weight:550}.field input,.field select,.field textarea,select.select{width:100%;min-width:0;min-height:48px;color:var(--text);background:var(--field);border:1px solid transparent;border-radius:11px;padding:11px 13px;font-size:14px}.field input:invalid:not(:placeholder-shown){border-color:var(--danger)}.field textarea{resize:vertical;line-height:1.7;min-height:105px}.field small{color:var(--muted);font-size:11px;line-height:1.65}.fields-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fields-2 .field{margin-bottom:0}.control-row{display:flex;align-items:center;gap:14px;justify-content:space-between;min-height:74px;padding:14px 17px}.control-row+.control-row{border-top:1px solid var(--line)}.control-row p{font-size:12px;color:var(--muted);margin-top:4px}.switch{display:inline-flex;flex-shrink:0;position:relative;width:48px;height:28px;border:2px solid var(--muted);border-radius:18px;align-items:center;background:var(--raised)}.switch:after{content:"";display:block;width:18px;height:18px;border-radius:50%;background:var(--muted);margin-left:3px;transition:transform .12s}.switch[aria-checked=true]{background:var(--primary);border-color:var(--primary)}.switch[aria-checked=true]:after{background:var(--tint);transform:translateX(20px)}.switch:disabled{opacity:.35}.disabled-content{opacity:.42;pointer-events:none}.range-line{display:flex;align-items:center;gap:15px}.range-line input{accent-color:var(--primary);flex:1;min-width:0}.range-value{color:var(--primary);font-size:16px;font-weight:650;min-width:48px;text-align:right}.policy-top{padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:20px}.policy-top label{font-size:11px;color:var(--muted);display:block;margin-bottom:8px}.policy-top select{background:var(--field);border:0;color:var(--text);border-radius:10px;padding:10px 12px;min-height:46px;width:100%;font-size:14px;min-width:0}.policy-top p{margin-top:10px;font-size:11px;color:var(--muted)}.context-meter{height:7px;border-radius:9px;overflow:hidden;background:var(--field);margin:15px 0 7px}.context-meter span{display:block;height:100%;background:var(--primary);border-radius:9px}.details{border:1px solid var(--line);background:var(--surface);border-radius:16px;overflow:hidden;margin-top:12px}.details summary{padding:16px 18px;cursor:pointer;list-style:none;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;min-height:62px}.details summary::-webkit-details-marker{display:none}.details summary svg{width:18px;color:var(--muted)}.details[open] summary svg{transform:rotate(180deg)}.details-body{padding:0 18px 18px}.details-body .control-row{padding-left:0;padding-right:0}.detail-heading{display:flex;gap:13px;align-items:center;padding:2px 0 19px}.detail-heading .symbol{width:46px;height:46px}.detail-heading h2{font-size:22px}.detail-heading p{font-size:12px;color:var(--muted);margin-top:4px}.subtabs{margin-bottom:22px}.subtabs .tab{min-height:47px}.empty{padding:40px 18px;text-align:center;color:var(--muted);font-size:13px}.footer-hint{color:var(--muted);font-size:11px;line-height:1.8;margin:18px 2px 0}.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.divider{height:1px;background:var(--line);margin:17px 0}.group-label{font-size:12px;color:var(--muted);margin:16px 2px 8px}.link-row{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:13px 0;font-size:13px;color:var(--primary)}dialog{padding:0;border:1px solid var(--line);border-radius:24px;background:var(--surface);color:var(--text);width:min(560px,calc(100% - 28px));max-height:calc(100dvh - 40px);box-shadow:var(--shadow)}dialog::backdrop{background:#0009;backdrop-filter:blur(3px)}.dialog-shell{display:flex;flex-direction:column;max-height:calc(100dvh - 44px);min-height:0}.dialog-head{padding:19px 19px 8px;display:flex;align-items:center;gap:8px;flex-shrink:0}.dialog-head h2{font-size:19px}.dialog-body{padding:10px 22px 20px;overflow-y:auto;overscroll-behavior:contain;min-height:0}.dialog-footer{display:flex;gap:9px;justify-content:flex-end;padding:13px 20px 18px;border-top:1px solid var(--line);flex-wrap:wrap;flex-shrink:0}.dialog-footer .button{min-height:42px;padding:9px 17px}.selected-model{border:1px solid var(--primary);background:var(--tint);border-radius:14px;padding:14px;margin-bottom:16px}.option-row{display:flex;align-items:center;gap:9px;min-height:46px;margin:4px 0;font-size:13px}.option-row input{accent-color:var(--primary);width:18px;height:18px}.section-editor{padding:13px 0;border-top:1px solid var(--line)}.section-editor:first-child{border-top:0}.section-editor .control-row{padding:4px 0 12px;min-height:50px}.section-editor .field{margin-top:12px}.result{border:1px solid var(--line);padding:15px;border-radius:14px;margin-top:16px;line-height:1.7;font-size:13px}.toast{position:fixed;bottom:max(25px,env(safe-area-inset-bottom));left:50%;transform:translate(-50%,14px);opacity:0;pointer-events:none;background:var(--text);color:var(--bg);border-radius:14px;padding:12px 17px;font-size:12px;box-shadow:var(--shadow);max-width:calc(100% - 34px);width:max-content;transition:.16s;z-index:10}.toast.visible{opacity:1;transform:translate(-50%,0)}.settings-group{margin-top:22px}.settings-group h3{font-size:13px;color:var(--muted);margin:0 4px 10px}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1000px){.shell{grid-template-columns:minmax(0,740px);max-width:800px;padding:18px 24px 65px;gap:0}.rail{display:none}.preview-bar{margin-bottom:10px}.appbar{margin-bottom:14px}}
+@media(max-width:450px){body{font-size:14px}.shell{padding:12px 16px 55px}.preview-bar{font-size:10px}.preview-bar button{font-size:10px;min-height:34px}.appbar{margin-bottom:10px}h1{font-size:19px}.intro h2{font-size:21px}.tab{font-size:13px;padding:8px 3px}.list-item{padding:16px 14px;gap:12px}.card-pad{padding:16px}.function-line{padding:15px 13px;gap:10px}.function-line .symbol{width:31px;height:31px}.function-line h3{font-size:14px}.field input,.field select,.field textarea{font-size:13px}.fields-2{gap:10px}.dialog-body{padding:8px 17px 18px}.dialog-head{padding:15px 13px 8px}.dialog-footer{padding:12px 16px 16px}.policy-top{padding:14px}.section-heading{margin-top:23px}.button{padding:9px 14px;font-size:13px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="rail" aria-label="设计稿导航">
+<div class="brand">Operit<span class="accent">.</span></div><p class="rail-caption">Android 设置 · 交互设计预览</p>
+<div class="small muted">模型与对话</div>
+<nav class="rail-nav"><a href="#models" data-nav="models">模型配置</a><a href="#functions" data-nav="functions">功能分配</a><a href="#context" data-nav="context">上下文与总结</a><a href="#settings" data-nav="settings">设置首页</a></nav>
+<div class="rail-note"><strong>让每一层只回答一个问题</strong>模型配置：有哪些连接可用。<br>功能分配：每项功能用哪个模型。<br>上下文与总结：对话如何保留和压缩。<br><br>选中配置后，连接与参数在独立详情中编辑。</div>
+</aside>
+<div class="workspace">
+<div class="preview-bar"><span>交互设计稿 · 示例数据 · 刷新重置</span><button id="theme-button" type="button" aria-label="切换深浅色">切换浅色</button></div>
+<header id="appbar" class="appbar"></header>
+<nav id="tabs" class="tabs" aria-label="模型与对话分类" role="tablist"></nav>
+<main id="content" tabindex="-1"></main>
+</div>
+</div>
+<dialog id="modal" aria-labelledby="dialog-title"><div class="dialog-shell"><div id="dialog-head" class="dialog-head"></div><div id="dialog-body" class="dialog-body"></div><div id="dialog-footer" class="dialog-footer"></div></div></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const paths={back:'m15 18-6-6 6-6M9 12h12',chevron:'m9 6 6 6-6 6',down:'m6 9 6 6 6-6',close:'m6 6 12 12M6 18 18 6',more:'M12 5h.01M12 12h.01M12 19h.01',search:'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',plus:'M12 5v14M5 12h14',model:'m12 3 8 5v8l-8 5-8-5V8l8-5ZM4 8l8 5 8-5M12 13v8',folder:'M3 6h7l2 2h9v12H3V6Z',chat:'M4 4h16v12H9l-5 4V4Z',summary:'M6 3h9l4 4v14H6V3ZM9 10h7M9 14h7M9 18h4',title:'M4 6h16M12 6v14M9 20h6',people:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2 21v-3a6 6 0 0 1 12 0v3M18 4a4 4 0 0 1 0 7M18 15a5 5 0 0 1 4 5',memory:'M5 4h14v16H5V4ZM8 8h8M8 12h8M8 16h4',vector:'M5 5h14v5H5V5ZM5 14h14v5H5v-5ZM8 7.5h.01M8 16.5h.01',touch:'M9 13V4a2 2 0 0 1 4 0v7l2-1 5 4v4l-4 4h-5l-6-7a2 2 0 0 1 3-2l1 1',translate:'M3 5h12M9 3v2M5 5c1 5 4 8 9 10M12 5c-1 5-4 8-9 10M14 21l4-10 4 10M15 18h6',image:'M3 4h18v16H3V4Zm0 12 5-5 5 6 3-3 5 5M16 8h.01',mic:'M9 4a3 3 0 0 1 6 0v8a3 3 0 0 1-6 0V4ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8',video:'M3 6h12v12H3V6ZM15 10l6-4v12l-6-4',settings:'M4 7h16M4 17h16M8 4v6M16 14v6',check:'m5 12 4 4L19 6',alert:'m12 3 10 18H2L12 3ZM12 9v4M12 17h.01',info:'M12 17v-5M12 7h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1',shield:'m12 3 8 3v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3Z',storage:'M4 4h16v5H4V4ZM4 15h16v5H4v-5ZM7 6.5h.01M7 17.5h.01',link:'m9 8 2-2a5 5 0 0 1 7 7l-2 2M15 16l-2 2a5 5 0 0 1-7-7l2-2M8 16l8-8',download:'M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4',activity:'m3 12 5-8 4 16 4-8h5'};
+const icon=(name,cls='')=>`<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]}"></path></svg>`;
+const esc=value=>String(value).replace(/[&<>"']/g,ch=>String.fromCharCode(38,35)+ch.charCodeAt(0)+';');
+const sectionDefaults=()=>[
+ {id:'task',title:'核心任务状态',enabled:true,instruction:'保留当前目标、已完成工作、阻塞和下一步。'},
+ {id:'interaction',title:'互动情节与设定',enabled:true,instruction:'保留重要互动、约定和必要的角色设定。'},
+ {id:'progress',title:'对话历程与概要',enabled:true,instruction:'按实际进展记录重要决定与结果。'},
+ {id:'facts',title:'关键信息与上下文',enabled:true,instruction:'保留继续任务需要的路径、数据和事实。'}
+];
+const policyDefaults=()=>({contextLength:96,maxContextLength:128,enableSummary:true,threshold:75,byCount:false,messageCount:40,rules:'',previousReview:false,dialogueReview:true,reviewTitle:'对话回顾',sections:sectionDefaults()});
+const makeProfile=(id,name,group,protocol,models,caps)=>({id,name,group,protocol,models,caps,endpoint:'https://api.example.com',apiKey:'',params:{temperature:.7,maxTokens:8192,topP:1,frequencyPenalty:0,presencePenalty:0,parallelRequests:0,requestInterval:0},policy:policyDefaults()});
+const profiles=[
+ makeProfile('daily','日常对话','默认分组','responses',['gpt-4.1','gpt-4.1-mini'],{tools:true,stream:true,image:true,audio:false,video:false}),
+ makeProfile('helper','轻量辅助','默认分组','chat',['qwen-plus','qwen-turbo'],{tools:true,stream:true,image:false,audio:false,video:false}),
+ makeProfile('vision','多媒体理解','工作','chat',['gemini-2.5-flash'],{tools:true,stream:true,image:true,audio:true,video:true}),
+ makeProfile('embed','记忆向量','工作','embeddings',['text-embedding-3-small'],{tools:false,stream:false,image:false,audio:false,video:false})
+];
+const functions=[
+ {id:'CHAT',title:'对话功能',group:'对话与整理',icon:'chat',desc:'日常聊天与工具协作',config:'daily',model:'gpt-4.1',thinking:'off',level:'medium'},
+ {id:'SUMMARY',title:'上下文总结',group:'对话与整理',icon:'summary',desc:'压缩长对话，保留后续所需信息',config:'helper',model:'qwen-plus',thinking:'off',level:'medium'},
+ {id:'TITLE_GENERATION',title:'AI 总结标题',group:'对话与整理',icon:'title',desc:'为聊天生成简短标题',config:'helper',model:'qwen-turbo',thinking:'off',level:'medium'},
+ {id:'ROLE_RESPONSE_PLANNER',title:'群组发言规划',group:'对话与整理',icon:'people',desc:'规划群组角色的发言顺序',config:'helper',model:'qwen-plus',thinking:'off',level:'medium'},
+ {id:'MEMORY',title:'记忆更新',group:'记忆与检索',icon:'memory',desc:'整理并更新记忆内容',config:'helper',model:'qwen-plus',thinking:'off',level:'medium'},
+ {id:'MEMORY_EMBEDDING',title:'记忆向量',group:'记忆与检索',icon:'vector',desc:'生成记忆向量并进行语义检索',config:'',model:'',thinking:'off',level:'medium'},
+ {id:'GREP',title:'Grep 检索',group:'记忆与检索',icon:'search',desc:'规划上下文或代码检索',config:'daily',model:'gpt-4.1-mini',thinking:'off',level:'medium'},
+ {id:'UI_CONTROLLER',title:'UI 控制器',group:'工具与辅助',icon:'touch',desc:'分析界面并规划操作',config:'vision',model:'gemini-2.5-flash',thinking:'off',level:'medium'},
+ {id:'TRANSLATION',title:'翻译功能',group:'工具与辅助',icon:'translate',desc:'文本翻译',config:'helper',model:'qwen-turbo',thinking:'off',level:'medium'},
+ {id:'IMAGE_RECOGNITION',title:'图像识别',group:'多模态理解',icon:'image',desc:'识别图片中的内容',config:'daily',model:'gpt-4.1',need:'image',thinking:'off',level:'medium'},
+ {id:'AUDIO_RECOGNITION',title:'音频识别',group:'多模态理解',icon:'mic',desc:'理解和转写音频',config:'daily',model:'gpt-4.1',need:'audio',thinking:'off',level:'medium'},
+ {id:'VIDEO_RECOGNITION',title:'视频识别',group:'多模态理解',icon:'video',desc:'理解视频内容',config:'daily',model:'gpt-4.1',need:'video',thinking:'off',level:'medium'}
+];
+const state={group:'全部',modelQuery:'',functionQuery:'',functionScope:'all',summaryId:'daily',summaryPinned:false,editId:'daily',detailTab:'connection',retention:{image:3,media:1},openDetails:new Set(),dialog:null,toastTimer:0,restoreFocus:null,nextProfileId:1};
+const capabilityNames={tools:'工具调用',stream:'流式输出',image:'图片理解',audio:'音频理解',video:'视频理解'};
+const protocolNames={responses:'ChatGPT Responses（OpenAI）',chat:'Chat Completions（兼容接口）',embeddings:'Embeddings（向量接口）'};
+const $=selector=>document.querySelector(selector);
+const getProfile=id=>profiles.find(profile=>profile.id===id);
+const getFunction=id=>functions.find(item=>item.id===id);
+const currentChat=()=>getFunction('CHAT').config;
+const groups=()=>[...new Set(profiles.map(profile=>profile.group))];
+const thinkingLabel=item=>({on:`思考开启 · ${{low:'低',medium:'中',high:'高'}[item.level]}`,off:'思考关闭'}[item.thinking]);
+function warningFor(item){
+ if(!item.config)return '尚未配置';
+ const profile=getProfile(item.config);
+ if(item.need&&!profile.caps[item.need])return `该配置未开启${capabilityNames[item.need]}`;
+ return '';
+}
+function notify(message){
+ clearTimeout(state.toastTimer);$('#toast').textContent=message;$('#toast').classList.add('visible');
+ state.toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),2500);
+}
+const pill=(text,cls='')=>`<span class="pill ${cls}">${esc(text)}</span>`;
+function switchRow(label,description,key,value,scope,disabled=false){
+ return `<div class="control-row"><div class="grow"><div>${esc(label)}</div>${description?`<p>${esc(description)}</p>`:''}</div><button type="button" class="switch" role="switch" aria-label="${esc(label)}" aria-checked="${value}" data-action="toggle" data-key="${key}" data-scope="${scope}" ${disabled?'disabled':''}></button></div>`;
+}
+function field(key,label,value,scope,options={}){
+ const id=`field-${scope}-${key}`;
+ const attrs=options.attrs||'';const numeric=!['text','url','password'].includes(options.type);
+ const numericAttrs=numeric?(!/\bmin=/.test(attrs)?'min="0" ':'')+(!/\bstep=/.test(attrs)?'step="any"':''):'';
+ return `<div class="field"><label for="${id}">${esc(label)}</label><input id="${id}" data-field="${key}" data-scope="${scope}" value="${esc(value)}" type="${options.type||'number'}" ${numericAttrs} ${attrs}>${options.note?`<small>${esc(options.note)}</small>`:''}</div>`;
+}
+function details(id,title,body){
+ return `<details class="details" data-detail="${id}" ${state.openDetails.has(id)?'open':''}><summary>${esc(title)}${icon('down')}</summary><div class="details-body">${body}</div></details>`;
+}
+function profileOptions(selected,allowEmpty=false){
+ return `${allowEmpty?`<option value="" ${selected===''?'selected':''}>暂不配置</option>`:''}${groups().map(group=>`<optgroup label="${esc(group)}">${profiles.filter(profile=>profile.group===group).map(profile=>`<option value="${profile.id}" ${profile.id===selected?'selected':''}>${esc(profile.name)} · ${esc(profile.models.join(' / '))}</option>`).join('')}</optgroup>`).join('')}`;
+}
+function header(title,subtitle,back,actions=''){
+ $('#appbar').innerHTML=`${back?`<a class="icon" href="#${back}" aria-label="返回">${icon('back')}</a>`:''}<div class="grow"><h1>${esc(title)}</h1>${subtitle?`<p class="small muted">${esc(subtitle)}</p>`:''}</div>${actions}`;
+}
+function renderModels(){
+ return `<div class="intro row between"><div class="grow"><h2>模型配置</h2><p>连接、密钥和参数，按配置管理。</p></div><button class="button tonal" data-action="new-profile">${icon('plus')}添加</button></div><div class="search">${icon('search')}<input aria-label="搜索模型配置" data-search="models" placeholder="搜索配置、模型名称" value="${esc(state.modelQuery)}"></div><div class="filters" aria-label="配置分组">${['全部',...groups()].map(group=>`<button class="filter ${state.group===group?'selected':''}" data-action="group" data-value="${esc(group)}" aria-pressed="${state.group===group}">${esc(group)}</button>`).join('')}</div><div id="model-results">${renderModelResults()}</div><p class="footer-hint">选择一份配置编辑连接与参数。各项功能使用的模型，在“功能分配”中设置。</p>`;
+}
+function renderModelResults(){
+ const query=state.modelQuery.trim().toLowerCase();
+ const visible=profiles.filter(profile=>(state.group==='全部'||profile.group===state.group)&&`${profile.name} ${profile.group} ${profile.models.join(' ')}`.toLowerCase().includes(query));
+ if(!visible.length)return '<div class="empty">没有找到匹配的配置</div>';
+ return `<div class="card">${visible.map(profile=>{
+  const bound=functions.filter(item=>item.config===profile.id);
+  return `<a class="list-item" href="#config/${profile.id}/connection"><div class="symbol">${icon('model')}</div><div class="grow"><div class="row wrap" style="gap:7px"><h3>${esc(profile.name)}</h3>${currentChat()===profile.id?pill('当前对话','active'):''}</div><p>${esc(profile.group)} · ${esc(protocolNames[profile.protocol])}</p><div class="model-name">${esc(profile.models.join(' / '))}</div><div class="metadata">${pill(`${profile.models.length} 个模型`)}${pill(`${bound.length} 项功能使用`)}</div></div>${icon('chevron','chevron')}</a>`;
+ }).join('')}</div>`;
+}
+function renderFunctions(){
+ const attention=functions.filter(item=>warningFor(item)).length;
+ return `<div class="intro"><h2>每项功能，用合适的模型</h2><p>功能分配对整个应用生效，可使用不同分组中的配置。</p><div class="summary-stats">${pill(`${functions.length} 项功能`)}${pill(`${attention} 项待检查`,'warn')}</div></div><div class="search">${icon('search')}<input aria-label="搜索功能或已绑定模型" data-search="functions" value="${esc(state.functionQuery)}" placeholder="搜索功能、配置或模型"></div><div class="filters"><button class="filter ${state.functionScope==='all'?'selected':''}" data-action="function-scope" data-value="all">全部</button><button class="filter ${state.functionScope==='attention'?'selected':''}" data-action="function-scope" data-value="attention">待检查 ${attention}</button><button class="filter ${state.functionScope.startsWith('config:')?'selected':''}" data-action="function-filter">${icon('settings')} ${state.functionScope.startsWith('config:')?esc(getProfile(state.functionScope.slice(7)).name):'按配置筛选'}</button></div><div id="function-results">${renderFunctionResults()}</div><div class="row between" style="margin-top:22px"><span class="small muted">分配模型不改变连接配置。</span><button class="text-button" data-action="reset-functions">重置分配</button></div>`;
+}
+function renderFunctionResults(){
+ const query=state.functionQuery.trim().toLowerCase();
+ const visible=functions.filter(item=>{
+  if(state.functionScope==='attention'&&!warningFor(item))return false;
+  if(state.functionScope.startsWith('config:')&&item.config!==state.functionScope.slice(7))return false;
+  const profile=item.config?getProfile(item.config):null;
+  return `${item.title} ${item.desc} ${profile?profile.name:''} ${item.model}`.toLowerCase().includes(query);
+ });
+ if(!visible.length)return '<div class="empty">没有符合条件的功能</div>';
+ return [...new Set(visible.map(item=>item.group))].map(group=>`<div class="section-heading"><span>${esc(group)}</span><small>${visible.filter(item=>item.group===group).length} 项</small></div><div class="card">${visible.filter(item=>item.group===group).map(item=>{
+  const profile=item.config?getProfile(item.config):null;const warning=warningFor(item);
+  return `<button class="function-line" data-action="edit-function" data-id="${item.id}"><div class="symbol">${icon(item.icon)}</div><div class="grow"><h3>${esc(item.title)}</h3><div class="function-binding">${profile?`${esc(profile.name)} · ${esc(item.model)}`:'尚未选择向量模型'}</div>${profile?`<div class="function-extra">${esc(profile.group)}${item.id==='MEMORY_EMBEDDING'?'':` · ${esc(thinkingLabel(item))}`}</div>`:''}${warning?`<div class="inline-warning">${icon('alert')}<span>${esc(warning)}</span></div>`:''}</div>${icon('chevron','chevron')}</button>`;
+ }).join('')}</div>`).join('');
+}
+function renderContext(){
+ const profile=getProfile(state.summaryId),policy=profile.policy,summary=getFunction('SUMMARY');
+ return `<div class="intro"><h2>上下文与总结</h2><p>为每份配置设置对话长度和压缩方式。</p></div><div class="policy-top"><label for="summary-profile">正在编辑的模型配置</label><select id="summary-profile" data-summary-select>${profileOptions(profile.id)}</select><p>${profile.id===currentChat()?'此配置正在用于对话功能。':'此处修改只作用于所选配置。当前对话使用“'+esc(getProfile(currentChat()).name)+'”。'}</p></div><div class="section-heading"><span>上下文长度</span>${pill('随配置保存')}</div><div class="card card-pad"><div class="fields-2">${field('contextLength','日常上下文（K tokens）',policy.contextLength,'policy',{attrs:'required min="1"'})}${field('maxContextLength','API 最大上下文（K tokens）',policy.maxContextLength,'policy',{attrs:'required min="1"'})}</div><p class="small muted" style="margin-top:13px">日常长度用于控制对话保留范围；最大长度按模型 API 的限制填写。</p></div><div class="section-heading"><span>自动总结</span>${pill('随配置保存')}</div><div class="card">${switchRow('启用自动总结','达到阈值时压缩对话内容','enableSummary',policy.enableSummary,'policy')}<div class="card-pad ${!policy.enableSummary?'disabled-content':''}"><label class="small" for="summary-threshold">上下文使用达到以下比例时触发</label><div class="range-line"><input id="summary-threshold" aria-label="总结触发比例" type="range" min="10" max="95" step="5" value="${policy.threshold}" data-threshold ${!policy.enableSummary?'disabled':''}><output id="threshold-value" class="range-value">${policy.threshold}%</output></div><div class="context-meter"><span id="context-meter-fill" style="width:${policy.threshold}%"></span></div><p class="small muted" id="threshold-description">以 ${policy.contextLength}K 日常上下文计算，约 ${formatThreshold(policy)}K 时触发。</p></div>${switchRow('按消息条数触发','新消息达到指定条数时也可触发','byCount',policy.byCount,'policy',!policy.enableSummary)}${policy.byCount?`<div class="card-pad ${!policy.enableSummary?'disabled-content':''}">${field('messageCount','新消息条数',policy.messageCount,'policy',{attrs:`required min="1" ${!policy.enableSummary?'disabled':''}`})}</div>`:''}<button class="list-item" data-action="edit-function" data-id="SUMMARY"><div class="symbol">${icon('summary')}</div><div class="grow"><h3>执行总结的模型</h3><p>${esc(getProfile(summary.config).name)} · ${esc(summary.model)}</p><p>修改此项会更新全局功能分配。</p></div>${icon('chevron','chevron')}</button></div>${details('summary-content','摘要内容与结构',`<p class="small muted">${policy.sections.filter(section=>section.enabled).length} 个摘要板块${policy.dialogueReview?' · 附带对话回顾':''}</p><div class="metadata">${policy.sections.filter(section=>section.enabled).map(section=>pill(section.title)).join('')}</div><button class="link-row" style="width:100%;text-align:left" data-action="summary-editor" ${!policy.enableSummary?'disabled':''}><span>编辑摘要结构与规则</span>${icon('chevron')}</button>${switchRow('总结上一轮摘要','会压缩上一轮摘要，增加额外额度消耗','previousReview',policy.previousReview,'policy',!policy.enableSummary)}<button class="text-button" data-action="summary-preview">预览摘要结构</button>`)}<div class="section-heading"><span>历史媒体保留</span>${pill('全局设置','active')}</div><div class="card card-pad"><p class="small muted" style="margin-bottom:16px">只向模型发送最近指定回合中的图片、音频和视频。此设置对所有模型配置生效。</p><div class="fields-2">${field('image','图片保留回合',state.retention.image,'retention',{attrs:'required min="0" step="1"'})}${field('media','音视频保留回合',state.retention.media,'retention',{attrs:'required min="0" step="1"'})}</div></div><p id="policy-error" class="small danger" role="alert" style="margin-top:12px"></p><p class="footer-hint">页面修改仅保存在当前设计稿中，不会写入 Operit。</p>`;
+}
+const formatThreshold=policy=>Number((policy.contextLength*policy.threshold/100).toFixed(2));
+function renderConnection(profile){
+ return `<div class="card card-pad"><div class="field"><label for="connection-protocol">服务方式</label><select id="connection-protocol" data-protocol>${Object.entries(protocolNames).map(([value,label])=>`<option value="${value}" ${profile.protocol===value?'selected':''}>${esc(label)}</option>`).join('')}</select></div>${field('endpoint','API 端点',profile.endpoint,'profile',{type:'url',attrs:'required',note:'示例地址；设计稿不会发送请求。'})}${field('apiKey','API 密钥',profile.apiKey,'profile',{type:'password',attrs:'autocomplete="off" placeholder="仅供界面预览，请勿输入真实密钥"'})}<button class="text-button" data-action="key-preview">密钥池与密钥管理</button></div><div class="section-heading"><span>模型列表</span><button class="text-button" data-action="edit-models">编辑</button></div><div class="card">${profile.models.map(model=>`<div class="list-item"><div class="symbol">${icon('model')}</div><div class="grow break">${esc(model)}</div>${pill(`${functions.filter(item=>item.config===profile.id&&item.model===model).length} 项功能`)}</div>`).join('')}</div><div class="section-heading"><span>请求能力</span><small>随当前配置保存</small></div><div class="card">${Object.entries(capabilityNames).map(([key,label])=>switchRow(label,'',key,profile.caps[key],'caps')).join('')}</div>${details('headers','自定义请求头',`<div class="field"><label for="header-preview">请求头（预览）</label><textarea id="header-preview" placeholder="例如 X-Client: Operit" data-header-preview>${esc(profile.headers||'')}</textarea></div>`)}<div class="row between" style="margin-top:20px"><a class="text-button" href="#functions" data-use-profile="${profile.id}">查看使用此配置的功能</a><button class="button" data-action="demo-test">测试连接</button></div>`;
+}
+function renderParameters(profile){
+ return `<div class="scope-note">${icon('info')}<span>参数只影响“${esc(profile.name)}”。功能可单独设置思考开关和档位。</span></div><div class="card card-pad"><div class="fields-2">${field('temperature','温度',profile.params.temperature,'params',{attrs:'max="2"'})}${field('maxTokens','最大输出 Token',profile.params.maxTokens,'params',{attrs:'min="1" step="1"'})}</div></div>${details('sampling','采样与重复惩罚',`<div class="fields-2">${field('topP','Top P',profile.params.topP,'params',{attrs:'max="1"'})}${field('frequencyPenalty','频率惩罚',profile.params.frequencyPenalty,'params',{attrs:'min="-2" max="2"'})}</div><div style="margin-top:14px">${field('presencePenalty','存在惩罚',profile.params.presencePenalty,'params',{attrs:'min="-2" max="2"'})}</div>`)}${details('thinking','思考配置',`<p class="small muted">按模型名称和服务方式匹配思考规则，选择默认档位与请求字段。</p><div class="metadata">${pill('模型匹配规则')}${pill('默认档位')}${pill('请求字段')}</div>`)}${details('custom-parameters','自定义参数',`<p class="small muted">为服务添加额外请求参数，分别设置字段类型、参数值与是否启用。</p>`)}${details('request-queue','请求队列',`<div class="fields-2">${field('parallelRequests','最大并发请求',profile.params.parallelRequests,'params',{attrs:'step="1"'})}${field('requestInterval','请求间隔（毫秒）',profile.params.requestInterval,'params',{attrs:'step="1"'})}</div><p class="small muted" style="margin-top:12px">0 表示不限制。</p>`)}<div class="card card-pad" style="margin-top:22px"><div class="row"><div class="symbol">${icon('summary')}</div><div class="grow"><h3>上下文与总结</h3><p class="small muted">${profile.policy.contextLength}K 日常上下文 · ${profile.policy.enableSummary?'自动总结已开启':'自动总结已关闭'}</p></div><button class="text-button" data-action="profile-policy">设置</button></div></div>`;
+}
+function renderConfig(profile){
+ return `<div class="detail-heading"><div class="symbol">${icon('model')}</div><div class="grow"><h2>${esc(profile.name)}</h2><p>${esc(profile.group)} · ${profile.models.length} 个模型</p></div><button class="icon" aria-label="配置操作" data-action="profile-menu">${icon('more')}</button></div><div class="tabs subtabs" role="tablist" aria-label="所选配置设置">${[['connection','连接'],['parameters','参数']].map(([key,label])=>`<button id="detail-tab-${key}" class="tab" role="tab" aria-selected="${state.detailTab===key}" aria-controls="detail-panel" data-action="detail-tab" data-value="${key}">${label}</button>`).join('')}</div><div id="detail-panel" role="tabpanel" aria-labelledby="detail-tab-${state.detailTab}">${state.detailTab==='connection'?renderConnection(profile):renderParameters(profile)}</div>`;
+}
+function renderSettings(){
+ const item=(title,desc,name,action)=>`<button class="list-item" ${action}><div class="symbol">${icon(name)}</div><div class="grow"><h3>${esc(title)}</h3><p>${esc(desc)}</p></div>${icon('chevron','chevron')}</button>`;
+ const group=(title,body)=>`<section class="settings-group"><h3>${title}</h3><div class="card">${body}</div></section>`;
+ const other='data-action="other-design"';
+ return `<p class="small muted" style="margin-bottom:20px">设置入口归属预览；本轮可进入“模型与对话”。</p>${group('个性化',item('主题和外观','颜色、背景、字体与语言','sun',other)+item('显示与行为','显示样式与自动化行为','settings',other))}${group('AI 模型配置',item('模型与对话','模型配置、功能分配、上下文与总结','model','data-action="navigate" data-value="models"')+item('语音服务配置','TTS / STT 服务设置','mic',other))}${group('提示词配置',item('角色卡编辑','系统和模型提示词','chat',other)+item('记忆管理','记忆空间与角色绑定','memory',other))}${group('数据与资源',item('数据与备份','备份恢复、聊天管理、用量与日志','storage',other)+item('数据与存储','数据占用明细与清理','folder',other)+item('离线资源','本地模型与运行资源','download',other))}${group('工具与连接',item('工具权限设置','工具访问与安全设置','shield',other)+item('外部 HTTP 调用','接口监听、端口与访问令牌','link',other))}${group('应用与诊断',item('性能分析','CPU、内存与网络占用','activity',other)+item('关于','版本、使用手册与开源信息','info',other))}`;
+}
+function render(){
+ const route=location.hash.slice(1)||'models';let active=route;let body='';
+ $('#tabs').hidden=false;
+ if(route.startsWith('config/')){
+  const parts=route.split('/');const profile=getProfile(parts[1]);
+  if(!profile){header('配置不存在','','models');body='<div class="empty">未找到这份配置，请返回模型列表。</div>';active='invalid';$('#tabs').hidden=true;}
+  else{state.editId=profile.id;state.detailTab=parts[2]==='parameters'?'parameters':'connection';header('连接与参数','','models');body=renderConfig(profile);active='models';$('#tabs').hidden=true;}
+ }else if(route==='models'){header('模型与对话','','settings');body=renderModels();}
+ else if(route==='functions'){header('模型与对话','','settings');body=renderFunctions();}
+ else if(route==='context'){header('模型与对话','','settings');body=renderContext();}
+ else if(route==='settings'){header('设置','','');body=renderSettings();$('#tabs').hidden=true;}
+ else{header('页面不存在','','models');body='<div class="empty">这个预览地址没有对应页面。</div>';active='invalid';$('#tabs').hidden=true;}
+ $('#tabs').innerHTML=[['models','模型配置'],['functions','功能分配'],['context','上下文与总结']].map(([key,label])=>`<button id="tab-${key}" class="tab" role="tab" aria-selected="${active===key}" aria-controls="content" data-action="navigate" data-value="${key}">${label}</button>`).join('');
+ $('#content').innerHTML=body;
+ if(!$('#tabs').hidden){$('#content').setAttribute('role','tabpanel');$('#content').setAttribute('aria-labelledby',`tab-${active}`);}else{$('#content').removeAttribute('role');$('#content').removeAttribute('aria-labelledby');}
+ document.querySelectorAll('[data-nav]').forEach(link=>link.classList.toggle('active',link.dataset.nav===active));
+}
+
+function showDialog(title,body,footer){
+ const modal=$('#modal');
+ if(!modal.open)state.restoreFocus=document.activeElement;
+ $('#dialog-head').innerHTML=`<h2 id="dialog-title" class="grow">${esc(title)}</h2><button class="icon" aria-label="关闭窗口" data-action="close-dialog">${icon('close')}</button>`;
+ $('#dialog-body').innerHTML=body+'<p id="dialog-error" class="small danger" role="alert" style="margin-top:12px"></p>';
+ $('#dialog-footer').innerHTML=footer;
+ if(!modal.open)modal.showModal();
+}
+const cancelButton='<button class="button" data-action="close-dialog">取消</button>';
+const doneButton='<button class="button primary" data-action="close-dialog">知道了</button>';
+const dialogError=message=>{$('#dialog-error').textContent=message;};
+function closeDialog(){
+ $('#modal').close();state.dialog=null;
+ if(state.restoreFocus&&state.restoreFocus.isConnected)state.restoreFocus.focus({preventScroll:true});
+}
+function openFunction(id){state.dialog={type:'function',id,draft:structuredClone(getFunction(id))};renderFunctionDialog();}
+function renderFunctionDialog(){
+ const item=state.dialog.draft;const profile=item.config?getProfile(item.config):null;const warning=warningFor(item);
+ const body=`<p class="small muted" style="margin-bottom:18px">${esc(item.desc)}</p><div class="scope-note">${icon('info')}<span>这是全局功能分配。修改后，应用中的“${esc(item.title)}”使用此处选择的模型。</span></div><div class="field"><label for="binding-config">使用的配置</label><select id="binding-config" data-bind-config>${profileOptions(item.config,item.id==='MEMORY_EMBEDDING')}</select><small>可选择其他分组中的配置。</small></div>${profile?`<div class="field"><label for="binding-model">具体模型</label><select id="binding-model" data-bind-model>${profile.models.map(model=>`<option ${item.model===model?'selected':''}>${esc(model)}</option>`).join('')}</select></div><div class="selected-model"><p class="small muted">${esc(profile.group)} / ${esc(profile.name)}</p><p class="break" style="margin-top:4px">${esc(item.model)}</p></div>`:'<div class="notice">记忆向量尚未配置。选择向量模型后才能进行对应的语义检索。</div>'}${warning&&profile?`<div class="notice" style="margin-bottom:16px">${esc(warning)}。请核对模型支持情况，并在连接设置中开启对应能力。</div>`:''}${profile&&item.id!=='MEMORY_EMBEDDING'?`<div class="field"><label for="binding-thinking">思考设置</label><select id="binding-thinking" data-bind-thinking>${[['on','开启思考'],['off','关闭思考']].map(([value,label])=>`<option value="${value}" ${item.thinking===value?'selected':''}>${label}</option>`).join('')}</select></div>${item.thinking==='on'?`<div class="field"><label for="binding-level">思考档位</label><select id="binding-level" data-bind-level>${[['low','低'],['medium','中'],['high','高']].map(([value,label])=>`<option value="${value}" ${item.level===value?'selected':''}>${label}</option>`).join('')}</select><small>正式界面按所选模型的思考规则提供可用档位。</small></div>`:''}`:''}<div class="actions">${profile?`<button class="text-button" data-action="edit-bound-profile">编辑连接与参数</button>`:''}<button class="text-button" data-action="function-test-preview" ${!profile?'disabled':''}>功能测试预览</button></div>`;
+ showDialog(item.title,body,cancelButton+'<button class="button primary" data-action="save-function">保存分配</button>');
+}
+function renderSummaryEditor(){
+ const draft=state.dialog.draft;
+ const body=`<p class="small muted" style="margin-bottom:17px">只修改“${esc(getProfile(state.summaryId).name)}”的摘要结构。关闭某个板块后，生成摘要时不再输出该板块。</p><div class="field"><label for="summary-custom-rules">总结补充规则</label><textarea id="summary-custom-rules" data-summary-draft="rules" placeholder="希望每次总结都遵守的要求">${esc(draft.rules)}</textarea></div>${draft.sections.map((section,index)=>`<section class="section-editor"><label class="option-row"><input type="checkbox" data-section-enabled="${index}" ${section.enabled?'checked':''}>${esc(section.title)}</label><div class="field"><label for="section-title-${index}">板块标题</label><input type="text" id="section-title-${index}" data-section-index="${index}" data-section-prop="title" value="${esc(section.title)}" ${!section.enabled?'disabled':''}></div><div class="field"><label for="section-rule-${index}">板块说明</label><textarea id="section-rule-${index}" data-section-index="${index}" data-section-prop="instruction" ${!section.enabled?'disabled':''}>${esc(section.instruction)}</textarea></div></section>`).join('')}<div class="section-editor"><label class="option-row"><input type="checkbox" data-summary-review ${draft.dialogueReview?'checked':''}>附带对话回顾</label><div class="field"><label for="review-title">回顾标题</label><input id="review-title" type="text" value="${esc(draft.reviewTitle)}" data-summary-draft="reviewTitle" ${!draft.dialogueReview?'disabled':''}></div></div>`;
+ showDialog('摘要结构与规则',body,cancelButton+'<button class="button primary" data-action="save-summary-editor">保存</button>');
+}
+function openTestPreview(returnFunction=false){
+ const source=returnFunction?state.dialog.id:'';const parent=returnFunction?state.dialog:null;
+ state.dialog={type:'test',source,parent};
+ showDialog('连接与功能测试预览','<p class="small muted">设计稿不会发送 API 请求。请选择一种示例状态查看界面反馈。</p><div class="filters">'+[['running','测试中'],['passed','通过'],['unverified','未验证'],['failed','失败']].map(([key,label])=>`<button class="filter" data-action="test-state" data-value="${key}">${label}</button>`).join('')+'<div id="test-result" class="result">尚未选择示例状态。</div>',source?'<button class="button" data-action="return-function">返回功能设置</button>':doneButton);
+}
+function openProfileForm(mode){
+ const profile=getProfile(state.editId);state.dialog={type:'profile-form',mode};
+ showDialog(mode==='new'?'添加模型配置':'重命名配置',`<div class="field"><label for="profile-name">配置名称</label><input id="profile-name" type="text" maxlength="80" value="${mode==='new'?'':esc(profile.name)}" placeholder="例如 日常对话"></div>${mode==='new'?`<div class="field"><label for="profile-group">所属分组</label><select id="profile-group">${groups().map(group=>`<option>${esc(group)}</option>`).join('')}</select></div><p class="small muted">创建后进入连接设置，填写服务方式、端点和模型。</p>`:''}`,cancelButton+'<button class="button primary" data-action="save-profile-form">保存</button>');
+}
+function routeTo(route){if(location.hash===`#${route}`){render();}else{location.hash=route;}}
+document.addEventListener('click',event=>{
+ const profileLink=event.target.closest('[data-use-profile]');
+ if(profileLink){state.functionScope=`config:${profileLink.dataset.useProfile}`;state.functionQuery='';}
+ const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
+ const action=button.dataset.action;
+ if(action==='navigate'){routeTo(button.dataset.value);}
+ else if(action==='close-dialog'){closeDialog();}
+ else if(action==='group'){state.group=button.dataset.value;render();}
+ else if(action==='detail-tab'){routeTo(`config/${state.editId}/${button.dataset.value}`);}
+ else if(action==='function-scope'){state.functionScope=button.dataset.value;render();}
+ else if(action==='edit-function'){openFunction(button.dataset.id);}
+ else if(action==='save-function'){
+  const draft=state.dialog.draft;Object.assign(getFunction(draft.id),draft);
+  if(draft.id==='CHAT'&&!state.summaryPinned)state.summaryId=draft.config;
+  closeDialog();render();notify('已在当前设计稿中更新功能分配');
+ }
+ else if(action==='function-filter'){
+  state.dialog={type:'filter'};
+  showDialog('按配置筛选功能',`<button class="list-item" data-action="choose-filter" data-value="all"><span class="grow">全部配置</span>${state.functionScope==='all'?icon('check'):''}</button>${profiles.map(profile=>`<button class="list-item" data-action="choose-filter" data-value="config:${profile.id}"><div class="grow"><h3>${esc(profile.name)}</h3><p>${esc(profile.group)}</p></div>${pill(`${functions.filter(item=>item.config===profile.id).length} 项`)}</button>`).join('')}`,cancelButton);
+ }
+ else if(action==='choose-filter'){state.functionScope=button.dataset.value;closeDialog();render();}
+ else if(action==='toggle'){
+  const scope=button.dataset.scope,key=button.dataset.key;
+  if(scope==='policy'){const policy=getProfile(state.summaryId).policy;policy[key]=!policy[key];}
+  else if(scope==='caps'){const caps=getProfile(state.editId).caps;caps[key]=!caps[key];}
+  render();
+ }
+ else if(action==='profile-policy'){state.summaryId=state.editId;state.summaryPinned=true;routeTo('context');}
+ else if(action==='summary-editor'){state.dialog={type:'summary',draft:structuredClone(getProfile(state.summaryId).policy)};renderSummaryEditor();}
+ else if(action==='save-summary-editor'){
+  const draft=state.dialog.draft;
+  if(draft.sections.some(section=>section.enabled&&!section.title.trim())){dialogError('启用的摘要板块需要填写标题。');return;}
+  const policy=getProfile(state.summaryId).policy;
+  for(const key of ['rules','sections','dialogueReview','reviewTitle'])policy[key]=structuredClone(draft[key]);
+  closeDialog();render();notify('已在当前设计稿中保存摘要结构');
+ }
+ else if(action==='summary-preview'){
+  const policy=getProfile(state.summaryId).policy;
+  state.dialog={type:'summary-preview'};
+  showDialog('摘要结构预览','<p class="small muted" style="margin-bottom:17px">这里只预览标题排列，不生成对话摘要。</p>'+policy.sections.filter(section=>section.enabled).map(section=>`<div class="section-editor"><h3>${esc(section.title)}</h3><p class="small muted" style="margin-top:8px">${esc(section.instruction)}</p></div>`).join('')+(policy.dialogueReview?`<div class="section-editor"><h3>${esc(policy.reviewTitle)}</h3><p class="small muted">用户、助手与工具调用记录</p></div>`:''),doneButton);
+ }
+ else if(action==='demo-test'){openTestPreview();}
+ else if(action==='function-test-preview'){openTestPreview(true);}
+ else if(action==='test-state'){
+  const status={running:['muted','示例：正在测试','正在请求所选模型…'],passed:['good','示例：测试通过','请求及对应能力检查完成。'],unverified:['warning','示例：能力未验证','请求可完成，当前条件不足以确认该项能力。'],failed:['danger','示例：测试失败','请求失败，展开错误详情后可查看返回内容。']}[button.dataset.value];
+  $('#test-result').innerHTML=`<strong class="${status[0]}">${status[1]}</strong><p class="small muted" style="margin-top:7px">${status[2]}</p><p class="small muted" style="margin-top:9px">以上均为展示数据，没有真实请求。</p>`;
+  $('#dialog-body').querySelectorAll('[data-action="test-state"]').forEach(item=>item.classList.toggle('selected',item===button));
+ }
+ else if(action==='return-function'){state.dialog=state.dialog.parent;renderFunctionDialog();}
+ else if(action==='edit-bound-profile'){
+  const saved=getFunction(state.dialog.id),draft=state.dialog.draft;
+  if(saved.config!==draft.config||saved.model!==draft.model||saved.thinking!==draft.thinking||saved.level!==draft.level){dialogError('请先保存当前分配，或取消修改后再编辑连接。');return;}
+  const id=draft.config;closeDialog();routeTo(`config/${id}/connection`);
+ }
+ else if(action==='reset-functions'){
+  state.dialog={type:'reset'};showDialog('重置功能分配','<p>将所有普通功能绑定“日常对话”的第一个模型，思考设置改为关闭。记忆向量设为未配置。</p><p class="small muted" style="margin-top:12px">模型配置、连接和参数会继续保留。</p>',cancelButton+'<button class="button primary" data-action="confirm-reset">重置分配</button>');
+ }
+ else if(action==='confirm-reset'){
+  functions.forEach(item=>{item.config=item.id==='MEMORY_EMBEDDING'?'':'daily';item.model=item.config?getProfile('daily').models[0]:'';item.thinking='off';});
+  if(!state.summaryPinned)state.summaryId='daily';closeDialog();render();notify('已重置当前设计稿中的功能分配');
+ }
+ else if(action==='new-profile'){openProfileForm('new');}
+ else if(action==='rename-profile'){openProfileForm('rename');}
+ else if(action==='save-profile-form'){
+  const name=$('#profile-name').value.trim();if(!name){dialogError('请填写配置名称。');return;}
+  if(state.dialog.mode==='rename'){getProfile(state.editId).name=name;closeDialog();render();}
+  else{const id=`config-${state.nextProfileId++}`;profiles.push(makeProfile(id,name,$('#profile-group').value,'chat',['请填写模型名称'],{tools:true,stream:true,image:false,audio:false,video:false}));closeDialog();state.group='全部';state.modelQuery='';routeTo(`config/${id}/connection`);}
+ }
+ else if(action==='profile-menu'){
+  const profile=getProfile(state.editId);state.dialog={type:'profile-menu'};
+  showDialog(profile.name,`<button class="list-item" data-action="rename-profile">重命名</button><button class="list-item" data-action="copy-profile">复制配置</button><button class="list-item" data-action="profile-preview">配置预览</button><button class="list-item danger" data-action="delete-profile">删除配置</button>`,cancelButton);
+ }
+ else if(action==='copy-profile'){
+  const profile=structuredClone(getProfile(state.editId));profile.id=`config-${state.nextProfileId++}`;profile.name+=' 副本';profile.apiKey='';profiles.push(profile);closeDialog();routeTo(`config/${profile.id}/connection`);notify('已复制示例配置，密钥未复制');
+ }
+ else if(action==='profile-preview'){
+  const profile=getProfile(state.editId);
+  showDialog('配置预览',`<div class="stack"><p class="break">配置：${esc(profile.name)}</p><p class="break">分组：${esc(profile.group)}</p><p class="break">服务：${esc(protocolNames[profile.protocol])}</p><p class="break">端点：${esc(profile.endpoint)}</p><p class="break">模型：${esc(profile.models.join(' / '))}</p><p>上下文：${profile.policy.contextLength}K / ${profile.policy.maxContextLength}K</p></div>`,doneButton);
+ }
+ else if(action==='delete-profile'){
+  const used=functions.filter(item=>item.config===state.editId);
+  if(state.editId==='daily'||used.length){showDialog('配置仍在使用',`<p>${state.editId==='daily'?'默认配置需要保留。':`请先为以下功能重新分配模型：${used.map(item=>esc(item.title)).join('、')}。`}</p>`,doneButton);}
+  else{state.dialog={type:'delete',id:state.editId};showDialog('删除配置',`<p>删除“${esc(getProfile(state.editId).name)}”？</p>`,cancelButton+'<button class="button danger" data-action="confirm-delete">删除</button>');}
+ }
+ else if(action==='confirm-delete'){
+  const id=state.dialog.id;profiles.splice(profiles.findIndex(profile=>profile.id===id),1);
+  if(state.summaryId===id){state.summaryId=currentChat();state.summaryPinned=false;}
+  if(state.functionScope===`config:${id}`)state.functionScope='all';
+  state.group='全部';closeDialog();routeTo('models');
+ }
+ else if(action==='edit-models'){
+  state.dialog={type:'models'};showDialog('编辑模型列表',`<div class="field"><label for="models-editor">模型名称，每行一个</label><textarea id="models-editor" rows="6">${esc(getProfile(state.editId).models.join('\n'))}</textarea><small>正在被功能使用的模型，需要先调整分配后才能移除。</small></div>`,cancelButton+'<button class="button primary" data-action="save-models">保存</button>');
+ }
+ else if(action==='save-models'){
+  const models=[...new Set($('#models-editor').value.split(/\n|,/).map(model=>model.trim()).filter(Boolean))];
+  if(!models.length){dialogError('至少保留一个模型。');return;}
+  const used=functions.filter(item=>item.config===state.editId&&!models.includes(item.model));
+  if(used.length){dialogError('以下功能还在使用被移除的模型：'+used.map(item=>item.title).join('、'));return;}
+  getProfile(state.editId).models=models;closeDialog();render();
+ }
+ else if(action==='key-preview'){
+  state.dialog={type:'keys'};showDialog('密钥管理',`<div class="scope-note">${icon('info')}<span>此处为示例密钥状态，不包含真实密钥。</span></div><div class="card"><div class="list-item"><div class="grow"><h3>示例密钥 01</h3><p>•••• •••• demo-01</p></div>${pill('启用','active')}</div><div class="list-item"><div class="grow"><h3>示例密钥 02</h3><p>•••• •••• demo-02</p></div>${pill('暂停')}</div></div><p class="footer-hint">单密钥与密钥池继续在同一处管理。</p>`,doneButton);
+ }
+ else if(action==='other-design'){
+  state.dialog={type:'other'};showDialog('其他设置设计稿','<p>本轮重点是模型配置、功能分配和上下文与总结。</p><p class="small muted" style="margin-top:12px">主题、显示与行为、角色卡、工具权限和数据备份的已有设计稿，可从本次交付的统一索引打开。</p>',doneButton);
+ }
+});
+document.addEventListener('input',event=>{
+ const input=event.target;
+ if(input.dataset.search==='models'){state.modelQuery=input.value;$('#model-results').innerHTML=renderModelResults();}
+ else if(input.dataset.search==='functions'){state.functionQuery=input.value;$('#function-results').innerHTML=renderFunctionResults();}
+ else if(input.hasAttribute('data-threshold')){
+  const policy=getProfile(state.summaryId).policy;policy.threshold=Number(input.value);
+  $('#threshold-value').textContent=`${policy.threshold}%`;$('#context-meter-fill').style.width=`${policy.threshold}%`;$('#threshold-description').textContent=`以 ${policy.contextLength}K 日常上下文计算，约 ${formatThreshold(policy)}K 时触发。`;
+ }
+ else if(input.hasAttribute('data-summary-draft')){state.dialog.draft[input.dataset.summaryDraft]=input.value;}
+ else if(input.hasAttribute('data-section-prop')){state.dialog.draft.sections[Number(input.dataset.sectionIndex)][input.dataset.sectionProp]=input.value;}
+});
+document.addEventListener('change',event=>{
+ const input=event.target;
+ if(input.hasAttribute('data-bind-config')){const draft=state.dialog.draft;draft.config=input.value;draft.model=draft.config?getProfile(draft.config).models[0]:'';renderFunctionDialog();}
+ else if(input.hasAttribute('data-bind-model')){state.dialog.draft.model=input.value;renderFunctionDialog();}
+ else if(input.hasAttribute('data-bind-thinking')){state.dialog.draft.thinking=input.value;renderFunctionDialog();}
+ else if(input.hasAttribute('data-bind-level')){state.dialog.draft.level=input.value;}
+ else if(input.hasAttribute('data-summary-select')){state.summaryId=input.value;state.summaryPinned=true;render();}
+ else if(input.hasAttribute('data-section-enabled')){state.dialog.draft.sections[Number(input.dataset.sectionEnabled)].enabled=input.checked;renderSummaryEditor();}
+ else if(input.hasAttribute('data-summary-review')){state.dialog.draft.dialogueReview=input.checked;renderSummaryEditor();}
+ else if(input.hasAttribute('data-protocol')){getProfile(state.editId).protocol=input.value;}
+ else if(input.hasAttribute('data-header-preview')){getProfile(state.editId).headers=input.value;}
+ else if(input.hasAttribute('data-field')){
+  const scope=input.dataset.scope,key=input.dataset.field;
+  if(!input.checkValidity()){notify('请检查输入范围和格式');return;}
+  if(scope==='profile'){getProfile(state.editId)[key]=input.value;return;}
+  const value=Number(input.value);
+  if(scope==='policy'){
+   const policy=getProfile(state.summaryId).policy;
+   const context=key==='contextLength'?value:policy.contextLength,max=key==='maxContextLength'?value:policy.maxContextLength;
+   if(context>max){$('#policy-error').textContent='日常上下文不能超过 API 最大上下文。';input.setAttribute('aria-invalid','true');return;}
+   policy[key]=value;input.removeAttribute('aria-invalid');$('#policy-error').textContent='';
+   $('#threshold-description').textContent=`以 ${policy.contextLength}K 日常上下文计算，约 ${formatThreshold(policy)}K 时触发。`;
+  }else if(scope==='retention'){state.retention[key]=value;}
+  else if(scope==='params'){getProfile(state.editId).params[key]=value;}
+ }
+});
+document.addEventListener('toggle',event=>{const detail=event.target;if(detail.matches('details[data-detail]')){if(detail.open)state.openDetails.add(detail.dataset.detail);else state.openDetails.delete(detail.dataset.detail);}},true);
+document.addEventListener('keydown',event=>{
+ const tab=event.target.closest('[role="tab"]');if(!tab||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+ const tabs=[...tab.parentElement.querySelectorAll('[role="tab"]')];let index=tabs.indexOf(tab);
+ if(event.key==='ArrowLeft')index=(index+tabs.length-1)%tabs.length;
+ else if(event.key==='ArrowRight')index=(index+1)%tabs.length;
+ else index=event.key==='Home'?0:tabs.length-1;
+ event.preventDefault();const target=tabs[index],id=target.id;target.click();requestAnimationFrame(()=>{const next=document.getElementById(id);if(next)next.focus({preventScroll:true});});
+});
+$('#modal').addEventListener('cancel',()=>{state.dialog=null;});
+$('#modal').addEventListener('click',event=>{if(event.target===$('#modal'))closeDialog();});
+$('#theme-button').addEventListener('click',()=>{const light=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=light?'light':'dark';$('#theme-button').textContent=light?'切换深色':'切换浅色';});
+window.addEventListener('hashchange',()=>{if($('#modal').open)closeDialog();render();window.scrollTo(0,0);});
+if(new URLSearchParams(location.search).get('theme')==='light'){document.documentElement.dataset.theme='light';$('#theme-button').textContent='切换深色';}
+render();
+</script>
+</body>
+</html>
