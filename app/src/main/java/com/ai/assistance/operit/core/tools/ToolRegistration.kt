@@ -2,6 +2,7 @@ package com.ai.assistance.operit.core.tools
 
 import android.content.Context
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.core.tools.parameters.ProxyParamsDiagnostics
 import com.ai.assistance.operit.core.performance.PerformanceMonitorManager
 import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager
 import com.ai.assistance.operit.core.tools.climode.CliToolModeSupport
@@ -145,15 +146,15 @@ fun registerAllTools(handler: AIToolHandler, context: Context) {
                 "Exactly one params parameter is required"
             )
         }
-        val paramsRaw = paramsParams.first().value.trim()
+        val paramsRaw = paramsParams.first().value
         if (paramsRaw.isBlank()) {
-            return null to buildToolErrorResult(tool, "params must be a JSON object")
+            return null to buildToolErrorResult(tool, ProxyParamsDiagnostics.describe(paramsRaw))
         }
 
         val paramsObject = try {
             JSONObject(paramsRaw)
-        } catch (_: Exception) {
-            return null to buildToolErrorResult(tool, "params must be a valid JSON object")
+        } catch (error: org.json.JSONException) {
+            return null to buildToolErrorResult(tool, ProxyParamsDiagnostics.describe(paramsRaw, error.message))
         }
 
         val forwardedParameters = mutableListOf<ToolParameter>()
