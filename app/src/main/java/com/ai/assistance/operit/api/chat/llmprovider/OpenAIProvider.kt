@@ -1411,8 +1411,8 @@ open class OpenAIProvider(
                 try {
                     JSONObject(argumentsJson)
                 } catch (e: Exception) {
-                    AppLogger.w("OpenAIProvider", "Failed to parse tool arguments: $argumentsJson", e)
-                    JSONObject()
+                    AppLogger.w("OpenAIProvider", "Invalid tool arguments: name=$name argsLen=${argumentsJson.length}")
+                    null
                 }
             } else {
                 JSONObject()
@@ -1423,15 +1423,19 @@ open class OpenAIProvider(
             xml.append("\n<$toolTagName name=\"$name\">")
 
             // 添加所有参数
-            val keys = params.keys()
-            while (keys.hasNext()) {
+            val keys = params?.keys()
+            while (keys != null && keys.hasNext()) {
                 val key = keys.next()
-                val value = params.get(key)
+                val value = requireNotNull(params).get(key)
                 // 必须对值进行XML转义，否则会破坏XML结构
                 val escapedValue = escapeXml(value.toString())
                 xml.append("\n<param name=\"$key\">$escapedValue</param>")
             }
 
+            if (params == null) {
+                xml.append("\n<param name=\"_raw_arguments\">")
+                    .append(escapeXml(argumentsJson)).append("</param>")
+            }
             xml.append("\n</$toolTagName>\n")
         }
 
@@ -1873,7 +1877,8 @@ open class OpenAIProvider(
         var streamCompletionConfirmed: Boolean = false,
         val accumulatedToolCalls: MutableMap<Int, JSONObject> = mutableMapOf(),
         val toolCallState: ToolCallState = ToolCallState(),
-        var lastProcessedToolIndex: Int? = null,
+        var emittingToolIndex: Int? = null,
+        val completedToolCalls: MutableSet<Int> = mutableSetOf(),
         val imageBuffers: MutableMap<Int, ImageBufferState> = mutableMapOf(),
         val emittedResponsesReasoningTextKeys: MutableSet<String> = mutableSetOf(),
         val responsesWebSearchItems: MutableMap<Int, JSONObject> = linkedMapOf(),
@@ -1884,85 +1889,58 @@ open class OpenAIProvider(
         val responsesLiveEmittedOutputIndexes: MutableSet<Int> = mutableSetOf()
     )
 
-    /**
-     * 处理工具切换：关闭前一个工具
-     */
-    private suspend fun handleToolSwitch(
-        prevIndex: Int,
-        state: StreamingState,
-        emitter: StreamEmitter
-    ) {
-        if (state.toolCallState.closed[prevIndex] != true && 
-            state.toolCallState.nameEmitted[prevIndex] == true) {
-            closeToolCallIfOpen(prevIndex, state, emitter)
-            AppLogger.d("AIService", "检测到工具切换，关闭前一个工具 index=$prevIndex")
-        }
-    }
-
-    /**
-     * 处理单个工具调用的增量数据
-     */
+    /** 先按索引累计，只有当前调用可以写入 XML，避免交错参数落到已关闭标签之外。 */
     private suspend fun processToolCallChunk(
         index: Int,
         deltaCall: JSONObject,
         state: StreamingState,
         emitter: StreamEmitter
     ) {
-        // 获取或创建该index的累积对象
-        val accumulated = state.accumulatedToolCalls.getOrPut(index) {
-            createToolCallAccumulator(index)
-        }
-
-        // 更新id和type
-        deltaCall.optString("id", "").let {
-            if (it.isNotEmpty()) accumulated.put("id", it)
-        }
-        deltaCall.optString("type", "").let {
-            if (it.isNotEmpty()) accumulated.put("type", it)
-        }
-
-        // 处理function字段
+        val accumulated = state.accumulatedToolCalls.getOrPut(index) { createToolCallAccumulator(index) }
+        deltaCall.optString("id", "").takeIf { it.isNotEmpty() }?.let { accumulated.put("id", it) }
+        deltaCall.optString("type", "").takeIf { it.isNotEmpty() }?.let { accumulated.put("type", it) }
         val deltaFunction = deltaCall.optJSONObject("function") ?: return
-        val accFunction = accumulated.getJSONObject("function")
-        
-        // 处理工具名
-        val name = deltaFunction.optString("name", "")
-        if (name.isNotEmpty()) {
-            accFunction.put("name", name)
-            // 流式输出开始标签
-            if (state.toolCallState.nameEmitted[index] != true) {
-                val toolTagName = state.toolCallState.getTagName(index)
-                val toolStartTag = if (state.toolCallState.emitted[index] != true) {
-                    state.toolCallState.emitted[index] = true
-                    "\n<$toolTagName name=\"$name\">"
-                } else {
-                    ""
-                }
-                if (toolStartTag.isNotEmpty()) {
-                    emitter.emitTag(toolStartTag)
-                }
-                state.toolCallState.nameEmitted[index] = true
-
-                // 如果参数先到，工具名后到，在此处一次性补喂已累计参数
-                val canonicalArgs = accFunction.optString("arguments", "")
-                if (canonicalArgs.isNotEmpty()) {
-                    feedParserFromCanonical(index, canonicalArgs, state, emitter)
-                }
-            }
+        val function = accumulated.getJSONObject("function")
+        deltaFunction.optString("name", "").takeIf { it.isNotEmpty() }?.let { function.put("name", it) }
+        val arguments = deltaFunction.optString("arguments", "")
+        if (arguments.isNotEmpty()) {
+            val previous = function.optString("arguments", "")
+            val merged = mergeCanonicalArgs(previous, arguments)
+            check(state.toolCallState.closed[index] != true || merged == previous) { "Arguments arrived after tool call completion: index=$index" }
+            function.put("arguments", merged)
         }
-        
-        // 处理参数
-        val args = deltaFunction.optString("arguments", "")
-        if (args.isNotEmpty()) {
-            val currentArgs = accFunction.optString("arguments", "")
-            val mergedArgs = mergeCanonicalArgs(currentArgs, args)
-            val changed = mergedArgs != currentArgs
-            if (changed) {
-                accFunction.put("arguments", mergedArgs)
-                if (state.toolCallState.nameEmitted[index] == true) {
-                    feedParserFromCanonical(index, mergedArgs, state, emitter)
-                }
+        emitAvailableToolCalls(state, emitter)
+    }
+
+    /** 后续调用可以先到；前一个调用的完整对象到齐或收到结束事件后才切换输出。 */
+    private suspend fun emitAvailableToolCalls(
+        state: StreamingState,
+        emitter: StreamEmitter,
+        finishAll: Boolean = false
+    ) {
+        while (true) {
+            val index = state.emittingToolIndex
+                ?: state.accumulatedToolCalls.keys.sorted().firstOrNull { state.toolCallState.closed[it] != true }
+                ?: return
+            state.emittingToolIndex = index
+            val function = state.accumulatedToolCalls.getValue(index).getJSONObject("function")
+            val name = function.optString("name", "")
+            if (name.isEmpty()) return
+            if (state.toolCallState.nameEmitted[index] != true) {
+                val tag = state.toolCallState.getTagName(index)
+                emitter.emitTag("\n<$tag name=\"${escapeXml(name)}\">")
+                state.toolCallState.emitted[index] = true
+                state.toolCallState.nameEmitted[index] = true
             }
+            val arguments = function.optString("arguments", "")
+            feedParserFromCanonical(index, arguments, state, emitter)
+            val completeObject = arguments.trimEnd().endsWith("}") && runCatching { JSONObject(arguments) }.isSuccess
+            if (!finishAll && index !in state.completedToolCalls && !completeObject) return
+            closeToolCallIfOpen(index, state, emitter)
+            if (state.toolCallState.closed[index] != true) return
+            // 只记录结构与长度，便于区分上游空参数和转换丢参，不输出命令内容。
+            AppLogger.d("AIService", "Tool arguments delivered: index=$index name=$name argsLen=${arguments.length} calls=${state.accumulatedToolCalls.size}")
+            state.emittingToolIndex = null
         }
     }
 
@@ -2025,12 +2003,6 @@ open class OpenAIProvider(
             val index = deltaCall.optInt("index", -1)
             if (index < 0) continue
 
-            // 检测工具切换
-            if (state.lastProcessedToolIndex != null && state.lastProcessedToolIndex != index) {
-                handleToolSwitch(state.lastProcessedToolIndex!!, state, emitter)
-            }
-            state.lastProcessedToolIndex = index
-
             // Chat Completions 的 tool_calls.arguments 为增量片段。
             processToolCallChunk(index, deltaCall, state, emitter)
         }
@@ -2080,8 +2052,9 @@ open class OpenAIProvider(
     }
 
     private fun hasOpenToolCalls(state: StreamingState): Boolean {
-        return state.toolCallState.nameEmitted.any { (index, emitted) ->
-            emitted && state.toolCallState.closed[index] != true
+        return state.accumulatedToolCalls.any { (index, call) ->
+            call.optJSONObject("function")?.optString("name", "").orEmpty().isNotBlank() &&
+                state.toolCallState.closed[index] != true
         }
     }
 
@@ -2089,12 +2062,7 @@ open class OpenAIProvider(
         state: StreamingState,
         emitter: StreamEmitter
     ) {
-        if (!hasOpenToolCalls(state)) return
-
-        val sortedIndices = state.accumulatedToolCalls.keys.sorted()
-        for (index in sortedIndices) {
-            closeToolCallIfOpen(index, state, emitter)
-        }
+        emitAvailableToolCalls(state, emitter, finishAll = true)
     }
 
     protected open fun formatResponsesWebSearchDisplayXml(
@@ -2757,7 +2725,6 @@ open class OpenAIProvider(
                 // 对于 output_item 事件，仅更新工具元信息（name/id）。
                 // 参数统一由 response.function_call_arguments.delta 通道累积，避免快照+增量混拼导致 JSON 破坏。
                 processToolCallChunk(outputIndex, deltaCall, state, emitter)
-                state.lastProcessedToolIndex = outputIndex
                 // 某些供应商会先发送 output_item.done，随后才发送 function_call_arguments.delta。
                 // 因此不在 output_item.done 阶段关闭工具调用，改由
                 // response.function_call_arguments.done / response.completed 统一收口。
@@ -2789,15 +2756,22 @@ open class OpenAIProvider(
                 }
 
                 processToolCallChunk(outputIndex, deltaCall, state, emitter)
-                state.lastProcessedToolIndex = outputIndex
             }
 
             "response.function_call_arguments.done" -> {
                 if (!enableToolCall) return
                 val outputIndex = jsonResponse.optInt("output_index", -1)
                 if (outputIndex >= 0) {
-                    closeToolCallIfOpen(outputIndex, state, emitter)
-                    state.lastProcessedToolIndex = outputIndex
+                    val snapshot = jsonResponse.optString("arguments", "")
+                    if (snapshot.isNotEmpty()) {
+                        val accumulated = state.accumulatedToolCalls.getOrPut(outputIndex) { createToolCallAccumulator(outputIndex) }
+                        val function = accumulated.getJSONObject("function")
+                        val existing = function.optString("arguments", "")
+                        check(snapshot.startsWith(existing)) { "Tool argument final snapshot conflicts with streamed prefix: index=$outputIndex" }
+                        function.put("arguments", snapshot)
+                    }
+                    state.completedToolCalls.add(outputIndex)
+                    emitAvailableToolCalls(state, emitter)
                 }
             }
 
@@ -2899,7 +2873,8 @@ open class OpenAIProvider(
 
             // 清空累积器
             state.accumulatedToolCalls.clear()
-            state.lastProcessedToolIndex = null
+            state.emittingToolIndex = null
+            state.completedToolCalls.clear()
         }
     }
 
