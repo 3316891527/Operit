@@ -49,7 +49,7 @@ const guide = [
   "原生工具：a2ui_catalog 查询组件、函数和参数；a2ui_icons 查询图标；a2ui_prepare(source, live=false) 编译 Express 并返回本轮卡片引用；a2ui_revise(reference, changes, remove=[]) 生成保留原卡片的新修订；a2ui_patch_data(reference, expected_version, data) 更新 live 卡片数据。",
   "这些工具直接以原生工具名调用，不经过 package_proxy，也不需要 use_package。它们沿用工具权限和角色卡可见性；生成、修订和更新必须处于真实的活动聊天请求中，不传入聊天 ID 或请求 ID。",
   "简例：root=Column(children=[Heading(text=\"标题\"),Text(text=\"内容\")])。Express 使用 name=value 参数；组件和函数的精确签名通过 a2ui_catalog 查询。模型可使用原生编译器返回的位置和错误信息修改源码。",
-  "生成流程：调用 a2ui_prepare，把返回的 reference 放在回答正文的 a2ui-ref 围栏中。围栏内容只包含引用，如 card-1。原生消息管线会展开成自包含的 a2ui v0.9 文档，Compose 再进行渲染。引用仅属于本轮请求，不能跨请求复用。",
+  "生成流程：调用 a2ui_prepare 编译并安排展示，宿主在本轮正常结束时自动把尚未展示的真实卡片加入正文，不必重写 JSON。也可在正文用 a2ui-ref 围栏输出 card-1 这样的本轮引用来指定位置，宿主展开后不会重复追加。不要把历史卡片摘要当作展示语法，引用不能跨请求复用。",
   "直接输出完整、有效的 a2ui v0.9 围栏也可由原生渲染器识别。网上的 A2UI 示例可能采用其他协议版本或组件目录；应遵循本应用的原生目录，不将通用示例视为已经兼容。",
   "界面中的本地输入、选择和试算不会自动发起模型请求。AI 提交和工具操作需要用户确认，并沿用当前聊天、候选回复和权限检查。编辑卡片不会消耗聊天输入框的草稿。",
   "live=true 必须在 source 中初始化 $/agent 对象，例如 $/agent={progress:10}，并把模型更新的数据绑定到 $/agent/progress；仅声明 $/progress=10 不符合 live 合同。更新时 data 直接传 {progress:50}，替换整个 $/agent 对象，不再包裹 agent 键。expected_version 初始为 0，每次成功后使用返回的递增版本。",

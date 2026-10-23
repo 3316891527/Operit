@@ -1773,6 +1773,16 @@ class EnhancedAIService private constructor(context: Context) {
         }
     }
 
+    /** 由宿主投递本轮已编译但未定位的卡片，与正文共用存储和渲染管线。 */
+    private suspend fun appendUnplacedA2ui(context: MessageExecutionContext, collector: StreamCollector<String>) {
+        val suffix = CardDelivery.unplaced(context.a2uiRunId, context.roundManager.getDisplayContent())
+        if (suffix.isNotEmpty()) {
+            context.streamBuffer.append(suffix)
+            context.roundManager.appendChunk(suffix)
+            collector.emit(suffix)
+        }
+    }
+
     /** 在处理完流后调用，使用增强的工具检测功能 */
     private suspend fun processStreamCompletion(
             context: MessageExecutionContext,
@@ -1813,9 +1823,10 @@ class EnhancedAIService private constructor(context: Context) {
             // We must still finalize the conversation to reset the state correctly.
             if (content.isEmpty()) {
                 AppLogger.d(TAG, "Stream content is empty. Finalizing conversation state.")
+                appendUnplacedA2ui(context, collector)
                 finalizeAssistantResponse(
                     context = context,
-                    content = content,
+                    content = context.roundManager.getDisplayContent(),
                     enableMemoryAutoUpdate = enableMemoryAutoUpdate,
                     onNonFatalError = onNonFatalError,
                     isSubTask = isSubTask,
@@ -1911,6 +1922,10 @@ class EnhancedAIService private constructor(context: Context) {
             // Check again if conversation is active
             if (!context.isConversationActive.get()) {
                 return
+            }
+
+            if (truncatedToolRecovery == null && extractedToolInvocations.isEmpty()) {
+                appendUnplacedA2ui(context, collector)
             }
 
             // Add current assistant message to conversation history

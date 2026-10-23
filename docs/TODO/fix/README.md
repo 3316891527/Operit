@@ -84,3 +84,4 @@
 - [工作流定时执行](workflow-scheduling/index.md) · `workflow-scheduling`
 
 - [包工具 JSON 参数诊断](package-proxy-json-diagnostics/index.md)
+- [A2UI 编译说明与消息投递](a2ui-generation-delivery/index.md)

@@ -263,7 +263,7 @@ internal object A2uiProtocol {
             val min = c["min"]?.jsonPrimitive?.double ?: 0.0
             val max = c["max"]?.jsonPrimitive?.double ?: 100.0
             require(min.isFinite() && max.isFinite() && min >= -1_000_000 &&
-                max <= 1_000_000 && max > min && max - min <= 1000) { "Invalid slider range" }
+                max <= 1_000_000 && max > min) { "Invalid slider range" }
             c["steps"]?.let { require((it as? JsonPrimitive)?.intOrNull in 0..999) { "Invalid slider steps" } }
         }
         if (c["component"]?.jsonPrimitive?.content == "Grid") c["columnCount"]?.let {
