@@ -43,7 +43,12 @@ import io.github.fletchmckee.liquid.rememberLiquidState
 
 /** 预览使用当前草稿及正式颜色、字体、图片气泡和玻璃渲染，不写入角色主题。 */
 @Composable
-internal fun ThemeWorkbenchPreview(editorSession: ThemeEditorSession, full: Boolean = false, layoutPreview: Boolean = false) {
+internal fun ThemeWorkbenchPreview(
+    editorSession: ThemeEditorSession,
+    full: Boolean = false,
+    layoutPreview: Boolean = false,
+    showDescription: Boolean = true,
+) {
     val values by editorSession.values.collectAsState()
     val userName by editorSession.globalUserNameFlow.collectAsState()
     val layoutSettings by editorSession.layout.collectAsState()
@@ -51,7 +56,7 @@ internal fun ThemeWorkbenchPreview(editorSession: ThemeEditorSession, full: Bool
     ThemeWorkbenchCard(
         stringResource(R.string.theme_workbench_live_preview),
         icon = Icons.Default.Visibility,
-        subtitle = stringResource(R.string.theme_workbench_preview_description),
+        subtitle = if (showDescription) stringResource(R.string.theme_workbench_preview_description) else null,
         onHeaderClick = if (full) null else ({ expanded = !expanded }),
         trailing = {
             if (!full)

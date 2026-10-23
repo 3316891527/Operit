@@ -9443,4 +9443,40 @@
     <string name="chat_batch_move_success">Moved %1$d chats</string>
     <string name="chat_batch_move_failed">Move failed. Check the selected chats and destination folder, then try again.</string>
     <string name="emoji_create_category_first">Create a group before adding emojis</string>
+
+    <!-- 主题导入与导出 -->
+    <string name="theme_transfer_title">Theme settings</string>
+    <string name="theme_transfer_export">Export theme</string>
+    <string name="theme_transfer_import">Import theme</string>
+    <string name="theme_transfer_generated">Theme code generated</string>
+    <string name="theme_transfer_preview">Theme preview</string>
+    <string name="theme_transfer_name">Theme name</string>
+    <string name="theme_transfer_author">Author</string>
+    <string name="theme_transfer_code">Share code</string>
+    <string name="theme_transfer_file">Theme file .oktheme</string>
+    <string name="theme_transfer_full_contents">Includes theme parameters, background images or video, both bubble images, custom fonts, avatars, and media adjustments.</string>
+    <string name="theme_transfer_paste">Share code or theme link</string>
+    <string name="theme_transfer_choose_file">Choose theme file</string>
+    <string name="theme_transfer_generate">Generate code</string>
+    <string name="theme_transfer_export_file">Export theme file</string>
+    <string name="theme_transfer_validate">Validate and preview</string>
+    <string name="theme_transfer_copy">Copy code</string>
+    <string name="theme_transfer_copied">Code copied</string>
+    <string name="theme_transfer_target">Choose target character</string>
+    <string name="theme_transfer_apply">Apply theme</string>
+    <string name="theme_transfer_global_layout">Also applies the global chat layout</string>
+    <string name="theme_transfer_preview_user">Me</string>
+    <string name="theme_transfer_overwrite_title">Replace character theme?</string>
+    <string name="theme_transfer_overwrite_message">“%1$s” already has a theme. Replace it?</string>
+    <string name="theme_transfer_overwrite">Replace theme</string>
+    <string name="theme_transfer_success">Theme operation completed</string>
+    <string name="theme_transfer_error_code">Invalid or damaged share code</string>
+    <string name="theme_transfer_error_config">Incomplete theme configuration or invalid parameters</string>
+    <string name="theme_transfer_error_version">This theme version is not supported</string>
+    <string name="theme_transfer_error_manifest">Theme package is missing manifest.json</string>
+    <string name="theme_transfer_error_archive">Invalid or damaged theme package</string>
+    <string name="theme_transfer_error_asset">A referenced theme asset is missing or unreadable</string>
+    <string name="theme_transfer_error_size">Theme exceeds the size limit</string>
+    <string name="theme_transfer_error_target">The target character no longer exists. Choose another character.</string>
+    <string name="theme_transfer_error_io">Unable to read or write the theme file</string>
 </resources>

@@ -45,6 +45,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Tune
 import com.ai.assistance.operit.ui.features.databackup.DataBackupOverview
+import com.ai.assistance.operit.ui.features.databackup.themes.ThemeTransferEntry
 import com.ai.assistance.operit.ui.features.databackup.components.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -754,6 +755,8 @@ ModelConfigManagementCard(
                     modelConfigFilePickerLauncher.launch(intent)
                 }
             )
+                    HorizontalDivider()
+                    ThemeTransferEntry()
                 }
             }
         }

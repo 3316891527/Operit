@@ -1081,6 +1081,26 @@ class UserPreferencesManager private constructor(private val context: Context) {
         }
     }
 
+    /** 主题导入按目标角色写入；全局聊天布局与角色主题在同一笔事务中保存。 */
+    internal suspend fun mutateThemeAndLayoutForCharacterCard(
+        characterCardId: String,
+        layout: ChatLayoutSettings,
+        transform: (ThemePreferenceValues) -> ThemePreferenceValues,
+    ) {
+        layout.validate()
+        editResourcePreferences { preferences ->
+            val prefix = getCharacterCardThemePrefix(characterCardId)
+            val values = transform(readThemePreferenceValues(preferences, prefix))
+            writeVisualThemeValues(preferences, prefix, values)
+            writeThemeTargetMetadata(preferences, prefix, values)
+            preferences[CHAT_SETTINGS_BUTTON_END_PADDING] = layout.chatSettingsButtonEndPadding
+            preferences[CHAT_AREA_HORIZONTAL_PADDING] = layout.chatAreaHorizontalPadding
+            preferences[AI_MARKDOWN_LINE_HEIGHT_MULTIPLIER] = layout.aiMarkdownLineHeightMultiplier
+            preferences[AI_MARKDOWN_LETTER_SPACING] = layout.aiMarkdownLetterSpacing
+            preferences[AI_MARKDOWN_PARAGRAPH_SPACING] = layout.aiMarkdownParagraphSpacing
+        }
+    }
+
     suspend fun resetVisualThemeForPrompt(
         target: ActivePrompt,
         values: ThemePreferenceValues,

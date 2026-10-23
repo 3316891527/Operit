@@ -1,0 +1,26 @@
+---
+fork: https://github.com/3316891527/Operit
+branch: feat/data-and-backup
+status: implemented-awaiting-ci
+---
+
+# 主题导入与导出
+
+数据与备份的单项导入导出增加主题设置，提供离线分享码和完整 `.oktheme` 文件。
+
+分享码采用紧凑 JSON、标准 zlib、无填充 Base64URL。完整文件是 ZIP，根目录为 `manifest.json`，素材放入 `assets/`。两种方式使用固定版本和字段校验，不导出用户名、角色身份、模型配置或聊天内容。
+
+导出与导入均使用底部抽屉。完整主题自动包含参数、背景图片或视频、双方气泡图片、文件字体、头像及素材调整，仅保留简短包含说明。导入先校验、预览并选择目标角色卡；默认外观直接应用，已有自定义主题必须确认覆盖。五项现有全局聊天布局随主题传递，预览中单独标示其全局范围。
+
+## 实施步骤
+
+- 新增独立 data/themesharing 协议、压缩编码、ZIP 读写和按角色导入模块
+- 新增 ui/features/databackup/themes 抽屉与预览，挂入模型配置下方
+- 补充协议、媒体保留、非法包和覆盖策略的 JVM 回归用例，交由仓库 Android Tests 执行
+- 完善全量设备验收清单，提交原功能分支并派发 Debug 与 Android Tests，不轮询 CI
+
+现有 HTML 是交互参考，Android 此前没有正式主题分享协议，不兼容演示稿生成的旧示例码。
+
+[协议与作用范围](protocol.md)
+
+[DONE] Android 实现、协议用例与全量设备清单已完成；仓库 CI 与设备验收结果另行记录。
