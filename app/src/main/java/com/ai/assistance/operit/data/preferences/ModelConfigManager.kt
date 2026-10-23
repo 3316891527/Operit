@@ -1247,6 +1247,36 @@ class ModelConfigManager(
         }
     }
 
+    // 工作区将同一草稿的上下文与总结字段一次写入，避免多个保存任务相互覆盖。
+    internal suspend fun updateContextSummarySettings(
+            configId: String,
+            contextLength: Float,
+            maxContextLength: Float,
+            enableSummary: Boolean,
+            summaryTokenThreshold: Float?,
+            enableSummaryByMessageCount: Boolean,
+            summaryMessageCountThreshold: Int?,
+            summaryCustomRules: String,
+            summarySectionOverrides: List<SummarySectionOverride>,
+            enablePreviousSummaryReview: Boolean,
+            enableSummaryDialogueReview: Boolean,
+            summaryDialogueReviewTitle: String,
+    ): ModelConfigData = updateConfigInternal(configId) { current ->
+        current.copy(
+            contextLength = contextLength,
+            maxContextLength = maxContextLength,
+            enableSummary = enableSummary,
+            summaryTokenThreshold = if (enableSummary) requireNotNull(summaryTokenThreshold) else current.summaryTokenThreshold,
+            enableSummaryByMessageCount = enableSummaryByMessageCount,
+            summaryMessageCountThreshold = if (enableSummary && enableSummaryByMessageCount) requireNotNull(summaryMessageCountThreshold) else current.summaryMessageCountThreshold,
+            summaryCustomRules = summaryCustomRules,
+            summarySectionOverrides = summarySectionOverrides,
+            enablePreviousSummaryReview = enablePreviousSummaryReview,
+            enableSummaryDialogueReview = enableSummaryDialogueReview,
+            summaryDialogueReviewTitle = summaryDialogueReviewTitle,
+        )
+    }
+
     suspend fun updatePreviousSummaryReviewSettings(
             configId: String,
             enabled: Boolean

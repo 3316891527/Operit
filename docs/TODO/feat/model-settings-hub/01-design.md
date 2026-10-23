@@ -43,11 +43,11 @@
 
 手机上的既有第二版文件直接更新；统一索引主入口指向该文件。仓库保持原有 `design.html` 路径，说明文档同步改为当前四标签方案。
 
-本轮仍为 HTML 审阅阶段，修改只保存在页面内存中。原连接测试没有发起真实请求；现有 Android 配置和导航尚未迁移，资源下载、OCR 与插件外置、工程模板拆包、终端环境预装不在本轮范围。
+本文记录 HTML 的设计范围。对应 Android 工作区已经按四标签接入，实际保存、导航和能力复用见 [实现说明](02-implementation.md)。资源下载、OCR 与插件外置、工程模板拆包、终端环境预装不在本轮范围。
 
 ## 源码依据
 
 - [现有模型工作区](../../../../app/src/main/java/com/ai/assistance/operit/ui/features/settings/screens/ModelConfigScreen.kt)
 - [现有功能分配](../../../../app/src/main/java/com/ai/assistance/operit/ui/features/settings/model/ModelFunctionAssignments.kt)
-- [现有上下文与总结](../../../../app/src/main/java/com/ai/assistance/operit/ui/features/settings/screens/ContextSummarySettingsScreen.kt)
+- [现有上下文与总结](../../../../app/src/main/java/com/ai/assistance/operit/ui/features/settings/contextsummary/ModelContextSummaryContent.kt)
 - [现有工作区能力范围](../chat-batch-and-settings/07-模型工作区与居中弹窗.md)
