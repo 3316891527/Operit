@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 补齐此前缺少的本地化译文。 -->
+    <string name="crash_report_export_logs_compact">ログのエクスポート</string>
+    <string name="crash_report_wrap_stack">自動行折り返し</string>
+</resources>

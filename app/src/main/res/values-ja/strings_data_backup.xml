@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 补齐此前缺少的本地化译文。 -->
+    <string name="data_backup_count_characters">キャラクターカード</string>
+    <string name="data_backup_chat_records">チャット履歴管理</string>
+    <string name="data_backup_export_logs">ログのエクスポート</string>
+    <string name="data_backup_log_filters">エクスポートのフィルタリング</string>
+    <string name="data_backup_clear_logs">ログをクリアする</string>
+    <string name="data_backup_ungrouped">グループ化されていない</string>
+</resources>
