@@ -564,10 +564,6 @@
     <string name="chat_style_cursor_user_bubble_water_glass_desc">Cuando está activado, el fondo del globo de usuario en modo comando usará un efecto de cristal acuoso y desactivará el cristal esmerilado</string>
 
     <!-- Toolbox Categories -->
-    <string name="tool_category_all">Todas las herramientas</string>
-    <string name="tool_category_file_management">Gestión de archivos</string>
-    <string name="tool_category_development">Herramientas de desarrollo</string>
-    <string name="tool_category_system">Herramientas del sistema</string>
 
     <!-- Tool Names -->
     <string name="tool_file_manager">Gestor de archivos</string>
@@ -595,7 +591,6 @@
     <string name="tool_log_viewer">Visor de registros</string>
     <string name="tool_log_viewer_desc">Captura y visualización en tiempo real de registros del sistema y aplicaciones con filtrado y búsqueda</string>
     <string name="tool_token_config_desc">Abrir la página de obtención y configuración de la clave API para completar rápidamente la integración del modelo</string>
-    <string name="toolbox_description">Colección de herramientas convenientes y prácticas para mejorar la eficiencia del trabajo</string>
 
     <!-- MCP Config Screen -->
     <string name="import_or_connect_mcp_service">Importar o conectar servicio MCP</string>
@@ -732,27 +727,6 @@
     <string name="crash_report_export_failed">Error al exportar: %1$s</string>
 
     <!-- Toolbox Permission Manager -->
-    <string name="toolbox_permissions_search_hint">Buscar aplicaciones</string>
-    <string name="toolbox_permissions_system_apps">Aplicaciones del sistema</string>
-    <string name="toolbox_permissions_app_count">%d aplicaciones en total</string>
-    <string name="toolbox_permissions_loading_apps">Cargando lista de aplicaciones…</string>
-    <string name="toolbox_permissions_no_match">No se encontraron aplicaciones coincidentes</string>
-    <string name="toolbox_permissions_try_other_keywords">Pruebe con otras palabras clave</string>
-    <string name="toolbox_permissions_try_system_apps">Pruebe marcar "Aplicaciones del sistema" para ver más</string>
-    <string name="toolbox_permissions_no_apps">No se encontraron aplicaciones</string>
-    <string name="toolbox_permissions_reset">Restablecer permisos</string>
-    <string name="toolbox_permissions_overview">Resumen de permisos</string>
-    <string name="toolbox_permissions_total">Permisos totales</string>
-    <string name="toolbox_permissions_granted">Concedidos</string>
-    <string name="toolbox_permissions_dangerous">Permisos peligrosos</string>
-    <string name="toolbox_permissions_loading_info">Cargando información de permisos…</string>
-    <string name="toolbox_permissions_no_special">Esta aplicación no tiene permisos especiales</string>
-    <string name="toolbox_permissions_no_special_desc">Esto significa que la aplicación no necesita acceso a datos o funciones sensibles</string>
-    <string name="toolbox_permissions_count_suffix"> permisos</string>
-    <string name="toolbox_permissions_view">Ver permisos</string>
-    <string name="toolbox_permissions_get_error">Error al obtener permisos: %s</string>
-    <string name="toolbox_permissions_modify_error">Error al modificar permisos: %s</string>
-    <string name="toolbox_permissions_reset_error">Error al restablecer permisos: %s</string>
     <string name="try_different_keywords">Pruebe con palabras clave diferentes</string>
     <string name="try_show_system_apps">Pruebe marcar "Aplicaciones del sistema" para ver más aplicaciones</string>
     <string name="no_apps_found_anywhere">No se encontraron aplicaciones</string>
@@ -939,61 +913,12 @@
     <string name="preferences_intro_template_no_age">Soy %1$s, %2$s. Estoy particularmente interesado en %3$s. En comunicación, prefiero %4$s.</string>
 
     <!-- Occupation Options -->
-    <string name="occupation_student">Estudiante</string>
-    <string name="occupation_employee">Empleado</string>
-    <string name="occupation_teacher">Profesor</string>
-    <string name="occupation_doctor">Doctor</string>
-    <string name="occupation_engineer">Ingeniero</string>
-    <string name="occupation_designer">Diseñador</string>
-    <string name="occupation_programmer">Programador</string>
-    <string name="occupation_business_owner">Empresario</string>
-    <string name="occupation_sales">Ventas</string>
-    <string name="occupation_customer_service">Atención al Cliente</string>
-    <string name="occupation_freelancer">Freelancer</string>
-    <string name="occupation_retired">Jubilado</string>
-    <string name="occupation_other">Otro</string>
 
     <!-- Personality Traits -->
-    <string name="personality_extroverted">Extrovertido</string>
-    <string name="personality_introverted">Introvertido</string>
-    <string name="personality_sensitive">Sensible</string>
-    <string name="personality_rational">Racional</string>
-    <string name="personality_emotional">Emocional</string>
-    <string name="personality_cautious">Cauteloso</string>
-    <string name="personality_adventurous">Aventurero</string>
-    <string name="personality_patient">Paciente</string>
-    <string name="personality_impatient">Impaciente</string>
-    <string name="personality_optimistic">Optimista</string>
-    <string name="personality_pessimistic">Pesimista</string>
-    <string name="personality_curious">Curioso</string>
-    <string name="personality_conservative">Conservador</string>
-    <string name="personality_innovative">Innovador</string>
-    <string name="personality_meticulous">Meticuloso</string>
-    <string name="personality_rough">Tosco</string>
 
     <!-- Identity Options -->
-    <string name="identity_student">Estudiante</string>
-    <string name="identity_teacher">Profesor</string>
-    <string name="identity_parent">Padre/Madre</string>
-    <string name="identity_music_lover">Amante de la Música</string>
-    <string name="identity_art_lover">Amante del Arte</string>
-    <string name="identity_gamer">Gamer</string>
-    <string name="identity_athlete">Atleta</string>
-    <string name="identity_tech_enthusiast">Entusiasta de la Tecnología</string>
-    <string name="identity_traveler">Viajero</string>
-    <string name="identity_foodie">Amante de la Comida</string>
-    <string name="identity_entrepreneur">Emprendedor</string>
-    <string name="identity_professional">Profesional</string>
 
     <!-- AI Style Options -->
-    <string name="ai_style_professional">Profesional y Riguroso</string>
-    <string name="ai_style_humorous">Animado y Humorístico</string>
-    <string name="ai_style_direct">Conciso y Directo</string>
-    <string name="ai_style_patient">Paciente y Detallado</string>
-    <string name="ai_style_creative">Pensamiento Creativo</string>
-    <string name="ai_style_technical">Orientado a la Técnica</string>
-    <string name="ai_style_educational">Guía Educativa</string>
-    <string name="ai_style_supportive">Apoyo Emocional</string>
 
     <!-- User Preferences Settings Screen -->
     <string name="default_profile">Perfil Predeterminado</string>
@@ -2405,10 +2330,6 @@
     <string name="dangerous_permission">Permiso peligroso</string>
     <string name="granted">Concedido</string>
     <string name="not_granted">No concedido</string>
-    <string name="toolbox_title">Caja de herramientas</string>
-    <string name="toolbox_subtitle">Conjunto de herramientas de desarrollo y administración del sistema</string>
-    <string name="toolbox_no_tools">No hay herramientas en esta categoría</string>
-    <string name="toolbox_animation_loading">Cargando herramientas...</string>
     <string name="file_manager_title">Administrador de archivos</string>
     <string name="file_manager_dual_pane">Modo de panel doble</string>
     <string name="file_manager_multi_select">Modo de selección múltiple</string>
@@ -6217,13 +6138,6 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="profile_identity_value">Identidad: %1$s</string>
     <string name="profile_occupation_value">Ocupación: %1$s</string>
     <string name="profile_ai_style_value">Estilo de IA esperado: %1$s</string>
-    <string name="profile_regex_birth_date">(fecha de nacimiento|fecha de nacimiento completa)[:：\s]+([\d-]+)</string>
-    <string name="profile_regex_birth_year">(año de nacimiento|edad)[:：\s]+(\d+)</string>
-    <string name="profile_regex_gender">género[:：\s]+([\u4e00-\u9fa5]+)</string>
-    <string name="profile_regex_personality">personalidad(rasgos)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_identity">identidad(autopercepción)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_occupation">ocupación[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_ai_style">(estilo de IA|estilo de IA esperado|estilo de IA preferido)[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
     <string name="ai_message_user">Usuario</string>
     <string name="ai_message_replying_to_previous">El usuario está respondiendo a este mensaje tuyo anterior:</string>
     <string name="ai_message_executing_deep_search">Ejecutando búsqueda profunda...</string>

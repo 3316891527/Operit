@@ -1503,10 +1503,6 @@
     <string name="skill_zip_package">Paket ZIP Skill</string>
     <string name="get_skill">Dapatkan Skill</string>
     <string name="overwrite_existing">Timpa Skill dengan nama yang sama</string>
-    <string name="tool_category_all">Semua Alat</string>
-    <string name="tool_category_file_management">Manajemen Berkas</string>
-    <string name="tool_category_development">Alat Pengembangan</string>
-    <string name="tool_category_system">Alat Sistem</string>
     <string name="tool_file_manager">Manajer Berkas</string>
     <string name="tool_file_manager_desc">Jelajahi dan kelola berkas perangkat, mendukung berbagai operasi</string>
     <string name="tool_tts">Teks ke Ucapan</string>
@@ -1857,10 +1853,6 @@
     <string name="dangerous_permission">Izin Berbahaya</string>
     <string name="granted">Telah Diizinkan</string>
     <string name="not_granted">Belum Diizinkan</string>
-    <string name="toolbox_title">Kotak Peralatan</string>
-    <string name="toolbox_subtitle">Kumpulan alat pengembangan dan manajemen sistem</string>
-    <string name="toolbox_no_tools">Belum ada alat dalam kategori ini</string>
-    <string name="toolbox_animation_loading">Memuat alat...</string>
     <string name="file_manager_title">Manajer File</string>
     <string name="file_manager_dual_pane">Mode Panel Ganda</string>
     <string name="file_manager_multi_select">Mode Pilihan Ganda</string>
@@ -1884,21 +1876,6 @@
     <string name="file_manager_operation_failed">Operasi file gagal</string>
     <string name="file_manager_zoom_in">Perbesar</string>
 
-    <string name="toolbox_permissions_try_system_apps">Coba centang "Aplikasi Sistem" untuk melihat lebih banyak aplikasi</string>
-    <string name="toolbox_permissions_no_apps">Tidak ditemukan aplikasi apa pun</string>
-    <string name="toolbox_permissions_reset">Atur ulang izin</string>
-    <string name="toolbox_permissions_overview">Ikhtisar Izin</string>
-    <string name="toolbox_permissions_total">Total Izin</string>
-    <string name="toolbox_permissions_granted">Diizinkan</string>
-    <string name="toolbox_permissions_dangerous">Izin Berbahaya</string>
-    <string name="toolbox_permissions_loading_info">Memuat informasi izin…</string>
-    <string name="toolbox_permissions_no_special">Aplikasi ini tidak meminta izin khusus apa pun</string>
-    <string name="toolbox_permissions_no_special_desc">Ini berarti aplikasi tidak perlu mengakses data atau fungsi sensitif</string>
-    <string name="toolbox_permissions_count_suffix"> izin</string>
-    <string name="toolbox_permissions_view">Lihat Izin</string>
-    <string name="toolbox_permissions_get_error">Gagal mendapatkan izin: %s</string>
-    <string name="toolbox_permissions_modify_error">Gagal mengubah izin: %s</string>
-    <string name="toolbox_permissions_reset_error">Gagal mengatur ulang izin: %s</string>
     <string name="try_different_keywords">Coba gunakan kata kunci lain untuk mencari</string>
     <string name="try_show_system_apps">Coba centang "Aplikasi Sistem" untuk melihat lebih banyak aplikasi</string>
     <string name="no_apps_found_anywhere">Tidak ditemukan aplikasi apa pun</string>
@@ -2026,7 +2003,6 @@
     <string name="process_limit_error_output">Output kesalahan</string>
     <string name="process_limit_exit_code">Kode keluar: %d</string>
     <string name="process_limit_command">Perintah</string>
-    <string name="toolbox_description">Kumpulan alat praktis yang nyaman untuk meningkatkan efisiensi kerja Anda</string>
     <string name="autoglm_status_running">Sedang menjalankan konfigurasi satu klik, harap tunggu...</string>
     <string name="autoglm_status_success">Konfigurasi satu klik AutoGLM telah selesai:
 - Konfigurasi model pengontrol UI AutoGLM telah dibuat atau diperbarui (autoglm-phone, Zhipu)
@@ -2087,12 +2063,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="remote_service_updated">Layanan jarak jauh %1$s telah diperbarui</string>
     <string name="plugin_zip_file">File zip plugin</string>
     <string name="mcp_plugin">Plugin MCP</string>
-    <string name="toolbox_permissions_search_hint">Cari aplikasi</string>
-    <string name="toolbox_permissions_system_apps">Aplikasi sistem</string>
-    <string name="toolbox_permissions_app_count">Total %d aplikasi</string>
-    <string name="toolbox_permissions_loading_apps">Memuat daftar aplikasi...</string>
-    <string name="toolbox_permissions_no_match">Tidak ada aplikasi yang cocok ditemukan</string>
-    <string name="toolbox_permissions_try_other_keywords">Coba cari dengan kata kunci lain</string>
 
     <string name="file_dialog_compress_filename">Nama file terkompresi</string>
     <string name="file_dialog_compress_button">Kompres</string>
@@ -2774,45 +2744,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="workspace_close">Tutup</string>
 
     <string name="preferences_intro_template_no_age">Saya %1$s, %2$s. Saya sangat tertarik pada %3$s. Dalam komunikasi, saya suka %4$s.</string>
-    <string name="occupation_student">Pelajar</string>
-    <string name="occupation_employee">Karyawan</string>
-    <string name="occupation_teacher">Guru</string>
-    <string name="occupation_doctor">Dokter</string>
-    <string name="occupation_engineer">Insinyur</string>
-    <string name="occupation_designer">Desainer</string>
-    <string name="occupation_programmer">Programmer</string>
-    <string name="occupation_business_owner">Pemilik bisnis</string>
-    <string name="occupation_sales">Sales</string>
-    <string name="occupation_customer_service">Customer service</string>
-    <string name="occupation_freelancer">Freelancer</string>
-    <string name="occupation_retired">Pensiunan</string>
-    <string name="occupation_other">Lainnya</string>
-    <string name="personality_extroverted">Ekstrover</string>
-    <string name="personality_introverted">Introver</string>
-    <string name="personality_sensitive">Sensitif</string>
-    <string name="personality_rational">Rasional</string>
-    <string name="personality_emotional">Emosional</string>
-    <string name="personality_cautious">Hati-hati</string>
-    <string name="personality_adventurous">Petualang</string>
-    <string name="personality_patient">Sabar</string>
-    <string name="personality_impatient">Tidak sabar</string>
-    <string name="personality_optimistic">Optimis</string>
-    <string name="personality_pessimistic">Pesimis</string>
-    <string name="personality_curious">Penasaran</string>
-    <string name="personality_conservative">Konservatif</string>
-    <string name="personality_innovative">Inovatif</string>
-    <string name="personality_meticulous">Teliti</string>
-    <string name="personality_rough">Kasar</string>
-    <string name="identity_student">Pelajar</string>
-    <string name="identity_teacher">Guru</string>
-    <string name="identity_parent">Orang tua</string>
-    <string name="identity_music_lover">Pecinta musik</string>
-    <string name="identity_art_lover">Pecinta seni</string>
-    <string name="identity_gamer">Gamer</string>
-    <string name="identity_athlete">Atlet</string>
-    <string name="identity_tech_enthusiast">Penggemar teknologi</string>
-    <string name="identity_traveler">Pecinta perjalanan</string>
-    <string name="identity_foodie">Foodie</string>
 
     <string name="new_group_name">Nama grup baru</string>
     <string name="confirm_delete_group">Konfirmasi hapus grup</string>
@@ -2883,16 +2814,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="settings_custom_headers_subtitle">Konfigurasi bidang header permintaan API</string>
     <string name="headers_configured_count">%1$d item telah dikonfigurasi</string>
 
-    <string name="identity_entrepreneur">Pengusaha</string>
-    <string name="identity_professional">Profesional</string>
-    <string name="ai_style_professional">Profesional dan Teliti</string>
-    <string name="ai_style_humorous">Ceria dan Humoris</string>
-    <string name="ai_style_direct">Singkat dan Langsung</string>
-    <string name="ai_style_patient">Sabar dan Teliti</string>
-    <string name="ai_style_creative">Berpikir Kreatif</string>
-    <string name="ai_style_technical">Berorientasi Teknis</string>
-    <string name="ai_style_educational">Panduan Instruksional</string>
-    <string name="ai_style_supportive">Dukungan Emosional</string>
     <string name="default_profile">Profil Default</string>
     <string name="date_format_chinese">yyyy年MM月dd日</string>
     <string name="save_action">Simpan</string>
@@ -6008,11 +5929,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="profile_identity_value">Identitas: %1$s</string>
     <string name="profile_occupation_value">Pekerjaan: %1$s</string>
     <string name="profile_ai_style_value">Gaya AI yang diharapkan: %1$s</string>
-    <string name="profile_regex_birth_date">(Tanggal lahir|Tanggal kelahiran)[:：\s]+([\d-]+)</string>
-    <string name="profile_regex_birth_year">(Tahun lahir|Usia)[:：\s]+(\d+)</string>
-    <string name="profile_regex_gender">Jenis kelamin[:：\s]+([\u4e00-\u9fa5]+)</string>
-    <string name="profile_regex_personality">Kepribadian(ciri-ciri)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_identity">Identitas(pengakuan)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
 
     <string name="skill_imported_with_desc">Skill diimpor: %1$s (%2$s)</string>
     <string name="skill_imported">Skill diimpor: %1$s</string>
@@ -6145,8 +6061,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="plan_complexity_compare">Bandingkan</string>
     <string name="plan_complexity_research">Teliti</string>
 
-    <string name="profile_regex_occupation">Pekerjaan[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_ai_style">(Gaya AI|Gaya AI yang Diharapkan|Gaya AI yang Disukai)[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
     <string name="ai_message_user">Pengguna</string>
     <string name="ai_message_replying_to_previous">Pengguna sedang membalas pesan Anda sebelumnya ini:</string>
     <string name="ai_message_executing_deep_search">Sedang melakukan pencarian mendalam...</string>
