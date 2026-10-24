@@ -92,4 +92,6 @@
     <string name="memory_relation_existing">Existing relationship</string>
     <string name="memory_content_type">Content type</string>
     <string name="memory_workbench_all_folders">All folders</string>
+    <string name="memory_workbench_select_source">Choose source memory</string>
+    <string name="memory_workbench_select_target">Choose target memory</string>
 </resources>

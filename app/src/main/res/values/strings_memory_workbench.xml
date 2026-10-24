@@ -92,4 +92,6 @@
     <string name="memory_relation_existing">原有关系</string>
     <string name="memory_content_type">内容类型</string>
     <string name="memory_workbench_all_folders">全部文件夹</string>
+    <string name="memory_workbench_select_source">选择起点记忆</string>
+    <string name="memory_workbench_select_target">选择终点记忆</string>
 </resources>

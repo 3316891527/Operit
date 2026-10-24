@@ -9,7 +9,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +23,7 @@ import com.ai.assistance.operit.ui.components.slider.WorkbenchSlider
 
 internal data class MemoryChoice(val id: String, val title: String, val subtitle: String = "")
 
-/** 下拉框和操作菜单共享表面样式，选项改变前不修改调用方草稿。 */
+/** 空间与工具操作使用锚定菜单，表单选择使用独立弹窗。 */
 @Composable
 internal fun MemoryMenu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     DropdownMenu(
@@ -38,53 +37,6 @@ internal fun MemoryMenu(expanded: Boolean, onDismiss: () -> Unit, content: @Comp
         properties = PopupProperties(focusable = true),
         content = content,
     )
-}
-
-@Composable
-internal fun MemoryPicker(label: String, value: String, choices: List<MemoryChoice>, enabled: Boolean = true, onSelect: (String) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    var query by remember { mutableStateOf("") }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Box {
-            Surface(
-                onClick = { query = ""; expanded = true },
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            ) {
-                Row(Modifier.padding(horizontal = 12.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(choices.firstOrNull { it.id == value }?.title.orEmpty(), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
-                }
-            }
-            MemoryMenu(expanded, { expanded = false }) {
-                if (choices.size > 8) {
-                    OutlinedTextField(
-                        value = query, onValueChange = { query = it }, singleLine = true,
-                        placeholder = { Text(stringResource(R.string.memory_workbench_find_option)) },
-                        modifier = Modifier.padding(10.dp).fillMaxWidth(),
-                    )
-                }
-                val filtered = choices.filter { (it.title + " " + it.subtitle).contains(query.trim(), ignoreCase = true) }
-                if (filtered.isEmpty()) Text(stringResource(R.string.memory_workbench_no_options), Modifier.padding(16.dp))
-                filtered.forEach { choice ->
-                    DropdownMenuItem(
-                        text = {
-                            Column {
-                                Text(choice.title, style = MaterialTheme.typography.bodyMedium)
-                                if (choice.subtitle.isNotBlank()) Text(choice.subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        },
-                        trailingIcon = { if (value == choice.id) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary) },
-                        onClick = { expanded = false; onSelect(choice.id) },
-                    )
-                }
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

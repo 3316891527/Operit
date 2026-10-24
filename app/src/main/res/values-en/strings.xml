@@ -9535,4 +9535,22 @@
     <string name="voice_message_understanding_failed">Unable to process voice. Check audio understanding and speech recognition settings, then retry</string>
     <string name="voice_message_understanding_timeout">Audio understanding timed out</string>
     <string name="voice_message_understanding_prompt">Faithfully extract what the user says in this recording. Briefly include audible tone, delivery, or background sounds only when they help explain the intent. Do not answer or execute the request, infer facts not present, or call tools. Return the voice content for the ongoing conversation.</string>
+
+    <!-- 补齐此前缺少的本地化译文。 -->
+    <string name="agreement_document_title">Operit Kong User Agreement and Privacy Policy</string>
+    <string name="system_permission_notifications">Notifications</string>
+    <string name="system_permission_app_list">App list</string>
+    <string name="system_permission_usage_access">Usage access</string>
+    <string name="system_permission_write_settings">Modify system settings</string>
+    <string name="status_available">Available</string>
+    <string name="status_unavailable">Unavailable</string>
+    <string name="data_recovery_configuration_file_domain_issue">Invalid configuration file content: %1$s. Repair is possible after preserving the original file.</string>
+    <string name="tool_permission_execution_denied">Tool execution permission denied.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">Display over other apps permission is required to confirm tool execution.</string>
+    <string name="tool_permission_confirmation_timeout">Tool execution confirmation timed out.</string>
+    <string name="colorpicker_select_thinking_particle">Choose thinking particle color</string>
+    <string name="theme_thinking_particle_color">Particle color</string>
+    <string name="theme_thinking_particle_color_desc">Customize the color of particles flowing along the slider while thinking is enabled. White is used by default.</string>
+    <string name="theme_thinking_particle_color_title">Thinking particle color</string>
+    <string name="onboarding_brand_name">Operit</string>
 </resources>

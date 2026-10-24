@@ -39,6 +39,7 @@
 - [Incremental Private Publisher Projection](market_private_publisher_incremental_20260728/index.md) · `market_private_publisher_incremental_20260728`
 - [Marketplace client-version compatibility](market_version_compatibility_20260805/index.md) · `market_version_compatibility_20260805`
 - [市场版本范围下载状态](market_version_download_state/index.md) · `market_version_download_state`
+- [记忆工作台选择器与默认空间删除状态](memory-workbench-selectors/index.md)
 - [记忆检索相关性与诊断（#1320）](memory-search-1320/01-relevance-and-diagnostics.md) · `memory-search-1320`
 - [额外信息注入并发时限](message_insert_parallel_deadline_20260808/index.md) · `message_insert_parallel_deadline_20260808`
 - [模型配置默认启用 Tool Call](model_tool_call_default_20260807/index.md) · `model_tool_call_default_20260807`
