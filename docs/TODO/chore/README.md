@@ -20,3 +20,4 @@
 - [Tools 目录重整](tools_directory_reorganization/index.md) · `tools_directory_reorganization`
 - [工具箱与旧用户偏好字符串清理](unused-string-resources/index.md) · `unused-string-resources`
 - [1.12.2+10 发布同步](release-1.12.2-plus-10/index.md) · `release-1.12.2-plus-10`
+- [1.12.2+11 发布同步](release-1.12.2-plus-11/index.md) · `release-1.12.2-plus-11`
