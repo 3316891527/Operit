@@ -233,6 +233,8 @@ fun UserMessageComposable(
         Card(
             modifier =
             Modifier
+                // 语音卡片按内容收紧后，需要单独保留用户消息的右侧归属。
+                .then(if (voiceMessage != null) Modifier.align(Alignment.End) else Modifier)
                 .then(
                     if (isHiddenPlaceholder || voiceMessage != null) {
                         Modifier.widthIn(max = 320.dp)

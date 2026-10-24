@@ -33,7 +33,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -42,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -60,7 +58,6 @@ internal fun VoiceMessageSheetContent(
     onDismiss: () -> Unit,
     onFinish: () -> Unit,
     onRecordAgain: () -> Unit,
-    onRetry: () -> Unit,
     onSend: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -129,15 +126,7 @@ internal fun VoiceMessageSheetContent(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                        if (state.phase == VoiceMessagePhase.TRANSCRIBING) {
-                            LinearProgressIndicator(Modifier.fillMaxWidth().height(3.dp).clip(CircleShape))
-                            Text(
-                                stringResource(R.string.voice_message_transcribing),
-                                color = colors.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        state.message?.let { message ->
+                        state.message?.takeIf { it.transcript.isNotBlank() }?.let { message ->
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
                                     stringResource(R.string.voice_message_transcript_title),
@@ -164,7 +153,7 @@ internal fun VoiceMessageSheetContent(
                 }
             }
 
-            VoiceMessageSheetActions(state, sending, onFinish, onRecordAgain, onRetry, onSend)
+            VoiceMessageSheetActions(state, sending, onFinish, onRecordAgain, onSend)
         }
     }
 }
@@ -222,25 +211,22 @@ private fun VoiceMessageSheetActions(
     sending: Boolean,
     onFinish: () -> Unit,
     onRecordAgain: () -> Unit,
-    onRetry: () -> Unit,
     onSend: () -> Unit,
 ) {
     val phase = state.phase
-    val showRecordAgain = state.recording != null && (phase == VoiceMessagePhase.READY || phase == VoiceMessagePhase.ERROR)
-    val busy = sending || phase == VoiceMessagePhase.PREPARING || phase == VoiceMessagePhase.TRANSCRIBING
+    val showRecordAgain = state.recording != null && phase == VoiceMessagePhase.READY
+    val busy = sending || phase == VoiceMessagePhase.PREPARING
     val action = when (phase) {
         VoiceMessagePhase.RECORDING -> onFinish
         VoiceMessagePhase.READY -> onSend
-        VoiceMessagePhase.ERROR -> if (state.recording != null) onRetry else onRecordAgain
+        VoiceMessagePhase.ERROR -> onRecordAgain
         else -> onFinish
     }
     val label = when {
         sending -> R.string.voice_message_sending
         phase == VoiceMessagePhase.RECORDING -> R.string.voice_message_done
         phase == VoiceMessagePhase.READY -> R.string.voice_message_send
-        phase == VoiceMessagePhase.TRANSCRIBING -> R.string.voice_message_transcribing
         phase == VoiceMessagePhase.PREPARING -> R.string.voice_message_preparing
-        state.recording != null -> R.string.voice_message_retry
         else -> R.string.voice_message_rerecord
     }
     val icon = when (phase) {

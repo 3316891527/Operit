@@ -21,13 +21,13 @@ internal suspend fun transcribeVoiceMessage(context: Context, recording: Recorde
         val input = ByteBuffer.wrap(pcm).order(ByteOrder.LITTLE_ENDIAN)
         val samples = FloatArray(pcm.size / 2) { input.short / 32768f }
         val service = SpeechServiceFactory.createSpeechService(context)
+        val busyStates = setOf(
+            com.ai.assistance.operit.api.speech.SpeechService.RecognitionState.PREPARING,
+            com.ai.assistance.operit.api.speech.SpeechService.RecognitionState.RECOGNIZING,
+            com.ai.assistance.operit.api.speech.SpeechService.RecognitionState.PROCESSING,
+        )
+        check(service.currentState !in busyStates) { context.getString(R.string.voice_message_stt_busy) }
         try {
-            val busyStates = setOf(
-                com.ai.assistance.operit.api.speech.SpeechService.RecognitionState.PREPARING,
-                com.ai.assistance.operit.api.speech.SpeechService.RecognitionState.RECOGNIZING,
-                com.ai.assistance.operit.api.speech.SpeechService.RecognitionState.PROCESSING,
-            )
-            check(service.currentState !in busyStates) { context.getString(R.string.voice_message_stt_busy) }
             check(service.initialize()) {
                 context.getString(R.string.voice_message_stt_failed) + " " + service.recognitionErrorFlow.value.message
             }

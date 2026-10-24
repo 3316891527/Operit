@@ -9510,9 +9510,7 @@
     <string name="voice_message_confirm_title">Review voice message</string>
     <string name="voice_message_silence_hint">Stops after 3 seconds of silence · 60 seconds max</string>
     <string name="voice_message_done">Done speaking</string>
-    <string name="voice_message_transcribing">Transcribing voice…</string>
     <string name="voice_message_rerecord">Record again</string>
-    <string name="voice_message_retry">Retry transcription</string>
     <string name="voice_message_permission">Microphone permission is required to record voice</string>
     <string name="voice_message_record_failed">Recording failed. Please try again</string>
     <string name="voice_message_no_speech">No speech detected. Please record again</string>
@@ -9529,9 +9527,12 @@
     <string name="voice_message_confirm_hint">Listen back and send when ready</string>
     <string name="voice_message_recording">Recording</string>
     <string name="voice_message_preparing">Preparing microphone…</string>
-    <string name="voice_message_transcript_title">Transcript</string>
+    <string name="voice_message_transcript_title">Voice content</string>
     <string name="voice_message_send">Send voice</string>
     <string name="voice_message_sending">Sending…</string>
     <string name="voice_message_text">Text</string>
     <string name="voice_message_collapse_text">Hide</string>
+    <string name="voice_message_understanding_failed">Unable to process voice. Check audio understanding and speech recognition settings, then retry</string>
+    <string name="voice_message_understanding_timeout">Audio understanding timed out</string>
+    <string name="voice_message_understanding_prompt">Faithfully extract what the user says in this recording. Briefly include audible tone, delivery, or background sounds only when they help explain the intent. Do not answer or execute the request, infer facts not present, or call tools. Return the voice content for the ongoing conversation.</string>
 </resources>

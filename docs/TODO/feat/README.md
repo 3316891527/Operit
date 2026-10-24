@@ -77,4 +77,4 @@
 
 - [模型设置与工具修复统一联调](settings-tools-integration/index.md)
 
-- [单独发送的语音条与 STT 输入](voice-messages/index.md)
+- [单独发送的语音条与音频理解](voice-messages/index.md)

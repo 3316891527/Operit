@@ -1,13 +1,17 @@
 package com.ai.assistance.operit.core.chat.voice
 
 import com.ai.assistance.operit.data.model.AttachmentInfo
+import kotlin.math.roundToInt
 
-/** 录音附件与转写共同保存，模型请求只使用转写文字。 */
+enum class VoiceInputMode { TEXT, AUDIO }
+
+/** 旧语音保留转写文字，新语音保留可直接理解的录音。 */
 data class VoiceMessageData(
     val attachment: AttachmentInfo,
     val durationMs: Long,
     val waveform: List<Float>,
     val transcript: String,
+    val inputMode: VoiceInputMode = VoiceInputMode.TEXT,
 )
 
 object VoiceMessageMarkup {
@@ -17,13 +21,15 @@ object VoiceMessageMarkup {
     private val transcript = Regex("<transcript>([\\s\\S]*?)</transcript>")
 
     fun encode(message: VoiceMessageData): String {
-        require(message.durationMs > 0 && message.transcript.isNotBlank())
+        require(message.durationMs > 0 && (message.inputMode == VoiceInputMode.AUDIO || message.transcript.isNotBlank()))
         require(message.attachment.mimeType == "audio/wav")
         require(message.attachment.filePath.isNotBlank() && message.attachment.fileName.isNotBlank())
         require(message.attachment.fileSize >= 44)
         require(message.waveform.size <= 64 && message.waveform.all { it.isFinite() && it in 0f..1f })
-        val waves = message.waveform.joinToString(",") { ((it.coerceIn(0f, 1f) * 100).toInt() / 100f).toString() }
-        return "<voice_bar version=\"1\" duration_ms=\"${message.durationMs}\" waveform=\"$waves\">" +
+        val waves = message.waveform.joinToString(",") { ((it.coerceIn(0f, 1f) * 100).roundToInt() / 100f).toString() }
+        val version = if (message.inputMode == VoiceInputMode.AUDIO) "2" else "1"
+        val input = if (message.inputMode == VoiceInputMode.AUDIO) " input=\"audio\"" else ""
+        return "<voice_bar version=\"$version\"$input duration_ms=\"${message.durationMs}\" waveform=\"$waves\">" +
             "<attachment id=\"${escape(message.attachment.filePath)}\" filename=\"${escape(message.attachment.fileName)}\" type=\"audio/wav\" size=\"${message.attachment.fileSize}\" />" +
             "<transcript>${escape(message.transcript)}</transcript></voice_bar>"
     }
@@ -34,7 +40,11 @@ object VoiceMessageMarkup {
         val match = matches.singleOrNull()?.takeIf { it.value == normalized } ?: return null
         val header = match.value.substringBefore('>')
         val attrs = attribute.findAll(header).associate { it.groupValues[1] to unescape(it.groupValues[2]) }
-        if (attrs["version"] != "1") return null
+        val inputMode = when (attrs["version"]) {
+            "1" -> VoiceInputMode.TEXT
+            "2" -> if (attrs["input"] == "audio") VoiceInputMode.AUDIO else return null
+            else -> return null
+        }
         val duration = attrs["duration_ms"]?.toLongOrNull()?.takeIf { it > 0 } ?: return null
         val waveText = attrs["waveform"] ?: return null
         val waves = if (waveText.isEmpty()) emptyList() else waveText.split(',').map { part ->
@@ -50,10 +60,11 @@ object VoiceMessageMarkup {
         val name = audioAttrs["filename"]?.takeIf { it.isNotBlank() } ?: return null
         val size = audioAttrs["size"]?.toLongOrNull()?.takeIf { it >= 44 } ?: return null
         val textMatch = transcript.findAll(match.value).singleOrNull() ?: return null
-        val text = unescape(textMatch.groupValues[1]).takeIf { it.isNotBlank() } ?: return null
+        val text = unescape(textMatch.groupValues[1])
+        if (inputMode == VoiceInputMode.TEXT && text.isBlank()) return null
         val body = match.value.substringAfter('>').substringBeforeLast("</voice_bar>")
         if (body.replace(audio, "").replace(textMatch.value, "").isNotBlank()) return null
-        return VoiceMessageData(AttachmentInfo(path, name, "audio/wav", size), duration, waves, text)
+        return VoiceMessageData(AttachmentInfo(path, name, "audio/wav", size), duration, waves, text, inputMode)
     }
 
     /** 聊天消息可以在语音正文之外附带系统生成的工作区等元数据。 */
@@ -65,9 +76,34 @@ object VoiceMessageMarkup {
         return parse(body)
     }
 
-    fun toModelText(value: String): String = block.replace(value) { match ->
+    fun messages(value: String): List<VoiceMessageData> = block.findAll(value).mapNotNull { parse(it.value) }.toList()
+
+    fun rewrite(value: String, transform: (VoiceMessageData) -> String): String = block.replace(value) { match ->
         val message = parse(match.value)
-        if (message != null) message.transcript else match.value
+        if (message != null) transform(message) else match.value
+    }
+
+    /** 只在真正的请求边界解开新录音，避免提前丢掉音频。 */
+    fun toRequestContent(value: String): String = block.replace(value) { match ->
+        val message = parse(match.value)
+        when {
+            message == null || message.inputMode == VoiceInputMode.AUDIO -> match.value
+            else -> message.transcript
+        }
+    }
+
+    fun toModelText(value: String): String = rewrite(value) { message ->
+        message.transcript.ifBlank { "[Voice message]" }
+    }
+
+    /** 已被编辑或解析过的消息不覆盖，录音理解结果只回写对应的原始语音。 */
+    fun withResolvedTranscript(value: String, source: VoiceMessageData, text: String): String = block.replace(value) { match ->
+        val message = parse(match.value)
+        if (message == source && message.inputMode == VoiceInputMode.AUDIO) {
+            encode(message.copy(transcript = text, inputMode = VoiceInputMode.TEXT))
+        } else {
+            match.value
+        }
     }
 
     private fun escape(value: String): String = value.replace("&", "&" + "amp;").replace("\"", "&" + "quot;")

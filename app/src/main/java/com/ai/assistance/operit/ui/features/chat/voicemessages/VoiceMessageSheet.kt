@@ -71,7 +71,6 @@ fun VoiceMessageSheet(onDismiss: () -> Unit, onSend: suspend (VoiceMessageData, 
             onDismiss = onDismiss,
             onFinish = session::finish,
             onRecordAgain = ::requestRecording,
-            onRetry = session::retryTranscription,
             onSend = {
                 val message = state.message
                 if (message != null && !sending) {

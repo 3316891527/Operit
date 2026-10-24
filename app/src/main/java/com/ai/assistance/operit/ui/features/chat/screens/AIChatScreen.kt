@@ -1384,6 +1384,7 @@ private fun ChatInputBottomBar(
         source: String = inputStyle,
         submitSource: String = "",
         chatId: String? = currentChatId,
+        attachmentCount: Int = attachments.size,
     ): ChatInputHookContext {
         val normalizedSelectionStart = selectionStart.coerceIn(0, text.length)
         val normalizedSelectionEnd = selectionEnd.coerceIn(0, text.length)
@@ -1394,8 +1395,8 @@ private fun ChatInputBottomBar(
             text = text,
             selectionStart = normalizedSelectionStart,
             selectionEnd = normalizedSelectionEnd,
-            hasAttachments = attachments.isNotEmpty(),
-            attachmentCount = attachments.size,
+            hasAttachments = attachmentCount > 0,
+            attachmentCount = attachmentCount,
             isProcessing = isMessageProcessing,
             inputStyle = inputStyle,
             source = source,
@@ -1719,7 +1720,8 @@ private fun ChatInputBottomBar(
                 val decision = ChatInputHookRegistry.dispatchSubmitRequested(
                     buildChatInputHookContext(eventName = ChatInputEvents.SUBMIT_REQUESTED,
                         text = message.transcript, selectionStart = message.transcript.length,
-                        selectionEnd = message.transcript.length, submitSource = "voice")
+                        selectionEnd = message.transcript.length, submitSource = "voice",
+                        chatId = originChatId, attachmentCount = 1)
                 )
                 if (decision.action == ChatInputSubmitActions.BLOCK || decision.action == ChatInputSubmitActions.CONSUME) {
                     showChatInputHookMessage(decision.message)
@@ -1733,7 +1735,8 @@ private fun ChatInputBottomBar(
                         ChatInputHookRegistry.dispatchNotification(
                             buildChatInputHookContext(eventName = ChatInputEvents.SUBMITTED,
                                 text = finalTranscript, selectionStart = finalTranscript.length,
-                                selectionEnd = finalTranscript.length, submitSource = "voice")
+                                selectionEnd = finalTranscript.length, submitSource = "voice",
+                                chatId = originChatId, attachmentCount = 1)
                         )
                     } else OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
                     accepted

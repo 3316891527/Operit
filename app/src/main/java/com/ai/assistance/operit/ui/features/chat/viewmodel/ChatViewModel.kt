@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.viewmodel
 
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
 
@@ -1646,7 +1647,8 @@ class ChatViewModel(context: Context) : ViewModel() {
                 (state !is InputProcessingState.Idle && state !is InputProcessingState.Completed && state !is InputProcessingState.Error)
             return currentChatId.value == originChatId &&
                 canStartVoiceMessage(userMessage.value.text, attachments.value.size, processing, replyToMessage.value != null) &&
-                message.transcript.isNotBlank() && java.io.File(message.attachment.filePath).isFile
+                (message.transcript.isNotBlank() || message.inputMode == VoiceInputMode.AUDIO) &&
+                java.io.File(message.attachment.filePath).isFile
         }
         if (!canSubmit()) return false
         hideMentionSuggestionPanel()

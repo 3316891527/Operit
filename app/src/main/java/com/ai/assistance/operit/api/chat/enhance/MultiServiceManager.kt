@@ -16,6 +16,8 @@ import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getValidModelIndex
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -123,8 +125,13 @@ class MultiServiceManager(private val context: Context) {
             serviceMutex.withLock {
                 getOrCreateServiceForFunctionLocked(functionType).also { it.activeLeases += 1 }
             }
-        val modelParameters =
+        // 参数读取也可能被取消；尚未交给调用方的租约必须在这里归还。
+        val modelParameters = try {
             modelConfigManager.getModelParametersForConfig(managedService.modelConfig.id)
+        } catch (error: Throwable) {
+            withContext(NonCancellable) { releaseLease(managedService) }
+            throw error
+        }
         return ServiceLease(
             closeAction = { releaseLease(managedService) },
             service = managedService.service,
@@ -139,8 +146,13 @@ class MultiServiceManager(private val context: Context) {
             serviceMutex.withLock {
                 getOrCreateServiceForConfigLocked(configId, modelIndex).also { it.activeLeases += 1 }
             }
-        val modelParameters =
+        // 参数读取也可能被取消；尚未交给调用方的租约必须在这里归还。
+        val modelParameters = try {
             modelConfigManager.getModelParametersForConfig(managedService.modelConfig.id)
+        } catch (error: Throwable) {
+            withContext(NonCancellable) { releaseLease(managedService) }
+            throw error
+        }
         return ServiceLease(
             closeAction = { releaseLease(managedService) },
             service = managedService.service,

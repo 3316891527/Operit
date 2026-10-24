@@ -176,6 +176,9 @@ class ChatServiceCore(
             addMessageToChat = { chatId, message ->
                 chatHistoryDelegate.addMessageToChat(message, chatId)
             },
+            resolveVoiceMessage = { chatId, source, text ->
+                chatHistoryDelegate.resolveVoiceMessage(chatId, source, text)
+            },
             saveCurrentChat = { chatId ->
                 chatHistoryDelegate.saveChatStatistics(chatId)
             },

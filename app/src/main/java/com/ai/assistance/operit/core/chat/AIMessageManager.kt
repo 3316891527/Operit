@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.core.chat
 
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 
 import com.ai.assistance.operit.core.chat.context.RequestWindowSnapshot
 
@@ -383,9 +385,10 @@ object AIMessageManager {
         memorySpaceIdOverride: String? = null,
         disableWarning: Boolean = false,
         historyOnly: Boolean = false,
+        onVoiceMessageResolved: suspend (VoiceMessageData, String) -> Unit = { _, _ -> },
     ): SharedStream<String> {
         val totalStartTime = messageTimingNow()
-        val voiceNormalizedMessage = VoiceMessageMarkup.toModelText(messageContent)
+        val voiceNormalizedMessage = VoiceMessageMarkup.toRequestContent(messageContent)
         val chatKey = chatId ?: DEFAULT_CHAT_KEY
         lastActiveChatKey = chatKey
         activeEnhancedAiServiceByChatId[chatKey] = enhancedAiService
@@ -393,7 +396,7 @@ object AIMessageManager {
         return withContext(Dispatchers.IO) {
             val buildMemoryStartTime = messageTimingNow()
             val memory = getMemoryFromMessages(
-                messages = chatHistory.map { it.copy(content = VoiceMessageMarkup.toModelText(it.content)) },
+                messages = chatHistory.map { it.copy(content = VoiceMessageMarkup.toRequestContent(it.content)) },
                 splitByRole = splitHistoryByRole,
                 targetRoleName = currentRoleName,
                 groupOrchestrationMode = groupOrchestrationMode
@@ -417,7 +420,7 @@ object AIMessageManager {
             val maxMediaHistoryUserTurns = apiPreferences.maxMediaHistoryUserTurnsFlow.first()
 
             val memoryAfterImageLimit = limitImageLinksInChatHistory(memory, maxImageHistoryUserTurns)
-            val memoryForRequest = limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns)
+            val memoryForRequest = limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns, voiceNormalizedMessage)
             val beforeImageLinkCount = memory.count { MediaLinkParser.hasImageLinks(it.content) }
             val afterImageLinkCount = memoryForRequest.count { MediaLinkParser.hasImageLinks(it.content) }
             if (beforeImageLinkCount != afterImageLinkCount) {
@@ -511,6 +514,7 @@ object AIMessageManager {
                     memorySpaceIdOverride = memorySpaceIdOverride,
                     disableWarning = disableWarning,
                     historyOnly = historyOnly,
+                    onVoiceMessageResolved = onVoiceMessageResolved,
                 )
             ).shareRevisable(
                 scope = scope,
@@ -598,7 +602,7 @@ object AIMessageManager {
     ): RequestWindowSnapshot {
         val memory =
             getMemoryFromMessages(
-                messages = chatHistory.map { it.copy(content = VoiceMessageMarkup.toModelText(it.content)) },
+                messages = chatHistory.map { it.copy(content = VoiceMessageMarkup.toRequestContent(it.content)) },
                 splitByRole = splitHistoryByRole,
                 targetRoleName = currentRoleName,
                 groupOrchestrationMode = groupOrchestrationMode
@@ -607,10 +611,10 @@ object AIMessageManager {
         val maxMediaHistoryUserTurns = apiPreferences.maxMediaHistoryUserTurnsFlow.first()
         val memoryAfterImageLimit = limitImageLinksInChatHistory(memory, maxImageHistoryUserTurns)
         val memoryForRequest =
-            limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns)
+            limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns, VoiceMessageMarkup.toRequestContent(messageContent))
 
         return enhancedAiService.estimateRequestWindowSnapshotFromMemory(
-            message = VoiceMessageMarkup.toModelText(messageContent),
+            message = VoiceMessageMarkup.toRequestContent(messageContent),
             chatHistory = memoryForRequest,
             chatId = chatId,
             workspacePath = workspacePath,
@@ -629,7 +633,8 @@ object AIMessageManager {
 
     private fun limitMediaLinksInChatHistory(
         history: List<PromptTurn>,
-        keepLastUserMediaTurns: Int
+        keepLastUserMediaTurns: Int,
+        currentMessage: String = "",
     ): List<PromptTurn> {
         val limit = keepLastUserMediaTurns.coerceAtLeast(0)
         val totalUserTurns = history.count { it.kind == PromptTurnKind.USER }
@@ -642,8 +647,14 @@ object AIMessageManager {
             }
 
             val shouldKeepMedia = limit > 0 && currentUserTurnIndex >= keepFromTurn
-            if (!shouldKeepMedia && MediaLinkParser.hasMediaLinks(turn.content)) {
-                val removed = MediaLinkParser.removeMediaLinks(turn.content).trim()
+            val hasVoiceAudio = VoiceMessageMarkup.messages(turn.content).any {
+                it.inputMode == VoiceInputMode.AUDIO
+            }
+            val isCurrentVoice = hasVoiceAudio && turn === history.lastOrNull() &&
+                turn.kind == PromptTurnKind.USER && turn.content == currentMessage
+            if (!shouldKeepMedia && !isCurrentVoice && (hasVoiceAudio || MediaLinkParser.hasMediaLinks(turn.content))) {
+                val withoutVoiceAudio = VoiceMessageMarkup.toModelText(turn.content)
+                val removed = MediaLinkParser.removeMediaLinks(withoutVoiceAudio).trim()
                 turn.copy(content = removed.ifBlank { context.getString(R.string.ai_message_media_omitted) })
             } else {
                 turn
@@ -1023,7 +1034,7 @@ object AIMessageManager {
                     // 清理消息内容：移除 memory 标签和 thinking 内容
                     val cleanedContent = if (message.sender == "user") {
                         stripMediaLinksForAssistant(
-                            message.content.replace(memoryTagRegex, "").trim()
+                            VoiceMessageMarkup.toModelText(message.content).replace(memoryTagRegex, "").trim()
                         )
                     } else {
                         // AI 消息需要先移除 thinking 内容，再移除媒体链接
@@ -1058,7 +1069,7 @@ object AIMessageManager {
                 val role = if (message.sender == "user") "user" else "assistant"
                 val cleanedContent = if (role == "user") {
                     stripMediaLinksForAssistant(
-                        message.content.replace(memoryTagRegex, "").trim()
+                        VoiceMessageMarkup.toModelText(message.content).replace(memoryTagRegex, "").trim()
                     )
                 } else {
                     stripMediaLinksForAssistant(message.content)

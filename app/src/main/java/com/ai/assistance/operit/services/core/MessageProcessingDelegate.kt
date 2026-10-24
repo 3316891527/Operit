@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.services.core
 
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
@@ -63,6 +64,7 @@ class MessageProcessingDelegate(
         private val getRuntimeChatHistory: suspend (String) -> List<ChatMessage>,
         private val hasUserMessage: suspend (String) -> Boolean,
         private val addMessageToChat: suspend (String, ChatMessage) -> Unit,
+        private val resolveVoiceMessage: suspend (String, VoiceMessageData, String) -> List<ChatMessage>,
         private val saveCurrentChat: suspend (chatId: String?) -> Unit,
         private val showErrorMessage: (String) -> Unit,
         private val updateChatTitle: (chatId: String, title: String) -> Unit,
@@ -1133,6 +1135,10 @@ class MessageProcessingDelegate(
                     memorySpaceIdOverride = memorySpaceIdOverride,
                     disableWarning = turnOptions.disableWarning,
                     historyOnly = sendMode == MessageSendMode.CONTINUE,
+                    onVoiceMessageResolved = { source, text ->
+                        val updatedMessages = resolveVoiceMessage(activeChatId, source, text)
+                        updatedMessages.firstOrNull { it.timestamp == userMessage.timestamp }?.let { userMessage = it }
+                    },
                 )
                 // AIMessageManager 已返回可重放的共享流，这里直接复用，避免在 viewModelScope 上再包一层。
                 val sharedCharStream = responseStream
@@ -1743,6 +1749,10 @@ class MessageProcessingDelegate(
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
                     memorySpaceIdOverride = memorySpaceIdOverride,
+                    onVoiceMessageResolved = { source, text ->
+                        resolveVoiceMessage(chatId, source, text)
+                        Unit
+                    },
                 )
 
             val sharedResponseStream = responseStream
