@@ -51,7 +51,13 @@ internal fun MemoryEditor(
         OutlinedTextField(content, { content = it; invalid = false }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.memory_content)) }, minLines = 4, maxLines = 9, enabled = !busy && memory?.isDocumentNode != true)
         if (memory?.isDocumentNode == true) Text(stringResource(R.string.memory_workbench_document_readonly), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         val paths = (allFolderPaths + folder).filter { it.isNotBlank() && it != uncategorized }.distinct()
-        MemoryPicker(stringResource(R.string.memory_folder), folder, listOf(MemoryChoice("", uncategorized)) + paths.map { MemoryChoice(it, it) }, enabled = !busy) { folder = it }
+        MemoryPicker(
+            label = stringResource(R.string.memory_folder),
+            value = folder,
+            choices = listOf(MemoryChoice("", uncategorized)) + paths.map { MemoryChoice(it, it) },
+            enabled = !busy,
+            searchable = true,
+        ) { folder = it }
         Text(stringResource(R.string.memory_tags), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             tags.forEach { tag ->
@@ -96,10 +102,18 @@ internal fun MemoryLinkEditor(graph: Graph, initialIds: List<String>, busy: Bool
             }) { Text(stringResource(R.string.memory_create_link)) }
         }
     }) {
-        val choices = graph.nodes.map { MemoryChoice(it.id, it.label) }
-        MemoryPicker(stringResource(R.string.memory_from), from, choices, enabled = !busy) { from = it; localError = null }
+        val choices = graph.nodes.map { MemoryChoice(it.id, it.label, it.metadata["folder"].orEmpty()) }
+        MemoryPicker(
+            label = stringResource(R.string.memory_from), value = from, choices = choices,
+            enabled = !busy, searchable = true,
+            dialogTitle = stringResource(R.string.memory_workbench_select_source),
+        ) { from = it; localError = null }
         RelationPicker(type, enabled = !busy) { type = it; localError = null }
-        MemoryPicker(stringResource(R.string.memory_to), to, choices, enabled = !busy) { to = it; localError = null }
+        MemoryPicker(
+            label = stringResource(R.string.memory_to), value = to, choices = choices,
+            enabled = !busy, searchable = true,
+            dialogTitle = stringResource(R.string.memory_workbench_select_target),
+        ) { to = it; localError = null }
         MemoryValueSlider(stringResource(R.string.memory_weight), weight, { weight = it }, enabled = !busy)
         OutlinedTextField(description, { description = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.memory_description)) }, minLines = 3, maxLines = 6, enabled = !busy)
         localError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
@@ -133,7 +147,14 @@ internal fun MemoryEdgeEditor(edge: Edge, graph: Graph, busy: Boolean, error: St
 
 @Composable
 private fun RelationPicker(type: String, enabled: Boolean, onSelect: (String) -> Unit) {
-    MemoryPicker(stringResource(R.string.memory_type), type, memoryRelationOptions(type).map { MemoryChoice(it, stringResource(memoryRelationName(it)), it) }, enabled = enabled, onSelect = onSelect)
+    MemoryPicker(
+        label = stringResource(R.string.memory_type),
+        value = type,
+        choices = memoryRelationOptions(type).map { MemoryChoice(it, stringResource(memoryRelationName(it)), it) },
+        enabled = enabled,
+        searchable = false,
+        onSelect = onSelect,
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

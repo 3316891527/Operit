@@ -284,7 +284,17 @@ private fun SpaceActions(space: MemorySpace, activeId: String, busy: Boolean, on
             DropdownMenuItem(text = { Text(stringResource(R.string.rename)) }, leadingIcon = { Icon(Icons.Default.Edit, null) }, onClick = { expanded = false; onRename() })
             DropdownMenuItem(text = { Text(stringResource(R.string.memory_overview_choose_global)) }, leadingIcon = { Icon(Icons.Default.Check, null) }, enabled = space.id != activeId, onClick = { expanded = false; onGlobal() })
             HorizontalDivider(Modifier.padding(horizontal = 12.dp))
-            DropdownMenuItem(text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }, leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }, enabled = space.id != "default", onClick = { expanded = false; onDelete() })
+            // 颜色交给菜单状态处理，固定红色会覆盖默认空间的禁用外观。
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.delete)) },
+                leadingIcon = { Icon(Icons.Default.Delete, null) },
+                enabled = !busy && space.id != "default",
+                colors = MenuDefaults.itemColors(
+                    textColor = MaterialTheme.colorScheme.error,
+                    leadingIconColor = MaterialTheme.colorScheme.error,
+                ),
+                onClick = { expanded = false; onDelete() },
+            )
         }
     }
 }
