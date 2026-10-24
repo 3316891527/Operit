@@ -234,7 +234,7 @@ fun UserMessageComposable(
             modifier =
             Modifier
                 .then(
-                    if (isHiddenPlaceholder) {
+                    if (isHiddenPlaceholder || voiceMessage != null) {
                         Modifier.widthIn(max = 320.dp)
                     } else {
                         Modifier.fillMaxWidth()
@@ -266,12 +266,12 @@ fun UserMessageComposable(
             shape = RoundedCornerShape(8.dp)
         ) {
             Column(modifier = Modifier
-                .fillMaxWidth()
+                .then(if (voiceMessage == null) Modifier.fillMaxWidth() else Modifier)
                 .padding(
                     start = 16.dp,
-                    top = if (isHiddenPlaceholder) 0.dp else 16.dp,
+                    top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
                     end = 16.dp,
-                    bottom = if (isHiddenPlaceholder) 0.dp else 16.dp,
+                    bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
                 )) {
                 if (isHiddenPlaceholder) {
                     HiddenUserMessagePlaceholderContent(
@@ -293,7 +293,7 @@ fun UserMessageComposable(
 
                     if (voiceMessage != null) {
                         VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
-                            voiceMessage.waveform, voiceMessage.transcript)
+                            voiceMessage.waveform, voiceMessage.transcript, embedded = true, contentColor = effectiveTextColor)
                     } else {
                         Text(
                             text = textContent,

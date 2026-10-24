@@ -9507,7 +9507,7 @@
     <!-- 语音条与录音面板 -->
     <string name="voice_message_record_title">录制语音</string>
     <string name="voice_message_confirm_title">确认语音消息</string>
-    <string name="voice_message_silence_hint">连续 3 秒无声自动结束，最长 60 秒</string>
+    <string name="voice_message_silence_hint">停顿 3 秒自动结束 · 最长 60 秒</string>
     <string name="voice_message_done">说完了</string>
     <string name="voice_message_transcribing">正在转写语音…</string>
     <string name="voice_message_rerecord">重新录制</string>
@@ -9524,4 +9524,13 @@
     <string name="voice_message_show_text">查看文字</string>
     <string name="voice_message_hide_text">收起文字</string>
     <string name="voice_message_standalone">语音消息需单独发送，请保持当前对话、空草稿且没有附件或引用</string>
+    <string name="voice_message_record_hint">录完可以试听，确认后再发送</string>
+    <string name="voice_message_confirm_hint">听一遍，确认后发送</string>
+    <string name="voice_message_recording">正在录音</string>
+    <string name="voice_message_preparing">正在准备录音…</string>
+    <string name="voice_message_transcript_title">识别文字</string>
+    <string name="voice_message_send">发送语音</string>
+    <string name="voice_message_sending">正在发送…</string>
+    <string name="voice_message_text">文字</string>
+    <string name="voice_message_collapse_text">收起</string>
 </resources>

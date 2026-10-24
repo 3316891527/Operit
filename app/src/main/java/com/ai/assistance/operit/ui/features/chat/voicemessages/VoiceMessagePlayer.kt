@@ -1,7 +1,12 @@
 package com.ai.assistance.operit.ui.features.chat.voicemessages
 
 import android.net.Uri
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -11,9 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,23 +42,13 @@ private object VoicePlaybackCoordinator {
 internal fun voiceDurationLabel(milliseconds: Long): String =
     String.format(Locale.ROOT, "%02d:%02d", milliseconds / 60000, milliseconds / 1000 % 60)
 
-@Composable
-internal fun VoiceWaveform(levels: List<Float>, modifier: Modifier = Modifier, progress: Float = 0f) {
-    val primary = MaterialTheme.colorScheme.primary
-    val remaining = primary.copy(alpha = 0.4f)
-    val samples = List(maxOf(0, 48 - levels.size)) { 0f } + levels
-    Canvas(modifier) {
-        val count = samples.size
-        val step = size.width / count
-        repeat(count) { index ->
-            val level = samples[index].coerceIn(0f, 1f)
-            val halfHeight = maxOf(1.5.dp.toPx(), level * size.height * 0.46f)
-            val x = step * (index + 0.5f)
-            drawLine(if (progress <= 0f || index.toFloat() / count <= progress) primary else remaining,
-                Offset(x, size.height / 2 - halfHeight), Offset(x, size.height / 2 + halfHeight),
-                strokeWidth = minOf(3.dp.toPx(), step * 0.45f), cap = StrokeCap.Round)
-        }
-    }
+/** 短语音使用短条，时长增加只在有限范围内增加宽度。 */
+private fun voiceMessageWidth(durationMs: Long) =
+    (168f + durationMs.coerceIn(0L, 60000L) / 1000f).dp
+
+private fun voiceCompactDurationLabel(durationMs: Long): String {
+    val seconds = maxOf(1L, durationMs / 1000L)
+    return if (seconds < 60) "${seconds}″" else "${seconds / 60}′${(seconds % 60).toString().padStart(2, '0')}″"
 }
 
 /** 点击时才创建播放器，历史列表中的未播放语音条不会分配播放资源。 */
@@ -66,6 +59,8 @@ fun VoiceMessagePlayer(
     waveform: List<Float>,
     transcript: String = "",
     modifier: Modifier = Modifier,
+    embedded: Boolean = false,
+    contentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -133,26 +128,53 @@ fun VoiceMessagePlayer(
         if (active.playbackState == Player.STATE_ENDED) active.seekTo(0)
         active.play()
     }
-    Surface(modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = ::toggle),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (preparing) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-                else Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    stringResource(if (playing) R.string.voice_message_pause else R.string.voice_message_play),
-                    tint = MaterialTheme.colorScheme.primary)
-                VoiceWaveform(waveform, Modifier.weight(1f).height(36.dp),
-                    progress = if (durationMs > 0) position.toFloat() / durationMs else 0f)
-                Text(voiceDurationLabel(durationMs), style = MaterialTheme.typography.labelLarge)
+    val playAction = stringResource(if (playing) R.string.voice_message_pause else R.string.voice_message_play)
+    val textAction = stringResource(if (showText) R.string.voice_message_hide_text else R.string.voice_message_show_text)
+    Surface(
+        modifier = modifier.animateContentSize().width(if (showText) 280.dp else voiceMessageWidth(durationMs)),
+        shape = RoundedCornerShape(18.dp),
+        color = if (embedded) Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+    ) {
+        Column(Modifier.padding(horizontal = if (embedded) 0.dp else 12.dp, vertical = if (embedded) 0.dp else 6.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp))
+                        .clickable(enabled = !preparing, role = Role.Button, onClickLabel = playAction, onClick = ::toggle),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(Modifier.size(30.dp).background(contentColor.copy(alpha = 0.1f), CircleShape),
+                        contentAlignment = Alignment.Center) {
+                        if (preparing) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = contentColor)
+                        else Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            playAction, tint = contentColor, modifier = Modifier.size(20.dp))
+                    }
+                    VoiceWaveform(waveform, Modifier.weight(1f).height(28.dp),
+                        progress = if (durationMs > 0) position.toFloat() / durationMs else 0f, color = contentColor)
+                    Text(voiceCompactDurationLabel(durationMs), style = MaterialTheme.typography.labelLarge,
+                        color = contentColor, maxLines = 1)
+                }
+                if (transcript.isNotBlank()) {
+                    Box(Modifier.width(1.dp).height(16.dp).background(contentColor.copy(alpha = 0.15f)))
+                    Box(
+                        Modifier.heightIn(min = 44.dp).widthIn(min = 28.dp).clip(RoundedCornerShape(8.dp))
+                            .clickable(role = Role.Button, onClickLabel = textAction) { showText = !showText }
+                            .padding(horizontal = 4.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(stringResource(if (showText) R.string.voice_message_collapse_text else R.string.voice_message_text),
+                            color = contentColor.copy(alpha = 0.75f), style = MaterialTheme.typography.labelMedium)
+                    }
+                }
             }
             if (error) Text(stringResource(R.string.voice_message_play_failed), color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall)
-            if (transcript.isNotBlank()) {
-                TextButton(onClick = { showText = !showText }, contentPadding = PaddingValues(0.dp)) {
-                    Text(stringResource(if (showText) R.string.voice_message_hide_text else R.string.voice_message_show_text))
+                style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+            if (showText && transcript.isNotBlank()) {
+                Column(Modifier.padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(contentColor.copy(alpha = 0.12f)))
+                    Text(transcript, style = MaterialTheme.typography.bodyMedium, color = contentColor)
                 }
-                if (showText) Text(transcript, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
             }
         }
     }

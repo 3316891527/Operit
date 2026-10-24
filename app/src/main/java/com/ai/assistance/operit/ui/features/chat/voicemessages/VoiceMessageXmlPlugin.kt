@@ -14,7 +14,7 @@ object VoiceMessageXmlPlugin : XmlRenderPlugin {
         textColor: Color, xmlStream: Stream<String>?): XmlRenderResult? {
         val message = VoiceMessageMarkup.parse(xmlContent) ?: return null
         return XmlRenderResult.ComposableRender { modifier, _, _ ->
-            VoiceMessagePlayer(message.attachment.filePath, message.durationMs, message.waveform, message.transcript, modifier)
+            VoiceMessagePlayer(message.attachment.filePath, message.durationMs, message.waveform, message.transcript, modifier, contentColor = textColor)
         }
     }
 }
