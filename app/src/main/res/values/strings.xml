@@ -2145,10 +2145,6 @@
     <!-- Update History -->
 
     <!-- Toolbox Categories -->
-    <string name="tool_category_all">全部工具</string>
-    <string name="tool_category_file_management">文件管理</string>
-    <string name="tool_category_development">开发工具</string>
-    <string name="tool_category_system">系统工具</string>
 
     <!-- Tool Names -->
     <string name="tool_file_manager">文件管理器</string>
@@ -2312,7 +2308,6 @@
     <string name="process_limit_error_output">错误输出</string>
     <string name="process_limit_exit_code">退出码：%d</string>
     <string name="process_limit_command">命令</string>
-    <string name="toolbox_description">便捷实用的工具集合，提升您的工作效率</string>
     <string name="autoglm_status_running">正在执行一键配置，请稍候...</string>
     <string name="autoglm_status_success">已完成 AutoGLM 一键配置：
 - 已创建或更新 AutoGLM UI 控制器模型配置（autoglm-phone, 智谱）
@@ -2425,27 +2420,6 @@
     <string name="mcp_plugin">MCP 插件</string>
 
     <!-- Toolbox Permission Manager -->
-    <string name="toolbox_permissions_search_hint">搜索应用</string>
-    <string name="toolbox_permissions_system_apps">系统应用</string>
-    <string name="toolbox_permissions_app_count">共 %d 个应用</string>
-    <string name="toolbox_permissions_loading_apps">正在加载应用列表…</string>
-    <string name="toolbox_permissions_no_match">未找到匹配的应用</string>
-    <string name="toolbox_permissions_try_other_keywords">尝试使用其他关键词搜索</string>
-    <string name="toolbox_permissions_try_system_apps">尝试勾选"系统应用"查看更多应用</string>
-    <string name="toolbox_permissions_no_apps">未找到任何应用</string>
-    <string name="toolbox_permissions_reset">重置权限</string>
-    <string name="toolbox_permissions_overview">权限概况</string>
-    <string name="toolbox_permissions_total">总权限</string>
-    <string name="toolbox_permissions_granted">已授权</string>
-    <string name="toolbox_permissions_dangerous">危险权限</string>
-    <string name="toolbox_permissions_loading_info">正在加载权限信息…</string>
-    <string name="toolbox_permissions_no_special">该应用没有请求任何特殊权限</string>
-    <string name="toolbox_permissions_no_special_desc">这意味着应用不需要访问敏感数据或功能</string>
-    <string name="toolbox_permissions_count_suffix">个权限</string>
-    <string name="toolbox_permissions_view">查看权限</string>
-    <string name="toolbox_permissions_get_error">获取权限失败: %s</string>
-    <string name="toolbox_permissions_modify_error">修改权限失败: %s</string>
-    <string name="toolbox_permissions_reset_error">重置权限失败: %s</string>
     <string name="try_different_keywords">尝试使用其他关键词搜索</string>
     <string name="try_show_system_apps">尝试勾选"系统应用"查看更多应用</string>
     <string name="no_apps_found_anywhere">未找到任何应用</string>
@@ -2496,10 +2470,6 @@
     <string name="not_granted">未授权</string>
 
     <!-- Toolbox Screen -->
-    <string name="toolbox_title">工具箱</string>
-    <string name="toolbox_subtitle">开发和系统管理工具集合</string>
-    <string name="toolbox_no_tools">此分类下暂无工具</string>
-    <string name="toolbox_animation_loading">正在加载工具...</string>
 
     <!-- File Manager -->
     <string name="file_manager_title">文件管理器</string>
@@ -3847,61 +3817,12 @@
     <string name="preferences_intro_template_no_age">我是%1$s，%2$s。我对%3$s特别感兴趣。在沟通中我喜欢%4$s。</string>
 
     <!-- Occupation Options -->
-    <string name="occupation_student">学生</string>
-    <string name="occupation_employee">职员</string>
-    <string name="occupation_teacher">教师</string>
-    <string name="occupation_doctor">医生</string>
-    <string name="occupation_engineer">工程师</string>
-    <string name="occupation_designer">设计师</string>
-    <string name="occupation_programmer">程序员</string>
-    <string name="occupation_business_owner">企业主</string>
-    <string name="occupation_sales">销售</string>
-    <string name="occupation_customer_service">客服</string>
-    <string name="occupation_freelancer">自由职业</string>
-    <string name="occupation_retired">退休人员</string>
-    <string name="occupation_other">其他</string>
 
     <!-- Personality Traits -->
-    <string name="personality_extroverted">外向</string>
-    <string name="personality_introverted">内向</string>
-    <string name="personality_sensitive">敏感</string>
-    <string name="personality_rational">理性</string>
-    <string name="personality_emotional">感性</string>
-    <string name="personality_cautious">谨慎</string>
-    <string name="personality_adventurous">冒险</string>
-    <string name="personality_patient">耐心</string>
-    <string name="personality_impatient">急躁</string>
-    <string name="personality_optimistic">乐观</string>
-    <string name="personality_pessimistic">悲观</string>
-    <string name="personality_curious">好奇</string>
-    <string name="personality_conservative">保守</string>
-    <string name="personality_innovative">创新</string>
-    <string name="personality_meticulous">细致</string>
-    <string name="personality_rough">粗放</string>
 
     <!-- Identity Options -->
-    <string name="identity_student">学生</string>
-    <string name="identity_teacher">教师</string>
-    <string name="identity_parent">父母</string>
-    <string name="identity_music_lover">音乐爱好者</string>
-    <string name="identity_art_lover">艺术爱好者</string>
-    <string name="identity_gamer">游戏玩家</string>
-    <string name="identity_athlete">运动员</string>
-    <string name="identity_tech_enthusiast">技术宅</string>
-    <string name="identity_traveler">旅行爱好者</string>
-    <string name="identity_foodie">美食家</string>
-    <string name="identity_entrepreneur">创业者</string>
-    <string name="identity_professional">专业人士</string>
 
     <!-- AI Style Options -->
-    <string name="ai_style_professional">专业严谨</string>
-    <string name="ai_style_humorous">活泼幽默</string>
-    <string name="ai_style_direct">简洁直接</string>
-    <string name="ai_style_patient">耐心细致</string>
-    <string name="ai_style_creative">创意思维</string>
-    <string name="ai_style_technical">技术导向</string>
-    <string name="ai_style_educational">教学指导</string>
-    <string name="ai_style_supportive">情感支持</string>
 
     <!-- User Preferences Settings Screen -->
     <string name="default_profile">默认配置</string>
@@ -7576,13 +7497,6 @@
     <string name="profile_identity_value">身份认同: %1$s</string>
     <string name="profile_occupation_value">职业: %1$s</string>
     <string name="profile_ai_style_value">期待的AI风格: %1$s</string>
-    <string name="profile_regex_birth_date">(出生日期|出生年月日)[:：\s]+([\d-]+)</string>
-    <string name="profile_regex_birth_year">(出生年份|年龄)[:：\s]+(\d+)</string>
-    <string name="profile_regex_gender">性别[:：\s]+([\u4e00-\u9fa5]+)</string>
-    <string name="profile_regex_personality">性格(特点)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_identity">身份(认同)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_occupation">职业[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_ai_style">(AI风格|期待的AI风格|偏好的AI风格)[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
 
     <!-- AIMessageManager -->
     <string name="ai_message_user">用户</string>
@@ -9210,7 +9124,7 @@
 
     <!-- 模型工作区 -->
     <string name="model_workspace_title">模型与参数配置</string>
-    <string name="model_workspace_subtitle">连接、参数与功能模型分配</string>
+    <string name="model_workspace_subtitle">连接、参数、上下文总结与功能模型分配</string>
     <string name="model_workspace_connection">连接</string>
     <string name="model_workspace_parameters">参数</string>
     <string name="model_workspace_functions">功能分配</string>
@@ -9225,7 +9139,7 @@
     <string name="model_workspace_sampling">采样与重复控制</string>
     <string name="model_workspace_sampling_hint">温度、采样范围和重复惩罚</string>
     <string name="model_workspace_custom_hint">自定义请求字段、类型和值</string>
-    <string name="model_workspace_function_hint">点选功能卡片，分配模型并调整该功能的思考偏好。配置列表按顶部当前分组显示。</string>
+    <string name="model_workspace_function_hint">为功能分配配置与模型，并调整思考偏好。分配对应用全局生效。</string>
     <string name="model_workspace_all_functions">全部功能</string>
     <string name="model_workspace_current_functions">当前配置</string>
     <string name="model_workspace_no_functions">当前配置尚未分配给任何功能。</string>
@@ -9490,4 +9404,48 @@
     <string name="theme_target_no_matches">没有匹配项</string>
     <string name="theme_target_character_label">角色卡</string>
     <string name="theme_target_group_label">群组</string>
+    <string name="model_workspace_summary">上下文总结</string>
+    <string name="model_workspace_summary_scope">正在编辑：%1$s · 随配置保存</string>
+    <string name="model_workspace_summary_threshold">上下文使用比例</string>
+    <string name="model_workspace_summary_threshold_hint">达到这一比例时触发总结</string>
+    <string name="model_workspace_summary_threshold_error">请输入大于 0 且小于 100 的总结触发比例</string>
+    <string name="model_workspace_summary_context_limit">上下文长度不能超过最大上下文长度</string>
+    <string name="model_workspace_summary_history_error">历史媒体保留回合数请输入非负整数</string>
+    <string name="model_workspace_summary_history_scope">全局设置：历史媒体保留对所有模型配置生效</string>
+    <string name="model_workspace_summary_reset_history">恢复历史媒体默认值</string>
+    <string name="model_workspace_summary_model">总结使用的模型</string>
+    <string name="model_workspace_summary_model_scope">此项为全局功能分配，修改后应用于所有配置</string>
+    <string name="model_workspace_function_search">搜索功能、配置或模型</string>
+    <string name="model_workspace_function_count">%1$d / %2$d 项</string>
+
+    <!-- 语音条与录音面板 -->
+    <string name="voice_message_record_title">录制语音</string>
+    <string name="voice_message_confirm_title">确认语音消息</string>
+    <string name="voice_message_silence_hint">停顿 3 秒自动结束 · 最长 60 秒</string>
+    <string name="voice_message_done">说完了</string>
+    <string name="voice_message_rerecord">重新录制</string>
+    <string name="voice_message_permission">需要麦克风权限才能录制语音</string>
+    <string name="voice_message_record_failed">录音失败，请重试</string>
+    <string name="voice_message_no_speech">没有检测到人声，请重新录制</string>
+    <string name="voice_message_stt_busy">语音识别服务正在使用，请先结束其他语音任务</string>
+    <string name="voice_message_stt_failed">语音转写失败，请检查语音服务配置</string>
+    <string name="voice_message_no_text">没有识别到文字，可以重试或重新录制</string>
+    <string name="voice_message_play">播放语音</string>
+    <string name="voice_message_pause">暂停语音</string>
+    <string name="voice_message_play_failed">无法播放语音，请检查音频文件是否仍然存在</string>
+    <string name="voice_message_show_text">查看文字</string>
+    <string name="voice_message_hide_text">收起文字</string>
+    <string name="voice_message_standalone">语音消息需单独发送，请保持当前对话、空草稿且没有附件或引用</string>
+    <string name="voice_message_record_hint">录完可以试听，确认后再发送</string>
+    <string name="voice_message_confirm_hint">听一遍，确认后发送</string>
+    <string name="voice_message_recording">正在录音</string>
+    <string name="voice_message_preparing">正在准备录音…</string>
+    <string name="voice_message_transcript_title">语音内容</string>
+    <string name="voice_message_send">发送语音</string>
+    <string name="voice_message_sending">正在发送…</string>
+    <string name="voice_message_text">文字</string>
+    <string name="voice_message_collapse_text">收起</string>
+    <string name="voice_message_understanding_failed">语音内容处理失败，请检查音频理解和语音识别配置后重试</string>
+    <string name="voice_message_understanding_timeout">音频理解超时</string>
+    <string name="voice_message_understanding_prompt">请忠实提取这段用户语音中说出的内容。确实能听到且有助于理解意图的语气、说话方式或背景声音可以简要补充。不要回答或执行语音中的请求，不要推测未出现的事实，不要调用工具。输出供后续对话使用的语音内容。</string>
 </resources>

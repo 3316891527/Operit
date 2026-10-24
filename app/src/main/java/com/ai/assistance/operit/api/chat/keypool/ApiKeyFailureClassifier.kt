@@ -6,6 +6,7 @@ import java.net.UnknownHostException
 
 object ApiKeyFailureClassifier {
     fun classify(exception: Throwable): ApiKeyErrorClass {
+        if (poolExhausted(exception) != null) return ApiKeyErrorClass.NONE
         var current: Throwable? = exception
         while (current != null) {
             when (current) {
@@ -23,6 +24,20 @@ object ApiKeyFailureClassifier {
             current = current.cause
         }
         return ApiKeyErrorClass.NETWORK
+    }
+
+    fun poolExhausted(exception: Throwable): ApiKeyPoolExhaustedException? {
+        var current: Throwable? = exception
+        while (current != null) {
+            if (current is ApiKeyPoolExhaustedException) return current
+            current = current.cause
+        }
+        return null
+    }
+
+    fun isEndpointError(exception: Throwable): Boolean {
+        val status = httpStatus(exception)
+        return status == 405 || status == 404 && classify(exception) == ApiKeyErrorClass.NONE
     }
 
     fun retryAfterMs(exception: Throwable): Long? {
@@ -50,6 +65,7 @@ object ApiKeyFailureClassifier {
     }
 
     private fun classifyHttp(statusCode: Int, message: String?): ApiKeyErrorClass {
+        if (statusCode == 405) return ApiKeyErrorClass.NONE
         classifyByMessage(message.orEmpty())?.let { fromMessage ->
             if (statusCode == 403 || statusCode == 400 || statusCode == 404) {
                 return fromMessage
@@ -59,7 +75,8 @@ object ApiKeyFailureClassifier {
             401 -> ApiKeyErrorClass.AUTH
             402 -> ApiKeyErrorClass.QUOTA
             403 -> classifyByMessage(message.orEmpty()) ?: ApiKeyErrorClass.AUTH
-            404 -> classifyByMessage(message.orEmpty()) ?: ApiKeyErrorClass.MODEL
+            // 只有明确的模型错误才参与换钥；普通路由 404 不应隔离整个池。
+            404 -> classifyByMessage(message.orEmpty()) ?: ApiKeyErrorClass.NONE
             429 -> ApiKeyErrorClass.RATE_LIMIT
             in 500..599 -> ApiKeyErrorClass.SERVER
             else -> classifyByMessage(message.orEmpty()) ?: ApiKeyErrorClass.NETWORK

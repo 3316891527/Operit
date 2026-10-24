@@ -57,6 +57,28 @@ internal fun formatApiKeyPoolExhaustedMessage(
     )
 }
 
+internal suspend fun reportKeyAwareFailure(
+    exception: Throwable,
+    model: String,
+    stream: Boolean,
+    attemptNumber: Int,
+) {
+    // 选钥失败发生在 HTTP 之前，直接结束，避免虚构网络失败与再次选空池。
+    ApiKeyFailureClassifier.poolExhausted(exception)?.let { throw it }
+    if (ApiRequestRetryPolicy.mode(exception) == ApiRequestRetryMode.STOP) return
+    currentApiKeySession()?.reportOutcome(
+        ApiKeyAttemptReport(
+            success = false,
+            errorClass = ApiKeyFailureClassifier.classify(exception),
+            httpStatus = ApiKeyFailureClassifier.httpStatus(exception),
+            retryAfterMs = ApiKeyFailureClassifier.retryAfterMs(exception),
+            model = model,
+            stream = stream,
+            attemptIndex = attemptNumber,
+        )
+    )
+}
+
 internal suspend fun handleKeyAwareRetry(
     context: Context,
     exception: Exception,
@@ -70,13 +92,17 @@ internal suspend fun handleKeyAwareRetry(
     if (exception is UserCancellationException || exception is CancellationException) {
         throw exception
     }
+    ApiKeyFailureClassifier.poolExhausted(exception)?.let { throw it }
     val retryMode = ApiRequestRetryPolicy.mode(exception)
     val errorClass = ApiKeyFailureClassifier.classify(exception)
     val transportError = if (retryMode == ApiRequestRetryMode.RETRY &&
         (errorClass == ApiKeyErrorClass.NETWORK || errorClass == ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT)
     ) ApiTransportError.describe(exception) else null
+    val endpointHint = if (ApiKeyFailureClassifier.isEndpointError(exception)) {
+        context.getString(R.string.api_key_pool_endpoint_error, exception.message.orEmpty())
+    } else null
     val errorText =
-        transportError?.json(
+        endpointHint ?: transportError?.json(
             attempt = attemptNumber,
             retryable = enableRetry && retryMode == ApiRequestRetryMode.RETRY,
         )

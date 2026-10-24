@@ -12,7 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
+import com.ai.assistance.operit.ui.components.slider.WorkbenchSlider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,7 +59,7 @@ internal fun MemorySettingsSlider(
             Text(title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Text(valueText, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
         }
-        Slider(value = value, onValueChange = onValueChange, valueRange = valueRange, enabled = enabled, steps = steps)
+        WorkbenchSlider(value = value, onValueChange = onValueChange, valueRange = valueRange, enabled = enabled, steps = steps)
     }
 }
 

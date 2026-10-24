@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.LocaleUtils
@@ -61,6 +64,7 @@ class MessageProcessingDelegate(
         private val getRuntimeChatHistory: suspend (String) -> List<ChatMessage>,
         private val hasUserMessage: suspend (String) -> Boolean,
         private val addMessageToChat: suspend (String, ChatMessage) -> Unit,
+        private val resolveVoiceMessage: suspend (String, VoiceMessageData, String) -> List<ChatMessage>,
         private val saveCurrentChat: suspend (chatId: String?) -> Unit,
         private val showErrorMessage: (String) -> Unit,
         private val updateChatTitle: (chatId: String, title: String) -> Unit,
@@ -126,7 +130,7 @@ class MessageProcessingDelegate(
             try {
                 val generatedTitle = EnhancedAIService.getChatInstance(context, chatId)
                     .generateConversationTitle(
-                        userText = userText,
+                        userText = VoiceMessageMarkup.toModelText(userText),
                         attachmentFileNames = attachments.map { it.fileName }
                     )
                     .trim()
@@ -706,8 +710,9 @@ class MessageProcessingDelegate(
             suppressUserMessageInHistory: Boolean = false,
             isGroupOrchestrationTurn: Boolean = false,
             groupParticipantNamesText: String? = null,
-            turnOptions: ChatTurnOptions = ChatTurnOptions()
-    ) {
+            turnOptions: ChatTurnOptions = ChatTurnOptions(),
+            onUserMessagePersisted: (() -> Unit)? = null,
+    ): Job? {
         val rawMessageText = if (sendMode.isContinuation) "" else messageTextOverride ?: _userMessage.value.text
         // 群组成员回复与续写允许在没有新增用户输入时请求模型。
         if (rawMessageText.isBlank() && attachments.isEmpty() && !sendMode.isContinuation && !isGroupOrchestrationTurn) {
@@ -715,7 +720,7 @@ class MessageProcessingDelegate(
                 TAG,
                 "sendUserMessage ignored: empty input, chatId=$chatId, sendMode=$sendMode"
             )
-            return
+            return null
         }
         val chatRuntime = runtimeFor(chatId)
         if (chatRuntime.isLoading.value) {
@@ -723,7 +728,7 @@ class MessageProcessingDelegate(
                 TAG,
                 "sendUserMessage忽略: chat正在处理中, chatId=$chatId, roleCardId=$roleCardId, override=${!messageTextOverride.isNullOrBlank()}, suppressUserMessageInHistory=$suppressUserMessageInHistory"
             )
-            return
+            return null
         }
         val turnId = chatRuntime.turnSequence.incrementAndGet()
         chatRuntime.activeTurnId = turnId
@@ -749,6 +754,7 @@ class MessageProcessingDelegate(
 
         val sendJob =
             coroutineScope.launch(Dispatchers.IO) {
+            try {
             val sendUserMessageStartTime = messageTimingNow()
             val effectivePersistTurn = turnOptions.persistTurn
             val effectiveHideUserMessage = effectivePersistTurn && turnOptions.hideUserMessage
@@ -871,7 +877,15 @@ class MessageProcessingDelegate(
             if (shouldAddUserMessageToChat && chatId != null) {
                 // 等待消息添加到聊天历史完成，确保getChatHistory()包含新消息
                 val addUserMessageStartTime = messageTimingNow()
-                addMessageToChat(chatId, userMessage)
+                if (onUserMessagePersisted != null) {
+                    // 写入消息和交接文件所有权必须一起完成，关闭面板不能删除已保存的录音。
+                    withContext(NonCancellable) {
+                        addMessageToChat(chatId, userMessage)
+                        onUserMessagePersisted()
+                    }
+                } else {
+                    addMessageToChat(chatId, userMessage)
+                }
                 userMessageAdded = true
                 logMessageTiming(
                     stage = "delegate.addUserMessageToChat",
@@ -1121,6 +1135,10 @@ class MessageProcessingDelegate(
                     memorySpaceIdOverride = memorySpaceIdOverride,
                     disableWarning = turnOptions.disableWarning,
                     historyOnly = sendMode == MessageSendMode.CONTINUE,
+                    onVoiceMessageResolved = { source, text ->
+                        val updatedMessages = resolveVoiceMessage(activeChatId, source, text)
+                        updatedMessages.firstOrNull { it.timestamp == userMessage.timestamp }?.let { userMessage = it }
+                    },
                 )
                 // AIMessageManager 已返回可重放的共享流，这里直接复用，避免在 viewModelScope 上再包一层。
                 val sharedCharStream = responseStream
@@ -1604,8 +1622,24 @@ class MessageProcessingDelegate(
                 }
             }
             cancellationToPropagate?.let { throw it }
+            } catch (error: Exception) {
+                // 主请求已有收尾；这里负责配置读取、钩子和落库前的准备失败。
+                if (chatRuntime.activeTurnId == turnId && chatRuntime.isLoading.value) {
+                    val finalState = if (error is kotlinx.coroutines.CancellationException) {
+                        EnhancedInputProcessingState.Idle
+                    } else {
+                        reportRequestFailure(chatId, error.message.orEmpty(), error)
+                    }
+                    chatRuntime.isLoading.value = false
+                    chatRuntime.sendJob = null
+                    setChatInputProcessingState(chatId, finalState)
+                    updateGlobalLoadingState()
+                }
+                if (error is kotlinx.coroutines.CancellationException) throw error
+            }
         }
         chatRuntime.sendJob = sendJob
+        return sendJob
     }
 
     suspend fun regenerateAiMessageVariant(
@@ -1715,6 +1749,10 @@ class MessageProcessingDelegate(
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
                     memorySpaceIdOverride = memorySpaceIdOverride,
+                    onVoiceMessageResolved = { source, text ->
+                        resolveVoiceMessage(chatId, source, text)
+                        Unit
+                    },
                 )
 
             val sharedResponseStream = responseStream

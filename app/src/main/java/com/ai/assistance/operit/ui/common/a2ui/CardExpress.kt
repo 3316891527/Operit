@@ -279,8 +279,12 @@ internal object CardExpress {
             if (node.kind != "call") fail(node.token, "Expected a component constructor.")
             val fields = CardAuthoringCatalog.components[node.token.text]
                 ?: fail(node.token, "Unknown component. Query a2ui_catalog.")
-            if (node.fields.keys.any { key -> fields.none { it.name == key } } ||
-                fields.any { it.required && it.name !in node.fields }) fail(node.token, "Missing or unknown argument for ${node.token.text}. Query its signature with a2ui_catalog.")
+            val unknown = node.fields.keys.filter { key -> fields.none { it.name == key } }
+            val missing = fields.filter { it.required && it.name !in node.fields }.map { it.name }
+            if (unknown.isNotEmpty() || missing.isNotEmpty()) {
+                val signature = fields.joinToString { "${it.name}${if (it.required) "" else "?"}:${it.type}" }
+                fail(node.token, "Arguments for ${node.token.text}: $signature. Unknown: ${unknown.joinToString()}; missing: ${missing.joinToString()}.")
+            }
             val result = buildJsonObject {
                 put("id", id); put("component", node.token.text)
                 fields.forEach { field ->
@@ -327,8 +331,8 @@ internal object CardExpress {
             if (node.token.text == "Chart" && !hasItem(node)) {
                 val series = node.fields.getValue("series")
                 val labels = node.fields["labels"]?.let { initial(it).jsonArray.map { v -> v.jsonPrimitive.content } }.orEmpty()
-                try { cardChartSeries(A2uiProtocol.toValue(initial(series)), labels, initial(node.fields.getValue("type")).jsonPrimitive.content) }
-                catch (_: Exception) { fail(series.token, "Invalid chart series. Check type, numeric values, label lengths and series limits.") }
+                try { cardChartSeries(A2uiProtocol.toValue(initial(series)), labels, initial(node.fields.getValue("type")).jsonPrimitive.content, strict = true) }
+                catch (error: Exception) { fail(series.token, "Invalid chart series: ${error.message?.take(160)}. Use {label:\"Series\",values:[1,2]}; scatter uses points:[{x:1,y:2}].") }
             }
             if (node.token.text == "Map" && !hasItem(node)) {
                 val markers = node.fields.getValue("markers")

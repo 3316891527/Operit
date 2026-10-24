@@ -48,7 +48,6 @@ fun SettingsScreen(
         navigateToSpeechServicesSettings: () -> Unit,
         navigateToExternalHttpChatSettings: () -> Unit,
         navigateToPerformanceMonitor: () -> Unit,
-        navigateToContextSummarySettings: () -> Unit,
         navigateToAbout: () -> Unit
 ) {
         val context = LocalContext.current
@@ -109,12 +108,6 @@ fun SettingsScreen(
                                 onClick = navigateToModelConfig
                         )
 
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_section_context_summary),
-                                subtitle = stringResource(id = R.string.settings_context_summary_subtitle),
-                                icon = Icons.Default.Tune,
-                                onClick = navigateToContextSummarySettings
-                        )
 
                         CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_speech_services),

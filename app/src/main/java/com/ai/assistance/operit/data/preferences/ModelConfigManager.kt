@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.preferences
 
 import android.content.Context
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyCooldownRecovery
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.R
@@ -611,9 +612,13 @@ class ModelConfigManager(
     // 保存配置
     suspend fun saveModelConfig(config: ModelConfigData) {
         val configKey = stringPreferencesKey("config_${config.id}")
+        var previous: ModelConfigData? = null
+        val normalized = normalizeConfig(config)
         configDataStore.edit { preferences ->
-            preferences[configKey] = json.encodeToString(normalizeConfig(config))
+            previous = readConfig(preferences, config.id)
+            preferences[configKey] = json.encodeToString(normalized)
         }
+        previous?.let { ApiKeyCooldownRecovery.onConfigSaved(it, normalized) }
     }
 
     // 从DataStore加载配置
@@ -648,6 +653,7 @@ class ModelConfigManager(
     ): ModelConfigData {
         val configKey = stringPreferencesKey("config_${configId}")
         var updated: ModelConfigData? = null
+        var previous: ModelConfigData? = null
         configDataStore.edit { preferences ->
             val current =
                     run {
@@ -673,7 +679,11 @@ class ModelConfigManager(
 
             val newConfig = normalizeConfig(transform(current))
             preferences[configKey] = json.encodeToString(newConfig)
+            previous = current
             updated = newConfig
+        }
+        previous?.let { old ->
+            updated?.let { ApiKeyCooldownRecovery.onConfigSaved(old, it) }
         }
         return updated ?: ModelConfigData(id = configId, name = context.getString(R.string.model_config_config_id, configId))
     }
@@ -1245,6 +1255,36 @@ class ModelConfigManager(
                         summarySectionOverrides ?: current.summarySectionOverrides
             )
         }
+    }
+
+    // 工作区将同一草稿的上下文与总结字段一次写入，避免多个保存任务相互覆盖。
+    internal suspend fun updateContextSummarySettings(
+            configId: String,
+            contextLength: Float,
+            maxContextLength: Float,
+            enableSummary: Boolean,
+            summaryTokenThreshold: Float?,
+            enableSummaryByMessageCount: Boolean,
+            summaryMessageCountThreshold: Int?,
+            summaryCustomRules: String,
+            summarySectionOverrides: List<SummarySectionOverride>,
+            enablePreviousSummaryReview: Boolean,
+            enableSummaryDialogueReview: Boolean,
+            summaryDialogueReviewTitle: String,
+    ): ModelConfigData = updateConfigInternal(configId) { current ->
+        current.copy(
+            contextLength = contextLength,
+            maxContextLength = maxContextLength,
+            enableSummary = enableSummary,
+            summaryTokenThreshold = if (enableSummary) requireNotNull(summaryTokenThreshold) else current.summaryTokenThreshold,
+            enableSummaryByMessageCount = enableSummaryByMessageCount,
+            summaryMessageCountThreshold = if (enableSummary && enableSummaryByMessageCount) requireNotNull(summaryMessageCountThreshold) else current.summaryMessageCountThreshold,
+            summaryCustomRules = summaryCustomRules,
+            summarySectionOverrides = summarySectionOverrides,
+            enablePreviousSummaryReview = enablePreviousSummaryReview,
+            enableSummaryDialogueReview = enableSummaryDialogueReview,
+            summaryDialogueReviewTitle = summaryDialogueReviewTitle,
+        )
     }
 
     suspend fun updatePreviousSummaryReviewSettings(

@@ -157,11 +157,12 @@ class StandardTerminalCommandExecutor(private val context: Context) {
 
                     val fullOutput = completionOutput?.takeIf { it.isNotEmpty() } ?: events.joinToString("")
                     AppLogger.d(TAG, "Command output collected: '$fullOutput', exitCode: $exitCode")
-                    // 超时必须返回失败，不能因为命令没有抛出普通异常而显示成功。
+                    // 超时、未完成或非零退出码都必须返回失败，命令结束不等于执行成功。
                     val errorMessage =
                             when {
                                 didTimeout -> context.getString(R.string.terminal_error_command_timeout)
                                 !hasCompleted -> context.getString(R.string.terminal_error_command_failed)
+                                exitCode != 0 -> context.getString(R.string.terminal_error_command_non_zero_exit, exitCode)
                                 else -> null
                             }
 
@@ -310,10 +311,12 @@ class StandardTerminalCommandExecutor(private val context: Context) {
             }
 
             val fullOutput = completionOutput?.takeIf { it.isNotEmpty() } ?: events.joinToString("")
+            // 流式执行的最终状态与普通执行一致，非零退出码不能显示成功。
             val errorMessage =
                 when {
                     didTimeout -> context.getString(R.string.terminal_error_command_timeout)
                     !hasCompleted -> context.getString(R.string.terminal_error_command_failed)
+                    exitCode != 0 -> context.getString(R.string.terminal_error_command_non_zero_exit, exitCode)
                     else -> null
                 }
 

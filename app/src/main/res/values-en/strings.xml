@@ -2043,10 +2043,6 @@
     <string name="repo_link">Repository Link</string>
 
     <!-- Toolbox Categories -->
-    <string name="tool_category_all">All Tools</string>
-    <string name="tool_category_file_management">File Management</string>
-    <string name="tool_category_development">Development Tools</string>
-    <string name="tool_category_system">System Tools</string>
 
     <!-- Tool Names -->
     <string name="tool_file_manager">File Manager</string>
@@ -2195,7 +2191,6 @@
     <string name="process_limit_error_output">Error Output</string>
     <string name="process_limit_exit_code">Exit Code: %d</string>
     <string name="process_limit_command">Command</string>
-    <string name="toolbox_description">Convenient and practical tool collection to improve your work efficiency</string>
 
     <!-- MCP Config Screen -->
     <string name="import_or_connect_mcp_service">Import or Connect MCP Service</string>
@@ -2330,27 +2325,6 @@
     <string name="mcp_plugin">MCP Plugin</string>
 
     <!-- Toolbox Permission Manager -->
-    <string name="toolbox_permissions_search_hint">Search apps</string>
-    <string name="toolbox_permissions_system_apps">System apps</string>
-    <string name="toolbox_permissions_app_count">%d apps total</string>
-    <string name="toolbox_permissions_loading_apps">Loading app list…</string>
-    <string name="toolbox_permissions_no_match">No matching apps found</string>
-    <string name="toolbox_permissions_try_other_keywords">Try other keywords</string>
-    <string name="toolbox_permissions_try_system_apps">Try checking "System apps" to see more</string>
-    <string name="toolbox_permissions_no_apps">No apps found</string>
-    <string name="toolbox_permissions_reset">Reset permissions</string>
-    <string name="toolbox_permissions_overview">Permissions overview</string>
-    <string name="toolbox_permissions_total">Total permissions</string>
-    <string name="toolbox_permissions_granted">Granted</string>
-    <string name="toolbox_permissions_dangerous">Dangerous permissions</string>
-    <string name="toolbox_permissions_loading_info">Loading permission info…</string>
-    <string name="toolbox_permissions_no_special">This app has no special permissions</string>
-    <string name="toolbox_permissions_no_special_desc">This means the app doesn\'t need access to sensitive data or features</string>
-    <string name="toolbox_permissions_count_suffix"> permissions</string>
-    <string name="toolbox_permissions_view">View permissions</string>
-    <string name="toolbox_permissions_get_error">Failed to get permissions: %s</string>
-    <string name="toolbox_permissions_modify_error">Failed to modify permissions: %s</string>
-    <string name="toolbox_permissions_reset_error">Failed to reset permissions: %s</string>
     <string name="try_different_keywords">Try different keywords</string>
     <string name="try_show_system_apps">Try checking "System apps" to see more apps</string>
     <string name="no_apps_found_anywhere">No apps found anywhere</string>
@@ -2402,10 +2376,6 @@
     <string name="not_granted">Not granted</string>
 
     <!-- Toolbox Screen -->
-    <string name="toolbox_title">Toolbox</string>
-    <string name="toolbox_subtitle">Collection of development and system management tools</string>
-    <string name="toolbox_no_tools">No tools in this category</string>
-    <string name="toolbox_animation_loading">Loading tools...</string>
 
     <!-- File Manager -->
     <string name="file_manager_title">File Manager</string>
@@ -3889,61 +3859,12 @@
     <string name="preferences_intro_template_no_age">I am %1$s, %2$s. I am particularly interested in %3$s. In communication, I prefer %4$s.</string>
 
     <!-- Occupation Options -->
-    <string name="occupation_student">Student</string>
-    <string name="occupation_employee">Employee</string>
-    <string name="occupation_teacher">Teacher</string>
-    <string name="occupation_doctor">Doctor</string>
-    <string name="occupation_engineer">Engineer</string>
-    <string name="occupation_designer">Designer</string>
-    <string name="occupation_programmer">Programmer</string>
-    <string name="occupation_business_owner">Business Owner</string>
-    <string name="occupation_sales">Sales</string>
-    <string name="occupation_customer_service">Customer Service</string>
-    <string name="occupation_freelancer">Freelancer</string>
-    <string name="occupation_retired">Retired</string>
-    <string name="occupation_other">Other</string>
 
     <!-- Personality Traits -->
-    <string name="personality_extroverted">Extroverted</string>
-    <string name="personality_introverted">Introverted</string>
-    <string name="personality_sensitive">Sensitive</string>
-    <string name="personality_rational">Rational</string>
-    <string name="personality_emotional">Emotional</string>
-    <string name="personality_cautious">Cautious</string>
-    <string name="personality_adventurous">Adventurous</string>
-    <string name="personality_patient">Patient</string>
-    <string name="personality_impatient">Impatient</string>
-    <string name="personality_optimistic">Optimistic</string>
-    <string name="personality_pessimistic">Pessimistic</string>
-    <string name="personality_curious">Curious</string>
-    <string name="personality_conservative">Conservative</string>
-    <string name="personality_innovative">Innovative</string>
-    <string name="personality_meticulous">Meticulous</string>
-    <string name="personality_rough">Rough</string>
 
     <!-- Identity Options -->
-    <string name="identity_student">Student</string>
-    <string name="identity_teacher">Teacher</string>
-    <string name="identity_parent">Parent</string>
-    <string name="identity_music_lover">Music Lover</string>
-    <string name="identity_art_lover">Art Lover</string>
-    <string name="identity_gamer">Gamer</string>
-    <string name="identity_athlete">Athlete</string>
-    <string name="identity_tech_enthusiast">Tech Enthusiast</string>
-    <string name="identity_traveler">Traveler</string>
-    <string name="identity_foodie">Foodie</string>
-    <string name="identity_entrepreneur">Entrepreneur</string>
-    <string name="identity_professional">Professional</string>
 
     <!-- AI Style Options -->
-    <string name="ai_style_professional">Professional &amp; Rigorous</string>
-    <string name="ai_style_humorous">Lively &amp; Humorous</string>
-    <string name="ai_style_direct">Concise &amp; Direct</string>
-    <string name="ai_style_patient">Patient &amp; Detailed</string>
-    <string name="ai_style_creative">Creative Thinking</string>
-    <string name="ai_style_technical">Technical Oriented</string>
-    <string name="ai_style_educational">Educational Guidance</string>
-    <string name="ai_style_supportive">Emotional Support</string>
 
     <!-- User Preferences Settings Screen -->
     <string name="default_profile">Default Profile</string>
@@ -7022,13 +6943,6 @@
     <string name="profile_identity_value">Identity: %1$s</string>
     <string name="profile_occupation_value">Occupation: %1$s</string>
     <string name="profile_ai_style_value">Expected AI Style: %1$s</string>
-    <string name="profile_regex_birth_date">(Birth Date|Date of Birth)[:：\\s]+([\\d-]+)</string>
-    <string name="profile_regex_birth_year">(Birth year|Age)[:：\\s]+(\\d+)</string>
-    <string name="profile_regex_gender">Gender[:：\\s]+([^;]+)</string>
-    <string name="profile_regex_personality">Personality( traits)?[:：\\s]+([^;]+)</string>
-    <string name="profile_regex_identity">Identity( recognition)?[:：\\s]+([^;]+)</string>
-    <string name="profile_regex_occupation">Occupation[:：\\s]+([^;]+)</string>
-    <string name="profile_regex_ai_style">(AI Style|Expected AI Style|Preferred AI Style)[:：\\s]+([^;]+)</string>
 
     <!-- AI Message Manager -->
     <string name="ai_message_user">User</string>
@@ -9210,7 +9124,7 @@
 
     <!-- 模型工作区 -->
     <string name="model_workspace_title">Model and parameter settings</string>
-    <string name="model_workspace_subtitle">Connections, parameters and function assignments</string>
+    <string name="model_workspace_subtitle">Connections, parameters, context summaries and function assignments</string>
     <string name="model_workspace_connection">Connection</string>
     <string name="model_workspace_parameters">Parameters</string>
     <string name="model_workspace_functions">Functions</string>
@@ -9225,7 +9139,7 @@
     <string name="model_workspace_sampling">Sampling and repetition</string>
     <string name="model_workspace_sampling_hint">Temperature, sampling range and repetition penalties</string>
     <string name="model_workspace_custom_hint">Custom request fields, types and values</string>
-    <string name="model_workspace_function_hint">Tap a function to assign a model and adjust its thinking preferences. Configurations follow the selected group above.</string>
+    <string name="model_workspace_function_hint">Assign a configuration and model to each function and adjust thinking preferences. Assignments apply globally.</string>
     <string name="model_workspace_all_functions">All functions</string>
     <string name="model_workspace_current_functions">Current config</string>
     <string name="model_workspace_no_functions">No functions are assigned to this configuration.</string>
@@ -9491,4 +9405,66 @@
     <string name="theme_target_no_matches">No matches</string>
     <string name="theme_target_character_label">Character card</string>
     <string name="theme_target_group_label">Group</string>
+    <string name="model_workspace_summary">Context &amp; summary</string>
+    <string name="model_workspace_summary_scope">Editing: %1$s · saved per configuration</string>
+    <string name="model_workspace_summary_threshold">Context usage percentage</string>
+    <string name="model_workspace_summary_threshold_hint">Generate a summary when this percentage is reached</string>
+    <string name="model_workspace_summary_threshold_error">Enter a summary threshold greater than 0 and less than 100</string>
+    <string name="model_workspace_summary_context_limit">Context length must not exceed the maximum context length</string>
+    <string name="model_workspace_summary_history_error">Enter non-negative whole numbers for history media retention</string>
+    <string name="model_workspace_summary_history_scope">Global setting: history media retention applies to every configuration</string>
+    <string name="model_workspace_summary_reset_history">Reset history media retention</string>
+    <string name="model_workspace_summary_model">Model used for summaries</string>
+    <string name="model_workspace_summary_model_scope">This function assignment applies to every configuration</string>
+    <string name="model_workspace_function_search">Search functions, configurations or models</string>
+    <string name="model_workspace_function_count">%1$d / %2$d functions</string>
+
+    <!-- 语音条与录音面板 -->
+    <string name="voice_message_record_title">Record voice message</string>
+    <string name="voice_message_confirm_title">Review voice message</string>
+    <string name="voice_message_silence_hint">Stops after 3 seconds of silence · 60 seconds max</string>
+    <string name="voice_message_done">Done speaking</string>
+    <string name="voice_message_rerecord">Record again</string>
+    <string name="voice_message_permission">Microphone permission is required to record voice</string>
+    <string name="voice_message_record_failed">Recording failed. Please try again</string>
+    <string name="voice_message_no_speech">No speech detected. Please record again</string>
+    <string name="voice_message_stt_busy">Speech recognition is busy. Finish the other voice task first</string>
+    <string name="voice_message_stt_failed">Transcription failed. Check speech service settings</string>
+    <string name="voice_message_no_text">No text recognized. Retry or record again</string>
+    <string name="voice_message_play">Play voice message</string>
+    <string name="voice_message_pause">Pause voice message</string>
+    <string name="voice_message_play_failed">Unable to play voice. Check that the audio file is available</string>
+    <string name="voice_message_show_text">Show transcript</string>
+    <string name="voice_message_hide_text">Hide transcript</string>
+    <string name="voice_message_standalone">Voice messages must be sent alone in the same chat with no draft, attachments or reply</string>
+    <string name="voice_message_record_hint">Listen back before sending</string>
+    <string name="voice_message_confirm_hint">Listen back and send when ready</string>
+    <string name="voice_message_recording">Recording</string>
+    <string name="voice_message_preparing">Preparing microphone…</string>
+    <string name="voice_message_transcript_title">Voice content</string>
+    <string name="voice_message_send">Send voice</string>
+    <string name="voice_message_sending">Sending…</string>
+    <string name="voice_message_text">Text</string>
+    <string name="voice_message_collapse_text">Hide</string>
+    <string name="voice_message_understanding_failed">Unable to process voice. Check audio understanding and speech recognition settings, then retry</string>
+    <string name="voice_message_understanding_timeout">Audio understanding timed out</string>
+    <string name="voice_message_understanding_prompt">Faithfully extract what the user says in this recording. Briefly include audible tone, delivery, or background sounds only when they help explain the intent. Do not answer or execute the request, infer facts not present, or call tools. Return the voice content for the ongoing conversation.</string>
+
+    <!-- 补齐此前缺少的本地化译文。 -->
+    <string name="agreement_document_title">Operit Kong User Agreement and Privacy Policy</string>
+    <string name="system_permission_notifications">Notifications</string>
+    <string name="system_permission_app_list">App list</string>
+    <string name="system_permission_usage_access">Usage access</string>
+    <string name="system_permission_write_settings">Modify system settings</string>
+    <string name="status_available">Available</string>
+    <string name="status_unavailable">Unavailable</string>
+    <string name="data_recovery_configuration_file_domain_issue">Invalid configuration file content: %1$s. Repair is possible after preserving the original file.</string>
+    <string name="tool_permission_execution_denied">Tool execution permission denied.</string>
+    <string name="tool_permission_overlay_required_for_confirmation">Display over other apps permission is required to confirm tool execution.</string>
+    <string name="tool_permission_confirmation_timeout">Tool execution confirmation timed out.</string>
+    <string name="colorpicker_select_thinking_particle">Choose thinking particle color</string>
+    <string name="theme_thinking_particle_color">Particle color</string>
+    <string name="theme_thinking_particle_color_desc">Customize the color of particles flowing along the slider while thinking is enabled. White is used by default.</string>
+    <string name="theme_thinking_particle_color_title">Thinking particle color</string>
+    <string name="onboarding_brand_name">Operit</string>
 </resources>

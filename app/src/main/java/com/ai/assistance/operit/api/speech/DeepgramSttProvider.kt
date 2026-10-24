@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.api.speech
 
 import android.annotation.SuppressLint
+import com.ai.assistance.operit.api.speech.http.awaitSttBody
+import kotlinx.coroutines.CancellationException
 import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -377,6 +379,11 @@ class DeepgramSttProvider(
             return@withContext listOf("zh", "en")
         }
 
+    override suspend fun recognize(audioData: FloatArray, languageCode: String) {
+        lastLanguageCode = languageCode
+        recognize(audioData)
+    }
+
     override suspend fun recognize(audioData: FloatArray) {
         if (!isInitialized.value) {
             val ok = initialize()
@@ -387,9 +394,10 @@ class DeepgramSttProvider(
         _recognitionResult.value = SpeechService.RecognitionResult("")
         _recognitionState.value = SpeechService.RecognitionState.PROCESSING
 
+        val file = File(context.cacheDir, "deepgram_stt_${UUID.randomUUID()}.wav")
         try {
-            val file = withContext(Dispatchers.IO) {
-                val out = File(context.cacheDir, "deepgram_stt_${UUID.randomUUID()}.wav")
+            withContext(Dispatchers.IO) {
+                val out = file
                 FileOutputStream(out).use { fos ->
                     fos.write(ByteArray(WAV_HEADER_SIZE))
                     val bytes = ByteArray(audioData.size * 2)
@@ -410,14 +418,17 @@ class DeepgramSttProvider(
                 transcribeWavFile(file, languageCode = lastLanguageCode)
             }
 
-            file.delete()
-
             _recognitionResult.value = SpeechService.RecognitionResult(text = text, isFinal = true, confidence = 0f)
             _recognitionState.value = SpeechService.RecognitionState.IDLE
+        } catch (e: CancellationException) {
+            _recognitionState.value = SpeechService.RecognitionState.IDLE
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "Deepgram STT recognize(audioData) failed", e)
             _recognitionState.value = SpeechService.RecognitionState.ERROR
             _recognitionError.value = SpeechService.RecognitionError(-1, e.message ?: "recognize failed")
+        } finally {
+            file.delete()
         }
     }
 
@@ -541,7 +552,7 @@ class DeepgramSttProvider(
         }
     }
 
-    private fun transcribeWavFile(file: File, languageCode: String?): String {
+    private suspend fun transcribeWavFile(file: File, languageCode: String?): String {
         val url = endpointUrl.toHttpUrl().newBuilder()
             .addQueryParameter("model", model)
             .addQueryParameter("smart_format", "true")
@@ -558,31 +569,19 @@ class DeepgramSttProvider(
             .addHeader("Authorization", "Token $apiKey")
             .build()
 
-        val response = try {
-            httpClient.newCall(request).execute()
-        } catch (e: IOException) {
-            throw IOException(context.getString(R.string.deepgram_stt_request_failed), e)
+        val body = httpClient.newCall(request).awaitSttBody(context.getString(R.string.deepgram_stt_request_failed))
+        val trimmed = body.trim()
+        if (trimmed.startsWith("{")) {
+            val json = JSONObject(trimmed)
+            val results = json.optJSONObject("results")
+            val channels = results?.optJSONArray("channels")
+            val firstChannel = channels?.optJSONObject(0)
+            val alternatives = firstChannel?.optJSONArray("alternatives")
+            val firstAlt = alternatives?.optJSONObject(0)
+            val transcript = firstAlt?.optString("transcript", "")
+            return transcript.orEmpty()
         }
-
-        response.use { resp ->
-            val body = resp.body?.string() ?: ""
-            if (!resp.isSuccessful) {
-                throw IOException("Deepgram STT request failed with code ${resp.code}: $body")
-            }
-            val trimmed = body.trim()
-            if (trimmed.startsWith("{")) {
-                val json = JSONObject(trimmed)
-                val results = json.optJSONObject("results")
-                val channels = results?.optJSONArray("channels")
-                val firstChannel = channels?.optJSONObject(0)
-                val alternatives = firstChannel?.optJSONArray("alternatives")
-                val firstAlt = alternatives?.optJSONObject(0)
-                val transcript = firstAlt?.optString("transcript", "")
-                if (!transcript.isNullOrBlank()) return transcript
-                return trimmed
-            }
-            return trimmed
-        }
+        return trimmed
     }
 
     private fun updateVolumeLevel(buffer: ShortArray, length: Int) {

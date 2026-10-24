@@ -17,6 +17,7 @@
 - [超大聊天消息读取修复](chat_large_message_io_20260806/index.md) · `chat_large_message_io_20260806`
 - [Claude 工具结果配对修复](claude_tool_result_pairing_repair_20260907/index.md) · `claude_tool_result_pairing_repair_20260907`
 - [Codex Auth Keystore Restore Crash](codex_auth_keystore_restore_20260904/index.md) · `codex_auth_keystore_restore_20260904`
+- [崩溃报告自动换行开关反馈](crash-report-wrap-feedback/index.md)
 - [DeepSeek Responses Reasoning Replay](deepseek_responses_reasoning_replay_20260907/index.md) · `deepseek_responses_reasoning_replay_20260907`
 - [悬浮窗 NaN 崩溃修复](floating_window_nan_crash_20260917/index.md) · `floating_window_nan_crash_20260917`
 - [Gemini tool history and thinking repair](gemini_tool_history_and_thinking_repair_20260907/index.md) · `gemini_tool_history_and_thinking_repair_20260907`
@@ -38,6 +39,7 @@
 - [Incremental Private Publisher Projection](market_private_publisher_incremental_20260728/index.md) · `market_private_publisher_incremental_20260728`
 - [Marketplace client-version compatibility](market_version_compatibility_20260805/index.md) · `market_version_compatibility_20260805`
 - [市场版本范围下载状态](market_version_download_state/index.md) · `market_version_download_state`
+- [记忆工作台选择器与默认空间删除状态](memory-workbench-selectors/index.md)
 - [记忆检索相关性与诊断（#1320）](memory-search-1320/01-relevance-and-diagnostics.md) · `memory-search-1320`
 - [额外信息注入并发时限](message_insert_parallel_deadline_20260808/index.md) · `message_insert_parallel_deadline_20260808`
 - [模型配置默认启用 Tool Call](model_tool_call_default_20260807/index.md) · `model_tool_call_default_20260807`
@@ -82,3 +84,9 @@
 - [Workflow Runtime Initialization](workflow_runtime_init_20260731/index.md) · `workflow_runtime_init_20260731`
 - [工作流存储稳定性](workflow_storage_stability_20260828/index.md) · `workflow_storage_stability_20260828`
 - [工作流定时执行](workflow-scheduling/index.md) · `workflow-scheduling`
+
+- [包工具 JSON 参数诊断](package-proxy-json-diagnostics/index.md)
+- [A2UI 编译说明与消息投递](a2ui-generation-delivery/index.md)
+- [多工具交错参数完整性](interleaved-tool-call-arguments/index.md)
+
+- [终端非零退出码统一判为失败](terminal-nonzero-exit/index.md)

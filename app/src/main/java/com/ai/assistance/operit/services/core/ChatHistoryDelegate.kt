@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.data.model.MessageSectionCodec
 import com.ai.assistance.operit.data.chat.deletion.ChatDeletionResult
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
@@ -1419,6 +1422,22 @@ class ChatHistoryDelegate(
         )
         return false
     }
+
+    suspend fun resolveVoiceMessage(chatId: String, source: VoiceMessageData, text: String): List<ChatMessage> =
+        historyUpdateMutex.withLock {
+            val updatedMessages = mutableListOf<ChatMessage>()
+            for (existing in chatHistoryManager.loadRuntimeChatMessages(chatId)) {
+                if (existing.sender != "user") continue
+                val content = VoiceMessageMarkup.withResolvedTranscript(existing.content, source, text)
+                if (content == existing.content) continue
+                val updated = existing.copy(content = content, sections = MessageSectionCodec.parse(content))
+                chatHistoryManager.updateMessage(chatId, updated)
+                if (chatId == _currentChatId.value && allowAddMessage.get()) upsertCurrentChatMessageInMemory(updated)
+                ToolPkgChatMessageHookBridge.dispatchMessagePersisted(chatId, updated)
+                updatedMessages.add(updated)
+            }
+            updatedMessages
+        }
 
     suspend fun addMessageToChat(message: ChatMessage, chatIdOverride: String? = null) {
         historyUpdateMutex.withLock {
