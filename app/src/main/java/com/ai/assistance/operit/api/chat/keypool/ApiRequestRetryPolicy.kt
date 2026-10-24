@@ -36,6 +36,7 @@ internal object ApiRequestRetryPolicy {
     private val invalidRequestMarkers = listOf("invalid_request_error", "invalid_argument")
 
     fun mode(exception: Throwable): ApiRequestRetryMode {
+        if (ApiKeyFailureClassifier.poolExhausted(exception) != null) return ApiRequestRetryMode.STOP
         val errorClass = ApiKeyFailureClassifier.classify(exception)
         // 余额可在等待期间补充，保留原有额度重试策略。
         if (errorClass == ApiKeyErrorClass.QUOTA) return ApiRequestRetryMode.RETRY

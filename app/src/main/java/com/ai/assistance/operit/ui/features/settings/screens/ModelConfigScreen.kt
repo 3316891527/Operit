@@ -59,6 +59,7 @@ import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.ui.features.settings.DebouncedModelConfigAutoSaveEffect
 import com.ai.assistance.operit.ui.features.settings.ModelConfigSaveCoordinator
+import com.ai.assistance.operit.ui.features.settings.contextsummary.ModelContextSummaryContent
 import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveAction
 import com.ai.assistance.operit.ui.features.settings.rememberModelConfigSaveCoordinator
 import com.ai.assistance.operit.ui.features.settings.keypool.ApiKeyPoolSettingsSection
@@ -177,10 +178,12 @@ fun ModelConfigScreen(
     var workspaceTab by rememberSaveable { mutableStateOf(initialTab) }
     val connectionListState = rememberLazyListState()
     val parameterListState = rememberLazyListState()
+    val summaryListState = rememberLazyListState()
     val functionListState = rememberLazyListState()
     val listState = when (workspaceTab) {
         ModelWorkspaceTab.CONNECTION -> connectionListState
         ModelWorkspaceTab.PARAMETERS -> parameterListState
+        ModelWorkspaceTab.SUMMARY -> summaryListState
         ModelWorkspaceTab.FUNCTIONS -> functionListState
     }
     var savingSelection by remember { mutableStateOf(false) }
@@ -663,6 +666,12 @@ fun ModelConfigScreen(
                                         )
                                         AdvancedSettingsSection(config, configManager, saveCoordinator, ::showNotification)
                                     }
+                                    ModelWorkspaceTab.SUMMARY -> ModelContextSummaryContent(
+                                        config = config,
+                                        configManager = configManager,
+                                        saveCoordinator = saveCoordinator,
+                                        showNotification = ::showNotification,
+                                    )
                                     ModelWorkspaceTab.FUNCTIONS -> Unit
                                 }
                             }

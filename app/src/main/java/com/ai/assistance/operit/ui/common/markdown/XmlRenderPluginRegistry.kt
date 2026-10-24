@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.common.markdown
 
+import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessageXmlPlugin
+
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -91,7 +93,7 @@ private fun buildXmlRenderComposeDslExecutionContextKey(
 
 object XmlRenderPluginRegistry {
     private const val TAG = "XmlRenderPluginRegistry"
-    private val plugins = CopyOnWriteArrayList<XmlRenderPlugin>()
+    private val plugins = CopyOnWriteArrayList<XmlRenderPlugin>().apply { add(VoiceMessageXmlPlugin) }
     private val changeVersionMutable = MutableStateFlow(0)
     val changeVersion: StateFlow<Int> = changeVersionMutable.asStateFlow()
 

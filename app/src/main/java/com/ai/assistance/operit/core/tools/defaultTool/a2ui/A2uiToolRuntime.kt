@@ -49,7 +49,7 @@ internal object A2uiToolRuntime {
                 if (live) put("version", 0)
                 report["repaired"]?.let { put("repaired", it) }
                 report["repair"]?.let { put("repair", it) }
-                put("message", "Place this reference in the answer at the card position:\n```a2ui-ref\n$reference\n```")
+                put("message", "Card compiled and queued. Operit will render it automatically when this turn completes. To choose its position, optionally output this exact reference fence; never output a historical summary or rewrite the JSON:\n```a2ui-ref\n$reference\n```")
             }
         } catch (error: IllegalArgumentException) {
             failure("invalid_card", error.message?.take(240) ?: "Invalid card data.")
@@ -71,13 +71,13 @@ internal object A2uiToolRuntime {
             val source = CardDelivery.source(run, reference)
                 ?: return failure("unknown_reference", "Reference is not from this active turn.")
             val prepared = CardExpress.prepareRevision(source, changes, remove)
-            val updated = CardDelivery.register(run, prepared.document, prepared.source)
+            val updated = CardDelivery.register(run, prepared.document, prepared.source, supersedesReference = reference)
             buildJsonObject {
                 put("valid", true)
                 put("reference", updated)
                 put("baseReference", reference)
                 prepared.repair?.let { put("repaired", true); put("repair", it) }
-                put("message", "The previous card is preserved. Display the new reference:\n```a2ui-ref\n$updated\n```")
+                put("message", "Revision compiled and queued. Previously displayed cards are preserved; unplaced older revisions are replaced. Operit will render the new card automatically when this turn completes. Optional position reference:\n```a2ui-ref\n$updated\n```")
             }
         } catch (error: CardExpress.Failure) {
             buildJsonObject {

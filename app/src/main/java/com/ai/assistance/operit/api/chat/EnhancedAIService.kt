@@ -1,5 +1,10 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.api.chat.voice.VoiceAudioRequest
+
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -360,6 +365,7 @@ class EnhancedAIService private constructor(context: Context) {
         var stream: Boolean = true,
         var disableWarning: Boolean = false,
         var historyOnly: Boolean = false,
+        var onVoiceMessageResolved: suspend (VoiceMessageData, String) -> Unit = { _, _ -> },
     )
 
     // MultiServiceManager 管理不同功能的 AIService 实例
@@ -440,7 +446,8 @@ class EnhancedAIService private constructor(context: Context) {
         val conversationHistory: MutableList<PromptTurn>,
         val eventChannel: MutableSharedStream<TextStreamEvent>,
         val permissionSession: PermissionCapabilitySession,
-        var modelExecutionSnapshot: ModelExecutionSnapshot? = null
+        var modelExecutionSnapshot: ModelExecutionSnapshot? = null,
+        @Volatile var voiceInputJob: Job? = null,
     )
 
     private val activeExecutionContexts = ConcurrentHashMap<Int, MessageExecutionContext>()
@@ -458,6 +465,7 @@ class EnhancedAIService private constructor(context: Context) {
 
     private fun invalidateExecutionContext(context: MessageExecutionContext, reason: String) {
         if (context.isConversationActive.compareAndSet(true, false)) {
+            context.voiceInputJob?.cancel(CancellationException(reason))
             CardDelivery.end(context.a2uiRunId)
             AppLogger.d(TAG, "执行上下文已失效: id=${context.executionId}, reason=$reason")
         }
@@ -879,18 +887,21 @@ class EnhancedAIService private constructor(context: Context) {
                     previous.toolName == current.toolName
             }
 
-        val windowSize =
-            estimatePreparedRequestWindow(
+        val voiceEstimate = VoiceAudioRequest(context, multiServiceManager) { _, _ -> }
+        try {
+            val estimatedHistory = requestHistory.map { turn ->
+                turn.copy(content = voiceEstimate.formatForEstimate(turn.content, modelConfig.enableDirectAudioProcessing))
+            }
+            val windowSize = estimatePreparedRequestWindow(
                 serviceForFunction = serviceForFunction,
-                preparedHistory = requestHistory,
+                preparedHistory = estimatedHistory,
                 availableTools = availableTools,
-                publishEstimate = publishEstimate
+                publishEstimate = publishEstimate,
             )
-        return RequestWindowSnapshot(
-            windowTokens = windowSize,
-            history = requestHistory,
-            tools = availableTools
-        )
+            return RequestWindowSnapshot(windowTokens = windowSize, history = estimatedHistory, tools = availableTools)
+        } finally {
+            voiceEstimate.close()
+        }
     }
 
     suspend fun estimateRequestWindowFromMemory(
@@ -941,9 +952,10 @@ class EnhancedAIService private constructor(context: Context) {
     suspend fun sendMessage(
         options: SendMessageOptions
     ): Stream<String> {
-        val message = options.message
+        var message = VoiceMessageMarkup.toRequestContent(options.message)
         val chatId = options.chatId
-        val chatHistory = options.chatHistory
+        // 历史保留新语音的录音输入，由实际模型配置决定如何处理。
+        val chatHistory = options.chatHistory.map { it.copy(content = VoiceMessageMarkup.toRequestContent(it.content)) }
         val workspacePath = options.workspacePath
         val workspaceEnv = options.workspaceEnv
         val functionType = options.functionType
@@ -1023,6 +1035,7 @@ class EnhancedAIService private constructor(context: Context) {
             var hadFatalError = false
             // 完成处理位于 finally，流式状态需由本次消息共享，并在取得配置快照后更新。
             var stream = requestedStream
+            val voiceAudioRequest = VoiceAudioRequest(context, multiServiceManager, options.onVoiceMessageResolved)
             try {
                 // 确保所有操作都在IO线程上执行
                 withContext(Dispatchers.IO) {
@@ -1040,6 +1053,13 @@ class EnhancedAIService private constructor(context: Context) {
                         }
                     }
 
+                    // 音频理解和 STT 属于本次输入；取消对话时同步停止，不能再切换路径。
+                    if ((listOf(message) + chatHistory.map { it.content }).any { content ->
+                            VoiceMessageMarkup.messages(content).any { it.inputMode == VoiceInputMode.AUDIO }
+                        }) {
+                        execContext.voiceInputJob = kotlin.coroutines.coroutineContext[Job]
+                        if (!isExecutionContextActive(execContext)) throw CancellationException("Voice input cancelled")
+                    }
                     val startTime = messageTimingNow()
                     val modelSnapshot =
                         getModelExecutionSnapshot(
@@ -1049,6 +1069,13 @@ class EnhancedAIService private constructor(context: Context) {
                             chatModelIndexOverride
                         )
                     stream = requestedStream && modelSnapshot.config.enableStreamOutput
+                    // 这里使用已绑定角色卡和模型索引的实际配置快照，不读取全局默认聊天模型代替。
+                    message = voiceAudioRequest.format(message, modelSnapshot.config.enableDirectAudioProcessing)
+                    val voiceHistory = execContext.conversationHistory.map { turn ->
+                        turn.copy(content = voiceAudioRequest.format(turn.content, modelSnapshot.config.enableDirectAudioProcessing))
+                    }
+                    execContext.conversationHistory.clear()
+                    execContext.conversationHistory.addAll(voiceHistory)
 
                     // Prepare conversation history with system prompt
                     val preparedHistory =
@@ -1163,6 +1190,8 @@ class EnhancedAIService private constructor(context: Context) {
                             previous.kind == PromptTurnKind.USER &&
                                 current.kind == PromptTurnKind.USER &&
                                 previous.toolName == current.toolName
+                        }.map { turn ->
+                            turn.copy(content = voiceAudioRequest.format(turn.content, modelSnapshot.config.enableDirectAudioProcessing))
                         }
                     execContext.conversationHistory.clear()
                     execContext.conversationHistory.addAll(requestHistory)
@@ -1176,10 +1205,12 @@ class EnhancedAIService private constructor(context: Context) {
                     // 使用新的Stream API
                     AppLogger.d(TAG, "sendMessage请求前准备耗时: ${tAfterGetTools - startTime}ms, 流式输出: $stream")
                     val requestStartTime = messageTimingNow()
-                    val responseStream =
+                    val responseStream = voiceAudioRequest.send(
+                        history = requestHistory,
+                        request = { voiceRequestHistory ->
                             serviceForFunction.sendMessage(
                                     context = this@EnhancedAIService.context,
-                                    chatHistory = requestHistory,
+                                    chatHistory = voiceRequestHistory,
                                     modelParameters = modelParameters,
                                     enableThinking = enableThinking,
                                     stream = stream,
@@ -1192,6 +1223,13 @@ class EnhancedAIService private constructor(context: Context) {
                                     },
                                      onNonFatalError = onNonFatalError,
                             )
+                        },
+                        onHistoryResolved = { textHistory ->
+                            execContext.conversationHistory.clear()
+                            execContext.conversationHistory.addAll(textHistory)
+                            estimatePreparedRequestWindow(serviceForFunction, textHistory, availableTools, publishEstimate = true)
+                        },
+                    )
                     val revisableStream = responseStream as? TextStreamEventCarrier
 
                     // 收到第一个响应，更新状态
@@ -1381,7 +1419,8 @@ class EnhancedAIService private constructor(context: Context) {
                     }
                 } finally {
                     unregisterExecutionContext(execContext)
-                    withContext(NonCancellable) {
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        voiceAudioRequest.close()
                         releaseModelExecutionSnapshot(execContext)
                     }
                 }
@@ -1773,6 +1812,16 @@ class EnhancedAIService private constructor(context: Context) {
         }
     }
 
+    /** 由宿主投递本轮已编译但未定位的卡片，与正文共用存储和渲染管线。 */
+    private suspend fun appendUnplacedA2ui(context: MessageExecutionContext, collector: StreamCollector<String>) {
+        val suffix = CardDelivery.unplaced(context.a2uiRunId, context.roundManager.getDisplayContent())
+        if (suffix.isNotEmpty()) {
+            context.streamBuffer.append(suffix)
+            context.roundManager.appendChunk(suffix)
+            collector.emit(suffix)
+        }
+    }
+
     /** 在处理完流后调用，使用增强的工具检测功能 */
     private suspend fun processStreamCompletion(
             context: MessageExecutionContext,
@@ -1813,9 +1862,10 @@ class EnhancedAIService private constructor(context: Context) {
             // We must still finalize the conversation to reset the state correctly.
             if (content.isEmpty()) {
                 AppLogger.d(TAG, "Stream content is empty. Finalizing conversation state.")
+                appendUnplacedA2ui(context, collector)
                 finalizeAssistantResponse(
                     context = context,
-                    content = content,
+                    content = context.roundManager.getDisplayContent(),
                     enableMemoryAutoUpdate = enableMemoryAutoUpdate,
                     onNonFatalError = onNonFatalError,
                     isSubTask = isSubTask,
@@ -1911,6 +1961,10 @@ class EnhancedAIService private constructor(context: Context) {
             // Check again if conversation is active
             if (!context.isConversationActive.get()) {
                 return
+            }
+
+            if (truncatedToolRecovery == null && extractedToolInvocations.isEmpty()) {
+                appendUnplacedA2ui(context, collector)
             }
 
             // Add current assistant message to conversation history

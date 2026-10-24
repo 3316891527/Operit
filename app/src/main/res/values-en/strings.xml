@@ -9210,7 +9210,7 @@
 
     <!-- 模型工作区 -->
     <string name="model_workspace_title">Model and parameter settings</string>
-    <string name="model_workspace_subtitle">Connections, parameters and function assignments</string>
+    <string name="model_workspace_subtitle">Connections, parameters, context summaries and function assignments</string>
     <string name="model_workspace_connection">Connection</string>
     <string name="model_workspace_parameters">Parameters</string>
     <string name="model_workspace_functions">Functions</string>
@@ -9225,7 +9225,7 @@
     <string name="model_workspace_sampling">Sampling and repetition</string>
     <string name="model_workspace_sampling_hint">Temperature, sampling range and repetition penalties</string>
     <string name="model_workspace_custom_hint">Custom request fields, types and values</string>
-    <string name="model_workspace_function_hint">Tap a function to assign a model and adjust its thinking preferences. Configurations follow the selected group above.</string>
+    <string name="model_workspace_function_hint">Assign a configuration and model to each function and adjust thinking preferences. Assignments apply globally.</string>
     <string name="model_workspace_all_functions">All functions</string>
     <string name="model_workspace_current_functions">Current config</string>
     <string name="model_workspace_no_functions">No functions are assigned to this configuration.</string>
@@ -9491,4 +9491,48 @@
     <string name="theme_target_no_matches">No matches</string>
     <string name="theme_target_character_label">Character card</string>
     <string name="theme_target_group_label">Group</string>
+    <string name="model_workspace_summary">Context &amp; summary</string>
+    <string name="model_workspace_summary_scope">Editing: %1$s · saved per configuration</string>
+    <string name="model_workspace_summary_threshold">Context usage percentage</string>
+    <string name="model_workspace_summary_threshold_hint">Generate a summary when this percentage is reached</string>
+    <string name="model_workspace_summary_threshold_error">Enter a summary threshold greater than 0 and less than 100</string>
+    <string name="model_workspace_summary_context_limit">Context length must not exceed the maximum context length</string>
+    <string name="model_workspace_summary_history_error">Enter non-negative whole numbers for history media retention</string>
+    <string name="model_workspace_summary_history_scope">Global setting: history media retention applies to every configuration</string>
+    <string name="model_workspace_summary_reset_history">Reset history media retention</string>
+    <string name="model_workspace_summary_model">Model used for summaries</string>
+    <string name="model_workspace_summary_model_scope">This function assignment applies to every configuration</string>
+    <string name="model_workspace_function_search">Search functions, configurations or models</string>
+    <string name="model_workspace_function_count">%1$d / %2$d functions</string>
+
+    <!-- 语音条与录音面板 -->
+    <string name="voice_message_record_title">Record voice message</string>
+    <string name="voice_message_confirm_title">Review voice message</string>
+    <string name="voice_message_silence_hint">Stops after 3 seconds of silence · 60 seconds max</string>
+    <string name="voice_message_done">Done speaking</string>
+    <string name="voice_message_rerecord">Record again</string>
+    <string name="voice_message_permission">Microphone permission is required to record voice</string>
+    <string name="voice_message_record_failed">Recording failed. Please try again</string>
+    <string name="voice_message_no_speech">No speech detected. Please record again</string>
+    <string name="voice_message_stt_busy">Speech recognition is busy. Finish the other voice task first</string>
+    <string name="voice_message_stt_failed">Transcription failed. Check speech service settings</string>
+    <string name="voice_message_no_text">No text recognized. Retry or record again</string>
+    <string name="voice_message_play">Play voice message</string>
+    <string name="voice_message_pause">Pause voice message</string>
+    <string name="voice_message_play_failed">Unable to play voice. Check that the audio file is available</string>
+    <string name="voice_message_show_text">Show transcript</string>
+    <string name="voice_message_hide_text">Hide transcript</string>
+    <string name="voice_message_standalone">Voice messages must be sent alone in the same chat with no draft, attachments or reply</string>
+    <string name="voice_message_record_hint">Listen back before sending</string>
+    <string name="voice_message_confirm_hint">Listen back and send when ready</string>
+    <string name="voice_message_recording">Recording</string>
+    <string name="voice_message_preparing">Preparing microphone…</string>
+    <string name="voice_message_transcript_title">Voice content</string>
+    <string name="voice_message_send">Send voice</string>
+    <string name="voice_message_sending">Sending…</string>
+    <string name="voice_message_text">Text</string>
+    <string name="voice_message_collapse_text">Hide</string>
+    <string name="voice_message_understanding_failed">Unable to process voice. Check audio understanding and speech recognition settings, then retry</string>
+    <string name="voice_message_understanding_timeout">Audio understanding timed out</string>
+    <string name="voice_message_understanding_prompt">Faithfully extract what the user says in this recording. Briefly include audible tone, delivery, or background sounds only when they help explain the intent. Do not answer or execute the request, infer facts not present, or call tools. Return the voice content for the ongoing conversation.</string>
 </resources>

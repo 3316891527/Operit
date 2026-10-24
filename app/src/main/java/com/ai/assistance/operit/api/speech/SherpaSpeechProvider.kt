@@ -1,7 +1,10 @@
 package com.ai.assistance.operit.api.speech
 
+import kotlinx.coroutines.ensureActive
+
 import android.annotation.SuppressLint
 import android.content.Context
+import com.ai.assistance.operit.R
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -537,18 +540,50 @@ class SherpaSpeechProvider(private val context: Context) : SpeechService {
                 return@withContext listOf("zh", "en")
             }
 
-    // This method is for non-streaming recognition, which we are not using with sherpa-ncnn's
-    // streaming API.
-    // We can leave it as a no-op or throw an exception if called.
+    /** 语音条先保存录音，再使用同一个本地引擎转写，避免重复打开麦克风。 */
     override suspend fun recognize(audioData: FloatArray) {
-        // Not implemented for streaming recognizer
-        withContext(Dispatchers.Main) {
-            _recognitionError.value =
-                    SpeechService.RecognitionError(
-                            -10,
-                            "Batch recognition not supported in this provider"
-                    )
-            _recognitionState.value = SpeechService.RecognitionState.ERROR
+        recognitionMutex.withLock {
+            if (!isInitialized.value && !initialize()) return@withLock
+            check(recordingJob?.isActive != true) { context.getString(R.string.voice_message_stt_busy) }
+            _recognitionError.value = SpeechService.RecognitionError(0, "")
+            _recognitionResult.value = SpeechService.RecognitionResult("")
+            _recognitionState.value = SpeechService.RecognitionState.PROCESSING
+            try {
+                val text = withContext(Dispatchers.IO) {
+                    val engine = checkNotNull(recognizer)
+                    engine.reset(false)
+                    try {
+                        var offset = 0
+                        while (offset < audioData.size) {
+                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                            val end = minOf(offset + 16000, audioData.size)
+                            engine.acceptSamples(audioData.copyOfRange(offset, end))
+                            while (engine.isReady()) {
+                                kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                                engine.decode()
+                            }
+                            offset = end
+                        }
+                        engine.inputFinished()
+                        while (engine.isReady()) {
+                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                            engine.decode()
+                        }
+                        engine.text.trim()
+                    } finally {
+                        engine.reset(false)
+                    }
+                }
+                _recognitionResult.value = SpeechService.RecognitionResult(text, isFinal = true)
+                _recognitionState.value = SpeechService.RecognitionState.IDLE
+            } catch (error: CancellationException) {
+                _recognitionState.value = SpeechService.RecognitionState.IDLE
+                throw error
+            } catch (error: Exception) {
+                AppLogger.e(TAG, "转写预录语音失败", error)
+                _recognitionError.value = SpeechService.RecognitionError(-10, error.message.orEmpty())
+                _recognitionState.value = SpeechService.RecognitionState.ERROR
+            }
         }
     }
 }

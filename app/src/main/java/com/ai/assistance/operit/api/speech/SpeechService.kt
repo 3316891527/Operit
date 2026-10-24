@@ -108,4 +108,8 @@ interface SpeechService {
      * @param audioData 音频数据，格式为浮点数组表示的PCM数据
      */
     suspend fun recognize(audioData: FloatArray)
+    /** 指定预录音频的识别语言，在线引擎将语言代码传给服务端。 */
+    suspend fun recognize(audioData: FloatArray, languageCode: String) {
+        recognize(audioData)
+    }
 }

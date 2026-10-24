@@ -95,6 +95,24 @@ internal object ApiKeyPoolSelector {
         return ApiKeyPick.Exhausted("empty_or_disabled")
     }
 
+    fun earliestCooldownUntilMs(
+        pool: List<ApiKeyInfo>,
+        excludedIds: Set<String>,
+        nowMs: Long,
+        model: String,
+        cooldownUntilMs: (keyId: String, model: String) -> Long,
+    ): Long? {
+        val enabledKeys = pool.filter { it.isEnabled && it.key.isNotBlank() }
+        val hasAvailabilityMark =
+            enabledKeys.any { it.availabilityStatus != ApiKeyAvailabilityStatus.UNTESTED }
+        return enabledKeys.asSequence()
+            .filter { !hasAvailabilityMark || it.availabilityStatus == ApiKeyAvailabilityStatus.AVAILABLE }
+            .filter { it.id !in excludedIds }
+            .map { cooldownUntilMs(it.id, model) }
+            .filter { it > nowMs }
+            .minOrNull()
+    }
+
     fun candidateCount(
         pool: List<ApiKeyInfo>,
         excludedIds: Set<String>,

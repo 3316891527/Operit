@@ -51,6 +51,7 @@ private const val INFO_RECORD_LIMIT = 2000
 internal fun ApiKeyPoolInfoSheet(
     configId: String,
     keys: List<ApiKeyInfo>,
+    cooldowns: Map<String, List<ApiKeyCooldownRemaining>>,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -112,7 +113,10 @@ internal fun ApiKeyPoolInfoSheet(
                             .weight(1f, fill = false).heightIn(max = 480.dp)
                 ) {
                     items(rows, key = { it.key.id }) { row ->
-                        ApiKeyPoolInfoRowItem(row = row, nowMs = nowMs)
+                        ApiKeyPoolInfoRowItem(
+                            row = row, nowMs = nowMs,
+                            cooldowns = cooldowns[row.key.id].orEmpty(),
+                        )
                     }
                 }
             }
@@ -131,16 +135,18 @@ internal fun ApiKeyPoolInfoSheet(
 private fun ApiKeyPoolInfoRowItem(
     row: ApiKeyPoolInfoRow,
     nowMs: Long,
+    cooldowns: List<ApiKeyCooldownRemaining>,
 ) {
     val statusColor = row.key.statusColor()
+    val showRecent = row.isRecent && cooldowns.isEmpty()
     val statusLabel =
-        if (row.isRecent) {
+        if (showRecent) {
             stringResource(R.string.api_key_pool_info_recent)
         } else {
             row.key.statusLabel()
         }
     val chipColor =
-        if (row.isRecent) {
+        if (showRecent) {
             Color(0xFF4CAF50)
         } else {
             statusColor
@@ -182,6 +188,7 @@ private fun ApiKeyPoolInfoRowItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            ApiKeyCooldownLabels(cooldowns)
             Text(
                 text = formatInfoLine(row, nowMs),
                 style = MaterialTheme.typography.bodySmall,

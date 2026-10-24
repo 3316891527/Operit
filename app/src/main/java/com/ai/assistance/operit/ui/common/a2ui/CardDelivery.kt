@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.common.a2ui
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.data.model.MessageSectionCodec
+import com.ai.assistance.operit.util.markdown.MarkdownFence
 import java.util.UUID
 import kotlinx.serialization.json.*
 
@@ -16,7 +17,7 @@ internal object CardDelivery {
     // 仅标识真实的轮次失效，卡片内容错误由输入校验单独报告。
     class InactiveRunException : IllegalStateException("Card generation is unavailable outside an active chat turn.")
 
-    private data class Revision(val document: String, val source: String) {
+    private data class Revision(val document: String, val source: String, var superseded: Boolean = false) {
         val size get() = document.length + source.length
     }
     private val runs = mutableMapOf<String, MutableMap<String, Revision>>()
@@ -25,7 +26,7 @@ internal object CardDelivery {
     }
     @Synchronized fun end(run: String) { runs.remove(run); CardLiveStore.end(run) }
     @Synchronized fun register(run: String, document: String, source: String = "",
-        liveChat: String? = null, liveDirectory: java.io.File? = null): String {
+        liveChat: String? = null, liveDirectory: java.io.File? = null, supersedesReference: String? = null): String {
         val cards = runs[run] ?: throw InactiveRunException()
         val id = UUID.randomUUID().toString()
         val stored = if (liveChat == null) document else document.lines().filter(String::isNotBlank).joinToString("\n") { line ->
@@ -43,6 +44,7 @@ internal object CardDelivery {
         }
         if (liveChat != null) CardLiveStore.register(run, id, liveChat, requireNotNull(liveDirectory), source, stored)
         cards[id] = revision
+        supersedesReference?.let { canonical(run, it) }?.let { cards[it]?.superseded = true }
         return "card-${cards.size}"
     }
     /** Maps a model-facing name (or an internal UUID from this run) to the internal UUID. */
@@ -61,6 +63,26 @@ internal object CardDelivery {
     }
     @Synchronized fun source(run: String, reference: String): String? =
         canonical(run, reference)?.let { runs[run]?.get(it)?.source?.takeIf(String::isNotEmpty) }
+    /** 从实际保留的正文判断是否已展示，流式回滚不会误消耗投递记录。 */
+    @Synchronized fun unplaced(run: String, transcript: String): String {
+        val cards = runs[run] ?: return ""
+        fun normalized(source: String) = source.lineSequence().filter(String::isNotBlank).joinToString("\n") { it.trim() }
+        val displayed = MessageSectionCodec.parse(transcript).filterIsInstance<MessageSection.Text>()
+            .flatMap { section -> MarkdownFence.blocks(section.content).filter { it.closed && it.fence.language == "a2ui" }
+                .map { normalized(it.body(section.content)) } }.toMutableSet()
+        val pending = mutableListOf<String>()
+        cards.entries.forEachIndexed { index, (id, revision) ->
+            if (!revision.superseded && displayed.add(normalized(revision.document))) {
+                if (CardLiveStore.publish(run, id)) pending += "```a2ui\n${revision.document}\n```"
+                else pending += "```a2ui-ref\ncard-${index + 1}\n```"
+            }
+        }
+        if (pending.isEmpty()) return ""
+        val currentText = MessageSectionCodec.parse(transcript).filterIsInstance<MessageSection.Text>().lastOrNull()?.content.orEmpty()
+        val openFence = MarkdownFence.blocks(currentText).lastOrNull()?.takeUnless { it.closed }
+        val separator = if (openFence == null) "\n\n" else "\n${openFence.fence.delimiter}\n\n"
+        return separator + pending.joinToString("\n\n") + "\n"
+    }
     private val SHORT_NAME = Regex("card-(\\d{1,2})")
     val REFERENCE = Regex("[0-9a-f-]{36}|card-\\d{1,2}", RegexOption.IGNORE_CASE)
 }
@@ -83,7 +105,7 @@ internal object CardTranscript {
 
     /** [maxSummary] bounds chat prompts; memory learning passes a larger bound to keep the whole card. */
     fun forModel(content: String, maxSummary: Int = MAX_SUMMARY): String {
-        if (!content.contains("```a2ui")) return content
+        if (!content.contains("a2ui")) return content
         // 使用本分支的消息片段，只压缩正文卡片，保留思考、工具和协议数据。
         return MessageSectionCodec.render(MessageSectionCodec.parse(content).map { section ->
             if (section is MessageSection.Text) section.copy(content = summarizeBlocks(section.content, maxSummary))
@@ -92,30 +114,17 @@ internal object CardTranscript {
     }
 
     private fun summarizeBlocks(text: String, maxSummary: Int): String = buildString {
-        val lines = text.splitToSequence('\n').toList()
-        var index = 0
-        while (index < lines.size) {
-            val opening = Regex("^(`{3,}|~{3,})([^`~]*)$").matchEntire(lines[index])
-            if (opening == null) {
-                append(lines[index++])
-                if (index < lines.size) append('\n')
-                continue
-            }
-            val delimiter = opening.groupValues[1]
-            val closing = Regex("^" + Regex.escape(delimiter.first().toString()) + "{" + delimiter.length + ",}[ \t]*$")
-            val end = (index + 1 until lines.size).firstOrNull { closing.matches(lines[it]) }
-            if (end == null) {
-                append(lines.drop(index).joinToString("\n"))
-                break
-            }
-            if (opening.groupValues[2].trim() == "a2ui") {
-                append("[Dynamic UI card shown to the user here")
-                append(summary(lines.subList(index + 1, end).joinToString("\n"), maxSummary))
-                append("]")
-            } else append(lines.subList(index, end + 1).joinToString("\n"))
-            index = end + 1
-            if (index < lines.size) append('\n')
+        var offset = 0
+        MarkdownFence.blocks(text).forEach { block ->
+            append(text.substring(offset, block.start))
+            if (block.closed && block.fence.language == "a2ui") {
+                append("Historical A2UI summary (context only; do not output this text as a card)")
+                append(summary(block.body(text), maxSummary))
+            } else append(text.substring(block.start, block.end))
+            offset = block.end
+            if (block.closed && block.fence.language == "a2ui" && offset > 0 && text[offset - 1] == '\n') append('\n')
         }
+        append(text.substring(offset))
     }
 
     private fun summary(document: String, maxSummary: Int): String {
@@ -151,69 +160,76 @@ internal object CardTranscript {
  * An unresolved reference stays as its a2ui-ref fence; the renderer shows a short notice and the
  * model later sees exactly what it wrote.
  */
-internal class CardReferenceExpander(
-    private val resolve: (String) -> String?,
-) {
-    private data class Snapshot(
-        val pending: String, val reference: String?, val start: Boolean,
-        val fence: Char?, val fenceLength: Int, val tag: String, val hidden: Int, val expanded: Int,
-    )
+internal class CardReferenceExpander(private val resolve: (String) -> String?) {
+    private data class Snapshot(val pending: String, val reference: String?, val referenceHeader: String,
+        val referenceFence: MarkdownFence?, val start: Boolean, val fence: MarkdownFence?,
+        val tag: String, val hidden: Int, val expanded: Int)
     private var pending = ""
     private var reference: String? = null
+    private var referenceHeader = ""
+    private var referenceFence: MarkdownFence? = null
     private var start = true
-    private var fence: Char? = null
-    private var fenceLength = 0
+    private var fence: MarkdownFence? = null
     private var tag = ""
     private var hidden = 0
     private var expanded = 0
     private val snapshots = mutableMapOf<String, Snapshot>()
+
     fun savepoint(id: String) {
-        snapshots[id] = Snapshot(pending, reference, start, fence, fenceLength, tag, hidden, expanded)
+        snapshots[id] = Snapshot(pending, reference, referenceHeader, referenceFence, start, fence, tag, hidden, expanded)
     }
     fun rollback(id: String) {
-        val s = snapshots[id] ?: return
-        pending = s.pending; reference = s.reference; start = s.start
-        fence = s.fence; fenceLength = s.fenceLength; tag = s.tag; hidden = s.hidden; expanded = s.expanded
+        val state = snapshots[id] ?: return
+        pending = state.pending; reference = state.reference; referenceHeader = state.referenceHeader
+        referenceFence = state.referenceFence; start = state.start; fence = state.fence
+        tag = state.tag; hidden = state.hidden; expanded = state.expanded
     }
     fun push(chunk: String): String = buildString {
-        for (c in chunk) {
+        for (char in chunk) {
             if (reference != null) {
-                pending += c
-                if (c == '\n') append(referenceLine())
-                else if (pending.length > 128) {
-                    append("```a2ui-ref\n").append(reference).append(pending)
-                    reference = null; pending = ""; fence = '`'; fenceLength = 3; start = false
+                pending += char
+                if (char == '\n') append(referenceLine())
+                else if (pending.length > 128) append(abandonReference())
+                continue
+            }
+            if (pending.isNotEmpty() || start && hidden == 0 && char in " \t`~") {
+                pending += char
+                if (char == '\n') append(fenceLine())
+                else {
+                    val indent = pending.takeWhile { it == ' ' || it == '\t' }.length
+                    val rest = pending.drop(indent)
+                    val candidate = indent <= 3 && (rest.isEmpty() || rest.first() in "`~")
+                    if (!candidate || pending.length > 256) {
+                        if (candidate && fence == null) {
+                            val delimiter = rest.takeWhile { it == rest.first() }
+                            if (delimiter.length >= 3) fence = MarkdownFence(delimiter, "")
+                        }
+                        append(ordinary(pending)); pending = ""
+                    }
                 }
                 continue
             }
-            if (pending.isNotEmpty() || start && (c == '`' || c == '~') && hidden == 0) {
-                pending += c
-                if (c == '\n') append(fenceLine())
-                else if (pending.length > 256) {
-                    // Long headers remain ordinary code; never interpret their later body as references.
-                    val count = pending.takeWhile { it == pending[0] }.length
-                    if (fence == null && count >= 3) { fence = pending[0]; fenceLength = count }
-                    append(pending); pending = ""; start = false
-                }
-                continue
-            }
-            append(c)
-            if (fence == null) trackMarkup(c)
-            start = c == '\n'
+            append(ordinary(char.toString()))
         }
     }
-    private fun trackMarkup(c: Char) {
-        if (c == '<') tag = "<"
+    private fun ordinary(text: String): String {
+        text.forEach { char ->
+            if (fence == null) trackMarkup(char)
+            start = char == '\n'
+        }
+        return text
+    }
+    private fun trackMarkup(char: Char) {
+        if (char == '<') tag = "<"
         else if (tag.isNotEmpty()) {
-            if (tag.length < 512) tag += c else { tag = ""; return }
-            if (c == '>') {
+            if (tag.length < 512) tag += char else { tag = ""; return }
+            if (char == '>') {
                 val match = Regex("^<(/?)([A-Za-z_][A-Za-z0-9_:-]*)(?:\\s[^>]*)?>$").matchEntire(tag)
                 if (match != null) {
                     val name = match.groupValues[2].lowercase()
-                    val localName = name.substringAfterLast(':')
+                    val local = name.substringAfterLast(':')
                     if (name in setOf("think", "thinking", "analysis", "reasoning", "tool_results", "tools") ||
-                        ChatMarkupRegex.isToolTagName(localName) ||
-                        ChatMarkupRegex.isToolResultTagName(localName)) {
+                        ChatMarkupRegex.isToolTagName(local) || ChatMarkupRegex.isToolResultTagName(local)) {
                         if (match.groupValues[1] == "/") hidden = (hidden - 1).coerceAtLeast(0)
                         else if (!tag.endsWith("/>")) hidden++
                     }
@@ -226,46 +242,45 @@ internal class CardReferenceExpander(
         val raw = pending
         pending = ""; start = raw.endsWith('\n')
         val line = raw.trimEnd('\r', '\n')
-        val count = line.takeWhile { it == line.firstOrNull() }.length
         if (fence == null) {
-            if (line == "```a2ui-ref") { reference = ""; return "" }
-            if (count >= 3) { fence = line[0]; fenceLength = count }
-        } else if (line.firstOrNull() == fence && count >= fenceLength && line.drop(count).isBlank()) {
-            fence = null; fenceLength = 0
-        }
+            val opening = MarkdownFence.parse(line)
+            if (opening?.language == "a2ui-ref") {
+                reference = ""; referenceHeader = raw; referenceFence = opening
+                return ""
+            }
+            if (opening != null) fence = opening
+        } else if (fence!!.closing.matches(line)) fence = null
         return raw
     }
     private fun referenceLine(): String {
         val raw = pending
         pending = ""
-        val line = raw.trimEnd('\r', '\n')
-        if (line == "```") {
+        if (referenceFence!!.closing.matches(raw.trimEnd('\r', '\n'))) {
+            val original = referenceHeader + reference + raw
             val id = reference!!.trim()
-            reference = null; start = raw.endsWith('\n')
+            reference = null; referenceFence = null; start = raw.endsWith('\n')
             val source = if (id.matches(CardDelivery.REFERENCE)) resolve(id) else null
-            if (source == null || expanded + source.length > 524_288) return "```a2ui-ref\n$id\n$raw"
+            if (source == null || expanded + source.length > 524_288) return original
             expanded += source.length
             return "```a2ui\n$source\n```" + if (start) "\n" else ""
         }
         reference += raw
-        if (reference!!.length > 128) {
-            val result = "```a2ui-ref\n" + reference
-            reference = null; fence = '`'; fenceLength = 3; start = raw.endsWith('\n')
-            return result
-        }
+        if (reference!!.length > 128) return abandonReference()
         return ""
     }
-    /** Incomplete references stay plain code on cancellation; only a complete closing line expands. */
+    private fun abandonReference(): String {
+        val raw = referenceHeader + reference + pending
+        fence = referenceFence; reference = null; referenceFence = null; pending = ""
+        start = raw.endsWith('\n')
+        return raw
+    }
     fun finish(): String {
         if (reference != null) {
-            if (pending == "```") return referenceLine()
-            val tail = "```a2ui-ref\n" + reference + pending
-            reference = null; pending = ""
-            return tail
+            if (referenceFence!!.closing.matches(pending)) return referenceLine()
+            return abandonReference()
         }
-        if (pending.isNotEmpty()) return fenceLine().let {
-            if (reference != null) { reference = null; "```a2ui-ref" } else it
-        }
-        return ""
+        if (pending.isEmpty()) return ""
+        val raw = fenceLine()
+        return if (reference == null) raw else abandonReference()
     }
 }

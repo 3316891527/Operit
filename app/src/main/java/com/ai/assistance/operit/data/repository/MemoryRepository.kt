@@ -2226,7 +2226,9 @@ class MemoryRepository(private val context: Context, profileId: String) {
         contentType: String = "text/plain",
         source: String = "user_input",
         folderPath: String = "",
-        tags: List<String>? = null
+        tags: List<String>? = null,
+        credibility: Float = 0.5f,
+        importance: Float = 0.5f
     ): Memory? = withContext(Dispatchers.IO) {
         val normalizedTags = tags
             ?.map { it.trim() }
@@ -2238,6 +2240,8 @@ class MemoryRepository(private val context: Context, profileId: String) {
             content = content,
             contentType = contentType,
             source = source,
+            credibility = credibility.coerceIn(0f, 1f),
+            importance = importance.coerceIn(0f, 1f),
             folderPath = normalizeFolderPath(folderPath)
         )
         saveMemory(memory)
@@ -2505,6 +2509,22 @@ class MemoryRepository(private val context: Context, profileId: String) {
     // --- Graph Export ---
 
     /** Fetches all memories and their links, and converts them into a Graph data structure. */
+    /** 列表和最近更新直接读取已有记忆，避免空查询检索的数量限制。 */
+    suspend fun getAllMemories(): List<Memory> = withContext(Dispatchers.IO) {
+        memoryBox.all
+    }
+
+    suspend fun getSpaceSummary(): com.ai.assistance.operit.data.model.MemorySpaceSummary = withContext(Dispatchers.IO) {
+        cleanupDanglingLinksIfNeeded()
+        val memories = memoryBox.all
+        com.ai.assistance.operit.data.model.MemorySpaceSummary(
+            memoryCount = memories.size,
+            linkCount = linkBox.count().toInt(),
+            folderCount = memories.map { normalizeFolderPath(it.folderPath) }.distinct().size,
+            recentMemories = memories.sortedByDescending { it.updatedAt.time }.take(3),
+        )
+    }
+
     suspend fun getMemoryGraph(): Graph = withContext(Dispatchers.IO) {
         cleanupDanglingLinksIfNeeded()
         buildGraphFromMemories(memoryBox.all, null)
@@ -2524,6 +2544,11 @@ class MemoryRepository(private val context: Context, profileId: String) {
                     Node(
                             id = memory.uuid,
                             label = memory.title,
+                            metadata = mapOf(
+                                "folder" to (normalizeFolderPath(memory.folderPath) ?: ""),
+                                "document" to memory.isDocumentNode.toString(),
+                                "updatedAt" to memory.updatedAt.time.toString(),
+                            ),
                             color =
                                     if (memory.isDocumentNode) {
                                         Color(0xFF9575CD) // Purple for documents
@@ -2570,6 +2595,7 @@ class MemoryRepository(private val context: Context, profileId: String) {
                             targetId = targetId,
                             label = link.type,
                             weight = link.weight,
+                            metadata = mapOf("description" to link.description),
                             isCrossFolderLink = isCrossFolder
                         )
                     )

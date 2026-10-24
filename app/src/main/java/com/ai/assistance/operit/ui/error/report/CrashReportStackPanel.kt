@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.error.report
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -158,7 +159,14 @@ internal fun CrashReportStackPanel(
                     )
                     Row(
                         Modifier.heightIn(min = 36.dp)
-                            .toggleable(wrap, role = Role.Switch, onValueChange = { wrap = it }),
+                            // 自绘开关用轨道表达状态，关闭整行默认灰色涟漪并保留开关语义。
+                            .toggleable(
+                                value = wrap,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                role = Role.Switch,
+                                onValueChange = { wrap = it },
+                            ),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

@@ -5,11 +5,11 @@ internal object LlmRetryPolicy {
     const val MAX_POOL_ATTEMPTS = 20
     // 慢速推理允许等待五分钟；首个有效内容到达后仍立即解除首字监控。
     const val FIRST_TOKEN_TIMEOUT_MS = 300_000L
-    const val AUTH_COOLDOWN_MS = 12L * 60L * 60L * 1000L
-    const val QUOTA_COOLDOWN_MS = 4L * 60L * 60L * 1000L
+    const val AUTH_COOLDOWN_MS = 60_000L
+    const val QUOTA_COOLDOWN_MS = 60_000L
     const val RATE_LIMIT_COOLDOWN_MS = 45_000L
     const val RATE_LIMIT_COOLDOWN_MAX_MS = 15L * 60L * 1000L
-    const val MODEL_COOLDOWN_MS = 30L * 60L * 1000L
+    const val MODEL_COOLDOWN_MS = 3L * 60L * 1000L
     const val SERVER_COOLDOWN_MS = 5_000L
     const val NETWORK_COOLDOWN_MS = 2_000L
     const val FIRST_TOKEN_COOLDOWN_MS = 10_000L

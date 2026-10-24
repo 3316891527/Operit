@@ -2,6 +2,12 @@ package com.ai.assistance.operit.api.chat.keypool
 
 import java.util.concurrent.ConcurrentHashMap
 
+internal data class ApiKeyCooldown(
+    val keyId: String,
+    val model: String,
+    val untilMs: Long,
+)
+
 internal object ApiKeyCooldownStore {
     private val untilMsBySlot = ConcurrentHashMap<String, Long>()
 
@@ -34,6 +40,30 @@ internal object ApiKeyCooldownStore {
     fun clear(configId: String, keyId: String) {
         val prefix = "$configId|$keyId|"
         untilMsBySlot.keys.removeAll { it.startsWith(prefix) }
+    }
+
+    fun activeCooldowns(configId: String, nowMs: Long): List<ApiKeyCooldown> {
+        val prefix = "$configId|"
+        return untilMsBySlot.mapNotNull { (slot, untilMs) ->
+            if (!slot.startsWith(prefix) || untilMs <= nowMs) return@mapNotNull null
+            val keyAndModel = slot.removePrefix(prefix)
+            ApiKeyCooldown(
+                keyId = keyAndModel.substringBefore('|'),
+                model = keyAndModel.substringAfter('|'),
+                untilMs = untilMs,
+            )
+        }
+    }
+
+    fun clearConfig(configId: String) {
+        val prefix = "$configId|"
+        untilMsBySlot.keys.removeAll { it.startsWith(prefix) }
+    }
+
+    fun clearForModel(configId: String, keyId: String, model: String) {
+        // 本次成功证明全局鉴权与当前模型已恢复，保留其他模型的独立冷却。
+        untilMsBySlot.remove(globalSlot(configId, keyId))
+        untilMsBySlot.remove(modelSlot(configId, keyId, model))
     }
 
     fun resetForTests() {

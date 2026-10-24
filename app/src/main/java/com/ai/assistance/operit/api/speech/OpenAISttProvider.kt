@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.api.speech
 
 import android.annotation.SuppressLint
+import com.ai.assistance.operit.api.speech.http.awaitSttBody
+import kotlinx.coroutines.CancellationException
 import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -393,6 +395,11 @@ class OpenAISttProvider(
             return@withContext listOf("zh", "en")
         }
 
+    override suspend fun recognize(audioData: FloatArray, languageCode: String) {
+        lastLanguageCode = languageCode
+        recognize(audioData)
+    }
+
     override suspend fun recognize(audioData: FloatArray) {
         if (!isInitialized.value) {
             val ok = initialize()
@@ -403,9 +410,10 @@ class OpenAISttProvider(
         _recognitionResult.value = SpeechService.RecognitionResult("")
         _recognitionState.value = SpeechService.RecognitionState.PROCESSING
 
+        val file = File(context.cacheDir, "openai_stt_${UUID.randomUUID()}.wav")
         try {
-            val file = withContext(Dispatchers.IO) {
-                val out = File(context.cacheDir, "openai_stt_${UUID.randomUUID()}.wav")
+            withContext(Dispatchers.IO) {
+                val out = file
                 FileOutputStream(out).use { fos ->
                     fos.write(ByteArray(WAV_HEADER_SIZE))
                     val bytes = ByteArray(audioData.size * 2)
@@ -426,14 +434,17 @@ class OpenAISttProvider(
                 transcribeWavFile(file, languageCode = lastLanguageCode)
             }
 
-            file.delete()
-
             _recognitionResult.value = SpeechService.RecognitionResult(text = text, isFinal = true, confidence = 0f)
             _recognitionState.value = SpeechService.RecognitionState.IDLE
+        } catch (e: CancellationException) {
+            _recognitionState.value = SpeechService.RecognitionState.IDLE
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "OpenAI STT recognize(audioData) failed", e)
             _recognitionState.value = SpeechService.RecognitionState.ERROR
             _recognitionError.value = SpeechService.RecognitionError(-1, e.message ?: "recognize failed")
+        } finally {
+            file.delete()
         }
     }
 
@@ -557,7 +568,7 @@ class OpenAISttProvider(
         }
     }
 
-    private fun transcribeWavFile(file: File, languageCode: String?): String {
+    private suspend fun transcribeWavFile(file: File, languageCode: String?): String {
         val bodyBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
         bodyBuilder.addFormDataPart("file", file.name, file.asRequestBody("audio/wav".toMediaType()))
         bodyBuilder.addFormDataPart("model", model)
@@ -573,24 +584,13 @@ class OpenAISttProvider(
             .addHeader("Authorization", "Bearer $apiKey")
             .build()
 
-        val response = try {
-            httpClient.newCall(request).execute()
-        } catch (e: IOException) {
-            throw IOException(context.getString(R.string.openai_stt_error_request_failed), e)
+        val body = httpClient.newCall(request).awaitSttBody(context.getString(R.string.openai_stt_error_request_failed))
+        val trimmed = body.trim()
+        if (trimmed.startsWith("{")) {
+            val json = JSONObject(trimmed)
+            return json.optString("text", "")
         }
-
-        response.use { resp ->
-            val body = resp.body?.string() ?: ""
-            if (!resp.isSuccessful) {
-                throw IOException("OpenAI STT request failed with code ${resp.code}: $body")
-            }
-            val trimmed = body.trim()
-            if (trimmed.startsWith("{")) {
-                val json = JSONObject(trimmed)
-                return json.optString("text", trimmed)
-            }
-            return trimmed
-        }
+        return trimmed
     }
 
     private fun updateVolumeLevel(buffer: ShortArray, length: Int) {

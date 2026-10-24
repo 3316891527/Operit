@@ -1,32 +1,13 @@
 package com.ai.assistance.operit.ui.common.a2ui
 
+import com.ai.assistance.operit.util.markdown.MarkdownFence
+
 /** 卡片 JSON 只参与显示，不能被旧 XML 工具检测管线解释为工具调用。 */
 internal object CardFences {
-    private val opening = Regex("^[ \\t]{0,3}(`{3,}|~{3,})([^`~]*)$")
-
-    private fun ranges(content: String): List<IntRange> {
-        if (!content.contains("a2ui")) return emptyList()
-        val lines = content.splitToSequence('\n').toList()
-        val spans = mutableListOf<IntRange>()
-        var index = 0
-        var offset = 0
-        while (index < lines.size) {
-            val header = opening.matchEntire(lines[index].removeSuffix("\r"))
-            if (header == null) {
-                offset += lines[index++].length + 1
-                continue
-            }
-            val delimiter = header.groupValues[1]
-            val closing = Regex("^[ \\t]{0,3}" + Regex.escape(delimiter.first().toString()) + "{" + delimiter.length + ",}[ \\t]*\\r?$")
-            val end = (index + 1 until lines.size).firstOrNull { closing.matches(lines[it]) }
-            val last = end ?: lines.lastIndex
-            val next = (offset + (index..last).sumOf { lines[it].length + 1 }).coerceAtMost(content.length)
-            if (header.groupValues[2].trim() in setOf("a2ui", "a2ui-ref")) spans.add(offset until next)
-            offset = next
-            index = last + 1
-        }
-        return spans
-    }
+    private fun ranges(content: String): List<IntRange> =
+        if (!content.contains("a2ui")) emptyList()
+        else MarkdownFence.blocks(content).filter { it.fence.language in setOf("a2ui", "a2ui-ref") }
+            .map { it.start until it.end }
 
     /** 保留字符位置和换行，使工具调用的位置仍对应原始回复。 */
     fun forTools(content: String): String {

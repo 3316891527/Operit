@@ -1,6 +1,9 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.api.chat.keypool.*
+import android.content.Context
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ApiKeyAttemptRecordEntity
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.stats.ApiKeyAttemptRepository
@@ -186,22 +189,45 @@ class MultiApiKeyProvider(
                 AppLogger.d("ApiKeyProvider", "Config ${config.name}: Falling back to single API key")
                 ApiKeySelection(pick.key, SingleApiKeyRequestSession.SINGLE_KEY_ID, "", 1)
             }
-            is ApiKeyPick.Exhausted -> throw exhausted(pick.reason, config.name)
+            is ApiKeyPick.Exhausted -> throw exhausted(
+                pick.reason, config, modelConfigManager.appContext,
+            )
         }
     }
 
     companion object {
-        internal fun exhausted(reason: String, configName: String): ApiKeyPoolExhaustedException {
-            val message =
-                when (reason) {
-                    "no_available_marks" ->
-                        "No AVAILABLE API keys in pool for $configName. Please test keys or clear availability marks."
-                    "all_cooling_or_excluded" ->
-                        "All API keys in pool for $configName are cooling down or already tried."
-                    else ->
-                        "API key pool for $configName is empty or all keys are disabled, and no fallback API key is available."
+        internal fun exhausted(
+            reason: String,
+            config: ModelConfigData,
+            context: Context,
+            model: String = "",
+            excludedIds: Set<String> = emptySet(),
+            summary: ApiKeyTriedSummary = ApiKeyTriedSummary(),
+        ): ApiKeyPoolExhaustedException {
+            val earliestRetryAt = if (reason == "all_cooling_or_excluded") {
+                ApiKeyPoolSelector.earliestCooldownUntilMs(
+                    pool = config.apiKeyPool,
+                    excludedIds = excludedIds,
+                    nowMs = System.currentTimeMillis(),
+                    model = model,
+                    cooldownUntilMs = { keyId, modelName ->
+                        ApiKeyCooldownStore.cooldownUntilMs(config.id, keyId, modelName)
+                    },
+                )
+            } else null
+            val message = when {
+                reason == "no_available_marks" ->
+                    context.getString(R.string.api_key_pool_no_available_marks, config.name)
+                earliestRetryAt != null -> {
+                    val seconds = ((earliestRetryAt - System.currentTimeMillis() + 999L) / 1000L)
+                        .coerceAtLeast(1L)
+                    context.getString(R.string.api_key_pool_all_cooling, config.name, seconds)
                 }
-            return ApiKeyPoolExhaustedException(message, ApiKeyTriedSummary())
+                reason == "all_cooling_or_excluded" ->
+                    context.getString(R.string.api_key_pool_already_tried, config.name)
+                else -> context.getString(R.string.api_key_pool_no_enabled_keys, config.name)
+            }
+            return ApiKeyPoolExhaustedException(message, summary)
         }
     }
 }
@@ -275,9 +301,10 @@ private class MultiApiKeyRequestSession(
                         ApiKeySelection(pick.key, SingleApiKeyRequestSession.SINGLE_KEY_ID, "", 1)
                     }
                     is ApiKeyPick.Exhausted -> {
-                        val message = MultiApiKeyProvider.exhausted(pick.reason, config.name).message
-                            ?: pick.reason
-                        throw ApiKeyPoolExhaustedException(message, summary)
+                        throw MultiApiKeyProvider.exhausted(
+                            pick.reason, config, modelConfigManager.appContext,
+                            model = model, excludedIds = excludedIds, summary = summary,
+                        )
                     }
                 }
             resolveAttemptBudgetLocked(config)
@@ -295,6 +322,7 @@ private class MultiApiKeyRequestSession(
         if (report.success) {
             sameKeyAttempts = 0
             if (selection != null && selection.keyId.isNotBlank()) {
+                ApiKeyCooldownStore.clearForModel(configId, selection.keyId, modelName)
                 ApiKeyStickyStore.pin(configId, modelName, selection.keyId, nowMs)
                 ApiKeyWindowStore.record(
                     configId = configId,
