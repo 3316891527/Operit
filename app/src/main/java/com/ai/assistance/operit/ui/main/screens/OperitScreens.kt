@@ -189,11 +189,11 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            MemoryOverviewScreen(onOpenSpace = { id -> navigateTo(MemorySpaceDetail(id)) })
+            MemoryOverviewScreen(onOpenSpace = { id -> navigateTo(MemorySpaceDetail(id)) }, onOpenRecent = { id, uuid -> navigateTo(MemorySpaceDetail(id, startInList = true, memoryUuid = uuid)) })
         }
     }
 
-    data class MemorySpaceDetail(val spaceId: String) :
+    data class MemorySpaceDetail(val spaceId: String, val startInList: Boolean = false, val memoryUuid: String? = null) :
             Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_memory_base) {
         @Composable
         override fun Content(
@@ -205,7 +205,7 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            MemoryScreen(spaceId = spaceId, onConfigureEmbedding = { navigateTo(FunctionalConfig) })
+            MemoryScreen(spaceId = spaceId, onConfigureEmbedding = { navigateTo(FunctionalConfig) }, initialList = startInList, initialMemoryUuid = memoryUuid)
         }
     }
 
