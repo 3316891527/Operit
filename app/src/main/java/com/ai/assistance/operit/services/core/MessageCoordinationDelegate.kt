@@ -770,6 +770,7 @@ class MessageCoordinationDelegate(
 
     /**
      * 内部发送消息的逻辑
+     * 返回本次直接发送任务，校验拒绝发送时返回 null，语音确认页据此保留录音。
      */
     private suspend fun sendMessageInternal(
         promptFunctionType: PromptFunctionType,
@@ -919,7 +920,7 @@ class MessageCoordinationDelegate(
             uiStateDelegate.showErrorMessage(
                 e.message ?: context.getString(R.string.role_card_chat_model_binding_parse_failed)
             )
-            return
+            return null
         }
         val resolvedChatModelConfigIdOverride = resolvedOverrides.first
         val resolvedChatModelIndexOverride = resolvedOverrides.second
@@ -933,7 +934,7 @@ class MessageCoordinationDelegate(
         if (configurationError != null) {
             // 在消费草稿、附件和启动总结前返回，让配置修正后可以直接重发。
             OKToast.requestError(context, configurationError).show()
-            return
+            return null
         }
         val chatContextSettings =
             withContext(Dispatchers.IO) {

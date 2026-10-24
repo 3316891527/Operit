@@ -9,6 +9,8 @@
 - 图标：使用同一提交的 terminal 源码检查，Material 图标引用已覆盖
 - Git：git diff --check 通过
 - 云端：工作分支派发 Android Build 的 assembleDebug 和 Android Tests，派发受理与最终通过分别记录
+- 首轮云端：[Android Build](https://github.com/3316891527/Operit/actions/runs/40040100428) 与 [Android Tests](https://github.com/3316891527/Operit/actions/runs/40040103254) 均因发送协调器两处返回类型不匹配而编译失败，单元测试尚未执行
+- 本次修正：模型绑定解析失败和配置无效时显式返回 null，与 Job? 返回契约一致；后续云端及设备结果待确认
 
 ## 操作与预期
 
