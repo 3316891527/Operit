@@ -72,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceMenu
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyCooldownStore
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.ApiKeyPoolAvailabilityTester
 import com.ai.assistance.operit.data.model.ApiKeyAvailabilityStatus
@@ -117,6 +118,10 @@ fun ApiKeyPoolSettingsSection(
     var pendingExportKeys by remember { mutableStateOf<List<ApiKeyInfo>>(emptyList()) }
 
     val keyTestState by keyAvailabilityTester.state.collectAsState()
+    val cooldowns = rememberApiKeyCooldowns(
+        configId = config.id,
+        keys = if (useApiKeyPool && !hidesApiKeyPool) apiKeyPool else emptyList(),
+    )
     val keyPoolSaveMutex = remember(config.id) { Mutex() }
 
     data class ApiKeyPoolSaveState(
@@ -288,10 +293,11 @@ fun ApiKeyPoolSettingsSection(
     }
 
     fun clearAvailabilityMarks() {
+        ApiKeyCooldownStore.clearConfig(config.id)
         apiKeyPool = apiKeyPool.map {
             it.copy(availabilityStatus = ApiKeyAvailabilityStatus.UNTESTED)
         }
-        saveChanges()
+        saveChanges(context.getString(R.string.api_key_pool_states_cleared))
     }
 
     val isLargeKeyPool = apiKeyPool.size > MAX_EDITABLE_KEYS
@@ -415,6 +421,18 @@ fun ApiKeyPoolSettingsSection(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
+                    if (cooldowns.isNotEmpty()) {
+                        Text(
+                            text = stringResource(
+                                R.string.api_key_pool_cooling_summary,
+                                cooldowns.size,
+                                cooldowns.values.flatten().minOf { it.seconds },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        )
+                    }
                     when {
                         apiKeyPool.isEmpty() -> {
                             ApiKeyPoolEmptyState(
@@ -451,6 +469,7 @@ fun ApiKeyPoolSettingsSection(
                         else -> {
                             ApiKeyPoolListState(
                                 keys = apiKeyPool,
+                                cooldowns = cooldowns,
                                 availableCount = apiKeyPool.count { it.isEnabled && it.availabilityStatus == ApiKeyAvailabilityStatus.AVAILABLE },
                                 unavailableCount = apiKeyPool.count { it.isEnabled && it.availabilityStatus == ApiKeyAvailabilityStatus.UNAVAILABLE },
                                 untestedCount = apiKeyPool.count { it.isEnabled && it.availabilityStatus == ApiKeyAvailabilityStatus.UNTESTED },
@@ -506,6 +525,7 @@ fun ApiKeyPoolSettingsSection(
         ApiKeyPoolInfoSheet(
             configId = config.id,
             keys = apiKeyPool,
+            cooldowns = cooldowns,
             onDismiss = { showInfoSheet = false }
         )
     }
@@ -596,6 +616,7 @@ private fun ApiKeyPoolEmptyState(
 @Composable
 private fun ApiKeyPoolListState(
     keys: List<ApiKeyInfo>,
+    cooldowns: Map<String, List<ApiKeyCooldownRemaining>>,
     availableCount: Int,
     unavailableCount: Int,
     untestedCount: Int,
@@ -656,6 +677,7 @@ private fun ApiKeyPoolListState(
                 ) {
                     ApiKeyPoolRow(
                         keyInfo = keyInfo,
+                        cooldowns = cooldowns[keyInfo.id].orEmpty(),
                         dragHandleModifier = Modifier.longPressDraggableHandle(),
                         onEdit = onEdit,
                         onDelete = onDelete,
@@ -797,6 +819,7 @@ private fun ApiKeyPoolStatusAndActions(
 @Composable
 private fun ApiKeyPoolRow(
     keyInfo: ApiKeyInfo,
+    cooldowns: List<ApiKeyCooldownRemaining>,
     dragHandleModifier: Modifier = Modifier,
     onEdit: (ApiKeyInfo) -> Unit,
     onDelete: (ApiKeyInfo) -> Unit,
@@ -837,6 +860,7 @@ private fun ApiKeyPoolRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            ApiKeyCooldownLabels(cooldowns)
         }
         Box {
             IconButton(

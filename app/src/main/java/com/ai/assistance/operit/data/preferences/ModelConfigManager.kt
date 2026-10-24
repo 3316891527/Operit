@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.preferences
 
 import android.content.Context
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyCooldownRecovery
 import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.R
@@ -611,9 +612,13 @@ class ModelConfigManager(
     // 保存配置
     suspend fun saveModelConfig(config: ModelConfigData) {
         val configKey = stringPreferencesKey("config_${config.id}")
+        var previous: ModelConfigData? = null
+        val normalized = normalizeConfig(config)
         configDataStore.edit { preferences ->
-            preferences[configKey] = json.encodeToString(normalizeConfig(config))
+            previous = readConfig(preferences, config.id)
+            preferences[configKey] = json.encodeToString(normalized)
         }
+        previous?.let { ApiKeyCooldownRecovery.onConfigSaved(it, normalized) }
     }
 
     // 从DataStore加载配置
@@ -648,6 +653,7 @@ class ModelConfigManager(
     ): ModelConfigData {
         val configKey = stringPreferencesKey("config_${configId}")
         var updated: ModelConfigData? = null
+        var previous: ModelConfigData? = null
         configDataStore.edit { preferences ->
             val current =
                     run {
@@ -673,7 +679,11 @@ class ModelConfigManager(
 
             val newConfig = normalizeConfig(transform(current))
             preferences[configKey] = json.encodeToString(newConfig)
+            previous = current
             updated = newConfig
+        }
+        previous?.let { old ->
+            updated?.let { ApiKeyCooldownRecovery.onConfigSaved(old, it) }
         }
         return updated ?: ModelConfigData(id = configId, name = context.getString(R.string.model_config_config_id, configId))
     }

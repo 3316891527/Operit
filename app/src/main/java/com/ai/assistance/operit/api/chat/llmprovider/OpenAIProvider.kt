@@ -1670,16 +1670,11 @@ open class OpenAIProvider(
         }
         checkCancellation(context, exception)
         watchdog?.cancel()
-        currentApiKeySession()?.reportOutcome(
-            ApiKeyAttemptReport(
-                success = false,
-                errorClass = ApiKeyFailureClassifier.classify(exception),
-                httpStatus = ApiKeyFailureClassifier.httpStatus(exception),
-                retryAfterMs = ApiKeyFailureClassifier.retryAfterMs(exception),
-                model = modelName,
-                stream = stream,
-                attemptIndex = attemptNumber,
-            )
+        reportKeyAwareFailure(
+            exception = exception,
+            model = modelName,
+            stream = stream,
+            attemptNumber = attemptNumber,
         )
         handleKeyAwareRetry(
             context = context,

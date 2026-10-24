@@ -1240,16 +1240,11 @@ open class ClaudeProvider(
             throw UserCancellationException(context.getString(R.string.openai_error_request_cancelled), exception)
         }
         watchdog?.cancel()
-        currentApiKeySession()?.reportOutcome(
-            ApiKeyAttemptReport(
-                success = false,
-                errorClass = ApiKeyFailureClassifier.classify(exception),
-                httpStatus = ApiKeyFailureClassifier.httpStatus(exception),
-                retryAfterMs = ApiKeyFailureClassifier.retryAfterMs(exception),
-                model = modelName,
-                stream = stream,
-                attemptIndex = attemptNumber,
-            )
+        reportKeyAwareFailure(
+            exception = exception,
+            model = modelName,
+            stream = stream,
+            attemptNumber = attemptNumber,
         )
         handleKeyAwareRetry(
             context = context,
