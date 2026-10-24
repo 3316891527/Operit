@@ -1963,10 +1963,6 @@
     <!-- Update History -->
 
     <!-- Toolbox Categories -->
-    <string name="tool_category_all">Toate instrumentele</string>
-    <string name="tool_category_file_management">Gestionarea fișierelor</string>
-    <string name="tool_category_development">Instrumente de dezvoltare</string>
-    <string name="tool_category_system">Instrumente de sistem</string>
 
     <!-- Tool Names -->
     <string name="tool_file_manager">Manager de fișiere</string>
@@ -2130,7 +2126,6 @@
     <string name="process_limit_error_output">Afișarea erorilor</string>
     <string name="process_limit_exit_code">Cod de ieșire:%d</string>
     <string name="process_limit_command">Comandă</string>
-    <string name="toolbox_description">O colecție de instrumente practice și ușor de utilizat, care vă sporesc eficiența în muncă</string>
     <string name="autoglm_status_running">Se efectuează configurarea cu un singur clic, vă rugăm să așteptați...</string>
     <string name="autoglm_status_success">Finalizat AutoGLM Configurare cu un singur clic:
 - A fost creat sau actualizat AutoGLM UI Configurarea modelului controlerului (autoglm-phone, Zhipu)
@@ -2243,27 +2238,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="mcp_plugin">MCP Plugin</string>
 
     <!-- Toolbox Permission Manager -->
-    <string name="toolbox_permissions_search_hint">Aplicație de căutare</string>
-    <string name="toolbox_permissions_system_apps">Aplicații ale sistemului</string>
-    <string name="toolbox_permissions_app_count">În total %d O aplicație</string>
-    <string name="toolbox_permissions_loading_apps">Se încarcă lista de aplicații…</string>
-    <string name="toolbox_permissions_no_match">Nu s-au găsit aplicații corespunzătoare</string>
-    <string name="toolbox_permissions_try_other_keywords">Încercați să efectuați o căutare folosind alte cuvinte-cheie</string>
-    <string name="toolbox_permissions_try_system_apps">Încearcă să bifezi opțiunea „Aplicații de sistem” pentru a vedea mai multe aplicații</string>
-    <string name="toolbox_permissions_no_apps">Nu s-a găsit nicio aplicație</string>
-    <string name="toolbox_permissions_reset">Resetarea permisiunilor</string>
-    <string name="toolbox_permissions_overview">Prezentare generală a permisiunilor</string>
-    <string name="toolbox_permissions_total">Drepturi totale</string>
-    <string name="toolbox_permissions_granted">Autorizat</string>
-    <string name="toolbox_permissions_dangerous">Permisiuni periculoase</string>
-    <string name="toolbox_permissions_loading_info">Se încarcă informațiile privind permisiunile…</string>
-    <string name="toolbox_permissions_no_special">Aplicația nu solicită nicio autorizație specială</string>
-    <string name="toolbox_permissions_no_special_desc">Aceasta înseamnă că aplicația nu are nevoie de acces la date sau funcții sensibile</string>
-    <string name="toolbox_permissions_count_suffix">o autorizație</string>
-    <string name="toolbox_permissions_view">Drepturi de vizualizare</string>
-    <string name="toolbox_permissions_get_error">Eșec la obținerea permisiunilor: %s</string>
-    <string name="toolbox_permissions_modify_error">Eșecul modificării drepturilor de acces: %s</string>
-    <string name="toolbox_permissions_reset_error">Eșecul resetării permisiunilor: %s</string>
     <string name="try_different_keywords">Încercați să efectuați o căutare folosind alte cuvinte-cheie</string>
     <string name="try_show_system_apps">Încearcă să bifezi opțiunea „Aplicații de sistem” pentru a vedea mai multe aplicații</string>
     <string name="no_apps_found_anywhere">Nu s-a găsit nicio aplicație</string>
@@ -2314,10 +2288,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="not_granted">Neautorizat</string>
 
     <!-- Toolbox Screen -->
-    <string name="toolbox_title">Trusa de scule</string>
-    <string name="toolbox_subtitle">Set de instrumente de dezvoltare și administrare a sistemelor</string>
-    <string name="toolbox_no_tools">În această categorie nu există încă instrumente</string>
-    <string name="toolbox_animation_loading">Se încarcă instrumentele...</string>
 
     <!-- File Manager -->
     <string name="file_manager_title">Manager de fișiere</string>
@@ -3510,61 +3480,12 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="preferences_intro_template_no_age">Eu sunt%1$s,%2$s. Eu sunt%3$sSunt foarte interesat. În comunicarea cu ceilalți, îmi place să%4$s.</string>
 
     <!-- Occupation Options -->
-    <string name="occupation_student">Elev</string>
-    <string name="occupation_employee">Angajat</string>
-    <string name="occupation_teacher">Profesor</string>
-    <string name="occupation_doctor">medic</string>
-    <string name="occupation_engineer">inginer</string>
-    <string name="occupation_designer">Designer</string>
-    <string name="occupation_programmer">programator</string>
-    <string name="occupation_business_owner">proprietar de întreprindere</string>
-    <string name="occupation_sales">Vânzări</string>
-    <string name="occupation_customer_service">Serviciul clienți</string>
-    <string name="occupation_freelancer">Munca independentă</string>
-    <string name="occupation_retired">pensionari</string>
-    <string name="occupation_other">Altele</string>
 
     <!-- Personality Traits -->
-    <string name="personality_extroverted">Extrovertit</string>
-    <string name="personality_introverted">Introvertit</string>
-    <string name="personality_sensitive">Sensibil</string>
-    <string name="personality_rational">Raționalitate</string>
-    <string name="personality_emotional">Senzualitate</string>
-    <string name="personality_cautious">Prudență</string>
-    <string name="personality_adventurous">Aventură</string>
-    <string name="personality_patient">Răbdare</string>
-    <string name="personality_impatient">Impaciență</string>
-    <string name="personality_optimistic">Optimism</string>
-    <string name="personality_pessimistic">Pesimism</string>
-    <string name="personality_curious">Curiozitate</string>
-    <string name="personality_conservative">Conservator</string>
-    <string name="personality_innovative">Inovație</string>
-    <string name="personality_meticulous">minuțios</string>
-    <string name="personality_rough">extensiv</string>
 
     <!-- Identity Options -->
-    <string name="identity_student">Elev</string>
-    <string name="identity_teacher">Profesor</string>
-    <string name="identity_parent">Părinții</string>
-    <string name="identity_music_lover">Iubitori de muzică</string>
-    <string name="identity_art_lover">Iubitori de artă</string>
-    <string name="identity_gamer">Jucători de jocuri video</string>
-    <string name="identity_athlete">sportiv</string>
-    <string name="identity_tech_enthusiast">pasionat de tehnologie</string>
-    <string name="identity_traveler">Pasionații de călătorii</string>
-    <string name="identity_foodie">Gurmand</string>
-    <string name="identity_entrepreneur">Antreprenor</string>
-    <string name="identity_professional">Profesioniști</string>
 
     <!-- AI Style Options -->
-    <string name="ai_style_professional">Profesionalism și rigurozitate</string>
-    <string name="ai_style_humorous">Vioi și plin de umor</string>
-    <string name="ai_style_direct">Concis și direct</string>
-    <string name="ai_style_patient">Răbdare și atenție la detalii</string>
-    <string name="ai_style_creative">Gândirea creativă</string>
-    <string name="ai_style_technical">Orientare tehnică</string>
-    <string name="ai_style_educational">Ghid didactic</string>
-    <string name="ai_style_supportive">Sprijin emoțional</string>
 
     <!-- User Preferences Settings Screen -->
     <string name="default_profile">Configurația implicită</string>
@@ -7163,13 +7084,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="profile_identity_value">Identitate: %1$s</string>
     <string name="profile_occupation_value">Profesie: %1$s</string>
     <string name="profile_ai_style_value">AșteptatAIStil: %1$s</string>
-    <string name="profile_regex_birth_date">(Data nașterii|Anul, luna și ziua nașterii)[:：\s]+([\d-]+)</string>
-    <string name="profile_regex_birth_year">(Anul nașterii|Vârsta)[:：\s]+(\d+)</string>
-    <string name="profile_regex_gender">Gen [:：\s]+([\u4e00-\u9fa5]+)</string>
-    <string name="profile_regex_personality">Caracter (trăsături)?[:：\s]+([\u4e00-\u9fa5、，,]+)</string>
-    <string name="profile_regex_identity">Identitate (identificare)?[:：\s]+([\u4e00-\u9fa5, ,]+)</string>
-    <string name="profile_regex_occupation">Profesie[:：\s]+([\u4e00-\u9fa5, ,]+)</string>
-    <string name="profile_regex_ai_style">(Stil AI | Stilul AI dorit | Stilul AI preferat)[:：\s]+([\u4e00-\u9fa5, ,]+)</string>
 
     <!-- AIMessageManager -->
     <string name="ai_message_user">Utilizator</string>
