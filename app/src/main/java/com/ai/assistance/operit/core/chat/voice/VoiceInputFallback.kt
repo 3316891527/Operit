@@ -5,7 +5,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
 internal enum class VoiceTextSource { AUDIO_MODEL, STT, CACHED }
-internal data class VoiceTextResult(val text: String, val source: VoiceTextSource)
+internal data class VoiceTextResult(val text: String, val source: VoiceTextSource, val audioContext: String = "")
 internal typealias VoiceResponseAttempt = suspend (suspend (String) -> Unit) -> Unit
 
 /** 用户指定的音频理解功能模型与 STT 顺序，取消不触发下一条路径。 */

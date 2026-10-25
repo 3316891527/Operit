@@ -211,18 +211,22 @@ class ChatServiceCore(
                     additionalOnTurnComplete?.invoke(chatId, null)
                     return@turnComplete
                 }
-                tokenStatisticsDelegate.updateCumulativeStatistics(chatId, service)
-                val (inputTokens, outputTokens) = tokenStatisticsDelegate.getCumulativeTokenCounts(chatId)
+                val usageBreakdown = service.getCurrentTurnUsageBreakdown()
+                val (previousInput, previousOutput) = tokenStatisticsDelegate.getCumulativeTokenCounts(chatId)
+                val inputTokens = previousInput + usageBreakdown.inputTokens
+                val outputTokens = previousOutput + usageBreakdown.outputTokens
                 val windowSize = nextWindowSize ?: tokenStatisticsDelegate.getLastCurrentWindowSize(chatId)
-                tokenStatisticsDelegate.setTokenCounts(chatId, inputTokens, outputTokens, windowSize)
+                // 先将总额与分类一起入库，避免切换会话的普通保存抢先把本轮输入记入其他。
                 if (turnOptions.persistTurn) {
                     chatHistoryDelegate.saveCurrentChat(
                         inputTokens,
                         outputTokens,
                         windowSize,
-                        chatIdOverride = chatId
+                        chatIdOverride = chatId,
+                        usageBreakdown = usageBreakdown,
                     )
                 }
+                tokenStatisticsDelegate.setTokenCounts(chatId, inputTokens, outputTokens, windowSize)
                 additionalOnTurnComplete?.invoke(chatId, Triple(inputTokens, outputTokens, windowSize))
             },
             getIsAutoReadEnabled = {

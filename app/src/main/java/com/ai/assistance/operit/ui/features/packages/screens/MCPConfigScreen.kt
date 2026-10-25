@@ -64,7 +64,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.ai.assistance.operit.data.mcp.InstallResult
-import com.ai.assistance.operit.ui.features.startup.screens.LocalPluginLoadingState
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.LocalMcpLoadingState
 
 /** MCP配置屏幕 - 极简风格界面，专注于插件快速部署 */
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -82,7 +82,7 @@ fun MCPConfigScreen(
 
     val scope = rememberCoroutineScope()
 
-    val pluginLoadingState = LocalPluginLoadingState.current
+    val mcpLoadingState = LocalMcpLoadingState.current
 
     // 实例化ViewModel
     val viewModel = remember {
@@ -121,8 +121,8 @@ fun MCPConfigScreen(
 
 
 
-    // 标记是否已经执行过初始化时的自动启动
-    var initialAutoStartPerformed = remember { mutableStateOf(false) }
+    // 仅记录首次配置读取是否完成，不启动服务。
+    var initialRefreshCompleted = remember { mutableStateOf(false) }
 
     var isRefreshing by remember { mutableStateOf(false) }
     var isToolsLoading by remember { mutableStateOf(true) }
@@ -162,15 +162,15 @@ fun MCPConfigScreen(
         }
     }
 
-    // 在应用启动时检查自动启动设置，而不是等待UI完全加载
+    // 进入页面时读取配置与运行状态，启动服务仅由用户操作触发。
     LaunchedEffect(Unit) {
         // 仅在首次加载时执行一次
-        if (!initialAutoStartPerformed.value) {
+        if (!initialRefreshCompleted.value) {
             com.ai.assistance.operit.util.AppLogger.d("MCPConfigScreen", "初始化 - 检查服务器状态")
 
             refreshMcpScreen()
 
-            // 只记录服务器状态，不再重复启动服务器(已由 Application 中的 initAndAutoStartPlugins 控制)
+            // 检查已经存在的运行状态，不执行部署或启动。
             val anyServerRunning = visiblePluginIds.any { pluginId ->
                 mcpLocalServer.isServerLikelyRunning(pluginId)
             }
@@ -191,7 +191,7 @@ fun MCPConfigScreen(
                 }
             }
 
-            initialAutoStartPerformed.value = true
+            initialRefreshCompleted.value = true
             toolRefreshTrigger++
         }
     }
@@ -242,7 +242,7 @@ fun MCPConfigScreen(
 
 
     // Effect to fetch and display tools when MCP servers start
-    val isPluginLoading by pluginLoadingState.isVisible.collectAsState()
+    val isPluginLoading by mcpLoadingState.isVisible.collectAsState()
     val wasPluginLoading = remember { mutableStateOf(isPluginLoading) }
 
     LaunchedEffect(isPluginLoading) {
@@ -1105,7 +1105,7 @@ fun MCPConfigScreen(
         isRefreshing || isImporting || isPluginLoading || pendingPluginId != null
 
     val isFullscreenLoading =
-        isToolsLoading || (visiblePluginIds.isEmpty() && (isAnyLoading || !initialAutoStartPerformed.value))
+        isToolsLoading || (visiblePluginIds.isEmpty() && (isAnyLoading || !initialRefreshCompleted.value))
 
     if (isFullscreenLoading) {
         Box(
@@ -1133,9 +1133,9 @@ fun MCPConfigScreen(
             onStart = {
                 val lifecycleScope = activity?.lifecycleScope
                 if (lifecycleScope != null) {
-                    pluginLoadingState.reset()
-                    pluginLoadingState.show()
-                    pluginLoadingState.initializeMCPServer(context, lifecycleScope)
+                    mcpLoadingState.reset()
+                    mcpLoadingState.show()
+                    mcpLoadingState.startConfiguredServers(context, lifecycleScope)
                 } else {
                     OKToast.error(context, context.getString(R.string.mcp_start_services_failed), OKToast.LENGTH_SHORT).show()
                 }

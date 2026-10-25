@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
+import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.data.model.MessageSectionCodec
@@ -1242,7 +1244,8 @@ class ChatHistoryDelegate(
         inputTokens: Long = 0L,
         outputTokens: Long = 0L,
         actualContextWindowSize: Long = 0L,
-        chatIdOverride: String? = null
+        chatIdOverride: String? = null,
+        usageBreakdown: TokenUsageBreakdown? = null
     ) {
         val chatId = chatIdOverride ?: _currentChatId.value
         chatId?.let {
@@ -1261,7 +1264,8 @@ class ChatHistoryDelegate(
                     it,
                     inputTokens,
                     outputTokens,
-                    actualContextWindowSize
+                    actualContextWindowSize,
+                    usageBreakdown = usageBreakdown
                 )
             }
         }
@@ -1423,12 +1427,12 @@ class ChatHistoryDelegate(
         return false
     }
 
-    suspend fun resolveVoiceMessage(chatId: String, source: VoiceMessageData, text: String): List<ChatMessage> =
+    suspend fun resolveVoiceMessage(chatId: String, source: VoiceMessageData, analysis: VoiceAnalysis): List<ChatMessage> =
         historyUpdateMutex.withLock {
             val updatedMessages = mutableListOf<ChatMessage>()
             for (existing in chatHistoryManager.loadRuntimeChatMessages(chatId)) {
                 if (existing.sender != "user") continue
-                val content = VoiceMessageMarkup.withResolvedTranscript(existing.content, source, text)
+                val content = VoiceMessageMarkup.withResolvedAnalysis(existing.content, source, analysis)
                 if (content == existing.content) continue
                 val updated = existing.copy(content = content, sections = MessageSectionCodec.parse(content))
                 chatHistoryManager.updateMessage(chatId, updated)

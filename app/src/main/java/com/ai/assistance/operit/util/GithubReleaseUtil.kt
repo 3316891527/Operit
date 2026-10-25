@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.util
 
 import android.content.Context
+import com.ai.assistance.operit.data.updates.patch.requirePatchByteRange
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.data.api.GitHubApiService
 import java.net.HttpURLConnection
@@ -89,13 +90,14 @@ class GithubReleaseUtil(private val context: Context) {
 
         suspend fun probeMirrorUrls(
             urls: Map<String, String>,
-            timeoutMs: Int = 2500
+            timeoutMs: Int = 2500,
+            requireByteRange: Boolean = false,
         ): Map<String, ProbeResult> {
             return withContext(Dispatchers.IO) {
                 coroutineScope {
                     urls.entries
                         .map { (name, url) ->
-                            async { name to probeOneUrl(url, timeoutMs) }
+                            async { name to probeOneUrl(url, timeoutMs, requireByteRange) }
                         }
                         .awaitAll()
                         .toMap()
@@ -105,7 +107,7 @@ class GithubReleaseUtil(private val context: Context) {
 
         private const val SPEED_TEST_BYTES = 256 * 1024L
 
-        private fun probeOneUrl(url: String, timeoutMs: Int): ProbeResult {
+        private fun probeOneUrl(url: String, timeoutMs: Int, requireByteRange: Boolean): ProbeResult {
             val startNs = System.nanoTime()
             return try {
                 var conn: HttpURLConnection? = null
@@ -117,6 +119,7 @@ class GithubReleaseUtil(private val context: Context) {
                     conn.requestMethod = "GET"
                     conn.setRequestProperty("User-Agent", "Operit")
                     conn.setRequestProperty("Range", "bytes=0-${SPEED_TEST_BYTES - 1}")
+                    if (requireByteRange) conn.setRequestProperty("Accept-Encoding", "identity")
                     conn.connect()
 
                     val code = conn.responseCode
@@ -130,6 +133,9 @@ class GithubReleaseUtil(private val context: Context) {
                         )
                     }
 
+                    val expectedRange = if (requireByteRange) {
+                        requirePatchByteRange(code, conn.getHeaderField("Content-Range"), 0L, SPEED_TEST_BYTES - 1L)
+                    } else null
                     var sampled = 0L
                     val buf = ByteArray(16 * 1024)
                     conn.inputStream.use { ins ->
@@ -142,6 +148,9 @@ class GithubReleaseUtil(private val context: Context) {
                         }
                     }
 
+                    if (expectedRange != null && sampled != expectedRange.length) {
+                        throw java.io.IOException("Patch mirror returned an incomplete byte range")
+                    }
                     val costMs = (System.nanoTime() - startNs) / 1_000_000
                     val safeMs = if (costMs <= 0L) 1L else costMs
                     val speed = if (sampled > 0L) (sampled * 1000L) / safeMs else null

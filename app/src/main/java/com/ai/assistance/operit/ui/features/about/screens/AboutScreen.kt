@@ -1787,7 +1787,7 @@ fun PatchDownloadSourceDialog(
                     val metaProbeUrl = if (key == "GitHub") metaUrl else metaMirrors[key] ?: metaUrl
 
                     val patchRes = withContext(Dispatchers.IO) {
-                        GithubReleaseUtil.probeMirrorUrls(mapOf(key to patchProbeUrl))[key]
+                        GithubReleaseUtil.probeMirrorUrls(mapOf(key to patchProbeUrl), requireByteRange = true)[key]
                     }
                     val metaRes = withContext(Dispatchers.IO) {
                         GithubReleaseUtil.probeMirrorUrls(mapOf(key to metaProbeUrl))[key]

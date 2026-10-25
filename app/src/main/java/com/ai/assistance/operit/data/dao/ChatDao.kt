@@ -72,6 +72,13 @@ interface ChatDao {
         timestamp: Long = System.currentTimeMillis(),
     )
 
+    /** 累计总额和九类明细在同一事务中保存，避免切换或迟到快照重复入账。 */
+    @Query("UPDATE chats SET updatedAt = :timestamp, inputTokens = MAX(inputTokens, :inputTokens), outputTokens = MAX(outputTokens, :outputTokens), currentWindowSize = :currentWindowSize, usageBreakdownJson = :usageBreakdownJson WHERE id = :chatId")
+    suspend fun updateChatTokenUsage(
+        chatId: String, inputTokens: Long, outputTokens: Long, currentWindowSize: Long,
+        usageBreakdownJson: String, timestamp: Long = System.currentTimeMillis(),
+    )
+
     /** 刷新窗口时不修改累计用量。 */
     @Query("UPDATE chats SET updatedAt = :timestamp, currentWindowSize = :currentWindowSize WHERE id = :chatId")
     suspend fun updateChatContextWindow(

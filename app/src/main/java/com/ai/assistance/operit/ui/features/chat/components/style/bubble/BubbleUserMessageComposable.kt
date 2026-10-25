@@ -3,6 +3,8 @@ import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.media.unescapeMediaAttribute
 import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileGuard
 import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessagePlayer
+import com.ai.assistance.operit.ui.features.chat.voicemessages.ExpiredVoiceMessageTag
+import com.ai.assistance.operit.ui.features.chat.attachments.rememberMediaFileMissing
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.ui.features.chat.attachments.images.SentImageGroup
 import com.ai.assistance.operit.ui.features.chat.attachments.images.sentImageSources
@@ -127,6 +129,7 @@ fun BubbleUserMessageComposable(
     val voiceMessage = remember(message.content, isHiddenPlaceholder) {
         if (isHiddenPlaceholder) null else VoiceMessageMarkup.parseMessage(message.content)
     }
+    val voiceFileMissing = rememberMediaFileMissing(voiceMessage?.attachment?.filePath, "audio/wav")
 
     // Parse message content to separate text and attachments
     val parseResult =
@@ -187,6 +190,14 @@ fun BubbleUserMessageComposable(
     val resolvedDisplayName = if (isProxySender) proxySenderName else globalUserName
     val shouldShowResolvedName = !isHiddenPlaceholder && if (isProxySender) true else showUserName
     val shouldShowAvatar = !isHiddenPlaceholder && bubbleShowAvatar
+    val avatarSize = 32.dp
+    val avatarSpacing = 8.dp
+    // 图片组与正文共用右边界，普通气泡布局需预留头像列及其间距。
+    val mediaEndPadding = when {
+        bubbleWideLayoutEnabled -> 0.dp
+        shouldShowAvatar -> avatarSize + avatarSpacing
+        else -> 8.dp
+    }
 
     // 添加状态控制内容预览
     val showContentPreview = remember { mutableStateOf(false) }
@@ -272,7 +283,7 @@ fun BubbleUserMessageComposable(
         }
 
         if (sentImages.isNotEmpty()) {
-            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.End) {
+            Row(Modifier.fillMaxWidth().padding(end = mediaEndPadding, bottom = 4.dp), horizontalArrangement = Arrangement.End) {
                 SentImageGroup(sources = sentImages, enabled = enableDialogs)
             }
         }
@@ -312,215 +323,59 @@ fun BubbleUserMessageComposable(
 
         // Message bubble
         if (bubbleWideLayoutEnabled) {
-            val headerVisible = shouldShowAvatar || (shouldShowResolvedName && !resolvedDisplayName.isNullOrEmpty())
+                val headerVisible = shouldShowAvatar || (shouldShowResolvedName && !resolvedDisplayName.isNullOrEmpty())
 
-            if (headerVisible) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (shouldShowResolvedName) {
-                        resolvedDisplayName?.takeIf { it.isNotEmpty() }?.let { userName ->
-                            Text(
-                                text = userName,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isProxySender) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-
-                    if (shouldShowAvatar) {
-                        if (shouldShowResolvedName && !resolvedDisplayName.isNullOrEmpty()) {
-                            Spacer(modifier = Modifier.width(8.dp))
+                if (headerVisible) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (shouldShowResolvedName) {
+                            resolvedDisplayName?.takeIf { it.isNotEmpty() }?.let { userName ->
+                                Text(
+                                    text = userName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isProxySender) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
 
-                        if (!avatarUri.isNullOrEmpty()) {
-                            Image(
-                                painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
-                                contentDescription = "User Avatar",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(avatarShape),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            )
-                        } else {
-                            Icon(
-                                imageVector = if (isProxySender) Icons.Default.Assistant else Icons.Default.Person,
-                                contentDescription = "User Avatar",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(avatarShape),
-                                tint = if (isProxySender) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                }
+                        if (shouldShowAvatar) {
+                            if (shouldShowResolvedName && !resolvedDisplayName.isNullOrEmpty()) {
+                                Spacer(modifier = Modifier.width(avatarSpacing))
+                            }
 
-                Spacer(modifier = Modifier.height(6.dp))
-            }
-
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val maxBubbleWidth = maxWidth
-                val bubbleShape =
-                    if (bubbleRoundedCornersEnabled) {
-                        RoundedCornerShape(20.dp, 4.dp, 20.dp, 20.dp)
-                    } else {
-                        RoundedCornerShape(0.dp)
-                    }
-                val bubbleModifier =
-                    Modifier
-                        .widthIn(max = if (isHiddenPlaceholder) minOf(maxBubbleWidth, 320.dp) else maxBubbleWidth)
-                        .defaultMinSize(minHeight = 44.dp)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    if (effectiveBubbleImageStyle != null) {
-                        BubbleImageBackgroundSurface(
-                            imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
-                            shape = bubbleShape,
-                            modifier = bubbleModifier,
-                            contentPadding =
-                                PaddingValues(
-                                    start = bubbleContentPaddingLeft.dp,
-                                    top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
-                                    end = bubbleContentPaddingRight.dp,
-                                    bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
-                                ),
-                        ) {
-                            if (isHiddenPlaceholder) {
-                                HiddenUserMessagePlaceholderContent(
-                                    titleColor = effectiveTextColor,
-                                    subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
+                            if (!avatarUri.isNullOrEmpty()) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
+                                    contentDescription = "User Avatar",
+                                    modifier = Modifier
+                                        .size(avatarSize)
+                                        .clip(avatarShape),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 )
                             } else {
-                                if (voiceMessage != null) {
-                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
-                                        voiceMessage.waveform, voiceMessage.transcript,
-                                        embedded = true, contentColor = effectiveTextColor)
-                                } else {
-                                    Text(
-                                        text = textContent,
-                                        color = effectiveTextColor,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        Surface(
-                            modifier =
-                                bubbleModifier
-                                    .waterGlass(
-                                        enabled = waterGlassEnabled,
-                                        shape = bubbleShape,
-                                        containerColor = effectiveBackgroundColor,
-                                        backgroundOpacity = backgroundOpacity,
-                                        region = GlassRegion.USER_MESSAGE,
-                                    )
-                                    .liquidGlass(
-                                        enabled = liquidGlassEnabled,
-                                        shape = bubbleShape,
-                                        containerColor = effectiveBackgroundColor,
-                                        backgroundOpacity = backgroundOpacity,
-                                        enableLens = false,
-                                        region = GlassRegion.USER_MESSAGE,
-                                    ),
-                            shape = bubbleShape,
-                            color =
-                                if (liquidGlassEnabled || waterGlassEnabled) {
-                                    Color.Transparent
-                                } else {
-                                    effectiveBackgroundColor
-                                },
-                            tonalElevation =
-                                if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder || backgroundOpacity == 0f) {
-                                    0.dp
-                                } else {
-                                    2.dp
-                                },
-                        ) {
-                            if (isHiddenPlaceholder) {
-                                Box(
-                                    modifier =
-                                        Modifier.padding(
-                                            start = bubbleContentPaddingLeft.dp,
-                                            top = 0.dp,
-                                            end = bubbleContentPaddingRight.dp,
-                                            bottom = 0.dp,
-                                        ),
-                                ) {
-                                    HiddenUserMessagePlaceholderContent(
-                                        titleColor = effectiveTextColor,
-                                        subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
-                                    )
-                                }
-                            } else {
-                                if (voiceMessage != null) {
-                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
-                                        voiceMessage.waveform, voiceMessage.transcript,
-                                        embedded = true, contentColor = effectiveTextColor,
-                                        modifier = Modifier.padding(start = bubbleContentPaddingLeft.dp, end = bubbleContentPaddingRight.dp,
-                                            top = 6.dp, bottom = 6.dp))
-                                } else {
-                                    Text(
-                                        text = textContent,
-                                        modifier =
-                                        Modifier.padding(
-                                            start = bubbleContentPaddingLeft.dp,
-                                            top = 12.dp,
-                                            end = bubbleContentPaddingRight.dp,
-                                            bottom = 12.dp,
-                                        ),
-                                        color = effectiveTextColor,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
+                                Icon(
+                                    imageVector = if (isProxySender) Icons.Default.Assistant else Icons.Default.Person,
+                                    contentDescription = "User Avatar",
+                                    modifier = Modifier
+                                        .size(avatarSize)
+                                        .clip(avatarShape),
+                                    tint = if (isProxySender) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
                     }
-                }
-            }
-        } else {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.Top
-        ) {
-            // 使用Column来垂直排列用户名和消息气泡
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .padding(
-                        start = 32.dp,
-                        end = if (shouldShowAvatar) 0.dp else 8.dp
-                    ),
-                horizontalAlignment = Alignment.End
-            ) {
-                // 显示用户名（如果开启了显示选项并且设置了用户名）
-                val displayName = resolvedDisplayName
-                val shouldShowName = shouldShowResolvedName
-                if (shouldShowName) {
-                    displayName?.let { userName ->
-                        if (userName.isNotEmpty()) {
-                            Text(
-                                text = userName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (isProxySender) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 4.dp, end = 4.dp)
-                            )
-                        }
-                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
                 }
 
-                // Message bubble
-                BoxWithConstraints {
-                    val maxBubbleWidth = maxWidth * 0.85f
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val maxBubbleWidth = maxWidth
                     val bubbleShape =
                         if (bubbleRoundedCornersEnabled) {
                             RoundedCornerShape(20.dp, 4.dp, 20.dp, 20.dp)
@@ -532,136 +387,298 @@ fun BubbleUserMessageComposable(
                             .widthIn(max = if (isHiddenPlaceholder) minOf(maxBubbleWidth, 320.dp) else maxBubbleWidth)
                             .defaultMinSize(minHeight = 44.dp)
 
-                    if (effectiveBubbleImageStyle != null) {
-                        BubbleImageBackgroundSurface(
-                            imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
-                            shape = bubbleShape,
-                            modifier = bubbleModifier,
-                            contentPadding =
-                                PaddingValues(
-                                    start = bubbleContentPaddingLeft.dp,
-                                    top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
-                                    end = bubbleContentPaddingRight.dp,
-                                    bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
-                                ),
-                        ) {
-                            if (isHiddenPlaceholder) {
-                                HiddenUserMessagePlaceholderContent(
-                                    titleColor = effectiveTextColor,
-                                    subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
-                                )
-                            } else {
-                                if (voiceMessage != null) {
-                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
-                                        voiceMessage.waveform, voiceMessage.transcript,
-                                        embedded = true, contentColor = effectiveTextColor)
-                                } else {
-                                    Text(
-                                        text = textContent,
-                                        color = effectiveTextColor,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        Surface(
-                            modifier =
-                                bubbleModifier
-                                    .waterGlass(
-                                        enabled = waterGlassEnabled,
-                                        shape = bubbleShape,
-                                        containerColor = effectiveBackgroundColor,
-                                        backgroundOpacity = backgroundOpacity,
-                                        region = GlassRegion.USER_MESSAGE,
-                                    )
-                                    .liquidGlass(
-                                        enabled = liquidGlassEnabled,
-                                        shape = bubbleShape,
-                                        containerColor = effectiveBackgroundColor,
-                                        backgroundOpacity = backgroundOpacity,
-                                        enableLens = false,
-                                        region = GlassRegion.USER_MESSAGE,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        if (voiceMessage != null && voiceFileMissing.value) {
+                            // 过期时只替换正文内容，保留消息行中的头像和姓名。
+                            ExpiredVoiceMessageTag(enabled = enableDialogs)
+                        } else if (effectiveBubbleImageStyle != null) {
+                            BubbleImageBackgroundSurface(
+                                imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
+                                shape = bubbleShape,
+                                modifier = bubbleModifier,
+                                contentPadding =
+                                    PaddingValues(
+                                        start = bubbleContentPaddingLeft.dp,
+                                        top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                        end = bubbleContentPaddingRight.dp,
+                                        bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
                                     ),
-                            shape = bubbleShape,
-                            color =
-                                if (liquidGlassEnabled || waterGlassEnabled) {
-                                    Color.Transparent
-                                } else {
-                                    effectiveBackgroundColor
-                                },
-                            tonalElevation =
-                                if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder || backgroundOpacity == 0f) {
-                                    0.dp
-                                } else {
-                                    2.dp
-                                }
-                        ) {
-                            if (isHiddenPlaceholder) {
-                                Box(
-                                    modifier =
-                                        Modifier.padding(
-                                            start = bubbleContentPaddingLeft.dp,
-                                            top = 0.dp,
-                                            end = bubbleContentPaddingRight.dp,
-                                            bottom = 0.dp,
-                                        ),
-                                ) {
+                            ) {
+                                if (isHiddenPlaceholder) {
                                     HiddenUserMessagePlaceholderContent(
                                         titleColor = effectiveTextColor,
                                         subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
                                     )
-                                }
-                            } else {
-                                if (voiceMessage != null) {
-                                    VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
-                                        voiceMessage.waveform, voiceMessage.transcript,
-                                        embedded = true, contentColor = effectiveTextColor,
-                                        modifier = Modifier.padding(start = bubbleContentPaddingLeft.dp, end = bubbleContentPaddingRight.dp,
-                                            top = 6.dp, bottom = 6.dp))
                                 } else {
-                                    Text(
-                                        text = textContent,
-                                        modifier =
-                                        Modifier.padding(
-                                            start = bubbleContentPaddingLeft.dp,
-                                            top = 12.dp,
-                                            end = bubbleContentPaddingRight.dp,
-                                            bottom = 12.dp,
+                                    if (voiceMessage != null) {
+                                        VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                            voiceMessage.waveform, voiceMessage.transcript,
+                                            embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing)
+                                    } else {
+                                        Text(
+                                            text = textContent,
+                                            color = effectiveTextColor,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Surface(
+                                modifier =
+                                    bubbleModifier
+                                        .waterGlass(
+                                            enabled = waterGlassEnabled,
+                                            shape = bubbleShape,
+                                            containerColor = effectiveBackgroundColor,
+                                            backgroundOpacity = backgroundOpacity,
+                                            region = GlassRegion.USER_MESSAGE,
+                                        )
+                                        .liquidGlass(
+                                            enabled = liquidGlassEnabled,
+                                            shape = bubbleShape,
+                                            containerColor = effectiveBackgroundColor,
+                                            backgroundOpacity = backgroundOpacity,
+                                            enableLens = false,
+                                            region = GlassRegion.USER_MESSAGE,
                                         ),
-                                        color = effectiveTextColor,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                shape = bubbleShape,
+                                color =
+                                    if (liquidGlassEnabled || waterGlassEnabled) {
+                                        Color.Transparent
+                                    } else {
+                                        effectiveBackgroundColor
+                                    },
+                                tonalElevation =
+                                    if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder || backgroundOpacity == 0f) {
+                                        0.dp
+                                    } else {
+                                        2.dp
+                                    },
+                            ) {
+                                if (isHiddenPlaceholder) {
+                                    Box(
+                                        modifier =
+                                            Modifier.padding(
+                                                start = bubbleContentPaddingLeft.dp,
+                                                top = 0.dp,
+                                                end = bubbleContentPaddingRight.dp,
+                                                bottom = 0.dp,
+                                            ),
+                                    ) {
+                                        HiddenUserMessagePlaceholderContent(
+                                            titleColor = effectiveTextColor,
+                                            subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
+                                        )
+                                    }
+                                } else {
+                                    if (voiceMessage != null) {
+                                        VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                            voiceMessage.waveform, voiceMessage.transcript,
+                                            embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing,
+                                            modifier = Modifier.padding(start = bubbleContentPaddingLeft.dp, end = bubbleContentPaddingRight.dp,
+                                                top = 6.dp, bottom = 6.dp))
+                                    } else {
+                                        Text(
+                                            text = textContent,
+                                            modifier =
+                                            Modifier.padding(
+                                                start = bubbleContentPaddingLeft.dp,
+                                                top = 12.dp,
+                                                end = bubbleContentPaddingRight.dp,
+                                                bottom = 12.dp,
+                                            ),
+                                            color = effectiveTextColor,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            if (shouldShowAvatar) {
-                Spacer(modifier = Modifier.width(8.dp))
-                // Avatar
-                if (!avatarUri.isNullOrEmpty()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
-                        contentDescription = "User Avatar",
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(avatarShape),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = if (isProxySender) Icons.Default.Assistant else Icons.Default.Person,
-                        contentDescription = "User Avatar",
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(avatarShape),
-                        tint = if (isProxySender) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-                    )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.Top
+            ) {
+                // 使用Column来垂直排列用户名和消息气泡
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .padding(
+                            start = 32.dp,
+                            end = if (shouldShowAvatar) 0.dp else 8.dp
+                        ),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    // 显示用户名（如果开启了显示选项并且设置了用户名）
+                    val displayName = resolvedDisplayName
+                    val shouldShowName = shouldShowResolvedName
+                    if (shouldShowName) {
+                        displayName?.let { userName ->
+                            if (userName.isNotEmpty()) {
+                                Text(
+                                    text = userName,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isProxySender) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 4.dp, end = 4.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Message bubble
+                    BoxWithConstraints {
+                        val maxBubbleWidth = maxWidth * 0.85f
+                        val bubbleShape =
+                            if (bubbleRoundedCornersEnabled) {
+                                RoundedCornerShape(20.dp, 4.dp, 20.dp, 20.dp)
+                            } else {
+                                RoundedCornerShape(0.dp)
+                            }
+                        val bubbleModifier =
+                            Modifier
+                                .widthIn(max = if (isHiddenPlaceholder) minOf(maxBubbleWidth, 320.dp) else maxBubbleWidth)
+                                .defaultMinSize(minHeight = 44.dp)
+
+                        if (voiceMessage != null && voiceFileMissing.value) {
+                            // 过期时只替换正文内容，保留消息行中的头像和姓名。
+                            ExpiredVoiceMessageTag(enabled = enableDialogs)
+                        } else if (effectiveBubbleImageStyle != null) {
+                            BubbleImageBackgroundSurface(
+                                imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
+                                shape = bubbleShape,
+                                modifier = bubbleModifier,
+                                contentPadding =
+                                    PaddingValues(
+                                        start = bubbleContentPaddingLeft.dp,
+                                        top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                        end = bubbleContentPaddingRight.dp,
+                                        bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                    ),
+                            ) {
+                                if (isHiddenPlaceholder) {
+                                    HiddenUserMessagePlaceholderContent(
+                                        titleColor = effectiveTextColor,
+                                        subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
+                                    )
+                                } else {
+                                    if (voiceMessage != null) {
+                                        VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                            voiceMessage.waveform, voiceMessage.transcript,
+                                            embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing)
+                                    } else {
+                                        Text(
+                                            text = textContent,
+                                            color = effectiveTextColor,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Surface(
+                                modifier =
+                                    bubbleModifier
+                                        .waterGlass(
+                                            enabled = waterGlassEnabled,
+                                            shape = bubbleShape,
+                                            containerColor = effectiveBackgroundColor,
+                                            backgroundOpacity = backgroundOpacity,
+                                            region = GlassRegion.USER_MESSAGE,
+                                        )
+                                        .liquidGlass(
+                                            enabled = liquidGlassEnabled,
+                                            shape = bubbleShape,
+                                            containerColor = effectiveBackgroundColor,
+                                            backgroundOpacity = backgroundOpacity,
+                                            enableLens = false,
+                                            region = GlassRegion.USER_MESSAGE,
+                                        ),
+                                shape = bubbleShape,
+                                color =
+                                    if (liquidGlassEnabled || waterGlassEnabled) {
+                                        Color.Transparent
+                                    } else {
+                                        effectiveBackgroundColor
+                                    },
+                                tonalElevation =
+                                    if (liquidGlassEnabled || waterGlassEnabled || isHiddenPlaceholder || backgroundOpacity == 0f) {
+                                        0.dp
+                                    } else {
+                                        2.dp
+                                    }
+                            ) {
+                                if (isHiddenPlaceholder) {
+                                    Box(
+                                        modifier =
+                                            Modifier.padding(
+                                                start = bubbleContentPaddingLeft.dp,
+                                                top = 0.dp,
+                                                end = bubbleContentPaddingRight.dp,
+                                                bottom = 0.dp,
+                                            ),
+                                    ) {
+                                        HiddenUserMessagePlaceholderContent(
+                                            titleColor = effectiveTextColor,
+                                            subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
+                                        )
+                                    }
+                                } else {
+                                    if (voiceMessage != null) {
+                                        VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                            voiceMessage.waveform, voiceMessage.transcript,
+                                            embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing,
+                                            modifier = Modifier.padding(start = bubbleContentPaddingLeft.dp, end = bubbleContentPaddingRight.dp,
+                                                top = 6.dp, bottom = 6.dp))
+                                    } else {
+                                        Text(
+                                            text = textContent,
+                                            modifier =
+                                            Modifier.padding(
+                                                start = bubbleContentPaddingLeft.dp,
+                                                top = 12.dp,
+                                                end = bubbleContentPaddingRight.dp,
+                                                bottom = 12.dp,
+                                            ),
+                                            color = effectiveTextColor,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (shouldShowAvatar) {
+                    Spacer(modifier = Modifier.width(avatarSpacing))
+                    // Avatar
+                    if (!avatarUri.isNullOrEmpty()) {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
+                            contentDescription = "User Avatar",
+                            modifier = Modifier
+                                .size(avatarSize)
+                                .clip(avatarShape),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (isProxySender) Icons.Default.Assistant else Icons.Default.Person,
+                            contentDescription = "User Avatar",
+                            modifier = Modifier
+                                .size(avatarSize)
+                                .clip(avatarShape),
+                            tint = if (isProxySender) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
-        }
         }
     }
     }
