@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.ui.features.startup.components
+package com.ai.assistance.operit.ui.features.packages.screens.mcp.loading
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing

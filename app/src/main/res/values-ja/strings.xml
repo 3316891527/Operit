@@ -2013,7 +2013,7 @@
     <string name="cannot_open_termux_battery_settings">Termux のバッテリー最適化設定を開けません</string>
     <string name="accessibility_provider_installed">サービスプロバイダーがインストールされている</string>
     <string name="cannot_open_docs_link">ドキュメントのリンクを開けません</string>
-    <string name="plugin_loading_skipped">プラグインの読み込みがスキップされました</string>
+    <string name="plugin_loading_skipped">MCP の読み込みをスキップしました</string>
     <string name="press_back_again_to_exit">もう一度押すとアプリを終了します</string>
     <string name="return_code_copied">リターンコードがコピーされました!</string>
     <string name="cannot_find_termux_app">Termux アプリが見つかりません</string>
@@ -3871,7 +3871,7 @@
     <string name="free_usage_title">無料リソースの利用確認</string>
     <string name="free_usage_confirm">利用する</string>
     <string name="free_usage_depleted">本日の利用上限に達しました</string>
-    <string name="plugin_loading_status_title">プラグインの読み込み状態</string>
+    <string name="plugin_loading_status_title">MCPサーバーの読み込み状態</string>
     <string name="plugin_loading_success">読み込み完了</string>
     <string name="plugin_loading">読み込み中...</string>
     <string name="plugin_initializing">初期化中...</string>
@@ -4276,7 +4276,7 @@
     <string name="free_usage_first_tip">初回の利用です。次回は 1 日後に利用できます～</string>
     <string name="free_usage_later_tip">無料利用もほどほどに。次に利用できるまで、あと %1$d 日です (๑•̀ㅂ•́)و✧</string>
     <string name="plugin_status">起動済み：%1$d / %2$d</string>
-    <string name="plugin_loading_timeout">読み込みがタイムアウトしました。右上の「スキップ」をタップすると続行できます。</string>
+
     <string name="plugin_starting_server">MCP サーバーを起動しています...</string>
     <string name="plugin_configuring_server">MCP サーバーを設定しています...</string>
     <string name="plugin_server_failed">MCP サーバーを起動できませんでした。右上の「スキップ」をタップすると続行できます。</string>
@@ -4285,30 +4285,30 @@
 
     <!-- 补齐此前缺少的日语译文。 -->
     <string name="plugin_server_initializing">MCP サーバーを初期化しています...</string>
-    <string name="plugin_loading_list">プラグイン一覧を読み込んでいます...</string>
-    <string name="plugin_no_plugins">インストール済みのプラグインが見つかりません</string>
-    <string name="plugin_preparing">%1$d 個のプラグインを準備しています...</string>
+    <string name="plugin_loading_list">MCPサーバー一覧を読み込んでいます...</string>
+    <string name="plugin_no_plugins">インストール済みのMCPサーバーが見つかりません</string>
+    <string name="plugin_preparing">%1$d 個のMCPサーバーを準備しています...</string>
     <string name="plugin_checking_env">環境を確認しています...</string>
-    <string name="plugin_starting_plugins">プラグインの起動を準備しています...</string>
-    <string name="plugin_starting_number">プラグインを起動しています（%1$d/%2$d）%3$s...</string>
-    <string name="plugin_disabled_suffix">（プラグインは無効です）</string>
+    <string name="plugin_starting_plugins">MCPサーバーの起動を準備しています...</string>
+    <string name="plugin_starting_number">MCPサーバーを起動しています（%1$d/%2$d）%3$s...</string>
+    <string name="plugin_disabled_suffix">（MCPサーバーは無効です）</string>
     <string name="plugin_termux_not_running">内蔵ターミナルサービスが起動していないため、プラグインを起動できません</string>
     <string name="plugin_termux_not_authorized">内蔵ターミナルサービスの準備ができていません。先にターミナルを起動してください。</string>
-    <string name="plugin_nodejs_missing">内蔵ターミナル環境に pnpm がありません（Node.js が必要です）。インストールしてからプラグインを使用してください。</string>
-    <string name="plugin_bridge_failed">ブリッジを初期化できないため、プラグインを起動できません</string>
-    <string name="plugin_other_error">プラグインの起動中にエラーが発生しました。右上の「スキップ」をタップすると続行できます。</string>
-    <string name="plugin_complete_with_failures">起動処理が完了しました。成功率：%1$d%%。一部のプラグインは読み込めませんでした。</string>
+    <string name="plugin_nodejs_missing">内蔵ターミナル環境に pnpm がありません（Node.js が必要です）。インストールしてからMCPサーバーを使用してください。</string>
+    <string name="plugin_bridge_failed">ブリッジを初期化できないため、MCPサーバーを起動できません</string>
+    <string name="plugin_other_error">MCPサーバーの起動中にエラーが発生しました。右上の「スキップ」をタップすると続行できます。</string>
+    <string name="plugin_complete_with_failures">起動処理が完了しました。成功率：%1$d%%。一部のMCPサーバーは読み込めませんでした。</string>
     <string name="plugin_complete_success">起動処理が完了しました。成功率：%1$d%%</string>
-    <string name="plugin_no_plugins_to_start">起動が必要なプラグインはありません</string>
-    <string name="plugin_deploying">プラグインがデプロイされていないため、自動デプロイを開始します：%1$s</string>
-    <string name="plugin_cannot_get_path">プラグインのパスを取得できません：%1$s</string>
-    <string name="plugin_cannot_determine_deploy">プラグインのデプロイ方法を特定できません：%1$s</string>
-    <string name="plugin_deploy_success">プラグインをデプロイしました：%1$s</string>
+    <string name="plugin_no_plugins_to_start">起動が必要なMCPサーバーはありません</string>
+    <string name="plugin_deploying">MCPサーバーがデプロイされていないため、自動デプロイを開始します：%1$s</string>
+    <string name="plugin_cannot_get_path">MCPサーバーのパスを取得できません：%1$s</string>
+    <string name="plugin_cannot_determine_deploy">MCPサーバーのデプロイ方法を特定できません：%1$s</string>
+    <string name="plugin_deploy_success">MCPサーバーをデプロイしました：%1$s</string>
     <string name="plugin_deploy_failed">デプロイに失敗しました：%1$s</string>
-    <string name="plugin_deploy_error">プラグインのデプロイに失敗しました：%1$s</string>
+    <string name="plugin_deploy_error">MCPサーバーのデプロイに失敗しました：%1$s</string>
     <string name="plugin_runtime_error">実行時エラー：%1$s</string>
     <string name="plugin_runtime_output">実行時の出力：\n%1$s</string>
-    <string name="plugin_auto_deploy">プラグインがデプロイされていないため、自動デプロイを開始します</string>
+    <string name="plugin_auto_deploy">MCPサーバーがデプロイされていないため、自動デプロイを開始します</string>
     <string name="plugin_terminal_service_unavailable">ターミナルサービスを利用できません。先に起動してください。</string>
     <string name="plugin_pnpm_missing">ターミナルに pnpm がありません。先にインストールしてください。</string>
     <string name="theme_follow_system_desc">有効にすると、システムのダークモード設定に合わせてテーマを自動で切り替えます</string>
@@ -4521,7 +4521,7 @@
     <string name="github_star_description">GitHub Star</string>
     <string name="plugin_app_name">OPERIT</string>
     <string name="plugin_copyright">2023 AI Assistance</string>
-    <string name="plugin_deploy_complete">プラグインのデプロイが完了しました。起動を続行します：%1$s</string>
+    <string name="plugin_deploy_complete">MCPサーバーのデプロイが完了しました。起動を続行します：%1$s</string>
     <string name="screen_title_html_packager">HTML Packager</string>
     <string name="command_success">コマンドを実行しました：\n%1$s</string>
     <string name="package_tab_skills">Skill</string>

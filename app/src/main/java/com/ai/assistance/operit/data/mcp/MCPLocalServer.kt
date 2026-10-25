@@ -13,6 +13,7 @@ import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.util.OperitPaths
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import java.io.File
@@ -98,9 +99,7 @@ class MCPLocalServer private constructor(private val context: Context) {
     val serverStatus: StateFlow<Map<String, ServerStatus>> = _serverStatus.asStateFlow()
 
     // Gson实例 - 使用格式化输出
-    private val gson = com.google.gson.GsonBuilder()
-        .setPrettyPrinting()
-        .create()
+    private val gson = createMcpConfigGson()
 
     init {
         // 初始化时加载所有配置
@@ -1082,21 +1081,19 @@ class MCPLocalServer private constructor(private val context: Context) {
      */
     suspend fun importConfigFromJson(json: String): Boolean {
         return try {
-            val typeToken = object : TypeToken<Map<String, Any>>() {}.type
-            val importData = gson.fromJson<Map<String, Any>>(json, typeToken)
-            
-            importData["mcpConfig"]?.let { config ->
-                val configJson = gson.toJson(config)
-                val rawMcpConfig = gson.fromJson(configJson, MCPConfig::class.java) ?: MCPConfig()
+            // 直接保留 JSON 子对象，避免通用 Map 将整型时间戳转成 Double 后改变配置值。
+            val importData = gson.fromJson(json, JsonObject::class.java)
+
+            importData["mcpConfig"]?.takeUnless { it.isJsonNull }?.let { config ->
+                val rawMcpConfig = gson.fromJson(config, MCPConfig::class.java) ?: MCPConfig()
                 val sanitizedConfig = sanitizeMCPConfig(rawMcpConfig, "importConfigFromJson")
                 _mcpConfig.value = autoFillMissingMetadata(sanitizedConfig.config)
                 saveMCPConfig()
             }
             
-            importData["serverStatus"]?.let { status ->
-                val statusJson = gson.toJson(status)
+            importData["serverStatus"]?.takeUnless { it.isJsonNull }?.let { status ->
                 val typeToken3 = object : TypeToken<Map<String, ServerStatus>>() {}.type
-                val serverStatus = gson.fromJson<Map<String, ServerStatus>>(statusJson, typeToken3)
+                val serverStatus = gson.fromJson<Map<String, ServerStatus>>(status, typeToken3)
                 _serverStatus.value = serverStatus
                 saveServerStatus()
             }

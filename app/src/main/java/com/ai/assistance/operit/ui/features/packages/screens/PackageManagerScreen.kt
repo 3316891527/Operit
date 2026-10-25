@@ -570,9 +570,10 @@ fun PackageManagerScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
         ) {
-            // 优化标签栏布局 - 直接使用TabRow，不再使用Card包裹，移除边距完全贴满
-            TabRow(
+            // 完整中文名称按内容宽度展示，窄屏可横向滚动，避免名称挤进等宽页签。
+            ScrollableTabRow(
                 selectedTabIndex = selectedTab.ordinal,
+                edgePadding = 0.dp,
                 modifier = Modifier.fillMaxWidth(),
                 divider = {
                     HorizontalDivider(
@@ -657,7 +658,7 @@ fun PackageManagerScreen(
                     }
                 }
 
-                // Skills标签
+                // 技能标签
                 Tab(
                     selected = selectedTab == PackageTab.SKILLS,
                     onClick = { selectedTab = PackageTab.SKILLS },
@@ -689,7 +690,7 @@ fun PackageManagerScreen(
                     }
                 }
 
-                // MCP标签
+                // 模型上下文协议标签
                 Tab(
                     selected = selectedTab == PackageTab.MCP,
                     onClick = { selectedTab = PackageTab.MCP },

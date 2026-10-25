@@ -526,7 +526,7 @@
     <string name="about">关于</string>
     <string name="terminal">终端</string>
     <string name="toolbox">工具箱</string>
-    <string name="mcp">MCP</string>
+    <string name="mcp">模型上下文协议</string>
     <string name="token_config_title">DeepSeek Token配置</string>
     <string name="character_card_change_title">角色卡已变更</string>
     <string name="character_card_change_prompt">角色卡已变更，是否前往对话管理界面处理聊天绑定的角色卡？</string>
@@ -648,46 +648,46 @@
     <string name="plugin_skip">跳过</string>
     <string name="plugin_app_name">OPERIT</string>
     <string name="plugin_status">已启动: %1$d / %2$d</string>
-    <string name="plugin_loading_status_title">插件加载状态</string>
+    <string name="plugin_loading_status_title">模型上下文协议加载状态</string>
     <string name="plugin_loading_success">加载成功</string>
     <string name="plugin_loading_failed">加载失败</string>
     <string name="plugin_loading">正在加载...</string>
-    <string name="plugin_loading_timeout">加载超时，您可以点击右上角的\"跳过\"继续</string>
+
     <string name="plugin_initializing">正在初始化...</string>
-    <string name="plugin_starting_server">正在启动MCP服务器...</string>
-    <string name="plugin_configuring_server">配置MCP服务器...</string>
-    <string name="plugin_server_failed">MCP服务器启动失败，您可以点击右上角的\"跳过\"继续</string>
-    <string name="plugin_server_success">MCP服务器启动成功</string>
-<string name="plugin_server_initializing">MCP服务器初始化中...</string>
-<string name="plugin_loading_list">正在加载插件列表...</string>
-<string name="plugin_no_plugins">没有检测到已安装的插件</string>
-<string name="plugin_preparing">正在准备 %1$d 个插件...</string>
+    <string name="plugin_starting_server">正在启动模型上下文协议服务器...</string>
+    <string name="plugin_configuring_server">配置模型上下文协议服务器...</string>
+    <string name="plugin_server_failed">模型上下文协议服务器启动失败，您可以点击右上角的\"跳过\"继续</string>
+    <string name="plugin_server_success">模型上下文协议服务器启动成功</string>
+<string name="plugin_server_initializing">模型上下文协议服务器初始化中...</string>
+<string name="plugin_loading_list">正在加载模型上下文协议服务列表...</string>
+<string name="plugin_no_plugins">没有检测到已安装的模型上下文协议服务</string>
+<string name="plugin_preparing">正在准备 %1$d 个模型上下文协议服务...</string>
 <string name="plugin_checking_env">正在检查环境...</string>
-<string name="plugin_starting_plugins">正在准备启动插件...</string>
-<string name="plugin_starting_number">正在启动插件 (%1$d/%2$d)%3$s...</string>
-<string name="plugin_disabled_suffix"> (插件已禁用)</string>
+<string name="plugin_starting_plugins">正在准备启动模型上下文协议...</string>
+<string name="plugin_starting_number">正在启动模型上下文协议服务 (%1$d/%2$d)%3$s...</string>
+<string name="plugin_disabled_suffix"> (模型上下文协议服务已禁用)</string>
 <string name="plugin_termux_not_running">内置终端服务未运行，无法启动插件</string>
 <string name="plugin_termux_not_authorized">内置终端服务未就绪，请先启动终端再使用插件</string>
-<string name="plugin_nodejs_missing">内置终端环境未安装 pnpm（需要 Node.js），请先安装后再使用插件</string>
-<string name="plugin_bridge_failed">桥接器初始化失败，无法启动插件</string>
-<string name="plugin_other_error">启动插件时发生错误，您可以点击右上角的\"跳过\"继续</string>
-<string name="plugin_complete_with_failures">已完成启动，成功率: %1$d%%。部分插件加载失败</string>
+<string name="plugin_nodejs_missing">内置终端环境未安装 pnpm（需要 Node.js），请先安装后再使用模型上下文协议服务</string>
+<string name="plugin_bridge_failed">桥接器初始化失败，无法启动模型上下文协议服务</string>
+<string name="plugin_other_error">启动模型上下文协议服务时发生错误，您可以点击右上角的\"跳过\"继续</string>
+<string name="plugin_complete_with_failures">已完成启动，成功率: %1$d%%。部分模型上下文协议服务加载失败</string>
 <string name="plugin_complete_success">已完成启动，成功率: %1$d%%</string>
-<string name="plugin_no_plugins_to_start">没有需要启动的插件</string>
+<string name="plugin_no_plugins_to_start">没有需要启动的模型上下文协议服务</string>
 <string name="plugin_copyright"> 2023 AI Assistance</string>
 <string name="plugin_registered">已注册</string>
 <string name="plugin_registration_failed">注册失败</string>
     <string name="plugin_verification_failed">验证失败</string>
-    <string name="plugin_deploying">插件未部署，开始自动部署: %1$s</string>
-    <string name="plugin_cannot_get_path">无法获取插件路径: %1$s</string>
-    <string name="plugin_cannot_determine_deploy">无法确定如何部署插件: %1$s</string>
-    <string name="plugin_deploy_success">插件部署成功: %1$s</string>
+    <string name="plugin_deploying">模型上下文协议服务未部署，开始自动部署: %1$s</string>
+    <string name="plugin_cannot_get_path">无法获取模型上下文协议服务路径: %1$s</string>
+    <string name="plugin_cannot_determine_deploy">无法确定如何部署模型上下文协议服务: %1$s</string>
+    <string name="plugin_deploy_success">模型上下文协议服务部署成功: %1$s</string>
     <string name="plugin_deploy_failed">部署失败: %1$s</string>
-    <string name="plugin_deploy_error">插件部署失败: %1$s</string>
-    <string name="plugin_deploy_complete">插件部署完成，继续启动: %1$s</string>
+    <string name="plugin_deploy_error">模型上下文协议服务部署失败: %1$s</string>
+    <string name="plugin_deploy_complete">模型上下文协议服务部署完成，继续启动: %1$s</string>
     <string name="plugin_runtime_error">运行时错误: %1$s</string>
     <string name="plugin_runtime_output">运行时输出:\n%1$s</string>
-    <string name="plugin_auto_deploy">插件未部署，开始自动部署</string>
+    <string name="plugin_auto_deploy">模型上下文协议服务未部署，开始自动部署</string>
     <string name="plugin_auto_deploy_complete">自动部署完成</string>
     <string name="plugin_terminal_service_unavailable">终端服务不可用，请先启动它</string>
     <string name="plugin_pnpm_missing">终端中未安装pnpm，请先安装</string>
@@ -999,15 +999,15 @@
     <!-- Package Manager Screen -->
     <string name="packages">沙盒包</string>
     <string name="skills">技能</string>
-    <string name="package_tab_skills">Skill</string>
+    <string name="package_tab_skills">技能</string>
     <string name="quick_plugin_creator_title">快速创作你的插件</string>
     <string name="quick_plugin_creator_desc">内置和市场都找不到想要的插件？创作你自己想要的！</string>
-    <string name="quick_plugin_creator_step1_title">1. 更新或者下载包创作 Skill</string>
+    <string name="quick_plugin_creator_step1_title">1. 更新或下载包创作技能</string>
     <string name="quick_plugin_creator_step1_desc">点击按钮后会自动下载 `install_or_update.js`，并调用 operit_editor 的 debug_run_sandbox_script 执行安装或更新。</string>
     <string name="quick_plugin_creator_run_setup">自动下载并执行</string>
-    <string name="quick_plugin_creator_pull_skill_update">拉取 Skill 更新</string>
-    <string name="quick_plugin_creator_setup_success">包创作 Skill 安装或更新完成</string>
-    <string name="quick_plugin_creator_setup_failed">包创作 Skill 安装或更新失败</string>
+    <string name="quick_plugin_creator_pull_skill_update">拉取技能更新</string>
+    <string name="quick_plugin_creator_setup_success">包创作技能安装或更新完成</string>
+    <string name="quick_plugin_creator_setup_failed">包创作技能安装或更新失败</string>
     <string name="quick_plugin_creator_step2_title">2. 输入需求开始创作</string>
     <string name="quick_plugin_creator_requirement_hint">例如：做一个可以批量整理下载目录图片并生成索引的工具</string>
     <string name="quick_plugin_creator_requirement_empty">请先输入插件需求</string>
@@ -1168,7 +1168,7 @@
 
     <string name="market_agreement_title">插件市场使用协议与行为规范</string>
     <string name="market_agreement_version">市场协议版本：%1$s</string>
-    <string name="market_agreement_content">1. 市场定位。Operit 插件市场仅用于分享、发现和索引脚本、工具包、Skill、MCP 及其他扩展，并提供市场内的浏览、下载和安装入口。市场不是插件作者、买方、卖方、经纪方、收费方、担保方或权利登记机构；市场展示、收录、排序或推荐某个插件，不表示该插件由 Operit 开发、拥有、代理或背书。\n\n2. 发布授权。发布者提交插件到市场，即授予 Operit 一项非独占、非转让、仅为运营市场所必要的许可，用于保存、缓存、复制、处理、展示、索引市场条目，并向市场用户提供该插件的下载和安装。发布行为同时表示发布者允许市场用户通过市场下载、安装并在插件设计用途范围内正常使用，但不当然允许修改或再分发。该许可不转移插件的著作权、所有权或其他权利，市场不得据此取得插件在市场之外的自由再许可权。发布者应确保自己有权作出上述授权。\n\n3. GitHub 开源建议。我们推荐发布者在自己控制的公开 GitHub 仓库直接发布源代码、README、许可证、版本或 Release 和变更记录，并从该仓库向市场登记来源。GitHub 仓库公开可见不等于自动授予开源许可；是否允许使用、修改和再分发，以作者明确声明的开源许可证或其他书面授权为准。\n\n4. 用户使用和再分发。插件的再分发权原则上由作者或其他权利人保留。前述下载、安装和正常使用权限，不等于向每一名用户授予再次上传、转发、改包、出售或重新发布插件的权利。除法律另有规定外，用户只能按照作者声明的许可证或授权修改和再分发；未声明允许再分发的插件，不得自行再分发。开源插件的权利范围以其开源许可证为准。\n\n5. 第三方风险和安全责任。插件具有独立的代码、配置和运行权限，可能执行代码、启动本地服务、访问文件、读取环境变量或连接网络。用户应自行审查并承担启用、安装和使用插件的风险。发布者不得在插件、仓库、示例或配置中提交 API Key、Cookie、Token、私钥、账号密码或用户数据，并应如实说明作者、许可证、权限、联网行为、环境变量、外部服务和已知风险。Operit 不对第三方扩展的安全性、准确性、可用性、合法性或兼容性作保证。\n\n6. 评论和社区行为。评论内容应与插件功能、使用体验、缺陷或安全问题相关。不得发布 QQ、Telegram、Discord 等群号、联系方式、广告、导流信息、交易信息、无关链接或其他可能扰乱社区秩序的内容；不得公开 API Key、Cookie、Token、私钥、账号密码或其他个人数据。\n\n7. 禁止交易和导流。不得在市场内买卖、倒卖、代装插件，不得通过收款、打赏、会员、私聊或第三方链接诱导他人为免费插件付费。市场不提供支付、履约、退款或交易纠纷处理服务。免费插件无需向任何人付费；第三方渠道的收费、授权或承诺不代表 Operit 官方认可。\n\n8. 市场服务边界。为提供分享、下载和安装服务，市场可能保存、缓存或传输市场条目和插件文件，但不承诺永久托管、备份、保密或防复制。发布到市场意味着作者授权市场按本协议向市场用户提供下载和安装，不意味着公众自动获得再分发权。插件是否可访问、下载和继续可用，还取决于作者仓库、GitHub 及其他第三方服务。\n\n9. 规范执行与协议更新。违反本规范的评论、条目或账号可能被限制、隐藏或移除。市场协议因功能、法律或安全要求发生实质变化时，将提高协议版本；用户可在市场入口主动查看更新内容。</string>
+    <string name="market_agreement_content">1. 市场定位。Operit 插件市场仅用于分享、发现和索引脚本、工具包、技能、模型上下文协议及其他扩展，并提供市场内的浏览、下载和安装入口。市场不是插件作者、买方、卖方、经纪方、收费方、担保方或权利登记机构；市场展示、收录、排序或推荐某个插件，不表示该插件由 Operit 开发、拥有、代理或背书。\n\n2. 发布授权。发布者提交插件到市场，即授予 Operit 一项非独占、非转让、仅为运营市场所必要的许可，用于保存、缓存、复制、处理、展示、索引市场条目，并向市场用户提供该插件的下载和安装。发布行为同时表示发布者允许市场用户通过市场下载、安装并在插件设计用途范围内正常使用，但不当然允许修改或再分发。该许可不转移插件的著作权、所有权或其他权利，市场不得据此取得插件在市场之外的自由再许可权。发布者应确保自己有权作出上述授权。\n\n3. GitHub 开源建议。我们推荐发布者在自己控制的公开 GitHub 仓库直接发布源代码、README、许可证、版本或 Release 和变更记录，并从该仓库向市场登记来源。GitHub 仓库公开可见不等于自动授予开源许可；是否允许使用、修改和再分发，以作者明确声明的开源许可证或其他书面授权为准。\n\n4. 用户使用和再分发。插件的再分发权原则上由作者或其他权利人保留。前述下载、安装和正常使用权限，不等于向每一名用户授予再次上传、转发、改包、出售或重新发布插件的权利。除法律另有规定外，用户只能按照作者声明的许可证或授权修改和再分发；未声明允许再分发的插件，不得自行再分发。开源插件的权利范围以其开源许可证为准。\n\n5. 第三方风险和安全责任。插件具有独立的代码、配置和运行权限，可能执行代码、启动本地服务、访问文件、读取环境变量或连接网络。用户应自行审查并承担启用、安装和使用插件的风险。发布者不得在插件、仓库、示例或配置中提交 API Key、Cookie、Token、私钥、账号密码或用户数据，并应如实说明作者、许可证、权限、联网行为、环境变量、外部服务和已知风险。Operit 不对第三方扩展的安全性、准确性、可用性、合法性或兼容性作保证。\n\n6. 评论和社区行为。评论内容应与插件功能、使用体验、缺陷或安全问题相关。不得发布 QQ、Telegram、Discord 等群号、联系方式、广告、导流信息、交易信息、无关链接或其他可能扰乱社区秩序的内容；不得公开 API Key、Cookie、Token、私钥、账号密码或其他个人数据。\n\n7. 禁止交易和导流。不得在市场内买卖、倒卖、代装插件，不得通过收款、打赏、会员、私聊或第三方链接诱导他人为免费插件付费。市场不提供支付、履约、退款或交易纠纷处理服务。免费插件无需向任何人付费；第三方渠道的收费、授权或承诺不代表 Operit 官方认可。\n\n8. 市场服务边界。为提供分享、下载和安装服务，市场可能保存、缓存或传输市场条目和插件文件，但不承诺永久托管、备份、保密或防复制。发布到市场意味着作者授权市场按本协议向市场用户提供下载和安装，不意味着公众自动获得再分发权。插件是否可访问、下载和继续可用，还取决于作者仓库、GitHub 及其他第三方服务。\n\n9. 规范执行与协议更新。违反本规范的评论、条目或账号可能被限制、隐藏或移除。市场协议因功能、法律或安全要求发生实质变化时，将提高协议版本；用户可在市场入口主动查看更新内容。</string>
 
     <!-- Sherpa -->
     <string name="sherpa_k2_ncnn_init_failed">实时语音识别引擎初始化失败</string>
@@ -1914,7 +1914,7 @@
     <string name="cannot_find_shizuku_app">无法找到Shizuku应用</string>
     <string name="cannot_launch_shizuku_app">无法启动Shizuku应用</string>
     <string name="cannot_open_docs_link">无法打开文档链接</string>
-    <string name="plugin_loading_skipped">已跳过插件加载</string>
+    <string name="plugin_loading_skipped">已跳过模型上下文协议加载</string>
     <string name="press_back_again_to_exit">再按一次退出应用</string>
     <string name="return_code_copied">返回码已复制！</string>
     <string name="cannot_find_termux_app">无法找到Termux应用</string>
@@ -2136,11 +2136,11 @@
     <string name="enter_repo_info">请输入仓库信息</string>
     <string name="repo_link">仓库链接</string>
 
-    <string name="import_or_install_skill">导入 Skill</string>
-    <string name="select_skill_plugin_zip">请选择 Skill 压缩包</string>
-    <string name="skill_zip_package">Skill 压缩包</string>
-    <string name="get_skill">获取 Skill</string>
-    <string name="overwrite_existing">覆盖已有同名 Skill</string>
+    <string name="import_or_install_skill">导入技能</string>
+    <string name="select_skill_plugin_zip">请选择技能压缩包</string>
+    <string name="skill_zip_package">技能压缩包</string>
+    <string name="get_skill">获取技能</string>
+    <string name="overwrite_existing">覆盖已有同名技能</string>
 
     <!-- Update History -->
 
@@ -2319,8 +2319,8 @@
     <string name="autoglm_error_empty_api_key">请先填写智谱 API Key。</string>
 
     <!-- MCP Config Screen -->
-    <string name="import_or_connect_mcp_service">导入或连接MCP服务</string>
-    <string name="select_mcp_plugin_zip">请选择MCP插件压缩包</string>
+    <string name="import_or_connect_mcp_service">导入或连接模型上下文协议服务</string>
+    <string name="select_mcp_plugin_zip">请选择模型上下文协议服务压缩包</string>
     <string name="plugin_zip_package">插件压缩包</string>
     <string name="select_zip_file">选择.zip文件</string>
     <string name="select_file">选择文件</string>
@@ -2338,9 +2338,9 @@
     <string name="mcp_remote_remove_header">删除请求头</string>
     <string name="service_metadata">服务元数据</string>
     <string name="plugin_name">插件名称</string>
-    <string name="my_mcp_plugin">我的MCP插件</string>
+    <string name="my_mcp_plugin">我的模型上下文协议服务</string>
     <string name="plugin_description">插件描述</string>
-    <string name="this_is_mcp_plugin">这是一个MCP插件</string>
+    <string name="this_is_mcp_plugin">这是一个模型上下文协议服务</string>
     <string name="plugin_already_exists">插件 \'%1$s\' 已存在，请使用其他名称。</string>
     <string name="remote_service">远程服务</string>
     <string name="import_plugin">导入插件</string>
@@ -2350,16 +2350,16 @@
     <string name="enter_complete_remote_info">请完整输入远程服务信息和名称</string>
     <string name="connect">连接</string>
     <string name="import_action">导入</string>
-    <string name="select_mcp_plugin_zip_title">选择MCP插件压缩包</string>
-    <string name="use_system_file_picker">请使用系统文件选择器选择一个.zip格式的MCP插件压缩包</string>
-    <string name="choose_mcp_plugin_zip">选择MCP插件压缩包</string>
+    <string name="select_mcp_plugin_zip_title">选择模型上下文协议服务压缩包</string>
+    <string name="use_system_file_picker">请使用系统文件选择器选择一个.zip格式的模型上下文协议服务压缩包</string>
+    <string name="choose_mcp_plugin_zip">选择模型上下文协议服务压缩包</string>
     <string name="open_file_picker">打开文件选择器</string>
     <string name="start_plugin">启动插件</string>
-    <string name="mcp_management">MCP管理</string>
+    <string name="mcp_management">模型上下文协议管理</string>
     <string name="running">运行中</string>
     <string name="not_running">未运行</string>
     <string name="no_plugins">暂无插件</string>
-    <string name="use_import_function_to_add">请使用导入功能添加MCP插件</string>
+    <string name="use_import_function_to_add">请使用导入功能添加模型上下文协议服务</string>
     <string name="local_installed_plugin">本地安装的插件</string>
     <string name="installed_plugins">已安装插件</string>
     <string name="local_installation">本地安装</string>
@@ -2417,7 +2417,7 @@
 
     <!-- UI 文本 -->
     <string name="plugin_zip_file">插件压缩包</string>
-    <string name="mcp_plugin">MCP 插件</string>
+    <string name="mcp_plugin">模型上下文协议服务</string>
 
     <!-- Toolbox Permission Manager -->
     <string name="try_different_keywords">尝试使用其他关键词搜索</string>
@@ -3186,7 +3186,7 @@
     <string name="feature_system_permission_modification">系统权限修改</string>
     <string name="feature_termux_support">终端支持</string>
     <string name="feature_run_js">虚拟屏幕</string>
-    <string name="feature_plugin_market_mcp">插件市场MCP</string>
+    <string name="feature_plugin_market_mcp">模型上下文协议市场</string>
     <string name="supported">支持</string>
     <string name="not_supported">不支持</string>
     <string name="permission_level_set_active">已将%1$s设为当前活动权限级别</string>
@@ -4258,12 +4258,12 @@
     <string name="screen_title_autoglm_one_click">AutoGLM 一键配置</string>
     <string name="screen_title_autoglm_tool">autoglm执行</string>
     <string name="screen_title_default_assistant_guide">默认助手设置</string>
-    <string name="screen_title_mcp_market">MCP 市场</string>
-    <string name="screen_title_skill_market">Skill 市场</string>
-    <string name="screen_title_skill_publish">发布 Skill</string>
-    <string name="screen_title_skill_detail">Skill 详情</string>
-    <string name="screen_title_skill_manage">管理我的 Skill</string>
-    <string name="screen_title_mcp_publish">发布 MCP 插件</string>
+    <string name="screen_title_mcp_market">模型上下文协议市场</string>
+    <string name="screen_title_skill_market">技能市场</string>
+    <string name="screen_title_skill_publish">发布技能</string>
+    <string name="screen_title_skill_detail">技能详情</string>
+    <string name="screen_title_skill_manage">管理我的技能</string>
+    <string name="screen_title_mcp_publish">发布模型上下文协议服务</string>
     <string name="screen_title_mcp_manage">管理我的插件</string>
     <!-- Model Prompts Settings Screen -->
     <string name="unknown_error">未知错误</string>
@@ -4365,7 +4365,7 @@
 
     <string name="settings_section_account">账号</string>
     <string name="github_account_not_logged_in">未登录</string>
-    <string name="github_account_login_desc">使用 GitHub 登录以使用 MCP 市场发布/管理等功能</string>
+    <string name="github_account_login_desc">使用 GitHub 登录以使用模型上下文协议市场发布/管理等功能</string>
     <string name="github_account_logout_desc">退出当前 GitHub 登录状态</string>
 
     <string name="github_account_info_title">账号信息</string>
@@ -4424,18 +4424,18 @@
     <string name="character_card_tool_access_follow_global">当前跟随全局配置</string>
     <string name="character_card_tool_access_configure">配置允许项</string>
     <string name="character_card_tool_access_summary_empty">当前未允许任何内建工具或外部来源</string>
-    <string name="character_card_tool_access_summary_counts">内建工具 %1$d · 包 %2$d · Skill %3$d · MCP %4$d</string>
+    <string name="character_card_tool_access_summary_counts">内建工具 %1$d · 包 %2$d · 技能 %3$d · 模型上下文协议 %4$d</string>
     <string name="character_card_tool_access_tab_builtin">内建工具</string>
     <string name="character_card_tool_access_tab_package">包</string>
-    <string name="character_card_tool_access_tab_skill">Skill</string>
-    <string name="character_card_tool_access_tab_mcp">MCP</string>
+    <string name="character_card_tool_access_tab_skill">技能</string>
+    <string name="character_card_tool_access_tab_mcp">模型上下文协议</string>
     <string name="character_card_tool_access_empty_builtin">当前没有可配置的内建工具</string>
     <string name="character_card_tool_access_empty_packages">当前没有全局可用的包</string>
-    <string name="character_card_tool_access_empty_skills">当前没有对 AI 可见的 Skill</string>
-    <string name="character_card_tool_access_empty_mcp">当前没有已启用的 MCP 服务器</string>
+    <string name="character_card_tool_access_empty_skills">当前没有对 AI 可见的技能</string>
+    <string name="character_card_tool_access_empty_mcp">当前没有已启用的模型上下文协议服务器</string>
     <string name="character_card_tool_access_search_placeholder">搜索名称、描述或标识</string>
     <string name="character_card_tool_access_empty_search">未找到匹配的工具</string>
-    <string name="character_card_tool_access_requires_use_package">当前已允许包 / Skill / MCP，但未允许 use_package，请先在内建工具中开启 use_package</string>
+    <string name="character_card_tool_access_requires_use_package">当前已允许包 / 技能 / 模型上下文协议，但未允许 use_package，请先在内建工具中开启 use_package</string>
     <string name="character_card_tool_access_denied_runtime">该角色卡不允许使用此工具/来源</string>
     <string name="character_card_custom_prompt">自定义提示词</string>
     <string name="character_card_custom_prompt_placeholder">高级自定义提示词...</string>
@@ -4495,14 +4495,14 @@
     <string name="pnpm_installed_need_pip">已安装pnpm，需要配置pip</string>
     <string name="pip_installed_need_pnpm">已安装pip，需要配置pnpm</string>
     <string name="need_configure_nodejs_pip">需要配置NodeJS和pip环境</string>
-    <string name="terminal_environment_setup_description">需要在终端中配置NodeJS（pnpm）和pip环境以支持MCP插件运行。点击下方按钮进入终端配置界面完成设置。</string>
+    <string name="terminal_environment_setup_description">需要在终端中配置NodeJS（pnpm）和pip环境以支持模型上下文协议服务运行。点击下方按钮进入终端配置界面完成设置。</string>
     <string name="go_to_terminal_config">前往终端配置</string>
-    <string name="nodejs_pip_environment_configured">NodeJS和pip环境已经配置完成，可以正常使用MCP插件功能。</string>
+    <string name="nodejs_pip_environment_configured">NodeJS和pip环境已经配置完成，可以正常使用模型上下文协议服务功能。</string>
     <string name="open_terminal">打开终端</string>
 
     <!-- MCP市场界面 -->
-    <string name="login_github_to_manage_mcp_plugins">登录 GitHub 以发布和管理您的 MCP 插件</string>
-    <string name="login_github_for_skill_market">登录 GitHub 以获得更好的 Skill 市场体验</string>
+    <string name="login_github_to_manage_mcp_plugins">登录 GitHub 以发布和管理您的模型上下文协议服务</string>
+    <string name="login_github_for_skill_market">登录 GitHub 以获得更好的技能市场体验</string>
     <string name="login_github_to_manage_scripts">登录 GitHub 以发布和管理您的脚本</string>
     <string name="login_github_to_manage_packages">登录 GitHub 以发布和管理您的工具包</string>
     <string name="browse">浏览</string>
@@ -4510,14 +4510,14 @@
     <string name="market_tab_artifact">沙盒包</string>
     <string name="market_tab_all">全部</string>
     <string name="market_tab_categories">分类</string>
-    <string name="market_tab_mcp">MCP</string>
-    <string name="market_tab_skill">Skill</string>
+    <string name="market_tab_mcp">模型上下文协议</string>
+    <string name="market_tab_skill">技能</string>
     <string name="market_tab_mine">我的</string>
     <string name="market_category_type_all">全部</string>
     <string name="market_category_type_script">沙盒包</string>
     <string name="market_category_type_package">插件</string>
-    <string name="market_category_type_skill">Skill</string>
-    <string name="market_category_type_mcp">MCP</string>
+    <string name="market_category_type_skill">技能</string>
+    <string name="market_category_type_mcp">模型上下文协议</string>
     <string name="market_category_search_research">搜索与研究</string>
     <string name="market_category_dev_code">开发编程</string>
     <string name="market_category_automation_workflow">自动化流程</string>
@@ -4555,15 +4555,15 @@
     <string name="market_error_load_failed">加载失败</string>
     <string name="market_error_action_failed">操作失败</string>
     <string name="market_manage_artifact">管理包</string>
-    <string name="market_manage_skill">管理 Skill</string>
-    <string name="market_manage_mcp">管理 MCP</string>
+    <string name="market_manage_skill">管理技能</string>
+    <string name="market_manage_mcp">管理模型上下文协议</string>
     <string name="market_manage_owned_section">我拥有的</string>
     <string name="market_manage_contributed_section">我参与提交的</string>
     <string name="market_manage_relation_owner">拥有者</string>
     <string name="market_manage_relation_contributor">协作者</string>
     <string name="market_publish_artifact">发布包</string>
-    <string name="market_publish_skill">发布 Skill</string>
-    <string name="market_publish_mcp">发布 MCP</string>
+    <string name="market_publish_skill">发布技能</string>
+    <string name="market_publish_mcp">发布模型上下文协议</string>
     <string name="market_publish_new_version">发布新版本</string>
     <string name="market_publish_new_version_locked_fields_description">发布更新版本时不可修改名称、描述、分类和仓库来源，只能提交新的版本信息。</string>
     <string name="market_publish_new_version_detail_desc">该插件允许社区协作更新。你可以为它提交一个新版本，审核通过后会进入公开列表。</string>
@@ -4604,36 +4604,36 @@
     <string name="market_login_required_hint">登录 GitHub 后可管理和发布市场内容</string>
     <string name="user_avatar">用户头像</string>
     <string name="clear_search">清空搜索</string>
-    <string name="available_mcp_plugins">可用的 MCP 插件</string>
-    <string name="available_skills_market">可用的 Skill</string>
+    <string name="available_mcp_plugins">可用的模型上下文协议服务</string>
+    <string name="available_skills_market">可用的技能</string>
     <string name="available_scripts_market">可用的脚本</string>
     <string name="available_packages_market">可用的工具包</string>
     <string name="no_matching_plugins_found">未找到匹配的插件</string>
-    <string name="no_matching_skills_found">未找到匹配的 Skill</string>
+    <string name="no_matching_skills_found">未找到匹配的技能</string>
     <string name="no_matching_scripts_found">未找到匹配的脚本</string>
     <string name="no_matching_packages_found">未找到匹配的工具包</string>
     <string name="skill_market_search_placeholder">搜索技能</string>
     <string name="script_market_search_placeholder">搜索脚本名称、描述、作者...</string>
     <string name="plugin_market_search_placeholder">搜索插件</string>
     <string name="package_market_search_placeholder">搜索包</string>
-    <string name="mcp_market_search_placeholder">搜索 MCP</string>
+    <string name="mcp_market_search_placeholder">搜索模型上下文协议</string>
     <string name="skill_repo_url_not_found">未找到仓库地址</string>
     <string name="skill_repo_url_not_found_cannot_install">未找到仓库地址，无法安装</string>
-    <string name="no_available_mcp_plugins">暂无可用的 MCP 插件</string>
+    <string name="no_available_mcp_plugins">暂无可用的模型上下文协议服务</string>
     <string name="no_scripts_available">暂无可用的脚本</string>
     <string name="no_market_packages_available">暂无可用的工具包</string>
     <string name="refresh_or_try_later">刷新或稍后再试</string>
     <string name="recommended_feature">推荐功能</string>
-    <string name="premium_mcp_plugins_coming_soon">即将推出精选的优质 MCP 插件</string>
-    <string name="coming_soon_for_mcp_plugins">即将推出精选的优质 MCP 插件</string>
+    <string name="premium_mcp_plugins_coming_soon">即将推出精选的优质模型上下文协议服务</string>
+    <string name="coming_soon_for_mcp_plugins">即将推出精选的优质模型上下文协议服务</string>
     <string name="please_login_github_first">请先登录 GitHub</string>
-    <string name="login_to_view_manage_mcp_plugins">登录后可以查看和管理您发布的 MCP 插件</string>
+    <string name="login_to_view_manage_mcp_plugins">登录后可以查看和管理您发布的模型上下文协议服务</string>
     <string name="publish_new_plugin">发布新插件</string>
-    <string name="publish_new_skill">发布新 Skill</string>
+    <string name="publish_new_skill">发布新技能</string>
     <string name="publish_new_script">发布新脚本</string>
     <string name="publish_new_package">发布新工具包</string>
     <string name="manage_my_plugins">管理我的插件</string>
-    <string name="manage_my_skills">管理我的 Skill</string>
+    <string name="manage_my_skills">管理我的技能</string>
     <string name="manage_my_scripts">管理我的脚本</string>
     <string name="manage_my_packages">管理我的工具包</string>
     <string name="logout">退出登录</string>
@@ -4649,7 +4649,7 @@
     <string name="github_login_method_external">使用外部浏览器登录</string>
     <string name="github_login_starting">正在准备 GitHub 授权…</string>
     <string name="github_login_external_waiting">已打开浏览器，请在完成授权后返回应用。</string>
-    <string name="publish_mcp_plugins_to_market">• 发布您的 MCP 插件到市场</string>
+    <string name="publish_mcp_plugins_to_market">• 发布您的模型上下文协议服务到市场</string>
     <string name="manage_published_plugins">• 管理您已发布的插件</string>
     <string name="better_installation_experience">• 获得更好的安装体验</string>
 
@@ -4671,30 +4671,30 @@
     <string name="publish_success">发布成功</string>
 
     <!-- MCP配置界面 -->
-    <string name="mcp_community_resources">MCP 社区资源</string>
-    <string name="mcp_official_repo">MCP 官方仓库</string>
-    <string name="anthropic_official_mcp_servers">Anthropic官方维护的MCP服务器集合</string>
+    <string name="mcp_community_resources">模型上下文协议社区资源</string>
+    <string name="mcp_official_repo">模型上下文协议官方仓库</string>
+    <string name="anthropic_official_mcp_servers">Anthropic官方维护的模型上下文协议服务器集合</string>
     <string name="link_copied">链接已复制</string>
-    <string name="mcp_server_directory">MCP 服务器目录</string>
-    <string name="complete_mcp_server_list_177">完整的MCP服务器列表，包含177+个服务器</string>
-    <string name="claude_mcp_community">Claude MCP 社区</string>
-    <string name="claude_mcp_community_website">专注于Claude MCP的社区网站</string>
+    <string name="mcp_server_directory">模型上下文协议服务器目录</string>
+    <string name="complete_mcp_server_list_177">完整的模型上下文协议服务器列表，包含177+个服务器</string>
+    <string name="claude_mcp_community">Claude 模型上下文协议社区</string>
+    <string name="claude_mcp_community_website">专注于Claude 模型上下文协议的社区网站</string>
     <string name="modelscope_community">魔搭社区</string>
-    <string name="modelscope_ai_community_mcp_resources">ModelScope AI模型社区，包含MCP相关资源</string>
-    <string name="github_awesome_mcp_resources">GitHub上精选的MCP资源和工具集合</string>
-    <string name="mcp_market">MCP市场</string>
+    <string name="modelscope_ai_community_mcp_resources">ModelScope AI模型社区，包含模型上下文协议相关资源</string>
+    <string name="github_awesome_mcp_resources">GitHub上精选的模型上下文协议资源和工具集合</string>
+    <string name="mcp_market">模型上下文协议市场</string>
     <string name="more">更多</string>
     <string name="copy_link">复制链接</string>
 
     <!-- MCP管理界面 -->
     <string name="need_login_github_manage_plugins">需要登录 GitHub 才能管理您发布的插件</string>
-    <string name="need_login_github_manage_skills">需要登录 GitHub 才能管理您发布的 Skill</string>
+    <string name="need_login_github_manage_skills">需要登录 GitHub 才能管理您发布的技能</string>
     <string name="need_login_github_manage_scripts">需要登录 GitHub 才能管理您发布的脚本</string>
     <string name="need_login_github_manage_packages">需要登录 GitHub 才能管理您发布的工具包</string>
     <string name="no_published_plugins_yet">还没有发布任何插件</string>
-    <string name="click_button_publish_first_mcp_plugin">点击上方按钮发布您的第一个 MCP 插件</string>
-    <string name="no_published_skills_yet">还没有发布任何 Skill</string>
-    <string name="click_button_publish_first_skill">点击上方按钮发布您的第一个 Skill</string>
+    <string name="click_button_publish_first_mcp_plugin">点击上方按钮发布您的第一个模型上下文协议服务</string>
+    <string name="no_published_skills_yet">还没有发布任何技能</string>
+    <string name="click_button_publish_first_skill">点击上方按钮发布您的第一个技能</string>
     <string name="no_published_scripts_yet">还没有发布任何脚本</string>
     <string name="click_button_publish_first_script">点击上方按钮发布您的第一个脚本</string>
     <string name="no_published_packages_yet">还没有发布任何工具包</string>
@@ -4734,14 +4734,14 @@
     <string name="extracting_progress">解压中...</string>
     <string name="installing_progress">安装中...</string>
     <string name="after_logging_in_you_can">登录 GitHub 账户后，您可以：</string>
-    <string name="publish_your_mcp_plugin_to_the_market">发布您的 MCP 插件到市场</string>
+    <string name="publish_your_mcp_plugin_to_the_market">发布您的模型上下文协议服务到市场</string>
     <string name="manage_your_published_plugins">管理您已发布的插件</string>
-    <string name="no_mcp_plugins_available">暂无可用的 MCP 插件</string>
-    <string name="no_skills_available">暂无可用的 Skill</string>
+    <string name="no_mcp_plugins_available">暂无可用的模型上下文协议服务</string>
+    <string name="no_skills_available">暂无可用的技能</string>
     <string name="try_changing_keywords">尝试更换关键词</string>
     <string name="refresh_or_try_again_later">刷新或稍后再试</string>
     <string name="recommended_features">推荐功能</string>
-    <string name="after_logging_in_you_can_view_and_manage_your_mcp_plugins">登录后可以查看和管理您发布的 MCP 插件</string>
+    <string name="after_logging_in_you_can_view_and_manage_your_mcp_plugins">登录后可以查看和管理您发布的模型上下文协议服务</string>
     <string name="after_logging_in_you_can_view_and_manage_your_scripts">登录后可以查看和管理您发布的脚本</string>
     <string name="after_logging_in_you_can_view_and_manage_your_packages">登录后可以查看和管理您发布的工具包</string>
     <string name="after_logging_in_you_can_view_and_manage_your_artifacts">登录后可以查看和管理您发布的脚本和工具包</string>
@@ -4830,7 +4830,7 @@
     <string name="artifact_detail_project_cluster">项目簇</string>
     <string name="artifact_detail_node_id">节点 ID</string>
     <string name="artifact_detail_continue_develop_current_node">基于当前节点继续开发</string>
-    <string name="artifact_detail_step_pull_skill_update">1. 拉取 Skill 更新</string>
+    <string name="artifact_detail_step_pull_skill_update">1. 拉取技能更新</string>
     <string name="artifact_detail_step_switch_or_download_version">2. 切换或下载当前版本</string>
     <string name="artifact_detail_step_enter_requirement">3. 输入需求开始创作</string>
     <string name="artifact_detail_continue_develop_hint">会在此版本基础上继续开发，并强提醒目录限制、types 同步和编译方式。</string>
@@ -4971,13 +4971,13 @@
     <string name="market_detail_preview_approved_message">当前条目已审核通过，但正式发布数据尚未生效，页面展示的是发布前预览。</string>
     <string name="market_detail_preview_changes_requested_message">当前条目已被打回修改，页面展示的是最近一次提交的预览内容。</string>
     <string name="market_detail_preview_rejected_message">当前条目已被拒绝，页面展示的是最近一次提交的预览内容。</string>
-    <string name="get_mcp">获取MCP</string>
+    <string name="get_mcp">获取模型上下文协议</string>
     <string name="plugin_name_description">只允许英文字母、数字和下划线，此名称将作为插件ID使用</string>
-    <string name="choose_mcp_community_to_get_plugins">选择以下优质MCP社区获取插件：</string>
-    <string name="awesome_mcp">Awesome MCP</string>
+    <string name="choose_mcp_community_to_get_plugins">选择以下模型上下文协议社区获取服务：</string>
+    <string name="awesome_mcp">精选模型上下文协议资源</string>
     <string name="loading_your_plugins">正在加载您的插件...</string>
     <string name="confirm_remove_plugin_from_market">确定要从市场移除插件「%1$s」吗？此操作会关闭对应的 Issue，但不会删除您的代码仓库。</string>
-    <string name="confirm_remove_skill_from_market">确定要从市场移除 Skill「%1$s」吗？此操作会关闭对应的 Issue，但不会删除您的代码仓库。</string>
+    <string name="confirm_remove_skill_from_market">确定要从市场移除技能「%1$s」吗？此操作会关闭对应的 Issue，但不会删除您的代码仓库。</string>
     <string name="confirm_remove_script_from_market">确定要从市场移除脚本「%1$s」吗？此操作会关闭对应的 Issue，但不会删除您的发布仓库。</string>
     <string name="confirm_remove_package_from_market">确定要从市场移除工具包「%1$s」吗？此操作会关闭对应的 Issue，但不会删除您的发布仓库。</string>
 
@@ -4987,20 +4987,20 @@
     <string name="plugin_name_required">插件名称 *</string>
     <string name="plugin_description_required">插件描述 *</string>
     <string name="github_repo_address_required">GitHub 仓库地址 *</string>
-    <string name="skill_name_required">Skill 名称 *</string>
-    <string name="skill_description_required">Skill 描述 *</string>
+    <string name="skill_name_required">技能名称 *</string>
+    <string name="skill_description_required">技能描述 *</string>
     <string name="skill_repo_address_required">GitHub 仓库地址 *</string>
-    <string name="skill_publish_info_description">您的 Skill 信息将作为 GitHub Issue 发布到市场仓库。请确保提供的信息准确完整。表单内容会自动保存为草稿，直到成功发布后才会清空。</string>
-    <string name="skill_edit_info_description">您正在编辑已发布的 Skill 信息。修改后的信息将更新到市场仓库的对应 Issue 中。</string>
-    <string name="confirm_skill_git_import_deployment">我已确认该 Skill 可以通过软件的 Git 仓库导入方式正常安装并使用</string>
-    <string name="skill_publish_success_message">您的 Skill 已成功发布到市场，等待审核通过后即可被其他用户发现和使用。</string>
-    <string name="skill_update_success_message">您的 Skill 信息已成功更新。</string>
-    <string name="skill_publish_login_required">GitHub 登录后才能发布 Skill。</string>
-    <string name="skill_publish_failed_title">Skill 发布失败</string>
-    <string name="skill_update_login_required">GitHub 登录后才能更新 Skill。</string>
-    <string name="skill_publish_name_empty">Skill 名称不能为空。</string>
-    <string name="skill_publish_check_name_conflict_failed">检查 Skill 名称是否重名失败：%1$s</string>
-    <string name="skill_publish_name_taken_message">Skill 市场里已经有同名插件「%1$s」，请换一个名称。</string>
+    <string name="skill_publish_info_description">您的技能信息将作为 GitHub Issue 发布到市场仓库。请确保提供的信息准确完整。表单内容会自动保存为草稿，直到成功发布后才会清空。</string>
+    <string name="skill_edit_info_description">您正在编辑已发布的技能信息。修改后的信息将更新到市场仓库的对应 Issue 中。</string>
+    <string name="confirm_skill_git_import_deployment">我已确认该技能可以通过软件的 Git 仓库导入方式正常安装并使用</string>
+    <string name="skill_publish_success_message">您的技能已成功发布到市场，等待审核通过后即可被其他用户发现和使用。</string>
+    <string name="skill_update_success_message">您的技能信息已成功更新。</string>
+    <string name="skill_publish_login_required">GitHub 登录后才能发布技能。</string>
+    <string name="skill_publish_failed_title">技能发布失败</string>
+    <string name="skill_update_login_required">GitHub 登录后才能更新技能。</string>
+    <string name="skill_publish_name_empty">技能名称不能为空。</string>
+    <string name="skill_publish_check_name_conflict_failed">检查技能名称是否重名失败：%1$s</string>
+    <string name="skill_publish_name_taken_message">技能市场里已经有同名技能「%1$s」，请换一个名称。</string>
     <string name="script_publish_info_description">脚本会先上传到您自己的 OperitForge 发布仓库，再将元数据登记到 OperitScriptMarket。请确认脚本内容、版本和描述准确无误。</string>
     <string name="script_edit_info_description">您正在编辑已发布脚本的信息。更新后会覆盖市场仓库中对应 Issue 的元数据。</string>
     <string name="package_publish_info_description">工具包会先上传到您自己的 OperitForge 发布仓库，再将元数据登记到 OperitPackageMarket。请确认工具包内容、版本和描述准确无误。</string>
@@ -5019,7 +5019,7 @@
     <string name="install_command_example">例如：pnpm install xxx@xxxx</string>
     <string name="install_command_optional_description">如果无填写则使用软件自动识别项目结构。建议为空。</string>
     <string name="install_config_example">{"mcpServers": {"example": {"command": "npx", "args": ["example@latest"]}}}</string>
-    <string name="install_config_optional_description">提供 MCP 配置 JSON，用户可以直接导入。选填。</string>
+    <string name="install_config_optional_description">提供模型上下文协议配置 JSON，用户可以直接导入。选填。</string>
     <string name="install_config_colon">安装配置: %1$s</string>
     <string name="updating_progress">更新中...</string>
     <string name="publishing_progress">发布中...</string>
@@ -5030,15 +5030,15 @@
     <string name="install_command_colon">安装命令: %1$s</string>
     <string name="update_failed_with_error">更新失败：%1$s</string>
     <string name="publish_failed_with_error">发布失败：%1$s</string>
-    <string name="mcp_plugin_update_success_message">您的 MCP 插件信息已成功更新。</string>
-    <string name="mcp_plugin_publish_success_message">您的 MCP 插件已成功发布到市场，等待审核通过后即可被其他用户发现和使用。</string>
+    <string name="mcp_plugin_update_success_message">您的模型上下文协议服务信息已成功更新。</string>
+    <string name="mcp_plugin_publish_success_message">您的模型上下文协议服务已成功发布到市场，等待审核通过后即可被其他用户发现和使用。</string>
 
     <string name="mcp_market_api_rate_limited_login_required">API请求超限，请登录GitHub后重试</string>
-    <string name="mcp_market_load_failed_with_error">加载MCP市场数据失败: %1$s</string>
+    <string name="mcp_market_load_failed_with_error">加载模型上下文协议市场数据失败: %1$s</string>
     <string name="mcp_market_load_more_failed_with_error">加载更多失败: %1$s</string>
     <string name="mcp_market_network_error_with_error">网络错误: %1$s</string>
     <string name="mcp_market_github_login_required">请先登录GitHub</string>
-    <string name="mcp_market_publish_success_toast">MCP插件发布成功！</string>
+    <string name="mcp_market_publish_success_toast">模型上下文协议服务发布成功！</string>
     <string name="mcp_market_github_login_start_failed">启动登录失败: %1$s</string>
     <string name="mcp_market_config_import_failed_with_error">配置导入失败: %1$s</string>
     <string name="mcp_market_config_import_success_with_count">成功导入 %1$s 配置，合并了 %2$d 个服务器</string>
@@ -5078,16 +5078,16 @@
     <string name="mcp_market_reaction_failed_with_error">点赞失败: %1$s</string>
     <string name="mcp_market_reaction_error_with_error">点赞时发生错误: %1$s</string>
 
-    <string name="mcp_issue_body_title_description">## MCP 插件描述</string>
+    <string name="mcp_issue_body_title_description">## 模型上下文协议服务描述</string>
     <string name="mcp_issue_body_title_install_info">## 安装信息</string>
     <string name="mcp_issue_body_repo_address">**仓库地址:** %1$s</string>
     <string name="mcp_issue_body_title_install_method">### 安装方式</string>
-    <string name="mcp_issue_body_install_step1">1. 在 Operit MCP 配置页面点击「导入」</string>
+    <string name="mcp_issue_body_install_step1">1. 在 Operit 模型上下文协议配置页面点击「导入」</string>
     <string name="mcp_issue_body_install_step2">2. 选择「从仓库导入」</string>
     <string name="mcp_issue_body_install_step3">3. 输入仓库地址: `%1$s`</string>
     <string name="mcp_issue_body_install_step4">4. 设置插件名称并点击导入</string>
     <string name="mcp_issue_body_title_tech_info">## 技术信息</string>
-    <string name="mcp_issue_body_tech_platform">- **发布平台:** Operit MCP 市场</string>
+    <string name="mcp_issue_body_tech_platform">- **发布平台:** Operit 模型上下文协议市场</string>
     <string name="mcp_issue_body_tech_publish_time">- **发布时间:** %1$s</string>
     <string name="mcp_issue_body_footer_note">*此Issue由 Operit 自动生成*</string>
 
@@ -5098,18 +5098,18 @@
     <string name="mcp_publish_body_section_quick_install">## ⚡ 快速安装</string>
     <string name="mcp_publish_body_section_install_method">## 📦 安装方式</string>
     <string name="mcp_publish_body_method_repo_import_title">### 方式一：从仓库导入</string>
-    <string name="mcp_publish_body_method_repo_import_step1">1. 打开 Operit MCP 配置页面</string>
+    <string name="mcp_publish_body_method_repo_import_step1">1. 打开 Operit 模型上下文协议配置页面</string>
     <string name="mcp_publish_body_method_repo_import_step2">2. 点击「导入」→「从仓库导入」</string>
     <string name="mcp_publish_body_method_repo_import_step3">3. 输入仓库地址：`%1$s`</string>
     <string name="mcp_publish_body_method_repo_import_step4">4. 配置插件名称并导入</string>
     <string name="mcp_publish_body_method_config_import_title">### 方式二：配置导入</string>
-    <string name="mcp_publish_body_method_config_import_step1">1. 打开 Operit MCP 配置页面</string>
+    <string name="mcp_publish_body_method_config_import_step1">1. 打开 Operit 模型上下文协议配置页面</string>
     <string name="mcp_publish_body_method_config_import_step2">2. 点击「导入」→「配置导入」</string>
     <string name="mcp_publish_body_method_config_import_step3">3. 粘贴以下配置：</string>
     <string name="mcp_publish_body_section_tech_info">## 🛠️ 技术信息</string>
     <string name="mcp_publish_body_table_header">| 项目 | 值 |</string>
     <string name="mcp_publish_body_table_separator">|------|-----|</string>
-    <string name="mcp_publish_body_table_row_platform">| 发布平台 | Operit MCP 市场 |</string>
+    <string name="mcp_publish_body_table_row_platform">| 发布平台 | Operit 模型上下文协议市场 |</string>
     <string name="mcp_publish_body_table_row_parser_version">| 解析版本 | 1.0 |</string>
     <string name="mcp_publish_body_table_row_publish_time">| 发布时间 | %1$s |</string>
 
@@ -6505,7 +6505,7 @@
     <string name="mcp_config_import">配置导入</string>
     <string name="mcp_more_options">更多选项</string>
     <string name="mcp_swipe_for_more">左滑查看更多选项</string>
-    <string name="mcp_paste_config_json">粘贴 MCP 配置 JSON</string>
+    <string name="mcp_paste_config_json">粘贴模型上下文协议配置 JSON</string>
     <string name="mcp_config_content">配置内容</string>
     <string name="mcp_open_config_file">打开配置文件</string>
     <string name="mcp_config_file_location">配置文件位置: %1$s</string>
@@ -6564,18 +6564,18 @@
     <string name="mcp_market_clear_search">清空搜索</string>
     <string name="mcp_market_refresh">刷新</string>
 
-    <string name="skill_publish_body_section_skill_info">## 📋 Skill 信息</string>
+    <string name="skill_publish_body_section_skill_info">## 📋 技能信息</string>
     <string name="skill_publish_body_section_repo_info">## 🔗 仓库信息</string>
     <string name="skill_publish_body_label_repo_url">**仓库地址:** %1$s</string>
     <string name="skill_publish_body_section_install_method">## 📦 安装方式</string>
-    <string name="skill_publish_body_install_step1">1. 打开 Operit → 包管理 → Skills</string>
-    <string name="skill_publish_body_install_step2">2. 点击「导入 Skill」→ 「从仓库导入」</string>
+    <string name="skill_publish_body_install_step1">1. 打开 Operit → 包管理 → 技能</string>
+    <string name="skill_publish_body_install_step2">2. 点击「导入技能」→ 「从仓库导入」</string>
     <string name="skill_publish_body_install_step3">3. 输入仓库地址：`%1$s`</string>
     <string name="skill_publish_body_install_step4">4. 确认导入</string>
     <string name="skill_publish_body_section_tech_info">## 🛠️ 技术信息</string>
     <string name="skill_publish_body_table_header">| 项目 | 值 |</string>
     <string name="skill_publish_body_table_separator">|------|-----|</string>
-    <string name="skill_publish_body_table_row_platform">| 发布平台 | Operit Skill 市场 |</string>
+    <string name="skill_publish_body_table_row_platform">| 发布平台 | Operit 技能市场 |</string>
     <string name="skill_publish_body_table_row_parser_version">| 解析版本 | 1.0 |</string>
     <string name="skill_publish_body_table_row_publish_time">| 发布时间 | %1$s |</string>
 
@@ -6760,21 +6760,21 @@
     <string name="skillmgr_import_failed">导入失败: %1$s</string>
     <string name="skillmgr_deleted">已删除: %1$s</string>
     <string name="skillmgr_delete_failed">删除失败: %1$s</string>
-    <string name="skillmgr_no_skills_found">未找到任何Skill。请将Skill文件夹放入: %1$s，并确保其中包含 SKILL.md。</string>
+    <string name="skillmgr_no_skills_found">未找到任何技能。请将技能文件夹放入: %1$s，并确保其中包含 SKILL.md。</string>
     <string name="skillmgr_cannot_read_file">无法读取文件</string>
     <string name="skillmgr_delete">删除</string>
     <string name="skillmgr_close">关闭</string>
-    <string name="skillmgr_direct_skill_id">Skill ID</string>
+    <string name="skillmgr_direct_skill_id">技能 ID</string>
     <string name="skillmgr_direct_skill_id_hint">例如: my_skill</string>
     <string name="skillmgr_direct_description">简介</string>
     <string name="skillmgr_direct_content">内容</string>
     <string name="skillmgr_direct_content_hint">输入 SKILL.md 的正文内容</string>
-    <string name="skillmgr_direct_files_saved_hint">附件会复制到该 Skill 文件夹下的 assets/ 目录</string>
-    <string name="skillmgr_direct_skill_id_required">请输入 Skill ID</string>
-    <string name="skillmgr_direct_skill_id_invalid">Skill ID 只能包含字母、数字、点、下划线和短横线，且不能是 . 或 ..</string>
-    <string name="skillmgr_direct_content_required">请输入 Skill 内容</string>
-    <string name="skillmgr_detail_loading">正在读取 Skill 详情...</string>
-    <string name="skillmgr_detail_directory">Skill 目录</string>
+    <string name="skillmgr_direct_files_saved_hint">附件会复制到该技能文件夹下的 assets/ 目录</string>
+    <string name="skillmgr_direct_skill_id_required">请输入技能 ID</string>
+    <string name="skillmgr_direct_skill_id_invalid">技能 ID 只能包含字母、数字、点、下划线和短横线，且不能是 . 或 ..</string>
+    <string name="skillmgr_direct_content_required">请输入技能内容</string>
+    <string name="skillmgr_detail_loading">正在读取技能详情...</string>
+    <string name="skillmgr_detail_directory">技能目录</string>
     <string name="skillmgr_detail_entry_file">入口文件</string>
     <string name="skillmgr_detail_imported_contents">已导入内容</string>
     <string name="skillmgr_detail_counts">文件 %1$d · 文件夹 %2$d</string>
@@ -6823,7 +6823,7 @@
     <string name="file_manager_search_failed">搜索失败</string>
     <string name="file_manager_search_error">搜索错误: %1$s</string>
     <string name="workflow_node">节点</string>
-    <string name="mcp_server">MCP 服务器</string>
+    <string name="mcp_server">模型上下文协议服务器</string>
     <string name="mcp_install">安装</string>
     <string name="mcp_uninstall">卸载</string>
     <string name="script_error">错误: %1$s</string>
@@ -7124,12 +7124,12 @@
     <string name="file_type_unknown">文件</string>
 
     <!-- Skill Market Error Messages -->
-    <string name="skillmarket_load_failed">加载Skill市场失败: %1$s</string>
+    <string name="skillmarket_load_failed">加载技能市场失败: %1$s</string>
     <string name="skillmarket_network_error">网络错误: %1$s</string>
     <string name="skillmarket_load_more_failed">加载更多失败: %1$s</string>
     <string name="skillmarket_github_login_required">请先登录GitHub</string>
     <string name="skillmarket_unable_get_user_info">无法获取用户信息</string>
-    <string name="skillmarket_load_published_failed">加载已发布 Skill 失败: %1$s</string>
+    <string name="skillmarket_load_published_failed">加载已发布技能失败: %1$s</string>
     <string name="skillmarket_load_comments_failed">加载评论失败: %1$s</string>
     <string name="skillmarket_post_comment_failed">发表评论失败: %1$s</string>
     <string name="skillmarket_invalid_repo_url">无效的仓库地址</string>
@@ -7185,8 +7185,8 @@
     <string name="mcp_deployment_plugin_not_exist">插件目录不存在: %1$s</string>
     <string name="mcp_deployment_using_market_config">使用市场配置部署插件...</string>
     <string name="mcp_deployment_analyzing_structure">分析项目结构...</string>
-    <string name="mcp_deployment_saving_config">保存MCP配置...</string>
-    <string name="mcp_deployment_save_config_failed">保存MCP配置失败</string>
+    <string name="mcp_deployment_saving_config">保存模型上下文协议配置...</string>
+    <string name="mcp_deployment_save_config_failed">保存模型上下文协议配置失败</string>
     <string name="mcp_deployment_error">部署出错: %1$s</string>
     <string name="mcp_deployment_cannot_determine">无法确定如何部署此插件: %1$s</string>
     <string name="mcp_deployment_copying_files">复制插件文件到目标目录...</string>
@@ -7352,12 +7352,12 @@
     <string name="skill_error_import_no_skill_md">导入失败：zip 内未找到 SKILL.md</string>
     <string name="skill_error_import_no_skill_md_in_path">导入失败：指定路径下未找到 SKILL.md</string>
     <string name="skill_error_import_skill_md_path_invalid">导入失败：SKILL.md 路径异常</string>
-    <string name="skill_error_import_duplicate_name">导入失败：已存在同名 Skill：%1$s</string>
+    <string name="skill_error_import_duplicate_name">导入失败：已存在同名技能：%1$s</string>
     <string name="skill_error_missing_skill_md">未找到 SKILL.md：%1$s</string>
-    <string name="skill_error_duplicate_scanned_name">扫描到重复的 Skill 名称：%1$s（已被目录 %2$s 占用）</string>
-    <string name="skill_error_scan_failed">扫描 Skill 失败：%1$s</string>
-    <string name="skill_imported_with_desc">已导入 Skill: %1$s（%2$s）</string>
-    <string name="skill_imported">已导入 Skill: %1$s</string>
+    <string name="skill_error_duplicate_scanned_name">扫描到重复的技能名称：%1$s（已被目录 %2$s 占用）</string>
+    <string name="skill_error_scan_failed">扫描技能失败：%1$s</string>
+    <string name="skill_imported_with_desc">已导入技能: %1$s（%2$s）</string>
+    <string name="skill_imported">已导入技能: %1$s</string>
     <string name="skill_error_import_failed">导入失败: %1$s</string>
 
     <!-- Context Summary Settings -->
@@ -8002,7 +8002,7 @@
     <string name="root_ui_listener_started">Root UI操作监听已启动</string>
 
     <!-- MCPLocalServer -->
-    <string name="mcp_local_auto_detected_server">通过配置文件自动识别的 MCP 服务器</string>
+    <string name="mcp_local_auto_detected_server">通过配置文件自动识别的模型上下文协议服务器</string>
     <string name="mcp_local_json_format_error">JSON 格式错误: %1$s</string>
     <string name="mcp_local_no_mcp_servers_field">配置中没有找到 mcpServers 字段</string>
     <string name="mcp_local_mcp_servers_empty">配置中 mcpServers 为空</string>
@@ -8678,16 +8678,16 @@
     <string name="data_storage_extension_plugin_source">插件源码</string>
     <string name="data_storage_extension_dev_package">开发包</string>
     <string name="data_storage_extension_themes">主题包</string>
-    <string name="data_storage_extension_bridge">MCP 桥接</string>
-    <string name="data_storage_extension_bridge_desc">可重建的 MCP 终端桥接脚本</string>
+    <string name="data_storage_extension_bridge">模型上下文协议桥接</string>
+    <string name="data_storage_extension_bridge_desc">可重建的模型上下文协议终端桥接脚本</string>
     <string name="data_storage_extension_plugins_empty">暂无运行时插件</string>
     <string name="data_storage_extension_scripts_empty">暂无脚本</string>
-    <string name="data_storage_extension_mcp_empty">暂无 MCP 插件</string>
+    <string name="data_storage_extension_mcp_empty">暂无模型上下文协议服务</string>
     <string name="data_storage_extension_skills_empty">暂无技能</string>
     <string name="data_storage_extension_plugin_source_empty">暂无插件源码</string>
     <string name="data_storage_extension_dev_package_empty">暂无开发包</string>
     <string name="data_storage_extension_themes_empty">暂无主题包</string>
-    <string name="data_storage_extension_bridge_empty">暂无 MCP 桥接文件</string>
+    <string name="data_storage_extension_bridge_empty">暂无模型上下文协议桥接文件</string>
 
     <string name="provider_antigravity">Antigravity（Google）</string>
     <string name="antigravity_login_title">登录 Antigravity</string>
@@ -8808,7 +8808,7 @@
     <string name="skill_list_count">技能 · %1$d 项</string>
     <string name="mcp_start_services">启动服务</string>
     <string name="mcp_starting_services">正在启动</string>
-    <string name="mcp_start_services_failed">无法启动 MCP 服务初始化</string>
+    <string name="mcp_start_services_failed">无法初始化模型上下文协议服务</string>
     <string name="mcp_services_ready_count">工具已就绪 %1$d/%2$d</string>
     <string name="theme_glass_requires_android13">玻璃效果需要 Android 13 或更高版本</string>
 
@@ -8820,7 +8820,7 @@
     <string name="context_panel_footer_summary_disabled">自动总结已关闭</string>
     <string name="context_panel_last_request">最近请求 %1$s · %2$s</string>
     <string name="context_panel_loading">正在估算当前窗口…</string>
-    <string name="context_panel_mcp_tools">MCP / 包工具</string>
+    <string name="context_panel_mcp_tools">模型上下文协议 / 包工具</string>
     <string name="context_panel_message_history">消息历史</string>
     <string name="context_panel_no_conversation">请先创建或选择对话。</string>
     <string name="context_panel_other">其他</string>

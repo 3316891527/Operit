@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.ui.features.startup.screens
+package com.ai.assistance.operit.ui.features.packages.screens.mcp.loading
 
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
@@ -62,7 +62,6 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.mcp.MCPLocalServer
 import com.ai.assistance.operit.data.mcp.MCPRepository
 import com.ai.assistance.operit.data.mcp.plugins.MCPStarter
-import com.ai.assistance.operit.ui.features.startup.components.SmoothLinearProgressIndicator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -74,19 +73,19 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
-/** 表示插件加载状态的枚举 */
-enum class PluginStatus {
+/** 表示模型上下文协议服务的手动加载状态。 */
+enum class McpLoadingStatus {
     WAITING, // 等待加载
     LOADING, // 正在加载
     SUCCESS, // 加载成功
     FAILED // 加载失败
 }
 
-/** 表示单个插件的加载信息 */
-data class PluginInfo(
+/** 单个模型上下文协议服务的加载信息。 */
+data class McpLoadingItem(
         val id: String,
         val displayName: String,
-        var status: PluginStatus = PluginStatus.WAITING,
+        var status: McpLoadingStatus = McpLoadingStatus.WAITING,
         var message: String = "",
         var serviceName: String = ""
 ) {
@@ -95,22 +94,22 @@ data class PluginInfo(
 }
 
 /**
- * 插件加载屏幕
+ * 模型上下文协议手动加载面板
  *
- * 在应用启动时显示插件加载进度的全屏界面
+ * 用户手动启动模型上下文协议服务时显示进度，不参与应用开屏流程。
  */
 @Composable
-fun PluginLoadingScreen(
+fun McpLoadingScreen(
         isVisible: Boolean,
         progress: Float,
         message: String,
         pluginsStarted: Int,
         pluginsTotal: Int,
-        pluginsList: List<PluginInfo>,
+        pluginsList: List<McpLoadingItem>,
         isExpanded: Boolean,
         onToggleExpansion: () -> Unit,
         onSkip: () -> Unit = {},
-        onPluginClick: (PluginInfo) -> Unit = {},
+        onPluginClick: (McpLoadingItem) -> Unit = {},
         modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -220,10 +219,10 @@ private fun ExpandedLoadingView(
     message: String,
     pluginsStarted: Int,
     pluginsTotal: Int,
-    pluginsList: List<PluginInfo>,
+    pluginsList: List<McpLoadingItem>,
     onSkip: () -> Unit,
     onCollapse: () -> Unit,
-    onPluginClick: (PluginInfo) -> Unit
+    onPluginClick: (McpLoadingItem) -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -299,7 +298,7 @@ private fun ExpandedLoadingView(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // 总插件统计
+                // 总模型上下文协议服务统计
                 Text(
                         text =
                                 stringResource(
@@ -315,7 +314,7 @@ private fun ExpandedLoadingView(
                 // 移除此处的跳过按钮
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 插件列表
+                // 模型上下文协议服务列表
                 if (pluginsList.isNotEmpty()) {
                     Text(
                             text = stringResource(id = R.string.plugin_loading_status_title),
@@ -326,7 +325,7 @@ private fun ExpandedLoadingView(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // 插件加载状态列表
+                    // 模型上下文协议服务加载状态列表
                     LazyColumn(
                             modifier =
                                     Modifier
@@ -335,10 +334,10 @@ private fun ExpandedLoadingView(
                                         .heightIn(max = 200.dp) // reduce height for smaller card
                     ) {
                         items(pluginsList) { plugin ->
-                            PluginStatusItem(
+                            McpLoadingStatusItem(
                                     plugin = plugin,
                                     modifier = Modifier.fillMaxWidth(),
-                                    onClick = if (plugin.status == PluginStatus.FAILED) {
+                                    onClick = if (plugin.status == McpLoadingStatus.FAILED) {
                                         { onPluginClick(plugin) }
                                     } else {
                                         null
@@ -361,16 +360,16 @@ private fun ExpandedLoadingView(
     }
 }
 
-/** 单个插件状态项 */
+/** 单个模型上下文协议服务状态项 */
 @Composable
-fun PluginStatusItem(
-    plugin: PluginInfo,
+fun McpLoadingStatusItem(
+    plugin: McpLoadingItem,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
     val animatedProgress by
             animateFloatAsState(
-                    targetValue = if (plugin.status == PluginStatus.LOADING) 1f else 0f,
+                    targetValue = if (plugin.status == McpLoadingStatus.LOADING) 1f else 0f,
                     label = "loading_progress"
             )
 
@@ -385,7 +384,7 @@ fun PluginStatusItem(
         // 状态图标或加载指示器
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(32.dp)) {
             when (plugin.status) {
-                PluginStatus.WAITING -> {
+                McpLoadingStatus.WAITING -> {
                     Box(
                             modifier =
                                     Modifier.size(10.dp)
@@ -393,14 +392,14 @@ fun PluginStatusItem(
                                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
                 }
-                PluginStatus.LOADING -> {
+                McpLoadingStatus.LOADING -> {
                     CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 2.dp
                     )
                 }
-                PluginStatus.SUCCESS -> {
+                McpLoadingStatus.SUCCESS -> {
                     Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription =
@@ -409,7 +408,7 @@ fun PluginStatusItem(
                             modifier = Modifier.size(24.dp)
                     )
                 }
-                PluginStatus.FAILED -> {
+                McpLoadingStatus.FAILED -> {
                     Icon(
                             imageVector = Icons.Default.Error,
                             contentDescription =
@@ -423,7 +422,7 @@ fun PluginStatusItem(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // 插件名称和状态
+        // 模型上下文协议服务名称和状态
         Column(modifier = Modifier.weight(1f)) {
             Text(
                     text = plugin.displayName,
@@ -439,7 +438,7 @@ fun PluginStatusItem(
                         style = MaterialTheme.typography.bodySmall,
                         color =
                                 when (plugin.status) {
-                                    PluginStatus.FAILED -> MaterialTheme.colorScheme.error
+                                    McpLoadingStatus.FAILED -> MaterialTheme.colorScheme.error
                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                         maxLines = 1,
@@ -456,11 +455,11 @@ interface SkipLoadingCallback {
 }
 
 /**
- * 插件加载状态管理器
+ * 模型上下文协议服务加载状态管理器
  *
- * 用于管理插件加载过程中的各种状态
+ * 管理用户主动启动服务时的进度、状态与日志。
  */
-class PluginLoadingState {
+class McpLoadingState {
     // 进度值 (0.0f - 1.0f)
     private val _progress = MutableStateFlow(0f)
     val progress: StateFlow<Float> = _progress
@@ -469,11 +468,11 @@ class PluginLoadingState {
     private val _message = MutableStateFlow("")
     val message: StateFlow<String> = _message
 
-    // 已启动的插件数量
+    // 已启动的模型上下文协议服务数量
     private val _pluginsStarted = MutableStateFlow(0)
     val pluginsStarted: StateFlow<Int> = _pluginsStarted
 
-    // 总插件数量
+    // 总模型上下文协议服务数量
     private val _pluginsTotal = MutableStateFlow(0)
     val pluginsTotal: StateFlow<Int> = _pluginsTotal
 
@@ -485,22 +484,15 @@ class PluginLoadingState {
     private val _isExpanded = MutableStateFlow(false)
     val isExpanded: StateFlow<Boolean> = _isExpanded
 
-    // 插件列表及其状态
-    private val _plugins = MutableStateFlow<List<PluginInfo>>(emptyList())
-    val plugins: StateFlow<List<PluginInfo>> = _plugins
+    // 模型上下文协议服务列表及其状态
+    private val _plugins = MutableStateFlow<List<McpLoadingItem>>(emptyList())
+    val plugins: StateFlow<List<McpLoadingItem>> = _plugins
 
     private val _pluginLogs = MutableStateFlow<Map<String, String>>(emptyMap())
     val pluginLogs: StateFlow<Map<String, String>> = _pluginLogs
 
-    // 应用上下文，用于获取MCP相关服务
+    // 应用上下文，用于获取模型上下文协议相关服务
     private var appContext: Context? = null
-
-    // 是否已超时
-    private val _hasTimedOut = MutableStateFlow(false)
-    val hasTimedOut: StateFlow<Boolean> = _hasTimedOut
-
-    // 用于取消超时计时器
-    private var timeoutJob: kotlinx.coroutines.Job? = null
 
     private val mcpInitInProgress = AtomicBoolean(false)
     private var mcpInitJob: Job? = null
@@ -508,7 +500,7 @@ class PluginLoadingState {
     // 跳过加载事件回调
     private var onSkipCallback: (() -> Unit)? = null
 
-    // 保护插件状态与日志的并发更新，避免回调互相覆盖
+    // 保护模型上下文协议服务状态与日志的并发更新，避免回调互相覆盖
     private val pluginStateLock = Any()
 
     // 设置应用上下文
@@ -534,7 +526,7 @@ class PluginLoadingState {
         _message.value = message
     }
 
-    /** 更新插件统计 */
+    /** 更新模型上下文协议服务统计 */
     fun updatePluginStats(started: Int, total: Int) {
         synchronized(pluginStateLock) {
             _pluginsStarted.value = started
@@ -542,12 +534,12 @@ class PluginLoadingState {
         }
     }
 
-    /** 设置插件列表 */
+    /** 设置模型上下文协议服务列表 */
     fun setPlugins(pluginIds: List<String>) {
         val context = appContext
         val plugins =
                 pluginIds.map { id ->
-                    // 尝试从metadata获取插件名称
+                    // 尝试从metadata获取模型上下文协议服务名称
                     var displayName = id.split("/").lastOrNull() ?: id
 
                     // 如果上下文可用，尝试从元数据获取名称
@@ -563,17 +555,17 @@ class PluginLoadingState {
                         }
                     }
 
-                    PluginInfo(id = id, displayName = displayName)
+                    McpLoadingItem(id = id, displayName = displayName)
                 }
         synchronized(pluginStateLock) {
             _plugins.value = plugins
             _pluginsTotal.value = plugins.size
-            _pluginsStarted.value = plugins.count { it.status == PluginStatus.SUCCESS }
+            _pluginsStarted.value = plugins.count { it.status == McpLoadingStatus.SUCCESS }
         }
     }
 
-    /** 更新插件状态 */
-    fun updatePluginStatus(pluginId: String, status: PluginStatus, message: String = "") {
+    /** 更新模型上下文协议服务状态 */
+    fun updateMcpLoadingStatus(pluginId: String, status: McpLoadingStatus, message: String = "") {
         synchronized(pluginStateLock) {
             val currentPlugins = _plugins.value.toMutableList()
             val pluginIndex = currentPlugins.indexOfFirst { it.id == pluginId }
@@ -582,7 +574,7 @@ class PluginLoadingState {
                 val plugin = currentPlugins[pluginIndex].copy(status = status, message = message)
                 currentPlugins[pluginIndex] = plugin
                 _plugins.value = currentPlugins
-                _pluginsStarted.value = currentPlugins.count { it.status == PluginStatus.SUCCESS }
+                _pluginsStarted.value = currentPlugins.count { it.status == McpLoadingStatus.SUCCESS }
             }
         }
     }
@@ -616,7 +608,7 @@ class PluginLoadingState {
         }
     }
 
-    /** 更新插件注册状态 */
+    /** 更新模型上下文协议服务注册状态 */
     fun updatePluginRegistration(pluginId: String, serviceName: String, success: Boolean) {
         synchronized(pluginStateLock) {
             val currentPlugins = _plugins.value.toMutableList()
@@ -639,29 +631,29 @@ class PluginLoadingState {
         }
     }
 
-    /** 开始加载指定插件 */
+    /** 开始加载指定模型上下文协议服务 */
     fun startLoadingPlugin(pluginId: String) {
-        updatePluginStatus(
+        updateMcpLoadingStatus(
                 pluginId,
-                PluginStatus.LOADING,
+                McpLoadingStatus.LOADING,
                 appContext?.getString(R.string.plugin_loading) ?: "Loading..."
         )
     }
 
-    /** 标记插件加载成功 */
+    /** 标记模型上下文协议服务加载成功 */
     fun setPluginSuccess(pluginId: String, message: String = "") {
-        updatePluginStatus(
+        updateMcpLoadingStatus(
                 pluginId,
-                PluginStatus.SUCCESS,
+                McpLoadingStatus.SUCCESS,
                 message.ifEmpty { appContext?.getString(R.string.plugin_loading_success) ?: "Loading successful" }
         )
     }
 
-    /** 标记插件加载失败 */
+    /** 标记模型上下文协议服务加载失败 */
     fun setPluginFailed(pluginId: String, message: String = "") {
-        updatePluginStatus(
+        updateMcpLoadingStatus(
                 pluginId,
-                PluginStatus.FAILED,
+                McpLoadingStatus.FAILED,
                 message.ifEmpty { appContext?.getString(R.string.plugin_loading_failed) ?: "Loading failed" }
         )
     }
@@ -675,48 +667,24 @@ class PluginLoadingState {
 
     // 触发跳过操作
     fun skip() {
-        timeoutJob?.cancel()
         hide()
         onSkipCallback?.invoke()
-    }
-
-    // 启动超时检测
-    fun startTimeoutCheck(timeoutMillis: Long = 30000L, scope: kotlinx.coroutines.CoroutineScope) {
-        timeoutJob?.cancel()
-        timeoutJob =
-                scope.launch {
-                    delay(timeoutMillis)
-                    _hasTimedOut.value = true
-                    updateMessage(
-                            appContext?.getString(R.string.plugin_loading_timeout)
-                                    ?: "Loading timeout, you can click \"Skip\" in the top right corner to continue"
-                    )
-                }
-    }
-
-    private fun finishTimeoutCheck() {
-        timeoutJob?.cancel()
-        timeoutJob = null
-        _hasTimedOut.value = false
     }
 
     /** 显示加载屏幕 */
     fun show() {
         _isVisible.value = true
-        _hasTimedOut.value = false
         // _isExpanded.value = true // 默认展开
     }
 
     /** 隐藏加载屏幕 */
     fun hide() {
-        timeoutJob?.cancel()
         _isVisible.value = false
         // _isExpanded.value = false // 关闭时重置为折叠状态
     }
 
     /** 重置所有状态 */
     fun reset() {
-        timeoutJob?.cancel()
         mcpInitJob?.cancel()
         mcpInitInProgress.set(false)
         _progress.value = 0f
@@ -728,14 +696,13 @@ class PluginLoadingState {
             _pluginLogs.value = emptyMap()
         }
         _isVisible.value = false
-        _hasTimedOut.value = false
         _isExpanded.value = false
     }
 
-    // 添加方法来初始化MCP服务器并启动插件
-    fun initializeMCPServer(context: Context, lifecycleScope: kotlinx.coroutines.CoroutineScope) {
+    // 添加方法来初始化MCP服务器并启动模型上下文协议服务
+    fun startConfiguredServers(context: Context, lifecycleScope: kotlinx.coroutines.CoroutineScope) {
         if (!mcpInitInProgress.compareAndSet(false, true)) {
-            AppLogger.d("PluginLoadingState", "initializeMCPServer already running, skipping")
+            AppLogger.d("McpLoadingState", "startConfiguredServers already running, skipping")
             return
         }
 
@@ -768,12 +735,12 @@ class PluginLoadingState {
                     // 获取MCPRepository实例
                     val mcpRepository = MCPRepository(context)
 
-                    // 注意：工具注册现在在MCPStarter的验证阶段进行，确保插件真正就绪后才注册工具
+                    // 注意：工具注册现在在MCPStarter的验证阶段进行，确保模型上下文协议服务真正就绪后才注册工具
 
-                    // 获取已安装的插件列表 (这是一个Set<String>)
+                    // 获取已安装的模型上下文协议服务列表 (这是一个Set<String>)
                     updateMessage(context.getString(R.string.plugin_loading_list))
                     updateProgress(0.28f)
-                    AppLogger.d("PluginLoadingState", "启动前刷新 MCP 配置与插件列表")
+                    AppLogger.d("McpLoadingState", "启动前刷新模型上下文协议配置与服务列表")
                     mcpRepository.refreshPluginList()
                     val installedPluginsSet = mcpRepository.installedPluginIds.first()
 
@@ -781,17 +748,17 @@ class PluginLoadingState {
                     val installedPluginsList = installedPluginsSet.toList()
 
                     if (installedPluginsSet.isEmpty()) {
-                        // 没有安装的插件，直接进入主界面
-                        AppLogger.d("PluginLoadingState", "没有检测到已安装的插件，直接进入主界面")
+                        // 没有可启动的服务时结束本次手动加载。
+                        AppLogger.d("McpLoadingState", "没有检测到已安装的服务，结束手动加载")
                         updateMessage(context.getString(R.string.plugin_no_plugins))
                         updateProgress(1.0f)
 
-                        // 立即隐藏插件加载界面
+                        // 隐藏手动加载面板。
                         hide()
                         return@launch
                     }
 
-                    // 筛选出将要启动的插件（已启用且满足条件的插件）
+                    // 筛选出将要启动的模型上下文协议服务（已启用且满足条件的模型上下文协议服务）
                     val pluginsToStart = installedPluginsList.filter { pluginId ->
                         val isEnabled = mcpLocalServer.isServerEnabled(pluginId)
                         if (!isEnabled) {
@@ -799,27 +766,27 @@ class PluginLoadingState {
                         } else {
                             val pluginInfo = mcpRepository.getInstalledPluginInfo(pluginId)
                             when (pluginInfo?.type) {
-                                "remote" -> true // 远程插件只需启用
-                                else -> true // 本地插件现在会自动部署，所以也包含在内
+                                "remote" -> true // 远程模型上下文协议服务只需启用
+                                else -> true // 本地模型上下文协议服务现在会自动部署，所以也包含在内
                             }
                         }
                     }
 
-                    // 设置插件列表，只传入将要启动的插件
+                    // 设置模型上下文协议服务列表，只传入将要启动的模型上下文协议服务
                     updateMessage(
                             context.getString(R.string.plugin_preparing, pluginsToStart.size)
                     )
                     updateProgress(0.32f)
                     setPlugins(pluginsToStart)
 
-                    // 有安装的插件，使用MCPStarter启动
+                    // 有安装的模型上下文协议服务，使用MCPStarter启动
                     updateMessage(context.getString(R.string.plugin_checking_env))
                     updateProgress(0.35f)
 
                     val mcpStarter = MCPStarter(context)
                     val mcpLocalServer = MCPLocalServer.getInstance(context)
 
-                    // 创建一个适配器匿名类实现插件启动监听器
+                    // 创建一个适配器匿名类实现模型上下文协议服务启动监听器
                     updateMessage(context.getString(R.string.plugin_starting_plugins))
                     updateProgress(0.38f)
 
@@ -830,7 +797,7 @@ class PluginLoadingState {
                                     context
                             )
 
-                    // 启动所有插件 - MCPStarter会处理各种检查逻辑
+                    // 启动所有模型上下文协议服务 - MCPStarter会处理各种检查逻辑
                     // 等待实际批次结束，生命周期取消时同步停止批次，避免重复启动争抢资源。
                     val startupJob = mcpStarter.startAllDeployedPlugins(progressListener)
                     try {
@@ -842,9 +809,8 @@ class PluginLoadingState {
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (e: Exception) {
-                    finishTimeoutCheck()
-                    // 处理插件加载过程中的异常
-                    AppLogger.e("PluginLoadingState", "加载插件过程中出错", e)
+                    // 处理模型上下文协议服务加载过程中的异常
+                    AppLogger.e("McpLoadingState", "加载模型上下文协议服务过程中出错", e)
                     updateMessage(e.message ?: context.getString(R.string.plugin_loading_failed))
                     updateProgress(1.0f)
 
@@ -853,8 +819,7 @@ class PluginLoadingState {
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
-                finishTimeoutCheck()
-                AppLogger.e("PluginLoadingState", "启动MCP服务器和插件时出错", e)
+                AppLogger.e("McpLoadingState", "启动模型上下文协议服务时出错", e)
                 updateMessage(e.message ?: context.getString(R.string.plugin_other_error))
                 updateProgress(1.0f)
 
@@ -865,7 +830,7 @@ class PluginLoadingState {
         }
     }
 
-    // 创建插件启动进度监听器
+    // 创建模型上下文协议服务启动进度监听器
     private fun createPluginStartProgressListener(
             mcpLocalServer: MCPLocalServer,
             lifecycleScope: kotlinx.coroutines.CoroutineScope,
@@ -873,7 +838,7 @@ class PluginLoadingState {
     ): MCPStarter.PluginStartProgressListener {
         return object : MCPStarter.PluginStartProgressListener {
             override fun onPluginStarting(pluginId: String, index: Int, total: Int) {
-                // 在这里检查插件是否被启用
+                // 在这里检查模型上下文协议服务是否被启用
                 val isEnabled = mcpLocalServer.isServerEnabled(pluginId) // 从配置读取
 
                 // 更新总体状态
@@ -889,7 +854,7 @@ class PluginLoadingState {
                 )
                 updateProgress(0.4f + 0.1f * (index.toFloat() / total)) // 注册占10% (0.4 -> 0.5)
 
-                // 更新特定插件状态
+                // 更新特定模型上下文协议服务状态
                 startLoadingPlugin(pluginId)
                 appendPluginLog(pluginId, "START")
             }
@@ -910,7 +875,7 @@ class PluginLoadingState {
                     index: Int,
                     total: Int
             ) {
-                // 记录插件加载结果
+                // 记录模型上下文协议服务加载结果
                 if (success) {
                     setPluginSuccess(pluginId)
                 } else {
@@ -933,8 +898,6 @@ class PluginLoadingState {
                     totalCount: Int,
                     status: MCPStarter.PluginInitStatus
             ) {
-                // 完成或失败均停止计时，避免真实错误随后被超时提示覆盖。
-                finishTimeoutCheck()
                 // 根据初始化状态显示不同的消息
                 when (status) {
                     MCPStarter.PluginInitStatus.NODEJS_MISSING -> {
@@ -947,17 +910,17 @@ class PluginLoadingState {
                         updateMessage(context.getString(R.string.plugin_other_error))
                     }
                     else -> {
-                        // 所有插件加载完成
+                        // 所有模型上下文协议服务加载完成
                         val successRate =
                                 if (totalCount > 0) {
                                     (successCount * 100) / totalCount
                                 } else {
-                                    0 // 当没有部署的插件时，成功率为0
+                                    0 // 当没有部署的模型上下文协议服务时，成功率为0
                                 }
 
                         // 工具注册将在验证阶段自动进行，无需在此处触发
 
-                        // 如果有插件加载失败，则特别提示可以跳过
+                        // 如果有模型上下文协议服务加载失败，则特别提示可以跳过
                         if (successCount < totalCount && totalCount > 0) {
                             updateMessage(
                                     context.getString(
@@ -999,9 +962,9 @@ class PluginLoadingState {
     }
 }
 
-/** 插件加载屏幕的预览视图 */
+/** 模型上下文协议服务加载屏幕的预览视图 */
 @Composable
-fun PluginLoadingScreenWithState(loadingState: PluginLoadingState, modifier: Modifier = Modifier) {
+fun McpLoadingScreenWithState(loadingState: McpLoadingState, modifier: Modifier = Modifier) {
     val isVisible by loadingState.isVisible.collectAsState()
     val progress by loadingState.progress.collectAsState()
     val message by loadingState.message.collectAsState()
@@ -1038,7 +1001,7 @@ fun PluginLoadingScreenWithState(loadingState: PluginLoadingState, modifier: Mod
         )
     }
 
-    PluginLoadingScreen(
+    McpLoadingScreen(
             isVisible = isVisible,
             progress = progress,
             message = message,
