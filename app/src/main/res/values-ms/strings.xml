@@ -3142,11 +3142,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="settings_max_context_length_subtitle">Panjang konteks maksimum yang disokong oleh API model (k token)</string>
     <string name="settings_summary_threshold">Ambang perkadaran penggunaan konteks</string>
     <string name="settings_summary_threshold_subtitle">Picu ringkasan apabila penggunaan konteks melebihi perkadaran ini (0.1-0.95)</string>
-    <string name="settings_history_retention_title">Tetapan pengekalan media sejarah</string>
-    <string name="settings_max_image_history_user_turns">Bilangan pusingan pengekalan gambar sejarah</string>
-    <string name="settings_max_image_history_user_turns_subtitle">Hanya simpan gambar daripada N perbualan pengguna terkini, elakkan penghantaran semula gambar sejarah</string>
-    <string name="settings_max_media_history_user_turns">Bilangan pusingan pengekalan audio/video sejarah</string>
-    <string name="settings_max_media_history_user_turns_subtitle">Hanya simpan audio/video daripada N perbualan pengguna terkini, elakkan penghantaran semula audio/video sejarah</string>
     <string name="layout_adjustment_settings_title">Tetapan pelarasan susun atur</string>
     <string name="layout_adjustment_description">Di sini anda boleh melaraskan kedudukan dan margin elemen antara muka, menyesuaikan pengalaman penggunaan anda</string>
     <string name="chat_settings_bar_section">Bar tetapan sembang</string>
@@ -5904,8 +5899,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="context_validation_error_positive_number">%1$s mestilah nombor sah yang lebih besar daripada 0</string>
     <string name="context_validation_error_positive_integer">%1$s mestilah integer sah yang lebih besar daripada 0</string>
     <string name="context_validation_error_non_negative_integer">%1$s mestilah integer sah yang lebih besar daripada atau sama dengan 0</string>
-    <string name="context_field_max_image_history_turns">Bilangan pusingan pengekalan gambar sejarah</string>
-    <string name="context_field_max_media_history_turns">Bilangan pusingan pengekalan media audio-video sejarah</string>
     <string name="context_unit_lines">baris</string>
     <string name="context_unit_times">kali</string>
     <string name="context_reset_all_settings">Tetapkan semula semua tetapan</string>
@@ -6186,7 +6179,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="ai_message_user">Pengguna</string>
     <string name="ai_message_replying_to_previous">Pengguna sedang membalas mesej anda yang sebelumnya:</string>
     <string name="ai_message_executing_deep_search">Sedang menjalankan carian mendalam...</string>
-    <string name="ai_message_media_omitted">[Audio/video telah ditinggalkan]</string>
+    <string name="ai_message_media_omitted">[Media digugurkan]</string>
     <string name="ai_message_image_omitted">[Imej telah ditinggalkan]</string>
     <string name="ai_message_workspace_omitted">[Ruang kerja telah ditinggalkan]</string>
     <string name="ai_message_attachment_omitted">[Lampiran telah ditinggalkan]</string>
@@ -8811,9 +8804,6 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="model_workspace_summary_threshold_hint">Ringkasan dicetuskan apabila nisbah ini dicapai</string>
     <string name="model_workspace_summary_threshold_error">Sila masukkan nisbah pencetus ringkasan yang lebih besar daripada 0 dan kurang daripada 100</string>
     <string name="model_workspace_summary_context_limit">Panjang konteks tidak boleh melebihi panjang konteks maksimum</string>
-    <string name="model_workspace_summary_history_error">Sila masukkan integer bukan negatif untuk bilangan pusingan pengekalan media sejarah.</string>
-    <string name="model_workspace_summary_history_scope">Tetapan global: hanya mengehadkan imej, audio dan video sejarah yang dihantar semula kepada model. Rekod sembang dan lampiran setempat tidak dipadamkan.</string>
-    <string name="model_workspace_summary_reset_history">Pulihkan lalai media sejarah</string>
     <string name="model_workspace_summary_model">Ringkaskan model yang digunakan</string>
     <string name="model_workspace_summary_model_scope">Item ini ialah peruntukan fungsi global dan akan digunakan pada semua konfigurasi selepas pengubahsuaian.</string>
     <string name="model_workspace_function_search">Cari fungsi, konfigurasi atau model</string>

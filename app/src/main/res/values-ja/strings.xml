@@ -5276,11 +5276,6 @@
     <string name="reorder">並べ替え</string>
     <string name="settings_summary_threshold">要約を開始するコンテキスト使用率</string>
     <string name="settings_summary_threshold_subtitle">コンテキストの使用率がこの値を超えると要約します（0.1～0.95）</string>
-    <string name="settings_history_retention_title">過去のメディアの保持設定</string>
-    <string name="settings_max_image_history_user_turns">過去の画像を保持する会話数</string>
-    <string name="settings_max_image_history_user_turns_subtitle">直近 N 回のユーザーメッセージの画像のみ保持し、古い画像の再送信を防ぎます</string>
-    <string name="settings_max_media_history_user_turns">過去の音声・動画を保持する会話数</string>
-    <string name="settings_max_media_history_user_turns_subtitle">直近 N 回のユーザーメッセージの音声・動画のみ保持し、古いメディアの再送信を防ぎます</string>
     <string name="layout_adjustment_settings_title">レイアウト調整</string>
     <string name="layout_adjustment_description">画面要素の位置や余白を調整して、使いやすい表示にできます</string>
     <string name="chat_settings_bar_section">チャット設定バー</string>
@@ -5427,8 +5422,6 @@
     <string name="attachment_unknown_error">不明なエラー</string>
     <string name="attachment_location_failed">位置情報を取得できませんでした：%1$s</string>
     <string name="workflow_unknown_error">不明なエラー</string>
-    <string name="context_field_max_image_history_turns">過去の画像を保持する会話数</string>
-    <string name="context_field_max_media_history_turns">過去の音声・動画を保持する会話数</string>
     <string name="apk_unknown_error">不明なエラー</string>
     <string name="update_unknown_error">不明なエラー</string>
     <string name="avatar_reset">リセット</string>
@@ -7814,7 +7807,7 @@
     <string name="profile_occupation_value">職業：%1$s</string>
     <string name="profile_ai_style_value">希望する AI のスタイル：%1$s</string>
     <string name="ai_message_executing_deep_search">詳細検索を実行しています...</string>
-    <string name="ai_message_media_omitted">[音声・動画は省略]</string>
+    <string name="ai_message_media_omitted">[メディア省略]</string>
     <string name="ai_message_image_omitted">[画像は省略]</string>
     <string name="ai_message_workspace_omitted">[ワークスペースは省略]</string>
     <string name="ai_message_attachment_omitted">[添付ファイルは省略]</string>
@@ -8647,9 +8640,6 @@
     <string name="model_workspace_summary_threshold_hint">この割合に達すると要約を開始します</string>
     <string name="model_workspace_summary_threshold_error">要約開始の割合は 0 より大きく 100 未満で入力してください</string>
     <string name="model_workspace_summary_context_limit">コンテキスト長は最大コンテキスト長を超えられません</string>
-    <string name="model_workspace_summary_history_error">過去のメディアを保持する会話数には、0 以上の整数を入力してください</string>
-    <string name="model_workspace_summary_history_scope">全体設定：モデルへ再送信する過去の画像・音声・動画だけを制限します。チャット履歴やローカルの添付ファイルは削除しません。</string>
-    <string name="model_workspace_summary_reset_history">過去のメディアの保持を既定値に戻す</string>
     <string name="model_workspace_summary_model">要約用モデル</string>
     <string name="model_workspace_summary_model_scope">この機能の割り当ては全体設定です。変更するとすべての設定に適用されます。</string>
     <string name="model_workspace_function_search">機能、設定、モデルを検索</string>

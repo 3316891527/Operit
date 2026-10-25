@@ -143,9 +143,10 @@ internal fun MemoryLibraryPage(spaceId: String, onSwitchSpace: (String) -> Unit,
 
     CustomScaffold { padding ->
         BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            val controlsHeight = maxHeight * 0.2f
             Column(Modifier.fillMaxSize()) {
                 MemoryLibraryControls(
-                    modifier = Modifier.height(maxHeight * 0.2f),
+                    modifier = Modifier.height(controlsHeight),
                     spaceControls = { compact ->
                         Row(
                             Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp),

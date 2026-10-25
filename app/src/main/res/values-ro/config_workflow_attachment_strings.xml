@@ -32,6 +32,5 @@
     <string name="workflow_issue_runtime">Mediul de execuție nu este pregătit. Încearcă din nou în curând.</string>
     <string name="workflow_issue_unknown">Nodul nu a finalizat acțiunea. Verifică intrările și setările instrumentului.</string>
     <string name="sent_image_count">%1$d imagini</string>
-    <string name="sent_image_expired_count">%1$d imagini expirate</string>
     <string name="workflow_run_failed_nodes">Noduri eșuate: %1$s</string>
 </resources>

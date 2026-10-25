@@ -19,7 +19,6 @@ import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.ModelConfigSelection
 import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.model.getValidModelIndex
-import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
@@ -29,11 +28,6 @@ import com.ai.assistance.operit.ui.features.settings.RegisterModelConfigSaveActi
 import com.ai.assistance.operit.ui.features.settings.model.ModelFunctionAssignmentDialog
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.LocaleUtils
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -44,20 +38,7 @@ fun ModelContextSummaryContent(
     saveCoordinator: ModelConfigSaveCoordinator,
     showNotification: (String, OKToast.Kind) -> Unit,
 ) {
-    val apiPreferences = remember { ApiPreferences.getInstance(configManager.appContext) }
-    val savedHistory by produceState<HistoryRetentionValues?>(null, apiPreferences) {
-        combine(apiPreferences.maxImageHistoryUserTurnsFlow, apiPreferences.maxMediaHistoryUserTurnsFlow) { image, media ->
-            HistoryRetentionValues(image, media)
-        }.collect { value = it }
-    }
-    val history = savedHistory
-    if (history == null) {
-        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-    ContextSummaryEditor(config, history, apiPreferences, configManager, saveCoordinator, showNotification)
+    ContextSummaryEditor(config, configManager, saveCoordinator, showNotification)
 }
 
 private class ContextSummaryInputException(message: String) : IllegalArgumentException(message)
@@ -65,21 +46,17 @@ private class ContextSummaryInputException(message: String) : IllegalArgumentExc
 @Composable
 private fun ContextSummaryEditor(
     config: ModelConfigData,
-    history: HistoryRetentionValues,
-    apiPreferences: ApiPreferences,
     configManager: ModelConfigManager,
     saveCoordinator: ModelConfigSaveCoordinator,
     showNotification: (String, OKToast.Kind) -> Unit,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val useEnglish = !LocaleUtils.usesChineseContent(context)
-    val incoming = ContextSummaryDraft.from(config, history, useEnglish)
+    val incoming = ContextSummaryDraft.from(config, useEnglish)
     var draft by remember(config.id) { mutableStateOf(incoming) }
     var synchronizedDraft by remember(config.id) { mutableStateOf(incoming) }
     var contextError by remember(config.id) { mutableStateOf<String?>(null) }
     var summaryError by remember(config.id) { mutableStateOf<String?>(null) }
-    var historyError by remember(config.id) { mutableStateOf<String?>(null) }
     var fullscreenEditor by remember(config.id) { mutableStateOf<FullscreenTextEditorRequest?>(null) }
     var editingSummaryModel by remember(config.id) { mutableStateOf(false) }
     val saveMutex = remember(config.id) { Mutex() }
@@ -95,7 +72,6 @@ private fun ContextSummaryEditor(
             val snapshot = draft
             contextError = null
             summaryError = null
-            historyError = null
             val invalid = snapshot.validationError()
             if (invalid != null) {
                 val message = context.getString(when (invalid) {
@@ -104,13 +80,11 @@ private fun ContextSummaryEditor(
                     ContextSummaryValidation.CONTEXT_LIMIT -> R.string.model_workspace_summary_context_limit
                     ContextSummaryValidation.SUMMARY_THRESHOLD -> R.string.model_workspace_summary_threshold_error
                     ContextSummaryValidation.MESSAGE_COUNT -> R.string.model_config_error_valid_message_count
-                    ContextSummaryValidation.HISTORY_RETENTION -> R.string.model_workspace_summary_history_error
                 })
                 when (invalid) {
                     ContextSummaryValidation.CONTEXT_LENGTH,
                     ContextSummaryValidation.MAX_CONTEXT_LENGTH,
                     ContextSummaryValidation.CONTEXT_LIMIT -> contextError = message
-                    ContextSummaryValidation.HISTORY_RETENTION -> historyError = message
                     else -> summaryError = message
                 }
                 throw ContextSummaryInputException(message)
@@ -129,8 +103,6 @@ private fun ContextSummaryEditor(
                 enableSummaryDialogueReview = snapshot.dialogueReview,
                 summaryDialogueReviewTitle = snapshot.reviewTitle.trim(),
             )
-            apiPreferences.saveMaxImageHistoryUserTurns(requireNotNull(snapshot.imageTurns.toIntOrNull()))
-            apiPreferences.saveMaxMediaHistoryUserTurns(requireNotNull(snapshot.mediaTurns.toIntOrNull()))
         }
     }
     RegisterModelConfigSaveAction(saveCoordinator, "context-summary:${config.id}") { _ -> persistCurrentDraft() }
@@ -175,35 +147,6 @@ private fun ContextSummaryEditor(
             onOpenFullscreenEditor = { title, value, change -> fullscreenEditor = FullscreenTextEditorRequest(title, value, change) },
             summaryError = summaryError,
             summaryModelContent = { SummaryModelLink(configManager) { editingSummaryModel = true } },
-        )
-        Text(stringResource(R.string.model_workspace_summary_history_scope), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        RenderHistoryRetentionSection(
-            componentBackgroundColor = background,
-            maxImageHistoryUserTurnsInput = draft.imageTurns,
-            onMaxImageHistoryUserTurnsInputChange = { draft = draft.copy(imageTurns = it); historyError = null },
-            maxMediaHistoryUserTurnsInput = draft.mediaTurns,
-            onMaxMediaHistoryUserTurnsInputChange = { draft = draft.copy(mediaTurns = it); historyError = null },
-            onReset = {
-                scope.launch {
-                    try {
-                        saveMutex.withLock {
-                            apiPreferences.resetHistoryRetentionSettings()
-                            draft = draft.copy(
-                                imageTurns = apiPreferences.maxImageHistoryUserTurnsFlow.first().toString(),
-                                mediaTurns = apiPreferences.maxMediaHistoryUserTurnsFlow.first().toString(),
-                            )
-                            historyError = null
-                        }
-                        showNotification(context.getString(R.string.settings_saved), OKToast.Kind.Success)
-                    } catch (error: CancellationException) {
-                        throw error
-                    } catch (error: Exception) {
-                        AppLogger.e("ModelContextSummary", "重置历史媒体保留失败", error)
-                        showNotification(context.getString(R.string.save_failed), OKToast.Kind.Error)
-                    }
-                }
-            },
-            historyError = historyError,
         )
     }
     if (editingSummaryModel) {

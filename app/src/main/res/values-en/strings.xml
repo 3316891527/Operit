@@ -3613,11 +3613,6 @@
     <string name="settings_summary_threshold_subtitle">Threshold for triggering chat summary (0.1-0.95)</string>
 
     <!-- History Media Retention Settings -->
-    <string name="settings_history_retention_title">History Media Retention</string>
-    <string name="settings_max_image_history_user_turns">Keep Image History Turns</string>
-    <string name="settings_max_image_history_user_turns_subtitle">Only keep images from the last N user turns to avoid resending old images</string>
-    <string name="settings_max_media_history_user_turns">Keep Media History Turns</string>
-    <string name="settings_max_media_history_user_turns_subtitle">Only keep audio/video from the last N user turns to avoid resending old media</string>
 
     <!-- Layout Adjustment Settings -->
     <string name="layout_adjustment_settings_title">Layout Adjustment Settings</string>
@@ -6817,8 +6812,6 @@
     <string name="context_validation_error_positive_number">%1$s must be a valid number greater than 0</string>
     <string name="context_validation_error_positive_integer">%1$s must be a valid integer greater than 0</string>
     <string name="context_validation_error_non_negative_integer">%1$s must be a valid integer greater than or equal to 0</string>
-    <string name="context_field_max_image_history_turns">Image History Turns</string>
-    <string name="context_field_max_media_history_turns">Media History Turns</string>
     <string name="context_unit_lines">lines</string>
     <string name="context_unit_times">times</string>
     <string name="context_reset_all_settings">Reset All Settings</string>
@@ -6952,7 +6945,7 @@
     <string name="ai_message_thinking">Thinking...</string>
     <string name="ai_message_voice_note">[Voice note]</string>
     <string name="ai_message_image_omitted">[Image omitted]</string>
-    <string name="ai_message_media_omitted">[Audio/video omitted]</string>
+    <string name="ai_message_media_omitted">[Media omitted]</string>
     <string name="ai_message_file_preview">[File preview]</string>
     <string name="ai_message_preview_omitted">[Preview omitted]</string>
     <string name="ai_message_reference">Reference</string>
@@ -9411,9 +9404,6 @@
     <string name="model_workspace_summary_threshold_hint">Generate a summary when this percentage is reached</string>
     <string name="model_workspace_summary_threshold_error">Enter a summary threshold greater than 0 and less than 100</string>
     <string name="model_workspace_summary_context_limit">Context length must not exceed the maximum context length</string>
-    <string name="model_workspace_summary_history_error">Enter non-negative whole numbers for history media retention</string>
-    <string name="model_workspace_summary_history_scope">Global setting: only limits historical images, audio and video sent to the model again. It does not delete chat records or local attachments.</string>
-    <string name="model_workspace_summary_reset_history">Reset history media retention</string>
     <string name="model_workspace_summary_model">Model used for summaries</string>
     <string name="model_workspace_summary_model_scope">This function assignment applies to every configuration</string>
     <string name="model_workspace_function_search">Search functions, configurations or models</string>

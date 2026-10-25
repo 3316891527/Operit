@@ -32,6 +32,5 @@
     <string name="workflow_issue_runtime">Persekitaran pelaksanaan belum sedia. Cuba lagi sebentar lagi.</string>
     <string name="workflow_issue_unknown">Nod tidak dapat menyelesaikan tindakan. Semak input dan tetapan alat.</string>
     <string name="sent_image_count">%1$d imej</string>
-    <string name="sent_image_expired_count">%1$d imej tamat tempoh</string>
     <string name="workflow_run_failed_nodes">Nod gagal: %1$s</string>
 </resources>

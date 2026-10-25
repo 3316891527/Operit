@@ -30,4 +30,15 @@ class SentImageSourcesTest {
         assertEquals(2, sources.size)
         assertNull(sources.last().poolId)
     }
+    @Test fun escapedOriginalFileNameIsDecodedAndStillUsesOriginalFile() {
+        val path = "/cleanOnExit/a & \"b\".jpg"
+        val source = sentImageSources(
+            com.ai.assistance.operit.core.chat.media.mediaAttachmentMarkup(
+                com.ai.assistance.operit.data.model.AttachmentInfo(path, "a & \"b\".jpg", "image/jpeg")
+            )
+        ).single()
+        assertEquals(path, source.id)
+        assertEquals("a & \"b\".jpg", source.title)
+        assertNull(source.poolId)
+    }
 }

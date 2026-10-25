@@ -5,4 +5,6 @@
     <string name="workspace_delete_selected_title">Ștergeți elementele selectate</string>
     <string name="workspace_delete_selected_message">Ștergeți cele %1$d fișiere sau dosare selectate, inclusiv conținutul dosarelor? Acțiunea nu poate fi anulată.</string>
     <string name="voice_message_expired">Fișierul audio a expirat sau a fost șters</string>
+    <string name="chat_media_file_missing">Fișierul nu mai există</string>
+    <string name="chat_media_preview_failed">Acest fișier media nu poate fi previzualizat</string>
 </resources>

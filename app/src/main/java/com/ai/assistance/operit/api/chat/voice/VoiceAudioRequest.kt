@@ -12,6 +12,7 @@ import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceTextResult
+import com.ai.assistance.operit.core.chat.voice.VoiceTextSource
 import com.ai.assistance.operit.core.chat.voice.collectVoiceResponse
 import com.ai.assistance.operit.core.chat.voice.resolveVoiceText
 import com.ai.assistance.operit.data.model.FunctionType

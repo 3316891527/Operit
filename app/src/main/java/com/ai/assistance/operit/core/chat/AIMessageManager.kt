@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.core.chat
 
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.media.currentTurnMediaHistory
+import com.ai.assistance.operit.core.chat.media.mediaAttachmentMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 
@@ -229,14 +231,6 @@ object AIMessageManager {
                 if (enableDirectImageProcessing && attachment.mimeType.startsWith("image/", ignoreCase = true)) {
                     try {
                         val imageId = ImagePoolManager.addImage(attachment.filePath)
-                        val attributes = buildString {
-                            append("id=\"${attachment.filePath}\" ")
-                            append("filename=\"${attachment.fileName}\" ")
-                            append("type=\"${attachment.mimeType}\"")
-                            if (attachment.fileSize > 0) {
-                                append(" size=\"${attachment.fileSize}\"")
-                            }
-                        }
                         val attachedContent = buildString {
                             append(context.getString(R.string.ai_message_image_attached_multimodal_notice))
                             if (attachment.content.isNotBlank()) {
@@ -244,19 +238,11 @@ object AIMessageManager {
                                 append(attachment.content)
                             }
                         }
-                        "${MediaLinkBuilder.image(context, imageId)} <attachment $attributes>$attachedContent</attachment>"
+                        "${MediaLinkBuilder.image(context, imageId)} ${mediaAttachmentMarkup(attachment, attachedContent)}"
                     } catch (e: Exception) {
                         AppLogger.e(TAG, "添加图片到池失败: ${attachment.filePath}", e)
                         // 失败时回退到普通附件格式
-                        val attributes = buildString {
-                            append("id=\"${attachment.filePath}\" ")
-                            append("filename=\"${attachment.fileName}\" ")
-                            append("type=\"${attachment.mimeType}\"")
-                            if (attachment.fileSize > 0) {
-                                append(" size=\"${attachment.fileSize}\"")
-                            }
-                        }
-                        "<attachment $attributes>${attachment.content}</attachment>"
+                        mediaAttachmentMarkup(attachment)
                     }
                 } else if (
                     enableDirectFileProcessing &&
@@ -273,18 +259,10 @@ object AIMessageManager {
                         if (audioId == "error") {
                             throw IllegalStateException("addMedia returned error")
                         }
-                        MediaLinkBuilder.audio(context, audioId)
+                        MediaLinkBuilder.audio(context, audioId) + " " + mediaAttachmentMarkup(attachment)
                     } catch (e: Exception) {
                         AppLogger.e(TAG, "添加音频到池失败: ${attachment.filePath}", e)
-                        val attributes = buildString {
-                            append("id=\"${attachment.filePath}\" ")
-                            append("filename=\"${attachment.fileName}\" ")
-                            append("type=\"${attachment.mimeType}\"")
-                            if (attachment.fileSize > 0) {
-                                append(" size=\"${attachment.fileSize}\"")
-                            }
-                        }
-                        "<attachment $attributes>${attachment.content}</attachment>"
+                        mediaAttachmentMarkup(attachment)
                     }
                 } else if (enableDirectVideoProcessing && attachment.mimeType.startsWith("video/", ignoreCase = true)) {
                     try {
@@ -292,30 +270,14 @@ object AIMessageManager {
                         if (videoId == "error") {
                             throw IllegalStateException("addMedia returned error")
                         }
-                        MediaLinkBuilder.video(context, videoId)
+                        MediaLinkBuilder.video(context, videoId) + " " + mediaAttachmentMarkup(attachment)
                     } catch (e: Exception) {
                         AppLogger.e(TAG, "添加视频到池失败: ${attachment.filePath}", e)
-                        val attributes = buildString {
-                            append("id=\"${attachment.filePath}\" ")
-                            append("filename=\"${attachment.fileName}\" ")
-                            append("type=\"${attachment.mimeType}\"")
-                            if (attachment.fileSize > 0) {
-                                append(" size=\"${attachment.fileSize}\"")
-                            }
-                        }
-                        "<attachment $attributes>${attachment.content}</attachment>"
+                        mediaAttachmentMarkup(attachment)
                     }
                 } else {
                     // 非图片或未启用直接图片处理，使用普通附件格式
-                    val attributes = buildString {
-                        append("id=\"${attachment.filePath}\" ")
-                        append("filename=\"${attachment.fileName}\" ")
-                        append("type=\"${attachment.mimeType}\"")
-                        if (attachment.fileSize > 0) {
-                            append(" size=\"${attachment.fileSize}\"")
-                        }
-                    }
-                    "<attachment $attributes>${attachment.content}</attachment>"
+                    mediaAttachmentMarkup(attachment)
                 }
             }
         } else ""
@@ -416,32 +378,15 @@ object AIMessageManager {
             }
 
             val limitHistoryStartTime = messageTimingNow()
-            val maxImageHistoryUserTurns = apiPreferences.maxImageHistoryUserTurnsFlow.first()
-            val maxMediaHistoryUserTurns = apiPreferences.maxMediaHistoryUserTurnsFlow.first()
-
-            val memoryAfterImageLimit = limitImageLinksInChatHistory(memory, maxImageHistoryUserTurns)
-            val memoryForRequest = limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns, voiceNormalizedMessage)
-            val beforeImageLinkCount = memory.count { MediaLinkParser.hasImageLinks(it.content) }
-            val afterImageLinkCount = memoryForRequest.count { MediaLinkParser.hasImageLinks(it.content) }
-            if (beforeImageLinkCount != afterImageLinkCount) {
-                AppLogger.d(
-                    TAG,
-                    "历史图片裁剪生效: limit=$maxImageHistoryUserTurns, before=$beforeImageLinkCount, after=$afterImageLinkCount"
-                )
-            }
-
-            val beforeMediaLinkCount = memory.count { MediaLinkParser.hasMediaLinks(it.content) }
-            val afterMediaLinkCount = memoryForRequest.count { MediaLinkParser.hasMediaLinks(it.content) }
-            if (beforeMediaLinkCount != afterMediaLinkCount) {
-                AppLogger.d(
-                    TAG,
-                    "历史音视频裁剪生效: limit=$maxMediaHistoryUserTurns, before=$beforeMediaLinkCount, after=$afterMediaLinkCount"
-                )
-            }
+            val memoryForRequest = currentTurnMediaHistory(
+                history = memory,
+                currentMessage = if (historyOnly) "" else voiceNormalizedMessage,
+                omittedLabel = context.getString(R.string.ai_message_media_omitted),
+            )
             logMessageTiming(
                 stage = "sendMessage.limitHistory",
                 startTimeMs = limitHistoryStartTime,
-                details = "chatKey=$chatKey, before=${memory.size}, after=${memoryForRequest.size}, imageLimit=$maxImageHistoryUserTurns, mediaLimit=$maxMediaHistoryUserTurns"
+                details = "chatKey=$chatKey, before=${memory.size}, after=${memoryForRequest.size}, media=current-turn"
             )
 
             val matchPluginStartTime = messageTimingNow()
@@ -607,11 +552,11 @@ object AIMessageManager {
                 targetRoleName = currentRoleName,
                 groupOrchestrationMode = groupOrchestrationMode
             )
-        val maxImageHistoryUserTurns = apiPreferences.maxImageHistoryUserTurnsFlow.first()
-        val maxMediaHistoryUserTurns = apiPreferences.maxMediaHistoryUserTurnsFlow.first()
-        val memoryAfterImageLimit = limitImageLinksInChatHistory(memory, maxImageHistoryUserTurns)
-        val memoryForRequest =
-            limitMediaLinksInChatHistory(memoryAfterImageLimit, maxMediaHistoryUserTurns, VoiceMessageMarkup.toRequestContent(messageContent))
+        val memoryForRequest = currentTurnMediaHistory(
+            history = memory,
+            currentMessage = VoiceMessageMarkup.toRequestContent(messageContent),
+            omittedLabel = context.getString(R.string.ai_message_media_omitted),
+        )
 
         return enhancedAiService.estimateRequestWindowSnapshotFromMemory(
             message = VoiceMessageMarkup.toRequestContent(messageContent),
@@ -629,61 +574,6 @@ object AIMessageManager {
             memorySpaceIdOverride = memorySpaceIdOverride,
             publishEstimate = publishEstimate
         )
-    }
-
-    private fun limitMediaLinksInChatHistory(
-        history: List<PromptTurn>,
-        keepLastUserMediaTurns: Int,
-        currentMessage: String = "",
-    ): List<PromptTurn> {
-        val limit = keepLastUserMediaTurns.coerceAtLeast(0)
-        val totalUserTurns = history.count { it.kind == PromptTurnKind.USER }
-        val keepFromTurn = (totalUserTurns - limit).coerceAtLeast(0)
-
-        var currentUserTurnIndex = -1
-        return history.map { turn ->
-            if (turn.kind == PromptTurnKind.USER) {
-                currentUserTurnIndex += 1
-            }
-
-            val shouldKeepMedia = limit > 0 && currentUserTurnIndex >= keepFromTurn
-            val hasVoiceAudio = VoiceMessageMarkup.messages(turn.content).any {
-                it.inputMode == VoiceInputMode.AUDIO
-            }
-            val isCurrentVoice = hasVoiceAudio && turn === history.lastOrNull() &&
-                turn.kind == PromptTurnKind.USER && turn.content == currentMessage
-            if (!shouldKeepMedia && !isCurrentVoice && (hasVoiceAudio || MediaLinkParser.hasMediaLinks(turn.content))) {
-                val withoutVoiceAudio = VoiceMessageMarkup.toModelText(turn.content)
-                val removed = MediaLinkParser.removeMediaLinks(withoutVoiceAudio).trim()
-                turn.copy(content = removed.ifBlank { context.getString(R.string.ai_message_media_omitted) })
-            } else {
-                turn
-            }
-        }
-    }
-
-    private fun limitImageLinksInChatHistory(
-        history: List<PromptTurn>,
-        keepLastUserImageTurns: Int
-    ): List<PromptTurn> {
-        val limit = keepLastUserImageTurns.coerceAtLeast(0)
-        val totalUserTurns = history.count { it.kind == PromptTurnKind.USER }
-        val keepFromTurn = (totalUserTurns - limit).coerceAtLeast(0)
-
-        var currentUserTurnIndex = -1
-        return history.map { turn ->
-            if (turn.kind == PromptTurnKind.USER) {
-                currentUserTurnIndex += 1
-            }
-
-            val shouldKeepImages = limit > 0 && currentUserTurnIndex >= keepFromTurn
-            if (!shouldKeepImages && MediaLinkParser.hasImageLinks(turn.content)) {
-                val removed = MediaLinkParser.removeImageLinks(turn.content).trim()
-                turn.copy(content = removed.ifBlank { context.getString(R.string.ai_message_image_omitted) })
-            } else {
-                turn
-            }
-        }
     }
 
     /**

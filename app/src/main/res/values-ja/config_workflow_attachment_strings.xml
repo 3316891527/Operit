@@ -34,6 +34,5 @@
     <string name="workflow_issue_runtime">実行環境の初期化が完了していません。しばらくしてからもう一度お試しください。</string>
     <string name="workflow_issue_unknown">ノードは操作を完了できませんでした。ノードの入力とツールの構成を確認してください。</string>
     <string name="sent_image_count">%1$d チャン</string>
-    <string name="sent_image_expired_count">%1$d 写真の有効期限が切れました</string>
     <string name="workflow_run_failed_nodes">障害が発生したノード: %1$s</string>
 </resources>

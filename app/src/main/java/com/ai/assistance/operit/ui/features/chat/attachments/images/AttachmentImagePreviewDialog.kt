@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +59,12 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileUnavailableTag
+import com.ai.assistance.operit.ui.features.chat.attachments.mediaPreviewUri
+import com.ai.assistance.operit.ui.features.chat.attachments.rememberMediaPreviewRevision
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** 保留单图预览入口，已选附件使用同一图片页展示多图。 */
 @Composable
@@ -116,6 +123,7 @@ fun AttachmentImagePreviewDialog(
             ) { page ->
                 PreviewImagePage(
                     imageUri = images[page].uri,
+                    title = images[page].title,
                     isActive = page == pagerState.currentPage,
                     onScaleChanged = { scale ->
                         if (page == pagerState.currentPage) activeScale = scale
@@ -166,11 +174,19 @@ fun AttachmentImagePreviewDialog(
 @Composable
 private fun PreviewImagePage(
     imageUri: Uri,
+    title: String?,
     isActive: Boolean,
     onScaleChanged: (Float) -> Unit,
     onMultiTouchChanged: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val revision = rememberMediaPreviewRevision()
+    var missing by remember(imageUri) { mutableStateOf(false) }
+    val localFile = imageUri.scheme == "file" || imageUri.scheme == "content"
+    LaunchedEffect(imageUri, revision) {
+        missing = localFile && withContext(Dispatchers.IO) { mediaPreviewUri(context, imageUri.toString()) == null }
+    }
     var viewport by remember(imageUri) { mutableStateOf(Size.Zero) }
     var imageSize by remember(imageUri) { mutableStateOf(Size.Zero) }
     var transform by remember(imageUri, viewport) { mutableStateOf(ImagePreviewTransform()) }
@@ -185,6 +201,10 @@ private fun PreviewImagePage(
     }
 
     Box(Modifier.fillMaxSize()) {
+        if (missing) {
+            MediaFileUnavailableTag(title, Modifier.align(Alignment.Center).padding(24.dp))
+            return@Box
+        }
         Box(
             modifier = Modifier.fillMaxSize()
                 .clipToBounds()
@@ -261,18 +281,22 @@ private fun PreviewImagePage(
                     failed = false
                     imageSize = it.painter.intrinsicSize
                 },
-                onError = { loading = false; failed = true },
+                onError = {
+                    loading = false
+                    failed = true
+                    scope.launch {
+                        missing = localFile && withContext(Dispatchers.IO) {
+                            mediaPreviewUri(context, imageUri.toString()) == null
+                        }
+                    }
+                },
             )
         }
         if (loading) {
             CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
         }
         if (failed) {
-            Text(
-                text = stringResource(R.string.attachment_image_preview_failed),
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Center).padding(24.dp),
-            )
+            MediaFileUnavailableTag(title, Modifier.align(Alignment.Center).padding(24.dp), missing = false)
         }
     }
 }

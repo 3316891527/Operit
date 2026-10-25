@@ -5,4 +5,6 @@
     <string name="workspace_delete_selected_title">Padam item yang dipilih</string>
     <string name="workspace_delete_selected_message">Padam %1$d fail atau folder yang dipilih, termasuk kandungan folder? Tindakan ini tidak boleh dibuat asal.</string>
     <string name="voice_message_expired">Fail audio telah tamat tempoh atau dipadamkan</string>
+    <string name="chat_media_file_missing">Fail tidak lagi wujud</string>
+    <string name="chat_media_preview_failed">Fail media ini tidak dapat dipratonton</string>
 </resources>

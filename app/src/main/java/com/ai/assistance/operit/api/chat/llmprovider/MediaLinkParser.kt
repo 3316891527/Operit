@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.util.ImagePoolManager
+import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.util.MediaBase64Limiter
 import com.ai.assistance.operit.util.MediaPoolManager
 
@@ -109,7 +110,31 @@ object MediaLinkParser {
                 ?: com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
                     ?.takeIf { it.range.first == 0 }
             if (attachment != null && attachment.groupValues[3].startsWith("image/", ignoreCase = true)) {
-                put(attachment.groupValues[1], id)
+                put(unescapeXml(attachment.groupValues[1]), id)
+            }
+        }
+    }
+
+    /** 仅关联紧邻且类型一致的原文件说明，旧的纯池链接仍按原格式处理。 */
+    fun extractMediaAttachmentBindings(message: String): Map<String, AttachmentInfo> = buildMap {
+        for (link in matchesForMediaType(message)) {
+            val type = link.groupValues[1].lowercase()
+            if (type != "audio" && type != "video") continue
+            val id = link.groupValues[2]
+            if (id == "error") continue
+            val remaining = message.substring(link.range.last + 1).trimStart()
+            val attachment = com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataTag.find(remaining)
+                ?.takeIf { it.range.first == 0 }
+                ?: com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
+                    ?.takeIf { it.range.first == 0 }
+            if (attachment != null && attachment.groupValues[3].startsWith("$type/", ignoreCase = true)) {
+                put(id, AttachmentInfo(
+                    filePath = unescapeXml(attachment.groupValues[1]),
+                    fileName = unescapeXml(attachment.groupValues[2]),
+                    mimeType = attachment.groupValues[3],
+                    fileSize = attachment.groupValues[4].toLongOrNull() ?: 0L,
+                    content = attachment.groupValues[5],
+                ))
             }
         }
     }
