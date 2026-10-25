@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.repository
 
+import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.data.chat.deletion.ChatDeletionPolicy
 import com.ai.assistance.operit.data.chat.deletion.ChatDeletionResult
 import androidx.room.withTransaction
@@ -176,6 +177,7 @@ private class CsvChatAccumulator(
     val folderId: String?,
     val lastUsedAt: Long,
     val folderPath: List<ChatFolder>,
+    val usageBreakdownJson: String?,
 ) {
     val messages = mutableListOf<CsvMessageRecord>()
     val variantsByTimestamp = mutableMapOf<Long, MutableList<OperitArchivedMessageVariant>>()
@@ -213,6 +215,7 @@ private class CsvChatAccumulator(
             folderId = folderId,
             lastUsedAt = lastUsedAt,
             folderPath = folderPath,
+            usageBreakdownJson = usageBreakdownJson,
         )
     }
 }
@@ -655,6 +658,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             inputTokens = this.inputTokens,
             outputTokens = this.outputTokens,
             currentWindowSize = this.currentWindowSize,
+            usageBreakdownJson = this.usageBreakdownJson,
             group = this.group, // 映射group字段
             displayOrder = this.displayOrder,
             workspace = this.workspace, // 映射workspace字段
@@ -1596,15 +1600,24 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatId: String,
         inputTokens: Long,
         outputTokens: Long,
-        currentWindowSize: Long
+        currentWindowSize: Long,
+        usageBreakdown: TokenUsageBreakdown? = null,
     ) {
         chatMutex(chatId).withLock {
-            chatDao.updateChatTokenCounts(
-                chatId = chatId,
-                inputTokens = inputTokens.coerceAtLeast(0L),
-                outputTokens = outputTokens.coerceAtLeast(0L),
-                currentWindowSize = currentWindowSize.coerceAtLeast(0L),
-            )
+            database.withTransaction {
+                val previous = chatDao.getChatById(chatId) ?: return@withTransaction
+                val usage = TokenUsageBreakdown.advance(
+                    previous.usageBreakdownJson, previous.inputTokens, previous.outputTokens,
+                    inputTokens.coerceAtLeast(0L), outputTokens.coerceAtLeast(0L), usageBreakdown,
+                )
+                chatDao.updateChatTokenUsage(
+                    chatId = chatId,
+                    inputTokens = inputTokens.coerceAtLeast(0L),
+                    outputTokens = outputTokens.coerceAtLeast(0L),
+                    currentWindowSize = currentWindowSize.coerceAtLeast(0L),
+                    usageBreakdownJson = usage.encode(),
+                )
+            }
         }
     }
     /** 仅保存上下文窗口，保留当前累计用量。 */
@@ -1963,6 +1976,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         inputTokens = parentChat.inputTokens,
                         outputTokens = parentChat.outputTokens,
                         currentWindowSize = parentChat.currentWindowSize,
+                        usageBreakdownJson = parentChat.usageBreakdownJson,
                         group = parentChat.group,
                         folderId = parentChat.folderId,
                         lastUsedAt = System.currentTimeMillis(),
@@ -2036,6 +2050,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         inputTokens = entity.inputTokens,
                         outputTokens = entity.outputTokens,
                         currentWindowSize = entity.currentWindowSize,
+                        usageBreakdownJson = entity.usageBreakdownJson,
                         group = entity.group,
                         displayOrder = entity.displayOrder,
                         workspace = entity.workspace,
@@ -2080,6 +2095,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     inputTokens = entity.inputTokens,
                     outputTokens = entity.outputTokens,
                     currentWindowSize = entity.currentWindowSize,
+                    usageBreakdownJson = entity.usageBreakdownJson,
                     group = entity.group,
                     displayOrder = entity.displayOrder,
                     workspace = entity.workspace,
@@ -2751,6 +2767,9 @@ class ChatHistoryManager private constructor(private val context: Context) {
             inputTokens = csvLong(row, columns, "chat_input_tokens"),
             outputTokens = csvLong(row, columns, "chat_output_tokens"),
             currentWindowSize = csvLong(row, columns, "current_window_size"),
+            usageBreakdownJson = if ("usage_breakdown_json" in columns) {
+                csvNullable(row, columns, "usage_breakdown_json")
+            } else null,
             group = csvNullable(row, columns, "group"),
             displayOrder = csvLong(row, columns, "display_order"),
             workspace = csvNullable(row, columns, "workspace"),

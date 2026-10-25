@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 
@@ -64,7 +65,7 @@ class MessageProcessingDelegate(
         private val getRuntimeChatHistory: suspend (String) -> List<ChatMessage>,
         private val hasUserMessage: suspend (String) -> Boolean,
         private val addMessageToChat: suspend (String, ChatMessage) -> Unit,
-        private val resolveVoiceMessage: suspend (String, VoiceMessageData, String) -> List<ChatMessage>,
+        private val resolveVoiceMessage: suspend (String, VoiceMessageData, VoiceAnalysis) -> List<ChatMessage>,
         private val saveCurrentChat: suspend (chatId: String?) -> Unit,
         private val showErrorMessage: (String) -> Unit,
         private val updateChatTitle: (chatId: String, title: String) -> Unit,

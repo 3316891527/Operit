@@ -28,5 +28,6 @@ data class ChatHistory(
     val folderId: String? = null,
     val lastUsedAt: Long = 0L,
     val pinned: Boolean = false,
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    val usageBreakdownJson: String? = null
 )

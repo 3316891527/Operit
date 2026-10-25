@@ -311,7 +311,7 @@ private fun ContextWindowRow(
     }
 }
 
-private data class ContextWindowCategoryColors(
+internal data class ContextWindowCategoryColors(
         val userMessages: Color,
         val assistantMessages: Color,
         val toolResults: Color,
@@ -324,7 +324,7 @@ private data class ContextWindowCategoryColors(
 )
 
 @Composable
-private fun rememberContextWindowCategoryColors(): ContextWindowCategoryColors {
+internal fun rememberContextWindowCategoryColors(): ContextWindowCategoryColors {
     val colorScheme = MaterialTheme.colorScheme
     val isDark = colorScheme.background.luminance() < 0.5f
     return remember(isDark) {

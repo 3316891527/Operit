@@ -44,6 +44,7 @@ data class OperitArchivedChat(
     val folderId: String? = null,
     val lastUsedAt: Long = 0L,
     val folderPath: List<ChatFolder> = emptyList(),
+    val usageBreakdownJson: String? = null,
 ) {
     fun toChatHistory(): ChatHistory {
         return ChatHistory(
@@ -55,6 +56,7 @@ data class OperitArchivedChat(
             inputTokens = inputTokens,
             outputTokens = outputTokens,
             currentWindowSize = currentWindowSize,
+            usageBreakdownJson = usageBreakdownJson,
             group = group,
             displayOrder = displayOrder,
             workspace = workspace,
@@ -84,6 +86,7 @@ data class OperitArchivedChat(
                 inputTokens = history.inputTokens,
                 outputTokens = history.outputTokens,
                 currentWindowSize = history.currentWindowSize,
+                usageBreakdownJson = history.usageBreakdownJson,
                 group = history.group,
                 displayOrder = history.displayOrder,
                 workspace = history.workspace,

@@ -13,6 +13,8 @@ data class VoiceMessageData(
     val transcript: String,
     val inputMode: VoiceInputMode = VoiceInputMode.TEXT,
     val transcriptResolved: Boolean = false,
+    val audioContext: String = "",
+    val requestContext: String = "",
 )
 
 object VoiceMessageMarkup {
@@ -20,6 +22,8 @@ object VoiceMessageMarkup {
     private val attribute = Regex("([a-z_]+)=\"([^\"]*)\"")
     private val attachment = Regex("<attachment\\b[^>]*?/>")
     private val transcript = Regex("<transcript>([\\s\\S]*?)</transcript>")
+    private val audioContext = Regex(transcript.pattern.replace("transcript", "audio_context"))
+    private val requestContext = Regex(transcript.pattern.replace("transcript", "request_context"))
 
     fun encode(message: VoiceMessageData): String {
         require(message.durationMs > 0 && (message.inputMode == VoiceInputMode.AUDIO || message.transcript.isNotBlank()))
@@ -34,7 +38,10 @@ object VoiceMessageMarkup {
         val resolved = if (message.transcriptResolved) " resolved=\"true\"" else ""
         return "<voice_bar version=\"$version\"$input$resolved duration_ms=\"${message.durationMs}\" waveform=\"$waves\">" +
             attachmentReference(message) +
-            "<transcript>${escape(message.transcript)}</transcript></voice_bar>"
+            "<transcript>${escape(message.transcript)}</transcript>" +
+            (if (message.audioContext.isBlank()) "" else "<audio_context>${escape(message.audioContext)}</audio_context>") +
+            (if (message.requestContext.isBlank()) "" else "<request_context>${escape(message.requestContext)}</request_context>") +
+            "</voice_bar>"
     }
 
     private fun attachmentReference(message: VoiceMessageData): String =
@@ -71,6 +78,11 @@ object VoiceMessageMarkup {
         val size = audioAttrs["size"]?.toLongOrNull()?.takeIf { it >= 44 } ?: return null
         val textMatch = transcript.findAll(match.value).singleOrNull() ?: return null
         val text = unescape(textMatch.groupValues[1])
+        val contextMatches = audioContext.findAll(match.value).toList()
+        val requestMatches = requestContext.findAll(match.value).toList()
+        if (contextMatches.size > 1 || requestMatches.size > 1) return null
+        val audioNotes = contextMatches.singleOrNull()?.groupValues?.get(1)?.let(::unescape).orEmpty()
+        val requestNotes = requestMatches.singleOrNull()?.groupValues?.get(1)?.let(::unescape).orEmpty()
         if (inputMode == VoiceInputMode.TEXT && text.isBlank()) return null
         val resolved = when (attrs["resolved"]) {
             null -> false
@@ -79,8 +91,8 @@ object VoiceMessageMarkup {
         }
         if (resolved && (inputMode != VoiceInputMode.AUDIO || text.isBlank())) return null
         val body = match.value.substringAfter('>').substringBeforeLast("</voice_bar>")
-        if (body.replace(audio, "").replace(textMatch.value, "").isNotBlank()) return null
-        return VoiceMessageData(AttachmentInfo(path, name, "audio/wav", size), duration, waves, text, inputMode, resolved)
+        if (body.replace(audio, "").replace(textMatch.value, "").replace(audioContext, "").replace(requestContext, "").isNotBlank()) return null
+        return VoiceMessageData(AttachmentInfo(path, name, "audio/wav", size), duration, waves, text, inputMode, resolved, audioNotes, requestNotes)
     }
 
     /** 聊天消息可以在语音正文之外附带系统生成的工作区等元数据。 */
@@ -112,11 +124,32 @@ object VoiceMessageMarkup {
         message.transcript.ifBlank { "[Voice message]" }
     }
 
+    /** 历史请求只携带文字与已记录的观察，原录音仍只发送于当前用户轮次。 */
+    fun toHistoryModelText(value: String): String = rewrite(value) { message ->
+        VoiceAnalysis(message.transcript.ifBlank { "[Voice message]" }, message.audioContext)
+            .toModelText(message.requestContext)
+    }
+
     /** 理解文字与录音并存；独立标记已解析结果，避免把钩子补充文字误当成转写缓存。 */
     fun withResolvedTranscript(value: String, source: VoiceMessageData, text: String): String = block.replace(value) { match ->
         val message = parse(match.value)
         if (message == source && message.inputMode == VoiceInputMode.AUDIO) {
             encode(message.copy(transcript = text, transcriptResolved = true))
+        } else {
+            match.value
+        }
+    }
+
+    /** 新识别结果分别持久化，历史消息缺少辅助字段时仍按原格式读取。 */
+    fun withResolvedAnalysis(value: String, source: VoiceMessageData, analysis: VoiceAnalysis): String = block.replace(value) { match ->
+        val message = parse(match.value)
+        if (message == source && message.inputMode == VoiceInputMode.AUDIO) {
+            encode(message.copy(
+                transcript = analysis.transcript,
+                transcriptResolved = true,
+                audioContext = analysis.audioContext,
+                requestContext = message.additionalRequestContext(),
+            ))
         } else {
             match.value
         }
