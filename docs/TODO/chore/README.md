@@ -21,3 +21,4 @@
 - [工具箱与旧用户偏好字符串清理](unused-string-resources/index.md) · `unused-string-resources`
 - [1.12.2+10 发布同步](release-1.12.2-plus-10/index.md) · `release-1.12.2-plus-10`
 - [1.12.2+11 发布同步](release-1.12.2-plus-11/index.md) · `release-1.12.2-plus-11`
+- [1.12.2+12 发布同步](release-1.12.2-plus-12/index.md) · `release-1.12.2-plus-12`

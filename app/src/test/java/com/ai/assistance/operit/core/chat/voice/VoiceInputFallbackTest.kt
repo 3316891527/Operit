@@ -17,6 +17,17 @@ class VoiceInputFallbackTest {
     }
 
     @Test
+    fun cachedTranscriptDoesNotReadConfigurationOrRecognizeAgain() = runBlocking {
+        val result = resolveVoiceText(
+            hasAudioModel = { throw AssertionError("已解析的文字不再读取音频配置") },
+            audioModel = { throw AssertionError("已解析的文字不再调用音频理解") },
+            stt = { throw AssertionError("已解析的文字不再调用 STT") },
+            cachedTranscript = "轻声说的原始请求",
+        )
+        assertEquals(VoiceTextResult("轻声说的原始请求", VoiceTextSource.CACHED), result)
+    }
+
+    @Test
     fun configuredAudioModelWinsWithoutStt() = runBlocking {
         val calls = mutableListOf<String>()
         val result = resolveVoiceText(

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.chat.components.style.cursor
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
+import com.ai.assistance.operit.core.chat.media.unescapeMediaAttribute
+import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileGuard
 import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessagePlayer
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.ui.features.chat.attachments.images.SentImageGroup
@@ -359,7 +361,9 @@ private fun parseMessageContent(context: android.content.Context, content: Strin
     cleanedContent = MediaLinkParser.removeImageLinks(cleanedContent).trim()
 
     val mediaLinkAttachments = mutableListOf<AttachmentData>()
+    val fileBindings = MediaLinkParser.extractMediaAttachmentBindings(cleanedContent)
     MediaLinkParser.extractMediaLinkTags(cleanedContent).forEach { tag ->
+        if (tag.id in fileBindings) return@forEach
         val filename = when (tag.type) {
             "audio" -> "Audio"
             "video" -> "Video"
@@ -502,9 +506,9 @@ private fun parseMessageContent(context: android.content.Context, content: Strin
             val startIndex = matchResult.range.first
 
             // Extract attachment data
-            val id = matchResult.groupValues[1]
-            val filename = matchResult.groupValues[2]
-            val type = matchResult.groupValues[3]
+            val id = unescapeMediaAttribute(matchResult.groupValues[1])
+            val filename = unescapeMediaAttribute(matchResult.groupValues[2])
+            val type = unescapeMediaAttribute(matchResult.groupValues[3])
             val size = matchResult.groupValues[4].toLongOrNull() ?: 0L
             // For paired tags, content is in group 5; for self-closing, it's also in group 5
             val attachmentContent = matchResult.groupValues[5]
@@ -589,6 +593,21 @@ data class AttachmentData(
 /** Compact attachment tag component for displaying in user messages */
 @Composable
 private fun AttachmentTag(
+    attachment: AttachmentData,
+    textColor: Color,
+    backgroundColor: Color,
+    enabled: Boolean = true,
+    onClick: (AttachmentData) -> Unit = {},
+) {
+    MediaFileGuard(attachment.id, attachment.filename, attachment.type) { checkFile ->
+        AttachmentTagContent(attachment, textColor, backgroundColor, enabled) { value ->
+            checkFile { onClick(value) }
+        }
+    }
+}
+
+@Composable
+private fun AttachmentTagContent(
     attachment: AttachmentData,
     textColor: Color,
     backgroundColor: Color,

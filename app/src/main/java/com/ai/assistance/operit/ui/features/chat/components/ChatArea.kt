@@ -489,36 +489,11 @@ fun ChatArea(
 
             if (showLoadingIndicator) {
                 item(key = "loading") {
-                    when (chatStyle) {
-                        ChatStyle.BUBBLE -> {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 0.dp)
-                                        .offset(y = (-24).dp),
-                            ) {
-                                Box(modifier = Modifier.padding(start = 16.dp)) {
-                                    if (showChatFloatingDotsAnimation) {
-                                        LoadingDotsIndicator(aiTextColor)
-                                    }
-                                }
-                            }
-                        }
-
-                        ChatStyle.CURSOR -> {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 0.dp),
-                            ) {
-                                Box(modifier = Modifier.padding(start = 16.dp)) {
-                                    if (showChatFloatingDotsAnimation) {
-                                        LoadingDotsIndicator(aiTextColor)
-                                    }
-                                }
-                            }
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                    ) {
+                        if (showChatFloatingDotsAnimation) {
+                            LoadingDotsIndicator(aiTextColor)
                         }
                     }
                 }

@@ -326,6 +326,7 @@ internal fun ThemePreviewInput(values: ThemePreferenceValues) {
         if (generating && values.requiredBoolean("show_chat_floating_dots_animation"))
             Text(
                 "· · ·",
+                modifier = Modifier.padding(top = 8.dp),
                 color = Color(values.int("thinking_particle_color") ?: Color.White.toArgb()),
                 style = MaterialTheme.typography.titleLarge,
             )

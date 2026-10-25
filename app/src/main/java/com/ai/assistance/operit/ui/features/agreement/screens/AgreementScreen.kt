@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.agreement.screens
 
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,8 +26,9 @@ import com.ai.assistance.operit.ui.common.displays.MarkdownTextComposable
 @Composable
 fun AgreementScreen() {
     val context = LocalContext.current
-    // 直接读取用户提供的正文，让成熟的 Markdown 渲染器负责标题、强调、链接和列表排版。
-    val agreementMarkdown = remember(context) {
+    // 正文由 Android 的本地化 raw 资源选择，语言变化后同步重新读取。
+    val localeTags = LocalConfiguration.current.locales.toLanguageTags()
+    val agreementMarkdown = remember(context, localeTags) {
         context.resources
             .openRawResource(R.raw.operit_user_agreement_v02)
             .bufferedReader(Charsets.UTF_8)

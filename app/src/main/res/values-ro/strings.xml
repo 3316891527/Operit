@@ -852,7 +852,7 @@
     <string name="settings_enable_summary_by_message_count">Generarea rezumatului în funcție de numărul de mesaje</string>
     <string name="settings_enable_summary_by_message_count_desc">Se declanșează rezumatul atunci când numărul de mesaje noi atinge pragul stabilit</string>
     <string name="settings_summary_message_count_threshold">Pragul numărului de mesaje</string>
-    <string name="settings_summary_message_count_threshold_subtitle">Numărul de mesaje noi care declanșează generarea unui rezumat(1-20articol)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">Mesaje noi înainte de generarea unui rezumat (1–50)</string>
     <string name="settings_summary_custom_rules">Reguli personalizate de rezumare</string>
     <string name="settings_summary_custom_rules_desc">Rezumați regulile suplimentare trimise în timpul conversației; dacă lăsați câmpul gol, nu se adaugă nimic</string>
     <string name="settings_summary_structure">Structura rezumatului</string>
@@ -3354,11 +3354,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="settings_summary_threshold_subtitle">Rezumatul se generează atunci când procentul de utilizare a contextului depășește această valoare(0.1-0.95)</string>
 
     <!-- 截断设置 -->
-    <string name="settings_history_retention_title">Setări de păstrare a conținutului media istoric</string>
-    <string name="settings_max_image_history_user_turns">Numărul de runde în care se păstrează imaginile istorice</string>
-    <string name="settings_max_image_history_user_turns_subtitle">Se păstrează doar cele mai recente N Imaginile din conversațiile ulterioare ale utilizatorului, pentru a evita trimiterea repetată a imaginilor anterioare</string>
-    <string name="settings_max_media_history_user_turns">Numărul de runde de păstrare a înregistrărilor audio și video istorice</string>
-    <string name="settings_max_media_history_user_turns_subtitle">Se păstrează doar cele mai recente N Fișierul audio din această conversație cu utilizatorul/Videoclipuri: evitarea trimiterii repetate a fișierelor audio și video din istoric</string>
 
     <!-- 布局调整设置 -->
     <string name="layout_adjustment_settings_title">Setări de ajustare a dispunerii</string>
@@ -6959,8 +6954,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="context_validation_error_positive_number">%1$s Trebuie să fie mai mare decât 0 cifrele semnificative</string>
     <string name="context_validation_error_positive_integer">%1$s Trebuie să fie mai mare decât 0 numere întregi valabile</string>
     <string name="context_validation_error_non_negative_integer">%1$s Trebuie să fie mai mare sau egal cu 0 numere întregi valabile</string>
-    <string name="context_field_max_image_history_turns">Numărul de runde în care se păstrează imaginile istorice</string>
-    <string name="context_field_max_media_history_turns">Numărul de runde de păstrare a înregistrărilor audio și video istorice</string>
     <string name="context_unit_lines">Bine</string>
     <string name="context_unit_times">a doua oară</string>
     <string name="context_reset_all_settings">Resetează toate setările</string>
@@ -6977,7 +6970,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="model_config_error_valid_max_context_length">Vă rugăm să introduceți o lungime maximă validă a contextului</string>
     <string name="model_config_error_save_failed">Eșec la salvare</string>
     <string name="model_config_error_summary_threshold_range">Vă rugăm să introduceți0-1Pragul de declanșare al rezumatului dintre cele două</string>
-    <string name="model_config_error_valid_message_count">Vă rugăm să introduceți o valoare validă pentru pragul numărului de mesaje</string>
+    <string name="model_config_error_valid_message_count">Introduceți un prag de mesaje între 1 și 50</string>
     <string name="model_config_collapse">Afișează</string>
     <string name="model_config_expand">Extindeți</string>
     <string name="model_config_unit_items">articol</string>
@@ -7089,7 +7082,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="ai_message_user">Utilizator</string>
     <string name="ai_message_replying_to_previous">Utilizatorul îți răspunde la mesajul tău anterior:</string>
     <string name="ai_message_executing_deep_search">Se efectuează o căutare aprofundată...</string>
-    <string name="ai_message_media_omitted">[Conținutul audio și video a fost omis]</string>
+    <string name="ai_message_media_omitted">[Conținut media omis]</string>
     <string name="ai_message_image_omitted">[Imaginea a fost omisă]</string>
     <string name="ai_message_workspace_omitted">[Zona de lucru a fost omisă]</string>
     <string name="ai_message_attachment_omitted">[Anexele au fost omise]</string>
@@ -9308,7 +9301,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="translation_language_romanian">română</string>
     <string name="translation_language_japanese">japoneză</string>
     <string name="translation_retry_error_status">Solicitarea de traducere a eșuat (în prezent se reîncercă %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Generat în %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Ștergeți</string>
     <string name="resource_delete_title">Ștergeți resursele locale</string>
     <string name="resource_delete_confirm">Ștergeți resursa locală a „%1$s”? Dacă trebuie să îl redescărcați sau să îl importați mai târziu, copia de rezervă ZIP care a fost exportată în spațiul de stocare partajat va fi păstrată.</string>
@@ -9405,9 +9398,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="model_workspace_summary_threshold_hint">Rezumatul este declanșat când se atinge acest raport</string>
     <string name="model_workspace_summary_threshold_error">Introduceți un raport de declanșare rezumat mai mare de 0 și mai mic de 100</string>
     <string name="model_workspace_summary_context_limit">Lungimea contextului nu poate depăși lungimea maximă a contextului</string>
-    <string name="model_workspace_summary_history_error">Introduceți un număr întreg nenegativ pentru numărul de runde istorice de păstrare a conținutului media.</string>
-    <string name="model_workspace_summary_history_scope">Setare globală: reținerea istorică a conținutului media are efect pentru toate configurațiile de model</string>
-    <string name="model_workspace_summary_reset_history">Restabiliți valorile implicite ale media istorice</string>
     <string name="model_workspace_summary_model">Rezumați modelele utilizate</string>
     <string name="model_workspace_summary_model_scope">Acest articol este o alocare globală a funcției și va fi aplicat tuturor configurațiilor după modificare.</string>
     <string name="model_workspace_function_search">Căutați o funcție, configurație sau model</string>

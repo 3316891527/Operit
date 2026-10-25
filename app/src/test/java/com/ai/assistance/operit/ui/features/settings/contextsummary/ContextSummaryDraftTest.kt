@@ -18,26 +18,24 @@ class ContextSummaryDraftTest {
         dialogueReview = true,
         reviewTitle = "对话回顾",
         sections = listOf(SummarySectionConfig(id = "core", title = "任务状态")),
-        imageTurns = "3",
-        mediaTurns = "1",
     )
 
     @Test
     fun databaseEchoDoesNotOverwriteContinuedTyping() {
         val previous = draft()
         val local = previous.copy(rules = "保存后继续输入的内容", contextLength = "80")
-        val incoming = previous.copy(rules = "先前保存的内容", thresholdPercent = "75", mediaTurns = "2")
+        val incoming = previous.copy(rules = "先前保存的内容", thresholdPercent = "75", previousReview = true)
         val merged = local.mergeUnedited(previous, incoming)
         assertEquals("保存后继续输入的内容", merged.rules)
         assertEquals("80", merged.contextLength)
         assertEquals("75", merged.thresholdPercent)
-        assertEquals("2", merged.mediaTurns)
+        assertEquals(true, merged.previousReview)
     }
 
     @Test
-    fun uneditedDraftTracksExternalConfigurationAndGlobalHistoryChanges() {
+    fun uneditedDraftTracksExternalConfigurationChanges() {
         val previous = draft()
-        val incoming = previous.copy(contextLength = "64", imageTurns = "5", reviewTitle = "新的回顾标题")
+        val incoming = previous.copy(contextLength = "64", reviewTitle = "新的回顾标题")
         assertEquals(incoming, previous.mergeUnedited(previous, incoming))
     }
 
@@ -73,16 +71,14 @@ class ContextSummaryDraftTest {
     }
 
     @Test
-    fun activeMessageThresholdMustBePositiveWholeNumber() {
+    fun activeMessageThresholdAcceptsOneThroughFiftyOnly() {
         assertEquals(ContextSummaryValidation.MESSAGE_COUNT, draft().copy(messageCount = "0").validationError())
         assertEquals(ContextSummaryValidation.MESSAGE_COUNT, draft().copy(messageCount = "1.5").validationError())
         assertNull(draft().copy(messageCount = "1").validationError())
+        assertNull(draft().copy(messageCount = "20").validationError())
+        assertNull(draft().copy(messageCount = "21").validationError())
+        assertNull(draft().copy(messageCount = "50").validationError())
+        assertEquals(ContextSummaryValidation.MESSAGE_COUNT, draft().copy(messageCount = "51").validationError())
     }
 
-    @Test
-    fun globalRetentionAcceptsZeroButRejectsNegativeOrFractionalTurns() {
-        assertNull(draft().copy(imageTurns = "0", mediaTurns = "0").validationError())
-        assertEquals(ContextSummaryValidation.HISTORY_RETENTION, draft().copy(imageTurns = "-1").validationError())
-        assertEquals(ContextSummaryValidation.HISTORY_RETENTION, draft().copy(mediaTurns = "1.5").validationError())
-    }
 }

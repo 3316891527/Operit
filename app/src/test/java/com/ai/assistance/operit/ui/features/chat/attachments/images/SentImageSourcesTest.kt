@@ -10,7 +10,8 @@ class SentImageSourcesTest {
     @Test fun sixUploadedImagesProduceSixItemsInsteadOfTwelveLabels() {
         val sources = sentImageSources((1..6).joinToString(" ", transform = ::linkedImage))
         assertEquals(6, sources.size)
-        assertEquals((1..6).map { "pool-$it" }, sources.map { it.poolId })
+        assertEquals((1..6).map { "/image-$it.jpg" }, sources.map { it.id })
+        assertTrue(sources.all { it.poolId == null })
         assertEquals("image-1.jpg", sources.first().title)
     }
     @Test fun legacyImageLinkWithoutAttachmentIsRetained() {
@@ -28,5 +29,16 @@ class SentImageSourcesTest {
         val sources = sentImageSources("""<link type="image" id="one">Image</link> hello <attachment id="/two.png" filename="two.png" type="image/png" />""")
         assertEquals(2, sources.size)
         assertNull(sources.last().poolId)
+    }
+    @Test fun escapedOriginalFileNameIsDecodedAndStillUsesOriginalFile() {
+        val path = "/cleanOnExit/a & \"b\".jpg"
+        val source = sentImageSources(
+            com.ai.assistance.operit.core.chat.media.mediaAttachmentMarkup(
+                com.ai.assistance.operit.data.model.AttachmentInfo(path, "a & \"b\".jpg", "image/jpeg", fileSize = 1024L)
+            )
+        ).single()
+        assertEquals(path, source.id)
+        assertEquals("a & \"b\".jpg", source.title)
+        assertNull(source.poolId)
     }
 }

@@ -811,7 +811,7 @@
     <string name="settings_enable_summary_by_message_count">Picu Ringkasan Berdasarkan Jumlah Pesan</string>
     <string name="settings_enable_summary_by_message_count_desc">Picu ringkasan saat jumlah pesan baru mencapai ambang batas</string>
     <string name="settings_summary_message_count_threshold">Ambang Batas Jumlah Pesan</string>
-    <string name="settings_summary_message_count_threshold_subtitle">Jumlah pesan baru yang memicu ringkasan (1-20 pesan)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">Jumlah pesan baru sebelum ringkasan dipicu (1–50)</string>
     <string name="settings_section_display">Tampilan dan Perilaku</string>
     <string name="settings_keep_screen_on">Layar Selalu Menyala</string>
     <string name="settings_keep_screen_on_desc">Jaga layar tetap menyala saat AI sedang mengeluarkan output, hindari layar mati</string>
@@ -3923,11 +3923,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="settings_max_context_length_subtitle">Panjang konteks maksimum yang didukung oleh API model (k token)</string>
     <string name="settings_summary_threshold">Ambang Rasio Penggunaan Konteks</string>
     <string name="settings_summary_threshold_subtitle">Pemicu ringkasan saat penggunaan konteks melebihi rasio ini (0.1-0.95)</string>
-    <string name="settings_history_retention_title">Pengaturan Retensi Media Riwayat</string>
-    <string name="settings_max_image_history_user_turns">Jumlah Putaran Retensi Gambar Riwayat</string>
-    <string name="settings_max_image_history_user_turns_subtitle">Hanya menyimpan gambar dari N percakapan pengguna terbaru, menghindari pengiriman ulang gambar riwayat</string>
-    <string name="settings_max_media_history_user_turns">Jumlah Putaran Retensi Audio/Video Riwayat</string>
-    <string name="settings_max_media_history_user_turns_subtitle">Hanya menyimpan audio/video dari N percakapan pengguna terbaru, menghindari pengiriman ulang audio/video riwayat</string>
     <string name="layout_adjustment_settings_title">Pengaturan Penyesuaian Tata Letak</string>
     <string name="layout_adjustment_description">Di sini Anda dapat menyesuaikan posisi dan margin elemen antarmuka, mengkustomisasi pengalaman penggunaan Anda</string>
     <string name="chat_settings_bar_section">Bilah Pengaturan Obrolan</string>
@@ -5939,8 +5934,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="context_validation_error_positive_number">%1$s harus berupa angka valid yang lebih besar dari 0</string>
     <string name="context_validation_error_positive_integer">%1$s harus berupa bilangan bulat valid yang lebih besar dari 0</string>
     <string name="context_validation_error_non_negative_integer">%1$s harus berupa bilangan bulat valid yang lebih besar dari atau sama dengan 0</string>
-    <string name="context_field_max_image_history_turns">Jumlah putaran retensi gambar sejarah</string>
-    <string name="context_field_max_media_history_turns">Jumlah putaran retensi audio/video sejarah</string>
     <string name="context_unit_lines">baris</string>
     <string name="context_unit_times">kali</string>
     <string name="context_reset_all_settings">Atur ulang semua pengaturan</string>
@@ -5953,7 +5946,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="model_config_error_valid_max_context_length">Masukkan panjang konteks maksimum yang valid</string>
     <string name="model_config_error_save_failed">Gagal menyimpan</string>
     <string name="model_config_error_summary_threshold_range">Masukkan ambang batas pemicu ringkasan antara 0-1</string>
-    <string name="model_config_error_valid_message_count">Masukkan jumlah ambang batas pesan yang valid</string>
+    <string name="model_config_error_valid_message_count">Masukkan ambang jumlah pesan dari 1 hingga 50</string>
     <string name="model_config_collapse">Tutup</string>
     <string name="model_config_expand">Buka</string>
     <string name="model_config_unit_items">item</string>
@@ -6064,7 +6057,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="ai_message_user">Pengguna</string>
     <string name="ai_message_replying_to_previous">Pengguna sedang membalas pesan Anda sebelumnya ini:</string>
     <string name="ai_message_executing_deep_search">Sedang melakukan pencarian mendalam...</string>
-    <string name="ai_message_media_omitted">[Media audio/video dihilangkan]</string>
+    <string name="ai_message_media_omitted">[Media dihilangkan]</string>
     <string name="ai_message_image_omitted">[Gambar dihilangkan]</string>
     <string name="ai_message_workspace_omitted">[Ruang kerja dihilangkan]</string>
     <string name="ai_message_attachment_omitted">[Lampiran dihilangkan]</string>
@@ -8715,7 +8708,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="translation_language_romanian">Rumania</string>
     <string name="translation_language_japanese">Jepang</string>
     <string name="translation_retry_error_status">Permintaan terjemahan gagal (saat ini mencoba kembali %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Dihasilkan di %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Hapus</string>
     <string name="resource_delete_title">Hapus sumber daya lokal</string>
     <string name="resource_delete_confirm">Hapus sumber daya lokal \"%1$s\"? Jika Anda perlu mengunduh ulang atau mengimpornya nanti, cadangan ZIP yang telah diekspor ke penyimpanan bersama akan disimpan.</string>
@@ -8812,9 +8805,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="model_workspace_summary_threshold_hint">Ringkasan dipicu ketika rasio ini tercapai</string>
     <string name="model_workspace_summary_threshold_error">Silakan masukkan rasio pemicu ringkasan yang lebih besar dari 0 dan kurang dari 100</string>
     <string name="model_workspace_summary_context_limit">Panjang konteks tidak boleh melebihi panjang konteks maksimum</string>
-    <string name="model_workspace_summary_history_error">Harap masukkan bilangan bulat non-negatif untuk jumlah putaran retensi media historis.</string>
-    <string name="model_workspace_summary_history_scope">Pengaturan global: Retensi media historis berlaku untuk semua konfigurasi model</string>
-    <string name="model_workspace_summary_reset_history">Pulihkan default media historis</string>
     <string name="model_workspace_summary_model">Ringkaslah model yang digunakan</string>
     <string name="model_workspace_summary_model_scope">Item ini merupakan alokasi fungsi global dan akan diterapkan ke semua konfigurasi setelah modifikasi.</string>
     <string name="model_workspace_function_search">Cari fungsi, konfigurasi, atau model</string>

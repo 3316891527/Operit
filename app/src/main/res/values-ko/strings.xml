@@ -773,7 +773,7 @@
     <string name="settings_enable_summary_by_message_count">메시지 수 기준 요약 트리거</string>
     <string name="settings_enable_summary_by_message_count_desc">새 메시지 수가 임계값에 도달하면 요약 트리거</string>
     <string name="settings_summary_message_count_threshold">메시지 수 임계값</string>
-    <string name="settings_summary_message_count_threshold_subtitle">요약을 실행할 새 메시지 수(1-20)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">요약을 시작할 새 메시지 수(1–50)</string>
     <string name="settings_section_display">표시 및 동작</string>
     <string name="settings_keep_screen_on">화면 켜짐 유지</string>
     <string name="settings_keep_screen_on_desc">화면이 꺼지는 것을 방지하려면 AI 출력 중에 화면을 켜두세요.</string>
@@ -3013,11 +3013,6 @@
     <string name="settings_max_context_length_subtitle">모델 API가 지원하는 최대 컨텍스트 길이(k 토큰)</string>
     <string name="settings_summary_threshold">요약 실행 비율 임계값</string>
     <string name="settings_summary_threshold_subtitle">컨텍스트 사용량이 이 비율을 넘으면 요약을 실행합니다(0.1-0.95)</string>
-    <string name="settings_history_retention_title">기록 미디어 보존</string>
-    <string name="settings_max_image_history_user_turns">이미지 기록 턴 유지</string>
-    <string name="settings_max_image_history_user_turns_subtitle">오래된 이미지를 다시 보내지 않도록 마지막 N개 사용자 턴의 이미지만 보관합니다.</string>
-    <string name="settings_max_media_history_user_turns">미디어 기록 턴 유지</string>
-    <string name="settings_max_media_history_user_turns_subtitle">이전 미디어 재전송을 방지하도록 마지막 N개 사용자 턴의 오디오/동영상만 보관합니다.</string>
     <string name="layout_adjustment_settings_title">레이아웃 조정 설정</string>
     <string name="layout_adjustment_description">UI 요소의 위치와 간격을 조정하여 경험을 맞춤화하세요.</string>
     <string name="chat_settings_bar_section">채팅 설정 표시줄</string>
@@ -6095,8 +6090,6 @@
     <string name="context_validation_error_positive_number">%1$s는 0보다 큰 유효한 숫자여야 합니다.</string>
     <string name="context_validation_error_positive_integer">%1$s는 0보다 큰 유효한 정수여야 합니다.</string>
     <string name="context_validation_error_non_negative_integer">%1$s는 0보다 크거나 같은 유효한 정수여야 합니다.</string>
-    <string name="context_field_max_image_history_turns">이미지 기록 턴</string>
-    <string name="context_field_max_media_history_turns">미디어 기록 턴</string>
     <string name="context_unit_lines">라인</string>
     <string name="context_unit_times">회</string>
     <string name="context_reset_all_settings">모든 설정 재설정</string>
@@ -6109,7 +6102,7 @@
     <string name="model_config_error_valid_max_context_length">유효한 최대 컨텍스트 길이를 입력하세요.</string>
     <string name="model_config_error_save_failed">저장 실패</string>
     <string name="model_config_error_summary_threshold_range">0-1 사이의 요약 트리거 임계값을 입력하십시오.</string>
-    <string name="model_config_error_valid_message_count">유효한 메시지 수 기준을 입력하세요.</string>
+    <string name="model_config_error_valid_message_count">메시지 수 기준을 1에서 50 사이로 입력하세요</string>
     <string name="model_config_collapse">접기</string>
     <string name="model_config_expand">펼치기</string>
     <string name="model_config_unit_items">항목</string>
@@ -6209,7 +6202,7 @@
     <string name="ai_message_user">사용자</string>
     <string name="ai_message_replying_to_previous">사용자가 이전 메시지에 답장하고 있습니다.</string>
     <string name="ai_message_executing_deep_search">심층 검색 실행 중...</string>
-    <string name="ai_message_media_omitted">[오디오/비디오 생략]</string>
+    <string name="ai_message_media_omitted">[미디어 생략됨]</string>
     <string name="ai_message_image_omitted">[이미지 생략]</string>
     <string name="ai_message_workspace_omitted">[작업 공간 생략]</string>
     <string name="ai_message_attachment_omitted">[첨부생략]</string>
@@ -8564,7 +8557,7 @@
     <string name="translation_language_romanian">루마니아어</string>
     <string name="translation_language_japanese">일본어</string>
     <string name="translation_retry_error_status">번역 요청 실패(현재 %1$d/%2$d 재시도 중): %3$s</string>
-    <string name="chat_generated_at">%1$s에서 생성됨</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">삭제</string>
     <string name="resource_delete_title">로컬 리소스 삭제</string>
     <string name="resource_delete_confirm">\"%1$s\"의 로컬 리소스를 삭제하시겠습니까? 나중에 다시 다운로드하거나 가져와야 하는 경우 공유 저장소로 내보낸 ZIP 백업은 유지됩니다.</string>
@@ -8661,9 +8654,6 @@
     <string name="model_workspace_summary_threshold_hint">이 비율에 도달하면 요약이 트리거됩니다.</string>
     <string name="model_workspace_summary_threshold_error">0보다 크고 100보다 작은 요약 트리거 비율을 입력하세요.</string>
     <string name="model_workspace_summary_context_limit">컨텍스트 길이는 최대 컨텍스트 길이를 초과할 수 없습니다.</string>
-    <string name="model_workspace_summary_history_error">기록 미디어 보존 라운드 수에 음수가 아닌 정수를 입력하십시오.</string>
-    <string name="model_workspace_summary_history_scope">전역 설정: 기록 미디어 보존은 모든 모델 구성에 적용됩니다.</string>
-    <string name="model_workspace_summary_reset_history">기록 미디어 기본값 복원</string>
     <string name="model_workspace_summary_model">사용된 모델 요약</string>
     <string name="model_workspace_summary_model_scope">이 항목은 전역 기능 할당으로 수정 후 모든 구성에 적용됩니다.</string>
     <string name="model_workspace_function_search">기능, 구성 또는 모델 검색</string>

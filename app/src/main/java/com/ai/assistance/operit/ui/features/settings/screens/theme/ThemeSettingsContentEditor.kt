@@ -709,6 +709,7 @@ private fun ThemeSettingsTargetSelector(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = selectedLabel,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

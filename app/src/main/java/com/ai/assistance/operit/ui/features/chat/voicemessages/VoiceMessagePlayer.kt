@@ -24,6 +24,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileGuard
 import com.ai.assistance.operit.util.AppLogger
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.C
@@ -62,6 +63,22 @@ fun VoiceMessagePlayer(
     embedded: Boolean = false,
     contentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
+    MediaFileGuard(filePath, File(filePath).name, "audio/wav", modifier) { checkFile ->
+        VoiceMessagePlayerContent(filePath, durationMs, waveform, transcript, modifier, embedded, contentColor, checkFile)
+    }
+}
+
+@Composable
+private fun VoiceMessagePlayerContent(
+    filePath: String,
+    durationMs: Long,
+    waveform: List<Float>,
+    transcript: String = "",
+    modifier: Modifier = Modifier,
+    embedded: Boolean = false,
+    contentColor: Color,
+    checkFile: (() -> Unit) -> Unit,
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var player by remember(filePath) { mutableStateOf<ExoPlayer?>(null) }
@@ -69,6 +86,7 @@ fun VoiceMessagePlayer(
     var preparing by remember(filePath) { mutableStateOf(false) }
     var position by remember(filePath) { mutableStateOf(0L) }
     var error by remember(filePath) { mutableStateOf(false) }
+    var expired by remember(filePath) { mutableStateOf(false) }
     var showText by remember(filePath) { mutableStateOf(false) }
     val stop = remember(filePath) {
         {
@@ -94,11 +112,12 @@ fun VoiceMessagePlayer(
             delay(150)
         }
     }
-    fun toggle() {
+    fun toggleAvailable() {
         if (preparing) return
         if (playing) { player?.pause(); return }
         error = false
-        if (!File(filePath).isFile) { error = true; return }
+        expired = false
+        if (!File(filePath).isFile) { checkFile {}; return }
         if (player == null) {
             VoicePlaybackCoordinator.stopCurrent?.invoke()
             VoicePlaybackCoordinator.stopCurrent = stop
@@ -117,7 +136,9 @@ fun VoiceMessagePlayer(
                 }
                 override fun onPlayerError(playbackError: PlaybackException) {
                     AppLogger.e("VoiceMessagePlayer", "播放语音消息失败", playbackError)
+                    expired = !File(filePath).isFile
                     error = true
+                    checkFile {}
                     stop()
                 }
             })
@@ -128,6 +149,7 @@ fun VoiceMessagePlayer(
         if (active.playbackState == Player.STATE_ENDED) active.seekTo(0)
         active.play()
     }
+    fun toggle() { checkFile { toggleAvailable() } }
     val playAction = stringResource(if (playing) R.string.voice_message_pause else R.string.voice_message_play)
     val textAction = stringResource(if (showText) R.string.voice_message_hide_text else R.string.voice_message_show_text)
     Surface(
@@ -168,7 +190,7 @@ fun VoiceMessagePlayer(
                     }
                 }
             }
-            if (error) Text(stringResource(R.string.voice_message_play_failed), color = MaterialTheme.colorScheme.error,
+            if (error) Text(stringResource(if (expired) R.string.voice_message_expired else R.string.voice_message_play_failed), color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
             if (showText && transcript.isNotBlank()) {
                 Column(Modifier.padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

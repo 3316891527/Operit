@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import java.util.Locale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
@@ -34,8 +36,11 @@ internal fun ThemeLanguageSection(
             else LocaleUtils.getCurrentLanguage(context)
         }
     val followSystem = stringResource(R.string.language_follow_system)
+    val displayLocale = LocalConfiguration.current.locales[0]
     fun label(language: LocaleUtils.Language): String =
-        if (language.code == LocaleUtils.LanguageCodes.AUTO) followSystem else language.nativeName
+        if (language.code == LocaleUtils.LanguageCodes.AUTO) followSystem
+        else Locale.forLanguageTag(language.code).getDisplayName(displayLocale)
+            .replaceFirstChar { it.titlecase(displayLocale) }
     val selected = supported.first { it.code == selectedCode }
     var expanded by remember { mutableStateOf(false) }
     com.ai.assistance.operit.ui.features.settings.screens.theme.workbench.ThemeWorkbenchCard(

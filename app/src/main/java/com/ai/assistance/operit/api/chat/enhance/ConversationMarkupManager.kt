@@ -5,6 +5,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
 import com.ai.assistance.operit.core.tools.ToolExecutionLimits
 import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.util.ImagePoolManager
 import com.ai.assistance.operit.data.model.ToolResult
 
 /**
@@ -86,15 +87,19 @@ class ConversationMarkupManager {
             }
         }
 
-        private fun splitImageLinksForModel(rawPayload: String): Pair<String, String> {
-            if (!MediaLinkParser.hasImageLinks(rawPayload)) {
+        internal fun splitImageLinksForModel(
+            rawPayload: String,
+            isImageAvailable: (String) -> Boolean = { ImagePoolManager.getImage(it) != null },
+        ): Pair<String, String> {
+            // 文件读取结果可能包含媒体协议源码，不能把不存在的示例 ID 提到消息正文。
+            val imageIds = MediaLinkParser.extractImageLinkIds(rawPayload).filter(isImageAvailable).toSet()
+            if (imageIds.isEmpty()) {
                 return rawPayload to ""
             }
 
             val imageLinkPayload =
-                MediaLinkParser.extractImageLinkIds(rawPayload)
-                    .joinToString("\n") { id -> """<link type="image" id="$id"></link>""" }
-            val textPayload = MediaLinkParser.removeImageLinks(rawPayload).trim()
+                imageIds.joinToString("\n") { id -> """<link type="image" id="$id"></link>""" }
+            val textPayload = MediaLinkParser.removeImageLinks(rawPayload, imageIds).trim()
             val toolPayload =
                 listOf("Image attached as multimodal input.", textPayload)
                     .filter { it.isNotBlank() }

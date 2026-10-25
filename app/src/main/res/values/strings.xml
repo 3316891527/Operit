@@ -861,7 +861,7 @@
     <string name="settings_enable_summary_by_message_count">按消息条数触发总结</string>
     <string name="settings_enable_summary_by_message_count_desc">当新消息数量达到阈值时触发总结</string>
     <string name="settings_summary_message_count_threshold">消息条数阈值</string>
-    <string name="settings_summary_message_count_threshold_subtitle">触发总结的新消息数量(1-20条)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">触发总结的新消息数量（1–50 条）</string>
     <string name="settings_summary_custom_rules">自定义总结规则</string>
     <string name="settings_summary_custom_rules_desc">总结对话时发送的额外规则，留空为不添加</string>
     <string name="settings_summary_previous_review">总结上一轮摘要</string>
@@ -3564,11 +3564,6 @@
     <string name="settings_summary_threshold_subtitle">当上下文使用超过此比例时触发总结(0.1-0.95)</string>
 
     <!-- 截断设置 -->
-    <string name="settings_history_retention_title">历史媒体保留设置</string>
-    <string name="settings_max_image_history_user_turns">历史图片保留回合数</string>
-    <string name="settings_max_image_history_user_turns_subtitle">仅保留最近 N 次用户对话中的图片，避免历史图片重复发送</string>
-    <string name="settings_max_media_history_user_turns">历史音视频保留回合数</string>
-    <string name="settings_max_media_history_user_turns_subtitle">仅保留最近 N 次用户对话中的音频/视频，避免历史音视频重复发送</string>
 
     <!-- 布局调整设置 -->
     <string name="layout_adjustment_settings_title">布局调整设置</string>
@@ -7372,8 +7367,6 @@
     <string name="context_validation_error_positive_number">%1$s 必须是大于 0 的有效数字</string>
     <string name="context_validation_error_positive_integer">%1$s 必须是大于 0 的有效整数</string>
     <string name="context_validation_error_non_negative_integer">%1$s 必须是大于等于 0 的有效整数</string>
-    <string name="context_field_max_image_history_turns">历史图片保留回合数</string>
-    <string name="context_field_max_media_history_turns">历史音视频保留回合数</string>
     <string name="context_unit_lines">行</string>
     <string name="context_unit_times">次</string>
     <string name="context_reset_all_settings">重置所有设置</string>
@@ -7390,7 +7383,7 @@
     <string name="model_config_error_valid_max_context_length">请输入有效的最大上下文长度</string>
     <string name="model_config_error_save_failed">保存失败</string>
     <string name="model_config_error_summary_threshold_range">请输入0-1之间的总结触发阈值</string>
-    <string name="model_config_error_valid_message_count">请输入有效的消息数量阈值</string>
+    <string name="model_config_error_valid_message_count">请输入 1 至 50 的消息数量阈值</string>
     <string name="model_config_collapse">收起</string>
     <string name="model_config_expand">展开</string>
     <string name="model_config_unit_items">条</string>
@@ -7502,7 +7495,7 @@
     <string name="ai_message_user">用户</string>
     <string name="ai_message_replying_to_previous">用户正在回复你之前的这条消息：</string>
     <string name="ai_message_executing_deep_search">正在执行深度搜索...</string>
-    <string name="ai_message_media_omitted">[音视频已省略]</string>
+    <string name="ai_message_media_omitted">[媒体已省略]</string>
     <string name="ai_message_image_omitted">[图片已省略]</string>
     <string name="ai_message_workspace_omitted">[工作区已省略]</string>
     <string name="ai_message_attachment_omitted">[附件已省略]</string>
@@ -9071,7 +9064,7 @@
     <string name="translation_language_japanese">日语</string>
     <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
 
-    <string name="chat_generated_at">生成于 %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">删除</string>
     <string name="resource_delete_title">删除本地资源</string>
     <string name="resource_delete_confirm">删除“%1$s”的本地资源？之后需要重新下载或导入，已导出到共享存储的 ZIP 备份会保留。</string>
@@ -9410,9 +9403,6 @@
     <string name="model_workspace_summary_threshold_hint">达到这一比例时触发总结</string>
     <string name="model_workspace_summary_threshold_error">请输入大于 0 且小于 100 的总结触发比例</string>
     <string name="model_workspace_summary_context_limit">上下文长度不能超过最大上下文长度</string>
-    <string name="model_workspace_summary_history_error">历史媒体保留回合数请输入非负整数</string>
-    <string name="model_workspace_summary_history_scope">全局设置：历史媒体保留对所有模型配置生效</string>
-    <string name="model_workspace_summary_reset_history">恢复历史媒体默认值</string>
     <string name="model_workspace_summary_model">总结使用的模型</string>
     <string name="model_workspace_summary_model_scope">此项为全局功能分配，修改后应用于所有配置</string>
     <string name="model_workspace_function_search">搜索功能、配置或模型</string>
