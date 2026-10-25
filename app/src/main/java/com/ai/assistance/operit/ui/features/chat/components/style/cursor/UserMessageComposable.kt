@@ -3,6 +3,8 @@ import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.media.unescapeMediaAttribute
 import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileGuard
 import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessagePlayer
+import com.ai.assistance.operit.ui.features.chat.voicemessages.ExpiredVoiceMessageTag
+import com.ai.assistance.operit.ui.features.chat.attachments.rememberMediaFileMissing
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.ui.features.chat.attachments.images.SentImageGroup
 import com.ai.assistance.operit.ui.features.chat.attachments.images.sentImageSources
@@ -118,6 +120,7 @@ fun UserMessageComposable(
     val voiceMessage = remember(message.content, isHiddenPlaceholder) {
         if (isHiddenPlaceholder) null else VoiceMessageMarkup.parseMessage(message.content)
     }
+    val voiceFileMissing = rememberMediaFileMissing(voiceMessage?.attachment?.filePath, "audio/wav")
 
     // Parse message content to separate text and attachments
     val parseResult =
@@ -191,6 +194,11 @@ fun UserMessageComposable(
             }
         }
 
+        if (voiceMessage != null && voiceFileMissing.value) {
+            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.End) {
+                ExpiredVoiceMessageTag(enabled = enableDialogs)
+            }
+        }
         if (sentImages.isNotEmpty()) {
             // 图片组与用户消息右侧对齐，两种聊天样式保持相同位置。
             Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.End) {
@@ -232,78 +240,80 @@ fun UserMessageComposable(
             !isHiddenPlaceholder && !waterGlassEnabled && enableLiquidGlass && isLiquidGlassSupported()
 
         // Message bubble
-        Card(
-            modifier =
-            Modifier
-                // 语音卡片按内容收紧后，需要单独保留用户消息的右侧归属。
-                .then(if (voiceMessage != null) Modifier.align(Alignment.End) else Modifier)
-                .then(
-                    if (isHiddenPlaceholder || voiceMessage != null) {
-                        Modifier.widthIn(max = 320.dp)
-                    } else {
-                        Modifier.fillMaxWidth()
-                    }
-                )
-                .waterGlass(
-                    enabled = waterGlassEnabled,
-                    shape = RoundedCornerShape(8.dp),
-                    containerColor = effectiveBackgroundColor,
-                    backgroundOpacity = backgroundOpacity,
-                    region = GlassRegion.USER_MESSAGE,
-                )
-                .liquidGlass(
-                    enabled = liquidGlassEnabled,
-                    shape = RoundedCornerShape(8.dp),
-                    containerColor = effectiveBackgroundColor,
-                    backgroundOpacity = backgroundOpacity,
-                    enableLens = false,
-                    region = GlassRegion.USER_MESSAGE,
-                ),
-            colors = CardDefaults.cardColors(
-                containerColor =
-                    if (liquidGlassEnabled || waterGlassEnabled) {
-                        Color.Transparent
-                    } else {
-                        effectiveBackgroundColor
-                    },
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column(modifier = Modifier
-                .then(if (voiceMessage == null) Modifier.fillMaxWidth() else Modifier)
-                .padding(
-                    start = 16.dp,
-                    top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
-                    end = 16.dp,
-                    bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
-                )) {
-                if (isHiddenPlaceholder) {
-                    HiddenUserMessagePlaceholderContent(
-                        titleColor = effectiveTextColor,
-                        subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
-                    )
-                } else {
-                    // 用户消息标题
-                    Text(
-                        text = if (!proxySenderName.isNullOrBlank()) {
-                            "Prompt by $proxySenderName"
+        if (voiceMessage == null || !voiceFileMissing.value) {
+            Card(
+                modifier =
+                Modifier
+                    // 语音卡片按内容收紧后，需要单独保留用户消息的右侧归属。
+                    .then(if (voiceMessage != null) Modifier.align(Alignment.End) else Modifier)
+                    .then(
+                        if (isHiddenPlaceholder || voiceMessage != null) {
+                            Modifier.widthIn(max = 320.dp)
                         } else {
-                            "Prompt"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = effectiveTextColor.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                            Modifier.fillMaxWidth()
+                        }
                     )
-
-                    if (voiceMessage != null) {
-                        VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
-                            voiceMessage.waveform, voiceMessage.transcript, embedded = true, contentColor = effectiveTextColor)
-                    } else {
-                        Text(
-                            text = textContent,
-                            color = effectiveTextColor,
-                            style = MaterialTheme.typography.bodyMedium
+                    .waterGlass(
+                        enabled = waterGlassEnabled,
+                        shape = RoundedCornerShape(8.dp),
+                        containerColor = effectiveBackgroundColor,
+                        backgroundOpacity = backgroundOpacity,
+                        region = GlassRegion.USER_MESSAGE,
+                    )
+                    .liquidGlass(
+                        enabled = liquidGlassEnabled,
+                        shape = RoundedCornerShape(8.dp),
+                        containerColor = effectiveBackgroundColor,
+                        backgroundOpacity = backgroundOpacity,
+                        enableLens = false,
+                        region = GlassRegion.USER_MESSAGE,
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor =
+                        if (liquidGlassEnabled || waterGlassEnabled) {
+                            Color.Transparent
+                        } else {
+                            effectiveBackgroundColor
+                        },
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier
+                    .then(if (voiceMessage == null) Modifier.fillMaxWidth() else Modifier)
+                    .padding(
+                        start = 16.dp,
+                        top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
+                        end = 16.dp,
+                        bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
+                    )) {
+                    if (isHiddenPlaceholder) {
+                        HiddenUserMessagePlaceholderContent(
+                            titleColor = effectiveTextColor,
+                            subtitleColor = effectiveTextColor.copy(alpha = 0.72f),
                         )
+                    } else {
+                        // 用户消息标题
+                        Text(
+                            text = if (!proxySenderName.isNullOrBlank()) {
+                                "Prompt by $proxySenderName"
+                            } else {
+                                "Prompt"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = effectiveTextColor.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        if (voiceMessage != null) {
+                            VoiceMessagePlayer(voiceMessage.attachment.filePath, voiceMessage.durationMs,
+                                voiceMessage.waveform, voiceMessage.transcript, embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing)
+                        } else {
+                            Text(
+                                text = textContent,
+                                color = effectiveTextColor,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
             }

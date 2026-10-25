@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -108,6 +109,21 @@ internal fun MediaFileUnavailableTag(
     }
 }
 
+/** 父布局和播放器共用文件状态，文件失效时可以同时移除气泡与播放资源。 */
+@Composable
+internal fun rememberMediaFileMissing(source: String?, mimeType: String): MutableState<Boolean> {
+    val context = LocalContext.current
+    val revision = rememberMediaPreviewRevision()
+    val missing = remember(source) { mutableStateOf(false) }
+    LaunchedEffect(source, mimeType, revision) {
+        missing.value = source != null &&
+            (mimeType.startsWith("image/", true) || mimeType.startsWith("audio/", true) || mimeType.startsWith("video/", true)) &&
+            (source.startsWith("/") || source.startsWith("file://") || source.startsWith("content://")) &&
+            withContext(Dispatchers.IO) { mediaPreviewUri(context, source) == null }
+    }
+    return missing
+}
+
 /** 正常文件使用原界面；文件消失后整体替换成标签，点击时再次核实。 */
 @Composable
 internal fun MediaFileGuard(
@@ -115,17 +131,14 @@ internal fun MediaFileGuard(
     fileName: String,
     mimeType: String,
     modifier: Modifier = Modifier,
+    missingState: MutableState<Boolean> = rememberMediaFileMissing(source, mimeType),
     content: @Composable (checkFile: (() -> Unit) -> Unit) -> Unit,
 ) {
     val context = LocalContext.current
-    val revision = rememberMediaPreviewRevision()
     val scope = rememberCoroutineScope()
     val tracked = (mimeType.startsWith("image/", true) || mimeType.startsWith("audio/", true) || mimeType.startsWith("video/", true)) &&
         (source.startsWith("/") || source.startsWith("file://") || source.startsWith("content://"))
-    var missing by remember(source) { mutableStateOf(false) }
-    LaunchedEffect(source, revision, tracked) {
-        missing = tracked && withContext(Dispatchers.IO) { mediaPreviewUri(context, source) == null }
-    }
+    var missing by missingState
     if (missing) {
         MediaFileUnavailableTag(fileName, modifier)
         return
