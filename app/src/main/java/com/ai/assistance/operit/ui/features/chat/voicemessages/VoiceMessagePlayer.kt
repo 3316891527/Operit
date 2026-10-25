@@ -25,6 +25,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileGuard
+import com.ai.assistance.operit.ui.features.chat.attachments.rememberMediaFileMissing
 import com.ai.assistance.operit.util.AppLogger
 import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.C
@@ -62,8 +63,9 @@ fun VoiceMessagePlayer(
     modifier: Modifier = Modifier,
     embedded: Boolean = false,
     contentColor: Color = MaterialTheme.colorScheme.primary,
+    missingState: MutableState<Boolean> = rememberMediaFileMissing(filePath, "audio/wav"),
 ) {
-    MediaFileGuard(filePath, File(filePath).name, "audio/wav", modifier) { checkFile ->
+    MediaFileGuard(filePath, File(filePath).name, "audio/wav", modifier, missingState) { checkFile ->
         VoiceMessagePlayerContent(filePath, durationMs, waveform, transcript, modifier, embedded, contentColor, checkFile)
     }
 }
