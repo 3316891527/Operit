@@ -852,7 +852,7 @@
     <string name="settings_enable_summary_by_message_count">Generarea rezumatului în funcție de numărul de mesaje</string>
     <string name="settings_enable_summary_by_message_count_desc">Se declanșează rezumatul atunci când numărul de mesaje noi atinge pragul stabilit</string>
     <string name="settings_summary_message_count_threshold">Pragul numărului de mesaje</string>
-    <string name="settings_summary_message_count_threshold_subtitle">Numărul de mesaje noi care declanșează generarea unui rezumat(1-20articol)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">Mesaje noi înainte de generarea unui rezumat (1–50)</string>
     <string name="settings_summary_custom_rules">Reguli personalizate de rezumare</string>
     <string name="settings_summary_custom_rules_desc">Rezumați regulile suplimentare trimise în timpul conversației; dacă lăsați câmpul gol, nu se adaugă nimic</string>
     <string name="settings_summary_structure">Structura rezumatului</string>
@@ -6977,7 +6977,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="model_config_error_valid_max_context_length">Vă rugăm să introduceți o lungime maximă validă a contextului</string>
     <string name="model_config_error_save_failed">Eșec la salvare</string>
     <string name="model_config_error_summary_threshold_range">Vă rugăm să introduceți0-1Pragul de declanșare al rezumatului dintre cele două</string>
-    <string name="model_config_error_valid_message_count">Vă rugăm să introduceți o valoare validă pentru pragul numărului de mesaje</string>
+    <string name="model_config_error_valid_message_count">Introduceți un prag de mesaje între 1 și 50</string>
     <string name="model_config_collapse">Afișează</string>
     <string name="model_config_expand">Extindeți</string>
     <string name="model_config_unit_items">articol</string>
@@ -9406,7 +9406,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="model_workspace_summary_threshold_error">Introduceți un raport de declanșare rezumat mai mare de 0 și mai mic de 100</string>
     <string name="model_workspace_summary_context_limit">Lungimea contextului nu poate depăși lungimea maximă a contextului</string>
     <string name="model_workspace_summary_history_error">Introduceți un număr întreg nenegativ pentru numărul de runde istorice de păstrare a conținutului media.</string>
-    <string name="model_workspace_summary_history_scope">Setare globală: reținerea istorică a conținutului media are efect pentru toate configurațiile de model</string>
+    <string name="model_workspace_summary_history_scope">Setare globală: limitează doar imaginile, fișierele audio și videoclipurile din istoric trimise din nou modelului. Nu șterge conversațiile sau atașamentele locale.</string>
     <string name="model_workspace_summary_reset_history">Restabiliți valorile implicite ale media istorice</string>
     <string name="model_workspace_summary_model">Rezumați modelele utilizate</string>
     <string name="model_workspace_summary_model_scope">Acest articol este o alocare globală a funcției și va fi aplicat tuturor configurațiilor după modificare.</string>

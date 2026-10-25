@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.settings.contextsummary
 
+import com.ai.assistance.operit.data.model.ModelConfigDefaults
+
 import com.ai.assistance.operit.core.config.FunctionalPrompts
 import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.SummarySectionConfig
@@ -56,7 +58,7 @@ internal data class ContextSummaryDraft(
             maximum == null || !maximum.isFinite() || maximum <= 0f -> ContextSummaryValidation.MAX_CONTEXT_LENGTH
             context > maximum -> ContextSummaryValidation.CONTEXT_LIMIT
             enableSummary && (threshold == null || !threshold.isFinite() || threshold <= 0f || threshold >= 100f) -> ContextSummaryValidation.SUMMARY_THRESHOLD
-            enableSummary && byMessageCount && (messages == null || messages <= 0) -> ContextSummaryValidation.MESSAGE_COUNT
+            enableSummary && byMessageCount && (messages == null || messages !in 1..ModelConfigDefaults.MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD) -> ContextSummaryValidation.MESSAGE_COUNT
             images == null || images < 0 || media == null || media < 0 -> ContextSummaryValidation.HISTORY_RETENTION
             else -> null
         }

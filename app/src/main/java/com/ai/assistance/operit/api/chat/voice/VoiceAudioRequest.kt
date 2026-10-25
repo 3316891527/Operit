@@ -63,8 +63,9 @@ internal class VoiceAudioRequest(
             val text = if (nativeAudio) {
                 try {
                     val link = audioLink(voice)
-                    nativeEntries[link] = voice
-                    listOf(link, voice.transcript).filter { it.isNotBlank() }.joinToString("\n")
+                    val input = listOf(link, voice.transcript).filter { it.isNotBlank() }.joinToString("\n")
+                    nativeEntries[input] = voice
+                    input
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Exception) {
@@ -87,7 +88,7 @@ internal class VoiceAudioRequest(
         onHistoryResolved: suspend (List<PromptTurn>) -> Unit,
     ): Stream<String> {
         currentCoroutineContext().ensureActive()
-        val active = nativeEntries.filterKeys { link -> history.any { link in it.content } }
+        val active = nativeEntries.filterKeys { input -> history.any { input in it.content } }
         if (active.isEmpty()) return request(history)
         val events = MutableSharedStream<TextStreamEvent>(replay = Int.MAX_VALUE)
         return stream<String> {
@@ -95,7 +96,7 @@ internal class VoiceAudioRequest(
                 native = { forward -> collectAttempt(request(history), events, forward) },
                 text = { forward ->
                     val replacements = mutableMapOf<String, String>()
-                    for ((link, voice) in active) replacements[link] = resolve(voice).text
+                    for ((input, voice) in active) replacements[input] = resolvedInput(voice)
                     val textHistory = history.map { turn ->
                         var content = turn.content
                         for ((link, text) in replacements) content = content.replace(link, text)
@@ -140,6 +141,8 @@ internal class VoiceAudioRequest(
         resolved[voice]?.let { return it }
         val result = try {
             resolveVoiceText(
+                // 钩子文字不代表已经理解录音，只有持久化标记明确时才复用。
+                cachedTranscript = voice.transcript.takeIf { voice.transcriptResolved },
                 hasAudioModel = { services.hasAudioRecognitionConfigured() },
                 audioModel = { understandAudio(voice) },
                 stt = {
@@ -157,7 +160,7 @@ internal class VoiceAudioRequest(
             throw IOException(context.getString(R.string.voice_message_understanding_failed), error)
         }
         val savedText = resolvedVoiceText(voice, result.text)
-        onResolved(voice, savedText)
+        if (result.source != VoiceTextSource.CACHED) onResolved(voice, savedText)
         resolved[voice] = result
         AppLogger.d("VoiceAudioRequest", "语音输入处理完成，来源=${result.source}")
         return result

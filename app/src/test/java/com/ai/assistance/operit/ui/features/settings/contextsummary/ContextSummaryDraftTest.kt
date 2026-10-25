@@ -73,10 +73,14 @@ class ContextSummaryDraftTest {
     }
 
     @Test
-    fun activeMessageThresholdMustBePositiveWholeNumber() {
+    fun activeMessageThresholdAcceptsOneThroughFiftyOnly() {
         assertEquals(ContextSummaryValidation.MESSAGE_COUNT, draft().copy(messageCount = "0").validationError())
         assertEquals(ContextSummaryValidation.MESSAGE_COUNT, draft().copy(messageCount = "1.5").validationError())
         assertNull(draft().copy(messageCount = "1").validationError())
+        assertNull(draft().copy(messageCount = "20").validationError())
+        assertNull(draft().copy(messageCount = "21").validationError())
+        assertNull(draft().copy(messageCount = "50").validationError())
+        assertEquals(ContextSummaryValidation.MESSAGE_COUNT, draft().copy(messageCount = "51").validationError())
     }
 
     @Test

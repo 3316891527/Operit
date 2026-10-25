@@ -46,11 +46,22 @@ class VoiceAudioMarkupTest {
         val saved = "${VoiceMessageMarkup.encode(source)} $workspace"
         val text = "轻声说：明天提醒我 <检查> & 确认\n钩子补充"
         val updated = VoiceMessageMarkup.withResolvedTranscript(saved, source, text)
-        val expected = source.copy(transcript = text, inputMode = VoiceInputMode.TEXT)
+        val expected = source.copy(transcript = text, transcriptResolved = true)
         assertEquals(expected, VoiceMessageMarkup.parseMessage(updated))
         assertTrue(updated.endsWith(workspace))
-        assertEquals("$text $workspace", VoiceMessageMarkup.toRequestContent(updated))
+        assertEquals(updated, VoiceMessageMarkup.toRequestContent(updated))
+        assertEquals(text, VoiceMessageMarkup.parseMessage(updated)!!.transcript)
+        assertEquals(source.attachment, VoiceMessageMarkup.parseMessage(updated)!!.attachment)
         assertEquals(updated, VoiceMessageMarkup.withResolvedTranscript(updated, source, "过期结果"))
+    }
+
+    @Test
+    fun hookTextIsNotMarkedAsResolvedAndInvalidCacheIsRejected() {
+        val hook = VoiceMessageMarkup.encode(audio("钩子补充"))
+        assertFalse(VoiceMessageMarkup.parse(hook)!!.transcriptResolved)
+        val empty = VoiceMessageMarkup.encode(audio())
+        assertNull(VoiceMessageMarkup.parse(empty.replace(" input=\"audio\"", " input=\"audio\" resolved=\"true\"")))
+        assertNull(VoiceMessageMarkup.parse(hook.replace(" input=\"audio\"", " input=\"audio\" resolved=\"unknown\"")))
     }
 
     @Test

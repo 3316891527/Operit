@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_multi_select">Pilih berbilang fail</string>
+    <string name="workspace_selection_count">%1$d dipilih</string>
+    <string name="workspace_delete_selected_title">Padam item yang dipilih</string>
+    <string name="workspace_delete_selected_message">Padam %1$d fail atau folder yang dipilih, termasuk kandungan folder? Tindakan ini tidak boleh dibuat asal.</string>
+    <string name="voice_message_expired">Fail audio telah tamat tempoh atau dipadamkan</string>
+</resources>

@@ -881,7 +881,7 @@
     <string name="settings_enable_summary_by_message_count">Picu ringkasan mengikut bilangan mesej</string>
     <string name="settings_enable_summary_by_message_count_desc">Picu ringkasan apabila bilangan mesej baharu mencapai ambang</string>
     <string name="settings_summary_message_count_threshold">Ambang bilangan mesej</string>
-    <string name="settings_summary_message_count_threshold_subtitle">Bilangan mesej baharu untuk memicu ringkasan (1-20 mesej)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">Bilangan mesej baharu sebelum ringkasan dicetuskan (1–50)</string>
     <string name="settings_section_display">Paparan dan tingkah laku</string>
     <string name="settings_keep_screen_on">Skrin sentiasa menyala</string>
     <string name="settings_keep_screen_on_desc">Pastikan skrin sentiasa menyala semasa AI mengeluarkan output, elakkan skrin terpadam</string>
@@ -5918,7 +5918,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="model_config_error_valid_max_context_length">Sila masukkan panjang konteks maksimum yang sah</string>
     <string name="model_config_error_save_failed">Gagal menyimpan</string>
     <string name="model_config_error_summary_threshold_range">Sila masukkan ambang pencetus ringkasan antara 0-1</string>
-    <string name="model_config_error_valid_message_count">Sila masukkan ambang bilangan mesej yang sah</string>
+    <string name="model_config_error_valid_message_count">Masukkan ambang bilangan mesej antara 1 hingga 50</string>
     <string name="model_config_collapse">Tutup</string>
     <string name="model_config_expand">Kembangkan</string>
     <string name="model_config_unit_items">item</string>
@@ -8812,7 +8812,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="model_workspace_summary_threshold_error">Sila masukkan nisbah pencetus ringkasan yang lebih besar daripada 0 dan kurang daripada 100</string>
     <string name="model_workspace_summary_context_limit">Panjang konteks tidak boleh melebihi panjang konteks maksimum</string>
     <string name="model_workspace_summary_history_error">Sila masukkan integer bukan negatif untuk bilangan pusingan pengekalan media sejarah.</string>
-    <string name="model_workspace_summary_history_scope">Tetapan global: Pengekalan media sejarah berkuat kuasa untuk semua konfigurasi model</string>
+    <string name="model_workspace_summary_history_scope">Tetapan global: hanya mengehadkan imej, audio dan video sejarah yang dihantar semula kepada model. Rekod sembang dan lampiran setempat tidak dipadamkan.</string>
     <string name="model_workspace_summary_reset_history">Pulihkan lalai media sejarah</string>
     <string name="model_workspace_summary_model">Ringkaskan model yang digunakan</string>
     <string name="model_workspace_summary_model_scope">Item ini ialah peruntukan fungsi global dan akan digunakan pada semua konfigurasi selepas pengubahsuaian.</string>

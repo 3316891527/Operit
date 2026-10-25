@@ -2024,7 +2024,7 @@
     <string name="settings_enable_summary_by_message_count">Activar resumen por número de mensajes</string>
     <string name="settings_enable_summary_by_message_count_desc">Activa el resumen cuando la cantidad de mensajes nuevos alcanza el umbral</string>
     <string name="settings_summary_message_count_threshold">Umbral de número de mensajes</string>
-    <string name="settings_summary_message_count_threshold_subtitle">Cantidad de mensajes nuevos para activar el resumen (1-20 mensajes)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">Mensajes nuevos antes de generar un resumen (1–50)</string>
     <string name="settings_section_external_calls">Llamadas externas</string>
     <string name="settings_total_tokens_breakdown">Entrada: %1$d (caché: %2$d) / Salida: %3$d</string>
     <string name="settings_cached_tokens">(caché: %1$d)</string>
@@ -6444,7 +6444,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="model_config_error_valid_max_context_length">Introduzca una longitud máxima de contexto válida</string>
     <string name="model_config_error_save_failed">Error al guardar</string>
     <string name="model_config_error_summary_threshold_range">Introduzca un umbral de activación de resumen entre 0 y 1</string>
-    <string name="model_config_error_valid_message_count">Introduzca un número de mensajes umbral válido</string>
+    <string name="model_config_error_valid_message_count">Introduce un umbral de mensajes entre 1 y 50</string>
     <string name="model_config_collapse">Contraer</string>
     <string name="model_config_expand">Expandir</string>
     <string name="model_config_unit_items">elementos</string>
@@ -8881,7 +8881,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="model_workspace_summary_threshold_error">Ingrese una proporción de activación de resumen mayor que 0 y menor que 100</string>
     <string name="model_workspace_summary_context_limit">La longitud del contexto no puede exceder la longitud máxima del contexto.</string>
     <string name="model_workspace_summary_history_error">Ingrese un número entero no negativo para la cantidad de rondas históricas de retención de medios.</string>
-    <string name="model_workspace_summary_history_scope">Configuración global: la retención de medios histórica entra en vigor para todas las configuraciones del modelo</string>
+    <string name="model_workspace_summary_history_scope">Configuración global: solo limita las imágenes, el audio y el vídeo del historial que se vuelven a enviar al modelo. No elimina conversaciones ni archivos adjuntos locales.</string>
     <string name="model_workspace_summary_reset_history">Restaurar los valores predeterminados históricos de los medios</string>
     <string name="model_workspace_summary_model">Resumir los modelos utilizados.</string>
     <string name="model_workspace_summary_model_scope">Este elemento es una asignación de función global y se aplicará a todas las configuraciones después de la modificación.</string>

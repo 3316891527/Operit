@@ -861,7 +861,7 @@
     <string name="settings_enable_summary_by_message_count">按消息条数触发总结</string>
     <string name="settings_enable_summary_by_message_count_desc">当新消息数量达到阈值时触发总结</string>
     <string name="settings_summary_message_count_threshold">消息条数阈值</string>
-    <string name="settings_summary_message_count_threshold_subtitle">触发总结的新消息数量(1-20条)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">触发总结的新消息数量（1–50 条）</string>
     <string name="settings_summary_custom_rules">自定义总结规则</string>
     <string name="settings_summary_custom_rules_desc">总结对话时发送的额外规则，留空为不添加</string>
     <string name="settings_summary_previous_review">总结上一轮摘要</string>
@@ -7390,7 +7390,7 @@
     <string name="model_config_error_valid_max_context_length">请输入有效的最大上下文长度</string>
     <string name="model_config_error_save_failed">保存失败</string>
     <string name="model_config_error_summary_threshold_range">请输入0-1之间的总结触发阈值</string>
-    <string name="model_config_error_valid_message_count">请输入有效的消息数量阈值</string>
+    <string name="model_config_error_valid_message_count">请输入 1 至 50 的消息数量阈值</string>
     <string name="model_config_collapse">收起</string>
     <string name="model_config_expand">展开</string>
     <string name="model_config_unit_items">条</string>
@@ -9411,7 +9411,7 @@
     <string name="model_workspace_summary_threshold_error">请输入大于 0 且小于 100 的总结触发比例</string>
     <string name="model_workspace_summary_context_limit">上下文长度不能超过最大上下文长度</string>
     <string name="model_workspace_summary_history_error">历史媒体保留回合数请输入非负整数</string>
-    <string name="model_workspace_summary_history_scope">全局设置：历史媒体保留对所有模型配置生效</string>
+    <string name="model_workspace_summary_history_scope">全局设置：仅限制重新发送给模型的历史图片和音视频，不删除聊天记录或本地附件。</string>
     <string name="model_workspace_summary_reset_history">恢复历史媒体默认值</string>
     <string name="model_workspace_summary_model">总结使用的模型</string>
     <string name="model_workspace_summary_model_scope">此项为全局功能分配，修改后应用于所有配置</string>

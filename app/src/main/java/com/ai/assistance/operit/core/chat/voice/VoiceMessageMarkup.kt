@@ -12,6 +12,7 @@ data class VoiceMessageData(
     val waveform: List<Float>,
     val transcript: String,
     val inputMode: VoiceInputMode = VoiceInputMode.TEXT,
+    val transcriptResolved: Boolean = false,
 )
 
 object VoiceMessageMarkup {
@@ -29,7 +30,9 @@ object VoiceMessageMarkup {
         val waves = message.waveform.joinToString(",") { ((it.coerceIn(0f, 1f) * 100).roundToInt() / 100f).toString() }
         val version = if (message.inputMode == VoiceInputMode.AUDIO) "2" else "1"
         val input = if (message.inputMode == VoiceInputMode.AUDIO) " input=\"audio\"" else ""
-        return "<voice_bar version=\"$version\"$input duration_ms=\"${message.durationMs}\" waveform=\"$waves\">" +
+        require(!message.transcriptResolved || (message.inputMode == VoiceInputMode.AUDIO && message.transcript.isNotBlank()))
+        val resolved = if (message.transcriptResolved) " resolved=\"true\"" else ""
+        return "<voice_bar version=\"$version\"$input$resolved duration_ms=\"${message.durationMs}\" waveform=\"$waves\">" +
             "<attachment id=\"${escape(message.attachment.filePath)}\" filename=\"${escape(message.attachment.fileName)}\" type=\"audio/wav\" size=\"${message.attachment.fileSize}\" />" +
             "<transcript>${escape(message.transcript)}</transcript></voice_bar>"
     }
@@ -62,9 +65,15 @@ object VoiceMessageMarkup {
         val textMatch = transcript.findAll(match.value).singleOrNull() ?: return null
         val text = unescape(textMatch.groupValues[1])
         if (inputMode == VoiceInputMode.TEXT && text.isBlank()) return null
+        val resolved = when (attrs["resolved"]) {
+            null -> false
+            "true" -> true
+            else -> return null
+        }
+        if (resolved && (inputMode != VoiceInputMode.AUDIO || text.isBlank())) return null
         val body = match.value.substringAfter('>').substringBeforeLast("</voice_bar>")
         if (body.replace(audio, "").replace(textMatch.value, "").isNotBlank()) return null
-        return VoiceMessageData(AttachmentInfo(path, name, "audio/wav", size), duration, waves, text, inputMode)
+        return VoiceMessageData(AttachmentInfo(path, name, "audio/wav", size), duration, waves, text, inputMode, resolved)
     }
 
     /** 聊天消息可以在语音正文之外附带系统生成的工作区等元数据。 */
@@ -96,11 +105,11 @@ object VoiceMessageMarkup {
         message.transcript.ifBlank { "[Voice message]" }
     }
 
-    /** 已被编辑或解析过的消息不覆盖，录音理解结果只回写对应的原始语音。 */
+    /** 理解文字与录音并存；独立标记已解析结果，避免把钩子补充文字误当成转写缓存。 */
     fun withResolvedTranscript(value: String, source: VoiceMessageData, text: String): String = block.replace(value) { match ->
         val message = parse(match.value)
         if (message == source && message.inputMode == VoiceInputMode.AUDIO) {
-            encode(message.copy(transcript = text, inputMode = VoiceInputMode.TEXT))
+            encode(message.copy(transcript = text, transcriptResolved = true))
         } else {
             match.value
         }

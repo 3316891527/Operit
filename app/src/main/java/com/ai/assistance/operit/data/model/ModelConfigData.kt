@@ -104,6 +104,7 @@ object ModelConfigDefaults {
         const val DEFAULT_ENABLE_SUMMARY = true
         const val DEFAULT_ENABLE_SUMMARY_BY_MESSAGE_COUNT = true
         const val DEFAULT_SUMMARY_MESSAGE_COUNT_THRESHOLD = 16
+        const val MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD = 50
 }
 
 data class SummarySectionConfig(

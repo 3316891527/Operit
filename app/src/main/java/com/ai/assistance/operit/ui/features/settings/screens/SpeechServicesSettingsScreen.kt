@@ -47,7 +47,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
+import com.ai.assistance.operit.ui.components.slider.WorkbenchSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -553,7 +553,7 @@ fun SpeechServicesSettingsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                Slider(
+                                WorkbenchSlider(
                                     value = ttsSpeechRateInput,
                                     onValueChange = { ttsSpeechRateInput = it },
                                     valueRange = 0.5f..2.0f,
@@ -566,7 +566,7 @@ fun SpeechServicesSettingsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                Slider(
+                                WorkbenchSlider(
                                     value = ttsPitchInput,
                                     onValueChange = { ttsPitchInput = it },
                                     valueRange = 0.5f..2.0f,

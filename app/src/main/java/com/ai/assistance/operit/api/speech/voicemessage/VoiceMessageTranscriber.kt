@@ -5,6 +5,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.speech.SpeechServiceFactory
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.data.model.AttachmentInfo
+import com.ai.assistance.operit.util.LocaleUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -32,7 +33,8 @@ internal suspend fun transcribeVoiceMessage(context: Context, recording: Recorde
                 context.getString(R.string.voice_message_stt_failed) + " " + service.recognitionErrorFlow.value.message
             }
             try {
-                withTimeout(60000L) { service.recognize(samples, "zh-CN") }
+                val locale = LocaleUtils.getLocalizedContext(context).resources.configuration.locales[0]
+                withTimeout(60000L) { service.recognize(samples, locale.toLanguageTag()) }
             } catch (error: kotlinx.coroutines.TimeoutCancellationException) {
                 throw IllegalStateException(context.getString(R.string.voice_message_stt_failed), error)
             }

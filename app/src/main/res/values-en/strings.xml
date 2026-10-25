@@ -926,7 +926,7 @@
     <string name="settings_enable_summary_by_message_count">Trigger summary by message count</string>
     <string name="settings_enable_summary_by_message_count_desc">Trigger summary when new message count reaches threshold</string>
     <string name="settings_summary_message_count_threshold">Message Count Threshold</string>
-    <string name="settings_summary_message_count_threshold_subtitle">Number of new messages to trigger summary (1-20)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">New messages before a summary is triggered (1–50)</string>
     <string name="settings_summary_custom_rules">Custom Summary Rules</string>
     <string name="settings_summary_custom_rules_desc">Extra rules sent when summarizing the conversation. Leave blank for none</string>
     <string name="settings_summary_previous_review">Summarize Previous Summary</string>
@@ -6835,7 +6835,7 @@
     <string name="model_config_error_valid_max_context_length">Please enter a valid max context length</string>
     <string name="model_config_error_save_failed">Save failed</string>
     <string name="model_config_error_summary_threshold_range">Please enter a summary trigger threshold between 0-1</string>
-    <string name="model_config_error_valid_message_count">Please enter a valid message count threshold</string>
+    <string name="model_config_error_valid_message_count">Enter a message count threshold from 1 to 50</string>
     <string name="model_config_collapse">Collapse</string>
     <string name="model_config_expand">Expand</string>
     <string name="model_config_unit_items">items</string>
@@ -9412,7 +9412,7 @@
     <string name="model_workspace_summary_threshold_error">Enter a summary threshold greater than 0 and less than 100</string>
     <string name="model_workspace_summary_context_limit">Context length must not exceed the maximum context length</string>
     <string name="model_workspace_summary_history_error">Enter non-negative whole numbers for history media retention</string>
-    <string name="model_workspace_summary_history_scope">Global setting: history media retention applies to every configuration</string>
+    <string name="model_workspace_summary_history_scope">Global setting: only limits historical images, audio and video sent to the model again. It does not delete chat records or local attachments.</string>
     <string name="model_workspace_summary_reset_history">Reset history media retention</string>
     <string name="model_workspace_summary_model">Model used for summaries</string>
     <string name="model_workspace_summary_model_scope">This function assignment applies to every configuration</string>

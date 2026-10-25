@@ -69,6 +69,7 @@ fun VoiceMessagePlayer(
     var preparing by remember(filePath) { mutableStateOf(false) }
     var position by remember(filePath) { mutableStateOf(0L) }
     var error by remember(filePath) { mutableStateOf(false) }
+    var expired by remember(filePath) { mutableStateOf(false) }
     var showText by remember(filePath) { mutableStateOf(false) }
     val stop = remember(filePath) {
         {
@@ -98,7 +99,8 @@ fun VoiceMessagePlayer(
         if (preparing) return
         if (playing) { player?.pause(); return }
         error = false
-        if (!File(filePath).isFile) { error = true; return }
+        expired = false
+        if (!File(filePath).isFile) { expired = true; error = true; return }
         if (player == null) {
             VoicePlaybackCoordinator.stopCurrent?.invoke()
             VoicePlaybackCoordinator.stopCurrent = stop
@@ -117,6 +119,7 @@ fun VoiceMessagePlayer(
                 }
                 override fun onPlayerError(playbackError: PlaybackException) {
                     AppLogger.e("VoiceMessagePlayer", "播放语音消息失败", playbackError)
+                    expired = !File(filePath).isFile
                     error = true
                     stop()
                 }
@@ -168,7 +171,7 @@ fun VoiceMessagePlayer(
                     }
                 }
             }
-            if (error) Text(stringResource(R.string.voice_message_play_failed), color = MaterialTheme.colorScheme.error,
+            if (error) Text(stringResource(if (expired) R.string.voice_message_expired else R.string.voice_message_play_failed), color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
             if (showText && transcript.isNotBlank()) {
                 Column(Modifier.padding(top = 6.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -10,7 +10,8 @@ class SentImageSourcesTest {
     @Test fun sixUploadedImagesProduceSixItemsInsteadOfTwelveLabels() {
         val sources = sentImageSources((1..6).joinToString(" ", transform = ::linkedImage))
         assertEquals(6, sources.size)
-        assertEquals((1..6).map { "pool-$it" }, sources.map { it.poolId })
+        assertEquals((1..6).map { "/image-$it.jpg" }, sources.map { it.id })
+        assertTrue(sources.all { it.poolId == null })
         assertEquals("image-1.jpg", sources.first().title)
     }
     @Test fun legacyImageLinkWithoutAttachmentIsRetained() {
