@@ -2,7 +2,7 @@
 fork: https://github.com/3316891527/Operit
 branch: fix/interface-media-polish
 base: dev
-status: READY_FOR_REVIEW
+status: READY_FOR_RELEASE
 ---
 
 # 界面与媒体交互修复
@@ -45,3 +45,7 @@ status: READY_FOR_REVIEW
 维护者已安装前一测试包，反馈原九项验收合格，语音条能正确生成附件。本轮只调整过期图片展示：同一消息合并成一个标签，右上角显示过期张数，仍可用的图片继续提供预览。
 
 后续开发测试统一派发 `assembleDebug`，`publish_release=false`。测试应用使用现有的 `com.ai.assistance.operit.debug` 包名和 `Operit Debug` 名称，与正式版并存。
+
+## 1.12.2+12 发行准备
+
+维护者要求合并 PR #37 到 dev，再同步 main 并正式发布。应用版本统一更新为 `1.12.2+12 / 68`，发行流程与已确认的仓库验证记录见 [发布同步](../../chore/release-1.12.2-plus-12/index.md)。
