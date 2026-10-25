@@ -94,6 +94,7 @@ Debug 提交／产物：________
 - TokenUsageBreakdownTest：六项，覆盖旧总额、实际请求分类、多次累计与序列化、重复与迟到保存、清零、新总额校准
 - ChatTokenUsageMigrationTest：一项，验证迁移保留旧总额且不捏造历史分类
 - IntegratedDatabaseMigrationTest：保留两项整链用例并延伸至 29
+- ChatHistoryCsvTest：表头 53 列且列名唯一，包含累计明细列；旧表头缺少该列仍可读
 - ChatArchivePersistenceTest：扩展既有实体／JSON 往返、旧备份兼容和 CSV 转义用例以覆盖明细字段
 
 运行状态：本地未运行，仓库工作流结果待完成。直接音频请求、真实录音识别准确率和 Android 界面呈现仍需对应设备条件验证。
