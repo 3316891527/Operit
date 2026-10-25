@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.updates
 import com.ai.assistance.operit.data.updates.patch.resolvePatchPath
+import com.ai.assistance.operit.data.updates.patch.requirePatchByteRange
 
 import android.content.Context
 import android.content.Intent
@@ -558,7 +559,7 @@ object PatchUpdateInstaller {
             if (key == "GitHub") metaUrl else metaMirrors[key] ?: metaUrl
         }
 
-        val patchResults = GithubReleaseUtil.probeMirrorUrls(patchProbeMap, timeoutMs = PROBE_TIMEOUT_MS)
+        val patchResults = GithubReleaseUtil.probeMirrorUrls(patchProbeMap, timeoutMs = PROBE_TIMEOUT_MS, requireByteRange = true)
         val metaResults = GithubReleaseUtil.probeMirrorUrls(metaProbeMap, timeoutMs = PROBE_TIMEOUT_MS)
 
         var completed = 0
@@ -729,8 +730,7 @@ object PatchUpdateInstaller {
         label: String,
         onEvent: (ProgressEvent) -> Unit
     ) {
-        val totalBytes = fetchContentLength(url)
-        verifyRangeDownloadSupported(url)
+        val totalBytes = fetchPatchByteLength(url)
 
         out.parentFile?.mkdirs()
         if (out.exists()) {
@@ -787,7 +787,8 @@ object PatchUpdateInstaller {
                             out = out,
                             start = start,
                             end = end,
-                            downloadedBytes = downloadedBytes
+                            downloadedBytes = downloadedBytes,
+                            expectedTotal = totalBytes,
                         )
                     }
                 }.awaitAll()
@@ -807,30 +808,14 @@ object PatchUpdateInstaller {
         )
     }
 
-    private fun fetchContentLength(url: String): Long {
-        val req = Request.Builder().url(url).build()
-        httpClient.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) {
-                throw IllegalStateException("HTTP ${resp.code}: ${resp.message}")
-            }
-            val body = resp.body ?: throw IllegalStateException("Empty response body")
-            val totalBytes = body.contentLength()
-            if (totalBytes <= 0L) {
-                throw IllegalStateException("Server must provide a valid Content-Length for 6-thread patch download")
-            }
-            return totalBytes
-        }
-    }
-
-    private fun verifyRangeDownloadSupported(url: String) {
+    private fun fetchPatchByteLength(url: String): Long {
         val req = Request.Builder()
             .url(url)
-            .addHeader("Range", "bytes=0-0")
+            .header("Range", "bytes=0-0")
+            .header("Accept-Encoding", "identity")
             .build()
         httpClient.newCall(req).execute().use { resp ->
-            if (resp.code != 206) {
-                throw IllegalStateException("Server does not support HTTP Range (required for 6-thread patch download)")
-            }
+            return requirePatchByteRange(resp.code, resp.header("Content-Range"), 0L, 0L).total
         }
     }
 
@@ -855,30 +840,34 @@ object PatchUpdateInstaller {
         out: File,
         start: Long,
         end: Long,
-        downloadedBytes: AtomicLong
+        downloadedBytes: AtomicLong,
+        expectedTotal: Long,
     ) {
         val req = Request.Builder()
             .url(url)
             .addHeader("Range", "bytes=$start-$end")
+            .header("Accept-Encoding", "identity")
             .build()
 
         httpClient.newCall(req).execute().use { resp ->
-            if (resp.code != 206) {
-                throw IllegalStateException("HTTP ${resp.code}: Range request failed for bytes=$start-$end")
-            }
+            val range = requirePatchByteRange(resp.code, resp.header("Content-Range"), start, end, expectedTotal)
             val body = resp.body ?: throw IllegalStateException("Empty response body for bytes=$start-$end")
 
             RandomAccessFile(out, "rw").use { raf ->
                 raf.seek(start)
                 val buffer = ByteArray(128 * 1024)
                 body.byteStream().use { ins ->
-                    while (true) {
+                    var remaining = range.length
+                    while (remaining > 0L) {
                         coroutineContext.ensureActive()
-                        val n = ins.read(buffer)
-                        if (n <= 0) break
+                        val n = ins.read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
+                        if (n < 0) throw java.io.IOException("Patch byte range ended before all bytes arrived")
+                        if (n == 0) continue
                         raf.write(buffer, 0, n)
+                        remaining -= n
                         downloadedBytes.addAndGet(n.toLong())
                     }
+                    if (ins.read() != -1) throw java.io.IOException("Patch byte range contains extra bytes")
                 }
             }
         }
