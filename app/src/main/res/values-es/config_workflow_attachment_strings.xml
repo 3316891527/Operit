@@ -32,5 +32,6 @@
     <string name="workflow_issue_runtime">El entorno de ejecución no está listo. Inténtalo de nuevo más tarde.</string>
     <string name="workflow_issue_unknown">El nodo no pudo completar la acción. Comprueba sus entradas y herramientas.</string>
     <string name="sent_image_count">%1$d imágenes</string>
+    <string name="sent_image_expired_count">%1$d imágenes caducadas</string>
     <string name="workflow_run_failed_nodes">Nodos con error: %1$s</string>
 </resources>

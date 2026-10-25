@@ -32,5 +32,6 @@
     <string name="workflow_issue_runtime">O ambiente de execução não está pronto. Tente novamente em instantes.</string>
     <string name="workflow_issue_unknown">O nó não concluiu a ação. Verifique as entradas e as configurações da ferramenta.</string>
     <string name="sent_image_count">%1$d imagens</string>
+    <string name="sent_image_expired_count">%1$d imagens expiradas</string>
     <string name="workflow_run_failed_nodes">Nós com falha: %1$s</string>
 </resources>

@@ -32,5 +32,6 @@
     <string name="workflow_issue_runtime">The execution environment is not ready. Try again shortly.</string>
     <string name="workflow_issue_unknown">The node could not complete its action. Check its inputs and tool settings.</string>
     <string name="sent_image_count">%1$d images</string>
+    <string name="sent_image_expired_count">%1$d images expired</string>
     <string name="workflow_run_failed_nodes">Failed nodes: %1$s</string>
 </resources>

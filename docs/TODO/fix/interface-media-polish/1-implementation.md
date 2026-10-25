@@ -64,3 +64,11 @@
 九种语言的 `chat_generated_at` 统一改为 `time: %1$s`，继续使用消息完成时间及既有日期格式。媒体绑定和特殊文件名回归样例显式提供 `AttachmentInfo.fileSize` 必填元数据。
 
 [DONE]
+
+## 7. 过期图片合并标签
+
+`SentImageGroup` 按同一条用户消息统计原文件缺失的图片，使用 `ExpiredImageGroupTag` 显示一个紧凑标签，不再逐个列出失效文件名。标签右上角以小字显示过期数量，点击提示“文件已不存在”。气泡和光标样式共用该组件，仍存在的图片继续显示原图片组；尚存但无法解码的图片继续使用无法预览提示，避免误报为文件缺失。过期数量提供九种语言资源。
+
+后续测试包统一使用现有 Debug 变体，应用 ID 为 `com.ai.assistance.operit.debug`，不再派发 Release 变体作为开发测试包。
+
+[DONE]

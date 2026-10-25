@@ -32,5 +32,6 @@
     <string name="workflow_issue_runtime">실행 환경이 준비되지 않았습니다. 잠시 후 다시 시도하세요.</string>
     <string name="workflow_issue_unknown">노드 작업을 완료하지 못했습니다. 입력과 도구 설정을 확인하세요.</string>
     <string name="sent_image_count">이미지 %1$d개</string>
+    <string name="sent_image_expired_count">이미지 %1$d개 만료됨</string>
     <string name="workflow_run_failed_nodes">실패한 노드: %1$s</string>
 </resources>

@@ -32,5 +32,6 @@
     <string name="workflow_issue_runtime">Lingkungan eksekusi belum siap. Coba lagi nanti.</string>
     <string name="workflow_issue_unknown">Simpul tidak dapat menyelesaikan tindakan. Periksa masukan dan pengaturan alat.</string>
     <string name="sent_image_count">%1$d gambar</string>
+    <string name="sent_image_expired_count">%1$d gambar kedaluwarsa</string>
     <string name="workflow_run_failed_nodes">Simpul gagal: %1$s</string>
 </resources>

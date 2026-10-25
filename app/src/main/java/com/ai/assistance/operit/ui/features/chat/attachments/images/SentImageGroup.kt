@@ -135,8 +135,13 @@ internal fun SentImageGroup(sources: List<SentMessageImage>, enabled: Boolean, m
                 }
             }
         }
-        state.orEmpty().filter { it.uri == null || it.source.id in failedIds }.forEach { image ->
-            MediaFileUnavailableTag(image.source.title, missing = image.uri == null)
+        // 同一条消息的缺失图片只有一个入口，避免重复列出无法预览的文件名。
+        val expiredCount = state.orEmpty().count { it.uri == null }
+        if (expiredCount > 0) {
+            ExpiredImageGroupTag(count = expiredCount, enabled = enabled)
+        }
+        state.orEmpty().filter { it.uri != null && it.source.id in failedIds }.forEach { image ->
+            MediaFileUnavailableTag(image.source.title, missing = false)
         }
     }
 }
