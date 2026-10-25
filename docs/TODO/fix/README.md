@@ -5,6 +5,7 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [语音条 WebView 挂载焦点修复](toolpkg-webview-focus/index.md) · `toolpkg-webview-focus`
 
 - [模型上下文协议手动启动与元数据兼容](mcp-manual-start/index.md) · `mcp-manual-start`
 - [界面与媒体交互修复](interface-media-polish/index.md) · `interface-media-polish`

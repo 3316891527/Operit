@@ -2218,9 +2218,8 @@ internal fun renderWebViewNode(
     }
 
     DisposableEffect(webView) {
-        webView.post {
-            webView.requestFocus()
-        }
+        // 聊天惰性列表中的 WebView 挂载时不要抢焦点，避免焦点搜索重入子组合测量。
+        // 保留原生可聚焦能力，网页输入仍可由用户交互或显式请求获得焦点。
         val createdState =
             updateStateSnapshot(
                 view = webView,
