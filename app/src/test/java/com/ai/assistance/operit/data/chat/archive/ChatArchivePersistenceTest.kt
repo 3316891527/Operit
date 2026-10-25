@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.chat.archive
 
 import com.ai.assistance.operit.data.converter.ChatHistoryCsv
+import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.data.model.ChatEntity
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.OperitArchivedChat
@@ -66,9 +67,10 @@ class ChatArchivePersistenceTest {
             """{"id":"legacy","title":"旧备份","messages":[],"locked":true,"pinned":true}""",
         ).toChatHistory()
         assertFalse(legacy.archived)
+        assertEquals(null, legacy.usageBreakdownJson)
         assertTrue(legacy.locked)
         assertTrue(legacy.pinned)
-        assertTrue(ChatHistoryCsv.supportsHeader(ChatHistoryCsv.HEADER - "archived"))
+        assertTrue(ChatHistoryCsv.supportsHeader(ChatHistoryCsv.HEADER - setOf("archived", "usage_breakdown_json")))
     }
 
     @Test
@@ -86,6 +88,7 @@ class ChatArchivePersistenceTest {
         assertEquals("folder", chat[header.indexOf("folder_id")])
         assertEquals("Echo", chat[header.indexOf("character_card_name")])
         assertEquals("标题含,逗号", chat[header.indexOf("title")])
+        assertEquals(archivedHistory().usageBreakdownJson, chat[header.indexOf("usage_breakdown_json")])
     }
 
     private fun archivedHistory(): ChatHistory {
@@ -98,6 +101,9 @@ class ChatArchivePersistenceTest {
             updatedAt = date,
             inputTokens = 123,
             outputTokens = 45,
+            usageBreakdownJson = TokenUsageBreakdown(
+                userMessageTokens = 100L, systemPromptTokens = 23L, outputTokens = 45L,
+            ).encode(),
             group = "资料夹",
             displayOrder = -42,
             workspace = "/workspace",

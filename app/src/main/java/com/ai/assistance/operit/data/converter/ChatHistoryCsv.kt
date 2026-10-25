@@ -78,6 +78,7 @@ object ChatHistoryCsv {
         "folder_id",
         "last_used_at",
         "folder_path",
+        "usage_breakdown_json",
     )
 
     private val columnIndex = HEADER.withIndex().associate { it.value to it.index }
@@ -86,6 +87,7 @@ object ChatHistoryCsv {
     fun supportsHeader(header: List<String>): Boolean {
         val optionalColumns = setOf(
             "message_sections", "variant_sections", "folder_id", "last_used_at", "folder_path", "archived",
+            "usage_breakdown_json",
         )
         val requiredColumns = HEADER.filterNot { it in optionalColumns }
         val hasMessageColumns =
@@ -120,6 +122,7 @@ object ChatHistoryCsv {
         put(row, "chat_input_tokens", history.inputTokens.toString())
         put(row, "chat_output_tokens", history.outputTokens.toString())
         put(row, "current_window_size", history.currentWindowSize.toString())
+        put(row, "usage_breakdown_json", history.usageBreakdownJson)
         put(row, "group", history.group)
         put(row, "display_order", history.displayOrder.toString())
         put(row, "workspace", history.workspace)

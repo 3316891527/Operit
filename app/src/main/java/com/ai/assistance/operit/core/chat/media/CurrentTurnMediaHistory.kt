@@ -20,7 +20,7 @@ internal fun currentTurnMediaHistory(
         if (isCurrent) {
             turn
         } else {
-            val text = VoiceMessageMarkup.toModelText(turn.content)
+            val text = VoiceMessageMarkup.toHistoryModelText(turn.content)
             val withoutMedia = MediaLinkParser.removeMediaLinks(MediaLinkParser.removeImageLinks(text))
             if (withoutMedia == turn.content) turn
             else turn.copy(content = withoutMedia.trim().ifBlank { omittedLabel })

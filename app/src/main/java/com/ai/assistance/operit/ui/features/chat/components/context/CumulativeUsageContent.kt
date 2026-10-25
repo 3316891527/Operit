@@ -24,13 +24,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 
 /** 累计用量来自会话计数，不按当前窗口或可见消息重算。 */
 @Composable
-internal fun CumulativeUsageContent(inputTokens: Long, outputTokens: Long) {
-    val total = inputTokens + outputTokens
-    val inputColor = MaterialTheme.colorScheme.primary
-    val outputColor = MaterialTheme.colorScheme.tertiary
+internal fun CumulativeUsageContent(usage: TokenUsageBreakdown) {
+    val total = usage.totalTokens
+    val colors = rememberContextWindowCategoryColors()
+    val tokensByCategory = usage.categoryTokens
+    val categories = listOf(
+        Triple(R.string.context_panel_user_messages, tokensByCategory[0], colors.userMessages),
+        Triple(R.string.context_panel_assistant_messages, tokensByCategory[1], colors.assistantMessages),
+        Triple(R.string.context_panel_tool_results, tokensByCategory[2], colors.toolResults),
+        Triple(R.string.context_panel_system_prompt, tokensByCategory[3], colors.systemPrompt),
+        Triple(R.string.context_panel_resident_tools, tokensByCategory[4], colors.residentTools),
+        Triple(R.string.context_panel_mcp_tools, tokensByCategory[5], colors.mcpTools),
+        Triple(R.string.context_panel_skills, tokensByCategory[6], colors.skills),
+        Triple(R.string.context_panel_summary, tokensByCategory[7], colors.summary),
+        Triple(R.string.context_panel_other, tokensByCategory[8], colors.other),
+    )
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
             stringResource(R.string.context_usage_cumulative_scope),
@@ -56,22 +68,16 @@ internal fun CumulativeUsageContent(inputTokens: Long, outputTokens: Long) {
         ) {
             if (total > 0L) {
                 Row(Modifier.fillMaxSize()) {
-                    if (inputTokens > 0L) {
-                        Box(Modifier.weight(inputTokens.toFloat()).fillMaxHeight().background(inputColor))
-                    }
-                    if (outputTokens > 0L) {
-                        Box(Modifier.weight(outputTokens.toFloat()).fillMaxHeight().background(outputColor))
+                    categories.filter { it.second > 0L }.forEach { (_, tokens, color) ->
+                        Box(Modifier.weight(tokens.toFloat()).fillMaxHeight().background(color))
                     }
                 }
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            CumulativeUsageRow(
-                stringResource(R.string.context_usage_cumulative_input), inputTokens, total, inputColor
-            )
-            CumulativeUsageRow(
-                stringResource(R.string.context_usage_cumulative_output), outputTokens, total, outputColor
-            )
+            categories.forEach { (label, tokens, color) ->
+                CumulativeUsageRow(stringResource(label), tokens, total, color)
+            }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Text(

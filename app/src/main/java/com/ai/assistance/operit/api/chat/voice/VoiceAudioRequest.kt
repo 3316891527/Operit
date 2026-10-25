@@ -8,11 +8,14 @@ import com.ai.assistance.operit.api.speech.voicemessage.RecordedVoiceMessage
 import com.ai.assistance.operit.api.speech.voicemessage.transcribeVoiceMessage
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
+import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
+import com.ai.assistance.operit.core.chat.voice.VoiceAnalysisCodec
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceTextResult
 import com.ai.assistance.operit.core.chat.voice.VoiceTextSource
+import com.ai.assistance.operit.core.chat.voice.additionalRequestContext
 import com.ai.assistance.operit.core.chat.voice.collectVoiceResponse
 import com.ai.assistance.operit.core.chat.voice.resolveVoiceText
 import com.ai.assistance.operit.data.model.FunctionType
@@ -33,17 +36,17 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 
 /** 一次对话请求持有音频副本，直到回复与后续工具轮次全部结束才清理。 */
 internal class VoiceAudioRequest(
     private val context: Context,
     private val services: MultiServiceManager,
-    private val onResolved: suspend (VoiceMessageData, String) -> Unit,
+    private val onResolved: suspend (VoiceMessageData, VoiceAnalysis) -> Unit,
 ) {
     private val mediaByPath = linkedMapOf<String, String>()
     private val nativeEntries = linkedMapOf<String, VoiceMessageData>()
@@ -51,9 +54,9 @@ internal class VoiceAudioRequest(
 
     fun formatForEstimate(value: String, nativeAudio: Boolean): String = VoiceMessageMarkup.rewrite(value) { voice ->
         val input = if (voice.inputMode == VoiceInputMode.AUDIO && nativeAudio && File(voice.attachment.filePath).isFile) {
-            listOf(audioLink(voice), voice.transcript).filter { it.isNotBlank() }.joinToString("\n")
+            listOf(audioLink(voice), voice.transcript, voice.requestContext).filter { it.isNotBlank() }.joinToString("\n")
         } else {
-            voice.transcript.ifBlank { "[Voice message]" }
+            VoiceAnalysis(voice.transcript.ifBlank { "[Voice message]" }, voice.audioContext).toModelText(voice.requestContext)
         }
         if (voice.inputMode == VoiceInputMode.AUDIO) VoiceMessageMarkup.withRequestAttachment(voice, input) else input
     }
@@ -67,7 +70,7 @@ internal class VoiceAudioRequest(
                     val link = audioLink(voice)
                     val input = VoiceMessageMarkup.withRequestAttachment(
                         voice,
-                        listOf(link, voice.transcript).filter { it.isNotBlank() }.joinToString("\n"),
+                        listOf(link, voice.transcript, voice.requestContext).filter { it.isNotBlank() }.joinToString("\n"),
                     )
                     nativeEntries[input] = voice
                     input
@@ -136,21 +139,26 @@ internal class VoiceAudioRequest(
         }
     }
 
-    private suspend fun resolvedInput(voice: VoiceMessageData): String =
-        VoiceMessageMarkup.withRequestAttachment(voice, resolvedVoiceText(voice, resolve(voice).text))
-
-    private fun resolvedVoiceText(voice: VoiceMessageData, text: String): String =
-        listOf(text, voice.transcript).filter { it.isNotBlank() }.distinct().joinToString("\n")
+    private suspend fun resolvedInput(voice: VoiceMessageData): String {
+        val result = resolve(voice)
+        val input = VoiceAnalysis(result.text, result.audioContext).toModelText(voice.additionalRequestContext())
+        return VoiceMessageMarkup.withRequestAttachment(voice, input)
+    }
 
     private suspend fun resolve(voice: VoiceMessageData): VoiceTextResult {
         currentCoroutineContext().ensureActive()
         resolved[voice]?.let { return it }
-        val result = try {
+        var audioContext = ""
+        val textResult = try {
             resolveVoiceText(
                 // 钩子文字不代表已经理解录音，只有持久化标记明确时才复用。
                 cachedTranscript = voice.transcript.takeIf { voice.transcriptResolved },
                 hasAudioModel = { services.hasAudioRecognitionConfigured() },
-                audioModel = { understandAudio(voice) },
+                audioModel = {
+                    val analysis = understandAudio(voice)
+                    audioContext = analysis.audioContext
+                    analysis.transcript
+                },
                 stt = {
                     transcribeVoiceMessage(context, RecordedVoiceMessage(
                         File(voice.attachment.filePath), voice.durationMs, voice.waveform,
@@ -165,14 +173,20 @@ internal class VoiceAudioRequest(
         } catch (error: Exception) {
             throw IOException(context.getString(R.string.voice_message_understanding_failed), error)
         }
-        val savedText = resolvedVoiceText(voice, result.text)
-        if (result.source != VoiceTextSource.CACHED) onResolved(voice, savedText)
+        val result = textResult.copy(audioContext = when (textResult.source) {
+            VoiceTextSource.AUDIO_MODEL -> audioContext
+            VoiceTextSource.CACHED -> voice.audioContext
+            VoiceTextSource.STT -> ""
+        })
+        if (result.source != VoiceTextSource.CACHED) {
+            onResolved(voice, VoiceAnalysis(result.text, result.audioContext))
+        }
         resolved[voice] = result
         AppLogger.d("VoiceAudioRequest", "语音输入处理完成，来源=${result.source}")
         return result
     }
 
-    private suspend fun understandAudio(voice: VoiceMessageData): String {
+    private suspend fun understandAudio(voice: VoiceMessageData): VoiceAnalysis {
         val result = withTimeoutOrNull(60000L) {
             val lease = services.acquireServiceForFunction(FunctionType.AUDIO_RECOGNITION)
             try {
@@ -189,7 +203,7 @@ internal class VoiceAudioRequest(
                     stream = false,
                     availableTools = null,
                 ).collect { content.append(it) }
-                ChatUtils.removeThinkingContent(content.toString()).trim()
+                VoiceAnalysisCodec.decode(ChatUtils.removeThinkingContent(content.toString()).trim())
             } finally {
                 withContext(NonCancellable) { lease.close() }
             }

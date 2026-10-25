@@ -44,6 +44,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
+import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
@@ -61,8 +62,6 @@ private sealed interface ContextWindowLoadState {
 @Composable
 fun ChatContextUsageDialog(actualViewModel: ChatViewModel, onDismiss: () -> Unit) {
     val chatId by actualViewModel.currentChatId.collectAsState()
-    val inputTokens by actualViewModel.inputTokenCount.collectAsState()
-    val outputTokens by actualViewModel.outputTokenCount.collectAsState()
     val perRequestTokens by actualViewModel.perRequestTokenCount.collectAsState()
     val maxWindowSizeInK by actualViewModel.maxWindowSizeInK.collectAsState()
     val summaryThreshold by actualViewModel.summaryTokenThreshold.collectAsState()
@@ -71,6 +70,13 @@ fun ChatContextUsageDialog(actualViewModel: ChatViewModel, onDismiss: () -> Unit
     val isSummarizing by actualViewModel.isSummarizing.collectAsState()
     val isSendTriggeredSummarizing by actualViewModel.isSendTriggeredSummarizing.collectAsState()
     val history by actualViewModel.chatHistory.collectAsState()
+    val chats by actualViewModel.chatHistories.collectAsState()
+    val usageChat = chats.firstOrNull { it.id == chatId }
+    val cumulativeUsage = remember(usageChat) {
+        usageChat?.let { chat -> runCatching {
+            TokenUsageBreakdown.fromStored(chat.usageBreakdownJson, chat.inputTokens, chat.outputTokens)
+        } }
+    }
     val summarizing = isSummarizing || isSendTriggeredSummarizing
     val stableHistory = if (isLoading || summarizing) null else history
     var page by remember(chatId) { mutableStateOf(ContextUsagePage.WINDOW) }
@@ -149,7 +155,12 @@ fun ChatContextUsageDialog(actualViewModel: ChatViewModel, onDismiss: () -> Unit
                             .verticalScroll(rememberScrollState()).padding(top = 16.dp)
                     ) {
                         when (page) {
-                            ContextUsagePage.CUMULATIVE -> CumulativeUsageContent(inputTokens, outputTokens)
+                            ContextUsagePage.CUMULATIVE -> when {
+                                chatId == null -> Text(stringResource(R.string.context_panel_no_conversation))
+                                cumulativeUsage == null -> CircularProgressIndicator()
+                                cumulativeUsage.isFailure -> Text(stringResource(R.string.context_panel_unavailable))
+                                else -> CumulativeUsageContent(cumulativeUsage.getOrThrow())
+                            }
                             ContextUsagePage.WINDOW -> when (val state = loadState) {
                                 ContextWindowLoadState.Loading -> Column(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),

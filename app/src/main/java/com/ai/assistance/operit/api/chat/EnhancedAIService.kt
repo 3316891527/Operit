@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
+import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
@@ -365,7 +367,7 @@ class EnhancedAIService private constructor(context: Context) {
         var stream: Boolean = true,
         var disableWarning: Boolean = false,
         var historyOnly: Boolean = false,
-        var onVoiceMessageResolved: suspend (VoiceMessageData, String) -> Unit = { _, _ -> },
+        var onVoiceMessageResolved: suspend (VoiceMessageData, VoiceAnalysis) -> Unit = { _, _ -> },
     )
 
     // MultiServiceManager 管理不同功能的 AIService 实例
@@ -522,6 +524,7 @@ class EnhancedAIService private constructor(context: Context) {
     // private val conversationHistory = mutableListOf<Pair<String, String>>() // Moved to MessageExecutionContext
     // private val conversationMutex = Mutex() // Moved to MessageExecutionContext
 
+    private var accumulatedUsageBreakdown = TokenUsageBreakdown()
     private var accumulatedInputTokenCount = 0L
     private var accumulatedOutputTokenCount = 0L
     private var accumulatedCachedInputTokenCount = 0L
@@ -1015,6 +1018,7 @@ class EnhancedAIService private constructor(context: Context) {
         // 一次用户消息对应一个权限快照会话，后续工具调用直接复用该结果。
         val permissionSession = toolHandler.beginPermissionSession()
         AppLogger.d(TAG, "sendMessage调用开始: 功能类型=$functionType, 提示词类型=$promptFunctionType")
+        accumulatedUsageBreakdown = TokenUsageBreakdown()
         accumulatedInputTokenCount = 0L
         accumulatedOutputTokenCount = 0L
         accumulatedCachedInputTokenCount = 0L
@@ -1205,9 +1209,11 @@ class EnhancedAIService private constructor(context: Context) {
                     // 使用新的Stream API
                     AppLogger.d(TAG, "sendMessage请求前准备耗时: ${tAfterGetTools - startTime}ms, 流式输出: $stream")
                     val requestStartTime = messageTimingNow()
+                    var usageRequestHistory = requestHistory
                     val responseStream = voiceAudioRequest.send(
                         history = requestHistory,
                         request = { voiceRequestHistory ->
+                            usageRequestHistory = voiceRequestHistory
                             serviceForFunction.sendMessage(
                                     context = this@EnhancedAIService.context,
                                     chatHistory = voiceRequestHistory,
@@ -1340,6 +1346,9 @@ class EnhancedAIService private constructor(context: Context) {
                     val inputTokens = serviceForFunction.inputTokenCount
                     val cachedInputTokens = serviceForFunction.cachedInputTokenCount
                     val outputTokens = serviceForFunction.outputTokenCount
+                    accumulatedUsageBreakdown += TokenUsageBreakdown.fromRequest(
+                        RequestWindowSnapshot(inputTokens, usageRequestHistory, availableTools), outputTokens,
+                    )
                     accumulatedInputTokenCount += inputTokens
                     accumulatedOutputTokenCount += outputTokens
                     accumulatedCachedInputTokenCount =
@@ -2533,6 +2542,8 @@ class EnhancedAIService private constructor(context: Context) {
         currentRequestOutputTokenCount = 0L
         currentRequestCachedInputTokenCount = 0L
         
+        // 保存此次实际请求，后续工具轮次不能改变已完成请求的分类依据。
+        val usageRequestHistory = currentChatHistory.toList()
         // 使用新的Stream API处理工具执行结果
         withContext(Dispatchers.IO) {
             try {
@@ -2664,6 +2675,9 @@ class EnhancedAIService private constructor(context: Context) {
                 val inputTokens = serviceForFunction.inputTokenCount
                 val cachedInputTokens = serviceForFunction.cachedInputTokenCount
                 val outputTokens = serviceForFunction.outputTokenCount
+                accumulatedUsageBreakdown += TokenUsageBreakdown.fromRequest(
+                    RequestWindowSnapshot(inputTokens, usageRequestHistory, availableTools), outputTokens,
+                )
                 accumulatedInputTokenCount += inputTokens
                 accumulatedOutputTokenCount += outputTokens
                 accumulatedCachedInputTokenCount =
@@ -2727,6 +2741,10 @@ class EnhancedAIService private constructor(context: Context) {
             }
         }
     }
+    /** 本轮各次请求的分类累计，按现有输入和输出总额校准。 */
+    fun getCurrentTurnUsageBreakdown(): TokenUsageBreakdown =
+        accumulatedUsageBreakdown.withTotals(getCurrentInputTokenCount(), getCurrentOutputTokenCount())
+
     /**
      * Get the current input token count from the last API call
      * @return The number of input tokens used in the most recent request
@@ -3085,6 +3103,7 @@ class EnhancedAIService private constructor(context: Context) {
 
         // Reset per-request token counts
         _perRequestTokenCounts.value = null
+        accumulatedUsageBreakdown = TokenUsageBreakdown()
         accumulatedInputTokenCount = 0L
         accumulatedOutputTokenCount = 0L
         accumulatedCachedInputTokenCount = 0L

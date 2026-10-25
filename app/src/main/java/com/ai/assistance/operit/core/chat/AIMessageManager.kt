@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat
 
+import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.media.currentTurnMediaHistory
 import com.ai.assistance.operit.core.chat.media.mediaAttachmentMarkup
@@ -347,7 +348,7 @@ object AIMessageManager {
         memorySpaceIdOverride: String? = null,
         disableWarning: Boolean = false,
         historyOnly: Boolean = false,
-        onVoiceMessageResolved: suspend (VoiceMessageData, String) -> Unit = { _, _ -> },
+        onVoiceMessageResolved: suspend (VoiceMessageData, VoiceAnalysis) -> Unit = { _, _ -> },
     ): SharedStream<String> {
         val totalStartTime = messageTimingNow()
         val voiceNormalizedMessage = VoiceMessageMarkup.toRequestContent(messageContent)
