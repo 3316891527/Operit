@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.common.markdown
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.ai.assistance.operit.core.chat.protocol.protocolMetaDisplayText
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.data.model.MessageSectionCodec
@@ -24,7 +25,7 @@ internal suspend fun parseMessageSectionsToNodes(
     val nodes = mutableListOf<MarkdownNode>()
     for (section in sections) {
         when (section) {
-            is MessageSection.Text -> nodes.addAll(parseText(section.content))
+            is MessageSection.Text -> nodes.addAll(parseText(protocolMetaDisplayText(section.content)))
             is MessageSection.Protocol -> Unit
             else -> nodes.add(
                 MarkdownNode(

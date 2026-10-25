@@ -6,6 +6,7 @@
 
 ## 计划索引
 
+- [流式协议元数据隐藏](streaming-protocol-meta/index.md) · `streaming-protocol-meta`
 - [模型上下文协议手动启动与元数据兼容](mcp-manual-start/index.md) · `mcp-manual-start`
 - [界面与媒体交互修复](interface-media-polish/index.md) · `interface-media-polish`
 
