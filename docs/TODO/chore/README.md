@@ -6,6 +6,7 @@
 
 ## 计划索引
 
+- [1.12.2+13 发布同步](release-1.12.2-plus-13/index.md)
 - [聊天体验统一验收与发行准备](chat-experience-release/index.md) · `chat-experience-release`
 - [DeepSeek Provider 内部 Responses 路由](deepseek_provider_internal_responses_20260827/index.md) · `deepseek_provider_internal_responses_20260827`
 - [依赖安全更新](dependency_security_updates/index.md) · `dependency_security_updates`
