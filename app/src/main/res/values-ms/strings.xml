@@ -8707,7 +8707,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="translation_language_romanian">bahasa Romania</string>
     <string name="translation_language_japanese">Jepun</string>
     <string name="translation_retry_error_status">Permintaan terjemahan gagal (sedang mencuba semula %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Dijana dalam %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Padam</string>
     <string name="resource_delete_title">Padamkan sumber tempatan</string>
     <string name="resource_delete_confirm">Padamkan sumber tempatan \"%1$s\"? Jika anda perlu memuat turun semula atau mengimportnya kemudian, sandaran ZIP yang telah dieksport ke storan kongsi akan dikekalkan.</string>

@@ -144,6 +144,13 @@ object MediaLinkParser {
             if (match.groupValues[1].equals("image", ignoreCase = true)) "" else match.value
         }
 
+    /** 只移除已确认可用的图片引用，源码中的示例标签继续作为工具文本保留。 */
+    fun removeImageLinks(message: String, imageIds: Set<String>): String =
+        LINK_PATTERN.replace(message) { match ->
+            if (match.groupValues[1].equals("image", ignoreCase = true) && match.groupValues[2] in imageIds) ""
+            else match.value
+        }
+
     fun replaceImageLinks(message: String, replacer: (id: String) -> String): String =
         LINK_PATTERN.replace(message) { match ->
             if (!match.groupValues[1].equals("image", ignoreCase = true)) {

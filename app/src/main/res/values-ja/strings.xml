@@ -8555,7 +8555,7 @@
     <string name="translation_language_romanian">ルーマニア語</string>
     <string name="translation_language_japanese">日本語</string>
     <string name="translation_retry_error_status">翻訳リクエストに失敗しました（再試行 %1$d/%2$d）：%3$s</string>
-    <string name="chat_generated_at">生成日時：%1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete_title">ローカルのリソースを削除</string>
     <string name="resource_delete_confirm">「%1$s」のローカルリソースを削除しますか？次回は再ダウンロードかインポートが必要です。共有ストレージにエクスポート済みの ZIP は保持します。</string>
     <string name="resource_delete_ubuntu_confirm">すべてのターミナルセッションを終了し、Ubuntu 環境、インストールしたソフトウェアとファイル、アプリ内のインストールアーカイブを削除します。削除後は未インストールとなり、リソースを再ダウンロード・インポートできます。エクスポート済みの ZIP は保持します。続行しますか？</string>

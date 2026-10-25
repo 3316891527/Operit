@@ -8557,7 +8557,7 @@
     <string name="translation_language_romanian">루마니아어</string>
     <string name="translation_language_japanese">일본어</string>
     <string name="translation_retry_error_status">번역 요청 실패(현재 %1$d/%2$d 재시도 중): %3$s</string>
-    <string name="chat_generated_at">%1$s에서 생성됨</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">삭제</string>
     <string name="resource_delete_title">로컬 리소스 삭제</string>
     <string name="resource_delete_confirm">\"%1$s\"의 로컬 리소스를 삭제하시겠습니까? 나중에 다시 다운로드하거나 가져와야 하는 경우 공유 저장소로 내보낸 ZIP 백업은 유지됩니다.</string>

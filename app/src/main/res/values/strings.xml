@@ -9064,7 +9064,7 @@
     <string name="translation_language_japanese">日语</string>
     <string name="translation_retry_error_status">翻译请求失败（当前重试 %1$d/%2$d）：%3$s</string>
 
-    <string name="chat_generated_at">生成于 %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">删除</string>
     <string name="resource_delete_title">删除本地资源</string>
     <string name="resource_delete_confirm">删除“%1$s”的本地资源？之后需要重新下载或导入，已导出到共享存储的 ZIP 备份会保留。</string>

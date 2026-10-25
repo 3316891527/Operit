@@ -9301,7 +9301,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="translation_language_romanian">română</string>
     <string name="translation_language_japanese">japoneză</string>
     <string name="translation_retry_error_status">Solicitarea de traducere a eșuat (în prezent se reîncercă %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Generat în %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Ștergeți</string>
     <string name="resource_delete_title">Ștergeți resursele locale</string>
     <string name="resource_delete_confirm">Ștergeți resursa locală a „%1$s”? Dacă trebuie să îl redescărcați sau să îl importați mai târziu, copia de rezervă ZIP care a fost exportată în spațiul de stocare partajat va fi păstrată.</string>

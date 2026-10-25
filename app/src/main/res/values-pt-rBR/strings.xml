@@ -8548,7 +8548,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="translation_language_romanian">Romeno</string>
     <string name="translation_language_japanese">Japonês</string>
     <string name="translation_retry_error_status">Falha na solicitação de tradução (atualmente tentando novamente %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Gerado em %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Excluir</string>
     <string name="resource_delete_title">Excluir recursos locais</string>
     <string name="resource_delete_confirm">Excluir o recurso local de \"%1$s\"? Se você precisar baixá-lo novamente ou importá-lo posteriormente, o backup ZIP que foi exportado para armazenamento compartilhado será mantido.</string>

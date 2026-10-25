@@ -8776,7 +8776,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="translation_language_romanian">rumano</string>
     <string name="translation_language_japanese">japonés</string>
     <string name="translation_retry_error_status">Error en la solicitud de traducción (actualmente reintentando %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Generado en %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Eliminar</string>
     <string name="resource_delete_title">Eliminar recursos locales</string>
     <string name="resource_delete_confirm">¿Eliminar el recurso local de \"%1$s\"? Si necesita volver a descargarlo o importarlo más tarde, se conservará la copia de seguridad ZIP que se exportó al almacenamiento compartido.</string>

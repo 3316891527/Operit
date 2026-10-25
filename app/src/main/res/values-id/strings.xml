@@ -8708,7 +8708,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="translation_language_romanian">Rumania</string>
     <string name="translation_language_japanese">Jepang</string>
     <string name="translation_retry_error_status">Permintaan terjemahan gagal (saat ini mencoba kembali %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Dihasilkan di %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Hapus</string>
     <string name="resource_delete_title">Hapus sumber daya lokal</string>
     <string name="resource_delete_confirm">Hapus sumber daya lokal \"%1$s\"? Jika Anda perlu mengunduh ulang atau mengimpornya nanti, cadangan ZIP yang telah diekspor ke penyimpanan bersama akan disimpan.</string>

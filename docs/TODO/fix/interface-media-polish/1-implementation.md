@@ -56,3 +56,11 @@
 语音请求显式导入 `VoiceTextSource`，使已解析结果分支使用正确的来源类型。记忆库在 `BoxWithConstraints` 接收器内先计算控制区高度，再传给内部 `Column`，避免 Compose DSL 接收器屏蔽外层 `maxHeight` 导致 Kotlin 编译失败。
 
 [DONE]
+
+## 6. 工具图片引用与时间提示
+
+`ConversationMarkupManager` 抽取工具结果图片前核对对应图片池数据，只将可用引用移出工具正文。`MediaLinkParser` 支持按指定 ID 集合移除图片链接，未注册的源码示例保持原样，避免被当成真实图片单独显示；真实图片继续输出一次，纯文字及其他媒体保持原有处理。
+
+九种语言的 `chat_generated_at` 统一改为 `time: %1$s`，继续使用消息完成时间及既有日期格式。媒体绑定和特殊文件名回归样例显式提供 `AttachmentInfo.fileSize` 必填元数据。
+
+[DONE]

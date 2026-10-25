@@ -31,8 +31,8 @@ class MediaAttachmentBindingTest {
     }
 
     @Test fun unrelatedTextOrDifferentMediaTypeDoesNotCreateBinding() {
-        val video = mediaAttachmentMarkup(AttachmentInfo("/v.mp4", "v.mp4", "video/mp4"))
-        val audio = mediaAttachmentMarkup(AttachmentInfo("/a.wav", "a.wav", "audio/wav"))
+        val video = mediaAttachmentMarkup(AttachmentInfo("/v.mp4", "v.mp4", "video/mp4", fileSize = 50000L))
+        val audio = mediaAttachmentMarkup(AttachmentInfo("/a.wav", "a.wav", "audio/wav", fileSize = 32044L))
         assertTrue(MediaLinkParser.extractMediaAttachmentBindings("""<link type="audio" id="a"/>""" + video).isEmpty())
         assertTrue(MediaLinkParser.extractMediaAttachmentBindings("""<link type="audio" id="a"/>说明""" + audio).isEmpty())
     }
@@ -53,7 +53,7 @@ class MediaAttachmentBindingTest {
     }
 
     @Test fun imageBindingUsesDecodedOriginalPath() {
-        val image = AttachmentInfo("/cleanOnExit/a & \"b\".png", "a & \"b\".png", "image/png")
+        val image = AttachmentInfo("/cleanOnExit/a & \"b\".png", "a & \"b\".png", "image/png", fileSize = 1024L)
         val bindings = MediaLinkParser.extractImageAttachmentBindings("""<link type="image" id="image"/>""" + mediaAttachmentMarkup(image))
         assertEquals(mapOf(image.filePath to "image"), bindings)
     }

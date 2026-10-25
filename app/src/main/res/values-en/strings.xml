@@ -9065,7 +9065,7 @@
     <string name="translation_language_japanese">Japanese</string>
     <string name="translation_retry_error_status">Translation request failed (retry %1$d/%2$d): %3$s</string>
 
-    <string name="chat_generated_at">Generated at %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Delete</string>
     <string name="resource_delete_title">Delete local resources</string>
     <string name="resource_delete_confirm">Delete the local resources for “%1$s”? Download or import them again to use them. ZIP backups exported to shared storage will be kept.</string>
