@@ -85,7 +85,8 @@ class OrderedToolResultsTest {
         assertEquals(2, emitted.size)
         assertTrue(batch.results.all { !it.success })
         assertEquals("The tool execution returned no results.", empty.error)
-        assertEquals("partial\nStep error: failed", failed.result.toString())
+        assertEquals("partial", failed.result.toString())
+        assertEquals("<error>failed\n\npartial</error>", content(emitted[1]))
         assertEquals(emitted.joinToString("\n"), batch.message)
     }
 
@@ -118,6 +119,66 @@ class OrderedToolResultsTest {
         val batch = ordered.finish()
         assertEquals(payload, content(emitted.single()))
         assertEquals(payload, content(batch.message))
+    }
+
+    @Test
+    fun `single failed tool publishes its error only once to both histories`() = runBlocking {
+        val message = "params must be a valid JSON object. The target tool was not executed."
+        val finalResult = ToolExecutionManager.aggregateToolResults(
+            "super_admin:terminal",
+            flowOf(ToolResult("super_admin:terminal", false, StringResultData(""), message)),
+        )
+        assertEquals("", finalResult.result.toString())
+        assertEquals(message, finalResult.error)
+        val emitted = mutableListOf<String>()
+        val ordered = OrderedToolResults(1) { emitted.add(it) }
+        ordered.complete(0, finalResult)
+        val batch = ordered.finish()
+        assertEquals("<error>$message</error>", content(emitted.single()))
+        assertEquals(emitted.single(), batch.message)
+    }
+
+    @Test
+    fun `final failure keeps partial output and its distinct diagnostic body`() = runBlocking {
+        val finalResult = ToolExecutionManager.aggregateToolResults(
+            "shell", flowOf(result("progress"), ToolResult("shell", false, StringResultData("stderr: line 9"), "failed")),
+        )
+        val formatted = ConversationMarkupManager.formatToolResultForMessage(finalResult)
+        assertEquals("<error>failed\n\nprogress\nstderr: line 9</error>", content(formatted))
+        assertFalse(finalResult.success)
+    }
+
+    @Test
+    fun `earlier step failure stays separate from the final error`() = runBlocking {
+        val finalResult = ToolExecutionManager.aggregateToolResults(
+            "shell", flowOf(
+                ToolResult("shell", false, StringResultData(""), "first"),
+                result("progress"),
+                ToolResult("shell", false, StringResultData(""), "last"),
+            ),
+        )
+        assertEquals("Step error: first\nprogress", finalResult.result.toString())
+        assertEquals("<error>last\n\nStep error: first\nprogress</error>",
+            content(ConversationMarkupManager.formatToolResultForMessage(finalResult)))
+    }
+
+    @Test
+    fun `successful final result still retains earlier step errors`() = runBlocking {
+        val finalResult = ToolExecutionManager.aggregateToolResults(
+            "shell", flowOf(ToolResult("shell", false, StringResultData(""), "first"), result("done")),
+        )
+        assertTrue(finalResult.success)
+        assertEquals("Step error: first\ndone", finalResult.result.toString())
+        assertEquals(finalResult.result.toString(), content(ConversationMarkupManager.formatToolResultForMessage(finalResult)))
+    }
+
+    @Test
+    fun `failure without an error field retains its existing marker`() = runBlocking {
+        val finalResult = ToolExecutionManager.aggregateToolResults(
+            "shell", flowOf(ToolResult("shell", false, StringResultData(""))),
+        )
+        assertFalse(finalResult.success)
+        assertEquals("Step error: Unknown error", finalResult.result.toString())
     }
 
     private fun result(text: String) = ToolResult("read_file", true, StringResultData(text))

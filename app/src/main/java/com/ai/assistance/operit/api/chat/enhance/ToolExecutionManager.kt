@@ -721,9 +721,14 @@ object ToolExecutionManager {
             )
         }
         val lastResult = collectedResults.last()
-        val combinedResultString = collectedResults.joinToString("\n") { res ->
-            (if (res.success) res.result.toString() else "Step error: ${res.error ?: "Unknown error"}").trim()
-        }.trim()
+        // 最终错误由 error 字段统一展示；正文保留分段输出和前序步骤错误，避免重复。
+        val combinedResultString = collectedResults.mapIndexed { index, res ->
+            if (res.success || (index == collectedResults.lastIndex && !res.error.isNullOrBlank())) {
+                res.result.toString().trim()
+            } else {
+                "Step error: ${res.error ?: "Unknown error"}".trim()
+            }
+        }.filter { it.isNotEmpty() }.joinToString("\n")
         return ToolResult(
             toolName = displayToolName,
             success = lastResult.success,
