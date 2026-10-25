@@ -76,7 +76,7 @@ internal fun SentImageGroup(sources: List<SentMessageImage>, enabled: Boolean, m
             onDismiss = { previewImages = emptyList(); refresh++ },
         )
     }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.End) {
         if (state == null) {
             Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(20.dp))
