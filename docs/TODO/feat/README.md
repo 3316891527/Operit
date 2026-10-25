@@ -81,3 +81,5 @@
 - [记忆空间入口与图谱交互设计](memory-space-design/index.md)
 
 - [语音服务配置交互设计](speech-services-design/index.md)
+
+- [语音服务原生工作区](speech-services-workbench/index.md)：按已选 HTML 设计重构 TTS、STT 和唤醒配置

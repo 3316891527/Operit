@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -31,6 +30,7 @@ import com.ai.assistance.operit.api.speech.SpeechService
 import com.ai.assistance.operit.api.speech.SpeechServiceFactory
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences.SttHttpConfig
 import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.settings.components.speech.workbench.*
 import com.ai.assistance.operit.ui.main.components.LocalIsCurrentScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -167,142 +167,120 @@ fun SpeechRecognitionTestSection(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-    ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.speech_services_test_stt), style = MaterialTheme.typography.titleSmall)
+    var languagePanel by remember(state) { mutableStateOf(false) }
+    SpeechWorkbenchCard(modifier) {
+        Text(stringResource(R.string.speech_workbench_stt_preview_title), style = MaterialTheme.typography.titleSmall)
+        Text(
+            stringResource(R.string.speech_services_test_stt_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (!hasPermission) {
+            Text(stringResource(R.string.microphone_permission_required), style = MaterialTheme.typography.bodyMedium)
+            FilledTonalButton(onClick = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }) {
+                Text(stringResource(R.string.request_microphone_permission))
+            }
+        } else {
+            SpeechWorkbenchRow(
+                title = stringResource(R.string.recognition_language),
+                value = state.language,
+                onClick = { languagePanel = true },
+                enabled = state.initialized && !state.busy && !state.changing,
+            )
+            val recording = state.ownsRecording && state.busy
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.initialized && !state.changing && (!state.busy || state.ownsRecording),
+                onClick = {
+                    val service = state.service ?: return@Button
+                    if (recording) {
+                        state.changing = true
+                        state.commandJob = scope.launch {
+                            try {
+                                if (!service.stopRecognition()) state.error = context.getString(R.string.stop_recognition_error, serviceType.name)
+                            } catch (error: CancellationException) {
+                                throw error
+                            } catch (error: Exception) {
+                                state.error = context.getString(R.string.stop_recognition_error, error.message.orEmpty())
+                                AppLogger.e("SpeechRecognitionTest", "停止识别测试失败", error)
+                            } finally {
+                                state.changing = false
+                                state.updateRecognitionState(service, service.currentState)
+                            }
+                        }
+                    } else {
+                        if (service.isRecognizing || service.currentState == SpeechService.RecognitionState.PREPARING || service.currentState == SpeechService.RecognitionState.PROCESSING) {
+                            state.error = context.getString(R.string.speech_services_test_stt_busy)
+                            return@Button
+                        }
+                        state.error = null
+                        state.text = ""
+                        state.changing = true
+                        state.commandJob = scope.launch {
+                            try {
+                                state.ownsRecording = true
+                                val local = serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN
+                                if (!service.startRecognition(state.language, continuousMode = local, partialResults = local)) {
+                                    state.ownsRecording = false
+                                    state.error = context.getString(R.string.start_recognition_error, serviceType.name)
+                                }
+                            } catch (error: CancellationException) {
+                                throw error
+                            } catch (error: Exception) {
+                                state.error = context.getString(R.string.start_recognition_error, error.message.orEmpty())
+                                AppLogger.e("SpeechRecognitionTest", "启动识别测试失败", error)
+                            } finally {
+                                state.changing = false
+                                state.updateRecognitionState(service, service.currentState)
+                            }
+                        }
+                    }
+                },
+            ) {
+                Icon(if (recording) Icons.Default.Stop else Icons.Default.Mic, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(if (recording) R.string.stop_recognition else R.string.start_recognition))
+            }
             Text(
-                stringResource(R.string.speech_services_test_stt_desc),
+                text = when {
+                    state.busy && !state.ownsRecording -> stringResource(R.string.speech_services_test_stt_busy)
+                    state.busy -> stringResource(R.string.recognizing)
+                    state.initialized -> stringResource(R.string.speech_engine_initialized)
+                    else -> stringResource(R.string.speech_engine_not_initialized)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (!hasPermission) {
-                Text(stringResource(R.string.microphone_permission_required), style = MaterialTheme.typography.bodyMedium)
-                FilledTonalButton(onClick = { permissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }) {
-                    Text(stringResource(R.string.request_microphone_permission))
-                }
-            } else {
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-                    OutlinedTextField(
-                        value = state.language,
-                        onValueChange = {},
-                        readOnly = true,
-                        enabled = state.initialized && !state.busy && !state.changing,
-                        label = { Text(stringResource(R.string.recognition_language)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        state.languages.forEach { language ->
-                            DropdownMenuItem(text = { Text(language) }, onClick = {
-                                state.language = language
-                                expanded = false
-                            })
-                        }
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(
-                        modifier = Modifier.weight(1f),
-                        enabled = state.initialized && !state.busy && !state.changing,
-                        onClick = {
-                            val service = state.service ?: return@FilledTonalButton
-                            if (service.isRecognizing || service.currentState == SpeechService.RecognitionState.PREPARING || service.currentState == SpeechService.RecognitionState.PROCESSING) {
-                                state.error = context.getString(R.string.speech_services_test_stt_busy)
-                                return@FilledTonalButton
-                            }
-                            state.error = null
-                            state.text = ""
-                            state.changing = true
-                            state.commandJob = scope.launch {
-                                try {
-                                    state.ownsRecording = true
-                                    val local = serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN
-                                    if (!service.startRecognition(state.language, continuousMode = local, partialResults = local)) {
-                                        state.ownsRecording = false
-                                        state.error = context.getString(R.string.start_recognition_error, serviceType.name)
-                                    }
-                                } catch (error: CancellationException) {
-                                    throw error
-                                } catch (error: Exception) {
-                                    state.error = context.getString(R.string.start_recognition_error, error.message.orEmpty())
-                                    AppLogger.e("SpeechRecognitionTest", "启动识别测试失败", error)
-                                } finally {
-                                    state.changing = false
-                                    state.updateRecognitionState(service, service.currentState)
-                                }
-                            }
-                        },
-                    ) {
-                        Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.start_recognition))
-                    }
-                    OutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        enabled = state.ownsRecording && state.busy && !state.changing,
-                        onClick = {
-                            val service = state.service ?: return@OutlinedButton
-                            state.changing = true
-                            state.commandJob = scope.launch {
-                                try {
-                                    if (!service.stopRecognition()) state.error = context.getString(R.string.stop_recognition_error, serviceType.name)
-                                } catch (error: CancellationException) {
-                                    throw error
-                                } catch (error: Exception) {
-                                    state.error = context.getString(R.string.stop_recognition_error, error.message.orEmpty())
-                                    AppLogger.e("SpeechRecognitionTest", "停止识别测试失败", error)
-                                } finally {
-                                    state.changing = false
-                                    state.updateRecognitionState(service, service.currentState)
-                                }
-                            }
-                        },
-                    ) {
-                        Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.stop_recognition))
-                    }
-                }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.recognition_result), modifier = Modifier.weight(1f))
+            IconButton(enabled = state.text.isNotBlank(), onClick = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("recognized_text", state.text))
+            }) {
+                Icon(Icons.Default.ContentCopy, stringResource(R.string.copy_text))
+            }
+        }
+        Surface(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(10.dp),
+        ) {
+            SelectionContainer {
                 Text(
-                    text = when {
-                        state.busy && !state.ownsRecording -> stringResource(R.string.speech_services_test_stt_busy)
-                        state.busy -> stringResource(R.string.recognizing)
-                        state.initialized -> stringResource(R.string.speech_engine_initialized)
-                        else -> stringResource(R.string.speech_engine_not_initialized)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = state.text.ifBlank { stringResource(R.string.speech_recognition_result_placeholder) },
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.recognition_result), modifier = Modifier.weight(1f))
-                IconButton(enabled = state.text.isNotBlank(), onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("recognized_text", state.text))
-                }) {
-                    Icon(Icons.Default.ContentCopy, stringResource(R.string.copy_text))
-                }
-            }
-            Surface(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(10.dp),
-            ) {
-                SelectionContainer {
-                    Text(
-                        text = state.text.ifBlank { stringResource(R.string.speech_recognition_result_placeholder) },
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
     }
+    if (languagePanel) SpeechChoicePanel(
+        title = stringResource(R.string.recognition_language),
+        choices = state.languages.map { SpeechChoice(it, it) },
+        selected = state.language,
+        onSelect = { state.language = it; languagePanel = false },
+        onDismiss = { languagePanel = false },
+    )
 }

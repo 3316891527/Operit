@@ -37,77 +37,80 @@ object VoiceServiceFactory {
         context: Context
     ): VoiceService {
         val profiles = SpeechServiceProfilesPreferences(context)
-        // 使用runBlocking同步获取配置，这在工厂方法中是可接受的
-        return runBlocking {
-            val profile = profiles.getCurrentTtsProfile()
+        val profile = runBlocking { profiles.getCurrentTtsProfile() }
+        return createVoiceService(context, profile)
+    }
 
-            when (profile.serviceType) {
-                VoiceServiceType.SIMPLE_TTS -> {
-                    SimpleVoiceProvider(
-                        context = context,
-                        initialLocaleTag = profile.httpConfig.localeTag,
-                        initialVoiceId = profile.httpConfig.voiceId
-                    )
+    /** 使用明确的档案快照创建独立服务，供设置页试听，避免读取延迟保存前的配置。 */
+    fun createVoiceService(
+        context: Context,
+        profile: SpeechServiceProfilesPreferences.TtsProfile,
+    ): VoiceService {
+        return when (profile.serviceType) {
+            VoiceServiceType.SIMPLE_TTS -> {
+                SimpleVoiceProvider(
+                    context = context,
+                    initialLocaleTag = profile.httpConfig.localeTag,
+                    initialVoiceId = profile.httpConfig.voiceId
+                )
+            }
+            VoiceServiceType.HTTP_TTS -> {
+                HttpVoiceProvider(context).apply {
+                    setConfiguration(profile.httpConfig)
                 }
-                VoiceServiceType.HTTP_TTS -> {
-                    HttpVoiceProvider(context).apply {
-                        setConfiguration(profile.httpConfig)
-                    }
-                }
-                VoiceServiceType.OPENAI_WS_TTS -> {
-                    OpenAIRealtimeVoiceProvider(
-                        context = context,
-                        endpointUrl = profile.httpConfig.urlTemplate,
-                        apiKey = profile.httpConfig.apiKey,
-                        model = profile.httpConfig.modelName,
-                        initialVoiceId = profile.httpConfig.voiceId
-                    )
-                }
-                VoiceServiceType.SILICONFLOW_TTS -> {
-                    SiliconFlowVoiceProvider(
-                        context = context,
-                        apiKey = profile.httpConfig.apiKey,
-                        initialVoiceId = profile.httpConfig.voiceId,
-                        initialModelName = profile.httpConfig.modelName
-                    )
-                }
-                VoiceServiceType.MINIMAX_TTS -> {
-                    MiniMaxVoiceProvider(
-                        context = context,
-                        config = profile.httpConfig
-                    )
-                }
-                VoiceServiceType.MIMO_TTS -> {
-                    MimoVoiceProvider(
-                        context = context,
-                        config = profile.httpConfig
-                    )
-                }
-                VoiceServiceType.DOUBAO_TTS -> {
-                    DoubaoVoiceProvider(
-                        context = context,
-                        config = profile.httpConfig
-                    )
-                }
-                VoiceServiceType.OPENAI_TTS -> {
-                    OpenAIVoiceProvider(
-                        context = context,
-                        endpointUrl = profile.httpConfig.urlTemplate,
-                        apiKey = profile.httpConfig.apiKey,
-                        model = profile.httpConfig.modelName,
-                        initialVoiceId = profile.httpConfig.voiceId
-                    )
-                }
-                VoiceServiceType.VITS_TTS -> {
-                    VitsVoiceProvider(
-                        context = context,
-                        config = profile.vitsConfig
-                    )
-                }
+            }
+            VoiceServiceType.OPENAI_WS_TTS -> {
+                OpenAIRealtimeVoiceProvider(
+                    context = context,
+                    endpointUrl = profile.httpConfig.urlTemplate,
+                    apiKey = profile.httpConfig.apiKey,
+                    model = profile.httpConfig.modelName,
+                    initialVoiceId = profile.httpConfig.voiceId
+                )
+            }
+            VoiceServiceType.SILICONFLOW_TTS -> {
+                SiliconFlowVoiceProvider(
+                    context = context,
+                    apiKey = profile.httpConfig.apiKey,
+                    initialVoiceId = profile.httpConfig.voiceId,
+                    initialModelName = profile.httpConfig.modelName
+                )
+            }
+            VoiceServiceType.MINIMAX_TTS -> {
+                MiniMaxVoiceProvider(
+                    context = context,
+                    config = profile.httpConfig
+                )
+            }
+            VoiceServiceType.MIMO_TTS -> {
+                MimoVoiceProvider(
+                    context = context,
+                    config = profile.httpConfig
+                )
+            }
+            VoiceServiceType.DOUBAO_TTS -> {
+                DoubaoVoiceProvider(
+                    context = context,
+                    config = profile.httpConfig
+                )
+            }
+            VoiceServiceType.OPENAI_TTS -> {
+                OpenAIVoiceProvider(
+                    context = context,
+                    endpointUrl = profile.httpConfig.urlTemplate,
+                    apiKey = profile.httpConfig.apiKey,
+                    model = profile.httpConfig.modelName,
+                    initialVoiceId = profile.httpConfig.voiceId
+                )
+            }
+            VoiceServiceType.VITS_TTS -> {
+                VitsVoiceProvider(
+                    context = context,
+                    config = profile.vitsConfig
+                )
             }
         }
     }
-
     // 单例实例缓存
     private var instance: VoiceService? = null
     private var currentProfileId: String? = null
