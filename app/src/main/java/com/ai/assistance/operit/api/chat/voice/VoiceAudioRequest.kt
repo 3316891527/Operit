@@ -49,11 +49,12 @@ internal class VoiceAudioRequest(
     private val resolved = mutableMapOf<VoiceMessageData, VoiceTextResult>()
 
     fun formatForEstimate(value: String, nativeAudio: Boolean): String = VoiceMessageMarkup.rewrite(value) { voice ->
-        if (voice.inputMode == VoiceInputMode.AUDIO && nativeAudio && File(voice.attachment.filePath).isFile) {
+        val input = if (voice.inputMode == VoiceInputMode.AUDIO && nativeAudio && File(voice.attachment.filePath).isFile) {
             listOf(audioLink(voice), voice.transcript).filter { it.isNotBlank() }.joinToString("\n")
         } else {
             voice.transcript.ifBlank { "[Voice message]" }
         }
+        if (voice.inputMode == VoiceInputMode.AUDIO) VoiceMessageMarkup.withRequestAttachment(voice, input) else input
     }
 
     suspend fun format(value: String, nativeAudio: Boolean): String {
@@ -63,7 +64,10 @@ internal class VoiceAudioRequest(
             val text = if (nativeAudio) {
                 try {
                     val link = audioLink(voice)
-                    val input = listOf(link, voice.transcript).filter { it.isNotBlank() }.joinToString("\n")
+                    val input = VoiceMessageMarkup.withRequestAttachment(
+                        voice,
+                        listOf(link, voice.transcript).filter { it.isNotBlank() }.joinToString("\n"),
+                    )
                     nativeEntries[input] = voice
                     input
                 } catch (error: CancellationException) {
@@ -131,7 +135,8 @@ internal class VoiceAudioRequest(
         }
     }
 
-    private suspend fun resolvedInput(voice: VoiceMessageData): String = resolvedVoiceText(voice, resolve(voice).text)
+    private suspend fun resolvedInput(voice: VoiceMessageData): String =
+        VoiceMessageMarkup.withRequestAttachment(voice, resolvedVoiceText(voice, resolve(voice).text))
 
     private fun resolvedVoiceText(voice: VoiceMessageData, text: String): String =
         listOf(text, voice.transcript).filter { it.isNotBlank() }.distinct().joinToString("\n")

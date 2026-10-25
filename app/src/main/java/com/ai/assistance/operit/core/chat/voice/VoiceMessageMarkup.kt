@@ -33,9 +33,16 @@ object VoiceMessageMarkup {
         require(!message.transcriptResolved || (message.inputMode == VoiceInputMode.AUDIO && message.transcript.isNotBlank()))
         val resolved = if (message.transcriptResolved) " resolved=\"true\"" else ""
         return "<voice_bar version=\"$version\"$input$resolved duration_ms=\"${message.durationMs}\" waveform=\"$waves\">" +
-            "<attachment id=\"${escape(message.attachment.filePath)}\" filename=\"${escape(message.attachment.fileName)}\" type=\"audio/wav\" size=\"${message.attachment.fileSize}\" />" +
+            attachmentReference(message) +
             "<transcript>${escape(message.transcript)}</transcript></voice_bar>"
     }
+
+    private fun attachmentReference(message: VoiceMessageData): String =
+        "<attachment id=\"${escape(message.attachment.filePath)}\" filename=\"${escape(message.attachment.fileName)}\" type=\"audio/wav\" size=\"${message.attachment.fileSize}\" />"
+
+    /** 请求解开语音条后仍携带原录音引用；该描述不回写转写正文或增加界面附件标签。 */
+    fun withRequestAttachment(message: VoiceMessageData, input: String): String =
+        listOf(input, attachmentReference(message)).filter { it.isNotBlank() }.joinToString("\n")
 
     fun parse(value: String): VoiceMessageData? {
         val normalized = value.trim()

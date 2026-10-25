@@ -56,6 +56,36 @@ class VoiceAudioMarkupTest {
     }
 
     @Test
+    fun textRequestRetainsOriginalAttachmentWithoutPollutingSavedTranscript() {
+        val source = audio()
+        val text = "识别出的语音内容"
+        val saved = VoiceMessageMarkup.withResolvedTranscript(VoiceMessageMarkup.encode(source), source, text)
+        val resolved = VoiceMessageMarkup.parse(saved)!!
+        val request = VoiceMessageMarkup.withRequestAttachment(resolved, resolved.transcript)
+        assertTrue(request.startsWith("$text\n"))
+        assertTrue(request.contains("id=\"${source.attachment.filePath}\""))
+        assertTrue(request.contains("filename=\"${source.attachment.fileName}\""))
+        assertTrue(request.contains("type=\"audio/wav\""))
+        assertFalse(request.contains("<voice_bar"))
+        assertEquals(text, resolved.transcript)
+        assertEquals(source.attachment, resolved.attachment)
+    }
+
+    @Test
+    fun nativeAudioRequestRetainsAudioLinkAndTheSameEscapedFileReference() {
+        val source = audio().copy(attachment = audio().attachment.copy(
+            filePath = "/shared/voice & \"sample\".wav", fileName = "voice & \"sample\".wav",
+        ))
+        val link = "<link type=\"audio\" id=\"request-audio\">Audio</link>"
+        val request = VoiceMessageMarkup.withRequestAttachment(source, link)
+        assertTrue(request.startsWith("$link\n"))
+        val attachment = request.substringAfter('\n')
+        assertTrue(VoiceMessageMarkup.encode(source).contains(attachment))
+        assertTrue(attachment.contains("voice &" + "amp; &" + "quot;sample&" + "quot;.wav"))
+        assertEquals(source.attachment, VoiceMessageMarkup.parse(VoiceMessageMarkup.encode(source))!!.attachment)
+    }
+
+    @Test
     fun hookTextIsNotMarkedAsResolvedAndInvalidCacheIsRejected() {
         val hook = VoiceMessageMarkup.encode(audio("钩子补充"))
         assertFalse(VoiceMessageMarkup.parse(hook)!!.transcriptResolved)
