@@ -177,11 +177,14 @@ internal class VoiceAudioRequest(
             val lease = services.acquireServiceForFunction(FunctionType.AUDIO_RECOGNITION)
             try {
                 check(lease.modelConfig.enableDirectAudioProcessing)
-                val prompt = audioLink(voice) + "\n" + context.getString(R.string.voice_message_understanding_prompt)
+                val instructions = context.getString(R.string.voice_message_understanding_prompt)
                 val content = StringBuilder()
                 lease.service.sendMessage(
                     context = context,
-                    chatHistory = listOf(PromptTurn(PromptTurnKind.USER, prompt)),
+                    chatHistory = listOf(
+                        PromptTurn(PromptTurnKind.SYSTEM, instructions),
+                        PromptTurn(PromptTurnKind.USER, audioLink(voice)),
+                    ),
                     modelParameters = lease.modelParameters,
                     stream = false,
                     availableTools = null,
