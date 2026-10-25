@@ -13,19 +13,7 @@ import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.ui.features.chat.webview.workspace.workspaceMimeTypeForPath
 import java.io.File
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
-
-internal data class FileBrowserClipboardItem(val path: String, val environment: String?, val cut: Boolean, val isDirectory: Boolean)
-
-/** 页面切换时保留剪贴板及源文件所在环境。 */
-internal object FileBrowserClipboard {
-    private val state = MutableStateFlow<FileBrowserClipboardItem?>(null)
-    val content = state.asStateFlow()
-    fun set(item: FileBrowserClipboardItem) { state.value = item }
-    fun clear(item: FileBrowserClipboardItem) { state.compareAndSet(item, null) }
-}
 
 /** 界面操作使用现有文件工具，保留每次工具调用的成功或失败结果。 */
 internal class FileBrowserOperations(context: Context) {
@@ -60,28 +48,41 @@ internal class FileBrowserOperations(context: Context) {
     }
 
     suspend fun paste(directory: String, environment: String?) = withContext(Dispatchers.IO) {
-        val item = FileBrowserClipboard.content.value ?: return@withContext
-        val sourceEnv = item.environment ?: "android"
+        val items = FileBrowserClipboard.content.value
+        if (items.isEmpty()) return@withContext
         val destinationEnv = environment ?: "android"
-        val destination = directory.trimEnd('/') + "/" + item.path.substringAfterLast('/')
-        check(sourceEnv != destinationEnv || (destination != item.path && !destination.startsWith(item.path.trimEnd('/') + "/"))) {
-            context.getString(R.string.workspace_invalid_paste)
-        }
         val parent = execute("file_exists", parameters(environment, "path" to directory)).result
         check(parent is FileExistsData && parent.exists && parent.isDirectory) {
             context.getString(R.string.workspace_error_invalid_path, directory)
         }
-        requireNewDestination(destination, environment)
-        if (item.cut && sourceEnv == destinationEnv) {
-            execute("move_file", parameters(environment, "source" to item.path, "destination" to destination))
-        } else {
-            execute("copy_file", listOf(ToolParameter("source", item.path), ToolParameter("destination", destination),
-                ToolParameter("source_environment", sourceEnv), ToolParameter("dest_environment", destinationEnv),
-                ToolParameter("recursive", item.isDirectory.toString())))
-            // 跨环境剪切在复制成功后才删除来源，失败时保留剪贴板和原文件。
-            if (item.cut) delete(item.path, item.environment, item.isDirectory)
+        val targets = items.map { item ->
+            val sourceEnv = item.environment ?: "android"
+            val destination = directory.trimEnd('/') + "/" + item.path.substringAfterLast('/')
+            check(sourceEnv != destinationEnv ||
+                (destination != item.path && !destination.startsWith(item.path.trimEnd('/') + "/"))) {
+                context.getString(R.string.workspace_invalid_paste)
+            }
+            item to destination
         }
-        if (item.cut) FileBrowserClipboard.clear(item)
+        check(targets.map { it.second }.distinct().size == targets.size) {
+            context.getString(R.string.file_op_confirm_overwrite)
+        }
+        // 全批次先检查目标，避免遇到重名时已经移动了前面的文件。
+        targets.forEach { (_, destination) -> requireNewDestination(destination, environment) }
+        for ((item, destination) in targets) {
+            val sourceEnv = item.environment ?: "android"
+            requireNewDestination(destination, environment)
+            if (item.cut && sourceEnv == destinationEnv) {
+                execute("move_file", parameters(environment, "source" to item.path, "destination" to destination))
+            } else {
+                execute("copy_file", listOf(ToolParameter("source", item.path), ToolParameter("destination", destination),
+                    ToolParameter("source_environment", sourceEnv), ToolParameter("dest_environment", destinationEnv),
+                    ToolParameter("recursive", item.isDirectory.toString())))
+                // 每项复制成功才删除其来源，失败后剩余剪切项仍可继续粘贴。
+                if (item.cut) delete(item.path, item.environment, item.isDirectory)
+            }
+            if (item.cut) FileBrowserClipboard.clear(item)
+        }
     }
 
     suspend fun externalOpen(path: String, environment: String?, share: Boolean) {

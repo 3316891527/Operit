@@ -114,6 +114,7 @@ internal fun ThemeTargetPicker(
                         ) {
                             Text(
                                 card.name,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 2,

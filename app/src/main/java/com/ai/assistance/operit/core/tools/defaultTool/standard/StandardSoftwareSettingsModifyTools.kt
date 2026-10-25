@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.standard
 
+import com.ai.assistance.operit.data.model.ModelConfigDefaults
+
 import android.content.Context
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.llmprovider.ModelConfigConnectionTester
@@ -2286,7 +2288,7 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
             config.copy(enableSummaryByMessageCount = value)
         }
         applyInt("summary_message_count_threshold") { config, value ->
-            config.copy(summaryMessageCountThreshold = value.coerceAtLeast(1))
+            config.copy(summaryMessageCountThreshold = value.coerceIn(1, ModelConfigDefaults.MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD))
         }
         applyString("custom_parameters") { config, value ->
             val json = value.ifBlank { "[]" }

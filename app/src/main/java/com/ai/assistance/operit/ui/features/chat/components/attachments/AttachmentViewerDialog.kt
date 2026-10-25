@@ -39,6 +39,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.chat.attachments.MediaFileUnavailableTag
+import com.ai.assistance.operit.ui.features.chat.attachments.mediaPreviewUri
+import com.ai.assistance.operit.ui.features.chat.attachments.rememberMediaPreviewRevision
 import com.ai.assistance.operit.ui.features.chat.components.compactDialogHeightWhenShort
 import com.ai.assistance.operit.ui.features.chat.components.rememberCompactDialogMetrics
 import com.ai.assistance.operit.util.AppLogger
@@ -95,78 +101,91 @@ fun AttachmentViewerDialog(
         attachment.id.takeIf { it.startsWith("media_pool:") }?.removePrefix("media_pool:")
     }
 
+    val previewRevision = rememberMediaPreviewRevision()
+    var mediaPoolResolved by remember(mediaPoolId, attachment.mimeType) { mutableStateOf(mediaPoolId == null) }
     val mediaPoolFileState = produceState<File?>(initialValue = null, key1 = mediaPoolId, key2 = attachment.mimeType) {
         if (mediaPoolId.isNullOrBlank()) return@produceState
 
-        val mediaData = MediaPoolManager.getMedia(mediaPoolId) ?: return@produceState
-        val estimatedBytes = MediaBase64Limiter.estimateDecodedSizeBytes(mediaData.base64)
-        if (estimatedBytes == null || estimatedBytes > 20 * 1024 * 1024) {
-            AppLogger.w("AttachmentViewerDialog", "Media pool item too large to preview: $mediaPoolId, estimatedBytes=$estimatedBytes")
-            return@produceState
-        }
-        val bytes = try {
-            Base64.decode(mediaData.base64, Base64.DEFAULT)
-        } catch (e: Exception) {
-            AppLogger.e("AttachmentViewerDialog", "Failed to decode media base64: $mediaPoolId", e)
-            return@produceState
-        }
-
-        if (bytes.size > 20 * 1024 * 1024) {
-            AppLogger.w("AttachmentViewerDialog", "Media pool item too large to preview after decode: $mediaPoolId, bytes=${bytes.size}")
-            return@produceState
-        }
-
-        val dir = File(context.cacheDir, "media_pool_preview")
-        withContext(Dispatchers.IO) {
-            if (!dir.exists()) {
-                dir.mkdirs()
-            }
-        }
-
-        val ext = fileExtForMimeType(mediaData.mimeType)
-        val outFile = File(dir, "$mediaPoolId.$ext")
         try {
-            withContext(Dispatchers.IO) {
-                outFile.writeBytes(bytes)
+            val mediaData = MediaPoolManager.getMedia(mediaPoolId) ?: return@produceState
+            val estimatedBytes = MediaBase64Limiter.estimateDecodedSizeBytes(mediaData.base64)
+            if (estimatedBytes == null || estimatedBytes > 20 * 1024 * 1024) {
+                AppLogger.w("AttachmentViewerDialog", "Media pool item too large to preview: $mediaPoolId, estimatedBytes=$estimatedBytes")
+                return@produceState
             }
-            value = outFile
-        } catch (e: Exception) {
-            AppLogger.e("AttachmentViewerDialog", "Failed to write media pool file: $mediaPoolId", e)
+            val bytes = try {
+                Base64.decode(mediaData.base64, Base64.DEFAULT)
+            } catch (e: Exception) {
+                AppLogger.e("AttachmentViewerDialog", "Failed to decode media base64: $mediaPoolId", e)
+                return@produceState
+            }
+
+            if (bytes.size > 20 * 1024 * 1024) {
+                AppLogger.w("AttachmentViewerDialog", "Media pool item too large to preview after decode: $mediaPoolId, bytes=${bytes.size}")
+                return@produceState
+            }
+
+            val dir = File(context.cacheDir, "media_pool_preview")
+            withContext(Dispatchers.IO) {
+                if (!dir.exists()) {
+                    dir.mkdirs()
+                }
+            }
+
+            val ext = fileExtForMimeType(mediaData.mimeType)
+            val outFile = File(dir, "$mediaPoolId.$ext")
+            try {
+                withContext(Dispatchers.IO) {
+                    outFile.writeBytes(bytes)
+                }
+                value = outFile
+            } catch (e: Exception) {
+                AppLogger.e("AttachmentViewerDialog", "Failed to write media pool file: $mediaPoolId", e)
+            }
+        } finally {
+            mediaPoolResolved = true
         }
     }
 
-    val fileFromPath = remember(attachment.id) {
-        val maybe = runCatching { File(attachment.id) }.getOrNull()
-        if (maybe != null && maybe.exists()) maybe else null
+    var originalResolved by remember(attachment.id, previewRevision) { mutableStateOf(false) }
+    val originalUriState = produceState<Uri?>(initialValue = null, key1 = attachment.id, key2 = previewRevision) {
+        value = null
+        try {
+            if (mediaPoolId == null) {
+                value = withContext(Dispatchers.IO) { mediaPreviewUri(context, attachment.id) }
+            }
+        } finally {
+            originalResolved = true
+        }
     }
-
+    val originalUri = originalUriState.value
+    val fileFromPath = remember(originalUri) {
+        originalUri?.takeIf { it.scheme == "file" }?.path?.let(::File)
+    }
     val file = mediaPoolFileState.value ?: fileFromPath
+    val fileUri = if (mediaPoolId != null) file?.let(Uri::fromFile) else originalUri
+    val sourceResolved = if (mediaPoolId != null) mediaPoolResolved else originalResolved
+    var imageResolved by remember(fileUri, previewRevision) { mutableStateOf(false) }
 
-    val fileUri = remember(attachment.id, file) {
-        when {
-            attachment.id.startsWith("content://") -> Uri.parse(attachment.id)
-            attachment.id.startsWith("file://") -> Uri.parse(attachment.id)
-            file != null -> Uri.fromFile(file)
-            else -> null
+    val imageBitmapState = produceState<Bitmap?>(initialValue = null, key1 = fileUri, key2 = previewRevision) {
+        value = null
+        try {
+            if (!isImage) return@produceState
+            val uri = fileUri ?: return@produceState
+            value = withContext(Dispatchers.IO) {
+                val bytes = readBytesLimited(context, uri, 20 * 1024 * 1024)
+                ImageBitmapLimiter.decodeDownsampledBitmap(bytes)
+            }
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLogger.e("AttachmentViewerDialog", "读取图片原文件失败：$fileUri", error)
+        } finally {
+            imageResolved = true
         }
     }
 
-    val imageBitmapState = produceState<Bitmap?>(initialValue = null, key1 = attachment.id, key2 = attachment.mimeType) {
-        if (!isImage) return@produceState
-        val uri = fileUri ?: return@produceState
-        val bytes = try {
-            withContext(Dispatchers.IO) {
-                readBytesLimited(context, uri, 20 * 1024 * 1024)
-            }
-        } catch (e: Exception) {
-            AppLogger.e("AttachmentViewerDialog", "Failed to read image bytes: $uri", e)
-            null
-        } ?: return@produceState
-
-        value = ImageBitmapLimiter.decodeDownsampledBitmap(bytes)
-    }
-
-    val textContentState = produceState<String?>(initialValue = attachment.content.takeIf { it.isNotBlank() }, key1 = attachment.id, key2 = attachment.content, key3 = attachment.mimeType) {
+    val textContentState = produceState<String?>(initialValue = attachment.content.takeIf { it.isNotBlank() }, key1 = attachment.id, key2 = attachment.content, key3 = attachment.mimeType to file) {
         if (value != null) return@produceState
         if (!isTextLike) return@produceState
         val f = file ?: return@produceState
@@ -238,6 +257,12 @@ fun AttachmentViewerDialog(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 when {
+                    (isImage || isAudio || isVideo) && fileUri == null && sourceResolved -> {
+                        MediaFileUnavailableTag(attachment.filename)
+                    }
+                    (isImage || isAudio || isVideo) && fileUri == null -> {
+                        androidx.compose.material3.CircularProgressIndicator()
+                    }
                     isImage -> {
                         if (imageBitmapState.value != null) {
                             Box(
@@ -252,12 +277,10 @@ fun AttachmentViewerDialog(
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
+                        } else if (!imageResolved) {
+                            androidx.compose.material3.CircularProgressIndicator()
                         } else {
-                            Text(
-                                text = stringResource(R.string.cannot_decode_bitmap_from_uri),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            MediaFileUnavailableTag(attachment.filename, missing = false)
                         }
                     }
 

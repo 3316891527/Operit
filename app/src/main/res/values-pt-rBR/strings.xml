@@ -763,7 +763,7 @@
     <string name="settings_enable_summary_by_message_count">Resumo do gatilho por número de mensagens</string>
     <string name="settings_enable_summary_by_message_count_desc">Acionar o resumo quando o número de novas mensagens atingir o limite</string>
     <string name="settings_summary_message_count_threshold">Limite de número de mensagem</string>
-    <string name="settings_summary_message_count_threshold_subtitle">O número de novas mensagens que acionaram o resumo (1-20)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">Novas mensagens antes de gerar um resumo (1–50)</string>
     <string name="settings_section_display">exibição e comportamento</string>
     <string name="settings_keep_screen_on">Tela sempre ligada</string>
     <string name="settings_keep_screen_on_desc">Mantenha a tela sempre ligada durante a saída de IA para evitar que a tela desligue</string>
@@ -2849,11 +2849,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="settings_max_context_length_subtitle">Comprimento máximo do contexto (k tokens) compatível com a API do modelo</string>
     <string name="settings_summary_threshold">Limite de escala de uso de contexto</string>
     <string name="settings_summary_threshold_subtitle">Resumo acionado quando o uso do contexto excede essa proporção (0,1-0,95)</string>
-    <string name="settings_history_retention_title">Retenção de mídia do histórico</string>
-    <string name="settings_max_image_history_user_turns">Número de rodadas de retenção de imagem histórica</string>
-    <string name="settings_max_image_history_user_turns_subtitle">Mantenha apenas as fotos das últimas N conversas do usuário para evitar o envio repetido de fotos históricas.</string>
-    <string name="settings_max_media_history_user_turns">Número de rodadas históricas de retenção de áudio e vídeo</string>
-    <string name="settings_max_media_history_user_turns_subtitle">Retenha apenas o áudio/vídeo das últimas N conversas do usuário para evitar o envio repetido de histórico de áudio e vídeo</string>
     <string name="layout_adjustment_settings_title">Configurações de ajuste de layout</string>
     <string name="layout_adjustment_description">Aqui você pode ajustar a posição e as margens dos elementos da interface para personalizar sua experiência</string>
     <string name="chat_settings_bar_section">Barra de configurações de bate-papo</string>
@@ -5618,8 +5613,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="context_validation_error_positive_number">%1$s deve ser um número válido maior que 0</string>
     <string name="context_validation_error_positive_integer">%1$s deve ser um número inteiro válido maior que 0</string>
     <string name="context_validation_error_non_negative_integer">%1$s deve ser um número inteiro válido maior ou igual a 0</string>
-    <string name="context_field_max_image_history_turns">Número de rodadas de retenção de imagem histórica</string>
-    <string name="context_field_max_media_history_turns">Número de rodadas históricas de retenção de áudio e vídeo</string>
     <string name="context_unit_lines">OK</string>
     <string name="context_unit_times">Segunda categoria</string>
     <string name="context_reset_all_settings">Redefinir todas as configurações</string>
@@ -5632,7 +5625,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="model_config_error_valid_max_context_length">Insira um comprimento máximo de contexto válido</string>
     <string name="model_config_error_save_failed">Falha ao salvar</string>
     <string name="model_config_error_summary_threshold_range">Insira um limite de acionamento resumido entre 0 e 1</string>
-    <string name="model_config_error_valid_message_count">Insira um limite de quantidade de mensagens válido</string>
+    <string name="model_config_error_valid_message_count">Insira um limite de mensagens entre 1 e 50</string>
     <string name="model_config_collapse">fechar</string>
     <string name="model_config_expand">Expandir</string>
     <string name="model_config_unit_items">tira</string>
@@ -5732,7 +5725,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="ai_message_user">usuário</string>
     <string name="ai_message_replying_to_previous">O usuário está respondendo à sua mensagem anterior:</string>
     <string name="ai_message_executing_deep_search">Executando pesquisa profunda...</string>
-    <string name="ai_message_media_omitted">[Áudio e vídeo omitidos]</string>
+    <string name="ai_message_media_omitted">[Mídia omitida]</string>
     <string name="ai_message_image_omitted">[Imagem omitida]</string>
     <string name="ai_message_workspace_omitted">[Área de trabalho omitida]</string>
     <string name="ai_message_attachment_omitted">[Anexo omitido]</string>
@@ -8555,7 +8548,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="translation_language_romanian">Romeno</string>
     <string name="translation_language_japanese">Japonês</string>
     <string name="translation_retry_error_status">Falha na solicitação de tradução (atualmente tentando novamente %1$d/%2$d): %3$s</string>
-    <string name="chat_generated_at">Gerado em %1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete">Excluir</string>
     <string name="resource_delete_title">Excluir recursos locais</string>
     <string name="resource_delete_confirm">Excluir o recurso local de \"%1$s\"? Se você precisar baixá-lo novamente ou importá-lo posteriormente, o backup ZIP que foi exportado para armazenamento compartilhado será mantido.</string>
@@ -8652,9 +8645,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="model_workspace_summary_threshold_hint">O resumo é acionado quando essa proporção é atingida</string>
     <string name="model_workspace_summary_threshold_error">Insira uma proporção de acionamento resumida maior que 0 e menor que 100</string>
     <string name="model_workspace_summary_context_limit">O comprimento do contexto não pode exceder o comprimento máximo do contexto</string>
-    <string name="model_workspace_summary_history_error">Insira um número inteiro não negativo para o número de rodadas históricas de retenção de mídia.</string>
-    <string name="model_workspace_summary_history_scope">Configuração global: a retenção de mídia histórica entra em vigor para todas as configurações do modelo</string>
-    <string name="model_workspace_summary_reset_history">Restaurar padrões históricos de mídia</string>
     <string name="model_workspace_summary_model">Resuma os modelos usados</string>
     <string name="model_workspace_summary_model_scope">Este item é uma alocação de função global e será aplicado a todas as configurações após modificação.</string>
     <string name="model_workspace_function_search">Procure uma função, configuração ou modelo</string>

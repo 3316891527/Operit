@@ -252,8 +252,15 @@ fun WorkspaceManager(
     var showWorkspaceMenu by remember { mutableStateOf(false) }
     var openFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(initialFile?.let { listOf(it) } ?: emptyList()) }
     var currentFileIndex by remember(workspacePath, workspaceEnv) { mutableStateOf(if (initialFile == null) -2 else 0) }
+    var handledEntrySequence by remember(workspacePath, workspaceEnv) {
+        mutableStateOf(if (initialFile != null) entryRequest.sequence else -1L)
+    }
     LaunchedEffect(isVisible, workspacePath, workspaceEnv, entryRequest.sequence) {
-        if (isVisible && entryRequest.action == WorkspaceEntryAction.FILES) currentFileIndex = -2
+        // 入口请求只消费一次，异步打开文件后不能再次重置活动标签。
+        if (isVisible && handledEntrySequence != entryRequest.sequence) {
+            handledEntrySequence = entryRequest.sequence
+            if (entryRequest.action == WorkspaceEntryAction.FILES) currentFileIndex = -2
+        }
     }
     var filePreviewStates by remember { mutableStateOf(mapOf<String, Boolean>()) }
     var fileLineNavigationRequests by remember(workspacePath, workspaceEnv) { mutableStateOf(mapOf<String, Int>()) }
@@ -549,6 +556,7 @@ fun WorkspaceManager(
 
     // 打开文件
     fun openFile(fileInfo: OpenFileInfo) {
+        handledEntrySequence = entryRequest.sequence
         // 检查文件是否已经打开
         val existingIndex = openFiles.indexOfFirst { it.key == fileInfo.key }
 
@@ -640,20 +648,26 @@ fun WorkspaceManager(
         Column(modifier = Modifier.fillMaxSize()) {
             val currentTextFile = openFiles.getOrNull(currentFileIndex)?.takeUnless { it.isReadOnlyPreview }
             if (currentTextFile != null) {
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { activeEditor?.undo() }) { Icon(Icons.Default.Undo, stringResource(R.string.undo)) }
-                    IconButton(onClick = { activeEditor?.redo() }) { Icon(Icons.Default.Redo, stringResource(R.string.redo)) }
-                    IconButton(onClick = { searchVisible = !searchVisible }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
-                    val language = LanguageDetector.detectLanguage(currentTextFile.name).lowercase()
-                    if (language in listOf("javascript", "js", "css", "html", "htm")) {
-                        IconButton(onClick = {
-                            val formatted = CodeFormatter.format(currentTextFile.content, language)
-                            val updated = openFiles.toMutableList()
-                            updated[currentFileIndex] = currentTextFile.copy(content = formatted)
-                            openFiles = updated
-                            activeEditor?.replaceAllText(formatted)
-                            unsavedFiles = unsavedFiles + currentTextFile.key
-                        }) { Icon(Icons.Default.AutoFixHigh, stringResource(R.string.format_code)) }
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ) {
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { activeEditor?.undo() }, enabled = activeEditor != null) { Icon(Icons.Default.Undo, stringResource(R.string.undo)) }
+                        IconButton(onClick = { activeEditor?.redo() }, enabled = activeEditor != null) { Icon(Icons.Default.Redo, stringResource(R.string.redo)) }
+                        IconButton(onClick = { searchVisible = !searchVisible }) { Icon(Icons.Default.Search, stringResource(R.string.search)) }
+                        val language = LanguageDetector.detectLanguage(currentTextFile.name).lowercase()
+                        if (language in listOf("javascript", "js", "css", "html", "htm")) {
+                            IconButton(onClick = {
+                                val formatted = CodeFormatter.format(currentTextFile.content, language)
+                                val updated = openFiles.toMutableList()
+                                updated[currentFileIndex] = currentTextFile.copy(content = formatted)
+                                openFiles = updated
+                                activeEditor?.replaceAllText(formatted)
+                                unsavedFiles = unsavedFiles + currentTextFile.key
+                            }) { Icon(Icons.Default.AutoFixHigh, stringResource(R.string.format_code)) }
+                        }
                     }
                 }
             }

@@ -149,14 +149,11 @@ private fun CrashReportSummary(
                     color = colors.muted,
                     fontSize = 12.sp,
                 )
-                Surface(color = colors.errorContainer, shape = RoundedCornerShape(6.dp)) {
-                    Text(
-                        stringResource(crashReasonLabel(report.reason)),
-                        Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        color = colors.error,
-                        fontSize = 11.sp,
-                    )
-                }
+                Text(
+                    stringResource(crashReasonLabel(report.reason)),
+                    color = colors.error,
+                    fontSize = 11.sp,
+                )
             }
             if (report.showTime) {
                 val time =

@@ -142,50 +142,133 @@ internal fun MemoryLibraryPage(spaceId: String, onSwitchSpace: (String) -> Unit,
     BackHandler(enabled = relatedId != null && uiState.selectedMemory == null && !uiState.isEditing && !uiState.isLinkingMode) { relatedId?.let { focus(it) } }
 
     CustomScaffold { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+            val controlsHeight = maxHeight * 0.2f
             Column(Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f).clickable { spaceSheet = true }) {
-                        Text(stringResource(R.string.screen_title_memory_base), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(verticalAlignment = Alignment.CenterVertically) { Text(spaces.firstOrNull { it.id == spaceId }?.name.orEmpty(), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis); Icon(Icons.Default.KeyboardArrowDown, null) }
-                    }
-                    Box {
-                        IconButton(onClick = { toolsMenu = true }) { Icon(Icons.Default.MoreHoriz, stringResource(R.string.memory_overview_space_actions)) }
-                        MemoryMenu(toolsMenu, { toolsMenu = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.memory_workbench_display)) }, leadingIcon = { Icon(Icons.Default.Tune, null) }, onClick = { toolsMenu = false; displaySheet = true })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.memory_workbench_manage_folders)) }, leadingIcon = { Icon(Icons.Default.FolderOpen, null) }, onClick = { toolsMenu = false; showFolderNavigator = true })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.memory_settings_title)) }, leadingIcon = { Icon(Icons.Default.Settings, null) }, onClick = { toolsMenu = false; viewModel.showSearchSettingsDialog(true) })
+                MemoryLibraryControls(
+                    modifier = Modifier.height(controlsHeight),
+                    spaceControls = { compact ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f).clickable { spaceSheet = true }) {
+                                if (!compact) Text(
+                                    stringResource(R.string.screen_title_memory_base),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        spaces.firstOrNull { it.id == spaceId }?.name.orEmpty(),
+                                        Modifier.weight(1f),
+                                        style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Icon(Icons.Default.KeyboardArrowDown, stringResource(R.string.memory_overview_space_actions))
+                                }
+                            }
+                            Box {
+                                IconButton(onClick = { toolsMenu = true }, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Default.MoreHoriz, stringResource(R.string.memory_overview_space_actions))
+                                }
+                                MemoryMenu(toolsMenu, { toolsMenu = false }) {
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.memory_workbench_display)) }, leadingIcon = { Icon(Icons.Default.Tune, null) }, onClick = { toolsMenu = false; displaySheet = true })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.memory_workbench_manage_folders)) }, leadingIcon = { Icon(Icons.Default.FolderOpen, null) }, onClick = { toolsMenu = false; showFolderNavigator = true })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.memory_settings_title)) }, leadingIcon = { Icon(Icons.Default.Settings, null) }, onClick = { toolsMenu = false; viewModel.showSearchSettingsDialog(true) })
+                                }
+                            }
                         }
-                    }
-                }
-                OutlinedTextField(uiState.searchQuery, { relatedId = null; viewModel.onSearchQueryChange(it) }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), placeholder = { Text(stringResource(R.string.memory_search_hint)) }, singleLine = true, shape = RoundedCornerShape(15.dp),
-                    leadingIcon = { Icon(Icons.Default.Search, null) }, trailingIcon = {
-                        Row {
-                            if (searching) IconButton(onClick = { viewModel.onSearchQueryChange("") }) { Icon(Icons.Default.Close, stringResource(R.string.memory_workbench_clear_search)) }
-                            IconButton(onClick = { searchSheet = true }) { Icon(Icons.Default.Tune, stringResource(R.string.memory_workbench_search_scope)) }
+                    },
+                    searchControls = {
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = { relatedId = null; viewModel.onSearchQueryChange(it) },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).heightIn(min = 48.dp),
+                            placeholder = { Text(stringResource(R.string.memory_search_hint), maxLines = 1) },
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            singleLine = true,
+                            shape = RoundedCornerShape(15.dp),
+                            leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(20.dp)) },
+                            trailingIcon = {
+                                Row {
+                                    if (searching) IconButton(onClick = { viewModel.onSearchQueryChange("") }, modifier = Modifier.size(36.dp)) {
+                                        Icon(Icons.Default.Close, stringResource(R.string.memory_workbench_clear_search), Modifier.size(20.dp))
+                                    }
+                                    IconButton(onClick = { searchSheet = true }, modifier = Modifier.size(36.dp)) {
+                                        Icon(Icons.Default.Tune, stringResource(R.string.memory_workbench_search_scope), Modifier.size(20.dp))
+                                    }
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { keyboard?.hide(); viewModel.searchMemories(searchBody) }),
+                        )
+                    },
+                    folderControls = { compact ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(start = 12.dp, end = 8.dp, bottom = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            TextButton(
+                                onClick = { folderSheet = true },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp),
+                            ) {
+                                Icon(Icons.Default.FolderOpen, null, Modifier.size(17.dp))
+                                Spacer(Modifier.width(5.dp))
+                                Text(uiState.selectedFolderPath.ifEmpty { stringResource(R.string.memory_workbench_all_folders) }, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Icon(Icons.Default.KeyboardArrowDown, null, Modifier.size(15.dp))
+                            }
+                            Surface(shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                                Row(Modifier.padding(2.dp)) {
+                                    listOf(false, true).forEach { showList ->
+                                        val action = if (showList) R.string.memory_workbench_list else R.string.memory_workbench_graph
+                                        val icon = if (showList) Icons.Default.List else Icons.Default.Share
+                                        val selectedView = listView == showList
+                                        val chooseView = {
+                                            listView = showList
+                                            if (showList) { relatedId = null; viewModel.clearSelection() }
+                                        }
+                                        if (compact) IconButton(
+                                            onClick = chooseView,
+                                            modifier = Modifier.size(34.dp),
+                                            colors = IconButtonDefaults.iconButtonColors(
+                                                containerColor = if (selectedView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                                contentColor = if (selectedView) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            ),
+                                        ) { Icon(icon, stringResource(action), Modifier.size(18.dp)) }
+                                        else TextButton(
+                                            onClick = chooseView,
+                                            shape = RoundedCornerShape(8.dp),
+                                            contentPadding = PaddingValues(horizontal = 8.dp),
+                                            colors = ButtonDefaults.textButtonColors(containerColor = if (selectedView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
+                                        ) {
+                                            Icon(icon, null, Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(action), style = MaterialTheme.typography.labelMedium)
+                                        }
+                                    }
+                                }
+                            }
+                            IconButton(
+                                onClick = { relatedId = null; if (!uiState.isBoxSelectionMode) expanded = true; viewModel.toggleBoxSelectionMode(!uiState.isBoxSelectionMode) },
+                                modifier = Modifier.size(36.dp),
+                            ) { Icon(if (uiState.isBoxSelectionMode) Icons.Default.Close else Icons.Default.SelectAll, stringResource(if (uiState.isBoxSelectionMode) R.string.memory_workbench_finish else R.string.memory_workbench_select), Modifier.size(19.dp)) }
+                            IconButton(enabled = uiState.graph.nodes.size >= 2 && !uiState.isLoading, onClick = { link() }, modifier = Modifier.size(36.dp)) {
+                                Icon(Icons.Default.Link, stringResource(R.string.memory_workbench_link), Modifier.size(19.dp))
+                            }
+                            Box {
+                                IconButton(onClick = { addMenu = true }, modifier = Modifier.size(36.dp)) {
+                                    Icon(Icons.Default.Add, stringResource(R.string.memory_workbench_add), Modifier.size(21.dp))
+                                }
+                                MemoryMenu(addMenu, { addMenu = false }) {
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.memory_action_create)) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { addMenu = false; viewModel.startEditing() })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.memory_action_import)) }, leadingIcon = { Icon(Icons.Default.UploadFile, null) }, onClick = { addMenu = false; addDocument() })
+                                }
+                            }
                         }
-                    }, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { keyboard?.hide(); viewModel.searchMemories(searchBody) }))
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { folderSheet = true }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(0.dp)) { Icon(Icons.Default.FolderOpen, null, Modifier.size(17.dp)); Spacer(Modifier.width(6.dp)); Text(uiState.selectedFolderPath.ifEmpty { stringResource(R.string.memory_workbench_all_folders) }, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis); Icon(Icons.Default.KeyboardArrowDown, null, Modifier.size(16.dp)) }
-                    Spacer(Modifier.width(12.dp))
-                    Surface(shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                        Row(Modifier.padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            TextButton(onClick = { listView = false }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.textButtonColors(containerColor = if (!listView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent), contentPadding = PaddingValues(horizontal = 8.dp)) { Icon(Icons.Default.Share, null, Modifier.size(15.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.memory_workbench_graph), style = MaterialTheme.typography.labelMedium) }
-                            TextButton(onClick = { listView = true; relatedId = null; viewModel.clearSelection() }, shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.textButtonColors(containerColor = if (listView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent), contentPadding = PaddingValues(horizontal = 8.dp)) { Icon(Icons.Default.List, null, Modifier.size(15.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.memory_workbench_list), style = MaterialTheme.typography.labelMedium) }
-                        }
-                    }
-                }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { relatedId = null; if (!uiState.isBoxSelectionMode) expanded = true; viewModel.toggleBoxSelectionMode(!uiState.isBoxSelectionMode) }) { Icon(Icons.Default.SelectAll, null, Modifier.size(17.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(if (uiState.isBoxSelectionMode) R.string.memory_workbench_finish else R.string.memory_workbench_select)) }
-                    TextButton(enabled = uiState.graph.nodes.size >= 2 && !uiState.isLoading, onClick = { link() }) { Icon(Icons.Default.Link, null, Modifier.size(17.dp)); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.memory_workbench_link)) }
-                    Box {
-                        OutlinedButton(onClick = { addMenu = true }, contentPadding = PaddingValues(horizontal = 12.dp)) { Icon(Icons.Default.Add, null, Modifier.size(17.dp)); Text(stringResource(R.string.memory_workbench_add)) }
-                        MemoryMenu(addMenu, { addMenu = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.memory_action_create)) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { addMenu = false; viewModel.startEditing() })
-                            DropdownMenuItem(text = { Text(stringResource(R.string.memory_action_import)) }, leadingIcon = { Icon(Icons.Default.UploadFile, null) }, onClick = { addMenu = false; addDocument() })
-                        }
-                    }
-                }
+                    },
+                )
                 HorizontalDivider()
                 Box(Modifier.fillMaxWidth().weight(1f)) {
                     when {

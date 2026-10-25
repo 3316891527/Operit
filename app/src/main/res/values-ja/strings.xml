@@ -1661,7 +1661,7 @@
     <string name="settings_enable_summary_by_message_count">メッセージ数ごとのトリガーの概要</string>
     <string name="settings_enable_summary_by_message_count_desc">新しいメッセージの数がしきい値に達したときのトリガーの概要</string>
     <string name="settings_summary_message_count_threshold">メッセージ数のしきい値</string>
-    <string name="settings_summary_message_count_threshold_subtitle">概要をトリガーした新しいメッセージの数 (1 ～ 20)</string>
+    <string name="settings_summary_message_count_threshold_subtitle">要約を開始する新しいメッセージ数（1～50 件）</string>
     <string name="settings_summary_custom_rules">カスタム要約ルール</string>
     <string name="settings_summary_custom_rules_desc">会話を要約するときに追加のルールが送信されます。追加しない場合は空白のままにしてください</string>
     <string name="settings_summary_previous_review">前回の要約を要約する</string>
@@ -5276,11 +5276,6 @@
     <string name="reorder">並べ替え</string>
     <string name="settings_summary_threshold">要約を開始するコンテキスト使用率</string>
     <string name="settings_summary_threshold_subtitle">コンテキストの使用率がこの値を超えると要約します（0.1～0.95）</string>
-    <string name="settings_history_retention_title">過去のメディアの保持設定</string>
-    <string name="settings_max_image_history_user_turns">過去の画像を保持する会話数</string>
-    <string name="settings_max_image_history_user_turns_subtitle">直近 N 回のユーザーメッセージの画像のみ保持し、古い画像の再送信を防ぎます</string>
-    <string name="settings_max_media_history_user_turns">過去の音声・動画を保持する会話数</string>
-    <string name="settings_max_media_history_user_turns_subtitle">直近 N 回のユーザーメッセージの音声・動画のみ保持し、古いメディアの再送信を防ぎます</string>
     <string name="layout_adjustment_settings_title">レイアウト調整</string>
     <string name="layout_adjustment_description">画面要素の位置や余白を調整して、使いやすい表示にできます</string>
     <string name="chat_settings_bar_section">チャット設定バー</string>
@@ -5427,8 +5422,6 @@
     <string name="attachment_unknown_error">不明なエラー</string>
     <string name="attachment_location_failed">位置情報を取得できませんでした：%1$s</string>
     <string name="workflow_unknown_error">不明なエラー</string>
-    <string name="context_field_max_image_history_turns">過去の画像を保持する会話数</string>
-    <string name="context_field_max_media_history_turns">過去の音声・動画を保持する会話数</string>
     <string name="apk_unknown_error">不明なエラー</string>
     <string name="update_unknown_error">不明なエラー</string>
     <string name="avatar_reset">リセット</string>
@@ -7736,7 +7729,7 @@
     <string name="model_config_error_valid_context_length">有効なコンテキスト長を入力してください</string>
     <string name="model_config_error_valid_max_context_length">有効な最大コンテキスト長を入力してください</string>
     <string name="model_config_error_summary_threshold_range">要約開始のしきい値は 0～1 で入力してください</string>
-    <string name="model_config_error_valid_message_count">有効なメッセージ数のしきい値を入力してください</string>
+    <string name="model_config_error_valid_message_count">メッセージ数のしきい値を 1～50 で入力してください</string>
     <string name="model_config_unit_items">件</string>
     <string name="global_display_automation_behavior">自動操作の表示と動作</string>
     <string name="root_execution_mode_description">自動モードでは環境に応じて選択します。手動モードで自動の選択を上書きできます。</string>
@@ -7814,7 +7807,7 @@
     <string name="profile_occupation_value">職業：%1$s</string>
     <string name="profile_ai_style_value">希望する AI のスタイル：%1$s</string>
     <string name="ai_message_executing_deep_search">詳細検索を実行しています...</string>
-    <string name="ai_message_media_omitted">[音声・動画は省略]</string>
+    <string name="ai_message_media_omitted">[メディア省略]</string>
     <string name="ai_message_image_omitted">[画像は省略]</string>
     <string name="ai_message_workspace_omitted">[ワークスペースは省略]</string>
     <string name="ai_message_attachment_omitted">[添付ファイルは省略]</string>
@@ -8562,7 +8555,7 @@
     <string name="translation_language_romanian">ルーマニア語</string>
     <string name="translation_language_japanese">日本語</string>
     <string name="translation_retry_error_status">翻訳リクエストに失敗しました（再試行 %1$d/%2$d）：%3$s</string>
-    <string name="chat_generated_at">生成日時：%1$s</string>
+    <string name="chat_generated_at">time: %1$s</string>
     <string name="resource_delete_title">ローカルのリソースを削除</string>
     <string name="resource_delete_confirm">「%1$s」のローカルリソースを削除しますか？次回は再ダウンロードかインポートが必要です。共有ストレージにエクスポート済みの ZIP は保持します。</string>
     <string name="resource_delete_ubuntu_confirm">すべてのターミナルセッションを終了し、Ubuntu 環境、インストールしたソフトウェアとファイル、アプリ内のインストールアーカイブを削除します。削除後は未インストールとなり、リソースを再ダウンロード・インポートできます。エクスポート済みの ZIP は保持します。続行しますか？</string>
@@ -8647,9 +8640,6 @@
     <string name="model_workspace_summary_threshold_hint">この割合に達すると要約を開始します</string>
     <string name="model_workspace_summary_threshold_error">要約開始の割合は 0 より大きく 100 未満で入力してください</string>
     <string name="model_workspace_summary_context_limit">コンテキスト長は最大コンテキスト長を超えられません</string>
-    <string name="model_workspace_summary_history_error">過去のメディアを保持する会話数には、0 以上の整数を入力してください</string>
-    <string name="model_workspace_summary_history_scope">全体設定：過去のメディアの保持はすべてのモデル設定に適用されます</string>
-    <string name="model_workspace_summary_reset_history">過去のメディアの保持を既定値に戻す</string>
     <string name="model_workspace_summary_model">要約用モデル</string>
     <string name="model_workspace_summary_model_scope">この機能の割り当ては全体設定です。変更するとすべての設定に適用されます。</string>
     <string name="model_workspace_function_search">機能、設定、モデルを検索</string>

@@ -1245,6 +1245,9 @@ class ModelConfigManager(
             summarySectionOverrides: List<SummarySectionOverride>? = null
     ): ModelConfigData {
         return updateConfigInternal(configId) { current ->
+            // 保留历史值以兼容已有配置；新修改的轮次必须落在界面支持的范围内。
+            require(summaryMessageCountThreshold == current.summaryMessageCountThreshold ||
+                summaryMessageCountThreshold in 1..ModelConfigDefaults.MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD)
             current.copy(
                     enableSummary = enableSummary,
                     summaryTokenThreshold = summaryTokenThreshold,
@@ -1272,6 +1275,10 @@ class ModelConfigManager(
             enableSummaryDialogueReview: Boolean,
             summaryDialogueReviewTitle: String,
     ): ModelConfigData = updateConfigInternal(configId) { current ->
+        if (enableSummary && enableSummaryByMessageCount) {
+            require(summaryMessageCountThreshold != null &&
+                summaryMessageCountThreshold in 1..ModelConfigDefaults.MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD)
+        }
         current.copy(
             contextLength = contextLength,
             maxContextLength = maxContextLength,

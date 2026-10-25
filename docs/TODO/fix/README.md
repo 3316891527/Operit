@@ -6,6 +6,8 @@
 
 ## 计划索引
 
+- [界面与媒体交互修复](interface-media-polish/index.md) · `interface-media-polish`
+
 - [Antigravity OAuth 修复、移除 Vertex AI 登录与指纹伪装](antigravity_oauth_repair_20260928/index.md) · `antigravity_oauth_repair_20260928`
 - [API Key 首次引导修复](api_key_onboarding/index.md) · `api_key_onboarding`
 - [Calculator Qualified API Repair](calculator_qualified_api_repair_20260809/index.md) · `calculator_qualified_api_repair_20260809`

@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Summarize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -436,62 +434,6 @@ private fun SummaryEditorHeader(
                 )
             )
         }
-    }
-}
-
-@Composable
-internal fun RenderHistoryRetentionSection(
-    componentBackgroundColor: Color,
-    maxImageHistoryUserTurnsInput: String,
-    onMaxImageHistoryUserTurnsInputChange: (String) -> Unit,
-    maxMediaHistoryUserTurnsInput: String,
-    onMaxMediaHistoryUserTurnsInputChange: (String) -> Unit,
-    onReset: () -> Unit,
-    historyError: String?
-) {
-    SectionTitle(
-        text = stringResource(id = R.string.settings_history_retention_title),
-        icon = Icons.Default.History
-    )
-    SettingsInputField(
-        title = stringResource(id = R.string.settings_max_image_history_user_turns),
-        subtitle = stringResource(id = R.string.settings_max_image_history_user_turns_subtitle),
-        value = maxImageHistoryUserTurnsInput,
-        onValueChange = onMaxImageHistoryUserTurnsInputChange,
-        unitText = stringResource(id = R.string.context_unit_times),
-        backgroundColor = componentBackgroundColor
-    )
-
-    SettingsInputField(
-        title = stringResource(id = R.string.settings_max_media_history_user_turns),
-        subtitle = stringResource(id = R.string.settings_max_media_history_user_turns_subtitle),
-        value = maxMediaHistoryUserTurnsInput,
-        onValueChange = onMaxMediaHistoryUserTurnsInputChange,
-        unitText = stringResource(id = R.string.context_unit_times),
-        backgroundColor = componentBackgroundColor
-    )
-
-    Button(
-        onClick = onReset,
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-    ) {
-        Icon(imageVector = Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = stringResource(id = R.string.model_workspace_summary_reset_history), style = MaterialTheme.typography.bodyLarge)
-    }
-
-    historyError?.let {
-        Text(
-            text = it,
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-        )
     }
 }
 

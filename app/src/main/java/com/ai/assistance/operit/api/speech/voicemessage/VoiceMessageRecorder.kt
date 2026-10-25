@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.api.speech.voicemessage
 
+import com.ai.assistance.operit.util.OperitPaths
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioFormat
@@ -42,7 +44,7 @@ internal class VoiceMessageRecorder(private val context: Context) {
     @SuppressLint("MissingPermission")
     suspend fun record(onFrame: (Float, Long) -> Unit): RecordedVoiceMessage = withContext(Dispatchers.IO) {
         check(!cancelled)
-        val directory = File(context.filesDir, "media_pool/voice")
+        val directory = OperitPaths.cleanOnExitDir()
         check(directory.isDirectory || directory.mkdirs()) { context.getString(R.string.voice_message_record_failed) }
         val file = File(directory, "voice-${UUID.randomUUID()}.wav")
         activeFile = file

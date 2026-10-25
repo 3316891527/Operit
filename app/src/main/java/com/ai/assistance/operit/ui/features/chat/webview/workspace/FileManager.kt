@@ -5,6 +5,8 @@ import android.net.Uri
 import android.annotation.SuppressLint
 import android.os.Environment
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.Color
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -127,8 +129,20 @@ fun FileBrowser(
     val operations = remember(context) { FileBrowserOperations(context) }
     val clipboard by FileBrowserClipboard.content.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
+    var selectionMode by rememberSaveable(currentPath, currentEnvironment) { mutableStateOf(false) }
+    var selectedNames by rememberSaveable(currentPath, currentEnvironment) { mutableStateOf(emptySet<String>()) }
+    var pendingBatchDelete by remember { mutableStateOf<List<FileBrowserClipboardItem>?>(null) }
     // 是否显示隐藏文件（以.开头）
     var showHiddenFiles by remember { mutableStateOf(false) }
+    val visibleFiles = remember(fileList, showHiddenFiles, searchQuery, sortMode, descending, ignoreCase, foldersFirst) {
+        sortDirectoryEntries(fileList.filter { (showHiddenFiles || !it.name.startsWith(".")) &&
+            it.name.contains(searchQuery, ignoreCase = true) }, sortMode, descending, ignoreCase, foldersFirst)
+    }
+    fun finishSelection() { selectionMode = false; selectedNames = emptySet() }
+    fun toggleSelection(name: String) {
+        selectedNames = if (name in selectedNames) selectedNames - name else selectedNames + name
+    }
+    BackHandler(enabled = selectionMode && !isLoading) { finishSelection() }
 
 
     fun queryRepoBookmarkName(uri: Uri): String {
@@ -203,7 +217,21 @@ fun FileBrowser(
             }
     }
 
+    fun publishDirectory(entries: List<DirectoryEntry>, path: String, targetEnvironment: String?) {
+        // 只用成功读取的目录修正选择；初始空列表不能清掉恢复的多选状态。
+        if (path == currentPath && targetEnvironment == currentEnvironment) {
+            selectedNames = selectedNames.intersect(entries.map { it.name }.toSet())
+        } else {
+            finishSelection()
+        }
+        fileList = entries
+        currentPath = path
+        currentEnvironment = targetEnvironment
+        errorMessage = null
+    }
+
     fun loadDirectory(path: String, targetEnvironment: String? = currentEnvironment) {
+        if (isOperationLoading) return
         // 新导航替换旧读取；旧任务的 finally 不得清除新任务的加载状态。
         val requestVersion = ++directoryLoadVersion
         directoryLoadJob?.cancel()
@@ -217,10 +245,7 @@ fun FileBrowser(
                         null
                     }
                 if (localEntries != null) {
-                    fileList = localEntries
-                    currentPath = path
-                    currentEnvironment = targetEnvironment
-                    errorMessage = null
+                    publishDirectory(localEntries, path, targetEnvironment)
                     AppLogger.d(
                         "WorkspaceFileBrowser",
                         "listed local path=$path directories=${localEntries.count { it.isDirectory }} files=${localEntries.count { !it.isDirectory }}"
@@ -238,19 +263,16 @@ fun FileBrowser(
                 AppLogger.d("WorkspaceFileBrowser", "result list_files success=${result.success} error=${result.error}")
                 if (result.success && result.result is DirectoryListingData) {
                     val entries = (result.result as DirectoryListingData).entries
-                    fileList =
-                            entries.map {
-                                DirectoryEntry(
-                                        name = it.name,
-                                        isDirectory = it.isDirectory,
-                                        size = it.size,
-                                        lastModified = it.lastModified,
-                                        permissions = it.permissions
-                                )
-                            }
-                    currentPath = path
-                    currentEnvironment = targetEnvironment
-                    errorMessage = null
+                    val listedEntries = entries.map {
+                        DirectoryEntry(
+                            name = it.name,
+                            isDirectory = it.isDirectory,
+                            size = it.size,
+                            lastModified = it.lastModified,
+                            permissions = it.permissions
+                        )
+                    }
+                    publishDirectory(listedEntries, path, targetEnvironment)
                 } else {
                     errorMessage = result.error
                 }
@@ -348,6 +370,10 @@ fun FileBrowser(
         )
     }
 
+    fun selectedEntries(cut: Boolean): List<FileBrowserClipboardItem> = fileList
+        .filter { it.name in selectedNames }
+        .map { FileBrowserClipboardItem(joinPath(currentPath, it.name), currentEnvironment, cut, it.isDirectory) }
+
     fun createNewFile(fileName: String, isDirectory: Boolean) {
         if (isLoading) return
         if (!isValidWorkspaceEntryName(fileName)) {
@@ -413,6 +439,27 @@ fun FileBrowser(
             }
             loadDirectory(currentPath)
         }
+    }
+
+    pendingBatchDelete?.let { targets ->
+        AlertDialog(
+            onDismissRequest = { pendingBatchDelete = null },
+            title = { Text(stringResource(R.string.workspace_delete_selected_title)) },
+            text = { Text(stringResource(R.string.workspace_delete_selected_message, targets.size)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingBatchDelete = null
+                    runOperation {
+                        for (target in targets) {
+                            operations.delete(target.path, target.environment, target.isDirectory)
+                            selectedNames = selectedNames - target.path.substringAfterLast('/')
+                        }
+                        if (selectedNames.isEmpty()) selectionMode = false
+                    }
+                }, enabled = !isLoading) { Text(stringResource(R.string.file_manager_delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { pendingBatchDelete = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 
     fun openFile(filePath: String, asText: Boolean = false) {
@@ -581,7 +628,7 @@ fun FileBrowser(
             } }, confirmButton = {})
     }
     contextMenuExpandedFor?.let { target ->
-        FileBrowserContextMenu(target.name, target.isDirectory, clipboard != null,
+        FileBrowserContextMenu(target.name, target.isDirectory, clipboard.isNotEmpty(),
             onDismiss = { contextMenuExpandedFor = null },
             onCopy = { cut ->
                 FileBrowserClipboard.set(FileBrowserClipboardItem(joinPath(currentPath, target.name), currentEnvironment, cut, target.isDirectory))
@@ -645,7 +692,7 @@ fun FileBrowser(
                 IconButton(onClick = { parentPath(currentPath)?.let { loadDirectory(it) } }, enabled = currentPath != "/") {
                     Icon(Icons.Default.ArrowUpward, stringResource(R.string.file_manager_navigate_up))
                 }
-                if (clipboard != null) {
+                if (clipboard.isNotEmpty()) {
                     IconButton(onClick = { runOperation { operations.paste(currentPath, currentEnvironment) } }, enabled = !isLoading) {
                         Icon(Icons.Default.ContentPaste, stringResource(R.string.file_manager_paste))
                     }
@@ -692,7 +739,8 @@ fun FileBrowser(
 
                     IconButton(
                             onClick = { loadDirectory(currentPath) },
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(48.dp),
+                            enabled = !isLoading,
                     ) {
                         Icon(
                                 Icons.Default.Refresh,
@@ -700,9 +748,32 @@ fun FileBrowser(
                                 modifier = Modifier.size(18.dp)
                         )
                     }
+                    IconButton(
+                        onClick = { if (selectionMode) finishSelection() else selectionMode = true },
+                        modifier = Modifier.size(48.dp),
+                        enabled = !isLoading,
+                    ) {
+                        Icon(
+                            if (selectionMode) Icons.Default.Close else Icons.Default.SelectAll,
+                            stringResource(R.string.workspace_multi_select),
+                            Modifier.size(20.dp),
+                            tint = if (selectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             
+            if (selectionMode) {
+                FileBrowserSelectionBar(
+                    count = selectedNames.size,
+                    enabled = !isLoading,
+                    onFinish = ::finishSelection,
+                    onSelectAll = { selectedNames = visibleFiles.map { it.name }.toSet() },
+                    onCopy = { cut -> FileBrowserClipboard.set(selectedEntries(cut)); finishSelection() },
+                    onDelete = { pendingBatchDelete = selectedEntries(false) },
+                )
+            }
+
             // 快速路径栏
             LazyRow(
                 modifier = Modifier
@@ -811,15 +882,6 @@ fun FileBrowser(
                         }
                     }
 
-                    // 根据showHiddenFiles过滤文件列表
-                    val filteredList = if (showHiddenFiles) {
-                        fileList
-                    } else {
-                        fileList.filter { !it.name.startsWith(".") }
-                    }
-                    
-                    val visibleFiles = sortDirectoryEntries(filteredList.filter { it.name.contains(searchQuery, ignoreCase = true) },
-                        sortMode, descending, ignoreCase, foldersFirst)
                     if (visibleFiles.isEmpty()) {
                         item { Text(stringResource(R.string.file_manager_empty_folder),
                             modifier = Modifier.padding(24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -832,9 +894,12 @@ fun FileBrowser(
                                             if (item.isDirectory) Icons.Default.Folder
                                             else getFileIcon(item.name),
                                     isDirectory = item.isDirectory,
+                                    selected = if (selectionMode) item.name in selectedNames else null,
                                     detail = listOf(formatLastModified(item.lastModified), if (item.isDirectory) "" else formatSize(item.size)).filter { it.isNotBlank() }.joinToString(" · "),
                                     onClick = {
-                                        if (item.isDirectory) {
+                                        if (selectionMode) {
+                                            toggleSelection(item.name)
+                                        } else if (item.isDirectory) {
                                             val newPath =
                                                 if (isSafEnv) joinPath(currentPath, item.name)
                                                 else File(currentPath, item.name).path
@@ -848,7 +913,8 @@ fun FileBrowser(
                                     },
                                     onLongPress = {
                                         if (!isLoading) {
-                                            contextMenuExpandedFor = item
+                                            if (selectionMode) toggleSelection(item.name)
+                                            else contextMenuExpandedFor = item
                                         }
                                     }
                             )
@@ -985,7 +1051,8 @@ private fun FileListItem(
         isDirectory: Boolean,
         onClick: () -> Unit,
         detail: String = "",
-        onLongPress: (() -> Unit)? = null
+        onLongPress: (() -> Unit)? = null,
+        selected: Boolean? = null,
 ) {
     val latestOnClick by rememberUpdatedState(onClick)
     val latestOnLongPress by rememberUpdatedState(onLongPress)
@@ -993,6 +1060,7 @@ private fun FileListItem(
             modifier =
                     Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(4.dp))
+                            .background(if (selected == true) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color.Transparent)
                             // 回调随重组更新，手势会话只在文件项身份改变时重启。
                             .pointerInput(name, isDirectory) {
                                 detectTapGestures(
@@ -1018,6 +1086,7 @@ private fun FileListItem(
             if (detail.isNotBlank()) Text(detail, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        if (selected != null) Checkbox(checked = selected, onCheckedChange = { latestOnClick() })
     }
 }
 

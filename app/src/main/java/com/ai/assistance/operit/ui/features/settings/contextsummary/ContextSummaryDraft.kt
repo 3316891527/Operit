@@ -1,13 +1,13 @@
 package com.ai.assistance.operit.ui.features.settings.contextsummary
 
+import com.ai.assistance.operit.data.model.ModelConfigDefaults
+
 import com.ai.assistance.operit.core.config.FunctionalPrompts
 import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.model.SummarySectionConfig
 
-internal data class HistoryRetentionValues(val imageTurns: Int, val mediaTurns: Int)
-
 internal enum class ContextSummaryValidation {
-    CONTEXT_LENGTH, MAX_CONTEXT_LENGTH, CONTEXT_LIMIT, SUMMARY_THRESHOLD, MESSAGE_COUNT, HISTORY_RETENTION
+    CONTEXT_LENGTH, MAX_CONTEXT_LENGTH, CONTEXT_LIMIT, SUMMARY_THRESHOLD, MESSAGE_COUNT
 }
 
 internal data class ContextSummaryDraft(
@@ -22,11 +22,9 @@ internal data class ContextSummaryDraft(
     val dialogueReview: Boolean,
     val reviewTitle: String,
     val sections: List<SummarySectionConfig>,
-    val imageTurns: String,
-    val mediaTurns: String,
 ) {
     companion object {
-        fun from(config: ModelConfigData, history: HistoryRetentionValues, useEnglish: Boolean) =
+        fun from(config: ModelConfigData, useEnglish: Boolean) =
             ContextSummaryDraft(
                 contextLength = formatSummaryNumber(config.contextLength),
                 maxContextLength = formatSummaryNumber(config.maxContextLength),
@@ -39,8 +37,6 @@ internal data class ContextSummaryDraft(
                 dialogueReview = config.enableSummaryDialogueReview,
                 reviewTitle = config.summaryDialogueReviewTitle,
                 sections = FunctionalPrompts.resolveSummarySections(config.summarySectionOverrides, useEnglish),
-                imageTurns = history.imageTurns.toString(),
-                mediaTurns = history.mediaTurns.toString(),
             )
     }
 
@@ -49,15 +45,12 @@ internal data class ContextSummaryDraft(
         val maximum = maxContextLength.toFloatOrNull()
         val threshold = thresholdPercent.toFloatOrNull()
         val messages = messageCount.toIntOrNull()
-        val images = imageTurns.toIntOrNull()
-        val media = mediaTurns.toIntOrNull()
         return when {
             context == null || !context.isFinite() || context <= 0f -> ContextSummaryValidation.CONTEXT_LENGTH
             maximum == null || !maximum.isFinite() || maximum <= 0f -> ContextSummaryValidation.MAX_CONTEXT_LENGTH
             context > maximum -> ContextSummaryValidation.CONTEXT_LIMIT
             enableSummary && (threshold == null || !threshold.isFinite() || threshold <= 0f || threshold >= 100f) -> ContextSummaryValidation.SUMMARY_THRESHOLD
-            enableSummary && byMessageCount && (messages == null || messages <= 0) -> ContextSummaryValidation.MESSAGE_COUNT
-            images == null || images < 0 || media == null || media < 0 -> ContextSummaryValidation.HISTORY_RETENTION
+            enableSummary && byMessageCount && (messages == null || messages !in 1..ModelConfigDefaults.MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD) -> ContextSummaryValidation.MESSAGE_COUNT
             else -> null
         }
     }
@@ -75,8 +68,6 @@ internal data class ContextSummaryDraft(
         dialogueReview = mergeField(dialogueReview, previous.dialogueReview, incoming.dialogueReview),
         reviewTitle = mergeField(reviewTitle, previous.reviewTitle, incoming.reviewTitle),
         sections = mergeField(sections, previous.sections, incoming.sections),
-        imageTurns = mergeField(imageTurns, previous.imageTurns, incoming.imageTurns),
-        mediaTurns = mergeField(mediaTurns, previous.mediaTurns, incoming.mediaTurns),
     )
 }
 

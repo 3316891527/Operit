@@ -734,7 +734,7 @@ class ApiConfigDelegate(
                     enableSummary = current.enableSummary,
                     summaryTokenThreshold = current.summaryTokenThreshold,
                     enableSummaryByMessageCount = current.enableSummaryByMessageCount,
-                    summaryMessageCountThreshold = threshold
+                    summaryMessageCountThreshold = threshold.coerceIn(1, ModelConfigDefaults.MAX_SUMMARY_MESSAGE_COUNT_THRESHOLD)
             )
         }
     }

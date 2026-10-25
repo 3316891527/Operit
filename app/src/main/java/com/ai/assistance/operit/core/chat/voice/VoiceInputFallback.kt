@@ -4,7 +4,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 
-internal enum class VoiceTextSource { AUDIO_MODEL, STT }
+internal enum class VoiceTextSource { AUDIO_MODEL, STT, CACHED }
 internal data class VoiceTextResult(val text: String, val source: VoiceTextSource)
 internal typealias VoiceResponseAttempt = suspend (suspend (String) -> Unit) -> Unit
 
@@ -14,8 +14,10 @@ internal suspend fun resolveVoiceText(
     audioModel: suspend () -> String,
     stt: suspend () -> String,
     onAudioModelFailure: (Exception) -> Unit = {},
+    cachedTranscript: String? = null,
 ): VoiceTextResult {
     currentCoroutineContext().ensureActive()
+    if (cachedTranscript != null) return VoiceTextResult(cachedTranscript, VoiceTextSource.CACHED)
     var audioError: Exception? = null
     try {
         if (hasAudioModel()) {

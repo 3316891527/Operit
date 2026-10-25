@@ -105,7 +105,7 @@ internal fun ThemeSettingsFooter(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(if (globalLayout) stringResource(R.string.theme_layout_global_title) else targetName, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                Text(if (globalLayout) stringResource(R.string.theme_layout_global_title) else targetName, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge, maxLines = 1)
                 Text(
                     stringResource(
                         when {
