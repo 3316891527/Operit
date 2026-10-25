@@ -190,6 +190,14 @@ fun BubbleUserMessageComposable(
     val resolvedDisplayName = if (isProxySender) proxySenderName else globalUserName
     val shouldShowResolvedName = !isHiddenPlaceholder && if (isProxySender) true else showUserName
     val shouldShowAvatar = !isHiddenPlaceholder && bubbleShowAvatar
+    val avatarSize = 32.dp
+    val avatarSpacing = 8.dp
+    // 图片组与正文共用右边界，普通气泡布局需预留头像列及其间距。
+    val mediaEndPadding = when {
+        bubbleWideLayoutEnabled -> 0.dp
+        shouldShowAvatar -> avatarSize + avatarSpacing
+        else -> 8.dp
+    }
 
     // 添加状态控制内容预览
     val showContentPreview = remember { mutableStateOf(false) }
@@ -274,13 +282,8 @@ fun BubbleUserMessageComposable(
             }
         }
 
-        if (voiceMessage != null && voiceFileMissing.value) {
-            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.End) {
-                ExpiredVoiceMessageTag(enabled = enableDialogs)
-            }
-        }
         if (sentImages.isNotEmpty()) {
-            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.End) {
+            Row(Modifier.fillMaxWidth().padding(end = mediaEndPadding, bottom = 4.dp), horizontalArrangement = Arrangement.End) {
                 SentImageGroup(sources = sentImages, enabled = enableDialogs)
             }
         }
@@ -319,8 +322,7 @@ fun BubbleUserMessageComposable(
         }
 
         // Message bubble
-        if (voiceMessage == null || !voiceFileMissing.value) {
-            if (bubbleWideLayoutEnabled) {
+        if (bubbleWideLayoutEnabled) {
                 val headerVisible = shouldShowAvatar || (shouldShowResolvedName && !resolvedDisplayName.isNullOrEmpty())
 
                 if (headerVisible) {
@@ -344,7 +346,7 @@ fun BubbleUserMessageComposable(
 
                         if (shouldShowAvatar) {
                             if (shouldShowResolvedName && !resolvedDisplayName.isNullOrEmpty()) {
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(avatarSpacing))
                             }
 
                             if (!avatarUri.isNullOrEmpty()) {
@@ -352,7 +354,7 @@ fun BubbleUserMessageComposable(
                                     painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
                                     contentDescription = "User Avatar",
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(avatarSize)
                                         .clip(avatarShape),
                                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 )
@@ -361,7 +363,7 @@ fun BubbleUserMessageComposable(
                                     imageVector = if (isProxySender) Icons.Default.Assistant else Icons.Default.Person,
                                     contentDescription = "User Avatar",
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(avatarSize)
                                         .clip(avatarShape),
                                     tint = if (isProxySender) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
                                 )
@@ -389,7 +391,10 @@ fun BubbleUserMessageComposable(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
                     ) {
-                        if (effectiveBubbleImageStyle != null) {
+                        if (voiceMessage != null && voiceFileMissing.value) {
+                            // 过期时只替换正文内容，保留消息行中的头像和姓名。
+                            ExpiredVoiceMessageTag(enabled = enableDialogs)
+                        } else if (effectiveBubbleImageStyle != null) {
                             BubbleImageBackgroundSurface(
                                 imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
                                 shape = bubbleShape,
@@ -495,7 +500,7 @@ fun BubbleUserMessageComposable(
                         }
                     }
                 }
-            } else {
+        } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -541,7 +546,10 @@ fun BubbleUserMessageComposable(
                                 .widthIn(max = if (isHiddenPlaceholder) minOf(maxBubbleWidth, 320.dp) else maxBubbleWidth)
                                 .defaultMinSize(minHeight = 44.dp)
 
-                        if (effectiveBubbleImageStyle != null) {
+                        if (voiceMessage != null && voiceFileMissing.value) {
+                            // 过期时只替换正文内容，保留消息行中的头像和姓名。
+                            ExpiredVoiceMessageTag(enabled = enableDialogs)
+                        } else if (effectiveBubbleImageStyle != null) {
                             BubbleImageBackgroundSurface(
                                 imageStyle = effectiveBubbleImageStyle.copy(backgroundOpacity = backgroundOpacity ?: 1f),
                                 shape = bubbleShape,
@@ -648,14 +656,14 @@ fun BubbleUserMessageComposable(
                     }
                 }
                 if (shouldShowAvatar) {
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(avatarSpacing))
                     // Avatar
                     if (!avatarUri.isNullOrEmpty()) {
                         Image(
                             painter = rememberAsyncImagePainter(model = Uri.parse(avatarUri)),
                             contentDescription = "User Avatar",
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(avatarSize)
                                 .clip(avatarShape),
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop
                         )
@@ -664,13 +672,12 @@ fun BubbleUserMessageComposable(
                             imageVector = if (isProxySender) Icons.Default.Assistant else Icons.Default.Person,
                             contentDescription = "User Avatar",
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(avatarSize)
                                 .clip(avatarShape),
                             tint = if (isProxySender) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-            }
             }
         }
     }
