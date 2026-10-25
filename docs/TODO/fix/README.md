@@ -6,6 +6,7 @@
 
 ## 计划索引
 
+- [模型上下文协议手动启动与元数据兼容](mcp-manual-start/index.md) · `mcp-manual-start`
 - [界面与媒体交互修复](interface-media-polish/index.md) · `interface-media-polish`
 
 - [Antigravity OAuth 修复、移除 Vertex AI 登录与指纹伪装](antigravity_oauth_repair_20260928/index.md) · `antigravity_oauth_repair_20260928`

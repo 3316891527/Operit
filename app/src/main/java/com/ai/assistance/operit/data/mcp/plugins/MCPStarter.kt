@@ -8,7 +8,7 @@ import com.ai.assistance.operit.core.tools.mcp.McpRuntimeDescriptor
 import com.ai.assistance.operit.data.mcp.MCPLocalServer
 import com.ai.assistance.operit.data.mcp.MCPRepository
 import com.ai.assistance.operit.core.tools.system.Terminal
-import com.google.gson.Gson
+import com.ai.assistance.operit.data.mcp.createMcpConfigGson
 import com.google.gson.JsonParser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -874,7 +874,7 @@ class MCPStarter(private val context: Context) {
         if (configJson.isBlank()) return null
 
         try {
-            return Gson().fromJson(configJson, MCPLocalServer.MCPConfig::class.java)
+            return createMcpConfigGson().fromJson(configJson, MCPLocalServer.MCPConfig::class.java)
         } catch (e: Exception) {
             AppLogger.e(TAG, "解析配置JSON失败", e)
             return null

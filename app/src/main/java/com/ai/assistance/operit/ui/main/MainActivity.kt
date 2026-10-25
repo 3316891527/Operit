@@ -43,10 +43,10 @@ import com.ai.assistance.operit.data.updates.UpdateManager
 import com.ai.assistance.operit.data.updates.UpdateStatus
 import com.ai.assistance.operit.ui.common.NavItem
 import com.ai.assistance.operit.ui.features.onboarding.screens.WelcomeScreen
-import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingScreenWithState
-import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingState
-import com.ai.assistance.operit.ui.features.startup.screens.LocalPluginLoadingState
-import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingStateRegistry
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingScreenWithState
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingState
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.LocalMcpLoadingState
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingStateRegistry
 import com.ai.assistance.operit.ui.theme.OperitTheme
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
 import com.ai.assistance.operit.util.AnrMonitor
@@ -84,8 +84,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var anrMonitor: AnrMonitor
     private lateinit var mcpRepository: MCPRepository
 
-    // ======== MCP插件状态 ========
-    private val pluginLoadingState = PluginLoadingState()
+    // ======== 模型上下文协议手动加载状态 ========
+    private val mcpLoadingState = McpLoadingState()
 
     // ======== 双击返回退出相关变量 ========
     private var backPressedTime: Long = 0
@@ -189,13 +189,13 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // 设置上下文以便获取插件元数据
-        pluginLoadingState.setAppContext(this)
-        PluginLoadingStateRegistry.bind(pluginLoadingState, lifecycleScope)
+        // 仅为手动加载入口提供状态与日志，不在应用启动时运行服务。
+        mcpLoadingState.setAppContext(this)
+        McpLoadingStateRegistry.bind(mcpLoadingState, lifecycleScope)
 
         // 设置跳过加载的回调
-        pluginLoadingState.setOnSkipCallback {
-            AppLogger.d(TAG, "用户跳过了插件加载过程")
+        mcpLoadingState.setOnSkipCallback {
+            AppLogger.d(TAG, "用户跳过了模型上下文协议加载面板")
             OKToast.info(this, getString(R.string.plugin_loading_skipped), OKToast.LENGTH_SHORT).show()
         }
 
@@ -361,25 +361,6 @@ class MainActivity : ComponentActivity() {
     private fun performInitialChecks() {
         lifecycleScope.launch {
             prepareStartupChatIfNeeded()
-            if (agreementPreferences.isOnboardingCompleted()) {
-                startPluginLoading()
-            }
-        }
-    }
-
-    // ======== 启动插件加载 ========
-    private fun startPluginLoading() {
-        // 显示插件加载界面
-        pluginLoadingState.show()
-
-        // 启动超时检测（30秒）
-        pluginLoadingState.startTimeoutCheck(30000L, lifecycleScope)
-
-        // 初始化MCP服务器并启动插件
-        // 轻微延迟让首帧 Compose 完成，避免启动阶段后台重任务立刻抢占导致掉帧
-        lifecycleScope.launch {
-            delay(500)
-            pluginLoadingState.initializeMCPServer(this@MainActivity, lifecycleScope)
         }
     }
 
@@ -442,10 +423,10 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         AppLogger.d(TAG, "onDestroy called")
 
-        PluginLoadingStateRegistry.unbind(pluginLoadingState)
+        McpLoadingStateRegistry.unbind(mcpLoadingState)
 
         // 确保隐藏加载界面
-        pluginLoadingState.hide()
+        mcpLoadingState.hide()
 
         // 主界面销毁时，确保关闭虚拟屏幕 Overlay 并断开 Shower WebSocket 连接
         try {
@@ -462,7 +443,7 @@ class MainActivity : ComponentActivity() {
         AppLogger.d(TAG, "onConfigurationChanged: new orientation=${newConfig.orientation}, last orientation=${lastOrientation}")
 
         // 屏幕方向变化时，确保加载界面不可见
-        pluginLoadingState.hide()
+        mcpLoadingState.hide()
 
         // 仅当方向确实发生变化时才处理
         if (newConfig.orientation != lastOrientation) {
@@ -560,7 +541,6 @@ class MainActivity : ComponentActivity() {
                         WelcomeScreen(
                             onStart = {
                                 agreementPreferences.markOnboardingCompleted()
-                                startPluginLoading()
                             }
                         )
                     } else {
@@ -577,7 +557,7 @@ class MainActivity : ComponentActivity() {
                                 else -> currentMainNavItem
                             }
 
-                            CompositionLocalProvider(LocalPluginLoadingState provides pluginLoadingState) {
+                            CompositionLocalProvider(LocalMcpLoadingState provides mcpLoadingState) {
                                 // 主应用界面 (始终存在于底层)
                                 OperitApp(
                                         initialNavItem = initialNavItem,
@@ -607,9 +587,9 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                    // 插件加载界面 (带有淡出效果) - 始终在最上层
-                    PluginLoadingScreenWithState(
-                            loadingState = pluginLoadingState,
+                    // 用户手动启动服务时显示进度，开屏保持隐藏。
+                    McpLoadingScreenWithState(
+                            loadingState = mcpLoadingState,
                             modifier = Modifier.zIndex(10f) // 确保加载界面在最上层
                     )
                 }

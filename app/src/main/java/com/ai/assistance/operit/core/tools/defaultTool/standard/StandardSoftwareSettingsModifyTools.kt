@@ -67,8 +67,8 @@ import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
-import com.ai.assistance.operit.ui.features.startup.screens.PluginLoadingStateRegistry
-import com.ai.assistance.operit.ui.features.startup.screens.PluginStatus
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingStateRegistry
+import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingStatus
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
 import com.ai.assistance.operit.ui.permissions.ToolPermissionSystem
 import kotlinx.coroutines.delay
@@ -1887,10 +1887,10 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                 ?.coerceIn(5000L, 600000L)
                 ?: 120000L
 
-        val pluginLoadingState = PluginLoadingStateRegistry.getState()
-        val lifecycleScope = PluginLoadingStateRegistry.getScope()
+        val mcpLoadingState = McpLoadingStateRegistry.getState()
+        val lifecycleScope = McpLoadingStateRegistry.getScope()
 
-        if (pluginLoadingState == null || lifecycleScope == null) {
+        if (mcpLoadingState == null || lifecycleScope == null) {
             return ToolResult(
                 toolName = tool.name,
                 success = false,
@@ -1912,16 +1912,16 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
             )
         }
 
-        pluginLoadingState.reset()
-        pluginLoadingState.show()
-        pluginLoadingState.initializeMCPServer(context, lifecycleScope)
+        mcpLoadingState.reset()
+        mcpLoadingState.show()
+        mcpLoadingState.startConfiguredServers(context, lifecycleScope)
 
         val startAt = System.currentTimeMillis()
         while (true) {
             val elapsed = System.currentTimeMillis() - startAt
             val finished =
-                pluginLoadingState.progress.value >= 0.999f &&
-                    pluginLoadingState.message.value.isNotBlank()
+                mcpLoadingState.progress.value >= 0.999f &&
+                    mcpLoadingState.message.value.isNotBlank()
             if (finished || elapsed >= timeoutMs) {
                 break
             }
@@ -1930,10 +1930,10 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
 
         val elapsedMs = System.currentTimeMillis() - startAt
         val timedOut = elapsedMs >= timeoutMs
-        val plugins = pluginLoadingState.plugins.value
-        val pluginLogs = pluginLoadingState.pluginLogs.value
-        val failedCount = plugins.count { it.status == PluginStatus.FAILED }
-        val successCount = plugins.count { it.status == PluginStatus.SUCCESS }
+        val plugins = mcpLoadingState.plugins.value
+        val pluginLogs = mcpLoadingState.pluginLogs.value
+        val failedCount = plugins.count { it.status == McpLoadingStatus.FAILED }
+        val successCount = plugins.count { it.status == McpLoadingStatus.SUCCESS }
 
         val pluginItems =
             plugins.map { plugin ->
@@ -1961,10 +1961,10 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                     timeoutMs = timeoutMs,
                     elapsedMs = elapsedMs,
                     timedOut = timedOut,
-                    progress = pluginLoadingState.progress.value.toDouble(),
-                    message = pluginLoadingState.message.value,
-                    pluginsTotal = pluginLoadingState.pluginsTotal.value,
-                    pluginsStarted = pluginLoadingState.pluginsStarted.value,
+                    progress = mcpLoadingState.progress.value.toDouble(),
+                    message = mcpLoadingState.message.value,
+                    pluginsTotal = mcpLoadingState.pluginsTotal.value,
+                    pluginsStarted = mcpLoadingState.pluginsStarted.value,
                     successCount = successCount,
                     failedCount = failedCount,
                     plugins = pluginItems,
