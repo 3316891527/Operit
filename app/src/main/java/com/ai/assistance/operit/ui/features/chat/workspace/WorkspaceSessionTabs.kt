@@ -3,6 +3,8 @@ package com.ai.assistance.operit.ui.features.chat.workspace
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -13,12 +15,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -101,7 +107,7 @@ internal fun WorkspaceSessionTabs(
         }
         if (page == WorkspaceHubPage.TERMINAL) {
             var menuOpen by remember { mutableStateOf(false) }
-            androidx.compose.foundation.layout.Box {
+            Box {
                 IconButton(onClick = { menuOpen = true }) {
                     Icon(
                         Icons.Default.MoreVert,
@@ -109,15 +115,45 @@ internal fun WorkspaceSessionTabs(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.workspace_terminal_setup)) }, onClick = {
-                        menuOpen = false
-                        onTerminalPage(EmbeddedTerminalPage.SETUP)
-                    })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.workspace_terminal_settings)) }, onClick = {
-                        menuOpen = false
-                        onTerminalPage(EmbeddedTerminalPage.SETTINGS)
-                    })
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    modifier = Modifier.widthIn(min = 228.dp, max = 280.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 3.dp,
+                    shadowElevation = 8.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)),
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.workspace_terminal_setup), style = MaterialTheme.typography.titleSmall) },
+                        leadingIcon = {
+                            Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                                Icon(Icons.Default.Build, null, Modifier.padding(8.dp).size(20.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 6.dp).heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        onClick = {
+                            menuOpen = false
+                            onTerminalPage(EmbeddedTerminalPage.SETUP)
+                        },
+                    )
+                    HorizontalDivider(Modifier.padding(horizontal = 18.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.workspace_terminal_settings), style = MaterialTheme.typography.titleSmall) },
+                        leadingIcon = {
+                            Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                                Icon(Icons.Default.Settings, null, Modifier.padding(8.dp).size(20.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 6.dp).heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp)),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        onClick = {
+                            menuOpen = false
+                            onTerminalPage(EmbeddedTerminalPage.SETTINGS)
+                        },
+                    )
                 }
             }
         }
