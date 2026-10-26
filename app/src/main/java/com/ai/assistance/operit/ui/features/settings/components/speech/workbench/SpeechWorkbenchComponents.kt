@@ -260,13 +260,15 @@ internal fun VoiceServiceType.titleRes(): Int = when (this) {
     VoiceServiceType.MIMO_TTS -> R.string.speech_services_tts_type_mimo
     VoiceServiceType.DOUBAO_TTS -> R.string.speech_services_tts_type_doubao
     VoiceServiceType.OPENAI_TTS -> R.string.speech_services_tts_type_openai
-    VoiceServiceType.VITS_TTS -> R.string.speech_services_tts_type_vits
+    VoiceServiceType.SHERPA_ONNX_TTS -> R.string.hub_tts_provider
+    VoiceServiceType.VITS_TTS -> R.string.hub_legacy_tts
 }
 
 internal fun SpeechServiceType.titleRes(): Int = when (this) {
+    SpeechServiceType.SHERPA_ONNX -> R.string.hub_stt_provider
     SpeechServiceType.SHERPA_NCNN -> R.string.speech_services_stt_type_sherpa
     SpeechServiceType.OPENAI_STT -> R.string.speech_services_stt_type_openai
     SpeechServiceType.DEEPGRAM_STT -> R.string.speech_services_stt_type_deepgram
 }
 
-internal val VoiceServiceType.local: Boolean get() = this == VoiceServiceType.SIMPLE_TTS || this == VoiceServiceType.VITS_TTS
+internal val VoiceServiceType.local: Boolean get() = this == VoiceServiceType.SIMPLE_TTS || this == VoiceServiceType.VITS_TTS || this == VoiceServiceType.SHERPA_ONNX_TTS

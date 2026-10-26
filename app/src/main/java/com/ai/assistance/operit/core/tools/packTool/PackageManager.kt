@@ -2,6 +2,10 @@ package com.ai.assistance.operit.core.tools.packTool
 
 import android.content.Context
 import android.os.Looper
+import com.ai.assistance.operit.data.resources.extensions.BuiltInExtensionResources
+import com.ai.assistance.operit.data.resources.packs.PackResources
+import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
+import com.ai.assistance.operit.data.storage.LocalModelUsageHandle
 import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.util.AppLogger
@@ -105,6 +109,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
 
     // Map of package name to package description (all available packages in market)
     private val availablePackages = ConcurrentHashMap<String, ToolPackage>()
+    private val builtInResourceUsage = mutableMapOf<String, LocalModelUsageHandle>()
 
     private val packageLoadErrors = ConcurrentHashMap<String, String>()
 
@@ -169,7 +174,8 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val logoMimeType: String? = null,
         val apiVersion: String = ToolPkgApiCompatibility.LEGACY_API_VERSION,
         val requires: List<ToolPkgManifestRequirement> = emptyList(),
-        val fileSizeBytes: Long = 0L
+        val fileSizeBytes: Long = 0L,
+        val isBuiltIn: Boolean = false,
     )
 
     data class ToolPkgLogoBytes(
@@ -482,14 +488,15 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             val cleanedEnabledPackageNames =
                 normalizedEnabledPackageNames.filter { packageName -> availablePackages.containsKey(packageName) }
             if (persistIfChanged && cleanedEnabledPackageNames != normalizedEnabledPackageNames) {
-                persistEnabledPackageNamesToPrefs(cleanedEnabledPackageNames)
+                val pending = normalizedEnabledPackageNames.filter { it in BuiltInExtensionResources.packageNames(context) }
+                persistEnabledPackageNamesToPrefs((cleanedEnabledPackageNames + pending).distinct())
             }
 
             val normalizedStates =
                 normalizeToolPkgSubpackageStates(subpackageStatesOverride ?: decodeToolPkgSubpackageStatesFromPrefs())
             val cleanedStates =
                 normalizedStates.filterKeys { packageName ->
-                    toolPkgSubpackageByPackageName.containsKey(packageName)
+                    toolPkgSubpackageByPackageName.containsKey(packageName) || packageName in BuiltInExtensionResources.packageNames(context)
                 }
             if (persistIfChanged && cleanedStates != normalizedStates) {
                 persistToolPkgSubpackageStatesToPrefs(cleanedStates)
@@ -499,6 +506,13 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             enabledPackageNameSetCache = cleanedEnabledPackageNames.toSet()
             toolPkgSubpackageStatesCache = cleanedStates
             runtimeCachesReady = true
+            val needed = BuiltInExtensionResources.installed(context).filter { (pack, _) ->
+                pack.extension!!.packageNames.any { it in enabledPackageNameSetCache && availablePackages[it]?.isBuiltIn == true }
+            }.map { it.first.id }.toSet()
+            (builtInResourceUsage.keys - needed).forEach { builtInResourceUsage.remove(it)?.close() }
+            (needed - builtInResourceUsage.keys).forEach { id ->
+                builtInResourceUsage[id] = checkNotNull(LocalModelRuntimeRegistry.acquire(PackResources.directory(context, id))) { "内置扩展正在移除" }
+            }
         }
         notifyToolPkgRuntimeChangeListeners()
     }
@@ -885,7 +899,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         mainEntry: String
     ): String? {
         return when (sourceType) {
-            ToolPkgSourceType.EXTERNAL -> {
+            ToolPkgSourceType.EXTERNAL, ToolPkgSourceType.RESOURCE -> {
                 val sourceFile = File(sourcePath)
                 if (!sourceFile.exists()) {
                     null
@@ -937,7 +951,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
 
     private fun extractToolPkgArchive(runtime: ToolPkgContainerRuntime, destinationDir: File): Boolean {
         return when (runtime.sourceType) {
-            ToolPkgSourceType.EXTERNAL ->
+            ToolPkgSourceType.EXTERNAL, ToolPkgSourceType.RESOURCE ->
                 ToolPkgArchiveParser.extractZipEntriesFromExternal(
                     zipFilePath = runtime.sourcePath,
                     destinationDir = destinationDir
@@ -1066,7 +1080,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
     ): Boolean {
         val existingContainer = toolPkgContainersTarget[packageName]
         if (existingContainer != null) {
-            return if (existingContainer.sourceType == ToolPkgSourceType.ASSET) {
+            return if (existingContainer.sourceType != ToolPkgSourceType.EXTERNAL) {
                 removeToolPkgContainerFromTargets(
                     containerPackageName = existingContainer.packageName,
                     availablePackagesTarget = availablePackagesTarget,
@@ -1082,7 +1096,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val existingSubpackage = toolPkgSubpackageByPackageNameTarget[packageName]
         if (existingSubpackage != null) {
             val ownerContainer = toolPkgContainersTarget[existingSubpackage.containerPackageName]
-            return if (ownerContainer?.sourceType == ToolPkgSourceType.ASSET) {
+            return if (ownerContainer != null && ownerContainer.sourceType != ToolPkgSourceType.EXTERNAL) {
                 removeToolPkgContainerFromTargets(
                     containerPackageName = ownerContainer.packageName,
                     availablePackagesTarget = availablePackagesTarget,
@@ -1120,7 +1134,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         conflictingNames.forEach { packageName ->
             val existingContainer = toolPkgContainersTarget[packageName]
             if (existingContainer != null) {
-                if (existingContainer.sourceType != ToolPkgSourceType.ASSET) {
+                if (existingContainer.sourceType == ToolPkgSourceType.EXTERNAL) {
                     return false
                 }
                 builtInContainersToRemove += existingContainer.packageName
@@ -1130,7 +1144,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             val existingSubpackage = toolPkgSubpackageByPackageNameTarget[packageName]
             if (existingSubpackage != null) {
                 val ownerContainer = toolPkgContainersTarget[existingSubpackage.containerPackageName]
-                if (ownerContainer?.sourceType != ToolPkgSourceType.ASSET) {
+                if (ownerContainer == null || ownerContainer.sourceType == ToolPkgSourceType.EXTERNAL) {
                     return false
                 }
                 builtInContainersToRemove += ownerContainer.packageName
@@ -1340,6 +1354,28 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         return scanPackageCandidates(phase = "asset", candidates = candidates)
     }
 
+    private fun scanDownloadedBuiltIns(baseSnapshot: PackageScanSnapshot): PackageScanSnapshot {
+        val candidates = BuiltInExtensionResources.installed(context).map { (pack, file) ->
+            PackageScanCandidate(
+                fileName = file.name,
+                sourcePath = file.absolutePath,
+                loadJs = { onError ->
+                    loadPackageFromJsFile(file, onError)?.let { toolPackage ->
+                        require(toolPackage.name in pack.extension!!.packageNames)
+                        BuiltInPackageDefaults.sandbox(toolPackage)
+                    }
+                },
+                loadToolPkg = { onError ->
+                    loadToolPkgFromExternalFile(file, onError, ToolPkgSourceType.RESOURCE)?.let { result ->
+                        require((listOf(result.containerPackage.name) + result.subpackagePackages.map(ToolPackage::name)).toSet() == pack.extension!!.packageNames.toSet())
+                        BuiltInPackageDefaults.plugin(result)
+                    }
+                },
+            )
+        }
+        return scanPackageCandidates("builtin-resource", candidates, baseSnapshot)
+    }
+
     private fun scanExternalPackages(baseSnapshot: PackageScanSnapshot): PackageScanSnapshot {
         val externalFiles =
             if (externalPackagesDir.exists()) {
@@ -1370,7 +1406,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                     PackageScanCandidate(
                         fileName = file.name,
                         sourcePath = file.absolutePath,
-                        loadJs = { onError -> loadPackageFromJsFile(file, onError) },
+                        loadJs = { onError -> loadPackageFromJsFile(file, onError)?.copy(isBuiltIn = false) },
                         loadToolPkg = { onError -> loadToolPkgFromExternalFile(file, onError) }
                     )
                 val signature = buildExternalPackageScanSignature(file)
@@ -1843,7 +1879,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * default package.
      */
     private fun initializeDefaultPackages() {
-        val enabledPackageNames = getEnabledPackageNamesInternal().toMutableSet()
+        val enabledPackageNames = decodeEnabledPackageNamesFromPrefs().toMutableSet()
         val disabledPackages = getDisabledPackagesInternal().toSet()
         var packagesChanged = false
 
@@ -1864,9 +1900,10 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         }
 
         if (packagesChanged) {
-            val prefs = context.getSharedPreferences(PACKAGE_PREFS, Context.MODE_PRIVATE)
-            val updatedJson = Json.encodeToString(enabledPackageNames.toList())
-            prefs.edit().putString(ENABLED_PACKAGES_KEY, updatedJson).apply()
+            val pending = decodeEnabledPackageNamesFromPrefs().filter {
+                !availablePackages.containsKey(it) && it in BuiltInExtensionResources.packageNames(context)
+            }
+            persistEnabledPackageNamesToPrefs((enabledPackageNames + pending).distinct())
             AppLogger.d(TAG, "Updated enabled package names with default packages.")
         }
     }
@@ -1891,10 +1928,11 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                 scanAssetPackages().also { assetPackageScanSnapshot = it }
             }
 
-        val mergedSnapshot = validateToolPkgRelationships(scanExternalPackages(assetSnapshot))
+        val mergedSnapshot = validateToolPkgRelationships(scanExternalPackages(scanDownloadedBuiltIns(assetSnapshot)))
         applyPackageScanSnapshot(mergedSnapshot)
         reconcileToolPkgCaches()
         if (isInitialized) {
+            initializeDefaultPackages()
             refreshToolPkgRuntimeState(persistIfChanged = true)
         }
         logToolPkgInfo(
@@ -2078,13 +2116,15 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         file: File,
         reportPackageLoadError: (key: String, error: String) -> Unit = { key, error ->
             packageLoadErrors[key] = error
-        }
+        },
+        sourceType: ToolPkgSourceType = ToolPkgSourceType.EXTERNAL,
     ): ToolPkgLoadResult? {
         val startMs = System.currentTimeMillis()
         return try {
             withToolPkgRegistrationEngine { registrationEngine ->
                 ToolPkgLoader.loadToolPkgFromExternalFile(
                     file = file,
+                    sourceType = sourceType,
                     jsEngine = registrationEngine,
                     parseJsPackage = { jsContent, onError -> parseJsPackage(jsContent, onError) },
                     reportPackageLoadError = { key, error ->
@@ -2199,46 +2239,56 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         }
     }
 
+    private fun acquireExternalResourceUsage(runtime: ToolPkgContainerRuntime, path: String): com.ai.assistance.operit.data.storage.LocalModelUsageHandle? {
+        val resource = runtime.resources.firstOrNull { it.path == path } ?: return null
+        if (resource.externalGroup.isEmpty()) return null
+        val root = com.ai.assistance.operit.data.resources.packs.PackResources.directory(context, resource.externalGroup)
+        return com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry.acquire(root) ?: error("资源正在移除，请稍后再试")
+    }
     internal fun readToolPkgResourceBytes(
         runtime: ToolPkgContainerRuntime,
         normalizedResourcePath: String
     ): ByteArray? {
-        val resourceFile = resolveToolPkgResourceFile(runtime, normalizedResourcePath)
-        if (resourceFile == null || !resourceFile.isFile) {
-            return null
-        }
-        return resourceFile.readBytes()
+        val usage = acquireExternalResourceUsage(runtime, normalizedResourcePath)
+        try {
+            val resourceFile = resolveToolPkgResourceFile(runtime, normalizedResourcePath)
+            if (resourceFile == null || !resourceFile.isFile) {
+                return null
+            }
+            return resourceFile.readBytes()
+        } finally { usage?.close() }
     }
-
     internal fun exportToolPkgResource(
         runtime: ToolPkgContainerRuntime,
         resource: ToolPkgResourceRuntime,
         destinationFile: File
     ): Boolean {
-        val resourceFile = resolveToolPkgResourceFile(runtime, resource.path) ?: return false
-        val parent = destinationFile.parentFile
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs()
-        }
-
-        return if (ToolPkgArchiveParser.isDirectoryResourceMime(resource.mime)) {
-            if (!resourceFile.isDirectory) {
-                false
-            } else {
-                zipToolPkgResourceDirectory(resourceFile, destinationFile)
+        val usage = acquireExternalResourceUsage(runtime, resource.path)
+        try {
+            val resourceFile = resolveToolPkgResourceFile(runtime, resource.path) ?: return false
+            val parent = destinationFile.parentFile
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs()
             }
-        } else {
-            if (!resourceFile.isFile) {
-                false
-            } else {
-                destinationFile.outputStream().use { output ->
-                    output.write(resourceFile.readBytes())
+
+            return if (ToolPkgArchiveParser.isDirectoryResourceMime(resource.mime)) {
+                if (!resourceFile.isDirectory) {
+                    false
+                } else {
+                    zipToolPkgResourceDirectory(resourceFile, destinationFile)
                 }
-                true
+            } else {
+                if (!resourceFile.isFile) {
+                    false
+                } else {
+                    destinationFile.outputStream().use { output ->
+                        output.write(resourceFile.readBytes())
+                    }
+                    true
+                }
             }
-        }
+        } finally { usage?.close() }
     }
-
     internal fun copyToolPkgResourceDirectory(
         runtime: ToolPkgContainerRuntime,
         normalizedResourcePath: String,
@@ -2276,6 +2326,10 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         normalizedResourcePath: String
     ): File? {
         val normalizedPath = ToolPkgArchiveParser.normalizeResourcePath(normalizedResourcePath) ?: return null
+        val declaration = runtime.resources.firstOrNull { it.path == normalizedPath }
+        if (declaration != null && declaration.externalGroup.isNotEmpty()) {
+            return com.ai.assistance.operit.data.resources.packs.PackResources.resourceFile(context, declaration.externalGroup, normalizedPath)
+        }
         val cacheDir = ensureToolPkgCache(runtime) ?: return null
         val resourceFile = File(cacheDir, normalizedPath)
         if (!resourceFile.exists()) {
@@ -2771,7 +2825,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             }
             .filter { candidate ->
                 val loadResult =
-                    loadToolPkgFromExternalFile(candidate) { _, _ -> }
+                    loadToolPkgFromExternalFile(candidate, reportPackageLoadError = { _, _ -> })
                         ?: return@filter false
                 loadResult.containerPackage.name == normalizedPackageName
             }
@@ -3705,7 +3759,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             val states = getToolPkgSubpackageStatesInternal()
             val cleanedStates =
                 states.filterKeys { packageName ->
-                    toolPkgSubpackageByPackageName.containsKey(packageName)
+                    toolPkgSubpackageByPackageName.containsKey(packageName) || packageName in BuiltInExtensionResources.packageNames(context)
                 }
 
             if (cleanedStates.size != states.size) {
@@ -3746,7 +3800,10 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
 
     internal fun saveEnabledPackageNames(enabledPackageNames: List<String>) {
         val normalizedPackages = normalizeEnabledPackageNames(enabledPackageNames)
-        persistEnabledPackageNamesToPrefs(normalizedPackages)
+        val pending = decodeEnabledPackageNamesFromPrefs().filter {
+            !availablePackages.containsKey(it) && it in BuiltInExtensionResources.packageNames(context)
+        }
+        persistEnabledPackageNamesToPrefs((normalizedPackages + pending).distinct())
         if (isInitialized || runtimeCachesReady) {
             refreshToolPkgRuntimeState(
                 persistIfChanged = false,
@@ -3772,7 +3829,10 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
 
     internal fun saveToolPkgSubpackageStates(states: Map<String, Boolean>) {
         val normalizedStates = normalizeToolPkgSubpackageStates(states)
-        persistToolPkgSubpackageStatesToPrefs(normalizedStates)
+        val pending = decodeToolPkgSubpackageStatesFromPrefs().filterKeys {
+            !toolPkgSubpackageByPackageName.containsKey(it) && it in BuiltInExtensionResources.packageNames(context)
+        }
+        persistToolPkgSubpackageStatesToPrefs(pending + normalizedStates)
         if (isInitialized || runtimeCachesReady) {
             refreshToolPkgRuntimeState(
                 persistIfChanged = false,
@@ -4018,6 +4078,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             return true
         }
 
+        if (availablePackages[normalizedPackageName]?.isBuiltIn == true) return false
         val packageFile = findPackageFile(normalizedPackageName)
 
         if (packageFile == null || !packageFile.exists()) {

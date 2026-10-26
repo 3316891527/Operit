@@ -26,13 +26,15 @@ private val TOOLPKG_DIRECTORY_RESOURCE_MIME_TYPES =
 
 internal enum class ToolPkgSourceType {
     ASSET,
+    RESOURCE,
     EXTERNAL
 }
 
 internal data class ToolPkgResourceRuntime(
     val key: String,
     val path: String,
-    val mime: String
+    val mime: String,
+    val externalGroup: String = "",
 )
 
 internal data class ToolPkgWasmModuleRuntime(
@@ -236,7 +238,8 @@ internal data class ToolPkgManifestSubpackage(
 internal data class ToolPkgManifestResource(
     val key: String,
     val path: String,
-    val mime: String = ""
+    val mime: String = "",
+    @SerialName("external_group") val externalGroup: String = "",
 )
 
 @Serializable
@@ -536,7 +539,13 @@ internal object ToolPkgArchiveParser {
                 val normalizedPath =
                     resolveManifestRelativeResourcePath(manifestBasePath, resource.path)
                         ?: throw IllegalArgumentException("Invalid resource path: ${resource.path}")
-                if (isDirectoryResourceMime(resource.mime)) {
+                if (resource.externalGroup.isNotEmpty()) {
+                    require(manifest.toolpkgId == "com.operit.apk_reverse_toolkit" && resource.externalGroup == "apk-reverse" && normalizedPath in setOf(
+                        "resources/apktool/apktool-runtime-android.jar", "resources/apktool/android-framework.jar",
+                        "resources/apktool/jadx-runtime-android.jar", "resources/apktool/apk-reverse-helper-runtime-android.jar",
+                    )) { "Unsupported external ToolPkg resource" }
+                    require(!entryIndex.containsEntry(normalizedPath)) { "External resource must not also be bundled" }
+                } else if (isDirectoryResourceMime(resource.mime)) {
                     if (!entryIndex.containsEntriesUnderDirectory(normalizedPath)) {
                         throw IllegalArgumentException("Cannot find resource directory '${resource.path}'")
                     }
@@ -546,7 +555,8 @@ internal object ToolPkgArchiveParser {
                 ToolPkgResourceRuntime(
                     key = resource.key,
                     path = normalizedPath,
-                    mime = resource.mime
+                    mime = resource.mime,
+                    externalGroup = resource.externalGroup,
                 )
             }
 

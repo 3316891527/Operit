@@ -50,7 +50,8 @@ class SpeechServicesPreferences(private val context: Context) {
     data class VitsTtsPackageConfig(
         val packagePath: String = "",
         val speakerId: String = "",
-        val options: Map<String, String> = emptyMap()
+        val options: Map<String, String> = emptyMap(),
+        val installedModelKey: String = ""
     )
 
     @Serializable
@@ -58,6 +59,7 @@ class SpeechServicesPreferences(private val context: Context) {
         val endpointUrl: String,
         val apiKey: String,
         val modelName: String,
+        val localModelKey: String = "",
     )
 
     companion object {
@@ -202,7 +204,7 @@ class SpeechServicesPreferences(private val context: Context) {
             speechRate?.let { prefs[TTS_SPEECH_RATE] = it }
             pitch?.let { prefs[TTS_PITCH] = it }
 
-            if (serviceType == VoiceServiceFactory.VoiceServiceType.VITS_TTS) {
+            if (serviceType == VoiceServiceFactory.VoiceServiceType.VITS_TTS || serviceType == VoiceServiceFactory.VoiceServiceType.SHERPA_ONNX_TTS) {
                 vitsConfig?.let { prefs[TTS_VITS_PACKAGE_CONFIG] = serializerJson.encodeToString(it) }
             }
         }
@@ -224,7 +226,9 @@ class SpeechServicesPreferences(private val context: Context) {
             prefs[STT_SERVICE_TYPE] = serviceType.name
 
             when (serviceType) {
+                SpeechServiceFactory.SpeechServiceType.SHERPA_ONNX,
                 SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN -> {
+                    httpConfig?.let { prefs[STT_HTTP_CONFIG] = serializerJson.encodeToString(it) }
                 }
                 SpeechServiceFactory.SpeechServiceType.OPENAI_STT -> {
                     httpConfig?.let { prefs[STT_HTTP_CONFIG] = serializerJson.encodeToString(it) }

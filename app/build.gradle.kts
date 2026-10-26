@@ -349,6 +349,56 @@ val syncSttModelAssets by tasks.registering {
     }
 }
 
+// providers.exec 会捕获输出；先打印诊断再检查退出码，避免 CI 只剩 Python 退出码。
+fun runResourceScript(scriptName: String, arguments: List<String> = emptyList()) {
+    logger.lifecycle("离线资源脚本：$scriptName")
+    val execution = providers.exec {
+        commandLine(listOf("python3", rootProject.file("ci/distribution/resources/$scriptName").path) + arguments)
+        isIgnoreExitValue = true
+    }
+    val result = execution.result.get()
+    val output = execution.standardOutput.asText.get()
+    val error = execution.standardError.asText.get()
+    if (output.isNotBlank()) logger.lifecycle(output.trimEnd())
+    if (error.isNotBlank()) logger.error(error.trimEnd())
+    result.assertNormalExitValue()
+}
+
+val bundleProjectResources = providers.gradleProperty("operit.bundleProjectResources").map { it.toBooleanStrict() }.getOrElse(false)
+val ocrArtifacts = listOf("text-recognition", "text-recognition-chinese", "text-recognition-japanese", "text-recognition-korean", "text-recognition-devanagari")
+val ocrModelAars = configurations.create("ocrModelAars") {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+    isTransitive = false
+}
+val strippedOcrSdkDir = layout.buildDirectory.dir("generated/offline-ocr-sdk")
+val stripOcrSdk by tasks.registering {
+    description = "Separates verified OCR model assets from the unchanged ML Kit SDK."
+    inputs.files(ocrModelAars)
+    inputs.file(file("config/mlkit-ocr-assets.json"))
+    inputs.file(rootProject.file("ci/distribution/resources/prepare_ocr_sdk.py"))
+    outputs.dir(strippedOcrSdkDir)
+    doLast {
+        val arguments = mutableListOf("--output", strippedOcrSdkDir.get().asFile.path)
+        ocrModelAars.files.sortedBy { it.name }.forEach { arguments.addAll(listOf("--aar", it.path)) }
+        runResourceScript("prepare_ocr_sdk.py", arguments)
+    }
+}
+val verifyOfflineHubDistribution by tasks.registering {
+    description = "Checks downloadable resource packaging before JVM unit tests."
+    inputs.files(
+        rootProject.file("ci/test/test_offline_hub_assets.py"),
+        rootProject.file("ci/distribution/resources/check_distribution.py"),
+        rootProject.file("ci/distribution/resources/prepare_hub.py"),
+        rootProject.file("ci/distribution/resources/builtin_packages.py"),
+        rootProject.file("ci/distribution/resources/verify_packaged_resources.py"),
+    )
+    doLast { runResourceScript("check_distribution.py") }
+}
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    dependsOn(verifyOfflineHubDistribution)
+}
+
 val syncMainAssets by tasks.registering(Sync::class) {
     description = "Assembles application assets with verified generated STT model files."
     group = "build setup"
@@ -356,10 +406,36 @@ val syncMainAssets by tasks.registering(Sync::class) {
 
     from("src/main/assets") {
         exclude("models/**", "subpack/**")
+        if (!bundleProjectResources) exclude("templates/**", "packages/**")
     }
     from(generatedSttModelAssetsDir)
     from("config/offline-resources.properties")
+    from("config/local-speech-models.json")
+    from("config/offline-packs.json")
+    inputs.property("bundleProjectResources", bundleProjectResources)
+    inputs.file(rootProject.file("ci/distribution/resources/prepare_hub.py"))
+    inputs.file(rootProject.file("ci/distribution/resources/verify_hub_catalog.py"))
+    inputs.file(rootProject.file("ci/distribution/resources/builtin_packages.py"))
+    inputs.dir(rootProject.file("examples"))
+    inputs.file(rootProject.file("tools/example_packages/packages_whitelist.txt"))
+    inputs.dir(file("src/main/assets/templates"))
+    inputs.dir(rootProject.file("examples/apktool/resources/apktool"))
     into(generatedMainAssetsDir)
+    doLast {
+        runResourceScript("verify_hub_catalog.py")
+        // 只修改生成目录，源码模板和完整插件仍保留，供独立资源发行与完整构建使用。
+        if (bundleProjectResources) {
+            val sourceRoot = file("src/main/assets/templates")
+            sourceRoot.walkTopDown().filter { it.isFile && it.name == ".gitignore" }.forEach { source ->
+                val relative = source.relativeTo(sourceRoot).invariantSeparatorsPath.split('/').joinToString("/") { if (it == ".gitignore") "gitignore" else it }
+                val target = File(generatedMainAssetsDir.get().asFile, "templates/$relative")
+                target.parentFile.mkdirs()
+                source.copyTo(target, overwrite = true)
+            }
+        } else {
+            runResourceScript("prepare_hub.py", listOf("--slim-assets", generatedMainAssetsDir.get().asFile.path))
+        }
+    }
 }
 
 android {
@@ -418,8 +494,8 @@ android {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 69
-        versionName = "1.12.2+13"
+        versionCode = 70
+        versionName = "1.12.2+14"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -697,13 +773,26 @@ dependencies {
     // Desugaring support for modern Java APIs on older Android
     coreLibraryDesugaring(libs.desugar.jdk)
 
-    // ML Kit - 文本识别
-    implementation(libs.mlkit.text.recognition)
-    // ML Kit - 多语言识别支持
-    implementation(libs.mlkit.text.chinese)
-    implementation(libs.mlkit.text.japanese)
-    implementation(libs.mlkit.text.korean)
-    implementation(libs.mlkit.text.devanagari)
+    // 仅拆出模型资产；原 SDK 描述符、JNI 运行库和多语言识别接口继续随 APK 提供。
+    ocrArtifacts.forEach { add(ocrModelAars.name, "com.google.mlkit:$it:16.0.0") }
+    if (bundleProjectResources) {
+        implementation(libs.mlkit.text.recognition)
+        implementation(libs.mlkit.text.chinese)
+        implementation(libs.mlkit.text.japanese)
+        implementation(libs.mlkit.text.korean)
+        implementation(libs.mlkit.text.devanagari)
+    } else {
+        implementation(files(ocrArtifacts.map { artifact -> strippedOcrSdkDir.map { it.file("$artifact-16.0.0.aar").asFile } }).builtBy(stripOcrSdk))
+        implementation("com.google.mlkit:text-recognition-bundled-common:16.0.0")
+        implementation("com.google.mlkit:common:18.8.0")
+        implementation("com.google.android.gms:play-services-base:18.1.0")
+        implementation("com.google.android.gms:play-services-basement:18.1.0")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.0")
+        implementation("com.google.android.gms:play-services-mlkit-text-recognition-common:19.0.0")
+        listOf("chinese", "japanese", "korean", "devanagari").forEach {
+            implementation("com.google.android.gms:play-services-mlkit-text-recognition-$it:16.0.0")
+        }
+    }
     
     implementation(libs.zxing.core)
     

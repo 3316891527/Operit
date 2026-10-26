@@ -1,39 +1,22 @@
 ---
 fork: https://github.com/3316891527/Operit
-branch: feat/offline-resource-hub
-status: HTML 设计稿已完成，等待维护者审阅后再实施 Android 重构
+branch: feat/offline-resource-workbench
+status: IMPLEMENTED_PENDING_CI
 ---
 # 离线资源与本地模型
 
-当前页面只包含 NCNN STT、Ubuntu 安装归档和两种网页导出模板。本次先交付可独立打开的 HTML 交互设计稿，将入口分为本地模型和其他资源，确认设计后再迁移 Android 页面、下载与配置逻辑。
+已按认可的 HTML 稿落实 Android 原生工作区，分为本地模型与其他资源。保留原有四组资源，加入五个 Sherpa ONNX 语音模型、九种工程模板、APK 逆向资源与 ML Kit 模型资产，并将语音设置接到同一安装记录。
 
-- [交互设计稿](design.html)
+- [设计稿](design.html)
 - [资源与模型来源](resource-map.md)
+- [原生实现与兼容](01-native-implementation.md)
+- [验证与完整回归](02-verification.md)
+- [资源准备的输入范围与日志](03-asset-preparation.md)
 
-## 本轮范围
+资源已扩展为 51 个资源包，目录与校验文件已[公开发布](https://github.com/3316891527/Operit/releases/tag/resources-v2-27aa8eec7b5c78a17629)。统一分支提交 `14e566ea776e9027300ef20a193011b2913916cf` 的 Debug 与 JVM 已通过；本轮清单和设置入口调整将在新提交上派发验证。设备验证记录按实际验收填写。
 
-本地模型包含现有 NCNN STT、Operit2 的五项原生语音模型候选，以及待拆分的 Google ML Kit OCR。模型入口支持目录搜索、仓库地址和本地模型包的流程预览。
+Ubuntu 开发环境预装及配置入口整理继续后置。分支继承已获认可的语音配置实现；未自行合并其他工作分支。
 
-其他资源包含 Ubuntu 安装归档、Android 与 Windows 网页应用导出模板、APK 逆向工具，以及 Android、Flutter、Go、Java、Node.js、Office、Python、TypeScript、Web 九种工程模板。
+第二轮计划见 [资源反馈与内置扩展按需安装](04-builtin-downloads.md)。
 
-APK 逆向工具的内置插件身份与资源是否随 APK 分发分开表达。实际检测到完整可用的包内资源时，只显示内置可用与详情，不提供重复下载、导入或删除入口；精简 APK 未携带资源时，仍保留内置插件身份并允许准备资源。
-
-Ubuntu 的已安装运行环境与已保存安装归档分开显示。开发环境预装进归档、删除现有环境配置入口属于最后阶段，本轮不变更。
-
-## 分阶段实施
-
-1. 完成 HTML 页面和关键交互演示，交付维护者审阅
-2. 设计认可后，实现 Android 资源目录、状态检测、下载与导入配置，保持已有资源可用
-3. 接入选定语音模型的实际运行引擎，处理 APK 插件、OCR 和工程模板的拆包与兼容
-4. 最后单独评估 Ubuntu 归档预装开发环境，以及现有配置入口和接口的调整
-
-HTML 中所有下载、安装、导入及校验状态均为界面演示，不执行资源下载、模型推理或 Android 配置修改。新模型引擎、OCR 外置加载及拆包体积尚未实现或验证。
-
-
-## 交付与验证
-
-设计稿为单文件 HTML，内含样式、SVG 图标与交互脚本，无 CDN 或外部脚本依赖。支持深浅色切换、两大板块与分类搜索、模型来源选择、资源详情、模拟下载和取消、模板整组准备、仓库与本地文件导入、已有安装与精简安装的状态预览。
-
-已完成 JavaScript 语法、HTML 结构、相对链接与差异检查。浏览器渲染及手机触摸实测未完成，需审阅实际观感。本轮只有设计稿与文档，没有 Android 代码变更，未运行或派发 Android 构建与测试。
-
-实现与自动化设计清单均未替代真实设备验收；新增语音引擎、OCR 拆包、APK 逆向资源与模板外置仍属于后续阶段。设计稿交付 [DONE]。
+本轮收尾见 [本地模型清单与设置入口](05-storage-and-settings.md)。

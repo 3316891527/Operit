@@ -19,7 +19,7 @@ internal fun SttProfileEditor(profile: SttProfile, onChange: (SttProfile) -> Uni
     var engines by remember { mutableStateOf(false) }
     val type = profile.serviceType
     val config = profile.httpConfig
-    val local = type == SpeechServiceType.SHERPA_NCNN
+    val local = type == SpeechServiceType.SHERPA_NCNN || type == SpeechServiceType.SHERPA_ONNX
     val deepgram = type == SpeechServiceType.DEEPGRAM_STT
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SpeechSectionLabel(stringResource(R.string.speech_workbench_connection))
@@ -28,8 +28,13 @@ internal fun SttProfileEditor(profile: SttProfile, onChange: (SttProfile) -> Uni
                 stringResource(R.string.speech_services_stt_engine), stringResource(type.titleRes()), { engines = true },
                 description = stringResource(if (local) R.string.speech_workbench_local else R.string.speech_workbench_online), icon = Icons.Default.Mic,
             )
+            if (type == SpeechServiceType.SHERPA_ONNX) {
+                InstalledSpeechModelField(com.ai.assistance.operit.data.resources.models.SpeechModelPurpose.STT, config.localModelKey) { model ->
+                    onChange(profile.copy(httpConfig = config.copy(localModelKey = model.key)))
+                }
+            }
             if (local) {
-                Text(stringResource(R.string.speech_workbench_local_stt_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(if (type == SpeechServiceType.SHERPA_ONNX) R.string.hub_onnx_stt_hint else R.string.speech_workbench_local_stt_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 SpeechWorkbenchField(
@@ -50,7 +55,7 @@ internal fun SttProfileEditor(profile: SttProfile, onChange: (SttProfile) -> Uni
     }
     if (engines) SpeechChoicePanel(
         title = stringResource(R.string.speech_services_stt_engine),
-        choices = SpeechServiceType.values().map { SpeechChoice(it.name, context.getString(it.titleRes()), context.getString(if (it == SpeechServiceType.SHERPA_NCNN) R.string.speech_workbench_local else R.string.speech_workbench_online)) },
+        choices = SpeechServiceType.values().map { SpeechChoice(it.name, context.getString(it.titleRes()), context.getString(if (it == SpeechServiceType.SHERPA_NCNN || it == SpeechServiceType.SHERPA_ONNX) R.string.speech_workbench_local else R.string.speech_workbench_online)) },
         selected = type.name,
         onSelect = { onChange(profile.copy(serviceType = SpeechServiceType.valueOf(it))); engines = false },
         onDismiss = { engines = false },

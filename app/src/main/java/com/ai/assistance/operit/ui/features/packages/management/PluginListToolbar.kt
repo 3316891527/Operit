@@ -21,6 +21,7 @@ fun PluginListToolbar(
     filter: PluginFilter,
     onSortChanged: (PluginSortSelection) -> Unit,
     onFilterChanged: (PluginFilter) -> Unit,
+    showSorting: Boolean = true,
 ) {
     var showSort by remember { mutableStateOf(false) }
     var showFilter by remember { mutableStateOf(false) }
@@ -34,7 +35,7 @@ fun PluginListToolbar(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        IconButton(onClick = { showSort = true }) {
+        if (showSorting) IconButton(onClick = { showSort = true }) {
             Icon(Icons.Default.Sort, contentDescription = stringResource(R.string.plugin_sort_action))
         }
         IconButton(onClick = { showFilter = true }) {
@@ -75,6 +76,7 @@ fun PluginListToolbar(
                         PluginFilter.ALL -> Icons.Default.Apps
                         PluginFilter.ENABLED -> Icons.Default.ToggleOn
                         PluginFilter.DISABLED -> Icons.Default.ToggleOff
+                        PluginFilter.BUILT_IN -> Icons.Default.Apps
                     }, selected = filter == option) {
                     onFilterChanged(option)
                     showFilter = false
@@ -106,4 +108,5 @@ private fun filterLabel(filter: PluginFilter): Int = when (filter) {
     PluginFilter.ALL -> R.string.plugin_filter_all
     PluginFilter.ENABLED -> R.string.plugin_filter_enabled
     PluginFilter.DISABLED -> R.string.plugin_filter_disabled
+    PluginFilter.BUILT_IN -> R.string.hub_filter_builtin
 }
