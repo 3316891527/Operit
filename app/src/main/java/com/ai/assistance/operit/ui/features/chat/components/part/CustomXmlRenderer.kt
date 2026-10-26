@@ -1087,8 +1087,9 @@ class CustomXmlRenderer(
         xmlStream: Stream<String>?
     ) {
         val paramTokenEstimate = rememberToolParamTokenEstimate(content, xmlStream)
+        // 已完成卡片在其他块更新时复用解析结果，避免反复扫描长参数或结果。
         val renderState =
-            run {
+            remember(content) {
                 val nameRegex = "name=\"([^\"]+)\"".toRegex()
                 val nameMatch = nameRegex.find(content)
                 val rawToolName = nameMatch?.groupValues?.get(1) ?: "Unknown tool"
@@ -1244,8 +1245,9 @@ class CustomXmlRenderer(
     private fun renderToolResult(content: String, modifier: Modifier, _textColor: Color) {
         val clipboardManager = LocalClipboardManager.current
 
+        // 已完成卡片在其他块更新时复用解析结果，避免反复扫描长参数或结果。
         val renderState =
-            run {
+            remember(content) {
                 val openingTag = content.substringBefore('>')
                 val nameMatch = ChatMarkupRegex.nameAttr.find(openingTag)
                 val toolName = nameMatch?.groupValues?.get(1) ?: ""

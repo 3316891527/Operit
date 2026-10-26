@@ -593,10 +593,9 @@ fun PackageManagerScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
         ) {
-            // 完整中文名称按内容宽度展示，窄屏可横向滚动，避免名称挤进等宽页签。
-            ScrollableTabRow(
+            // 固定四栏必须等分整行；长名称在各自栏内换行，不能由文字宽度决定标签宽度。
+            TabRow(
                 selectedTabIndex = selectedTab.ordinal,
-                edgePadding = 0.dp,
                 modifier = Modifier.fillMaxWidth(),
                 divider = {
                     HorizontalDivider(
@@ -621,9 +620,10 @@ fun PackageManagerScreen(
                 Tab(
                     selected = selectedTab == PackageTab.PLUGINS,
                     onClick = { selectedTab = PackageTab.PLUGINS },
-                    modifier = Modifier.height(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -636,11 +636,15 @@ fun PackageManagerScreen(
                             else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             context.getString(R.string.nav_group_plugins),
+                            modifier = Modifier.weight(1f, fill = false),
                             style = MaterialTheme.typography.bodySmall,
-                            softWrap = false,
+                            softWrap = true,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             color = if (selectedTab == PackageTab.PLUGINS)
                                 MaterialTheme.colorScheme.primary
                             else
@@ -653,9 +657,10 @@ fun PackageManagerScreen(
                 Tab(
                     selected = selectedTab == PackageTab.PACKAGES,
                     onClick = { selectedTab = PackageTab.PACKAGES },
-                    modifier = Modifier.height(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -668,11 +673,15 @@ fun PackageManagerScreen(
                             else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             context.getString(R.string.packages),
+                            modifier = Modifier.weight(1f, fill = false),
                             style = MaterialTheme.typography.bodySmall,
-                            softWrap = false,
+                            softWrap = true,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             color = if (selectedTab == PackageTab.PACKAGES)
                                 MaterialTheme.colorScheme.primary
                             else
@@ -685,9 +694,10 @@ fun PackageManagerScreen(
                 Tab(
                     selected = selectedTab == PackageTab.SKILLS,
                     onClick = { selectedTab = PackageTab.SKILLS },
-                    modifier = Modifier.height(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -700,11 +710,15 @@ fun PackageManagerScreen(
                             else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             context.getString(R.string.package_tab_skills),
+                            modifier = Modifier.weight(1f, fill = false),
                             style = MaterialTheme.typography.bodySmall,
-                            softWrap = false,
+                            softWrap = true,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             color = if (selectedTab == PackageTab.SKILLS)
                                 MaterialTheme.colorScheme.primary
                             else
@@ -717,9 +731,10 @@ fun PackageManagerScreen(
                 Tab(
                     selected = selectedTab == PackageTab.MCP,
                     onClick = { selectedTab = PackageTab.MCP },
-                    modifier = Modifier.height(48.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -732,12 +747,14 @@ fun PackageManagerScreen(
                             else
                                 MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             context.getString(R.string.hub_mcp_title),
+                            modifier = Modifier.weight(1f, fill = false),
                             style = MaterialTheme.typography.bodySmall,
                             softWrap = true,
                             maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             color = if (selectedTab == PackageTab.MCP)
                                 MaterialTheme.colorScheme.primary

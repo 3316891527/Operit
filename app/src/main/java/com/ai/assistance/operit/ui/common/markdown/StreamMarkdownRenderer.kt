@@ -537,7 +537,7 @@ fun StreamMarkdownRenderer(
                         tempBlockType != MarkdownProcessorType.XML_BLOCK
 
                 val rollbackContinuesCurrentBlock =
-                    rollbackPrefix != null &&
+                    blockGroup.continuesPrevious &&
                         pendingHtmlBreakCount == 0 &&
                         nodes.lastOrNull()?.type == tempBlockType
                 val mergeWithPrevious =
@@ -562,9 +562,19 @@ fun StreamMarkdownRenderer(
                         }
                     }
                 val nodeIndex = nodes.lastIndex
+                // XML 旁路订阅者需要完整的恢复前缀，节点正文则只追加新尾部。
+                val xmlPrefix =
+                    if (tempBlockType == MarkdownProcessorType.XML_BLOCK && rollbackContinuesCurrentBlock) {
+                        newNode.content.toString()
+                    } else {
+                        ""
+                    }
                 val blockStream: Stream<String> =
                     if (tempBlockType == MarkdownProcessorType.XML_BLOCK) {
-                        blockGroup.stream.share(scope = scope, replay = Int.MAX_VALUE)
+                        stream {
+                            if (xmlPrefix.isNotEmpty()) emit(xmlPrefix)
+                            blockGroup.stream.collect { emit(it) }
+                        }.share(scope = scope, replay = Int.MAX_VALUE)
                     } else {
                         blockGroup.stream
                     }
@@ -640,8 +650,19 @@ fun StreamMarkdownRenderer(
                         }
                     }
                 } else {
-                    blockStream.collect { contentChunk ->
-                        batchUpdater.appendBlockChunk(newNode, contentChunk)
+                    var skipRestoredXmlPrefix = xmlPrefix.isNotEmpty()
+                    try {
+                        blockStream.collect { contentChunk ->
+                            if (skipRestoredXmlPrefix) {
+                                skipRestoredXmlPrefix = false
+                            } else {
+                                batchUpdater.appendBlockChunk(newNode, contentChunk)
+                            }
+                        }
+                    } finally {
+                        if (tempBlockType == MarkdownProcessorType.XML_BLOCK) {
+                            batchUpdater.completeXmlBlock(nodeIndex)
+                        }
                     }
                 }
 
@@ -1235,6 +1256,12 @@ internal class BatchNodeUpdater(
     fun appendBlockChunk(node: MarkdownNode, contentChunk: String) {
         node.content + contentChunk
         requestUpdate()
+    }
+
+    fun completeXmlBlock(nodeIndex: Int) {
+        // 先保存最后一帧，再移除回放引用，避免晚订阅者读取空卡片。
+        performBatchUpdate()
+        xmlNodeStreams.remove(nodeIndex)
     }
 
     private fun performBatchUpdate() {

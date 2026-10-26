@@ -108,14 +108,15 @@ class DistributionPublishingTest(unittest.TestCase):
             patch_summary = {"format": "apkraw-1", "fromPatchIndex": 6, "toPatchIndex": 7,
                              "patchFile": patch_file.name, "metaFile": metadata.name}
             with patch("sys.argv", arguments), patch.object(publisher, "inspect_apk", side_effect=[target, baseline]):
-                with patch.object(publisher, "prepare_patch", return_value=(patch_file, metadata, patch_summary)):
+                with patch.object(publisher, "prepare_patch", return_value=(patch_file, metadata, patch_summary)), patch.object(publisher, "ensure_source_tag"):
                     with patch.object(publisher, "run", side_effect=[json.dumps([release("1.12.2+6")]), "", "", ""]) as execute:
                         publisher.main()
             commands = [call.args for call in execute.call_args_list]
             create = next(command for command in commands if command[:3] == ("gh", "release", "create"))
             notes_file = Path(create[create.index("--notes-file") + 1])
             manifest = output / "distribution-release.json"
-            self.assertEqual(notes, notes_file.read_text())
+            self.assertTrue(notes_file.read_text().startswith(notes.rstrip()))
+            self.assertIn("源码归档", notes_file.read_text())
             self.assertNotEqual(manifest, notes_file)
             self.assertEqual(notes, json.loads(manifest.read_text())["releaseNotes"])
             self.assertEqual(6, json.loads(manifest.read_text())["fromPatchIndex"])
@@ -123,6 +124,61 @@ class DistributionPublishingTest(unittest.TestCase):
             self.assertIn("--draft", create)
             self.assertEqual(("gh", "release", "edit"), commands[-1][:3])
             self.assertIn("--draft=false", commands[-1])
+
+    def publish_without_baseline(self, version, *, prepare_only=False):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            apk = root / publisher.APK_NAME
+            apk.write_bytes(b"signed apk fixture")
+            arguments = ["publish_release.py", "--apk", str(apk), "--build-tools", "sdk",
+                         "--repository", publisher.REPOSITORY, "--commit", "a" * 40,
+                         "--notes", "迁移发行仓库", "--output", str(root / "out")]
+            if prepare_only:
+                arguments.append("--prepare-only")
+            info = {"versionName": version, "versionCode": 71, "packageName": publisher.PACKAGE_NAME}
+            def response(*args):
+                return json.dumps([release(version)] if prepare_only else []) if args[:2] == ("gh", "api") else ""
+            with patch("sys.argv", arguments), patch.object(publisher, "inspect_apk", return_value=info):
+                with patch.object(publisher, "ensure_source_tag") as source_tag, patch.object(publisher, "run", side_effect=response) as execute:
+                    publisher.main()
+            manifest = json.loads((root / "out/distribution-release.json").read_text())
+            plan = json.loads((root / "out/release-plan.json").read_text())
+            return [call.args for call in execute.call_args_list], source_tag.call_args_list, manifest, plan
+
+    def test_patch_release_uses_only_update_repository_and_retains_source_identity(self):
+        commands, tags, manifest, plan = self.publish_without_baseline("1.12.2+15")
+        creations = [command for command in commands if command[:3] == ("gh", "release", "create")]
+        self.assertEqual(1, len(creations))
+        self.assertEqual(publisher.UPDATE_REPOSITORY, creations[0][creations[0].index("--repo") + 1])
+        self.assertNotIn("--target", creations[0])
+        self.assertEqual("a" * 40, manifest["sourceCommit"])
+        self.assertEqual(publisher.REPOSITORY, manifest["sourceRepository"])
+        self.assertEqual([publisher.UPDATE_REPOSITORY], plan["repositories"])
+        self.assertEqual(("v1.12.2+15", "a" * 40), tags[0].args)
+
+    def test_stable_release_uploads_both_drafts_before_publishing_either(self):
+        commands, _, _, plan = self.publish_without_baseline("1.12.3")
+        creations = [(index, command) for index, command in enumerate(commands) if command[:3] == ("gh", "release", "create")]
+        publications = [index for index, command in enumerate(commands) if command[:3] == ("gh", "release", "edit")]
+        self.assertEqual([publisher.REPOSITORY, publisher.UPDATE_REPOSITORY], plan["repositories"])
+        self.assertEqual(2, len(creations))
+        self.assertEqual(2, len(publications))
+        self.assertLess(max(index for index, _ in creations), min(publications))
+        self.assertEqual("a" * 40, creations[0][1][creations[0][1].index("--target") + 1])
+        self.assertNotIn("--target", creations[1][1])
+
+    def test_preparation_does_not_create_tag_or_release(self):
+        commands, tags, _, plan = self.publish_without_baseline("1.12.2+15", prepare_only=True)
+        self.assertEqual([], tags)
+        self.assertTrue(all(command[:2] == ("gh", "api") for command in commands))
+        self.assertEqual("v1.12.2+15", plan["tag"])
+
+    def test_existing_source_tag_cannot_be_moved(self):
+        refs = [{"ref": "refs/tags/v1.12.2+15"}]
+        with patch.object(publisher, "run", side_effect=[json.dumps(refs), "b" * 40]) as execute:
+            with self.assertRaisesRegex(ValueError, "禁止移动"):
+                publisher.ensure_source_tag("v1.12.2+15", "a" * 40)
+        self.assertTrue(all(call.args[:2] == ("gh", "api") and "--method" not in call.args for call in execute.call_args_list))
 
     def test_cross_base_or_nonincreasing_patch_is_rejected(self):
         for old, new in [("1.12.2+1", "1.12.3+1"), ("1.12.2+2", "1.12.2+2"), ("1.12.2+3", "1.12.2+2")]:
