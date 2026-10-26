@@ -202,6 +202,26 @@ class RequestFailureTest {
         }
     }
 
+    @Test
+    fun errorEvidenceComesFromTheExplicitAttemptNotAnotherActiveRequest() {
+        val request = RequestFailureTrace.attach(Request.Builder().url("https://api.example.test").build(), "first")
+        val trace = request.tag(RequestFailureTrace::class.java)!!
+        trace.phase = RequestPhase.RESPONSE_BODY
+        trace.httpStatus = 200
+        val next = RequestFailureTrace.attach(Request.Builder().url("https://api.example.test").build(), "second")
+        next.tag(RequestFailureTrace::class.java)!!.phase = RequestPhase.DNS
+        val first = RequestFailure.describe(RequestFailure.captureFromRequest(SocketException("Connection reset"), request))!!
+        val second = RequestFailure.describe(RequestFailure.captureFromRequest(UnknownHostException("host"), next))!!
+        val firstContext = requireNotNull(first.requestContext)
+        val secondContext = requireNotNull(second.requestContext)
+        assertEquals("first", firstContext.requestId)
+        assertEquals(200, firstContext.httpStatus)
+        assertEquals("second", secondContext.requestId)
+        assertNull(secondContext.httpStatus)
+        val beforeCall = IllegalStateException("request construction failed")
+        assertSame(beforeCall, RequestFailure.capture(beforeCall, null))
+    }
+
     private fun contextual(cause: Exception, phase: RequestPhase) = RequestFailureContextException(
         cause, RequestFailureContext(
             "local-request", phase, 1234L, if (phase == RequestPhase.RESPONSE_BODY) 200 else null,

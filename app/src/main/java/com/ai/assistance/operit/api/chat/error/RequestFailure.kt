@@ -4,6 +4,7 @@ import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
 import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
 import java.util.Locale
 import okhttp3.Call
+import okhttp3.Request
 import org.json.JSONObject
 
 internal data class RequestFailureDescription(
@@ -89,10 +90,15 @@ internal object RequestFailure {
     }
 
     fun capture(exception: Exception, call: Call?): Exception {
+        val request = call?.request() ?: return exception
+        return captureFromRequest(exception, request)
+    }
+
+    fun captureFromRequest(exception: Exception, request: Request): Exception {
         if (exception is kotlinx.coroutines.CancellationException ||
             exception is com.ai.assistance.operit.util.exceptions.UserCancellationException
         ) return exception
-        val trace = call?.request()?.tag(RequestFailureTrace::class.java) ?: return exception
+        val trace = request.tag(RequestFailureTrace::class.java) ?: return exception
         return RequestFailureContextException(exception, trace.snapshot())
     }
 }

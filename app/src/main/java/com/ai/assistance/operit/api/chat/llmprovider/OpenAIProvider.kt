@@ -3272,6 +3272,7 @@ open class OpenAIProvider(
                 // 在循环开始时检查是否已被取消
                 checkCancellation(context)
 
+                var attemptCall: okhttp3.Call? = null
                 try {
                     outputStoppedByLimit = false
                     if (retryCount > 0) {
@@ -3315,6 +3316,7 @@ open class OpenAIProvider(
 
                 // 创建Call对象并保存到activeCall中，以便可以取消
                 val call = client.newCall(RequestFailureTrace.attach(request, requestTraceId))
+                attemptCall = call
                 activeCall = call
                 watchdog.start(call)
 
@@ -3515,7 +3517,7 @@ open class OpenAIProvider(
                     context = context,
                     exception = RequestFailure.capture(
                         if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
-                        activeCall,
+                        attemptCall,
                     ),
                     retryCount = retryCount,
                     maxRetries = maxRetries,

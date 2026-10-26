@@ -2008,7 +2008,7 @@ open class ClaudeProvider(
                         context = context,
                         exception = RequestFailure.capture(
                             if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else ResponseJson.schemaFailure(e),
-                            activeCall,
+                            call,
                         ),
                         retryCount = retryCount,
                         maxRetries = maxRetries,

@@ -1223,6 +1223,7 @@ open class GeminiProvider(
                 throw UserCancellationException(context.getString(R.string.gemini_error_request_cancelled))
             }
             
+            var attemptCall: okhttp3.Call? = null
             try {
                 outputStoppedByLimit = false
                 if (retryCount > 0) {
@@ -1241,6 +1242,7 @@ open class GeminiProvider(
                 val request = createRequest(context, requestBody, stream, requestId) // 根据stream参数决定使用流式还是非流式
 
                 val call = client.newCall(RequestFailureTrace.attach(request))
+                attemptCall = call
                 activeCall = call
                 watchdog.start(call)
 
@@ -1331,7 +1333,7 @@ open class GeminiProvider(
                     context = context,
                     exception = RequestFailure.capture(
                         if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
-                        activeCall,
+                        attemptCall,
                     ),
                     retryCount = retryCount,
                     maxRetries = maxRetries,
@@ -1847,7 +1849,7 @@ open class GeminiProvider(
             throw e
         } catch (e: Exception) {
             logError("处理响应时发生异常: ${e.message}", e)
-            throw RequestFailure.capture(ResponseJson.schemaFailure(e), activeCall)
+            throw RequestFailure.captureFromRequest(ResponseJson.schemaFailure(e), response.request)
         } finally {
             activeCall = null
         }
@@ -1915,7 +1917,7 @@ open class GeminiProvider(
             throw e
         } catch (e: Exception) {
             logError("处理非流式响应时发生异常: ${e.message}", e)
-            throw RequestFailure.capture(ResponseJson.schemaFailure(e), activeCall)
+            throw RequestFailure.captureFromRequest(ResponseJson.schemaFailure(e), response.request)
         } finally {
             activeCall = null
         }
