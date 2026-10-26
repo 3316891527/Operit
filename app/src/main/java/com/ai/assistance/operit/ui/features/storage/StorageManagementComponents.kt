@@ -432,15 +432,16 @@ fun StorageLeadingMark(
     ) {
         val asyncPainter = painter as? AsyncImagePainter
         val painterReady = painter != null && (asyncPainter == null || asyncPainter.state is AsyncImagePainter.State.Success)
-        when {
-            painterReady && painter != null -> {
-                Image(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(if (circular) 0.dp else 4.dp),
-                    contentScale = if (circular) ContentScale.Crop else ContentScale.Fit,
-                )
-            }
+        // Coil 需要 Image 绘制时提供尺寸，不能等到 Success 后才创建 Image。
+        if (painter != null) {
+            Image(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().padding(if (circular) 0.dp else 4.dp),
+                contentScale = if (circular) ContentScale.Crop else ContentScale.Fit,
+            )
+        }
+        if (!painterReady) when {
             icon != null -> {
                 Icon(
                     imageVector = icon,

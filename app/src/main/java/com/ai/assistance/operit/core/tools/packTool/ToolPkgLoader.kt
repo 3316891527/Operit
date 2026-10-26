@@ -11,8 +11,10 @@ internal object ToolPkgLoader {
         file: File,
         jsEngine: JsEngine,
         parseJsPackage: (String, (String, String) -> Unit) -> ToolPackage?,
-        reportPackageLoadError: (key: String, error: String) -> Unit
+        reportPackageLoadError: (key: String, error: String) -> Unit,
+        sourceType: ToolPkgSourceType = ToolPkgSourceType.EXTERNAL,
     ): ToolPkgLoadResult {
+        require(sourceType != ToolPkgSourceType.ASSET)
         ZipFile(file).use { archive ->
             val entryIndex = ToolPkgArchiveParser.buildZipEntryIndex(archive)
             val readEntryText =
@@ -29,9 +31,9 @@ internal object ToolPkgLoader {
                 ToolPkgArchiveParser.parseToolPkgFromIndexedEntries(
                     entryIndex = entryIndex,
                     readEntryText = readEntryText,
-                    sourceType = ToolPkgSourceType.EXTERNAL,
+                    sourceType = sourceType,
                     sourcePath = file.absolutePath,
-                    isBuiltIn = false,
+                    isBuiltIn = sourceType == ToolPkgSourceType.RESOURCE,
                     parseJsPackage = parseJsPackage,
                     parseMainRegistration = { mainScriptText, toolPkgId, mainScriptPath, apiVersion ->
                         parseMainRegistration(mainScriptText, toolPkgId, mainScriptPath, apiVersion, jsEngine)

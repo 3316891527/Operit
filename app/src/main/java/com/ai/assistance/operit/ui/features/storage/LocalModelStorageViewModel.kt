@@ -24,6 +24,9 @@ enum class LocalModelFilter {
     MNN,
     LLAMA,
     SPEECH,
+    TTS,
+    OCR,
+    ENGINE,
 }
 
 data class LocalModelStorageUiState(
@@ -42,6 +45,9 @@ data class LocalModelStorageUiState(
             LocalModelFilter.MNN -> models.filter { it.kind == LocalModelKind.MNN }
             LocalModelFilter.LLAMA -> models.filter { it.kind == LocalModelKind.LLAMA }
             LocalModelFilter.SPEECH -> models.filter { it.kind == LocalModelKind.SPEECH }
+            LocalModelFilter.TTS -> models.filter { it.kind == LocalModelKind.TTS }
+            LocalModelFilter.OCR -> models.filter { it.kind == LocalModelKind.OCR }
+            LocalModelFilter.ENGINE -> models.filter { it.kind == LocalModelKind.ENGINE }
         }
 
     val totalBytes: Long

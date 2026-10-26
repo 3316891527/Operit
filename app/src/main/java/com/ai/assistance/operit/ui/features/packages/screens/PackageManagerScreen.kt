@@ -3,6 +3,10 @@ package com.ai.assistance.operit.ui.features.packages.screens
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import com.ai.assistance.operit.util.AppLogger
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -211,6 +215,7 @@ fun PackageManagerScreen(
                     PluginFilter.ALL -> true
                     PluginFilter.ENABLED -> enabled
                     PluginFilter.DISABLED -> !enabled
+                    PluginFilter.BUILT_IN -> details.isBuiltIn
                 }
                 matchesFilter && (searchText.isEmpty() || pluginMatchesSearch(packageName, details, searchText))
             }
@@ -218,6 +223,8 @@ fun PackageManagerScreen(
     }
     var packageSearchInput by rememberSaveable { mutableStateOf("") }
     var packageSearchQuery by rememberSaveable { mutableStateOf("") }
+    var sandboxFilterName by rememberSaveable { mutableStateOf(PluginFilter.ALL.name) }
+    val sandboxFilter = PluginFilter.valueOf(sandboxFilterName)
     var filteredAvailablePackages by remember { mutableStateOf<Map<String, ToolPackage>>(emptyMap()) }
     var isPackageSearchFiltering by remember { mutableStateOf(false) }
     var skillSearchInput by rememberSaveable { mutableStateOf("") }
@@ -289,8 +296,15 @@ fun PackageManagerScreen(
         mcpSearchQuery = mcpSearchInput.trim()
     }
 
-    LaunchedEffect(availablePackages.value, packageSearchQuery) {
-        val packagesMap = availablePackages.value
+    LaunchedEffect(availablePackages.value, packageSearchQuery, sandboxFilter, visibleImportedPackages.value) {
+        val packagesMap = availablePackages.value.filter { (name, toolPackage) ->
+            when (sandboxFilter) {
+                PluginFilter.ALL -> true
+                PluginFilter.ENABLED -> name in visibleImportedPackages.value
+                PluginFilter.DISABLED -> name !in visibleImportedPackages.value
+                PluginFilter.BUILT_IN -> toolPackage.isBuiltIn
+            }
+        }
         val searchText = packageSearchQuery.trim()
         if (searchText.isEmpty()) {
             filteredAvailablePackages = packagesMap
@@ -466,7 +480,16 @@ fun PackageManagerScreen(
 
         }
 
-    // Load packages
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) refreshGeneration++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // 返回页面时重新读取已准备的内置扩展。
     LaunchedEffect(refreshGeneration) {
         isLoading = true
         try {
@@ -711,9 +734,11 @@ fun PackageManagerScreen(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            context.getString(R.string.mcp),
+                            context.getString(R.string.hub_mcp_title),
                             style = MaterialTheme.typography.bodySmall,
-                            softWrap = false,
+                            softWrap = true,
+                            maxLines = 2,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             color = if (selectedTab == PackageTab.MCP)
                                 MaterialTheme.colorScheme.primary
                             else
@@ -748,6 +773,20 @@ fun PackageManagerScreen(
                         }
                     )
                 }
+            }
+            if (selectedTab == PackageTab.PACKAGES) {
+                Box(Modifier.padding(horizontal = 16.dp)) {
+                    PluginListToolbar(
+                        count = filteredAvailablePackages.size, sort = pluginSort, filter = sandboxFilter,
+                        onSortChanged = {}, onFilterChanged = { sandboxFilterName = it.name }, showSorting = false,
+                    )
+                }
+            }
+            if (selectedTab == PackageTab.PLUGINS || selectedTab == PackageTab.PACKAGES) {
+                TextButton(onClick = {
+                    context.startActivity(android.content.Intent(context, OfflineResourcesActivity::class.java)
+                        .putExtra(OfflineResourcesActivity.EXTRA_GROUP, "extensions"))
+                }, modifier = Modifier.padding(horizontal = 16.dp)) { Text(stringResource(R.string.hub_prepare_builtins)) }
             }
             if ((selectedTab == PackageTab.PLUGINS || selectedTab == PackageTab.PACKAGES) && packageLoadErrors.value.isNotEmpty()) {
                 TextButton(
@@ -851,7 +890,7 @@ fun PackageManagerScreen(
                             packages = filteredAvailablePackages,
                             enabledPackageNames = visibleImportedPackages.value,
                             isLoading = isLoading,
-                            isSearchActive = packageSearchQuery.isNotBlank(),
+                            isSearchActive = packageSearchQuery.isNotBlank() || sandboxFilter != PluginFilter.ALL,
                             onQuickPluginCreatorClick = {
                                 showQuickPluginCreatorDialog = true
                             },

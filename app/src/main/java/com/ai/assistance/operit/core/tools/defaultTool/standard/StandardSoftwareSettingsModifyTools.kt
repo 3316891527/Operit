@@ -535,7 +535,8 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                             SpeechTtsVitsPackageConfigResultItem(
                                 packagePath = ttsVitsConfig.packagePath,
                                 speakerId = ttsVitsConfig.speakerId,
-                                options = ttsVitsConfig.options
+                                options = ttsVitsConfig.options,
+                                installedModelKey = ttsVitsConfig.installedModelKey,
                             ),
                         ttsCleanerRegexs = ttsCleanerRegexs,
                         ttsSpeechRate = ttsSpeechRate,
@@ -546,7 +547,8 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                                 endpointUrl = sttHttpConfig.endpointUrl,
                                 apiKeySet = sttHttpConfig.apiKey.isNotBlank(),
                                 apiKeyPreview = maskSecret(sttHttpConfig.apiKey),
-                                modelName = sttHttpConfig.modelName
+                                modelName = sttHttpConfig.modelName,
+                                localModelKey = sttHttpConfig.localModelKey,
                             )
                     )
             )
@@ -768,11 +770,13 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                         } else {
                             currentTtsVitsConfig.speakerId
                         },
-                    options = ttsVitsOptions
+                    options = ttsVitsOptions,
+                    installedModelKey = if (hasField("tts_local_model_key")) getParameterValue(tool, "tts_local_model_key").orEmpty().trim() else currentTtsVitsConfig.installedModelKey,
                 )
 
             val sttHttpConfig =
                 currentSttHttpConfig.copy(
+                    localModelKey = if (hasField("stt_local_model_key")) getParameterValue(tool, "stt_local_model_key").orEmpty().trim() else currentSttHttpConfig.localModelKey,
                     endpointUrl =
                         if (hasField("stt_endpoint_url")) {
                             getParameterValue(tool, "stt_endpoint_url").orEmpty().trim()

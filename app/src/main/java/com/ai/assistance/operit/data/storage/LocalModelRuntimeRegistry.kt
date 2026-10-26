@@ -94,6 +94,24 @@ object LocalModelRuntimeRegistry {
         }
     }
 
+    /** 替换与删除使用同一独占标记，目录切换期间禁止新的运行引用进入。 */
+    fun withExclusiveAccess(path: File, action: () -> Unit): Boolean {
+        val canonicalPath = path.canonicalPath
+        synchronized(lock) {
+            if (isBusyLocked(canonicalPath)) return false
+            deletionHolds[canonicalPath] = 1
+            publishActivePathsLocked()
+        }
+        try {
+            action()
+            return true
+        } finally {
+            synchronized(lock) {
+                deletionHolds.remove(canonicalPath)
+                publishActivePathsLocked()
+            }
+        }
+    }
     internal fun resetForTests() {
         synchronized(lock) {
             referenceCounts.clear()

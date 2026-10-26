@@ -2461,7 +2461,8 @@ data class SpeechTtsHttpConfigResultItem(
 data class SpeechTtsVitsPackageConfigResultItem(
     val packagePath: String,
     val speakerId: String,
-    val options: Map<String, String>
+    val options: Map<String, String>,
+    val installedModelKey: String = "",
 )
 
 /** 语音服务 STT HTTP 配置条目 */
@@ -2470,7 +2471,8 @@ data class SpeechSttHttpConfigResultItem(
     val endpointUrl: String,
     val apiKeySet: Boolean,
     val apiKeyPreview: String,
-    val modelName: String
+    val modelName: String,
+    val localModelKey: String = "",
 )
 
 /** 获取语音服务配置结果 */

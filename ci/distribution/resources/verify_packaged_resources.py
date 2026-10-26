@@ -43,13 +43,21 @@ def main() -> None:
                 json.dumps(report, ensure_ascii=False, indent=2) + "\n")
             forbidden = [
                 name for name in package.namelist()
-                if name.startswith(("assets/subpack/", "assets/models/sherpa-ncnn-"))
+                if name.startswith(("assets/packages/", "assets/subpack/", "assets/models/sherpa-ncnn-", "assets/templates/", "assets/mlkit-google-ocr-models/"))
                 or name == "assets/ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"
             ]
             if forbidden:
                 raise ValueError(f"Large resources were bundled in {apk.name}: {forbidden}")
             if package.read("assets/offline-resources.properties") != manifest:
                 raise ValueError("Packaged resource catalog differs from source")
+            for catalog_name in ["local-speech-models.json", "offline-packs.json"]:
+                if package.read("assets/" + catalog_name) != (ROOT / "app/config" / catalog_name).read_bytes():
+                    raise ValueError("Packaged hub catalog differs from source: " + catalog_name)
+            # 内置身份与安装入口由固定目录保留，默认 APK 不包含脚本或插件本体。
+            catalog = json.loads(package.read("assets/offline-packs.json"))
+            extensions = [p["extension"] for p in catalog["packs"] if "extension" in p]
+            if len(extensions) != 40 or sum(e["kind"] == "plugin" for e in extensions) != 10:
+                raise ValueError("内置扩展目录不完整")
             vad_content = package.read("assets/models/silero_vad.onnx")
             if len(vad_content) != int(vad[2]) or hashlib.sha256(vad_content).hexdigest() != vad[3]:
                 raise ValueError("Shared Silero VAD is missing or failed verification")
