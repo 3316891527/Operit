@@ -8,6 +8,9 @@ from pathlib import Path
 import subprocess
 from urllib.parse import quote
 ROOT = Path(__file__).resolve().parents[3]
+import sys
+sys.path.insert(0, str(ROOT / "ci/distribution"))
+from repositories.config import RESOURCE_REPOSITORY, SOURCE_REPOSITORY
 
 def request(endpoint: str, payload: dict | None = None, missing_ok: bool = False) -> dict | list | None:
     command = ['gh', 'api', endpoint]
@@ -25,7 +28,7 @@ def digest(path: Path) -> str:
         return 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
 
 def publish(assets: Path, repository: str, commit: str) -> None:
-    if repository != '3316891527/Operit':
+    if repository != RESOURCE_REPOSITORY:
         raise ValueError('此资源目录固定指向维护者自己的仓库')
     pinned = ROOT / 'app/config/offline-packs.json'
     if (assets / pinned.name).read_bytes() != pinned.read_bytes():
@@ -47,8 +50,8 @@ def publish(assets: Path, repository: str, commit: str) -> None:
     release = request(f'repos/{repository}/releases/tags/{quote(tag, safe="")}', missing_ok=True)
     if release is None:
         release = request(f'repos/{repository}/releases', {
-            'tag_name': tag, 'target_commitish': commit, 'name': '离线资源 · ' + tag,
-            'body': '九种工程模板、40 个按需下载的内置扩展、Sherpa ONNX 共用引擎和 ML Kit 多语言模型资产。APK 逆向插件与四个运行 JAR 统一准备，下载后仍标记为内置。各文件的大小及 SHA-256 固定在随附的 offline-packs.json 中。本资源版本发布后不改写。',
+            'tag_name': tag, 'name': '离线资源 · ' + tag,
+            'body': f'九种工程模板、40 个按需下载的内置扩展、Sherpa ONNX 共用引擎和 ML Kit 多语言模型资产。APK 逆向插件与四个运行 JAR 统一准备，下载后仍标记为内置。各文件的大小及 SHA-256 固定在随附的 offline-packs.json 中。本资源版本发布后不改写。\n\n准备源码：https://github.com/{SOURCE_REPOSITORY}/tree/{commit}。资源及模型沿用各自随附许可证。',
             'draft': True, 'prerelease': False, 'make_latest': 'false',
         })
     release_id = release['id']

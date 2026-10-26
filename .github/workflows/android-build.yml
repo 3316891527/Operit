@@ -20,8 +20,18 @@ on:
         required: true
         default: false
         type: boolean
+      complete_repository_migration:
+        description: +15 发布核对成功后清理已迁移的主仓库历史 Release，保留源码标签
+        required: true
+        default: false
+        type: boolean
       previous_tag:
         description: 可选的基础 Release 标签；留空选择同一基础版本的最新正式包
+        required: false
+        default: ''
+        type: string
+      resource_artifact_id:
+        description: 固定资源 ZIP 产物 ID，需属于所选提交；仅发布离线资源时填写
         required: false
         default: ''
         type: string
@@ -112,8 +122,29 @@ jobs:
             echo '发布独立发行版必须选择 :app:verifyCiPreviewRelease' >&2
             exit 1
           fi
+      - name: Validate migration completion inputs
+        if: github.event_name == 'workflow_dispatch' && inputs.complete_repository_migration
+        env:
+          PUBLISH_RELEASE: ${{ inputs.publish_release }}
+          DISPATCH_GRADLE_TASK: ${{ inputs.gradle_task }}
+        shell: bash
+        run: |
+          if [ "$PUBLISH_RELEASE" != 'true' ] || [ "$DISPATCH_GRADLE_TASK" != ':app:verifyCiPreviewRelease' ]; then
+            echo '完成迁移必须同时发布 +15 签名发行版' >&2
+            exit 1
+          fi
+      - name: Validate cross-repository release access
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+        env:
+          GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
+        run: python3 ci/distribution/repositories/check_publish_access.py --mode release
       - name: Check distribution patch publishing
         run: python3 -m unittest discover -s ci/distribution/updates/tests -v
+      - name: Migrate and verify historical distribution releases
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release && inputs.complete_repository_migration
+        env:
+          GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
+        run: python3 ci/distribution/repositories/migrate_releases.py --output .ci-repository-migration --apply
       - name: Initialize terminal submodule
         shell: bash
         run: |
@@ -285,7 +316,7 @@ jobs:
       - name: Publish distribution release and patch
         if: github.event_name == 'workflow_dispatch' && inputs.publish_release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
           PREVIOUS_TAG: ${{ inputs.previous_tag }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
@@ -296,6 +327,33 @@ jobs:
             --commit "$GITHUB_SHA" \
             --previous-tag "$PREVIOUS_TAG" \
             --notes "$RELEASE_NOTES"
+
+      - name: Complete verified repository migration
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release && inputs.complete_repository_migration
+        env:
+          GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
+        run: |
+          python3 ci/distribution/repositories/cleanup_main_releases.py \
+            --receipts .ci-repository-migration/cleanup-receipts.json \
+            --release-plan .ci-release/release-plan.json \
+            --commit "$GITHUB_SHA" \
+            --apply
+      - name: Upload distribution release and migration reports
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.publish_release
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: operit-distribution-reports-${{ github.run_number }}
+          path: |
+            .ci-release/release-plan.json
+            .ci-release/distribution-release.json
+            .ci-release/cleanup-report.json
+            .ci-repository-migration/source-releases.json
+            .ci-repository-migration/migration-plan.json
+            .ci-repository-migration/verified-receipts.json
+            .ci-repository-migration/cleanup-receipts.json
+          if-no-files-found: warn
+          retention-days: 30
+          include-hidden-files: true
 
   resources:
     if: github.event_name == 'workflow_dispatch' && inputs.gradle_task == 'publishOfflineResources'
@@ -317,7 +375,12 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'
+      - name: Validate cross-repository resource access
+        env:
+          GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
+        run: python3 ci/distribution/repositories/check_publish_access.py --mode resources
       - name: Prepare, verify and publish resources
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 ci/distribution/resources/publish_resources.py --source-artifact-id 11956415189
+          GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
+          SOURCE_ARTIFACT_ID: ${{ inputs.resource_artifact_id }}
+        run: python3 ci/distribution/resources/publish_resources.py --source-artifact-id "$SOURCE_ARTIFACT_ID"
