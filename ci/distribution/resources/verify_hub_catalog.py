@@ -5,6 +5,9 @@ import json
 from builtin_packages import whitelist, source_fingerprint
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
+import sys
+sys.path.insert(0, str(ROOT / "ci/distribution"))
+from repositories.config import RESOURCE_REPOSITORY
 TEMPLATES = ['android', 'flutter', 'go', 'java', 'node', 'office', 'python', 'typescript', 'web']
 
 def sha(path: Path) -> str:
@@ -45,7 +48,7 @@ def main() -> None:
         content = json.dumps(identity, sort_keys=True).encode()
         if hashlib.sha256(content).hexdigest()[:20] != pack['version']:
             raise ValueError('资源版本与内容指纹不一致：' + pack['id'])
-        expected_url = f'https://github.com/3316891527/Operit/releases/download/{catalog["releaseTag"]}/{pack["archive"]["path"]}'
+        expected_url = f'https://github.com/{RESOURCE_REPOSITORY}/releases/download/{catalog["releaseTag"]}/{pack["archive"]["path"]}'
         if pack['archive']['url'] != expected_url:
             raise ValueError('固定资源地址与发行标签不一致')
     without_urls = [{**p, 'archive': {k: v for k, v in p['archive'].items() if k != 'url'}} for p in packs]

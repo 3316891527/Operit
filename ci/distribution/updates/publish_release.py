@@ -10,13 +10,18 @@ from pathlib import Path
 import re
 import subprocess
 import time
+import sys
+from urllib.parse import quote
 
-REPOSITORY = "3316891527/Operit"
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "ci/distribution"))
+from repositories.config import SOURCE_REPOSITORY, UPDATE_REPOSITORY, release_repositories, source_info
+
+REPOSITORY = SOURCE_REPOSITORY
 APK_NAME = "app-kong.apk"
 PACKAGE_NAME = "com.ai.assistance.operit.kong"
 CERTIFICATE_SHA256 = "5E01FFF4DD01A44BAB8318BE35107AE39C60A1261CFCE33003EA3528727EA799"
 VERSION_PATTERN = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?$")
-ROOT = Path(__file__).resolve().parents[3]
 
 
 def version_key(value: str) -> tuple[int, int, int, int]:
@@ -92,7 +97,7 @@ def prepare_patch(base: Path, target: Path, output: Path, old_version: str, new_
     meta_file = output / f"patch_{suffix}.json"
     extra = hotbuild_module("build_patch").build_apkraw_patch(base, target, patch)
     meta = {
-        "format": "apkraw-1", "repo": REPOSITORY, "tag": "v" + new_version,
+        "format": "apkraw-1", "repo": UPDATE_REPOSITORY, "tag": "v" + new_version,
         "fromVersion": old_version.split("+")[0], "toVersion": new_version.split("+")[0],
         "fromPatchIndex": old_key[3], "toPatchIndex": new_key[3],
         "baseSha256": base_sha, "targetSha256": target_sha,
@@ -112,6 +117,17 @@ def prepare_patch(base: Path, target: Path, output: Path, old_version: str, new_
     return patch, meta_file, summary
 
 
+def ensure_source_tag(tag: str, commit: str) -> None:
+    endpoint = f"repos/{SOURCE_REPOSITORY}"
+    refs = json.loads(run("gh", "api", f"{endpoint}/git/matching-refs/tags/{quote(tag, safe='')}"))
+    if any(ref["ref"] == "refs/tags/" + tag for ref in refs):
+        actual = run("gh", "api", f"{endpoint}/commits/{quote(tag, safe='')}", "--jq", ".sha").strip()
+        if actual != commit:
+            raise ValueError("源码标签已指向其他提交，禁止移动")
+        return
+    run("gh", "api", f"{endpoint}/git/refs", "--method", "POST", "-f", "ref=refs/tags/" + tag, "-f", "sha=" + commit)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apk", type=Path, required=True)
@@ -121,6 +137,7 @@ def main() -> None:
     parser.add_argument("--previous-tag", default="")
     parser.add_argument("--notes", default="")
     parser.add_argument("--output", type=Path, default=Path(".ci-release"))
+    parser.add_argument("--prepare-only", action="store_true", help="核对 APK、生成并还原补丁及发布计划，不创建标签或 Release")
     args = parser.parse_args()
     if args.repository != REPOSITORY or re.fullmatch(r"[0-9a-f]{40}", args.commit) is None:
         raise ValueError("发布仓库或目标提交不属于本次独立发行流程")
@@ -133,8 +150,9 @@ def main() -> None:
     info = inspect_apk(args.apk, args.build_tools)
     version = info["versionName"]
     tag = "v" + version
-    releases = json.loads(run("gh", "api", f"repos/{REPOSITORY}/releases?per_page=100"))
-    if any(r["tag_name"] == tag for r in releases):
+    destinations = release_repositories(version)
+    releases = json.loads(run("gh", "api", f"repos/{UPDATE_REPOSITORY}/releases?per_page=100"))
+    if not args.prepare_only and any(r["tag_name"] == tag for r in releases):
         raise ValueError(f"发行版本已存在，不覆盖已发布的 APK 或补丁：{tag}")
     previous = select_previous_release(releases, version, args.previous_tag)
     if args.previous_tag and previous is None:
@@ -143,12 +161,13 @@ def main() -> None:
     summary = {
         "format": "operit-distribution-1", "tag": tag, **info,
         "targetSha256": sha256(args.apk), "releaseNotes": args.notes,
+        "updateRepository": UPDATE_REPOSITORY, **source_info(args.commit, tag),
     }
     assets = [args.apk]
     if previous is not None:
         base_dir = args.output / "base"
         base_dir.mkdir(exist_ok=True)
-        run("gh", "release", "download", previous["tag_name"], "--repo", REPOSITORY, "--pattern", APK_NAME, "--dir", str(base_dir))
+        run("gh", "release", "download", previous["tag_name"], "--repo", UPDATE_REPOSITORY, "--pattern", APK_NAME, "--dir", str(base_dir))
         base = base_dir / APK_NAME
         base_info = inspect_apk(base, args.build_tools)
         if base_info["versionName"] != previous["tag_name"].removeprefix("v"):
@@ -166,11 +185,30 @@ def main() -> None:
     assets.append(manifest)
     # 页面正文与增量元数据分别保存，防止发布页再次显示机器 JSON。
     notes_file = args.output / "release-notes.md"
-    notes_file.write_text(args.notes.rstrip() + "\n", encoding="utf-8")
-    # 草稿阶段上传完整产物，所有文件到齐后再公开，避免客户端读取半成品。
-    run("gh", "release", "create", tag, "--repo", REPOSITORY, "--target", args.commit, "--draft", "--title", version, "--notes-file", str(notes_file), *[str(a) for a in assets])
-    run("gh", "release", "edit", tag, "--repo", REPOSITORY, "--draft=false", "--latest")
-    print(f"已发布 https://github.com/{REPOSITORY}/releases/tag/{tag}", flush=True)
+    notes_file.write_text(
+        args.notes.rstrip() + f"\n\n源码：[对应提交](https://github.com/{SOURCE_REPOSITORY}/tree/{args.commit}) · "
+        f"[源码归档](https://github.com/{SOURCE_REPOSITORY}/archive/{args.commit}.zip)\n", encoding="utf-8")
+    plan = {"tag": tag, "sourceCommit": args.commit, "repositories": list(destinations),
+            "assets": [{"name": asset.name, "bytes": asset.stat().st_size, "sha256": sha256(asset)} for asset in assets]}
+    (args.output / "release-plan.json").write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if args.prepare_only:
+        print(json.dumps({"prepared": True, **plan}, ensure_ascii=False), flush=True)
+        return
+    # 正式版的两个目的地都先检查，避免覆盖已存在的 Release。
+    if SOURCE_REPOSITORY in destinations:
+        source_releases = json.loads(run("gh", "api", f"repos/{SOURCE_REPOSITORY}/releases?per_page=100"))
+        if any(release["tag_name"] == tag for release in source_releases):
+            raise ValueError(f"主仓库发行版本已存在：{tag}")
+    ensure_source_tag(tag, args.commit)
+    # 各发行仓库的标签指向各自文档提交；源码身份由主仓库标签和附件中的源码提交固定。
+    # 所有目的地都上传完草稿后再公开，客户端最后从统一更新仓库发现更新。
+    for repository in destinations:
+        target = ("--target", args.commit) if repository == SOURCE_REPOSITORY else ()
+        run("gh", "release", "create", tag, "--repo", repository, *target, "--draft", "--title", version,
+            "--notes-file", str(notes_file), *[str(asset) for asset in assets])
+    for repository in destinations:
+        run("gh", "release", "edit", tag, "--repo", repository, "--draft=false", "--latest")
+        print(f"已发布 https://github.com/{repository}/releases/tag/{tag}", flush=True)
 
 
 if __name__ == "__main__":

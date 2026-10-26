@@ -1,115 +1,62 @@
+"""从指定源码提交的 Actions 产物发布已准备且经过固定清单校验的资源。"""
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
-import hashlib
 import json
 import os
-import shutil
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import tempfile
-import urllib.request
 import zipfile
 
-from prepare_release import prepare, ROOT
+from publish_hub import publish, ROOT
+from repositories.config import SOURCE_REPOSITORY, RESOURCE_REPOSITORY
 
 
-TAG = "resources-v1"
-SPEECH_DIRECTORY = "sherpa-ncnn-streaming-zipformer-bilingual-zh-en-2023-02-13"
-UBUNTU_URL = "https://raw.githubusercontent.com/3316891527/OperitTerminalCore/1cdbfab990efeab93072bfbf727cbaa4886f1efa/src/main/assets/ubuntu-noble-aarch64-pd-v4.18.0.tar.xz"
-
-
-def api(endpoint: str, payload: dict | None = None, method: str | None = None):
-    command = ["gh", "api", endpoint]
-    if payload is not None:
-        command += ["--method", method or "POST", "--input", "-"]
-    elif method:
-        command += ["--method", method]
-    result = subprocess.run(command, input=json.dumps(payload) if payload is not None else None, capture_output=True, text=True, timeout=60)
-    if result.returncode:
-        raise RuntimeError(result.stderr.strip())
-    return json.loads(result.stdout) if result.stdout.strip() else None
+def prepare_artifact(archive: Path, destination: Path) -> None:
+    catalog = json.loads((ROOT / "app/config/offline-packs.json").read_text())
+    expected = {pack["archive"]["path"]: pack["archive"]["bytes"] for pack in catalog["packs"]}
+    expected["offline-packs.json"] = (ROOT / "app/config/offline-packs.json").stat().st_size
+    with zipfile.ZipFile(archive) as source:
+        entries = source.infolist()
+        names = [entry.filename for entry in entries]
+        if len(names) != len(set(names)) or set(names) != set(expected) | {"SHA256SUMS.txt"}:
+            raise ValueError("资源产物必须仅包含当前清单声明的资源包、目录和校验清单")
+        for entry in entries:
+            if Path(entry.filename).name != entry.filename or entry.is_dir() or (entry.external_attr >> 16) & 0o170000 == 0o120000:
+                raise ValueError("资源产物包含非法路径或符号链接")
+            if entry.filename in expected and entry.file_size != expected[entry.filename]:
+                raise ValueError("资源产物中的文件大小与固定清单不符：" + entry.filename)
+            if entry.filename == "SHA256SUMS.txt" and entry.file_size > 1024 * 1024:
+                raise ValueError("总校验清单过大")
+            with source.open(entry) as stream, (destination / entry.filename).open("wb") as output:
+                shutil.copyfileobj(stream, output)
 
 
 def main(artifact_id: int) -> None:
-    repo = os.environ["GITHUB_REPOSITORY"]
+    if artifact_id <= 0 or os.environ["GITHUB_REPOSITORY"] != SOURCE_REPOSITORY:
+        raise ValueError("必须从源码仓库选择有效的固定资源产物")
     commit = os.environ["GITHUB_SHA"]
-    release = api(f"repos/{repo}/releases/413574420")
-    if release["tag_name"] != TAG:
-        raise ValueError("Unexpected draft resource tag")
-    release_id = release["id"]
-    if not release["draft"]:
-        raise ValueError("固定资源 Release 已发布，禁止重写；需要变更时创建新资源版本")
-    catalog = []
-    for line in (ROOT / "app/config/offline-resources.properties").read_text().splitlines():
-        if line and not line.startswith("#"):
-            fields = line.split("|")
-            if len(fields) != 6 or Path(fields[1]).name != fields[1] or fields[1] in {".", ".."}:
-                raise ValueError("Invalid pinned resource catalog")
-            catalog.append(fields)
-    with tempfile.TemporaryDirectory(prefix="operit-resources-") as directory:
+    if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        raise ValueError("源码提交格式不正确")
+    artifact = json.loads(subprocess.run(["gh", "api", f"repos/{SOURCE_REPOSITORY}/actions/artifacts/{artifact_id}"],
+                                         capture_output=True, text=True, check=True, timeout=30).stdout)
+    if artifact["expired"] or artifact["workflow_run"]["head_sha"] != commit:
+        raise ValueError("资源产物已过期或不属于本次派发的源码提交")
+    with tempfile.TemporaryDirectory(prefix="operit-resource-release-") as directory:
         work = Path(directory)
-        artifact = work / "source.zip"
-        with artifact.open("wb") as output:
-            subprocess.run(["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"], stdout=output, check=True, timeout=600)
-        apk = work / "source.apk"
-        with zipfile.ZipFile(artifact) as archive:
-            candidates = [name for name in archive.namelist() if name.endswith(".apk")]
-            if len(candidates) != 1:
-                raise ValueError("Source artifact must contain exactly one APK")
-            with archive.open(candidates[0]) as source, apk.open("wb") as output:
-                shutil.copyfileobj(source, output)
-        sources = work / "sources"
-        sources.mkdir()
-        with zipfile.ZipFile(apk) as package:
-            for group, name, size, digest, source_note, license_note in catalog:
-                target = sources / name
-                if group == "ubuntu":
-                    with urllib.request.urlopen(UBUNTU_URL, timeout=60) as source, target.open("wb") as output:
-                        shutil.copyfileobj(source, output)
-                else:
-                    asset = f"assets/models/{SPEECH_DIRECTORY}/{name}" if group == "speech" else f"assets/subpack/{name}"
-                    with package.open(asset) as source, target.open("wb") as output:
-                        shutil.copyfileobj(source, output)
-        output = work / "release-assets"
-        prepare(sources, output)
-        existing = api(f"repos/{repo}/releases/{release_id}/assets?per_page=100")
-        # 草稿只由本轮创建；清除未完成传输及旧 ZIP，正式资源版本始终不可改写。
-        for asset in existing:
-            target = output / asset["name"]
-            if not target.is_file():
-                raise ValueError(f"Unexpected asset in draft: {asset['name']}")
-            with target.open("rb") as stream:
-                digest = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
-            if asset["state"] != "uploaded" or asset["size"] != target.stat().st_size or asset.get("digest") != digest:
-                api(f"repos/{repo}/releases/assets/{asset['id']}", method="DELETE")
-        existing = {asset["name"] for asset in api(f"repos/{repo}/releases/{release_id}/assets?per_page=100")}
-        pending = [target for target in output.iterdir() if target.name not in existing]
-
-        def upload(target: Path) -> None:
-            subprocess.run(["gh", "release", "upload", TAG, str(target), "--repo", repo], check=True, timeout=900)
-            print(f"Uploaded {target.name}", flush=True)
-
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            list(pool.map(upload, pending))
-        remote = {asset["name"]: asset for asset in api(f"repos/{repo}/releases/{release_id}/assets?per_page=100")}
-        if set(remote) != {target.name for target in output.iterdir()}:
-            raise ValueError("Resource release file list differs from prepared assets")
-        for target in output.iterdir():
-            asset = remote[target.name]
-            with target.open("rb") as stream:
-                digest = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
-            if asset["state"] != "uploaded" or asset["size"] != target.stat().st_size or asset.get("digest") != digest:
-                raise ValueError(f"Uploaded asset failed verification: {target.name}")
-        published = api(f"repos/{repo}/releases/{release_id}", {"draft": False, "make_latest": "false", "target_commitish": commit}, method="PATCH")
-        print("Published verified resources: " + published["html_url"], flush=True)
-        with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
-            summary.write(f"资源已完整上传并通过大小及 SHA-256 核对：{published['html_url']}\n")
+        archive = work / "assets.zip"
+        with archive.open("wb") as output:
+            subprocess.run(["gh", "api", f"repos/{SOURCE_REPOSITORY}/actions/artifacts/{artifact_id}/zip"], stdout=output, check=True, timeout=300)
+        assets = work / "assets"
+        assets.mkdir()
+        prepare_artifact(archive, assets)
+        publish(assets, RESOURCE_REPOSITORY, commit)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-artifact-id", type=int, required=True)
-    arguments = parser.parse_args()
-    main(arguments.source_artifact_id)
+    main(parser.parse_args().source_artifact_id)

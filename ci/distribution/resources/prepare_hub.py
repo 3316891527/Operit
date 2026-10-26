@@ -16,6 +16,9 @@ import zipfile
 from prepare_ocr_sdk import build_models
 
 ROOT = Path(__file__).resolve().parents[3]
+import sys
+sys.path.insert(0, str(ROOT / "ci/distribution"))
+from repositories.config import RESOURCE_REPOSITORY
 ENGINE_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.2/sherpa-onnx-v1.13.2-android.tar.bz2'
 ENGINE_HASH = 'fc4d17941152941a883b0cfabfc9acac118682324e9f97df6c1ae1360bc7bc8e'
 ENGINE_BYTES = 52236308
@@ -142,7 +145,7 @@ def prepare(output: Path, cache: Path, packages: Path, base_assets: Path | None 
     fingerprint = hashlib.sha256(json.dumps(groups, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:20]
     tag = 'resources-v2-' + fingerprint
     for group in groups:
-        group['archive']['url'] = f'https://github.com/3316891527/Operit/releases/download/{tag}/{group["archive"]["path"]}'
+        group['archive']['url'] = f'https://github.com/{RESOURCE_REPOSITORY}/releases/download/{tag}/{group["archive"]["path"]}'
     result = {'schemaVersion': 1, 'releaseTag': tag, 'packs': groups}
     metadata = output / 'offline-packs.json'
     metadata.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n')
