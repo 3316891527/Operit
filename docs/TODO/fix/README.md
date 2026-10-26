@@ -5,6 +5,7 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [语音条 WebView 挂载焦点修复](toolpkg-webview-focus/index.md) · `toolpkg-webview-focus`
 
 - [包管理四标签等宽铺满](package-tabs-full-width/index.md)
 
