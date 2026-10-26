@@ -25,9 +25,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.util.AppLogger
-import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 
 // 保存滑动状态变量，使其跨重组保持
@@ -51,8 +48,6 @@ fun SettingsScreen(
         navigateToAbout: () -> Unit
 ) {
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
-        var showClearCookieConfirm by remember { mutableStateOf(false) }
 
         // 创建和记住滚动状态，设置为上次保存的位置
         val scrollState = rememberScrollState(SettingsScreenScrollPosition.value)
@@ -171,6 +166,23 @@ fun SettingsScreen(
 
 
                         CompactSettingsItem(
+                                title = stringResource(R.string.offline_resources_title),
+                                subtitle = stringResource(R.string.offline_resources_subtitle),
+                                icon = Icons.Default.Download,
+                                onClick = {
+                                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java))
+                                }
+                        )
+
+
+                        CompactSettingsItem(
+                                title = stringResource(id = R.string.settings_external_http_chat),
+                                subtitle = stringResource(id = R.string.settings_external_http_chat_subtitle),
+                                icon = Icons.Default.SettingsEthernet,
+                                onClick = navigateToExternalHttpChatSettings
+                        )
+
+                        CompactSettingsItem(
                                 title = stringResource(id = R.string.settings_performance_monitor),
                                 subtitle = stringResource(id = R.string.settings_performance_monitor_subtitle),
                                 icon = Icons.Default.Speed,
@@ -182,37 +194,6 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.settings_about_subtitle),
                                 icon = Icons.Default.Info,
                                 onClick = navigateToAbout
-                        )
-                }
-
-                // ======= 隐私与数据清理 =======
-                SettingsSection(
-                        title = stringResource(id = R.string.settings_privacy_data_cleanup),
-                        icon = Icons.Default.DeleteSweep,
-                        containerColor = cardContainerColor
-                ) {
-                        CompactSettingsItem(
-                                title = stringResource(R.string.offline_resources_title),
-                                subtitle = stringResource(R.string.offline_resources_subtitle),
-                                icon = Icons.Default.Download,
-                                onClick = {
-                                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java))
-                                }
-                        )
-
-                }
-
-                // ======= 外部调用 =======
-                SettingsSection(
-                        title = stringResource(id = R.string.settings_section_external_calls),
-                        icon = Icons.Default.SettingsEthernet,
-                        containerColor = cardContainerColor
-                ) {
-                        CompactSettingsItem(
-                                title = stringResource(id = R.string.settings_external_http_chat),
-                                subtitle = stringResource(id = R.string.settings_external_http_chat_subtitle),
-                                icon = Icons.Default.SettingsEthernet,
-                                onClick = navigateToExternalHttpChatSettings
                         )
                 }
 

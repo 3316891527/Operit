@@ -190,6 +190,10 @@ fun PluginTabContent(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
+                                if (details.isBuiltIn) Text(
+                                    stringResource(R.string.builtin), style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
                                 if (details.description.isNotBlank()) {
                                     Text(
                                         text = details.description,

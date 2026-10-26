@@ -198,6 +198,12 @@ class DataStorageRepository internal constructor(
             CleanupTarget.LINUX_PACKAGE_CACHE,
         )
 
+        rule(File(filesDir, "runtime/models/local"), StorageCategory.LOCAL_MODELS, StorageDetail.OTHER_MODELS)
+        rule(File(filesDir, "runtime/models/local/stt"), StorageCategory.LOCAL_MODELS, StorageDetail.SPEECH_MODELS)
+        rule(File(filesDir, "runtime/models/local/tts"), StorageCategory.LOCAL_MODELS, StorageDetail.TTS_MODELS)
+        rule(File(filesDir, "runtime/models/local/engines"), StorageCategory.LOCAL_MODELS, StorageDetail.MODEL_ENGINES)
+        rule(File(filesDir, "runtime/resources/ocr-google-mlkit"), StorageCategory.LOCAL_MODELS, StorageDetail.OCR_MODELS)
+        rule(File(filesDir, "runtime/downloads"), StorageCategory.LOCAL_MODELS, StorageDetail.OTHER_MODELS)
         val modelsRoot = File(publicRoot, "models")
         rule(modelsRoot, StorageCategory.LOCAL_MODELS, StorageDetail.OTHER_MODELS)
         rule(File(modelsRoot, "mnn"), StorageCategory.LOCAL_MODELS, StorageDetail.MNN_MODELS)
@@ -416,18 +422,10 @@ class DataStorageRepository internal constructor(
         }.onFailure { AppLogger.w(TAG, "Unable to read configuration counts: ${it.message}") }
 
         val rulesByDetail = layout.rules.groupBy { it.detail }
-        counts[StorageCategory.LOCAL_MODELS] =
-            CategoryCounts(
-                primary =
-                    countImmediateEntries(
-                        rulesByDetail
-                            .filterKeys {
-                                it == StorageDetail.MNN_MODELS ||
-                                    it == StorageDetail.LLAMA_MODELS ||
-                                    it == StorageDetail.SPEECH_MODELS
-                            }.values.flatten().map { it.path },
-                    ),
-            )
+        // 数量与详情使用同一清单，不能把用途、引擎或版本目录误当成模型数。
+        counts[StorageCategory.LOCAL_MODELS] = CategoryCounts(
+            primary = LocalModelInventory(appContext, storageRepository = this).listModels().size.toLong(),
+        )
         counts[StorageCategory.WORKSPACES_AND_MEDIA] =
             CategoryCounts(
                 primary =
@@ -496,6 +494,9 @@ class DataStorageRepository internal constructor(
                 StorageDetail.MNN_MODELS,
                 StorageDetail.LLAMA_MODELS,
                 StorageDetail.SPEECH_MODELS,
+                StorageDetail.TTS_MODELS,
+                StorageDetail.OCR_MODELS,
+                StorageDetail.MODEL_ENGINES,
                 StorageDetail.OTHER_MODELS -> StorageCategory.LOCAL_MODELS
                 StorageDetail.INTERNAL_WORKSPACES,
                 StorageDetail.SHARED_WORKSPACES,

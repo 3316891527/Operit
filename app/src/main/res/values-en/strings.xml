@@ -959,7 +959,6 @@
     <string name="settings_configure_permissions">Configure Permissions</string>
 
     <string name="settings_section_usage">Usage Statistics</string>
-    <string name="settings_section_external_calls">External Calls</string>
     <string name="settings_token_statistics">Token Statistics</string>
     <string name="settings_total_tokens_breakdown">Input: %1$d (Cached: %2$d) / Output: %3$d</string>
     <string name="settings_cached_tokens">(Cached: %1$d)</string>
@@ -3646,7 +3645,6 @@
     <string name="settings_diagnostics">Diagnostics and Logs</string>
     <string name="workspace_html_export_desc">Select a web project folder and export an Android or Windows package</string>
     <string name="settings_tool_permissions_subtitle">Tool permissions and security settings</string>
-    <string name="settings_privacy_data_cleanup">Privacy and Data Cleanup</string>
     <string name="settings_clear_cookies">Clear Cookies</string>
     <string name="settings_clear_cookies_subtitle">Clear cookies saved by search tools, the Browser package, and the built-in browser</string>
     <string name="clear_cookies_dialog_title">Clear cookies?</string>
@@ -8771,7 +8769,7 @@
 <string name="data_storage_detail_preferences">App preferences and configuration</string>
 <string name="data_storage_detail_shared_workspaces">Shared workspaces</string>
 <string name="data_storage_detail_skill_files">Skill files</string>
-<string name="data_storage_detail_speech_models">Speech recognition models</string>
+<string name="data_storage_detail_speech_models">Speech recognition</string>
 <string name="data_storage_detail_temporary_files">Temporary files</string>
 <string name="data_storage_detail_terminal_runtime">Terminal runtime and setup files</string>
 <string name="data_storage_detail_vector_indexes">Vector indexes</string>
@@ -8838,7 +8836,7 @@
 <string name="data_storage_linux_unit_root">Ubuntu root environment</string>
 <string name="data_storage_linux_units_title">Manageable storage units</string>
 <string name="data_storage_linux_usage_title">Linux environment and terminal usage</string>
-<string name="data_storage_local_models_count">%1$d models</string>
+<string name="data_storage_local_models_count">%1$d items</string>
 <string name="data_storage_local_models_delete_failed">Delete failed</string>
 <string name="data_storage_local_models_delete_message">This will cancel any unfinished download and delete “%1$s”. Models that are currently in use cannot be deleted.</string>
 <string name="data_storage_local_models_delete_title">Delete model</string>
@@ -8971,7 +8969,7 @@
 
     <!-- 离线大资源下载及备份 -->
     <string name="offline_resources_title">Offline resources</string>
-    <string name="offline_resources_subtitle">Download, back up and import speech, terminal and export resources</string>
+    <string name="offline_resources_subtitle">Models, built-in extensions, project templates, and runtimes</string>
     <string name="offline_resources_description">Large resources are downloaded when needed. Deleting the installer APK keeps downloaded resources; uninstalling the app removes its private resources. Export a ZIP to shared storage such as Downloads, then import it offline after reinstalling.</string>
     <string name="offline_resources_source">Download source: personal GitHub Releases</string>
     <string name="offline_resources_speech">Offline speech recognition · Sherpa-NCNN</string>
@@ -9030,7 +9028,7 @@
     <string name="about_distribution_maintainer">Distribution maintainer</string>
     <string name="about_distribution_feedback">Distribution feedback</string>
     <string name="resource_catalog_title">Resource catalog</string>
-    <string name="resource_catalog_speech">Speech recognition and synthesis</string>
+    <string name="resource_catalog_speech">Speech recognition</string>
     <string name="resource_catalog_environment">Runtime environment</string>
     <string name="resource_catalog_export">App packaging templates</string>
     <string name="resource_source_distribution">Current distribution</string>
@@ -9457,4 +9455,7 @@
     <string name="theme_thinking_particle_color_desc">Customize the color of particles flowing along the slider while thinking is enabled. White is used by default.</string>
     <string name="theme_thinking_particle_color_title">Thinking particle color</string>
     <string name="onboarding_brand_name">Operit</string>
+    <string name="data_storage_detail_tts_models">Speech synthesis</string>
+    <string name="data_storage_detail_ocr_models">Text recognition</string>
+    <string name="data_storage_detail_model_engines">Runtime engines</string>
 </resources>

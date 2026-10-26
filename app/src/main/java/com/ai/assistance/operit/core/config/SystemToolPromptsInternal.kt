@@ -1853,7 +1853,7 @@ object SystemToolPromptsInternal {
                                     ToolParameterSchema(
                                         name = "tts_service_type",
                                         type = "string",
-                                        description = "optional, SIMPLE_TTS/HTTP_TTS/OPENAI_WS_TTS/SILICONFLOW_TTS/MINIMAX_TTS/MIMO_TTS/DOUBAO_TTS/OPENAI_TTS/VITS_TTS",
+                                        description = "optional, SIMPLE_TTS/HTTP_TTS/OPENAI_WS_TTS/SILICONFLOW_TTS/MINIMAX_TTS/MIMO_TTS/DOUBAO_TTS/OPENAI_TTS/VITS_TTS/SHERPA_ONNX_TTS",
                                         required = false
                                     ),
                                     ToolParameterSchema(
@@ -1917,6 +1917,12 @@ object SystemToolPromptsInternal {
                                         required = false
                                     ),
                                     ToolParameterSchema(
+                                        name = "tts_local_model_key",
+                                        type = "string",
+                                        description = "可选，离线资源中已安装模型的 id@version",
+                                        required = false
+                                    ),
+                                    ToolParameterSchema(
                                         name = "tts_vits_package_path",
                                         type = "string",
                                         description = "optional, local VITS/Piper TTS package path; accepts a .zip file or extracted package directory",
@@ -1955,7 +1961,13 @@ object SystemToolPromptsInternal {
                                     ToolParameterSchema(
                                         name = "stt_service_type",
                                         type = "string",
-                                        description = "optional, SHERPA_NCNN/OPENAI_STT/DEEPGRAM_STT",
+                                        description = "optional, SHERPA_NCNN/SHERPA_ONNX/OPENAI_STT/DEEPGRAM_STT",
+                                        required = false
+                                    ),
+                                    ToolParameterSchema(
+                                        name = "stt_local_model_key",
+                                        type = "string",
+                                        description = "可选，离线资源中已安装模型的 id@version",
                                         required = false
                                     ),
                                     ToolParameterSchema(
@@ -4863,7 +4875,7 @@ object SystemToolPromptsInternal {
                                     ToolParameterSchema(
                                         name = "tts_service_type",
                                         type = "string",
-                                        description = "可选，SIMPLE_TTS/HTTP_TTS/OPENAI_WS_TTS/SILICONFLOW_TTS/MINIMAX_TTS/MIMO_TTS/DOUBAO_TTS/OPENAI_TTS/VITS_TTS",
+                                        description = "可选，SIMPLE_TTS/HTTP_TTS/OPENAI_WS_TTS/SILICONFLOW_TTS/MINIMAX_TTS/MIMO_TTS/DOUBAO_TTS/OPENAI_TTS/VITS_TTS/SHERPA_ONNX_TTS",
                                         required = false
                                     ),
                                     ToolParameterSchema(
@@ -4927,6 +4939,12 @@ object SystemToolPromptsInternal {
                                         required = false
                                     ),
                                     ToolParameterSchema(
+                                        name = "tts_local_model_key",
+                                        type = "string",
+                                        description = "可选，离线资源中已安装模型的 id@version",
+                                        required = false
+                                    ),
+                                    ToolParameterSchema(
                                         name = "tts_vits_package_path",
                                         type = "string",
                                         description = "可选，本地 VITS/Piper TTS 模型包路径，支持 .zip 文件或已解压目录",
@@ -4965,7 +4983,13 @@ object SystemToolPromptsInternal {
                                     ToolParameterSchema(
                                         name = "stt_service_type",
                                         type = "string",
-                                        description = "可选，SHERPA_NCNN/OPENAI_STT/DEEPGRAM_STT",
+                                        description = "可选，SHERPA_NCNN/SHERPA_ONNX/OPENAI_STT/DEEPGRAM_STT",
+                                        required = false
+                                    ),
+                                    ToolParameterSchema(
+                                        name = "stt_local_model_key",
+                                        type = "string",
+                                        description = "可选，离线资源中已安装模型的 id@version",
                                         required = false
                                     ),
                                     ToolParameterSchema(

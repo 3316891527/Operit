@@ -50,17 +50,20 @@ fun WorkspaceSetup(
     }
 
     fun bindBuiltInWorkspace(projectType: String?) {
-        val workspaceDir =
-            if (projectType == null) {
-                createAndGetDefaultWorkspace(context, chatId)
-            } else {
-                createAndGetDefaultWorkspace(context, chatId, projectType)
-            }
-        onBindWorkspace(workspaceDir.absolutePath, null)
-        showProjectTypeDialog = false
+        if (isImportingToolPkgTemplate) return
+        isImportingToolPkgTemplate = true
         projectTypeDialogError = null
+        scope.launch {
+            try {
+                val workspaceDir = withContext(Dispatchers.IO) { createAndGetDefaultWorkspace(context, chatId, projectType) }
+                onBindWorkspace(workspaceDir.absolutePath, null)
+                showProjectTypeDialog = false
+            } catch (cancel: CancellationException) { throw cancel } catch (error: Exception) {
+                com.ai.assistance.operit.util.AppLogger.e("WorkspaceSetup", "创建模板工作区失败", error)
+                projectTypeDialogError = error.localizedMessage
+            } finally { isImportingToolPkgTemplate = false }
+        }
     }
-
     fun importToolPkgWorkspaceTemplate(template: PackageManager.ToolPkgWorkspaceTemplate) {
         if (isImportingToolPkgTemplate) return
         projectTypeDialogError = null
@@ -134,6 +137,9 @@ fun WorkspaceSetup(
                         )
                     }
 
+                    TextButton(onClick = {
+                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java).putExtra(com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity.EXTRA_GROUP, "templates"))
+                    }, enabled = !isImportingToolPkgTemplate) { Text(context.getString(R.string.hub_prepare_templates)) }
                     if (isImportingToolPkgTemplate) {
                         Text(
                             text = context.getString(R.string.workspace_template_importing),

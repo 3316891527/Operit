@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.speech.PersonalWakeEnrollment
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences
+import com.ai.assistance.operit.ui.features.settings.components.speech.workbench.SpeechWorkbenchSheet
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -41,132 +42,120 @@ internal fun PersonalWakeEnrollmentDialog(wakePrefs: WakeWordPreferences, onDism
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    AlertDialog(
-        onDismissRequest = {
-            if (recordingStep == 0 && !saving) onDismiss()
-        },
-        title = { Text(text = stringResource(R.string.voice_wakeup_personal_config_dialog_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    SpeechWorkbenchSheet(
+        title = stringResource(R.string.voice_wakeup_personal_config_dialog_title),
+        onDismiss = onDismiss,
+        dismissEnabled = recordingStep == 0 && !saving,
+    ) {
+        Text(
+            text = stringResource(R.string.voice_wakeup_personal_config_dialog_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        @Composable
+        fun stepRow(index: Int, value: FloatArray?, onRecord: () -> Unit) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = stringResource(R.string.voice_wakeup_personal_config_dialog_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = stringResource(R.string.voice_wakeup_personal_config_step, index),
+                    style = MaterialTheme.typography.bodyMedium
                 )
 
-                @Composable
-                fun stepRow(index: Int, value: FloatArray?, onRecord: () -> Unit) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = stringResource(R.string.voice_wakeup_personal_config_step, index),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-
-                        val busy = recordingStep == index
-                        val label =
-                            when {
-                                busy -> stringResource(R.string.voice_wakeup_personal_config_recording)
-                                value != null -> stringResource(R.string.voice_wakeup_personal_config_record_done)
-                                else -> stringResource(R.string.voice_wakeup_personal_config_record)
-                            }
-                        FilledTonalButton(
-                            onClick = onRecord,
-                            enabled = recordingStep == 0 && !saving,
-                        ) {
-                            Text(text = label)
-                        }
+                val busy = recordingStep == index
+                val label =
+                    when {
+                        busy -> stringResource(R.string.voice_wakeup_personal_config_recording)
+                        value != null -> stringResource(R.string.voice_wakeup_personal_config_record_done)
+                        else -> stringResource(R.string.voice_wakeup_personal_config_record)
                     }
+                FilledTonalButton(
+                    onClick = onRecord,
+                    enabled = recordingStep == 0 && !saving,
+                ) {
+                    Text(text = label)
                 }
-
-                stepRow(1, step1) {
-                    recordingStep = 1
-                    recordingJob = scope.launch {
-                        try {
-                            val feat = PersonalWakeEnrollment.recordOneTemplate(context)
-                            if (feat != null) step1 = feat
-                        } catch (error: CancellationException) {
-                            throw error
-                        } catch (error: Exception) {
-                            AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
-                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
-                        } finally {
-                            recordingStep = 0
-                        }
-                    }
-                }
-                stepRow(2, step2) {
-                    recordingStep = 2
-                    recordingJob = scope.launch {
-                        try {
-                            val feat = PersonalWakeEnrollment.recordOneTemplate(context)
-                            if (feat != null) step2 = feat
-                        } catch (error: CancellationException) {
-                            throw error
-                        } catch (error: Exception) {
-                            AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
-                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
-                        } finally {
-                            recordingStep = 0
-                        }
-                    }
-                }
-                stepRow(3, step3) {
-                    recordingStep = 3
-                    recordingJob = scope.launch {
-                        try {
-                            val feat = PersonalWakeEnrollment.recordOneTemplate(context)
-                            if (feat != null) step3 = feat
-                        } catch (error: CancellationException) {
-                            throw error
-                        } catch (error: Exception) {
-                            AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
-                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
-                        } finally {
-                            recordingStep = 0
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            val canSave = step1 != null && step2 != null && step3 != null && recordingStep == 0 && !saving
-            TextButton(
-                enabled = canSave,
-                onClick = {
-                    if (!canSave) return@TextButton
-                    saving = true
-                    scope.launch {
-                        try {
-                            val templates = listOf(step1!!, step2!!, step3!!).map { features ->
-                                WakeWordPreferences.PersonalWakeTemplate(features = features.toList())
-                            }
-                            wakePrefs.savePersonalWakeTemplates(templates)
-                            onDismiss()
-                        } catch (error: CancellationException) {
-                            throw error
-                        } catch (error: Exception) {
-                            AppLogger.e("PersonalWakeEnrollment", "保存个人唤醒模板失败", error)
-                            OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
-                        } finally {
-                            saving = false
-                        }
-                    }
-                }
-            ) {
-                Text(text = stringResource(R.string.voice_wakeup_personal_config_save))
-            }
-        },
-        dismissButton = {
-            TextButton(
-                enabled = recordingStep == 0 && !saving,
-                onClick = { onDismiss() }
-            ) {
-                Text(text = stringResource(R.string.voice_wakeup_personal_config_cancel))
             }
         }
-    )
+
+        stepRow(1, step1) {
+            recordingStep = 1
+            recordingJob = scope.launch {
+                try {
+                    val feat = PersonalWakeEnrollment.recordOneTemplate(context)
+                    if (feat != null) step1 = feat
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
+                    OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
+                } finally {
+                    recordingStep = 0
+                }
+            }
+        }
+        stepRow(2, step2) {
+            recordingStep = 2
+            recordingJob = scope.launch {
+                try {
+                    val feat = PersonalWakeEnrollment.recordOneTemplate(context)
+                    if (feat != null) step2 = feat
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
+                    OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
+                } finally {
+                    recordingStep = 0
+                }
+            }
+        }
+        stepRow(3, step3) {
+            recordingStep = 3
+            recordingJob = scope.launch {
+                try {
+                    val feat = PersonalWakeEnrollment.recordOneTemplate(context)
+                    if (feat != null) step3 = feat
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    AppLogger.e("PersonalWakeEnrollment", "录制个人唤醒模板失败", error)
+                    OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
+                } finally {
+                    recordingStep = 0
+                }
+            }
+        }
+        val canSave = step1 != null && step2 != null && step3 != null && recordingStep == 0 && !saving
+        Button(
+            enabled = canSave,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                if (!canSave) return@Button
+                saving = true
+                scope.launch {
+                    try {
+                        val templates = listOf(step1!!, step2!!, step3!!).map { features ->
+                            WakeWordPreferences.PersonalWakeTemplate(features = features.toList())
+                        }
+                        wakePrefs.savePersonalWakeTemplates(templates)
+                        onDismiss()
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        AppLogger.e("PersonalWakeEnrollment", "保存个人唤醒模板失败", error)
+                        OKToast.error(context, context.getString(R.string.recognition_error, error.message.orEmpty()), OKToast.LENGTH_SHORT).show()
+                    } finally {
+                        saving = false
+                    }
+                }
+            }
+        ) {
+            Text(text = stringResource(R.string.voice_wakeup_personal_config_save))
+        }
+
+    }
 }

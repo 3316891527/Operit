@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.data.resources
 
 import android.content.Context
+import com.ai.assistance.operit.data.resources.models.ResourceDownloadPhase
 import android.net.Uri
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
@@ -60,7 +61,7 @@ object OfflineResources {
             }.filter { it[0] == id }.map { ResourceFileSpec(it[1], it[2].toLong(), it[3]) }.toList()
         }.also { require(it.isNotEmpty()) }
 
-    private fun directory(context: Context, id: String): File = when (id) {
+    fun directory(context: Context, id: String): File = when (id) {
         SPEECH -> File(OperitPaths.sherpaNcnnModelsDir(context), SPEECH_DIRECTORY)
         UBUNTU, ANDROID_EXPORT, WINDOWS_EXPORT -> File(context.filesDir, "downloaded_resources/$id")
         else -> error("Unknown resource group: $id")
@@ -94,6 +95,11 @@ object OfflineResources {
             ))
     }
 
+    /** 仅移除安装归档，不进入终端维护，不触碰已安装的 Ubuntu。 */
+    suspend fun deleteUbuntuArchive(context: Context) = access(context, UBUNTU, writing = true) { dir, _ ->
+        check(dir.deleteRecursively() || !dir.exists()) { context.getString(R.string.resource_delete_failed) }
+        DataStorageRepository(context).invalidateCache()
+    }
     suspend fun resumePendingUbuntuDeletion(context: Context) {
         delete(context, UBUNTU, resumeOnly = true)
     }
@@ -201,9 +207,10 @@ object OfflineResources {
             File(dir, files.single().name).copyTo(destination, overwrite = true)
         }
 
-    suspend fun download(context: Context, id: String, progress: (Long, Long) -> Unit) = access(context, id, writing = true) { dir, files ->
+    suspend fun download(context: Context, id: String, phase: (ResourceDownloadPhase) -> Unit = {}, progress: (Long, Long) -> Unit) = access(context, id, writing = true) { dir, files ->
         check(dir.isDirectory || dir.mkdirs())
         val jobContext = currentCoroutineContext()
+        phase(ResourceDownloadPhase.CONNECTING)
         val needed = files.filterNot { ResourceArchive.verified(File(dir, it.name), it) { jobContext.ensureActive() } }
         val required = needed.sumOf { it.size }
         if (dir.usableSpace < required + 1024 * 1024) throw IOException(context.getString(R.string.offline_resources_no_space))
@@ -211,6 +218,7 @@ object OfflineResources {
         var completed = total - required
         progress(completed, total)
         needed.forEach { spec ->
+            phase(ResourceDownloadPhase.DOWNLOADING)
             val part = File(dir, "${spec.name}.part")
             try {
                 coroutineScope {
@@ -231,6 +239,7 @@ object OfflineResources {
                     } finally { cancellation.cancelAndJoin() }
                 }
                 jobContext.ensureActive()
+                phase(ResourceDownloadPhase.INSTALLING)
                 ResourceArchive.install(part, File(dir, spec.name))
                 completed += spec.size
             } finally { part.delete() }

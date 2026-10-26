@@ -1,0 +1,95 @@
+"""发布已通过固定清单核对的资源，不修改已有正式资源版本。"""
+from __future__ import annotations
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+from urllib.parse import quote
+ROOT = Path(__file__).resolve().parents[3]
+
+def request(endpoint: str, payload: dict | None = None, missing_ok: bool = False) -> dict | list | None:
+    command = ['gh', 'api', endpoint]
+    if payload is not None:
+        command += ['--method', 'POST', '--input', '-']
+    result = subprocess.run(command, input=json.dumps(payload) if payload is not None else None, capture_output=True, text=True, timeout=60)
+    if result.returncode:
+        if missing_ok and 'HTTP 404' in result.stderr:
+            return None
+        raise RuntimeError(result.stderr.strip())
+    return json.loads(result.stdout) if result.stdout.strip() else None
+
+def digest(path: Path) -> str:
+    with path.open('rb') as stream:
+        return 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
+
+def publish(assets: Path, repository: str, commit: str) -> None:
+    if repository != '3316891527/Operit':
+        raise ValueError('此资源目录固定指向维护者自己的仓库')
+    pinned = ROOT / 'app/config/offline-packs.json'
+    if (assets / pinned.name).read_bytes() != pinned.read_bytes():
+        raise ValueError('准备的资源目录与本次源码清单不一致')
+    catalog = json.loads(pinned.read_text())
+    expected = {p['archive']['path']: p['archive'] for p in catalog['packs']}
+    files = sorted(p for p in assets.iterdir() if p.is_file())
+    if {p.name for p in files} != set(expected) | {'offline-packs.json', 'SHA256SUMS.txt'}:
+        raise ValueError('发行文件列表与目录不一致')
+    for path in files:
+        spec = expected.get(path.name)
+        if spec and (path.stat().st_size != spec['bytes'] or digest(path) != 'sha256:' + spec['sha256']):
+            raise ValueError('发行资源校验失败：' + path.name)
+    sums = (assets / 'SHA256SUMS.txt').read_text().splitlines()
+    expected_sums = sorted(f'{digest(path).removeprefix("sha256:")}  {path.name}' for path in files if path.name != 'SHA256SUMS.txt')
+    if sorted(sums) != expected_sums:
+        raise ValueError('总校验清单不匹配')
+    tag = catalog['releaseTag']
+    release = request(f'repos/{repository}/releases/tags/{quote(tag, safe="")}', missing_ok=True)
+    if release is None:
+        release = request(f'repos/{repository}/releases', {
+            'tag_name': tag, 'target_commitish': commit, 'name': '离线资源 · ' + tag,
+            'body': '九种工程模板、40 个按需下载的内置扩展、Sherpa ONNX 共用引擎和 ML Kit 多语言模型资产。APK 逆向插件与四个运行 JAR 统一准备，下载后仍标记为内置。各文件的大小及 SHA-256 固定在随附的 offline-packs.json 中。本资源版本发布后不改写。',
+            'draft': True, 'prerelease': False, 'make_latest': 'false',
+        })
+    release_id = release['id']
+    def remote_files() -> dict:
+        return {item['name']: item for item in request(f'repos/{repository}/releases/{release_id}/assets?per_page=100')}
+    remote = remote_files()
+    if set(remote) - {p.name for p in files}:
+        raise ValueError('现有资源版本中有未声明文件，禁止覆盖')
+    for path in files:
+        item = remote.get(path.name)
+        if item:
+            if item['state'] != 'uploaded' or item['size'] != path.stat().st_size or item.get('digest') != digest(path):
+                raise ValueError('现有远端资源与固定清单不一致，禁止覆盖：' + path.name)
+        else:
+            if not release['draft']:
+                raise ValueError('已发布资源版本不完整，禁止修改：' + path.name)
+            subprocess.run(['gh', 'release', 'upload', tag, str(path), '--repo', repository], check=True, timeout=900)
+            print('已上传：' + path.name, flush=True)
+    remote = remote_files()
+    if set(remote) != {p.name for p in files}:
+        raise ValueError('上传后的资源文件列表不匹配')
+    for path in files:
+        item = remote[path.name]
+        if item['state'] != 'uploaded' or item['size'] != path.stat().st_size or item.get('digest') != digest(path):
+            raise ValueError('上传后大小或摘要不匹配：' + path.name)
+    if release['draft']:
+        result = subprocess.run(['gh', 'api', f'repos/{repository}/releases/{release_id}', '--method', 'PATCH', '--input', '-'],
+            input=json.dumps({'draft': False, 'make_latest': 'false'}), text=True, capture_output=True, timeout=60)
+        if result.returncode:
+            raise RuntimeError(result.stderr.strip())
+        release = json.loads(result.stdout)
+    report = {'tag': tag, 'url': release['html_url'], 'files_verified': len(files), 'published': not release['draft']}
+    print(json.dumps(report, ensure_ascii=False), flush=True)
+    if os.environ.get('GITHUB_STEP_SUMMARY'):
+        with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+            summary.write('已发布并核对固定资源：' + release['html_url'] + '\n')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--assets', type=Path, required=True)
+    parser.add_argument('--repository', required=True)
+    parser.add_argument('--commit', required=True)
+    args = parser.parse_args()
+    publish(args.assets, args.repository, args.commit)

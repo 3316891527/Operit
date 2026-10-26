@@ -6,6 +6,8 @@ import com.ai.assistance.operit.data.mnn.DownloadState
 import com.ai.assistance.operit.data.mnn.MnnDownloadSnapshot
 import com.ai.assistance.operit.data.mnn.MnnModelDownloadManager
 import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.data.resources.models.SpeechModelPurpose
+import com.ai.assistance.operit.data.resources.packs.PackResources
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,6 +16,9 @@ enum class LocalModelKind {
     MNN,
     LLAMA,
     SPEECH,
+    TTS,
+    OCR,
+    ENGINE,
 }
 
 enum class LocalModelCompleteness {
@@ -32,6 +37,7 @@ data class LocalModelEntry(
     val downloadState: DownloadState? = null,
     val inUse: Boolean = false,
     val canDelete: Boolean = true,
+    val resourcePackId: String? = null,
 )
 
 class LocalModelInventory(
@@ -56,6 +62,19 @@ class LocalModelInventory(
         listSpeechModels(activePaths).forEach { entry ->
             if (seen.add(canonicalPath(entry.path))) entries += entry
         }
+        val speechStore = com.ai.assistance.operit.data.resources.models.SpeechModels(appContext)
+        speechStore.installed().models.forEach { model ->
+            val directory = speechStore.directory(model)
+            val used = isPathInUse(directory, activePaths)
+            if (seen.add(canonicalPath(directory))) entries += LocalModelEntry(
+                "speech:${model.key}", model.name, if (model.purpose == SpeechModelPurpose.STT) LocalModelKind.SPEECH else LocalModelKind.TTS, directory, directorySize(directory),
+                if (speechStore.isInstalled(model)) LocalModelCompleteness.COMPLETE else LocalModelCompleteness.INCOMPLETE,
+                inUse = used, canDelete = !used,
+            )
+        }
+        listPackModels(activePaths).forEach { entry ->
+            if (seen.add(canonicalPath(entry.path))) entries += entry
+        }
         entries.sortedWith(
             compareBy<LocalModelEntry> { it.kind.ordinal }
                 .thenByDescending { it.inUse }
@@ -68,10 +87,16 @@ class LocalModelInventory(
         entry: LocalModelEntry,
         onProgress: ((deletedBytes: Long, totalBytes: Long) -> Unit)? = null,
     ): LocalModelDeleteOutcome = withContext(Dispatchers.IO) {
-        val outcome = when (entry.kind) {
+        val outcome = if (entry.resourcePackId != null) {
+            PackResources.delete(appContext, entry.resourcePackId, onProgress)
+            LocalModelDeleteOutcome.DELETED
+        } else when (entry.kind) {
             LocalModelKind.MNN -> downloadManager.deleteModelFolder(entry.path, onProgress)
             LocalModelKind.LLAMA,
-            LocalModelKind.SPEECH -> LocalModelRuntimeRegistry.deleteIfUnused(entry.path, onProgress)
+            LocalModelKind.SPEECH,
+            LocalModelKind.TTS,
+            LocalModelKind.OCR,
+            LocalModelKind.ENGINE -> LocalModelRuntimeRegistry.deleteIfUnused(entry.path, onProgress)
         }
         if (outcome == LocalModelDeleteOutcome.DELETED) {
             storageRepository.invalidateCache()
@@ -154,6 +179,25 @@ class LocalModelInventory(
                 completeness = speechCompleteness(folder),
                 inUse = inUse,
                 canDelete = !inUse,
+            )
+        }
+    }
+
+    private fun listPackModels(activePaths: Set<String>): List<LocalModelEntry> {
+        val packs = listOf(
+            PackResources.OCR_MODELS to LocalModelKind.OCR,
+            PackResources.SPEECH_ENGINE to LocalModelKind.ENGINE,
+        )
+        return packs.mapNotNull { (id, kind) ->
+            if (PackResources.isBundled(appContext, id)) return@mapNotNull null
+            val directory = PackResources.directory(appContext, id)
+            if (!directory.exists()) return@mapNotNull null
+            val used = isPathInUse(directory, activePaths)
+            LocalModelEntry(
+                id = "resource:$id", displayName = PackResources.spec(appContext, id).name, kind = kind,
+                path = directory, bytes = directorySize(directory),
+                completeness = if (PackResources.isReady(appContext, id)) LocalModelCompleteness.COMPLETE else LocalModelCompleteness.INCOMPLETE,
+                inUse = used, canDelete = !used, resourcePackId = id,
             )
         }
     }

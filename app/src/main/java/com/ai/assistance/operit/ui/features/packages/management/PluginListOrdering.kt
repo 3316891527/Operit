@@ -4,7 +4,7 @@ import java.text.Collator
 import java.util.Locale
 
 enum class PluginSortMode { CUSTOM, NAME, SIZE, INSTALLED, LAST_USED, ENABLED }
-enum class PluginFilter { ALL, ENABLED, DISABLED }
+enum class PluginFilter { ALL, ENABLED, DISABLED, BUILT_IN }
 
 data class PluginSortSelection(
     val mode: PluginSortMode = PluginSortMode.CUSTOM,
