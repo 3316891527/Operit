@@ -6,6 +6,8 @@
 
 ## 计划索引
 
+- [包管理四标签等宽铺满](package-tabs-full-width/index.md)
+
 - [模型上下文协议手动启动与元数据兼容](mcp-manual-start/index.md) · `mcp-manual-start`
 - [界面与媒体交互修复](interface-media-polish/index.md) · `interface-media-polish`
 
