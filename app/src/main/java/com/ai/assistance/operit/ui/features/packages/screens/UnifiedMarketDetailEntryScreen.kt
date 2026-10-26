@@ -378,6 +378,7 @@ fun UnifiedMarketDetailEntryScreen(
                 }
             }
         },
+        trailingAction =
             entry.versions.takeIf { it.isNotEmpty() }?.let {
                 UnifiedMarketDetailIconAction(
                     contentDescription = stringResource(R.string.market_detail_view_version_history),
