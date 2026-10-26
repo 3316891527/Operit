@@ -37,4 +37,37 @@ class MessageSectionMarkdownTest {
         val content = MessageSectionCodec.render(listOf(tool))
         assertNotEquals(messageSectionCacheKey(content, listOf(tool)), messageSectionCacheKey(content, listOf(MessageSection.Text(content))))
     }
+
+    @Test fun textProjectionHidesMetadataInsideUnfinishedXmlWithoutChangingStoredText() = runBlocking {
+        val raw = "<unfinished>正文<meta provider=\"openai:responses_reasoning\">secret</meta>尾"
+        val stored = MessageSection.Text(raw)
+        val received = mutableListOf<String>()
+        parseMessageSectionsToNodes(listOf(stored)) { text ->
+            received.add(text)
+            emptyList()
+        }
+        assertEquals(listOf("<unfinished>正文尾"), received)
+        assertEquals(raw, stored.content)
+    }
+
+    @Test fun closedProtocolCodeExampleRemainsVisibleInStaticText() = runBlocking {
+        val raw = "```xml\n<meta provider=\"openai:responses_reasoning\">example</meta>\n```"
+        val received = mutableListOf<String>()
+        parseMessageSectionsToNodes(listOf(MessageSection.Text(raw))) { text ->
+            received.add(text)
+            emptyList()
+        }
+        assertEquals(listOf(raw), received)
+    }
+
+    @Test fun unfinishedCodeDoesNotRestoreProtocolWhenStaticRenderingTakesOver() = runBlocking {
+        val raw = "```xml\n正文<meta provider=\"gemini:thought_signature\">secret</meta>尾"
+        val received = mutableListOf<String>()
+        parseMessageSectionsToNodes(listOf(MessageSection.Text(raw))) { text ->
+            received.add(text)
+            emptyList()
+        }
+        assertEquals(listOf("```xml\n正文尾"), received)
+    }
+
 }
