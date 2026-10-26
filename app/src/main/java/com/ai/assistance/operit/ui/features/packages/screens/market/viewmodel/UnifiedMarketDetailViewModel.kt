@@ -143,15 +143,18 @@ class UnifiedMarketDetailViewModel(
         if (!MarketInstallStateStore.start(entryId)) return
         viewModelScope.launch {
             try {
-                installController.install(entry) { stage, progress ->
-                    MarketInstallStateStore.update(entryId, stage, progress)
+                installController.install(entry) { stage, transfer ->
+                    MarketInstallStateStore.update(entryId, stage, transfer)
                 }
             } catch (e: Exception) {
                 _errorMessage.value = context.getString(R.string.mcp_market_install_failed_with_error, e.message ?: "")
                 AppLogger.e(TAG, "Failed to install market entry ${entry.id}", e)
             } finally {
-                refreshLocalInstallStates(entry)
-                MarketInstallStateStore.finish(entryId)
+                try {
+                    refreshLocalInstallStates(entry)
+                } finally {
+                    MarketInstallStateStore.finish(entryId)
+                }
             }
         }
     }
