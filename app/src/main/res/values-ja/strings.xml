@@ -836,7 +836,7 @@
 <string name="model_config_save_order_failed">設定の順序を保存できませんでした</string>
 <string name="model_config_toggle_group">設定グループを折りたたむ／展開する</string>
 <string name="add_api_key">APIキーを追加</string>
-<string name="api_key_first_token_timeout">最初のトークン待ちがタイムアウトしたため、キーを切り替えます</string>
+<string name="api_key_first_token_timeout">10分以内に最初の有効な出力が届かなかったため、クライアントがリクエストをキャンセルしました</string>
 <string name="api_key_pool_add_short">キーを追加</string>
 <string name="api_key_pool_clear_marks">マークをクリア</string>
 <string name="api_key_pool_cleared">キープールを空にしました</string>

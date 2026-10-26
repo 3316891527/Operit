@@ -8158,7 +8158,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
 <string name="model_config_save_group_order_failed">No se pudo guardar el orden de los grupos</string>
 <string name="model_config_save_order_failed">No se pudo guardar el orden de las configuraciones</string>
 <string name="model_config_toggle_group">Contraer o expandir el grupo de configuraciones</string>
-<string name="api_key_first_token_timeout">Tiempo de espera del primer token agotado, cambiando de clave</string>
+<string name="api_key_first_token_timeout">Sin primera salida en 10 minutos; el cliente canceló esta solicitud</string>
 <string name="api_key_pool_add_short">Añadir clave</string>
 <string name="api_key_pool_delete_hint">No se puede deshacer. La clave API principal no se elimina.</string>
 <string name="api_key_pool_delete_keys">Eliminar claves</string>

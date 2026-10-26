@@ -8912,7 +8912,7 @@
 <string name="screen_title_workspace_media_storage">Workspaces and media</string>
 <string name="settings_data_storage">Data and storage</string>
 <string name="settings_data_storage_subtitle">View usage details and manage data</string>
-<string name="api_key_first_token_timeout">Timed out waiting for the first token, switching keys</string>
+<string name="api_key_first_token_timeout">No first output within 10 minutes; the client cancelled this request</string>
 <string name="api_key_pool_add_short">Add key</string>
 <string name="api_key_pool_delete_hint">Deleted keys cannot be restored. The main API key is not removed.</string>
 <string name="api_key_pool_delete_keys">Delete keys</string>

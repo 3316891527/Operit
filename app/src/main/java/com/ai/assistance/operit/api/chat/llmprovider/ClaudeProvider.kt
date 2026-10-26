@@ -1,5 +1,12 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
+import com.ai.assistance.operit.api.chat.error.RequestFailure
+import com.ai.assistance.operit.api.chat.error.RequestFailureTrace
+import com.ai.assistance.operit.api.chat.error.RequestFailureCode
+import com.ai.assistance.operit.api.chat.error.RequestFailureException
+import com.ai.assistance.operit.api.chat.error.ResponseJson
+import com.ai.assistance.operit.api.chat.error.ProviderResponseErrors
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.keypool.*
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import android.content.Context
@@ -1403,7 +1410,7 @@ open class ClaudeProvider(
                     tokenCacheManager.outputTokenCount
                 )
                 val request = createRequest(requestBody)
-                client.newCall(request).also { watchdog.start(it) }
+                client.newCall(RequestFailureTrace.attach(request)).also { watchdog.start(it) }
             } catch (e: Exception) {
                 throw e
             }
@@ -1426,7 +1433,7 @@ open class ClaudeProvider(
                         }
 
                         AppLogger.d("AIService", "连接成功，等待响应...")
-                        val responseBody = response.body ?: throw IOException(context.getString(R.string.provider_error_response_empty))
+                        val responseBody = response.body ?: throw RequestFailureException(RequestFailureCode.RESPONSE_BODY_MISSING, context.getString(R.string.provider_error_response_empty))
 
                         val contentType = response.header("Content-Type") ?: ""
                         AppLogger.d(
@@ -1506,7 +1513,7 @@ open class ClaudeProvider(
                                 processOpenAiCompatibleJsonLines(responseText)
                                 return@withContext
                             }
-                            val json = JSONObject(responseText)
+                            val json = ProviderResponseErrors.check("claude", ResponseJson.parseObject(responseText, streaming = false))
                             val resultText = parseAnthropicNonStreaming(json).ifBlank { parseOpenAiNonStreaming(json) }
                             if (resultText.isNotBlank()) {
                                 emit(resultText)
@@ -1524,7 +1531,7 @@ open class ClaudeProvider(
                                 openAiCompatible = json.has("choices"),
                             )
                             if (resultText.isBlank() && !usageApplied) {
-                                throw IOException(context.getString(R.string.provider_error_parsing_failed))
+                                throw RequestFailureException(RequestFailureCode.RESPONSE_SHAPE_INVALID, context.getString(R.string.provider_error_parsing_failed))
                             }
                             if (resultText.isNotBlank() && !usageApplied) {
                                 onTokensUpdated(
@@ -1544,7 +1551,7 @@ open class ClaudeProvider(
 
                         if (!stream) {
                             val responseText = responseBody.string().trim()
-                            val json = JSONObject(responseText)
+                            val json = ProviderResponseErrors.check("claude", ResponseJson.parseObject(responseText, streaming = false))
                             val resultText = parseAnthropicNonStreaming(json).ifBlank { parseOpenAiNonStreaming(json) }
                             if (resultText.isNotBlank()) {
                                 emit(resultText)
@@ -1603,7 +1610,7 @@ open class ClaudeProvider(
                             }
                             if (data.isBlank()) continue
 
-                            val jsonResponse = runCatching { JSONObject(data) }.getOrNull() ?: continue
+                            val jsonResponse = ProviderResponseErrors.check("claude", ResponseJson.parseObject(data, streaming = true))
                             val type = jsonResponse.optString("type", "")
 
                             // OpenAI-style chunk (no `type`)
@@ -1904,7 +1911,7 @@ open class ClaudeProvider(
                                     )
                                 }
                                 if (resultText.isBlank() && !usageApplied) {
-                                    throw IOException(context.getString(R.string.provider_error_parsing_failed))
+                                    throw RequestFailureException(RequestFailureCode.RESPONSE_SHAPE_INVALID, context.getString(R.string.provider_error_parsing_failed))
                                 }
                                 streamCompletionConfirmed = true
                             } else {
@@ -1973,7 +1980,7 @@ open class ClaudeProvider(
                     )
                 }
                 if (stream && !streamCompletionConfirmed) {
-                    throw IOException(context.getString(R.string.provider_error_network_interrupted))
+                    throw RequestFailureException(RequestFailureCode.STREAM_COMPLETION_MISSING, context.getString(R.string.provider_error_network_interrupted))
                 }
                 watchdog.cancel()
                 currentApiKeySession()?.reportOutcome(
@@ -1999,7 +2006,10 @@ open class ClaudeProvider(
 
                 retryCount = handleRetryableError(
                         context = context,
-                        exception = if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
+                        exception = RequestFailure.capture(
+                            if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else ResponseJson.schemaFailure(e),
+                            activeCall,
+                        ),
                         retryCount = retryCount,
                         maxRetries = maxRetries,
                         enableRetry = enableRetry,

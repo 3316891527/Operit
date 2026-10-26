@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
 import com.ai.assistance.operit.util.AppLogger
 import java.io.IOException
@@ -93,6 +94,15 @@ class ApiKeyFailureClassifierTest {
         val wrapped = IOException("wrapper", status(402, "insufficient_quota"))
         assertEquals(ApiKeyErrorClass.QUOTA, ApiKeyFailureClassifier.classify(wrapped))
         assertEquals(402, ApiKeyFailureClassifier.httpStatus(wrapped))
+    }
+
+    @Test
+    fun unclassifiedClientExceptionsDoNotPenalizeKeysAsNetworkFailures() {
+        assertEquals(ApiKeyErrorClass.NONE, ApiKeyFailureClassifier.classify(IllegalStateException("unexpected state")))
+        val malformed = com.ai.assistance.operit.api.chat.error.RequestFailureException(
+            com.ai.assistance.operit.api.chat.error.RequestFailureCode.STREAM_JSON_INVALID, "certificate credit timeout",
+        )
+        assertEquals(ApiKeyErrorClass.NONE, ApiKeyFailureClassifier.classify(malformed))
     }
 
     private fun status(code: Int, message: String): Exception {

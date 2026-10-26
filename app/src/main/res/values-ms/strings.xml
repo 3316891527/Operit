@@ -8089,7 +8089,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
 <string name="model_config_save_group_order_failed">Gagal menyimpan susunan kumpulan</string>
 <string name="model_config_save_order_failed">Gagal menyimpan susunan konfigurasi</string>
 <string name="model_config_toggle_group">Kuncupkan atau kembangkan kumpulan konfigurasi</string>
-<string name="api_key_first_token_timeout">Tunggu token pertama tamat masa, menukar kunci</string>
+<string name="api_key_first_token_timeout">Tiada output pertama dalam 10 minit; klien membatalkan permintaan ini</string>
 <string name="api_key_pool_add_short">Tambah kunci</string>
 <string name="api_key_pool_delete_hint">Tidak boleh dipulihkan. Kunci API utama tidak dipadam.</string>
 <string name="api_key_pool_delete_keys">Padam kunci</string>
