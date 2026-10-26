@@ -176,14 +176,24 @@ def migrate(releases: list[dict], output: Path) -> None:
             shutil.rmtree(prepared)
         expected = prepare_assets(source, prepared, release, repository, commit)
         if remote is None:
-            notes = folder / "release-notes.md"
-            notes.write_text(release_body(release, repository, commit), encoding="utf-8")
-            subprocess.run(["gh", "release", "create", tag, "--repo", repository, "--draft", "--title", release["name"] or tag,
-                            "--notes-file", str(notes), *[str(path) for path in sorted(prepared.iterdir())]], check=True, timeout=900)
-            remote = api(f"repos/{repository}/releases/tags/{quote(tag, safe='')}")
+            # 草稿尚未生成 Git 标签，创建时取得 Release ID，后续读取和公开均使用该 ID。
+            remote = api(f"repos/{repository}/releases", {
+                "tag_name": tag, "name": release["name"] or tag,
+                "body": release_body(release, repository, commit), "draft": True, "prerelease": False,
+            })
+            subprocess.run(["gh", "release", "upload", tag, "--repo", repository,
+                            *[str(path) for path in sorted(prepared.iterdir())]], check=True, timeout=900)
+        endpoint = f"repos/{repository}/releases/{remote['id']}"
+        remote = api(endpoint)
+        if remote["tag_name"] != tag or remote["prerelease"]:
+            raise ValueError("目标发行身份与迁移计划不一致：" + tag)
         verify_remote(remote, expected)
         if remote["draft"]:
-            subprocess.run(["gh", "release", "edit", tag, "--repo", repository, "--draft=false", "--latest=false"], check=True, timeout=60)
+            remote = api(endpoint, {"draft": False, "make_latest": "false"}, method="PATCH")
+        # 公开响应仍须核对，避免将未公开或附件发生变化的目标写入完成收据。
+        if remote["draft"] or remote["prerelease"] or remote["tag_name"] != tag:
+            raise ValueError("目标发行尚未按迁移计划公开：" + tag)
+        verify_remote(remote, expected)
         receipts.append({"tag": tag, "repository": repository, "sourceCommit": commit, "sourceReleaseId": release["id"], "sourceFiles": asset_specs(release["assets"]), "files": expected})
         (output / "verified-receipts.json").write_text(json.dumps(receipts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print("已逐项核对：https://github.com/" + repository + "/releases/tag/" + tag, flush=True)
