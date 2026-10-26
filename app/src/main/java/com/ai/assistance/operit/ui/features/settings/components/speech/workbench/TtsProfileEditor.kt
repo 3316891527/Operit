@@ -42,6 +42,12 @@ internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             when (type) {
                 VoiceServiceType.SIMPLE_TTS -> SystemTtsFields(profile, ::updateConfig)
+                VoiceServiceType.SHERPA_ONNX_TTS -> {
+                    InstalledSpeechModelField(com.ai.assistance.operit.data.resources.models.SpeechModelPurpose.TTS, profile.vitsConfig.installedModelKey) { model ->
+                        onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(installedModelKey = model.key, speakerId = "0"))))
+                    }
+                    SpeechWorkbenchField(stringResource(R.string.speech_services_vits_speaker_id), profile.vitsConfig.speakerId, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(speakerId = it)))) }, hint = stringResource(R.string.hub_speaker_hint))
+                }
                 VoiceServiceType.VITS_TTS -> {
                     SpeechWorkbenchField(stringResource(R.string.speech_services_vits_package_path), profile.vitsConfig.packagePath, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(packagePath = it)))) }, placeholder = stringResource(R.string.speech_services_vits_package_path_placeholder), hint = stringResource(R.string.speech_services_vits_package_path_hint))
                     SpeechWorkbenchField(stringResource(R.string.speech_services_vits_speaker_id), profile.vitsConfig.speakerId, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(speakerId = it)))) }, hint = stringResource(R.string.speech_services_vits_speaker_id_hint))

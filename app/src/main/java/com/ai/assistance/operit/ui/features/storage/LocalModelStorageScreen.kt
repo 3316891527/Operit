@@ -6,6 +6,10 @@ import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,6 +36,14 @@ fun LocalModelStorageScreen(
     val storageViewModel: LocalModelStorageViewModel = viewModel(factory = factory)
     val state by storageViewModel.state.collectAsState()
     var showConfirm by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, storageViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) storageViewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val selected = state.displayedModels.filter { it.id in state.selectedIds && it.canDelete }
     val selectedBytes = selected.sumOf { it.bytes }
 
@@ -131,6 +143,9 @@ private val LocalModelFilter.labelRes: Int
         LocalModelFilter.MNN -> R.string.data_storage_detail_mnn_models
         LocalModelFilter.LLAMA -> R.string.data_storage_detail_llama_models
         LocalModelFilter.SPEECH -> R.string.data_storage_detail_speech_models
+        LocalModelFilter.TTS -> R.string.data_storage_detail_tts_models
+        LocalModelFilter.OCR -> R.string.data_storage_detail_ocr_models
+        LocalModelFilter.ENGINE -> R.string.data_storage_detail_model_engines
     }
 
 private val LocalModelKind.labelRes: Int
@@ -138,6 +153,9 @@ private val LocalModelKind.labelRes: Int
         LocalModelKind.MNN -> R.string.data_storage_detail_mnn_models
         LocalModelKind.LLAMA -> R.string.data_storage_detail_llama_models
         LocalModelKind.SPEECH -> R.string.data_storage_detail_speech_models
+        LocalModelKind.TTS -> R.string.data_storage_detail_tts_models
+        LocalModelKind.OCR -> R.string.data_storage_detail_ocr_models
+        LocalModelKind.ENGINE -> R.string.data_storage_detail_model_engines
     }
 
 @Composable

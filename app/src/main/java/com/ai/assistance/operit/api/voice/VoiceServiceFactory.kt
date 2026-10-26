@@ -25,6 +25,8 @@ object VoiceServiceFactory {
         OPENAI_TTS,
         /** 基于 VITS/Piper ONNX Runtime 推理形态的本地 TTS 服务 */
         VITS_TTS,
+        /** 从离线资源安装目录读取 Sherpa ONNX 合成模型。 */
+        SHERPA_ONNX_TTS,
     }
 
     /**
@@ -103,6 +105,9 @@ object VoiceServiceFactory {
                     initialVoiceId = profile.httpConfig.voiceId
                 )
             }
+            VoiceServiceType.SHERPA_ONNX_TTS -> com.ai.assistance.operit.api.local.speech.SherpaOnnxVoiceProvider(
+                context.applicationContext, profile.vitsConfig.installedModelKey, profile.vitsConfig.speakerId, profile.speechRate, profile.pitch,
+            )
             VoiceServiceType.VITS_TTS -> {
                 VitsVoiceProvider(
                     context = context,

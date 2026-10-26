@@ -1070,6 +1070,9 @@ private val StorageDetail.titleRes: Int
             StorageDetail.MNN_MODELS -> R.string.data_storage_detail_mnn_models
             StorageDetail.LLAMA_MODELS -> R.string.data_storage_detail_llama_models
             StorageDetail.SPEECH_MODELS -> R.string.data_storage_detail_speech_models
+            StorageDetail.TTS_MODELS -> R.string.data_storage_detail_tts_models
+            StorageDetail.OCR_MODELS -> R.string.data_storage_detail_ocr_models
+            StorageDetail.MODEL_ENGINES -> R.string.data_storage_detail_model_engines
             StorageDetail.OTHER_MODELS -> R.string.data_storage_detail_other_models
             StorageDetail.INTERNAL_WORKSPACES -> R.string.data_storage_detail_internal_workspaces
             StorageDetail.SHARED_WORKSPACES -> R.string.data_storage_detail_shared_workspaces

@@ -219,7 +219,7 @@ fun SpeechRecognitionTestSection(
                         state.commandJob = scope.launch {
                             try {
                                 state.ownsRecording = true
-                                val local = serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN
+                                val local = serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN || serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_ONNX
                                 if (!service.startRecognition(state.language, continuousMode = local, partialResults = local)) {
                                     state.ownsRecording = false
                                     state.error = context.getString(R.string.start_recognition_error, serviceType.name)

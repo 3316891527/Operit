@@ -317,6 +317,7 @@ internal class PackageManagerToolPkgFacade(
             apiVersion = container.apiVersion,
             requires = container.requires,
             fileSizeBytes = container.fileSizeBytes,
+            isBuiltIn = container.sourceType != ToolPkgSourceType.EXTERNAL,
             resourceCount = container.resources.size,
             wasmModuleCount = wasmModules.size,
             workflowTemplateCount = workflowTemplates.size,

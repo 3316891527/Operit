@@ -15,6 +15,8 @@ object SpeechServiceFactory {
     enum class SpeechServiceType {
         /** 基于Sherpa-ncnn的本地识别实现 */
         SHERPA_NCNN,
+        /** 从离线资源安装目录读取 ONNX Zipformer 模型。 */
+        SHERPA_ONNX,
         OPENAI_STT,
         DEEPGRAM_STT,
     }
@@ -41,6 +43,7 @@ object SpeechServiceFactory {
         val profile = runBlocking { profiles.getCurrentSttProfile() }
         val selectedType = profile.serviceType
         val effectiveType = when (selectedType) {
+            SpeechServiceType.SHERPA_ONNX,
             SpeechServiceType.OPENAI_STT,
             SpeechServiceType.DEEPGRAM_STT,
             -> SpeechServiceType.SHERPA_NCNN
@@ -66,6 +69,7 @@ object SpeechServiceFactory {
     ): SpeechService {
         return when (type) {
             SpeechServiceType.SHERPA_NCNN -> acquireLocalSpeechService(context, type)
+            SpeechServiceType.SHERPA_ONNX -> com.ai.assistance.operit.api.local.speech.SherpaOnnxSpeechProvider(context.applicationContext, httpConfig.localModelKey)
             SpeechServiceType.OPENAI_STT -> {
                 runBlocking {
                     OpenAISttProvider(

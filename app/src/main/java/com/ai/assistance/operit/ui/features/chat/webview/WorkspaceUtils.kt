@@ -20,6 +20,9 @@ fun createAndResetWorkspaceDirectory(context: Context, chatId: String): File {
 }
 
 fun createAndGetDefaultWorkspace(context: Context, chatId: String, projectType: String?): File {
+    if (projectType != "blank") {
+        check(com.ai.assistance.operit.data.resources.packs.PackResources.isReady(context, "template-${projectType ?: "web"}")) { context.getString(R.string.hub_template_missing) }
+    }
     // 创建内部存储工作区
     val workspacePath = getWorkspacePath(context, chatId)
     ensureWorkspaceDirExists(workspacePath)
@@ -676,81 +679,10 @@ private fun generateOfficeProjectConfig(context: Context): String {
 """.trimIndent()
 }
 
-/**
- * 从 assets 复制项目模板文件到工作区
- */
+/** 工程模板由离线资源准备，缺失时抛出明确错误，不能创建半成品工作区。 */
 private fun copyTemplateFiles(context: Context, workspaceDir: File, templateName: String) {
-    val assetManager = context.assets
-    val templatePath = "templates/$templateName"
-
-    try {
-        val files = assetManager.list(templatePath) ?: return
-
-        for (filename in files) {
-            val sourcePath = "$templatePath/$filename"
-            // 特殊处理：gitignore (无点) -> .gitignore (有点)
-            // 因为 Android 构建工具会排除 assets 中的 .gitignore 文件
-            val destFileName = if (filename == "gitignore") ".gitignore" else filename
-            val destFile = File(workspaceDir, destFileName)
-
-            // 检查是否是目录
-            val isDirectory = try {
-                assetManager.list(sourcePath)?.isNotEmpty() == true
-            } catch (e: IOException) {
-                false
-            }
-
-            if (isDirectory) {
-                // 递归复制子目录
-                destFile.mkdirs()
-                copyTemplateFilesRecursive(assetManager, sourcePath, destFile)
-            } else {
-                // 复制文件
-                assetManager.open(sourcePath).use { inputStream ->
-                    destFile.outputStream().use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            }
-        }
-    } catch (e: IOException) {
-        e.printStackTrace()
-    }
+    com.ai.assistance.operit.data.resources.packs.PackResources.copyTemplate(context, templateName, workspaceDir)
 }
-
-/**
- * 递归复制模板文件
- */
-private fun copyTemplateFilesRecursive(assetManager: android.content.res.AssetManager, sourcePath: String, destDir: File) {
-    try {
-        val files = assetManager.list(sourcePath) ?: return
-
-        for (filename in files) {
-            val currentSourcePath = "$sourcePath/$filename"
-            val destFile = File(destDir, filename)
-
-            val isDirectory = try {
-                assetManager.list(currentSourcePath)?.isNotEmpty() == true
-            } catch (e: IOException) {
-                false
-            }
-
-            if (isDirectory) {
-                destFile.mkdirs()
-                copyTemplateFilesRecursive(assetManager, currentSourcePath, destFile)
-            } else {
-                assetManager.open(currentSourcePath).use { inputStream ->
-                    destFile.outputStream().use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            }
-        }
-    } catch (e: IOException) {
-        e.printStackTrace()
-    }
-}
-
 private fun createProjectConfigIfNeeded(context: Context, workspaceDir: File, projectType: ProjectType) {
     // 创建 .operit 目录和 config.json
     val operitDir = File(workspaceDir, ".operit")
