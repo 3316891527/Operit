@@ -8839,4 +8839,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="data_storage_detail_tts_models">Sintesis ucapan</string>
     <string name="data_storage_detail_ocr_models">Pengenalan teks</string>
     <string name="data_storage_detail_model_engines">Mesin runtime</string>
+    <string name="pkg_delete_failed">File ekstensi tidak dapat dihapus. Periksa akses file atau nonaktifkan plugin yang bergantung padanya.</string>
+    <string name="pkg_delete_success">File ekstensi telah dihapus</string>
 </resources>
