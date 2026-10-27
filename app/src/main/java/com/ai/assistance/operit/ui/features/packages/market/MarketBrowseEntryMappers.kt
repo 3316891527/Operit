@@ -55,6 +55,7 @@ fun MarketV2Entry.toUnifiedMarketBrowseEntry(
                 heartCount = 0,
                 downloads = downloadCountValue(),
                 showAction = canInstallFromUnifiedMarket(),
+                installProgress = installState,
                 actionState =
                     if (installState != null) {
                         MarketBrowseActionState.Installing(installState.progress)

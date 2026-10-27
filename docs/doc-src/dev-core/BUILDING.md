@@ -119,7 +119,7 @@ Operit 项目依赖于 android-34 平台和 34.0.0 构建工具。
 sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 ```
 3. 安装项目指定的 NDK 版本:  
-本项目要求使用 NDK 25.1.8937393。  
+本项目要求使用 NDK 25.1.8937393。根目录 `build.gradle.kts` 为应用和 Android 库模块统一固定此版本，与 CI 预装工具链及原生 ripgrep 构建保持一致。
 ```bash
 sdkmanager "ndk;25.1.8937393"
 ```

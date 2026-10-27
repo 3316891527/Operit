@@ -64,8 +64,6 @@ import com.ai.assistance.operit.data.api.MarketV2Entry
 import com.ai.assistance.operit.data.api.MarketV2Version
 import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
 import com.ai.assistance.operit.ui.features.packages.market.MarketReviewState
-import com.ai.assistance.operit.ui.features.packages.market.MarketInstallProgress
-import com.ai.assistance.operit.ui.features.packages.market.MarketInstallStage
 import com.ai.assistance.operit.ui.features.packages.market.MarketLocalInstallState
 import com.ai.assistance.operit.ui.features.packages.market.MarketLocalInstallStateKind
 import com.ai.assistance.operit.ui.features.packages.market.MarketAppVersionCompatibilityKind
@@ -88,6 +86,7 @@ import com.ai.assistance.operit.ui.features.packages.market.formatMarketDetailCo
 import com.ai.assistance.operit.ui.features.packages.market.formatMarketDetailDate
 import com.ai.assistance.operit.ui.features.packages.market.effectiveToolPkgApiVersion
 import com.ai.assistance.operit.ui.features.packages.market.labelResId
+import com.ai.assistance.operit.ui.features.packages.market.transfer.marketInstallLabel
 import com.ai.assistance.operit.ui.features.packages.market.marketDetailInitial
 import com.ai.assistance.operit.ui.features.packages.market.resolveCurrentAppVersionCompatibility
 import com.ai.assistance.operit.ui.features.packages.market.resolveMarketReviewSnapshot
@@ -183,6 +182,7 @@ fun UnifiedMarketDetailEntryScreen(
 
     UnifiedMarketDetailScreen(
         onNavigateBack = onNavigateBack,
+        installProgress = installProgress,
         header =
             UnifiedMarketDetailHeader(
                 title = entry.title,
@@ -240,7 +240,7 @@ fun UnifiedMarketDetailEntryScreen(
                         installProgress == null &&
                         localInstallState?.kind != MarketLocalInstallStateKind.INSTALLED,
                 isLoading = installProgress != null,
-                loadingLabel = installProgress?.detailLabel(),
+                loadingLabel = installProgress?.marketInstallLabel(),
                 icon =
                     if (isCurrentAppVersionUnsupported) {
                         Icons.Default.Warning
@@ -378,6 +378,7 @@ fun UnifiedMarketDetailEntryScreen(
                 }
             }
         },
+        trailingAction =
             entry.versions.takeIf { it.isNotEmpty() }?.let {
                 UnifiedMarketDetailIconAction(
                     contentDescription = stringResource(R.string.market_detail_view_version_history),
@@ -661,23 +662,6 @@ private fun MarketVersionHistoryRow(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun MarketInstallProgress.detailLabel(): String {
-    return when (stage) {
-        MarketInstallStage.CONNECTING -> stringResource(R.string.market_install_connecting)
-        MarketInstallStage.FETCHING_METADATA -> stringResource(R.string.market_install_fetching_metadata)
-        MarketInstallStage.CHECKING_LOCAL -> stringResource(R.string.market_install_checking_local)
-        MarketInstallStage.DOWNLOADING ->
-            progress?.let { stringResource(R.string.market_install_downloading_percent, (it * 100).toInt().coerceIn(0, 100)) }
-                ?: stringResource(R.string.market_install_downloading)
-        MarketInstallStage.VERIFYING -> stringResource(R.string.market_install_verifying)
-        MarketInstallStage.IMPORTING_REPOSITORY -> stringResource(R.string.market_install_importing_repository)
-        MarketInstallStage.IMPORTING_CONFIG -> stringResource(R.string.market_install_importing_config)
-        MarketInstallStage.INSTALLING -> stringResource(R.string.market_install_installing)
-        MarketInstallStage.RECORDING -> stringResource(R.string.market_install_recording)
     }
 }
 
