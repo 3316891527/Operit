@@ -23,6 +23,32 @@ def request(endpoint: str, payload: dict | None = None, missing_ok: bool = False
         raise RuntimeError(result.stderr.strip())
     return json.loads(result.stdout) if result.stdout.strip() else None
 
+def find_resource_release(repository: str, tag: str) -> dict | None:
+    published = request(f'repos/{repository}/releases/tags/{quote(tag, safe="")}', missing_ok=True)
+    if published is not None:
+        return published
+    # 未公开的草稿可能没有 Git tag，必须按列表中的 Release ID 继续处理。
+    matches = []
+    page = 1
+    while True:
+        releases = request(f'repos/{repository}/releases?per_page=100&page={page}')
+        matches.extend(release for release in releases if release['tag_name'] == tag)
+        if len(matches) > 1:
+            raise ValueError('同一资源标签存在多个草稿，停止发布以避免重复创建')
+        if len(releases) < 100:
+            break
+        page += 1
+    return matches[0] if matches else None
+
+
+def upload_resource_asset(repository: str, release_id: int, path: Path) -> None:
+    endpoint = f'https://uploads.github.com/repos/{repository}/releases/{release_id}/assets?name={quote(path.name, safe="")}'
+    subprocess.run([
+        'gh', 'api', endpoint, '--method', 'POST',
+        '--header', 'Content-Type: application/octet-stream', '--input', str(path),
+    ], check=True, capture_output=True, text=True, timeout=900)
+
+
 def digest(path: Path) -> str:
     with path.open('rb') as stream:
         return 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -47,7 +73,7 @@ def publish(assets: Path, repository: str, commit: str) -> None:
     if sorted(sums) != expected_sums:
         raise ValueError('总校验清单不匹配')
     tag = catalog['releaseTag']
-    release = request(f'repos/{repository}/releases/tags/{quote(tag, safe="")}', missing_ok=True)
+    release = find_resource_release(repository, tag)
     if release is None:
         release = request(f'repos/{repository}/releases', {
             'tag_name': tag, 'name': '离线资源 · ' + tag,
@@ -68,7 +94,7 @@ def publish(assets: Path, repository: str, commit: str) -> None:
         else:
             if not release['draft']:
                 raise ValueError('已发布资源版本不完整，禁止修改：' + path.name)
-            subprocess.run(['gh', 'release', 'upload', tag, str(path), '--repo', repository], check=True, timeout=900)
+            upload_resource_asset(repository, release_id, path)
             print('已上传：' + path.name, flush=True)
     remote = remote_files()
     if set(remote) != {p.name for p in files}:

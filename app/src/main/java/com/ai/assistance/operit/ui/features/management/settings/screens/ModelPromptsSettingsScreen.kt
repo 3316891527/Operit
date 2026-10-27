@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -849,6 +850,9 @@ fun ModelPromptsSettingsScreen(
         }
     }
 
+    // 页签离开组合后仍保留各自列表的位置，切回时恢复。
+    val tabStateHolder = rememberSaveableStateHolder()
+
     CustomScaffold() { paddingValues ->
         Box(
             modifier = Modifier
@@ -914,144 +918,146 @@ fun ModelPromptsSettingsScreen(
                 }
 
                 // 内容区域
-                when (currentTab) {
-                    0 -> CharacterCardTab(
-                        characterCards = allCharacterCards,
-                        activePrompt = activePrompt,
-                        allTags = allTags,
-                        onAddCharacterCard = {
-                            editingOriginalName = null
-                            editingCharacterCard = CharacterCard(
-                                id = "",
-                                name = "",
-                                description = "",
-                                characterSetting = CharacterCardBilingualData.getDefaultCharacterSetting(context),
-                                otherContentChat = CharacterCardBilingualData.getDefaultOtherContentChat(context),
-                                otherContentVoice = "",
-                                attachedTagIds = emptyList(),
-                                advancedCustomPrompt = "",
-                                marks = ""
-                            )
-                            showAddCharacterCardDialog = true
-                        },
-                        onEditCharacterCard = { card ->
-                            editingOriginalName = card.name
-                            editingCharacterCard = card.copy()
-                            showEditCharacterCardDialog = true
-                        },
-                        onOpenUserProfile = { card ->
-                            scope.launch {
-                                try {
-                                    MemorySpaceProfileDocumentRepository.getInstance(context).initialize()
-                                    userPreferencesManager.ensureDefaultMemorySpace(context.getString(R.string.default_profile))
-                                    // 直接打开角色实际使用的资料，避免误编辑其他记忆空间。
-                                    val profileId = if (
-                                        CharacterCardMemoryProfileBindingMode.normalize(card.memoryProfileBindingMode) ==
-                                            CharacterCardMemoryProfileBindingMode.FIXED_PROFILE
-                                    ) {
-                                        requireNotNull(card.memoryProfileId?.takeIf { it.isNotBlank() }) {
-                                            context.getString(R.string.character_card_memory_profile_select)
+                tabStateHolder.SaveableStateProvider(currentTab) {
+                    when (currentTab) {
+                        0 -> CharacterCardTab(
+                            characterCards = allCharacterCards,
+                            activePrompt = activePrompt,
+                            allTags = allTags,
+                            onAddCharacterCard = {
+                                editingOriginalName = null
+                                editingCharacterCard = CharacterCard(
+                                    id = "",
+                                    name = "",
+                                    description = "",
+                                    characterSetting = CharacterCardBilingualData.getDefaultCharacterSetting(context),
+                                    otherContentChat = CharacterCardBilingualData.getDefaultOtherContentChat(context),
+                                    otherContentVoice = "",
+                                    attachedTagIds = emptyList(),
+                                    advancedCustomPrompt = "",
+                                    marks = ""
+                                )
+                                showAddCharacterCardDialog = true
+                            },
+                            onEditCharacterCard = { card ->
+                                editingOriginalName = card.name
+                                editingCharacterCard = card.copy()
+                                showEditCharacterCardDialog = true
+                            },
+                            onOpenUserProfile = { card ->
+                                scope.launch {
+                                    try {
+                                        MemorySpaceProfileDocumentRepository.getInstance(context).initialize()
+                                        userPreferencesManager.ensureDefaultMemorySpace(context.getString(R.string.default_profile))
+                                        // 直接打开角色实际使用的资料，避免误编辑其他记忆空间。
+                                        val profileId = if (
+                                            CharacterCardMemoryProfileBindingMode.normalize(card.memoryProfileBindingMode) ==
+                                                CharacterCardMemoryProfileBindingMode.FIXED_PROFILE
+                                        ) {
+                                            requireNotNull(card.memoryProfileId?.takeIf { it.isNotBlank() }) {
+                                                context.getString(R.string.character_card_memory_profile_select)
+                                            }
+                                        } else {
+                                            userPreferencesManager.activeMemorySpaceIdFlow.first()
                                         }
-                                    } else {
-                                        userPreferencesManager.activeMemorySpaceIdFlow.first()
+                                        require(profileId in userPreferencesManager.memorySpaceListFlow.first()) {
+                                            context.getString(R.string.memory_settings_space_missing)
+                                        }
+                                        onNavigateToUserProfiles(profileId)
+                                    } catch (error: CancellationException) {
+                                        throw error
+                                    } catch (error: Exception) {
+                                        AppLogger.e("RoleUserProfile", "打开角色用户资料失败", error)
+                                        OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
                                     }
-                                    require(profileId in userPreferencesManager.memorySpaceListFlow.first()) {
-                                        context.getString(R.string.memory_settings_space_missing)
-                                    }
-                                    onNavigateToUserProfiles(profileId)
-                                } catch (error: CancellationException) {
-                                    throw error
-                                } catch (error: Exception) {
-                                    AppLogger.e("RoleUserProfile", "打开角色用户资料失败", error)
-                                    OKToast.error(context, error.message ?: error.javaClass.simpleName, OKToast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onDeleteCharacterCard = { card -> showDeleteCharacterCardConfirm(card.id, card.name) },
+                            onDuplicateCharacterCard = { card -> duplicateCharacterCard(card) },
+                            onResetDefaultCharacterCard = { showResetDefaultConfirm = true },
+                            onSetActiveCharacterCard = { cardId ->
+                                scope.launch {
+                                    activePromptManager.setActivePrompt(ActivePrompt.CharacterCard(cardId))
+                                    refreshTrigger++
+                                }
+                            },
+                            onNavigateToPersonaGeneration = onNavigateToPersonaGeneration,
+                            onImportTavernCard = {
+                                filePickerLauncher.launch("*/*")
+                            },
+                            onImportColorQrCode = {
+                                colorQrImagePickerLauncher.launch("image/*")
+                            },
+                            onScanColorQrCode = {
+                                val uri = getTmpCameraUri(context)
+                                tempColorQrCameraUri = uri
+                                takeColorQrPictureLauncher.launch(uri)
+                            },
+                            onExportCharacterCard = { cardId, cardName ->
+                                openCharacterCardExport(cardId, cardName)
+                            }
+                        )
+                        1 -> TagTab(
+                            tags = allTags,
+                            onAddTag = {
+                                editingTag = PromptTag(
+                                    id = "",
+                                    name = "",
+                                    description = "",
+                                    promptContent = "",
+                                    tagType = TagType.CUSTOM
+                                )
+                                showAddTagDialog = true
+                            },
+                            onEditTag = { tag ->
+                                editingTag = tag.copy()
+                                showEditTagDialog = true
+                            },
+                            onDeleteTag = { tag -> showDeleteTagConfirm(tag.id, tag.name) },
+                            onImportTags = { tagImportFilePickerLauncher.launch("*/*") },
+                            onExportTags = {
+                                if (customTagsForExport.isEmpty()) {
+                                    OKToast.info(context, context.getString(R.string.tag_export_no_custom_tags), OKToast.LENGTH_SHORT).show()
+                                } else {
+                                    selectedTagExportIds = customTagsForExport.map { it.id }.toSet()
+                                    showTagExportSelectionDialog = true
+                                }
+                            },
+                            isImporting = isTagImporting,
+                            isExporting = isTagExporting,
+                            onNavigateToMarket = onNavigateToMarket
+                        )
+                        2 -> GroupCardTab(
+                            groups = allCharacterGroups,
+                            characterCards = allCharacterCards,
+                            activePrompt = activePrompt,
+                            onAddGroup = {
+                                editingGroupCard = CharacterGroupCard(
+                                    id = "",
+                                    name = "",
+                                    description = ""
+                                )
+                                showAddGroupCardDialog = true
+                            },
+                            onEditGroup = { group ->
+                                editingGroupCard = group
+                                showEditGroupCardDialog = true
+                            },
+                            onDeleteGroup = { group ->
+                                deletingGroupCard = group
+                                showDeleteGroupCardConfirm = true
+                            },
+                            onDuplicateGroup = { group ->
+                                duplicateGroupCard(group)
+                            },
+                            onSetActiveGroup = { groupId ->
+                                scope.launch {
+                                    activePromptManager.setActivePrompt(ActivePrompt.CharacterGroup(groupId))
+                                    refreshTrigger++
                                 }
                             }
-                        },
-                        onDeleteCharacterCard = { card -> showDeleteCharacterCardConfirm(card.id, card.name) },
-                        onDuplicateCharacterCard = { card -> duplicateCharacterCard(card) },
-                        onResetDefaultCharacterCard = { showResetDefaultConfirm = true },
-                        onSetActiveCharacterCard = { cardId ->
-                            scope.launch {
-                                activePromptManager.setActivePrompt(ActivePrompt.CharacterCard(cardId))
-                                refreshTrigger++
-                            }
-                        },
-                        onNavigateToPersonaGeneration = onNavigateToPersonaGeneration,
-                        onImportTavernCard = {
-                            filePickerLauncher.launch("*/*")
-                        },
-                        onImportColorQrCode = {
-                            colorQrImagePickerLauncher.launch("image/*")
-                        },
-                        onScanColorQrCode = {
-                            val uri = getTmpCameraUri(context)
-                            tempColorQrCameraUri = uri
-                            takeColorQrPictureLauncher.launch(uri)
-                        },
-                        onExportCharacterCard = { cardId, cardName ->
-                            openCharacterCardExport(cardId, cardName)
-                        }
-                    )
-                    1 -> TagTab(
-                        tags = allTags,
-                        onAddTag = {
-                            editingTag = PromptTag(
-                                id = "",
-                                name = "",
-                                description = "",
-                                promptContent = "",
-                                tagType = TagType.CUSTOM
-                            )
-                            showAddTagDialog = true
-                        },
-                        onEditTag = { tag ->
-                            editingTag = tag.copy()
-                            showEditTagDialog = true
-                        },
-                        onDeleteTag = { tag -> showDeleteTagConfirm(tag.id, tag.name) },
-                        onImportTags = { tagImportFilePickerLauncher.launch("*/*") },
-                        onExportTags = {
-                            if (customTagsForExport.isEmpty()) {
-                                OKToast.info(context, context.getString(R.string.tag_export_no_custom_tags), OKToast.LENGTH_SHORT).show()
-                            } else {
-                                selectedTagExportIds = customTagsForExport.map { it.id }.toSet()
-                                showTagExportSelectionDialog = true
-                            }
-                        },
-                        isImporting = isTagImporting,
-                        isExporting = isTagExporting,
-                        onNavigateToMarket = onNavigateToMarket
-                    )
-                    2 -> GroupCardTab(
-                        groups = allCharacterGroups,
-                        characterCards = allCharacterCards,
-                        activePrompt = activePrompt,
-                        onAddGroup = {
-                            editingGroupCard = CharacterGroupCard(
-                                id = "",
-                                name = "",
-                                description = ""
-                            )
-                            showAddGroupCardDialog = true
-                        },
-                        onEditGroup = { group ->
-                            editingGroupCard = group
-                            showEditGroupCardDialog = true
-                        },
-                        onDeleteGroup = { group ->
-                            deletingGroupCard = group
-                            showDeleteGroupCardConfirm = true
-                        },
-                        onDuplicateGroup = { group ->
-                            duplicateGroupCard(group)
-                        },
-                        onSetActiveGroup = { groupId ->
-                            scope.launch {
-                                activePromptManager.setActivePrompt(ActivePrompt.CharacterGroup(groupId))
-                                refreshTrigger++
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
@@ -2077,7 +2083,7 @@ fun CharacterCardTab(
         }
 
         // 角色卡列表
-        items(sortedCharacterCards) { characterCard ->
+        items(sortedCharacterCards, key = { it.id }) { characterCard ->
             CharacterCardItem(
                 characterCard = characterCard,
                 isActive = (activePrompt as? ActivePrompt.CharacterCard)?.id == characterCard.id,
@@ -2424,7 +2430,7 @@ fun TagTab(
                 )
             }
 
-            items(sortedTags) { tag ->
+            items(sortedTags, key = { it.id }) { tag ->
                 TagItem(
                     tag = tag,
                     onEdit = { onEditTag(tag) },

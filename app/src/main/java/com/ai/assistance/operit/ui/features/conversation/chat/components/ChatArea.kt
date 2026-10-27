@@ -28,7 +28,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +66,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.ai.assistance.operit.ui.features.conversation.chat.copy.MessageCopyTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,7 +81,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -1269,6 +1269,7 @@ private fun MessageCopyPreviewBottomSheet(
             (screenHeightDp * COPY_PREVIEW_SHEET_HEIGHT_FRACTION).coerceIn(200.dp, 720.dp)
         }
     var copyMode by remember(content) { mutableStateOf(MessageCopyMode.PLAIN_TEXT) }
+    val previewStates = rememberSaveableStateHolder()
     var plainText by remember(content.markdownSource) { mutableStateOf<String?>(null) }
     LaunchedEffect(content.markdownSource, context) {
         plainText =
@@ -1337,21 +1338,16 @@ private fun MessageCopyPreviewBottomSheet(
                     CircularProgressIndicator()
                 }
             } else {
-                BasicTextField(
-                    value = displayedText,
-                    onValueChange = {},
-                    readOnly = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    // BasicTextField owns selection dragging, so it scrolls itself while a
-                    // handle is dragged past an edge and keeps the selection in sync.
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                )
+                // 每种文本格式保留各自的选区与位置，切换后返回不串用其他格式的状态。
+                previewStates.SaveableStateProvider(copyMode.name) {
+                    MessageCopyTextField(
+                        text = displayedText,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                    )
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
