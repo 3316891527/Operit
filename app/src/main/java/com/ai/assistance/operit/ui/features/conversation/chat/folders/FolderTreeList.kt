@@ -4,7 +4,6 @@ import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.ui.theme.glass.rememberGlassAppearance
 import com.ai.assistance.operit.ui.theme.liquidGlass
 
-import androidx.compose.animation.core.tween
 import com.ai.assistance.operit.ui.features.conversation.chat.motion.DissolvingChatTitle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -192,7 +191,8 @@ internal fun FolderTreeList(
                         selected -> selectedContentColor
                         else -> contentColor
                     }
-                    Column(Modifier.animateItem(fadeInSpec = null, placementSpec = tween(260), fadeOutSpec = tween(160)).fillMaxWidth().drawBehind {
+                    // 混合高度的历史行直接使用列表布局坐标，避免复用时叠加旧的位移和退场绘制。
+                    Column(Modifier.fillMaxWidth().drawBehind {
                         if (row.depth > 0) {
                             val x = (8 + (row.depth.coerceAtMost(4) - 1) * 12 + 6).dp.toPx()
                             drawLine(guideColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())

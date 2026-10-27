@@ -104,3 +104,11 @@
 - [use_package 激活失败状态](use-package-result/index.md)
 
 - [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)
+
+- [GitHub 工具包保留终端失败输出](github-terminal-result/index.md)
+- [对话历史长列表滚动重叠](history-scroll-placement/index.md)
+- [移植 DSL 与设置页滚动状态修复](scroll-state-preservation/index.md)
+- [保留消息复制预览选区与滚动位置](copy-preview-state/index.md)
+- [修复浏览器 ref 点击的 WebView 线程访问](browser-ref-main-thread/index.md)
+
+- [工具失败说明去重](tool-error-deduplication/index.md)
