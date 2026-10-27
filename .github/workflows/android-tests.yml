@@ -13,7 +13,6 @@ on:
       - ci/script/download_android_dependencies.sh
       - ci/script/prepare_android_dependencies.py
       - cmake/**
-      - avator/**
       - examples/**
       - gradle/**
       - gradle.properties
