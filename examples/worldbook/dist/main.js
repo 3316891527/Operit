@@ -329,9 +329,9 @@ function registerToolPkg() {
         }
     });
     ToolPkg.registerNavigationEntry({
-        id: "worldbook_manager_toolbox",
+        id: "worldbook_manager_details",
         route: WORLDBOOK_ROUTE,
-        surface: "toolbox",
+        surface: "package_details",
         title: {
             zh: "世界书管理",
             en: "World Book Manager"

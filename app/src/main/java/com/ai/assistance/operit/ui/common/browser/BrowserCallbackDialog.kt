@@ -34,8 +34,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.ui.components.CustomScaffold
-import com.ai.assistance.operit.ui.features.token.webview.WebViewConfig
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.models.token.webview.WebViewConfig
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.delay
 
 /**

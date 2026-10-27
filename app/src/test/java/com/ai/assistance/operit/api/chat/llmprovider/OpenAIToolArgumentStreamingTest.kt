@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.stream.TextStreamEvent
 import com.ai.assistance.operit.util.stream.MutableSharedStreamImpl
 import java.io.BufferedReader
@@ -18,6 +18,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
+import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
 
 class OpenAIToolArgumentStreamingTest {
     private var previousSystemLogEnabled = true

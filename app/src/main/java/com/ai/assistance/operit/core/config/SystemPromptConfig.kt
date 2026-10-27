@@ -9,8 +9,8 @@ import com.ai.assistance.operit.core.tools.climode.ToolExposureMode
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.skill.SkillRepository
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.process.WorkspaceRuleFileReader
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.process.WorkspaceRuleFileReader
+import com.ai.assistance.operit.util.android.LocaleUtils
 
 object SystemPromptConfig {
 

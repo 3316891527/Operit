@@ -8,7 +8,7 @@ import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
 import com.ai.assistance.operit.data.storage.LocalModelUsageHandle
 import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.PackageToolExecutor
@@ -36,9 +36,9 @@ import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.data.model.PackageToolPromptCategory
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceConfig
-import com.ai.assistance.operit.widget.ToolPkgDesktopWidgetHost
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceConfig
+import com.ai.assistance.operit.integrations.appwidget.ToolPkgDesktopWidgetHost
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.util.ToolPkgWasmRuntime
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -166,7 +166,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val workspaceTemplateCount: Int,
         val uiModuleCount: Int,
         val wasmModules: List<ToolPkgWasmModule>,
-        val toolboxUiModules: List<ToolPkgToolboxUiModule>,
+        val uiModules: List<ToolPkgUiModule>,
         val subpackages: List<ToolPkgSubpackageInfo>,
         val workflowTemplates: List<ToolPkgWorkflowTemplate>,
         val workspaceTemplates: List<ToolPkgWorkspaceTemplate>,
@@ -227,7 +227,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val workspaceConfig: WorkspaceConfig
     )
 
-    data class ToolPkgToolboxUiModule(
+    data class ToolPkgUiModule(
         val containerPackageName: String,
         val toolPkgId: String,
         val routeId: String,
@@ -4068,45 +4068,34 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * This action is permanent and cannot be undone.
      */
     fun deletePackage(packageName: String, preservePluginActivity: Boolean = false): Boolean {
-        val normalizedPackageName = normalizePackageName(packageName)
-        AppLogger.d(TAG, "Attempting to delete package: $normalizedPackageName")
         ensureInitialized()
-
-        if (toolPkgSubpackageByPackageName.containsKey(normalizedPackageName)) {
-            // Subpackage is part of a toolpkg archive; only remove enable state.
-            disablePackage(normalizedPackageName)
-            return true
+        val normalizedPackageName = normalizePackageName(packageName)
+        // 刷新真实来源，避免旧缓存或同 ID 的另一份安装包在删除后重新出现。
+        loadAvailablePackages(refreshExternalOnly = true)
+        if (toolPkgSubpackageByPackageName.containsKey(normalizedPackageName)) return false
+        val metadata = availablePackages[normalizedPackageName] ?: return false
+        if (metadata.isBuiltIn || getEnabledToolPkgDependents(normalizedPackageName).isNotEmpty()) return false
+        val sourcePaths = externalPackageScanCache.values.mapNotNull { entry ->
+            val result = entry.result
+            val name = if (result.toolPackage != null) result.toolPackage.name
+                else result.toolPkgLoadResult?.containerPackage?.name
+            if (name == normalizedPackageName) result.sourcePath else null
+        }.distinct()
+        val deleted = try {
+            deleteInstalledPackageSources(externalPackagesDir, sourcePaths)
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "Failed to delete package sources: $normalizedPackageName", error)
+            false
         }
-
-        if (availablePackages[normalizedPackageName]?.isBuiltIn == true) return false
-        val packageFile = findPackageFile(normalizedPackageName)
-
-        if (packageFile == null || !packageFile.exists()) {
-            AppLogger.w(
-                TAG,
-                "Package file not found for deletion: $normalizedPackageName. It might be already deleted or never existed."
-            )
-            disablePackage(normalizedPackageName)
-            removeFromCachesAfterDelete(normalizedPackageName)
-            if (!preservePluginActivity) pluginActivityStore.remove(normalizedPackageName)
-            return true
+        if (!deleted) {
+            AppLogger.w(TAG, "Package sources were not completely removed: $normalizedPackageName")
+            return false
         }
-
-        AppLogger.d(TAG, "Found package file to delete: ${packageFile.absolutePath}")
-
-        val fileDeleted = packageFile.delete()
-
-        if (fileDeleted) {
-            AppLogger.d(TAG, "Successfully deleted package file: ${packageFile.absolutePath}")
-            disablePackage(normalizedPackageName)
-            removeFromCachesAfterDelete(normalizedPackageName)
-            if (!preservePluginActivity) pluginActivityStore.remove(normalizedPackageName)
-            AppLogger.d(TAG, "Package '$normalizedPackageName' fully deleted.")
-            return true
-        }
-
-        AppLogger.e(TAG, "Failed to delete package file: ${packageFile.absolutePath}")
-        return false
+        disablePackage(normalizedPackageName)
+        removeFromCachesAfterDelete(normalizedPackageName)
+        externalPackageScanCache = externalPackageScanCache.filterKeys { it !in sourcePaths }
+        if (!preservePluginActivity) pluginActivityStore.remove(normalizedPackageName)
+        return true
     }
 
     private fun removeFromCachesAfterDelete(packageName: String) {

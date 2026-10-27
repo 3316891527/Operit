@@ -21,7 +21,7 @@ import com.ai.assistance.operit.data.stats.ModelPriceSettings
 import com.ai.assistance.operit.data.stats.ReleasedProviderModelKey
 import com.ai.assistance.operit.data.stats.ReleasedProviderModelKeyDecoder
 import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistry
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged

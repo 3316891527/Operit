@@ -7,7 +7,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -708,7 +708,7 @@ class FloatingWindowManager(
         val startX = currentParams.x
         val startY = currentParams.y
         
-        com.ai.assistance.operit.util.AppLogger.d("FloatingWindowManager", 
+        com.ai.assistance.operit.util.logging.AppLogger.d("FloatingWindowManager",
             "switchMode: from=${state.currentMode.value} to=$newMode, " +
             "startPos=($startX,$startY), startSize=($startWidth,$startHeight), " +
             "screenSize=($screenWidth,$screenHeight)")
@@ -800,12 +800,12 @@ class FloatingWindowManager(
                     )
                 }
                 
-                com.ai.assistance.operit.util.AppLogger.d("FloatingWindowManager", 
+                com.ai.assistance.operit.util.logging.AppLogger.d("FloatingWindowManager",
                     "Ball target before coerce: newPos=($newX,$newY), ballSize=$ballSizeInPx")
                     val minVisible = ballSizeInPx / 2
                 val finalX = newX.coerceIn(-ballSizeInPx + minVisible, screenWidth - minVisible)
                 val finalY = newY.coerceIn(0, screenHeight - minVisible)
-                com.ai.assistance.operit.util.AppLogger.d("FloatingWindowManager", 
+                com.ai.assistance.operit.util.logging.AppLogger.d("FloatingWindowManager",
                     "Ball target after coerce: finalPos=($finalX,$finalY)")
                 TargetParams(ballSizeInPx, ballSizeInPx, finalX, finalY, flags)
                 }

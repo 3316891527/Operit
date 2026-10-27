@@ -1,14 +1,14 @@
 package com.ai.assistance.operit.core.tools.defaultTool.a2ui
 
 import android.content.Context
-import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.ui.common.a2ui.CardAuthoringCatalog
 import com.ai.assistance.operit.ui.common.a2ui.CardIcons
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import java.io.File
 import kotlinx.serialization.json.*
 

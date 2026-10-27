@@ -11,8 +11,8 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.core.application.ActivityLifecycleManager
 import com.ai.assistance.operit.core.tools.defaultTool.standard.StandardBrowserSessionTools
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.HttpMultiPartDownloader
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.network.HttpMultiPartDownloader
 import java.io.File
 import java.io.FileOutputStream
 import java.util.LinkedHashMap

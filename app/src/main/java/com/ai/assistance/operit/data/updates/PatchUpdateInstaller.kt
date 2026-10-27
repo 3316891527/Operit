@@ -9,8 +9,8 @@ import android.os.Build
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.api.GitHubApiService
-import com.ai.assistance.operit.util.GithubReleaseUtil
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.data.updates.GithubReleaseUtil
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

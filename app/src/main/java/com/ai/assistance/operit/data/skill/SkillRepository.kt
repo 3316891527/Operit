@@ -7,8 +7,10 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.skill.SkillManager
 import com.ai.assistance.operit.core.tools.skill.SkillPackage
 import com.ai.assistance.operit.data.preferences.SkillVisibilityPreferences
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.SkillRepoZipPoolManager
+import com.ai.assistance.operit.data.transfer.DownloadTransferProgress
+import com.ai.assistance.operit.data.transfer.copyWithTransferProgress
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.data.skill.SkillRepoZipPoolManager
 import com.google.gson.JsonParser
 import java.io.BufferedInputStream
 import java.io.File
@@ -86,7 +88,11 @@ class SkillRepository private constructor(private val context: Context) {
         val installedDir: File?
     )
 
-    suspend fun importSkillFromGitHubRepoDetailed(repoUrl: String): SkillRepoImportResult {
+    suspend fun importSkillFromGitHubRepoDetailed(
+        repoUrl: String,
+        onDownloadProgress: (DownloadTransferProgress) -> Unit = {},
+        onImportStarted: () -> Unit = {},
+    ): SkillRepoImportResult {
         return withContext(Dispatchers.IO) {
             val target = parseGitHubSkillTarget(repoUrl)
                 ?: return@withContext SkillRepoImportResult(context.getString(R.string.skill_invalid_github_url), null)
@@ -103,7 +109,7 @@ class SkillRepository private constructor(private val context: Context) {
             val zipUrl = "https://codeload.github.com/$owner/$repoName/zip/$encodedRef"
             val repoRefKey = "$owner/$repoName@$ref"
             val pooledZip = SkillRepoZipPoolManager.getOrDownloadZip(repoRefKey) { outFile ->
-                downloadFromUrl(zipUrl, outFile)
+                downloadFromUrl(zipUrl, outFile, onDownloadProgress)
             }
 
             val suffix = (target.subDir ?: "repo")
@@ -118,7 +124,7 @@ class SkillRepository private constructor(private val context: Context) {
                 val zipFile = if (pooledZip != null) {
                     pooledZip
                 } else {
-                    val downloaded = downloadFromUrl(zipUrl, fallbackTempFile)
+                    val downloaded = downloadFromUrl(zipUrl, fallbackTempFile, onDownloadProgress)
                     if (!downloaded || !fallbackTempFile.exists() || fallbackTempFile.length() <= 0L) {
                         if (fallbackTempFile.exists()) fallbackTempFile.delete()
                         return@withContext SkillRepoImportResult(context.getString(R.string.skill_download_zip_failed), null)
@@ -126,6 +132,7 @@ class SkillRepository private constructor(private val context: Context) {
                     fallbackTempFile
                 }
 
+                onImportStarted()
                 val result = skillManager.importSkillFromZipDetailed(zipFile, target.subDir)
 
                 if (pooledZip == null) {
@@ -381,7 +388,11 @@ class SkillRepository private constructor(private val context: Context) {
         }
     }
 
-    private fun downloadFromUrl(zipUrl: String, outFile: File): Boolean {
+    private fun downloadFromUrl(
+        zipUrl: String,
+        outFile: File,
+        onProgress: (DownloadTransferProgress) -> Unit,
+    ): Boolean {
         val url = URL(zipUrl)
         val connection = (url.openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT
@@ -393,25 +404,22 @@ class SkillRepository private constructor(private val context: Context) {
             )
         }
 
-        connection.connect()
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-            AppLogger.e(TAG, "Download failed, HTTP ${connection.responseCode}")
-            return false
-        }
-
-        BufferedInputStream(connection.inputStream).use { input ->
-            FileOutputStream(outFile).use { output ->
-                val buffer = ByteArray(BUFFER_SIZE)
-                while (true) {
-                    val read = input.read(buffer)
-                    if (read <= 0) break
-                    output.write(buffer, 0, read)
-                }
-                output.flush()
+        try {
+            connection.connect()
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                AppLogger.e(TAG, "Download failed, HTTP ${connection.responseCode}")
+                return false
             }
+            BufferedInputStream(connection.inputStream).use { input ->
+                FileOutputStream(outFile).use { output ->
+                    input.copyWithTransferProgress(output, connection.contentLengthLong, onProgress, BUFFER_SIZE)
+                    output.flush()
+                }
+            }
+            return true
+        } finally {
+            connection.disconnect()
         }
-
-        return true
     }
 
     private fun getGithubDefaultBranch(owner: String, repoName: String): String? {

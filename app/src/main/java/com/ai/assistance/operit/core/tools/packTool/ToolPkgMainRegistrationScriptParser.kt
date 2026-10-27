@@ -2,7 +2,7 @@ package com.ai.assistance.operit.core.tools.packTool
 
 import com.ai.assistance.operit.core.tools.LocalizedText
 import com.ai.assistance.operit.core.tools.javascript.JsEngine
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -31,7 +31,7 @@ internal object ToolPkgMainRegistrationScriptParser {
                             "__operit_script_screen" to mainScriptPath
                         )
                 )
-            val uiModules = parseRegisteredUiModules(captured.toolboxUiModules)
+            val uiModules = parseRegisteredUiModules(captured.uiModules)
             val uiRoutes = parseRegisteredUiRoutes(captured.uiRoutes, toolPkgId)
             val navigationEntries = parseRegisteredNavigationEntries(captured.navigationEntries)
             val desktopWidgets = parseRegisteredDesktopWidgets(captured.desktopWidgets)
@@ -134,7 +134,7 @@ internal object ToolPkgMainRegistrationScriptParser {
             ToolPkgMainRegistrationParseResult.Success(
                 registration =
                     ToolPkgMainRegistration(
-                        toolboxUiModules = uiModules,
+                        uiModules = uiModules,
                         uiRoutes = uiRoutes,
                         navigationEntries = navigationEntries,
                         desktopWidgets = desktopWidgets,
@@ -201,7 +201,7 @@ internal object ToolPkgMainRegistrationScriptParser {
                     JSONObject(raw)
                 } catch (e: Exception) {
                     throw IllegalArgumentException(
-                        "$TOOLPKG_REGISTRATION_TOOLBOX_UI_MODULE payload[$index] must be a JSON object",
+                        "$TOOLPKG_REGISTRATION_UI_MODULE payload[$index] must be a JSON object",
                         e
                     )
                 }
@@ -209,10 +209,10 @@ internal object ToolPkgMainRegistrationScriptParser {
             val id = item.optString("id").trim()
             val screen = item.optString("screen").trim()
             if (id.isBlank()) {
-                throw IllegalArgumentException("$TOOLPKG_REGISTRATION_TOOLBOX_UI_MODULE[$index].id is required")
+                throw IllegalArgumentException("$TOOLPKG_REGISTRATION_UI_MODULE[$index].id is required")
             }
             if (screen.isBlank()) {
-                throw IllegalArgumentException("$TOOLPKG_REGISTRATION_TOOLBOX_UI_MODULE[$index].screen is required")
+                throw IllegalArgumentException("$TOOLPKG_REGISTRATION_UI_MODULE[$index].screen is required")
             }
 
             val runtime = item.optString("runtime").trim().ifBlank { TOOLPKG_RUNTIME_COMPOSE_DSL }
@@ -302,6 +302,10 @@ internal object ToolPkgMainRegistrationScriptParser {
                     item.optString("routeId").trim()
                 }
             val surface = item.optString("surface").trim().lowercase()
+            // 旧工具箱导航不生成入口，也不校验已经停用的界面路由。
+            if (surface == "toolbox") {
+                return@forEachIndexed
+            }
             val action = parseNavigationEntryAction(item, index)
             if (id.isBlank()) {
                 throw IllegalArgumentException("$TOOLPKG_REGISTRATION_NAVIGATION_ENTRY[$index].id is required")

@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest
@@ -15,6 +15,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.core.chat.media.ImageLink
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 
 /** DeepSeek Files API 返回的文件对象（4 个端点共用） */
 internal data class DeepseekFileInfo(

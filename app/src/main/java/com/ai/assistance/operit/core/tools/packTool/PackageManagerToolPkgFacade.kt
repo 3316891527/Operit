@@ -5,8 +5,8 @@ import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.data.model.Workflow
 import com.ai.assistance.operit.data.repository.WorkflowRepository
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceConfigReader
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceConfigReader
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
@@ -23,28 +23,28 @@ internal class PackageManagerToolPkgFacade(
             classDiscriminator = "__type"
         }
 
-    private fun buildToolPkgToolboxUiModules(
+    private fun buildToolPkgUiModules(
         container: ToolPkgContainerRuntime,
         localizationContext: Context,
         runtime: String
-    ): List<PackageManager.ToolPkgToolboxUiModule> {
+    ): List<PackageManager.ToolPkgUiModule> {
         val containerDisplayName =
             container.displayName.resolve(localizationContext).ifBlank { container.packageName }
         val containerDescription = container.description.resolve(localizationContext)
-        val toolboxRouteIds =
+        val packageDetailsRouteIds =
             container.navigationEntries
-                .filter { it.surface.equals(TOOLPKG_NAV_SURFACE_TOOLBOX, ignoreCase = true) }
+                .filter { it.surface.equals(TOOLPKG_NAV_SURFACE_PACKAGE_DETAILS, ignoreCase = true) }
                 .map { it.routeId.lowercase() }
                 .toSet()
         return container.uiRoutes
             .filter { route ->
                 route.runtime.equals(runtime, ignoreCase = true) &&
-                    (route.registeredAsToolboxUiModule || toolboxRouteIds.contains(route.routeId.lowercase()))
+                    (route.registeredAsUiModule || packageDetailsRouteIds.contains(route.routeId.lowercase()))
             }
             .map { route ->
                 val moduleTitle =
                     route.title.resolve(localizationContext).trim().ifBlank { containerDisplayName }
-                PackageManager.ToolPkgToolboxUiModule(
+                PackageManager.ToolPkgUiModule(
                     containerPackageName = container.packageName,
                     toolPkgId = container.packageName,
                     routeId = route.routeId,
@@ -68,9 +68,9 @@ internal class PackageManagerToolPkgFacade(
             }
             .sortedWith(
                 compareBy(
-                    PackageManager.ToolPkgToolboxUiModule::title,
-                    PackageManager.ToolPkgToolboxUiModule::containerPackageName,
-                    PackageManager.ToolPkgToolboxUiModule::uiModuleId
+                    PackageManager.ToolPkgUiModule::title,
+                    PackageManager.ToolPkgUiModule::containerPackageName,
+                    PackageManager.ToolPkgUiModule::uiModuleId
                 )
             )
     }
@@ -125,8 +125,8 @@ internal class PackageManagerToolPkgFacade(
     ): List<PackageManager.ToolPkgNavigationEntry> {
         val containerDescription = container.description.resolve(localizationContext)
         return container.navigationEntries
-            // 接受旧插件声明，但不再向导航目录发布工具箱入口。
-            .filterNot { entry -> entry.surface.equals(TOOLPKG_NAV_SURFACE_TOOLBOX, ignoreCase = true) }
+            // 插件详情入口由界面模块列表展示，主导航目录只发布主侧边栏入口。
+            .filterNot { entry -> entry.surface.equals(TOOLPKG_NAV_SURFACE_PACKAGE_DETAILS, ignoreCase = true) }
             .map { entry ->
                 PackageManager.ToolPkgNavigationEntry(
                     containerPackageName = container.packageName,
@@ -279,9 +279,9 @@ internal class PackageManagerToolPkgFacade(
         val enabledSet = packageManager.getEnabledPackageNameSetInternal()
         val localizationContext = resolveContext ?: packageManager.contextInternal
         val containerEnabled = enabledSet.contains(container.packageName)
-        val toolboxUiModules =
+        val uiModules =
             if (containerEnabled) {
-                buildToolPkgToolboxUiModules(
+                buildToolPkgUiModules(
                     container = container,
                     localizationContext = localizationContext,
                     runtime = TOOLPKG_RUNTIME_COMPOSE_DSL
@@ -324,7 +324,7 @@ internal class PackageManagerToolPkgFacade(
             workspaceTemplateCount = workspaceTemplates.size,
             uiModuleCount = container.uiModules.size,
             wasmModules = wasmModules,
-            toolboxUiModules = toolboxUiModules,
+            uiModules = uiModules,
             subpackages = subpackages,
             workflowTemplates = workflowTemplates,
             workspaceTemplates = workspaceTemplates

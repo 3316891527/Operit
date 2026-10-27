@@ -27,3 +27,5 @@
 - [1.12.2+10 发布同步](release-1.12.2-plus-10/index.md) · `release-1.12.2-plus-10`
 - [1.12.2+11 发布同步](release-1.12.2-plus-11/index.md) · `release-1.12.2-plus-11`
 - [1.12.2+12 发布同步](release-1.12.2-plus-12/index.md) · `release-1.12.2-plus-12`
+
+- [1.12.2+16 发行集成](release-plus16/index.md)

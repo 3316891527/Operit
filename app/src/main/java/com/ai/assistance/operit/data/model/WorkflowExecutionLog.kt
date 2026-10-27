@@ -72,4 +72,6 @@ data class WorkflowNodeExecutionReport(
     val finishedAt: Long? = null,
     val issue: WorkflowExecutionIssue? = null,
     val resultSummary: String? = null,
+    val failureReason: String? = null,
+    val actionName: String? = null,
 )

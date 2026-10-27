@@ -133,13 +133,12 @@ This repository is Operit's Android edition. Operit 2 is a separate second-gener
 </details>
 
 <details>
-<summary><b>Voice, Avatars, and Interface</b></summary>
+<summary><b>Voice and Interface</b></summary>
 
 - Use local Chinese and English speech recognition or cloud STT interfaces such as OpenAI and Deepgram
 - Use Android system TTS, local ONNX VITS, custom HTTP services, and multiple cloud TTS providers
 - Enable continuous voice conversations, background wake-up, custom wake templates, automatic read-aloud, and music queues
 - Open Operit from a floating window, chat bubble, home-screen widget, or the Android default assistant entry point
-- Use virtual avatars in DragonBones, WebP, MP4, MMD, glTF/GLB, and FBX formats
 - Customize themes, fonts, chat bubbles, backgrounds, toolbars, Markdown rendering, and layouts
 - Choose Chinese, English, Korean, Spanish, Malay, Indonesian, Brazilian Portuguese, or Romanian, or follow the system language
 - Optionally enable the LAN Web Chat and HTTP API, which are disabled by default; configure a bearer token and assess the risks of LAN exposure before enabling them

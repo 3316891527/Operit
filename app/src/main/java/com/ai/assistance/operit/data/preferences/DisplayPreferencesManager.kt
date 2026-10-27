@@ -3,7 +3,7 @@ package com.ai.assistance.operit.data.preferences
 import android.content.Context
 import com.ai.assistance.operit.data.resources.ManagedResourceFiles
 import com.ai.assistance.operit.data.resources.PrivateResourceCleanup
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences

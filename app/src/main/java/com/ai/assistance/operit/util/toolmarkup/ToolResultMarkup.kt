@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.util.toolmarkup
 
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 
 /** 工具结果的外层边界与正文提取；正文中的 XML 和代码保持原样。 */
 object ToolResultMarkup {

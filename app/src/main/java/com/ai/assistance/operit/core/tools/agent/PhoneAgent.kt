@@ -11,7 +11,7 @@ import android.os.Build
 import android.view.KeyEvent
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.AppListData
@@ -27,10 +27,10 @@ import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.services.FloatingChatService
 import com.ai.assistance.operit.ui.common.displays.UIAutomationProgressOverlay
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ImageOutputFormat
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.ImageRegistrationOptions
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.media.ImageOutputFormat
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.media.ImageRegistrationOptions
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job

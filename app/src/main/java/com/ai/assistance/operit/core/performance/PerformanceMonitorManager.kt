@@ -10,7 +10,7 @@ import android.system.Os
 import android.system.OsConstants
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.terminal.TerminalManager
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.util.ArrayDeque
 import java.util.Locale

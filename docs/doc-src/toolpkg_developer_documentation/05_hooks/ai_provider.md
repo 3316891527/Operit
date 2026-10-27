@@ -165,7 +165,7 @@ usage 可放在 `{ usage: {...} }` 中，也可放在顶层。字段名接受：
 
 - `plugins/toolpkg/ToolPkgAiProviderRegistry.kt`：Provider 注册表及排序。
 - `plugins/toolpkg/ToolPkgHookBridgeSupport.kt`：Provider 注册数据与 token 统计别名。
-- `api/chat/llmprovider/ToolPkgJsAiProviderService.kt`：payload 编码、调用调度、stream、usage、错误和取消。
+- `plugins/toolpkg/ai/ToolPkgJsAiProviderService.kt`：payload 编码、调用调度、stream、usage、错误和取消。
 - `examples/types/toolpkg.d.ts`：公开事件与返回类型。
 
 相关页面：[ToolPkg 注册 API](../03_runtime/registry.md)、[Hook 总索引](./index.md)、[API 版本规则](../09_compatibility/api_versions.md)。

@@ -12,7 +12,7 @@ import com.ai.assistance.operit.data.chat.folders.folderAncestors
 import com.ai.assistance.operit.ui.common.a2ui.A2uiStateStore
 import android.content.Context
 import android.net.Uri
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -37,7 +37,7 @@ import com.ai.assistance.operit.data.model.OperitArchivedMessage
 import com.ai.assistance.operit.data.model.OperitArchivedMessageVariant
 import com.ai.assistance.operit.data.model.OperitChatArchive
 import com.ai.assistance.operit.data.model.WorkspaceRenameResult
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import com.ai.assistance.operit.data.converter.*
 import com.ai.assistance.operit.data.exporter.*
 import com.google.gson.GsonBuilder

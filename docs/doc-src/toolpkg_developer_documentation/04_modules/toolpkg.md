@@ -80,7 +80,7 @@ ToolPkg.registerMessageProcessingPlugin(...)
 
 此外，全局还声明了一组辅助函数：
 
-- `registerToolPkgToolboxUiModule(...)`
+- `registerToolPkgUiModule(...)`
 - `registerToolPkgAppLifecycleHook(...)`
 - `registerToolPkgMessageProcessingPlugin(...)`
 - `registerToolPkgXmlRenderPlugin(...)`
@@ -471,7 +471,7 @@ interface PromptTurn {
 
 ## 注册定义对象
 
-### `ToolboxUiModuleRegistration`
+### `UiModuleRegistration`
 
 字段：
 
@@ -564,7 +564,7 @@ interface PromptTurn {
 
 运行时 `ToolPkg` 对象实现了这个接口，提供以下方法：
 
-- `registerToolboxUiModule(definition)`
+- `registerUiModule(definition)`
 - `registerUiRoute(definition)`
 - `registerNavigationEntry(definition)`
 - `registerDesktopWidget(definition)`
@@ -710,17 +710,17 @@ export async function run(params: { n: number }) {
 
 ## 示例
 
-### 注册兼容 UI 模块
+### 注册插件界面模块
 
-`registerToolboxUiModule` 沿用旧名称，只注册 Compose DSL 界面，不在工具箱生成卡片；插件详情仍能打开此界面。
+`registerUiModule` 注册 Compose DSL 界面模块，宿主自动生成包内路由，并在插件详情提供打开入口。
 
 ```ts
-import toolboxUI from './index.ui.js';
+import packageUI from './index.ui.js';
 
-ToolPkg.registerToolboxUiModule({
-  id: 'demo_toolbox',
+ToolPkg.registerUiModule({
+  id: 'demo_ui',
   runtime: 'compose_dsl',
-  screen: toolboxUI,
+  screen: packageUI,
   params: {},
   title: {
     zh: '示例模块',

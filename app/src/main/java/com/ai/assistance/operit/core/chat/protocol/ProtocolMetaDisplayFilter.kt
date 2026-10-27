@@ -191,7 +191,31 @@ internal class ProtocolMetaDisplayFilter(private val preserveCodeExamples: Boole
                 it.groupValues[3].lowercase() in PROVIDERS
         }
 
-        private val CODE_BOUNDARY = Regex("(`+|(?m)^[ \\t]{0,3}~{3,})")
+        private val CODE_BOUNDARY = Regex(
+            """(`+|(?m)^[ \t]{0,3}~{3,})|<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|<([A-Za-z][A-Za-z0-9_.:-]*)(?=\s|/?>)""",
+        )
+        private val XML_TOKEN = Regex(
+            """<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|</?([A-Za-z][A-Za-z0-9_.:-]*)(?=\s|/?>)(?:[^<>"']|"[^"]*"|'[^']*')*>""",
+        )
+
+        /** 独立 XML 的内容由其渲染器处理，其中的代码字符不能延续外部 Markdown 范围。 */
+        private fun xmlBlockEnd(content: String, start: Int, tagName: String): Int? {
+            val openingTag = XML_TOKEN.find(content, start)?.takeIf { it.range.first == start }
+                ?: return null
+            if (openingTag.value.endsWith("/>")) return openingTag.range.last + 1
+            var depth = 1
+            for (token in XML_TOKEN.findAll(content, openingTag.range.last + 1)) {
+                if (!token.groupValues[1].equals(tagName, ignoreCase = true)) continue
+                if (token.value.startsWith("</")) {
+                    depth--
+                    if (depth == 0) return token.range.last + 1
+                } else if (!token.value.endsWith("/>")) {
+                    depth++
+                }
+            }
+            // 前缀仍位于该 XML 内部，此时也没有可接续的外部 Markdown 代码范围。
+            return null
+        }
 
         private fun fenceClosing(marker: String) = Regex(
             "^[ \\t]{0,3}" + Regex.escape(marker.first().toString()) +
@@ -204,11 +228,21 @@ internal class ProtocolMetaDisplayFilter(private val preserveCodeExamples: Boole
             var scan = 0
             while (scan < prefix.length) {
                 val boundary = CODE_BOUNDARY.find(prefix, scan) ?: return null
-                val marker = boundary.value.trimStart()
                 val markerStart = boundary.range.first
                 var escapeStart = markerStart
                 while (escapeStart > 0 && prefix[escapeStart - 1] == '\\') escapeStart--
                 if ((markerStart - escapeStart) % 2 == 1) {
+                    scan = boundary.range.last + 1
+                    continue
+                }
+                val tagName = boundary.groupValues[2]
+                if (tagName.isNotEmpty()) {
+                    scan = xmlBlockEnd(prefix, markerStart, tagName) ?: return null
+                    continue
+                }
+                val marker = boundary.groupValues[1].trimStart()
+                if (marker.isEmpty()) {
+                    // 注释和 CDATA 整段跳过，不把其中的反引号当作代码起点。
                     scan = boundary.range.last + 1
                     continue
                 }

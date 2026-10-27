@@ -21,8 +21,8 @@ import com.ai.assistance.operit.core.tools.ToolProgressBus
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.data.preferences.ApiPreferences
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.FileUtils
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.files.FileUtils
 import java.io.BufferedReader
 import java.io.BufferedInputStream
 import java.io.InputStreamReader

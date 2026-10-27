@@ -3,7 +3,7 @@ package com.ai.assistance.operit.data.mcp
 import android.content.Context
 import android.content.SharedPreferences
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.mcp.MCPManager
 import com.ai.assistance.operit.core.tools.DirectoryListingData
@@ -11,7 +11,7 @@ import com.ai.assistance.operit.core.tools.FileExistsData
 import com.ai.assistance.operit.data.mcp.plugins.MCPStarter
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName

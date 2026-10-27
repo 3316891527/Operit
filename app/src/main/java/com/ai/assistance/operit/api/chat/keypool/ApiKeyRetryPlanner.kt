@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.chat.keypool
 
-import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
+import com.ai.assistance.operit.api.chat.request.LlmRetryPolicy
 
 object ApiKeyRetryPlanner {
     fun maxHttpAttempts(candidateCount: Int, poolMode: Boolean): Int {

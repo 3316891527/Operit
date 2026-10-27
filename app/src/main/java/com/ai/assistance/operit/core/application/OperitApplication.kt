@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.system.Os
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.work.Configuration as WorkConfiguration
 import androidx.work.WorkManager
@@ -22,7 +22,7 @@ import com.ai.assistance.operit.BuildConfig
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.AIMessageManager
 import com.ai.assistance.operit.api.chat.AIForegroundService
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
+import com.ai.assistance.operit.core.memory.extraction.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.plugins.PluginRegistry
 import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleEvent
 import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleHookParams
@@ -43,17 +43,17 @@ import com.ai.assistance.operit.data.preferences.initUserPreferencesManager
 import com.ai.assistance.operit.data.preferences.preferencesManager
 import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
-import com.ai.assistance.operit.ui.features.chat.webview.LocalWebServer
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.editor.language.LanguageFactory
-import com.ai.assistance.operit.util.GlobalExceptionHandler
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.LocaleUtils
-import com.ai.assistance.operit.util.MediaPoolManager
-import com.ai.assistance.operit.util.CrashRecoveryState
-import com.ai.assistance.operit.util.OperitPaths
-import com.ai.assistance.operit.util.SkillRepoZipPoolManager
-import com.ai.assistance.operit.util.SerializationSetup
-import com.ai.assistance.operit.util.TextSegmenter
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.LocalWebServer
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.editor.language.LanguageFactory
+import com.ai.assistance.operit.core.diagnostics.GlobalExceptionHandler
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.android.LocaleUtils
+import com.ai.assistance.operit.util.media.MediaPoolManager
+import com.ai.assistance.operit.core.diagnostics.CrashRecoveryState
+import com.ai.assistance.operit.util.files.OperitPaths
+import com.ai.assistance.operit.data.skill.SkillRepoZipPoolManager
+import com.ai.assistance.operit.data.serialization.SerializationSetup
+import com.ai.assistance.operit.util.text.TextSegmenter
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import com.ai.assistance.operit.core.tools.agent.ShowerController
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay

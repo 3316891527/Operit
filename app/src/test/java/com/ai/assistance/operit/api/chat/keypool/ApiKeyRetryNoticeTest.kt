@@ -2,8 +2,8 @@ package com.ai.assistance.operit.api.chat.keypool
 
 import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import android.content.Context
-import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest

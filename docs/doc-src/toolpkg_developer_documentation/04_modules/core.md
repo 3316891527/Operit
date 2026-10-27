@@ -141,7 +141,7 @@ complete<T>(result: T): void
 ### ToolPkg 注册桥
 | 方法 | 说明 | 版本 |
 | --- | --- | --- |
-| `registerToolPkgToolboxUiModule(specJson)` | 注册 Toolbox UI module 描述。 | 基线 |
+| `registerToolPkgUiModule(specJson)` | 注册插件界面模块描述。 | 基线 |
 | `registerToolPkgAppLifecycleHook(specJson)` | 注册应用生命周期 Hook。 | 基线 |
 | `registerToolPkgMessageProcessingPlugin(specJson)` | 注册消息处理插件。 | 基线 |
 | `registerToolPkgXmlRenderPlugin(specJson)` | 注册 XML render 插件。 | 基线 |

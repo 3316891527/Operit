@@ -2,7 +2,7 @@ package com.ai.assistance.operit.util.stream
 
 import android.content.Context
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 
 /**
  * 流处理器接口，定义了如何处理流数据

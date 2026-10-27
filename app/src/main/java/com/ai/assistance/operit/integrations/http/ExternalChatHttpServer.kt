@@ -14,7 +14,7 @@ import com.ai.assistance.operit.integrations.externalchat.ExternalChatResult
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatStreamEnvelope
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatStreamingStartResult
 import com.ai.assistance.operit.data.model.InputProcessingState
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import fi.iki.elonen.NanoHTTPD
 import java.io.BufferedWriter
 import java.io.FilterInputStream

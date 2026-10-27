@@ -53,4 +53,25 @@ class RetainedNoticeQueueTest {
         queue.retainForHostChange()
         assertTrue(queue.isEmpty)
     }
+    @Test
+    fun cancellingQueuedErrorLeavesOtherErrorsInOrder() {
+        val queue = queue()
+        val cancelled = Entry(2, true)
+        queue.add(Entry(1, true))
+        queue.add(cancelled)
+        queue.add(Entry(3, true))
+        queue.remove(cancelled)
+        queue.retainForHostChange()
+        assertEquals(listOf(1, 3), drain(queue))
+    }
+    @Test
+    fun repeatedCancellationDoesNotRemoveTheNextError() {
+        val queue = queue()
+        val cancelled = Entry(1, true)
+        queue.add(cancelled)
+        queue.add(Entry(2, true))
+        queue.remove(cancelled)
+        queue.remove(cancelled)
+        assertEquals(listOf(2), drain(queue))
+    }
 }

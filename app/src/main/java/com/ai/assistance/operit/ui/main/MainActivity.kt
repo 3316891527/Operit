@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -42,15 +42,15 @@ import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.data.updates.UpdateManager
 import com.ai.assistance.operit.data.updates.UpdateStatus
 import com.ai.assistance.operit.ui.common.NavItem
-import com.ai.assistance.operit.ui.features.onboarding.screens.WelcomeScreen
-import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingScreenWithState
-import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingState
-import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.LocalMcpLoadingState
-import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingStateRegistry
+import com.ai.assistance.operit.ui.features.support.onboarding.screens.WelcomeScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.McpLoadingScreenWithState
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.McpLoadingState
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.LocalMcpLoadingState
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.McpLoadingStateRegistry
 import com.ai.assistance.operit.ui.theme.OperitTheme
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
-import com.ai.assistance.operit.util.AnrMonitor
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.core.diagnostics.AnrMonitor
+import com.ai.assistance.operit.util.android.LocaleUtils
 import java.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -60,7 +60,7 @@ import com.ai.assistance.operit.data.mcp.MCPRepository
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.res.stringResource
-import com.ai.assistance.operit.widget.ToolPkgDesktopWidgetHost
+import com.ai.assistance.operit.integrations.appwidget.ToolPkgDesktopWidgetHost
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {

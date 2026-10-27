@@ -6,7 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_ACTIVITY_ON_CREATE
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_ACTIVITY_ON_DESTROY
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_ACTIVITY_ON_PAUSE

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.integrations.externalchat
 
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.StreamGroup
 import com.ai.assistance.operit.util.stream.splitBy

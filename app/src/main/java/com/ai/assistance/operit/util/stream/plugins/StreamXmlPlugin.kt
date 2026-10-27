@@ -1,8 +1,15 @@
 package com.ai.assistance.operit.util.stream.plugins
 
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.util.stream.*
-import com.ai.assistance.operit.util.ThinkingMarkup
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
+import com.ai.assistance.operit.util.stream.StreamKmpGraph
+import com.ai.assistance.operit.util.stream.StreamKmpGraphBuilder
+import com.ai.assistance.operit.util.stream.StreamKmpMatchResult
+import com.ai.assistance.operit.util.stream.StreamLogger
+import com.ai.assistance.operit.util.stream.kmpPattern
+import com.ai.assistance.operit.util.stream.map
+import com.ai.assistance.operit.util.stream.state
 
 private const val GROUP_TAG_NAME = 1
 private const val GROUP_ATTRIBUTES = 2

@@ -6,7 +6,7 @@ import com.ai.assistance.operit.data.preferences.AntigravityAuthPreferences
 import com.ai.assistance.operit.data.preferences.AntigravityAuthState
 import com.ai.assistance.operit.data.preferences.AntigravityQuotaPreferences
 import com.ai.assistance.operit.data.preferences.AntigravityStoredQuotaSnapshot
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers

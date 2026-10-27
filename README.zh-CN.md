@@ -132,13 +132,12 @@
 </details>
 
 <details>
-<summary><b>语音、形象与界面</b></summary>
+<summary><b>语音与界面</b></summary>
 
 - STT 支持本地中英文识别以及 OpenAI、Deepgram 等云端接口
 - TTS 支持 Android 系统、本地 ONNX VITS、自定义 HTTP 和多种云服务
 - 支持连续语音对话、后台唤醒、自定义唤醒模板、自动朗读和音乐播放队列
 - 可通过悬浮窗、气泡、桌面组件和 Android 默认助理入口调用 Operit
-- 虚拟形象支持 DragonBones、WebP、MP4、MMD、glTF/GLB 和 FBX 等格式
 - 支持主题、字体、聊天气泡、背景、工具栏、Markdown 渲染和布局定制
 - 界面支持中文、英语、韩语、西班牙语、马来语、印尼语、巴西葡萄牙语和罗马尼亚语，可跟随系统或手动切换
 - 可选的局域网 Web Chat 和 HTTP API 默认关闭，启用时需要配置 Bearer Token 并评估局域网暴露风险

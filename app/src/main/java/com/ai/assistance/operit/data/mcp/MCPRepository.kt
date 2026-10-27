@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.Environment
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.mcp.MCPManager
 import com.ai.assistance.operit.core.tools.mcp.MCPPackage
@@ -16,6 +16,8 @@ import com.ai.assistance.operit.core.tools.mcp.MCPToolExecutor
 import com.ai.assistance.operit.data.mcp.plugins.MCPConfigGenerator
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
+import com.ai.assistance.operit.data.transfer.DownloadTransferProgress
+import com.ai.assistance.operit.data.transfer.copyWithTransferProgress
 
 import com.google.gson.Gson
 import com.google.gson.JsonParser
@@ -622,60 +624,40 @@ class MCPRepository(private val context: Context) {
     ): File? = withContext(Dispatchers.IO) {
         val tempFile = File(context.cacheDir, "mcp_${serverId}_repo.zip")
         
-        try {
-            val url = URL(zipUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.connectTimeout = CONNECT_TIMEOUT
-            connection.readTimeout = READ_TIMEOUT
-            connection.doInput = true
-            connection.setRequestProperty(
+        val connection = (URL(zipUrl).openConnection() as HttpURLConnection).apply {
+            connectTimeout = CONNECT_TIMEOUT
+            readTimeout = READ_TIMEOUT
+            doInput = true
+            setRequestProperty(
                 "User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             )
-            
+        }
+        try {
             connection.connect()
-            
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
                 AppLogger.e(TAG, "下载失败，HTTP响应码: ${connection.responseCode}")
                 return@withContext null
             }
-            
-            val contentLength = connection.contentLength.toLong()
+            val contentLength = connection.contentLengthLong
             AppLogger.d(TAG, "开始下载，文件大小: $contentLength 字节")
-            
-            val inputStream = BufferedInputStream(connection.inputStream)
-            val outputStream = FileOutputStream(tempFile)
-            
-            val buffer = ByteArray(BUFFER_SIZE)
-            var bytesRead: Int
-            var totalBytesRead: Long = 0
-            var lastReportedProgress = -1
-            
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-                totalBytesRead += bytesRead
-                
-                val progress = if (contentLength > 0) {
-                    (totalBytesRead * 100 / contentLength).toInt()
-                } else -1
-                
-                if (progress != lastReportedProgress) {
-                    progressCallback(InstallProgress.Downloading(progress))
-                    lastReportedProgress = progress
+            BufferedInputStream(connection.inputStream).use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyWithTransferProgress(output, contentLength, { transfer ->
+                        val percent = transfer.fraction?.let { (it * 100).toInt() } ?: -1
+                        progressCallback(InstallProgress.Downloading(percent, transfer))
+                    }, BUFFER_SIZE)
+                    output.flush()
                 }
             }
-            
-            outputStream.flush()
-            outputStream.close()
-            inputStream.close()
-            
             AppLogger.d(TAG, "下载完成，保存到: ${tempFile.path}")
             return@withContext tempFile
-            
         } catch (e: Exception) {
             AppLogger.e(TAG, "下载ZIP文件失败: ${e.message}", e)
             if (tempFile.exists()) tempFile.delete()
             return@withContext null
+        } finally {
+            connection.disconnect()
         }
     }
 
@@ -1373,7 +1355,10 @@ private data class UnifiedToolInfo(
 /** 安装进度状态 */
 sealed class InstallProgress {
     object Preparing : InstallProgress()
-    data class Downloading(val progress: Int) : InstallProgress() // -1 表示未知进度
+    data class Downloading(
+        val progress: Int,
+        val transfer: DownloadTransferProgress? = null,
+    ) : InstallProgress() // -1 表示未知进度
     data class Extracting(val progress: Int) : InstallProgress() // -1 表示未知进度
     object Finished : InstallProgress()
 }

@@ -13,7 +13,7 @@ import android.text.style.ImageSpan
 import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import android.util.LruCache
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.core.tools.defaultTool.a2ui
 
-import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager.ToolRuntimeContext
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.ToolRuntimeContext
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter

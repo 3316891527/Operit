@@ -2,7 +2,7 @@ package com.ai.assistance.operit.core.tools.system
 
 import android.content.Context
 import android.os.Build
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.annotation.RequiresApi
 import com.ai.assistance.operit.terminal.CommandExecutionEvent
 import com.ai.assistance.operit.terminal.SessionDirectoryEvent

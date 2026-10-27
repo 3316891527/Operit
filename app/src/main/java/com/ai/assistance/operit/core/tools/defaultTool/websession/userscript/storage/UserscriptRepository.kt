@@ -17,8 +17,8 @@ import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.Use
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.UserscriptResourceEntry
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.UserscriptResourcePayload
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.UserscriptRunAt
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import java.net.URI
 import java.net.URLDecoder

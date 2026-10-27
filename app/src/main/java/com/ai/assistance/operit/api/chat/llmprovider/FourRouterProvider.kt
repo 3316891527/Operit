@@ -2,6 +2,7 @@ package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.data.model.ApiProviderType
 import okhttp3.OkHttpClient
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
 
 class FourRouterProvider(
     apiEndpoint: String,

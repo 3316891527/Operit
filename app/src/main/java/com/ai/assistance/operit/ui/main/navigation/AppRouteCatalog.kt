@@ -60,7 +60,6 @@ object AppRouteCatalog {
             navigationEntries =
                 (
                     ScreenRouteRegistry.mainSidebarEntries(context) +
-                        ScreenRouteRegistry.toolboxEntries(context) +
                         toolPkgNavigationEntries
                     )
                     .sortedWith(

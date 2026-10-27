@@ -19,7 +19,7 @@
 
 转写器通过 `SpeechServiceFactory.createSpeechService` 使用当前 STT 配置，不增加服务选择页面或新模型。现有接口保留无语言参数调用，并增加带语言参数的重载；本轮传入 `zh-CN`。本地 NCNN 增加预录 FloatArray 识别，在原识别互斥锁内提交样本、完成解码和重置引擎，不重新打开麦克风。
 
-OpenAI 和 Deepgram 批量识别在 finally 删除临时 WAV，取消时传播 CancellationException。共享 `api/speech/http/SttHttpRequest.kt` 将 HTTP Call 接入协程取消，响应体在回调内读取并关闭；JSON 结果没有文字时返回空转写，不把原始 JSON 当作识别文字。转写设置 60 秒超时，服务正在准备、识别或处理时拒绝占用，使用后释放工厂服务租约。
+OpenAI 和 Deepgram 批量识别在 finally 删除临时 WAV，取消时传播 CancellationException。共享 `api/speech/stt/http/SttHttpRequest.kt` 将 HTTP Call 接入协程取消，响应体在回调内读取并关闭；JSON 结果没有文字时返回空转写，不把原始 JSON 当作识别文字。转写设置 60 秒超时，服务正在准备、识别或处理时拒绝占用，使用后释放工厂服务租约。
 
 本轮复用当前模型，不改变本地识别准确率。普通话是当前界面的使用范围，不代表新增多语言模型或对所有语言的识别能力作出保证。
 

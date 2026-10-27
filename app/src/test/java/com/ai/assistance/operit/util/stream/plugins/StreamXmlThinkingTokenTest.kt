@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.util.stream.plugins
 
-import com.ai.assistance.operit.util.ThinkingMarkup
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
 import com.ai.assistance.operit.util.stream.StreamLogger
 import org.junit.Before
 import org.junit.After

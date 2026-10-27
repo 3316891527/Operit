@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.chat.error
 
-import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
 import java.io.EOFException
 import java.io.IOException
 import java.net.SocketException

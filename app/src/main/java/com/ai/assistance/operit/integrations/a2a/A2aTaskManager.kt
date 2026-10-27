@@ -7,7 +7,7 @@ import com.ai.assistance.operit.integrations.externalchat.ExternalChatRequestExe
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatResponseSanitizer
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatStreamingSession
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatStreamingStartResult
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
