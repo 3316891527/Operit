@@ -24,3 +24,4 @@
 - [工作流发布与 dev 检查同步](workflow-publishing-sync/index.md)
 
 - [PR Check Android SDK 初始化](pr-sdk-packages/index.md)
+- [固定资源只在变化时发布](resource-publication-idempotence/index.md)

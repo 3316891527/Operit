@@ -12,6 +12,8 @@ import tempfile
 import zipfile
 
 from publish_hub import publish, ROOT
+from published_resource_state import existing_publication
+from verify_hub_catalog import main as verify_catalog
 from repositories.config import SOURCE_REPOSITORY, RESOURCE_REPOSITORY
 
 
@@ -36,11 +38,21 @@ def prepare_artifact(archive: Path, destination: Path) -> None:
 
 
 def main(artifact_id: int) -> None:
-    if artifact_id <= 0 or os.environ["GITHUB_REPOSITORY"] != SOURCE_REPOSITORY:
-        raise ValueError("必须从源码仓库选择有效的固定资源产物")
+    if os.environ["GITHUB_REPOSITORY"] != SOURCE_REPOSITORY:
+        raise ValueError("必须从源码仓库发布固定资源")
     commit = os.environ["GITHUB_SHA"]
     if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
         raise ValueError("源码提交格式不正确")
+    verify_catalog()
+    existing = existing_publication(ROOT / "app/config/offline-packs.json", RESOURCE_REPOSITORY)
+    if existing is not None:
+        print(json.dumps(existing, ensure_ascii=False), flush=True)
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as summary:
+                summary.write("资源内容未变，已核对并复用现有发行，不创建标签或上传附件：" + existing["url"] + "\n")
+        return
+    if artifact_id <= 0:
+        raise ValueError("资源版本尚未完整公开，必须选择当前提交的固定资源产物")
     artifact = json.loads(subprocess.run(["gh", "api", f"repos/{SOURCE_REPOSITORY}/actions/artifacts/{artifact_id}"],
                                          capture_output=True, text=True, check=True, timeout=30).stdout)
     if artifact["expired"] or artifact["workflow_run"]["head_sha"] != commit:
@@ -58,5 +70,5 @@ def main(artifact_id: int) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-artifact-id", type=int, required=True)
+    parser.add_argument("--source-artifact-id", type=int, default=0)
     main(parser.parse_args().source_artifact_id)
