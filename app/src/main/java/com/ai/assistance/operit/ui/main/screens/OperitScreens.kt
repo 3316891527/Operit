@@ -82,7 +82,6 @@ import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoSc
 import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalAutoConfigToolScreen
 import com.ai.assistance.operit.ui.features.terminal.EmbeddedTerminalPage
 import com.ai.assistance.operit.ui.features.terminal.TerminalEntryScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ToolboxScreen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.UIDebuggerToolScreen
 import com.ai.assistance.operit.ui.features.toolbox.screens.sqlviewer.SqlViewerToolScreen
@@ -569,36 +568,6 @@ sealed class Screen(
             return stringResource(R.string.market_publish_new_version)
         }
     }
-
-    data object Toolbox : Screen(navItem = NavItem.Toolbox) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ToolboxScreen(
-                    navController = navController,
-                    onNavigationEntrySelected = { entry ->
-                        val nativeScreen = ScreenRouteRegistry.buildScreen(entry.routeId, entry.routeArgs)
-                        if (nativeScreen != null) {
-                            navigateTo(nativeScreen)
-                        } else {
-                            AppRouterGateway.navigate(
-                                routeId = entry.routeId,
-                                args = entry.routeArgs,
-                                source = com.ai.assistance.operit.ui.main.navigation.RouteEntrySource.DEFAULT
-                            )
-                        }
-                    }
-            )
-        }
-    }
-
 
     data object ShizukuCommands : Screen(navItem = NavItem.ShizukuCommands) {
         @Composable
@@ -1413,7 +1382,7 @@ sealed class Screen(
     }
 
     data object Terminal :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_terminal) {
+            Screen(navItem = NavItem.Terminal, titleRes = R.string.screen_title_terminal) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1438,7 +1407,7 @@ sealed class Screen(
     }
 
     data object TerminalSetup :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_terminal) {
+            Screen(navItem = NavItem.Terminal, titleRes = R.string.screen_title_terminal) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1463,7 +1432,7 @@ sealed class Screen(
     }
 
     data object TerminalAutoConfig :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_terminal_auto_config) {
+            Screen(navItem = NavItem.Terminal, titleRes = R.string.screen_title_terminal_auto_config) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1495,7 +1464,7 @@ sealed class Screen(
     }
 
     data object ShellExecutor :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_shell_executor) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_shell_executor) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1527,7 +1496,7 @@ sealed class Screen(
     }
 
     data object SqlViewer :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_sql_viewer) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_sql_viewer) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1544,7 +1513,7 @@ sealed class Screen(
 
     // FFmpeg Toolbox screen
     data object FFmpegToolbox :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_ffmpeg_toolbox) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_ffmpeg_toolbox) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1561,7 +1530,7 @@ sealed class Screen(
 
     // 流式Markdown演示屏幕
     data object MarkdownDemo :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_markdown_demo) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_markdown_demo) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1578,7 +1547,7 @@ sealed class Screen(
 
     // 在MarkdownDemo对象后添加TextToSpeech对象
     data object TextToSpeech :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_text_to_speech) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_text_to_speech) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1595,7 +1564,7 @@ sealed class Screen(
 
     // Tools screens
     data object SpeechToText :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_speech_to_text) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_speech_to_text) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1611,7 +1580,7 @@ sealed class Screen(
     }
 
     data object DefaultAssistantGuide :
-            Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_default_assistant_guide) {
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_default_assistant_guide) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1646,7 +1615,7 @@ sealed class Screen(
         }
     }
 
-    data object AutoGlmOneClick : Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_autoglm_one_click) {
+    data object AutoGlmOneClick : Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_autoglm_one_click) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1664,7 +1633,7 @@ sealed class Screen(
         }
     }
     
-    data object AutoGlmTool : Screen(navItem = NavItem.Toolbox, titleRes = R.string.screen_title_autoglm_tool) {
+    data object AutoGlmTool : Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_autoglm_tool) {
         @Composable
         override fun Content(
                 navController: NavController,

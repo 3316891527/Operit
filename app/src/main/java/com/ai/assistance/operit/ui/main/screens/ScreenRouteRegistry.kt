@@ -220,11 +220,6 @@ object ScreenRouteRegistry {
                 launchNavItem = NavItem.TokenConfig
             ),
             hostEntryDefinition(
-                entryId = "hidden.toolbox",
-                screen = Screen.Toolbox,
-                launchNavItem = NavItem.Toolbox
-            ),
-            hostEntryDefinition(
                 entryId = "hidden.tool_permissions",
                 screen = Screen.ToolPermission,
                 launchNavItem = NavItem.ToolPermissions
@@ -265,15 +260,8 @@ object ScreenRouteRegistry {
     fun mainSidebarEntries(context: Context): List<NavigationEntrySpec> =
         hostEntryDefinitions
             .filter { definition ->
-                definition.surface != null && definition.surface != NavigationSurface.TOOLBOX
+                definition.surface != null
             }
-            .map { definition ->
-            definition.toNavigationEntry(context)
-            }
-
-    fun toolboxEntries(context: Context): List<NavigationEntrySpec> =
-        hostEntryDefinitions
-            .filter { definition -> definition.surface == NavigationSurface.TOOLBOX }
             .map { definition ->
             definition.toNavigationEntry(context)
             }
