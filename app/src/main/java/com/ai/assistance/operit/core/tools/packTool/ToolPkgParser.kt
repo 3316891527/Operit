@@ -60,7 +60,7 @@ internal data class ToolPkgUiRouteRuntime(
     val screen: String,
     val title: LocalizedText,
     val keepAlive: Boolean = false,
-    val registeredAsToolboxUiModule: Boolean = false
+    val registeredAsUiModule: Boolean = false
 )
 
 internal data class ToolPkgNavigationEntryRuntime(
@@ -266,7 +266,7 @@ internal data class ToolPkgRegisteredUiRoute(
     val screen: String,
     val title: LocalizedText,
     val keepAlive: Boolean = false,
-    val registeredAsToolboxUiModule: Boolean = false
+    val registeredAsUiModule: Boolean = false
 )
 
 internal data class ToolPkgRegisteredNavigationEntry(
@@ -342,7 +342,7 @@ internal data class ToolPkgRegisteredTagFunctionHook(
 )
 
 internal data class ToolPkgMainRegistration(
-    val toolboxUiModules: List<ToolPkgRegisteredUiModule> = emptyList(),
+    val uiModules: List<ToolPkgRegisteredUiModule> = emptyList(),
     val uiRoutes: List<ToolPkgRegisteredUiRoute> = emptyList(),
     val navigationEntries: List<ToolPkgRegisteredNavigationEntry> = emptyList(),
     val desktopWidgets: List<ToolPkgRegisteredDesktopWidget> = emptyList(),
@@ -722,7 +722,7 @@ internal object ToolPkgArchiveParser {
 
         val registeredUiRoutes =
             buildList {
-                mainRegistration.toolboxUiModules.forEach { module ->
+                mainRegistration.uiModules.forEach { module ->
                     add(
                         ToolPkgRegisteredUiRoute(
                             id = module.id,
@@ -731,14 +731,14 @@ internal object ToolPkgArchiveParser {
                             screen = module.screen,
                             title = module.title,
                             keepAlive = module.keepAlive,
-                            registeredAsToolboxUiModule = true
+                            registeredAsUiModule = true
                         )
                     )
                 }
                 addAll(mainRegistration.uiRoutes)
             }
 
-        // 旧注册函数只生成 UI route；显式导航声明单独校验，但工具箱入口不再发布。
+        // 界面模块生成包内路由；导航声明按插件详情或主侧边栏的挂载面分别校验。
         val registeredNavigationEntries = mainRegistration.navigationEntries
 
         val uiModules = mutableListOf<ToolPkgUiModuleRuntime>()
@@ -790,7 +790,7 @@ internal object ToolPkgArchiveParser {
                     screen = normalizedScreenPath,
                     title = module.title,
                     keepAlive = module.keepAlive,
-                    registeredAsToolboxUiModule = module.registeredAsToolboxUiModule
+                    registeredAsUiModule = module.registeredAsUiModule
                 )
             )
         }
@@ -819,7 +819,7 @@ internal object ToolPkgArchiveParser {
                 )
             }
             if (
-                surface != TOOLPKG_NAV_SURFACE_TOOLBOX &&
+                surface != TOOLPKG_NAV_SURFACE_PACKAGE_DETAILS &&
                     surface != TOOLPKG_NAV_SURFACE_MAIN_SIDEBAR_PLUGINS
             ) {
                 throw IllegalArgumentException(

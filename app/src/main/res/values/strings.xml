@@ -26,7 +26,6 @@
     <string name="nav_memory_base">记忆库</string>
     <string name="nav_assistant_config">助手配置</string>
     <string name="nav_terminal">终端</string>
-    <string name="nav_toolbox">工具箱</string>
     <string name="nav_item_agreement">用户协议</string>
     <string name="sidebar_permission_short">权限</string>
     <string name="sidebar_status_normal">正常</string>
@@ -525,7 +524,6 @@
     <string name="tool_permissions">工具权限设置</string>
     <string name="about">关于</string>
     <string name="terminal">终端</string>
-    <string name="toolbox">工具箱</string>
     <string name="mcp">模型上下文协议</string>
     <string name="token_config_title">DeepSeek Token配置</string>
     <string name="character_card_change_title">角色卡已变更</string>
@@ -2143,7 +2141,7 @@
 
     <!-- Update History -->
 
-    <!-- Toolbox Categories -->
+    <!-- 工具页面分类 -->
 
     <!-- Tool Names -->
     <string name="tool_file_manager">文件管理器</string>
@@ -2202,8 +2200,6 @@
     <string name="ui_debugger_description">点击右下角的按钮启动悬浮窗进行UI调试</string>
     <string name="ui_debugger_launch_floating">启动悬浮窗</string>
     <string name="ui_debugger_start_float">启动悬浮窗</string>
-    <string name="tool_ffmpeg_toolbox">FFmpeg工具箱</string>
-    <string name="tool_ffmpeg_toolbox_desc">强大的音视频处理工具，支持转换、裁剪、合并等功能</string>
     <string name="tool_stream_markdown_demo">流式Markdown演示</string>
     <string name="tool_stream_markdown_demo_desc">高性能流式Markdown渲染演示，支持实时字符流动效果</string>
     <string name="tool_shell_executor">命令执行器</string>
@@ -2418,7 +2414,7 @@
     <string name="plugin_zip_file">插件压缩包</string>
     <string name="mcp_plugin">模型上下文协议服务</string>
 
-    <!-- Toolbox Permission Manager -->
+    <!-- 工具权限管理 -->
     <string name="try_different_keywords">尝试使用其他关键词搜索</string>
     <string name="try_show_system_apps">尝试勾选"系统应用"查看更多应用</string>
     <string name="no_apps_found_anywhere">未找到任何应用</string>
@@ -2468,7 +2464,7 @@
     <string name="granted">已授权</string>
     <string name="not_granted">未授权</string>
 
-    <!-- Toolbox Screen -->
+    <!-- 工具页面 -->
 
     <!-- File Manager -->
     <string name="file_manager_title">文件管理器</string>
@@ -2597,8 +2593,7 @@
     <string name="terminal_auto_config_detecting">正在检测环境...</string>
     <string name="terminal_auto_config_applying">正在应用配置...</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_toolbox_title">FFmpeg工具箱</string>
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_input_file">输入文件</string>
     <string name="ffmpeg_output_file">输出文件</string>
     <string name="ffmpeg_select_input">选择输入文件</string>
@@ -4248,7 +4243,7 @@
     <string name="screen_title_ui_debugger">UI调试工具</string>
     <string name="screen_title_shell_executor">命令执行器</string>
     <string name="screen_title_logcat">日志查看器</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpeg工具箱</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">流式Markdown演示</string>
     <string name="screen_title_text_to_speech">文本转语音</string>
     <string name="screen_title_speech_to_text">语音识别</string>
@@ -6018,7 +6013,7 @@
     <string name="default_assist_collapse">收起</string>
     <string name="default_assist_expand">展开</string>
 
-    <!-- FFmpeg Toolbox -->
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_param_input">-i: 输入文件</string>
     <string name="ffmpeg_param_video_codec">-c:v: 视频编码器</string>
     <string name="ffmpeg_param_audio_codec">-c:a: 音频编码器</string>

@@ -8,8 +8,8 @@ import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.ui.main.MainActivity
 import kotlinx.coroutines.runBlocking
 import androidx.glance.appwidget.updateAll
-import com.ai.assistance.operit.widget.ToolPkgDesktopGlanceWidget
-import com.ai.assistance.operit.widget.ToolPkgDesktopWidgetConfigActivity
+import com.ai.assistance.operit.integrations.appwidget.ToolPkgDesktopGlanceWidget
+import com.ai.assistance.operit.integrations.appwidget.ToolPkgDesktopWidgetConfigActivity
 
 object ToolPkgDesktopWidgetHost {
     const val EXTRA_OPEN_ROUTE_ID = "com.ai.assistance.operit.extra.OPEN_ROUTE_ID"

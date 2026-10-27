@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.resources.OfflineResources
-import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
+import com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity
 import com.ai.assistance.operit.terminal.TerminalManager
 import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.computer.ComputerScreen

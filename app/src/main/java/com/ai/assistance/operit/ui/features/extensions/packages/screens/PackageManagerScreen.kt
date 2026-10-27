@@ -6,7 +6,7 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
+import com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

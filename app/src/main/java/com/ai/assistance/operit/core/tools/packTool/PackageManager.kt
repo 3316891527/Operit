@@ -166,7 +166,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val workspaceTemplateCount: Int,
         val uiModuleCount: Int,
         val wasmModules: List<ToolPkgWasmModule>,
-        val toolboxUiModules: List<ToolPkgToolboxUiModule>,
+        val uiModules: List<ToolPkgUiModule>,
         val subpackages: List<ToolPkgSubpackageInfo>,
         val workflowTemplates: List<ToolPkgWorkflowTemplate>,
         val workspaceTemplates: List<ToolPkgWorkspaceTemplate>,
@@ -227,7 +227,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val workspaceConfig: WorkspaceConfig
     )
 
-    data class ToolPkgToolboxUiModule(
+    data class ToolPkgUiModule(
         val containerPackageName: String,
         val toolPkgId: String,
         val routeId: String,

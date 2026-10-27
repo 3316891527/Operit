@@ -29,12 +29,12 @@ import com.ai.assistance.operit.data.model.ToolResult
 import kotlinx.coroutines.launch
 
 /**
- * FFmpeg工具箱主屏幕 - 直接提供自定义命令功能
+ * FFmpeg 命令页面，提供自定义命令执行功能
  * 简化后的界面，移除了所有导航功能，以避免导航问题
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FFmpegToolboxScreen(navController: NavController) {
+fun FFmpegScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()

@@ -23,7 +23,6 @@
     <string name="nav_memory_base">메모리</string>
     <string name="nav_assistant_config">어시스턴트 설정</string>
     <string name="nav_terminal">터미널</string>
-    <string name="nav_toolbox">도구 상자</string>
     <string name="nav_item_agreement">사용자 계약</string>
     <string name="sidebar_permission_short">권한</string>
     <string name="sidebar_status_normal">정상</string>
@@ -485,7 +484,6 @@
     <string name="tool_permissions">도구 권한 설정</string>
     <string name="about">소개</string>
     <string name="terminal">터미널</string>
-    <string name="toolbox">도구 상자</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">DeepSeek API 토큰 설정</string>
     <string name="character_card_change_title">캐릭터 카드 업데이트</string>
@@ -1800,8 +1798,6 @@
     <string name="ui_debugger_description">오른쪽 하단에 있는 버튼을 탭하면 UI 디버깅을 위한 플로팅 창이 열립니다.</string>
     <string name="ui_debugger_launch_floating">플로팅 창 실행</string>
     <string name="ui_debugger_start_float">플로팅 창 시작</string>
-    <string name="tool_ffmpeg_toolbox">FFmpeg 도구 상자</string>
-    <string name="tool_ffmpeg_toolbox_desc">변환, 자르기, 병합 등을 지원하는 강력한 오디오/비디오 처리 도구</string>
     <string name="tool_stream_markdown_demo">스트리밍 Markdown 데모</string>
     <string name="tool_stream_markdown_demo_desc">실시간 문자 흐름 효과를 갖춘 고성능 스트리밍 마크다운 렌더링 데모</string>
     <string name="tool_shell_executor">명령 실행기</string>
@@ -2151,7 +2147,6 @@
     <string name="terminal_auto_config_failed">구성 실패</string>
     <string name="terminal_auto_config_detecting">환경 감지 중...</string>
     <string name="terminal_auto_config_applying">구성 적용 중...</string>
-    <string name="ffmpeg_toolbox_title">FFmpeg 도구 상자</string>
     <string name="ffmpeg_input_file">입력 파일</string>
     <string name="ffmpeg_output_file">출력 파일</string>
     <string name="ffmpeg_select_input">입력 파일 선택</string>
@@ -3506,7 +3501,7 @@
     <string name="screen_title_ui_debugger">UI 디버거</string>
     <string name="screen_title_shell_executor">쉘 실행자</string>
     <string name="screen_title_logcat">로그 뷰어</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpeg 도구 상자</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">마크다운 데모 스트리밍</string>
     <string name="screen_title_text_to_speech">텍스트 음성 변환</string>
     <string name="screen_title_speech_to_text">음성 인식</string>

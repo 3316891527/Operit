@@ -165,7 +165,7 @@ object ScreenRouteRegistry {
                 order = 30
             ),
             hostEntryDefinition(
-                entryId = "toolbox.agreement",
+                entryId = "support.agreement",
                 screen = Screen.Agreement,
                 launchNavItem = NavItem.Agreement,
                 titleResId = R.string.tool_user_agreement,
@@ -176,7 +176,7 @@ object ScreenRouteRegistry {
             hostEntryDefinition(entryId = "hidden.ui_debugger", screen = Screen.UIDebugger),
             hostEntryDefinition(entryId = "hidden.logcat", screen = Screen.Logcat),
             hostEntryDefinition(entryId = "hidden.html_packager", screen = Screen.HtmlPackager),
-            // 移除工具箱卡片后保留页面路由，供现有内部入口和插件导航使用。
+            // 原生功能页面提供独立路由，供内部入口和插件导航使用。
             hostEntryDefinition(
                 entryId = "hidden.text_to_speech",
                 screen = Screen.TextToSpeech
@@ -203,8 +203,8 @@ object ScreenRouteRegistry {
                 launchNavItem = NavItem.Terminal
             ),
             hostEntryDefinition(
-                entryId = "hidden.ffmpeg_toolbox",
-                screen = Screen.FFmpegToolbox
+                entryId = "hidden.ffmpeg",
+                screen = Screen.FFmpeg
             ),
             hostEntryDefinition(
                 entryId = "hidden.shell_executor",

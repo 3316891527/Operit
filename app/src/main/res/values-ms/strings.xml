@@ -23,7 +23,6 @@
     <string name="nav_memory_base">Pangkalan Ingatan</string>
     <string name="nav_assistant_config">Konfigurasi Pembantu</string>
     <string name="nav_terminal">Terminal</string>
-    <string name="nav_toolbox">Kotak Alat</string>
     <string name="nav_item_agreement">Perjanjian Pengguna</string>
     <string name="chat_fullscreen_input">Input Skrin Penuh</string>
     <string name="chat_history_settings">Tetapan Rekod Sembang</string>
@@ -487,7 +486,6 @@
     <string name="tool_permissions">Tetapan Kebenaran Alat</string>
     <string name="about">Tentang</string>
     <string name="terminal">Terminal</string>
-    <string name="toolbox">Kotak Alat</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">Konfigurasi Token DeepSeek</string>
     <string name="character_card_change_title">Kad Watak Telah Diubah</string>
@@ -1716,8 +1714,6 @@
     <string name="ui_debugger_description">Klik butang di sudut kanan bawah untuk melancarkan tetingkap terapung untuk penyahpepijatan UI</string>
     <string name="ui_debugger_launch_floating">Lancar Tetingkap Terapung</string>
     <string name="ui_debugger_start_float">Mulakan Tetingkap Terapung</string>
-    <string name="tool_ffmpeg_toolbox">Kotak Alat FFmpeg</string>
-    <string name="tool_ffmpeg_toolbox_desc">Alat pemprosesan audio dan video yang berkuasa, menyokong penukaran, pemotongan, penggabungan dan fungsi lain</string>
     <string name="tool_stream_markdown_demo">Demo Penstriman Markdown</string>
     <string name="tool_stream_markdown_demo_desc">Demo pemaparan Markdown penstriman berprestasi tinggi, menyokong kesan aliran aksara masa nyata</string>
     <string name="tool_shell_executor">Pelaksana Perintah</string>
@@ -2077,7 +2073,6 @@
     <string name="terminal_auto_config_failed">Konfigurasi Gagal</string>
     <string name="terminal_auto_config_detecting">Mengesan persekitaran...</string>
     <string name="terminal_auto_config_applying">Menggunakan konfigurasi...</string>
-    <string name="ffmpeg_toolbox_title">Kotak Alat FFmpeg</string>
     <string name="ffmpeg_input_file">Fail Input</string>
     <string name="ffmpeg_output_file">Fail Output</string>
     <string name="ffmpeg_select_input">Pilih Fail Input</string>
@@ -3485,7 +3480,7 @@ Kini anda boleh menggunakan mod AutoGLM di antara muka perbualan.</string>
     <string name="screen_title_ui_debugger">Alat Nyahpepijat UI</string>
     <string name="screen_title_shell_executor">Pelaksana Perintah</string>
     <string name="screen_title_logcat">Pemerhati Log</string>
-    <string name="screen_title_ffmpeg_toolbox">Kotak Alat FFmpeg</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">Demo Markdown Aliran</string>
     <string name="screen_title_text_to_speech">Teks ke Pertuturan</string>
 

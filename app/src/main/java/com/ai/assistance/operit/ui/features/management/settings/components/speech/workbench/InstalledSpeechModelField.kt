@@ -10,7 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.resources.models.*
-import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
+import com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

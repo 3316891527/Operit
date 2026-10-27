@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.provider
+package com.ai.assistance.operit.integrations.documents
 
 import android.content.Context
 import android.content.pm.ProviderInfo

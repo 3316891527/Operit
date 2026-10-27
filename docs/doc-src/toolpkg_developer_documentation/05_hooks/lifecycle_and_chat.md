@@ -98,7 +98,7 @@ status: complete
 
 ## 权威实现
 
-- `plugins/toolbox/ToolboxPlugin.kt`：应用生命周期注册、排序和可重放事件。
+- `plugins/toolpkg/ToolPkgLifecyclePlugin.kt`：应用生命周期注册、排序和可重放事件。
 - `plugins/toolpkg/ToolPkgChatViewHookBridge.kt`：聊天视图通知和新增 Hook replay。
 - `plugins/toolpkg/ToolPkgChatMessageHookBridge.kt`：消息持久化快照。
 - `plugins/toolpkg/ToolPkgChatMessageMenuItemBridge.kt`：sender 过滤、点击结果和 dialog 合并。

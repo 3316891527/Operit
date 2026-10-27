@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.widget
+package com.ai.assistance.operit.integrations.appwidget
 
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver

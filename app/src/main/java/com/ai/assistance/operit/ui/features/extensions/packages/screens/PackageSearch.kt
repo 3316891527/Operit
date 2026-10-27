@@ -69,7 +69,7 @@ fun pluginMatchesSearch(
                 add(template.displayName)
                 add(template.description)
             }
-            details.toolboxUiModules.forEach { module ->
+            details.uiModules.forEach { module ->
                 add(module.routeId)
                 add(module.uiModuleId)
                 add(module.title)

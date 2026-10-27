@@ -170,7 +170,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.offline_resources_subtitle),
                                 icon = Icons.Default.Download,
                                 onClick = {
-                                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java))
+                                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity::class.java))
                                 }
                         )
 

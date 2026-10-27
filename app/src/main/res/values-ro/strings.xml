@@ -27,7 +27,6 @@
     <string name="nav_memory_base">Baza de date</string>
     <string name="nav_assistant_config">Configurarea asistentului</string>
     <string name="nav_terminal">Terminal</string>
-    <string name="nav_toolbox">Trusa de scule</string>
     <string name="nav_item_agreement">Acordul de utilizare</string>
     <string name="sidebar_permission_short">Drepturi</string>
     <string name="sidebar_status_normal">Normal</string>
@@ -525,7 +524,6 @@
     <string name="tool_permissions">Setări privind permisiunile instrumentelor</string>
     <string name="about">Despre</string>
     <string name="terminal">Terminal</string>
-    <string name="toolbox">Trusa de scule</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">DeepSeek TokenConfigurație</string>
     <string name="character_card_change_title">Cartea personajului a fost modificată</string>
@@ -1961,7 +1959,7 @@
 
     <!-- Update History -->
 
-    <!-- Toolbox Categories -->
+    <!-- 工具页面分类 -->
 
     <!-- Tool Names -->
     <string name="tool_file_manager">Manager de fișiere</string>
@@ -2020,8 +2018,6 @@
     <string name="ui_debugger_description">Faceți clic pe butonul din colțul din dreapta jos pentru a activa fereastra plutitoare și a începeUIDepanare</string>
     <string name="ui_debugger_launch_floating">Activare fereastră flotantă</string>
     <string name="ui_debugger_start_float">Activare fereastră flotantă</string>
-    <string name="tool_ffmpeg_toolbox">FFmpegTrusa de scule</string>
-    <string name="tool_ffmpeg_toolbox_desc">Un instrument puternic de procesare audio și video, care oferă funcții precum conversie, decupare și îmbinare</string>
     <string name="tool_stream_markdown_demo">în fluxMarkdownPrezentare</string>
     <string name="tool_stream_markdown_demo_desc">Flux de înaltă performanțăMarkdownDemonstrație de randare, cu suport pentru efectul de curgere a caracterelor în timp real</string>
     <string name="tool_shell_executor">Executor de comenzi</string>
@@ -2236,7 +2232,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="plugin_zip_file">Pachetul de fișiere comprimate pentru plugin</string>
     <string name="mcp_plugin">MCP Plugin</string>
 
-    <!-- Toolbox Permission Manager -->
+    <!-- 工具权限管理 -->
     <string name="try_different_keywords">Încercați să efectuați o căutare folosind alte cuvinte-cheie</string>
     <string name="try_show_system_apps">Încearcă să bifezi opțiunea „Aplicații de sistem” pentru a vedea mai multe aplicații</string>
     <string name="no_apps_found_anywhere">Nu s-a găsit nicio aplicație</string>
@@ -2286,7 +2282,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="granted">Autorizat</string>
     <string name="not_granted">Neautorizat</string>
 
-    <!-- Toolbox Screen -->
+    <!-- 工具页面 -->
 
     <!-- File Manager -->
     <string name="file_manager_title">Manager de fișiere</string>
@@ -2415,8 +2411,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="terminal_auto_config_detecting">Se efectuează verificarea mediului...</string>
     <string name="terminal_auto_config_applying">Se aplică configurația...</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_toolbox_title">FFmpegTrusa de scule</string>
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_input_file">Fișier de intrare</string>
     <string name="ffmpeg_output_file">Fișier de ieșire</string>
     <string name="ffmpeg_select_input">Selectați fișierul de intrare</string>
@@ -3898,7 +3893,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="screen_title_ui_debugger">UIInstrumente de depanare</string>
     <string name="screen_title_shell_executor">Executor de comenzi</string>
     <string name="screen_title_logcat">Vizualizator de jurnale</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpegTrusa de scule</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">în fluxMarkdownPrezentare</string>
     <string name="screen_title_text_to_speech">Conversie text-voce</string>
     <string name="screen_title_speech_to_text">Recunoașterea vocală</string>
@@ -5614,7 +5609,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="default_assist_collapse">Afișează</string>
     <string name="default_assist_expand">Extindeți</string>
 
-    <!-- FFmpeg Toolbox -->
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_param_input">-i: Fișier de intrare</string>
     <string name="ffmpeg_param_video_codec">-c:v: Codificator video</string>
     <string name="ffmpeg_param_audio_codec">-c:a: Codificator audio</string>

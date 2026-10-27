@@ -1980,9 +1980,14 @@ class JsEngine(private val context: Context) {
         }
 
         @JavascriptInterface
-        fun registerToolPkgToolboxUiModule(specJson: String) {
-            toolPkgRegistrationSession.appendToolboxUiModule(specJson)
+        fun registerToolPkgUiModule(specJson: String) {
+            toolPkgRegistrationSession.appendUiModule(specJson)
         }
+
+        // 旧工具箱入口仅兼容调用，不收集或注册界面与导航项。
+        @Suppress("UNUSED_PARAMETER")
+        @JavascriptInterface
+        fun registerToolPkgToolboxUiModule(specJson: String) {}
 
         @JavascriptInterface
         fun registerToolPkgUiRoute(specJson: String) {

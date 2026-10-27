@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.resources.OfflineResources
 import com.ai.assistance.operit.terminal.TerminalManager
-import com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity
+import com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

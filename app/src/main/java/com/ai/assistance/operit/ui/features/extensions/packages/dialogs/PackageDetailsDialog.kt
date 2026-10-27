@@ -499,10 +499,10 @@ fun PackageDetailsDialog(
                             }
                         }
 
-                        if (details.toolboxUiModules.isNotEmpty()) {
+                        if (details.uiModules.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             ToolPkgPluginConfigCard(
-                                modules = details.toolboxUiModules,
+                                modules = details.uiModules,
                                 onOpenToolPkgPluginConfig = onOpenToolPkgPluginConfig
                             )
                         }
@@ -1414,7 +1414,7 @@ private fun formatRuntimeTimestamp(timestampMs: Long?, formatter: SimpleDateForm
 
 @Composable
 private fun ToolPkgPluginConfigCard(
-    modules: List<PackageManager.ToolPkgToolboxUiModule>,
+    modules: List<PackageManager.ToolPkgUiModule>,
     onOpenToolPkgPluginConfig: (String, String, String, Boolean) -> Unit
 ) {
     Column(

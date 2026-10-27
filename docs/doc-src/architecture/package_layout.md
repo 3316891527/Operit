@@ -65,7 +65,7 @@ ToolPkgJsAiProviderService、TokenUsage 与 ToolPkgMainHookRunner 位于 plugins
 
 旧、新路径、五处类名调整、兼容边界与静态核对方式见 [API 包迁移记录](../../TODO/chore/package-layout/index.md)。对应单元与设备测试的包路径随职责调整，测试内容保持原值。
 
-namespace、applicationId、Android 组件、配置枚举、DataStore 键、JSON 字段与已确认的 Java 桥入口均沿用现有定义。根包品牌、三个 MCP 路径不一致文件及未纳入本轮映射的目录属于后续工作。
+namespace、applicationId、authority、配置枚举、DataStore 键、JSON 字段和未纳入本轮的 Java 桥入口沿用现有定义；Android 组件包名按后续批准的范围统一到源码目录。根包品牌、三个 MCP 路径不一致文件及未纳入本轮映射的目录属于后续工作。
 ## 功能界面分类
 
 ```text
@@ -115,6 +115,13 @@ integrations/
 
 43 个根部工具文件按真实职责归位；聊天上下文与标记进入现有 core/chat 对应包，其余明确的工具子包保留。AssetCopyUtils、OCRUtils、WaifuMessageProcessor、ToolPkgWasmRuntime 保留根部完整名称，维持既有 Java 桥和 JNI 入口。
 
-DocumentsProvider 与 Widget 源码物理归档到 integrations。三个 Provider、五个 Widget/Glance/配置 Activity 与 OfflineResourcesActivity 保留原包声明，维持 authority、桌面绑定、Glance 身份和 Manifest 入口；两个普通 Widget 辅助文件使用新的 integrations.appwidget 包。这些例外由迁移清单显式列出，没有旧名转发层。
+DocumentsProvider 与 Widget 源码物理归档到 integrations。三个 Provider 使用 integrations.documents，七个 Widget 相关文件统一使用 integrations.appwidget，OfflineResourcesActivity 使用 ui.features.management.resources。包声明均与物理目录一致，Manifest 和 Widget XML 同步更新。旧桌面实例可能需要重新添加，不提供旧类转发或组件别名。
 
 第二轮的逐文件归属、兼容例外与检查证据见 [功能、工具与集成整理](../../TODO/chore/package-layout/03-ui-utilities-migration.md)。
+
+
+## 插件生命周期与界面模块
+
+ToolPkgLifecyclePlugin 位于 plugins/toolpkg，负责应用生命周期 Hook 的同步与重放。插件界面模块统一使用 ToolPkg.registerUiModule，宿主数据类型为 ToolPkgUiModule，插件详情字段为 uiModules；显式详情页导航面为 package_details。内置插件、SDK、独立脚本与宿主桥接使用相同的新接口。旧工具箱注册函数、全局调用名和类型声明保留为空操作兼容入口，不返回内容或注册任何内容；旧导航声明忽略。真实界面注册省略 runtime 时仍使用 compose_dsl。
+
+插件桌面定义通过 registerDesktopWidget 声明布局与路由，由 integrations.appwidget 中的原生接收器承接 Android 桌面实例。插件注册项与 Android ComponentName 属于两层身份，原生组件改名不要求插件改写 registerDesktopWidget 的调用，但已有桌面绑定可能失效。

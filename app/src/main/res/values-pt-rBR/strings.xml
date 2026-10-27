@@ -22,7 +22,6 @@
     <string name="nav_memory_base">banco de memória</string>
     <string name="nav_assistant_config">Configuração do assistente</string>
     <string name="nav_terminal">terminal</string>
-    <string name="nav_toolbox">caixa de ferramentas</string>
     <string name="nav_item_agreement">Contrato do usuário</string>
     <string name="chat_fullscreen_input">Entrada em tela cheia</string>
     <string name="chat_history_settings">Configurações do histórico de bate-papo</string>
@@ -476,7 +475,6 @@
     <string name="tool_permissions">Configurações de permissão da ferramenta</string>
     <string name="about">sobre</string>
     <string name="terminal">terminal</string>
-    <string name="toolbox">caixa de ferramentas</string>
     <string name="mcp">PCM</string>
     <string name="token_config_title">Configuração do Token DeepSeek</string>
     <string name="character_card_change_title">O cartão de personagem foi alterado</string>
@@ -1712,8 +1710,6 @@
     <string name="ui_debugger_description">Clique no botão no canto inferior direito para iniciar a janela flutuante para depuração da IU</string>
     <string name="ui_debugger_launch_floating">Iniciar janela flutuante</string>
     <string name="ui_debugger_start_float">Iniciar janela flutuante</string>
-    <string name="tool_ffmpeg_toolbox">Caixa de ferramentas FFmpeg</string>
-    <string name="tool_ffmpeg_toolbox_desc">Ferramentas poderosas de processamento de áudio e vídeo que suportam conversão, corte, mesclagem e outras funções</string>
     <string name="tool_stream_markdown_demo">Demonstração de Markdown de streaming</string>
     <string name="tool_stream_markdown_demo_desc">Demonstração de renderização Markdown de streaming de alto desempenho, com suporte a efeitos de fluxo de caracteres em tempo real</string>
     <string name="tool_shell_executor">executor de comando</string>
@@ -2067,7 +2063,6 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="terminal_auto_config_failed">Falha na configuração</string>
     <string name="terminal_auto_config_detecting">Verificando ambiente...</string>
     <string name="terminal_auto_config_applying">Aplicando configuração...</string>
-    <string name="ffmpeg_toolbox_title">Caixa de ferramentas FFmpeg</string>
     <string name="ffmpeg_input_file">arquivo de entrada</string>
     <string name="ffmpeg_output_file">arquivo de saída</string>
     <string name="ffmpeg_select_input">Selecione o arquivo de entrada</string>
@@ -3325,7 +3320,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
     <string name="screen_title_ui_debugger">Ferramentas de depuração de IU</string>
     <string name="screen_title_shell_executor">executor de comando</string>
     <string name="screen_title_logcat">Visualizador de registros</string>
-    <string name="screen_title_ffmpeg_toolbox">Caixa de ferramentas FFmpeg</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">Demonstração de Markdown de streaming</string>
     <string name="screen_title_text_to_speech">texto para fala</string>
     <string name="screen_title_speech_to_text">reconhecimento de fala</string>

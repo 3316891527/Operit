@@ -24,7 +24,6 @@
     <string name="nav_memory_base">記憶庫</string>
     <string name="nav_assistant_config">アシスタント設定</string>
     <string name="nav_terminal">ターミナル</string>
-    <string name="nav_toolbox">ツールボックス</string>
     <string name="nav_item_agreement">利用規約</string>
     <string name="nav_help">使い方</string>
     <string name="nav_workflow">ワークフロー</string>
@@ -194,7 +193,6 @@
     <string name="clear_chat_history">チャット履歴をすべて消去</string>
     <string name="tool_permissions">ツール権限の設定</string>
     <string name="terminal">ターミナル</string>
-    <string name="toolbox">ツールボックス</string>
 
     <!-- Model setup -->
 
@@ -2130,8 +2128,6 @@
     <string name="tool_ui_debugger_desc">インターフェイス要素のデバッグと分析、要素の検索と対話のサポート</string>
     <string name="ui_debugger_launch_floating">フローティングウィンドウを開始する</string>
     <string name="ui_debugger_start_float">フローティングウィンドウを開始する</string>
-    <string name="tool_ffmpeg_toolbox">FFmpeg ツールボックス</string>
-    <string name="tool_ffmpeg_toolbox_desc">変換、トリミング、結合などの機能をサポートする強力なオーディオおよびビデオ処理ツール</string>
     <string name="tool_stream_markdown_demo">ストリーミング マークダウン デモ</string>
     <string name="tool_stream_markdown_demo_desc">リアルタイムのキャラクター フロー エフェクトをサポートする、高性能ストリーミング マークダウン レンダリングのデモ</string>
     <string name="tool_shell_executor">コマンド実行者</string>
@@ -2307,7 +2303,6 @@
     <string name="terminal_auto_config_failed">構成に失敗しました</string>
     <string name="terminal_auto_config_detecting">環境を確認しています...</string>
     <string name="terminal_auto_config_applying">構成を適用しています...</string>
-    <string name="ffmpeg_toolbox_title">FFmpeg ツールボックス</string>
     <string name="ffmpeg_input_file">入力ファイル</string>
     <string name="ffmpeg_output_file">出力ファイル</string>
     <string name="ffmpeg_select_input">入力ファイルの選択</string>
@@ -3356,7 +3351,7 @@
     <string name="screen_title_terminal_auto_config">端末の自動設定</string>
     <string name="screen_title_shell_executor">コマンド実行者</string>
     <string name="screen_title_logcat">ログビューア</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpeg ツールボックス</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">ストリーミング マークダウン デモ</string>
     <string name="screen_title_process_limit_remover">ファントムプロセス制限を削除する</string>
     <string name="screen_title_autoglm_one_click">AutoGLM ワンクリック構成</string>

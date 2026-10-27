@@ -30,9 +30,9 @@ status: complete
 
 | 注册项 | 桥接/宿主处理 |
 | --- | --- |
-| `ToolboxUiModuleRegistration` | `id`、`screen` 必填；`runtime` 缺省为 `compose_dsl`，`keepAlive` 缺省 `false`，标题缺省为 `id`。宿主从 `id` 生成包内 route，但不自动创建 toolbox 导航项；插件详情仍提供打开 UI 的入口。ID 和 route ID 分别与显式 UI route 合并后做不区分大小写的重复检测。 |
+| `UiModuleRegistration` | `id`、`screen` 必填；`runtime` 缺省为 `compose_dsl`，`keepAlive` 缺省 `false`，标题缺省为 `id`。宿主从 `id` 生成包内 route，并在插件详情提供打开 UI 的入口。ID 和 route ID 分别与显式 UI route 合并后做不区分大小写的重复检测。 |
 | `UiRouteRegistration` | `id`、`screen` 必填。`route` 非空时优先于 `routeId`；两者都空时按包 ID 和 `id` 生成 route。`runtime` 缺省为 `compose_dsl`，`keepAlive` 缺省 `false`，标题缺省为 `id`。route 与 screen 路径在宿主侧需唯一、合法且指向归档内文件。两个别名同时给出不同值时使用 `route`，不会因冲突单独报错。 |
-| `NavigationEntryRegistration` | `id` 与 `surface` 必填；`route` 优先于 `routeId`。必须至少提供一个已注册的 route 或 `action`；非空 route 必须能解析到该 ToolPkg 已注册 route。`main_sidebar_plugins` 会发布主侧边栏插件入口；旧值 `toolbox` 仍接受并校验，但不再生成导航项。标题缺省为 `id`，空 icon 变为缺省，`order` 缺省为 `0`。 |
+| `NavigationEntryRegistration` | `id` 与 `surface` 必填；`route` 优先于 `routeId`。必须至少提供一个已注册的 route 或 `action`；非空 route 必须能解析到该 ToolPkg 已注册 route。`main_sidebar_plugins` 会发布主侧边栏插件入口；`package_details` 在插件详情展示已注册的界面路由。标题缺省为 `id`，空 icon 变为缺省，`order` 缺省为 `0`。 |
 | `DesktopWidgetRegistration` | `id` 与 `route`（或 `routeId`）必填；render route 优先取 `render`，再取 `renderRouteId`，都未提供时回退为 route。宿主要求 route 和最终 render route 都引用已注册 route；因此声明中可选的 render 字段运行时可以省略，但独立 route 不能省略。标题缺省为 `id`，subtitle/description 缺省为空，空 icon 变为缺省，`order` 缺省 `0`。 |
 | `ChatMessageMenuItemRegistration` | `id`、`function` 必填；`senders` 去空白、忽略大小写并去重，只接受 `user`、`ai`。`dialog.screen` 必须是可序列化路径且存在于包归档。标题缺省为 `id`，`order` 缺省为 `0`。 |
 | `AiProviderRegistration` | `id` 必填且在 Provider 类别内不得重复；`listModels`、`sendMessage`、`testConnection`、`calculateInputTokens` 四个嵌套 `{ function }` 均必填。`displayName` trim 后为空时回退为 `id`，`description` trim 后可为空。 |
@@ -41,14 +41,14 @@ status: complete
 
 ## UI 与导航注册
 
-### `ToolPkg.registerToolboxUiModule(definition)`
+### `ToolPkg.registerUiModule(definition)`
 
 ```ts
-registerToolboxUiModule(definition: ToolboxUiModuleRegistration): void
+registerUiModule(definition: UiModuleRegistration): void
 ```
 
 - **API 版本：** `1.0.0` 基线
-- **用途：** 兼容旧版注册方式，只注册可打开的 Compose DSL UI route；不自动在工具箱创建入口。插件详情仍可打开该界面。
+- **用途：** 注册可从插件详情打开的 Compose DSL 界面模块，并根据模块 ID 生成包内 route。
 - **`id`：** 包内稳定标识；宿主将其与容器包名组合用于解析注册项。
 - **`runtime?`：** 运行时标记；应与目标模块实现匹配。当前类型未限定字面量，具体支持值由 UI 运行时决定。
 - **`screen`：** Compose DSL screen 函数或包内模块路径。注册桥会把函数引用规范化为序列化路径。
@@ -79,7 +79,7 @@ registerNavigationEntry(definition: NavigationEntryRegistration): void
 
 - **API 版本：** `1.0.0` 基线
 - **`id`：** 导航项稳定 ID。
-- **`surface`：** 使用 `main_sidebar_plugins` 发布主侧边栏插件入口。旧值 `toolbox` 仍接受以保证旧插件可加载，但不再发布导航项。
+- **`surface`：** 使用 `main_sidebar_plugins` 发布主侧边栏插件入口，使用 `package_details` 在插件详情展示已注册的界面路由。
 - **`route?`：** 点击后打开的已注册路由。
 - **`action?`：** 导航动作 Hook；若提供函数，必须可以解析为持久化模块函数引用。
 - **`title?`、`icon?`、`order?`：** 本地化标题、图标名和同 surface 内排序值。
@@ -198,3 +198,17 @@ registerAiProvider(definition: AiProviderRegistration): void
 - 注册入口收集期不能执行 WASM 调用；模块、导出函数和 ABI 的有效性由 manifest 解析与宿主 WASM bridge 校验。
 
 相关页面：[包 Manifest 与资源格式](../02_package_model/package_format.md)、[Hook 参考](../05_hooks/index.md)、[API 版本规则](../09_compatibility/api_versions.md)。
+
+
+## 桌面小组件的宿主与插件定义
+
+`registerDesktopWidget` 声明包内小组件 ID、布局路由和打开路由，插件不注册 Android 原生接收器。宿主通过 `integrations.appwidget.ToolPkgDesktopWidgetReceiver` 承接桌面实例，再根据所选插件的定义渲染。配置页面为 `integrations.appwidget.ToolPkgDesktopWidgetConfigActivity`，Manifest 与 Widget XML 使用相同的完整类名。
+
+Android 桌面按宿主包名、原生接收器类名及 appWidgetId 记录实例。本轮原生类包名统一到 integrations.appwidget 后，旧桌面实例可能需要删除并重新添加；插件的 `registerDesktopWidget` 调用和已注册布局/路由保持。插件详情界面统一使用 `registerUiModule` 和 `package_details`，旧工具箱注册 API 保留为空操作，旧导航面忽略，不返回内容或注册任何界面与导航。需要实际展示界面时使用新接口，省略 runtime 仍默认使用 compose_dsl。
+
+
+## 旧工具箱注册兼容入口
+
+ToolPkg.registerToolboxUiModule 与全局 registerToolPkgToolboxUiModule 保留原调用签名；NativeInterface.registerToolPkgToolboxUiModule 也保留。旧类型 ToolboxUiModuleRegistration 作为 UiModuleRegistration 的类型别名保留。所有旧注册调用均为空操作，JavaScript 返回 undefined，Native 入口为 void，不处理 screen、不读取资源、不收集模块或创建界面、路由与导航。
+
+旧 surface=toolbox 的导航声明在路由校验前忽略，避免旧插件引用停用页面时中止整个主入口注册。新插件实际界面使用 registerUiModule 或 registerUiRoute，runtime 省略时默认为 compose_dsl；桌面小组件仍采用本轮新的原生组件包名。

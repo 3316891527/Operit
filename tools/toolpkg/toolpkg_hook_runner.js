@@ -293,6 +293,7 @@ function installRuntimeGlobals({ packageId, configDir, fixtures, registry }) {
     registerUiRoute() {},
     registerNavigationEntry() {},
     registerDesktopWidget() {},
+    registerUiModule() {},
     registerToolboxUiModule() {},
     registerAppLifecycleHook() {},
     registerToolPromptComposeHook() {},
@@ -330,6 +331,7 @@ function installRuntimeGlobals({ packageId, configDir, fixtures, registry }) {
   global.registerToolPkgUiRoute = global.ToolPkg.registerUiRoute;
   global.registerToolPkgNavigationEntry = global.ToolPkg.registerNavigationEntry;
   global.registerToolPkgDesktopWidget = global.ToolPkg.registerDesktopWidget;
+  global.registerToolPkgUiModule = global.ToolPkg.registerUiModule;
   global.registerToolPkgToolboxUiModule = global.ToolPkg.registerToolboxUiModule;
   global.registerToolPkgAppLifecycleHook = global.ToolPkg.registerAppLifecycleHook;
   global.registerToolPkgMessageProcessingPlugin = global.ToolPkg.registerMessageProcessingPlugin;

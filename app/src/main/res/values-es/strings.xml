@@ -10,7 +10,6 @@
     <string name="nav_about">Acerca de</string>
     <string name="nav_packages">Gestión de paquetes</string>
     <string name="nav_terminal">Terminal</string>
-    <string name="nav_toolbox">Caja de herramientas</string>
     <string name="nav_item_agreement">Acuerdo de usuario</string>
     <string name="nav_help">Centro de ayuda</string>
     <string name="menu">Menú</string>
@@ -31,7 +30,6 @@
     <string name="tool_permissions">Configuración de permisos de herramientas</string>
     <string name="about">Acerca de</string>
     <string name="terminal">Terminal</string>
-    <string name="toolbox">Caja de herramientas</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">Configuración de token DeepSeek</string>
     <string name="chat_history_settings">Gestión del historial de chat</string>
@@ -563,7 +561,7 @@
     <string name="chat_style_cursor_user_bubble_water_glass">Cristal acuoso para el globo de usuario en modo comando</string>
     <string name="chat_style_cursor_user_bubble_water_glass_desc">Cuando está activado, el fondo del globo de usuario en modo comando usará un efecto de cristal acuoso y desactivará el cristal esmerilado</string>
 
-    <!-- Toolbox Categories -->
+    <!-- 工具页面分类 -->
 
     <!-- Tool Names -->
     <string name="tool_file_manager">Gestor de archivos</string>
@@ -582,8 +580,6 @@
     <string name="tool_terminal_auto_config_desc">Instalar y configurar automáticamente Python, PIP y otras herramientas de desarrollo</string>
     <string name="tool_ui_debugger">Herramienta de depuración de UI</string>
     <string name="tool_ui_debugger_desc">Depurar y analizar elementos de interfaz con búsqueda de elementos y soporte de interacción</string>
-    <string name="tool_ffmpeg_toolbox">Caja de herramientas FFmpeg</string>
-    <string name="tool_ffmpeg_toolbox_desc">Herramienta potente de procesamiento de audio/video con soporte para conversión, recorte, fusión y más</string>
     <string name="tool_stream_markdown_demo">Demo de Markdown en streaming</string>
     <string name="tool_stream_markdown_demo_desc">Demo de renderizado de Markdown en streaming de alto rendimiento con efectos de flujo de caracteres en tiempo real</string>
     <string name="tool_shell_executor">Ejecutor de comandos</string>
@@ -726,7 +722,7 @@
     <string name="crash_report_export_success">Reporte de error exportado a\n%1$s</string>
     <string name="crash_report_export_failed">Error al exportar: %1$s</string>
 
-    <!-- Toolbox Permission Manager -->
+    <!-- 工具权限管理 -->
     <string name="try_different_keywords">Pruebe con palabras clave diferentes</string>
     <string name="try_show_system_apps">Pruebe marcar "Aplicaciones del sistema" para ver más aplicaciones</string>
     <string name="no_apps_found_anywhere">No se encontraron aplicaciones</string>
@@ -2531,7 +2527,6 @@
     <string name="terminal_auto_config_failed">Configuración fallida</string>
     <string name="terminal_auto_config_detecting">Detectando entorno...</string>
     <string name="terminal_auto_config_applying">Aplicando configuración...</string>
-    <string name="ffmpeg_toolbox_title">Caja de herramientas FFmpeg</string>
     <string name="ffmpeg_input_file">Archivo de entrada</string>
     <string name="ffmpeg_output_file">Archivo de salida</string>
     <string name="ffmpeg_select_input">Seleccionar archivo de entrada</string>
@@ -3332,7 +3327,7 @@ Ahora puede usar el modo AutoGLM en la interfaz de conversación.</string>
     <string name="screen_title_ui_debugger">Herramienta de depuración de UI</string>
     <string name="screen_title_shell_executor">Ejecutor de comandos</string>
     <string name="screen_title_logcat">Visor de registros</string>
-    <string name="screen_title_ffmpeg_toolbox">Caja de herramientas FFmpeg</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">Demostración de Markdown en streaming</string>
     <string name="screen_title_text_to_speech">Texto a voz</string>
     <string name="screen_title_speech_to_text">Reconocimiento de voz</string>

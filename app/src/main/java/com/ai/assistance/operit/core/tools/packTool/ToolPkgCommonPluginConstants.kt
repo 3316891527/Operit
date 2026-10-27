@@ -38,7 +38,7 @@ internal const val TOOLPKG_EVENT_AI_PROVIDER_TEST_CONNECTION = "toolpkg_ai_provi
 internal const val TOOLPKG_EVENT_AI_PROVIDER_CALCULATE_INPUT_TOKENS =
     "toolpkg_ai_provider_calculate_input_tokens"
 
-internal const val TOOLPKG_REGISTRATION_TOOLBOX_UI_MODULE = "registerToolPkgToolboxUiModule"
+internal const val TOOLPKG_REGISTRATION_UI_MODULE = "registerToolPkgUiModule"
 internal const val TOOLPKG_REGISTRATION_UI_ROUTE = "registerToolPkgUiRoute"
 internal const val TOOLPKG_REGISTRATION_NAVIGATION_ENTRY = "registerToolPkgNavigationEntry"
 internal const val TOOLPKG_REGISTRATION_DESKTOP_WIDGET = "registerToolPkgDesktopWidget"
@@ -80,7 +80,7 @@ internal const val TOOLPKG_REGISTRATION_SUMMARY_GENERATE_HOOK =
 internal const val TOOLPKG_REGISTRATION_AI_PROVIDER =
     "registerToolPkgAiProvider"
 
-internal const val TOOLPKG_NAV_SURFACE_TOOLBOX = "toolbox"
+internal const val TOOLPKG_NAV_SURFACE_PACKAGE_DETAILS = "package_details"
 internal const val TOOLPKG_NAV_SURFACE_MAIN_SIDEBAR_PLUGINS = "main_sidebar_plugins"
 
 internal fun buildToolPkgRouteId(

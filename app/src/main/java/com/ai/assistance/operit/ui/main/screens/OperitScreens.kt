@@ -85,7 +85,7 @@ import com.ai.assistance.operit.ui.features.automation.terminal.TerminalEntryScr
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.main.screens.UIDebuggerToolScreen
 import com.ai.assistance.operit.ui.features.automation.sql.SqlViewerToolScreen
-import com.ai.assistance.operit.ui.features.automation.ffmpeg.FFmpegToolboxScreen
+import com.ai.assistance.operit.ui.features.automation.ffmpeg.FFmpegScreen
 import com.ai.assistance.operit.ui.features.conversation.chat.export.htmlpackager.HtmlPackagerScreen
 import com.ai.assistance.operit.ui.features.management.settings.speech.stt.SpeechToTextToolScreen
 import com.ai.assistance.operit.ui.features.management.settings.speech.tts.TextToSpeechToolScreen
@@ -1511,9 +1511,9 @@ sealed class Screen(
         }
     }
 
-    // FFmpeg Toolbox screen
-    data object FFmpegToolbox :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_ffmpeg_toolbox) {
+    // FFmpeg 命令页面
+    data object FFmpeg :
+            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_ffmpeg) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -1524,7 +1524,7 @@ sealed class Screen(
                 onError: (String) -> Unit,
                 onGestureConsumed: (Boolean) -> Unit
         ) {
-            FFmpegToolboxScreen(navController = navController)
+            FFmpegScreen(navController = navController)
         }
     }
 

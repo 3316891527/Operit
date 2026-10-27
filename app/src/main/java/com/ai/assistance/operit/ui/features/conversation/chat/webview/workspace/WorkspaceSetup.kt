@@ -138,7 +138,7 @@ fun WorkspaceSetup(
                     }
 
                     TextButton(onClick = {
-                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity::class.java).putExtra(com.ai.assistance.operit.ui.features.resources.OfflineResourcesActivity.EXTRA_GROUP, "templates"))
+                        context.startActivity(android.content.Intent(context, com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity::class.java).putExtra(com.ai.assistance.operit.ui.features.management.resources.OfflineResourcesActivity.EXTRA_GROUP, "templates"))
                     }, enabled = !isImportingToolPkgTemplate) { Text(context.getString(R.string.hub_prepare_templates)) }
                     if (isImportingToolPkgTemplate) {
                         Text(

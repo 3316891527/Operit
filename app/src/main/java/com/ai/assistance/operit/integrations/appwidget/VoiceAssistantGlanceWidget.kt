@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.widget
+package com.ai.assistance.operit.integrations.appwidget
 
 import android.content.Context
 import android.content.Intent

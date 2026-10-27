@@ -132,9 +132,12 @@ export namespace NativeInterface {
     function logDebug(message: string, data: string): void;
 
     /**
-     * Register a toolbox UI module for current toolpkg main registration session.
-     * @param specJson - JSON object string describing a toolbox UI module
+     * 在当前 ToolPkg 主入口注册会话中声明插件界面模块。
+     * @param specJson - 描述插件界面模块的 JSON 对象字符串
      */
+    function registerToolPkgUiModule(specJson: string): void;
+
+    /** @deprecated 旧工具箱注册入口为空操作，不返回内容或注册任何内容。 */
     function registerToolPkgToolboxUiModule(specJson: string): void;
 
     /**

@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.ui.features.resources
+package com.ai.assistance.operit.ui.features.management.resources
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

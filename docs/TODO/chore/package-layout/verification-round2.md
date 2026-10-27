@@ -1,5 +1,7 @@
 # 第二轮路径迁移验证记录
 
+> 本记录对应第二轮快照 `5efa22e`。当时保留的九份 Android 包声明与旧插件界面命名已在后续收尾中统一，必要旧注册接口按空操作兼容，当前实现见 [收尾记录](04-layout-completion.md) 与 [最终路径清单](ui-utilities-migration-final.csv)。
+
 本记录比较工具箱清理提交 `8566d30589199a01570eb7cb2901f533a9cf5074` 与第二轮迁移结果。第一轮 API 的静态证据及维护者反馈见 [历史验证](verification.md)，工具箱删除的调用调查见 [清理记录](02-toolbox-cleanup.md)。
 
 ## 已执行的静态核对

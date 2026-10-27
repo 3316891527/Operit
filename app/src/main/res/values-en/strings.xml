@@ -17,7 +17,6 @@
     <string name="nav_packages">Packages</string>
     <string name="nav_assistant_config">Assistant Config</string>
     <string name="nav_terminal">Terminal</string>
-    <string name="nav_toolbox">Toolbox</string>
     <string name="nav_item_agreement">User Agreement</string>
 
     <!-- Chat Module -->
@@ -539,7 +538,6 @@
     <string name="tool_permissions">Tool Permission Settings</string>
     <string name="about">About</string>
     <string name="terminal">Terminal</string>
-    <string name="toolbox">Toolbox</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">DeepSeek Token Configuration</string>
     <string name="character_card_change_title">Character Card Updated</string>
@@ -2041,7 +2039,7 @@
     <string name="enter_repo_info">Please enter repository information</string>
     <string name="repo_link">Repository Link</string>
 
-    <!-- Toolbox Categories -->
+    <!-- 工具页面分类 -->
 
     <!-- Tool Names -->
     <string name="tool_file_manager">File Manager</string>
@@ -2100,8 +2098,6 @@
     <string name="ui_debugger_description">Tap the button in the bottom right corner to launch the floating window for UI debugging</string>
     <string name="ui_debugger_launch_floating">Launch Floating Window</string>
     <string name="ui_debugger_start_float">Start Float</string>
-    <string name="tool_ffmpeg_toolbox">FFmpeg Toolbox</string>
-    <string name="tool_ffmpeg_toolbox_desc">Powerful audio/video processing tool supporting conversion, cropping, merging and more</string>
     <string name="tool_stream_markdown_demo">Streaming Markdown Demo</string>
     <string name="tool_stream_markdown_demo_desc">High-performance streaming Markdown rendering demo with real-time character flow effects</string>
     <string name="tool_shell_executor">Command Executor</string>
@@ -2323,7 +2319,7 @@
     <string name="plugin_zip_file">Plugin ZIP File</string>
     <string name="mcp_plugin">MCP Plugin</string>
 
-    <!-- Toolbox Permission Manager -->
+    <!-- 工具权限管理 -->
     <string name="try_different_keywords">Try different keywords</string>
     <string name="try_show_system_apps">Try checking "System apps" to see more apps</string>
     <string name="no_apps_found_anywhere">No apps found anywhere</string>
@@ -2374,7 +2370,7 @@
         <string name="granted">Granted</string>
     <string name="not_granted">Not granted</string>
 
-    <!-- Toolbox Screen -->
+    <!-- 工具页面 -->
 
     <!-- File Manager -->
     <string name="file_manager_title">File Manager</string>
@@ -2503,8 +2499,7 @@
     <string name="terminal_auto_config_detecting">Detecting environment...</string>
         <string name="terminal_auto_config_applying">Applying configuration...</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_toolbox_title">FFmpeg Toolbox</string>
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_input_file">Input file</string>
     <string name="ffmpeg_output_file">Output file</string>
     <string name="ffmpeg_select_input">Select input file</string>
@@ -4274,7 +4269,7 @@
     <string name="screen_title_ui_debugger">UI Debugger</string>
     <string name="screen_title_shell_executor">Shell Executor</string>
     <string name="screen_title_logcat">Log Viewer</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpeg Toolbox</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">Streaming Markdown Demo</string>
     <string name="screen_title_text_to_speech">Text to Speech</string>
     <string name="screen_title_speech_to_text">Speech Recognition</string>
@@ -5536,7 +5531,7 @@
     <string name="default_assist_collapse">Collapse</string>
     <string name="default_assist_expand">Expand</string>
 
-    <!-- FFmpeg Toolbox -->
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_param_input">-i: Input file</string>
     <string name="ffmpeg_param_video_codec">-c:v: Video codec</string>
     <string name="ffmpeg_param_audio_codec">-c:a: Audio codec</string>

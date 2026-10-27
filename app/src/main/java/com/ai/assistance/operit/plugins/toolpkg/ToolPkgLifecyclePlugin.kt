@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.plugins.toolbox
+package com.ai.assistance.operit.plugins.toolpkg
 
 import com.ai.assistance.operit.core.application.OperitApplication
 import com.ai.assistance.operit.core.tools.AIToolHandler
@@ -21,11 +21,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private object ToolPkgAppLifecycleHookPlugin : AppLifecycleHookPlugin {
-    private const val TAG = "ToolboxPlugin"
+    private const val TAG = "ToolPkgLifecyclePlugin"
     @Volatile
     private var hooksByEvent: Map<String, List<ToolPkgAppLifecycleHookRegistration>> = emptyMap()
 
-    override val id: String = "builtin.toolbox.toolpkg-app-lifecycle"
+    override val id: String = "builtin.toolpkg.app-lifecycle"
 
     override suspend fun onEvent(
         event: AppLifecycleEvent,
@@ -133,8 +133,8 @@ private object ToolPkgAppLifecycleHookPlugin : AppLifecycleHookPlugin {
     }
 }
 
-object ToolboxPlugin : OperitPlugin {
-    override val id: String = "builtin.toolbox"
+object ToolPkgLifecyclePlugin : OperitPlugin {
+    override val id: String = "builtin.toolpkg.lifecycle"
     private val installed = AtomicBoolean(false)
     private val replayScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val runtimeChangeListener =

@@ -223,7 +223,6 @@
     <string name="nav_memory_base">Basis Memori</string>
     <string name="nav_assistant_config">Konfigurasi Asisten</string>
     <string name="nav_terminal">Terminal</string>
-    <string name="nav_toolbox">Kotak Alat</string>
     <string name="nav_item_agreement">Perjanjian Pengguna</string>
     <string name="chat_fullscreen_input">Input Layar Penuh</string>
     <string name="chat_history_settings">Pengaturan Riwayat Obrolan</string>
@@ -277,7 +276,6 @@
     <string name="tool_permissions">Pengaturan izin alat</string>
     <string name="about">Tentang</string>
     <string name="terminal">Terminal</string>
-    <string name="toolbox">Kotak alat</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">Konfigurasi Token DeepSeek</string>
     <string name="character_card_change_title">Kartu karakter telah diubah</string>
@@ -1716,8 +1714,6 @@
     <string name="accessibility_risk_warning_cancel">Batal</string>
 
     <string name="ui_debugger_start_float">Mulai Jendela Mengambang</string>
-    <string name="tool_ffmpeg_toolbox">Kotak Peralatan FFmpeg</string>
-    <string name="tool_ffmpeg_toolbox_desc">Alat pemrosesan audio dan video yang kuat, mendukung konversi, pemotongan, penggabungan, dan fungsi lainnya</string>
     <string name="tool_stream_markdown_demo">Demo Markdown Streaming</string>
     <string name="tool_stream_markdown_demo_desc">Demo rendering Markdown streaming berkinerja tinggi, mendukung efek aliran karakter real-time</string>
     <string name="tool_shell_executor">Eksekutor Perintah</string>
@@ -2121,7 +2117,6 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="terminal_auto_config_failed">Konfigurasi gagal</string>
     <string name="terminal_auto_config_detecting">Sedang mendeteksi lingkungan...</string>
     <string name="terminal_auto_config_applying">Sedang menerapkan konfigurasi...</string>
-    <string name="ffmpeg_toolbox_title">Kotak Peralatan FFmpeg</string>
     <string name="ffmpeg_input_file">File masukan</string>
     <string name="ffmpeg_output_file">File keluaran</string>
     <string name="ffmpeg_select_input">Pilih file masukan</string>
@@ -3239,7 +3234,7 @@ Sekarang Anda dapat menggunakan mode AutoGLM di antarmuka percakapan.</string>
     <string name="screen_title_ui_debugger">Alat Debug UI</string>
     <string name="screen_title_shell_executor">Eksekutor Perintah</string>
     <string name="screen_title_logcat">Penampil Log</string>
-    <string name="screen_title_ffmpeg_toolbox">Kotak Alat FFmpeg</string>
+    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">Demo Markdown Streaming</string>
     <string name="screen_title_text_to_speech">Teks ke Ucapan</string>
     <string name="screen_title_speech_to_text">Pengenalan Ucapan</string>

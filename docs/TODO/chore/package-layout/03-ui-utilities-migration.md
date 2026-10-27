@@ -1,5 +1,7 @@
 # 功能 UI、工具与 Android 集成路径整理
 
+> 本记录对应第二轮快照 `5efa22e`。当时保留的九份 Android 包声明与旧插件界面命名已在后续收尾中统一，必要旧注册接口按空操作兼容，当前实现见 [收尾记录](04-layout-completion.md) 与 [最终路径清单](ui-utilities-migration-final.csv)。
+
 基线为工具箱清理后的 `8566d30589199a01570eb7cb2901f533a9cf5074`。维护者要求继续使用原分支和 PR，将平铺的功能包分类、按职责整理 util，并将 provider 与 widget 源码移出根部。
 
 ## 功能分类
