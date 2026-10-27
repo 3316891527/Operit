@@ -100,3 +100,5 @@
 - [多工具交错参数完整性](interleaved-tool-call-arguments/index.md)
 
 - [终端非零退出码统一判为失败](terminal-nonzero-exit/index.md)
+
+- [use_package 激活失败状态](use-package-result/index.md)
