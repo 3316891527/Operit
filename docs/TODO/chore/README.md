@@ -29,3 +29,5 @@
 - [1.12.2+12 发布同步](release-1.12.2-plus-12/index.md) · `release-1.12.2-plus-12`
 
 - [1.12.2+16 发行集成](release-plus16/index.md)
+
+- [1.12.2+17 紧急发行](release-plus17/index.md)
