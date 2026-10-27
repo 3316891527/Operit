@@ -25,7 +25,6 @@
     <string name="common_expand_more">Afișează mai multe</string>
     <string name="nav_packages">Gestionarea pachetelor</string>
     <string name="nav_memory_base">Baza de date</string>
-    <string name="nav_assistant_config">Configurarea asistentului</string>
     <string name="nav_terminal">Terminal</string>
     <string name="nav_item_agreement">Acordul de utilizare</string>
     <string name="sidebar_permission_short">Drepturi</string>
@@ -120,7 +119,6 @@
     <string name="menu">Meniu</string>
     <string name="token_config">Obțineți cheia</string>
     <string name="package_category_plugin">Plugin</string>
-    <string name="desktop_pet_start">Pornește animalul de companie de pe birou</string>
 
     <!-- 工作流相关 -->
     <string name="workflow_list_title">Lista fluxurilor de lucru</string>
@@ -346,9 +344,7 @@
 
     <!-- 助手配置界面 -->
     <string name="assistant_config_title">Configurarea asistentului</string>
-    <string name="import_model">Importarea modelului</string>
     <string name="scan_user_models">Modelul utilizatorului scanat</string>
-    <string name="operation_success">Operațiunea a reușit</string>
     <string name="error_occurred_simple">A apărut o eroare</string>
     <string name="function_config_title">Configurația funcțiilor</string>
     <string name="function_config_desc">Chat, Voce și Mini-aplicații vor selecta automat configurația cuvintelor-cheie corespunzătoare, în funcție de modul de utilizare</string>
@@ -356,112 +352,13 @@
     <string name="not_configured">Neconfigurat</string>
     <string name="function_prompt">Cuvinte-cheie pentru funcții</string>
     <string name="function_model">Model funcțional</string>
-    <string name="importing_model">Se importă modelul...</string>
     <string name="processing">În curs de procesare...</string>
-    <string name="error_occurred">A apărut o eroare: %1$s</string>
-    <string name="avatar_config">Configurarea personajului virtual</string>
-    <string name="avatar_voice_call_enable_title">Este activată imaginea virtuală?</string>
-    <string name="avatar_voice_call_enable_summary">După activare, interfața apelurilor vocale va utiliza o imagine virtuală și, în funcție de răspunsul primit, &lt;mood&gt; Etichete: redare, emoție, acțiune.</string>
-    <string name="select_model">Alegerea modelului</string>
-    <string name="current_model">Modelul actual</string>
     <string name="scale">Mărire/micșorare: %1$s</string>
-    <string name="x_translation">XDeplasarea axului: %1$s</string>
-    <string name="y_translation">YDeplasarea axului: %1$s</string>
-    <string name="confirm_delete_model_title">Doriți să confirmați ștergerea modelului?</string>
-    <string name="confirm_delete_model_message">Odată șters, modelul nu poate fi recuperat. Sunteți sigur că doriți să ștergeți acest model?</string>
-    <string name="rename_avatar_model_title">Redenumirea modelului</string>
-    <string name="rename_avatar_model_message">Introduceți un nou nume pentru afișarea modelului</string>
-    <string name="avatar_model_name_label">Denumirea modelului</string>
-    <string name="no_models_available">Nu există modele disponibile</string>
-    <string name="please_select_model">Vă rugăm să alegeți un model</string>
-    <string name="unsupported_model_type">Tipuri de modele neacceptate: %1$s</string>
-    <string name="avatar_preview_error_log">Eroare la previzualizarea imaginii de profil: %1$s</string>
     <string name="how_to_import">Cum se creează și se importă modele?</string>
-    <string name="how_to_import_tap_to_expand">Cum se creează și se importă modele?(Faceți clic pentru a afișa)</string>
-    <string name="how_to_import_tap_to_collapse">Cum se creează și se importă modele?(Faceți clic pentru a ascunde)</string>
-    <string name="avatar_config_supported_formats">Suport:DragonBones(.json + _tex.json + _tex.png),WebP(.webp),MP4(.mp4),MMD(.pmx/.pmd + Opțional .vmd),glTF(.glb/.gltf),FBX(.fbx).</string>
-    <string name="avatar_config_import_methods">Suport pentru importul direct al fișierelor .glb/.gltf/.mp4/.fbx;DragonBones,WebP,MP4,MMD, mai multe fișiere glTF, sau cu texturi externe/Resursele FBX Vă rugăm să importați .zip.</string>
-    <string name="avatar_mood_trigger_mapping_title">Mood Mapare de declanșare</string>
-    <string name="avatar_mood_trigger_mapping_desc">Rezultatele pentru „maskotele de birou” și „avatarele vocale” &lt;mood&gt; Se vor afișa în primul rând rezultatele de aici trigger. Numai tipurile personalizate la care a fost asociată o animație vor fi incluse în textul de îndrumare.</string>
-    <string name="avatar_no_model_actions">În prezent, avatarul nu dispune de mișcări disponibile</string>
-    <string name="avatar_custom_types_title">Tipuri personalizate</string>
-    <string name="avatar_custom_type_add">Adăugarea unui tip personalizat</string>
-    <string name="avatar_custom_type_none">Nu există încă tipuri personalizate</string>
-    <string name="avatar_trigger_key_label">Taste de activare:%1$s</string>
-    <string name="avatar_fallback_emotion_label">Emoji de revenire:%1$s</string>
-    <string name="avatar_edit_custom_mood_type">Editare tipuri personalizate</string>
-    <string name="avatar_delete_custom_mood_type">Ștergerea tipurilor personalizate</string>
-    <string name="avatar_mapped_action">Acțiuni de asociere</string>
-    <string name="avatar_preview_action">Previzualizare</string>
-    <string name="avatar_unmapped">Nu este asociat</string>
-    <string name="avatar_custom_type_add_title">Adăugarea unui tip personalizat</string>
-    <string name="avatar_custom_type_edit_title">Editare tipuri personalizate</string>
-    <string name="avatar_custom_type_key">Tasta de tip</string>
-    <string name="avatar_custom_type_key_hint">Sunt permise doar litere mici, cifre,_ și -. După normalizare, key:%1$s</string>
-    <string name="avatar_empty_value_placeholder">&lt;Gol&gt;</string>
-    <string name="avatar_custom_type_prompt_hint_label">Explicații privind cuvintele-cheie</string>
-    <string name="avatar_custom_type_prompt_hint_help">Acest mesaj va fi inserat în masa de lucru/Avatarul vocal mood În reguli, se precizează în ce situații trebuie utilizat acest tip de model de ghidare.</string>
-    <string name="avatar_emotion_mapping_title">Corelarea expresiilor faciale</string>
-    <string name="avatar_emotion_mapping_chip">%1$s:%2$s</string>
-    <string name="avatar_emotion_label">Emoticoane</string>
-    <string name="avatar_clear_selected_mapping">Șterge maparea curentă</string>
-    <string name="avatar_emotion_idle">Modul de așteptare</string>
-    <string name="avatar_emotion_listening">Monitorizare</string>
-    <string name="avatar_emotion_thinking">Reflecție</string>
-    <string name="avatar_emotion_happy">Fericit</string>
-    <string name="avatar_emotion_sad">Trist</string>
-    <string name="avatar_emotion_confused">Confuzie</string>
-    <string name="avatar_emotion_surprised">Surprindere</string>
-    <string name="avatar_mood_angry_name">Supărat</string>
-    <string name="avatar_mood_happy_name">Fericit</string>
-    <string name="avatar_mood_shy_name">Timiditate</string>
-    <string name="avatar_mood_aojiao_name">Tăcut și mândru</string>
-    <string name="avatar_mood_cry_name">Trist</string>
-    <string name="avatar_mood_angry_hint">Se folosește atunci când utilizatorul își exprimă jignirea, sentimentul de nedreptate, reproșul, supărarea sau nemulțumirea puternică.</string>
-    <string name="avatar_mood_happy_hint">Se folosește atunci când utilizatorul își exprimă aprecierea în mod clar, își atinge obiectivul, primește un cadou sau este vizibil încântat.</string>
-    <string name="avatar_mood_shy_hint">Laude din partea utilizatorilor, aluzii, accentuarea aspectelor drăguțe; se folosește atunci când personajul se comportă timid.</string>
-    <string name="avatar_mood_aojiao_hint">Se folosește în cazul glumelor între utilizatori, al disputelor minore sau al momentelor în care personajele se arată inițial încăpățânate, dar apoi cedează.</string>
-    <string name="avatar_mood_cry_hint">Se folosește atunci când utilizatorul se simte dezamăgit, trist, frustrat, plânge sau este abătut după ce și-a cerut scuze.</string>
-    <string name="avatar_custom_type_prompt_hint_required">Descrierea cuvântului-cheie nu poate fi lăsată necompletată</string>
-    <string name="avatar_custom_type_invalid_key">Tipuri personalizate key Se pot folosi doar litere mici, cifre,_ sau -, și nu poate fi utilizat împreună cu cel încorporat key Conflict</string>
-    <string name="avatar_custom_type_duplicate_key">Tipuri personalizate key Există deja</string>
-    <string name="avatar_mmd_camera_pitch">MMD Înclinarea camerei (%1$s)</string>
-    <string name="avatar_mmd_camera_yaw">MMD Deviația camerei (%1$s)</string>
-    <string name="avatar_mmd_camera_distance">MMD Distanța până la cameră (%1$s)</string>
-    <string name="avatar_mmd_orbit_pivot_height">MMD Înălțimea în jurul centrului (%1$s)</string>
-    <string name="avatar_gltf_camera_pitch">glTF Înclinarea camerei (%1$s)</string>
-    <string name="avatar_gltf_camera_yaw">glTF Deviația camerei (%1$s)</string>
-    <string name="avatar_gltf_camera_distance">glTF Distanța până la cameră (%1$s)</string>
-    <string name="avatar_gltf_orbit_pivot_height">glTF Înălțimea în jurul centrului (%1$s)</string>
-    <string name="avatar_fbx_camera_pitch">FBX Înclinarea camerei (%1$s)</string>
-    <string name="avatar_fbx_camera_yaw">FBX Deviația camerei (%1$s)</string>
-    <string name="avatar_fbx_camera_distance">FBX Distanța până la cameră (%1$s)</string>
-    <string name="avatar_fbx_orbit_pivot_height">FBX Înălțimea în jurul centrului (%1$s)</string>
-    <string name="avatar_supported_formats_title">Formate acceptate</string>
-    <string name="avatar_supported_formats_desc">- DragonBones: Scheletul .json + *_tex.json + *_tex.png\n- WebP: unul sau mai multe .webp Document\n- MP4: unul sau mai multe .mp4 Document\n- MMD:.pmx sau .pmd Model, opțional .vmd Acțiune\n- glTF:.glb sau .gltf(În cazul în care se face referire, este necesar să se .bin/(resurse precum texturi etc.)\n- FBX:.fbx(Transferul direct este limitat la resursele autonome)</string>
-    <string name="avatar_import_methods_title">Modalități de import</string>
-    <string name="avatar_import_methods_desc">- Selectați direct fișierul:.glb / .gltf / .mp4 / .fbx\n- ZIP Introducere:DragonBones,WebP,MP4,MMD, mai multe fișiere glTF, sau cu texturi externe/Resursele FBX Geantă</string>
-    <string name="import_structure_guide_tap_to_expand">Ghid privind structura de import (faceți clic pentru a extinde)</string>
-    <string name="import_structure_guide_tap_to_collapse">Ghid privind structura de import (faceți clic pentru a ascunde)</string>
-    <string name="import_structure_guide_content">Aceasta este structura de directoare a „pachetului de import” (ZIP sau în interiorul fișierului selectat), nu în memoria internă a aplicației.\n\nDragonBones(.zip)\n  my_dragonbones.zip\n    any_folder_name/\n      hero_ske.json\n      hero_tex.json\n      hero_tex.png\n  Cerințe:ske/tex json/png Prefixele numelor fișierelor sunt identice.\n\nWebP(.zip)\n  my_webp.zip\n    any_folder_name/\n      idle.webp\n      talking.webp\n      happy.webp\n  Cerințe: să conțină cel puțin unul .webp Fișier.\n\nMP4\n  Modalitate A(fișier direct):\n    avatar.mp4\n  Modalitate B(.zip):\n    my_mp4.zip\n      any_folder_name/\n        idle.mp4\n        talking.mp4\n        happy.mp4\n  Cerințe: să conțină cel puțin unul .mp4 Fișier.\n\nMMD(.zip)\n  my_mmd.zip\n    any_folder_name/\n      character.pmx(sau .pmd)\n      motions/idle.vmd(opțional)\n      textures/...\n  Cerință: menținerea PMX/PMD Căile relative citate rămân neschimbate.\n\nglTF\n  Modalitate A(fișier direct):\n    avatar.glb\n  Modalitate B(Mai multe fișiere glTF Utilizare .zip):\n    my_gltf.zip\n      any_folder_name/\n        avatar.gltf\n        avatar.bin\n        textures/...\n  Cerință: menținerea .gltf Căile relative citate rămân neschimbate.\n\nFBX\n  Modalitate A(Fișiere directe, numai resurse autonome):\n    avatar.fbx\n  Modalitate B(Textură externă/Vă rugăm să utilizați resursele .zip):\n    my_fbx.zip\n      any_folder_name/\n        avatar.fbx\n        textures/...\n  Cerințe: încărcare directă .fbx Se acceptă doar resursele încorporate; dacă modelul face referire la texturi externe sau la alte resurse, vă rugăm să păstrați căile relative și să le plasați în ZIP.</string>
     <string name="enter">Intrare</string>
-    <string name="about_avatar_formats">Această aplicație acceptă mai multe formate de avatare, printre careDragonBones. În continuare sunt prezentate instrucțiunile pentru crearea și importarea modelului.</string>
-    <string name="dragon_bones_config">DragonBonesConfigurație</string>
-    <string name="dragon_bones_renamed">DragonBonesA fost redenumit înLoongBones, și a lansat un nou editor online.\nLoongBonesSusținereIK, deformarea rețelei, legarea scheletului și alte funcții profesionale de animație.</string>
-    <string name="making_models">1. Realizarea modelului:</string>
     <string name="making_models_desc">    · Recomandare: utilizați noua versiune a editorului online.\n    · Alternativă: descărcarea unei versiuni anterioare de pe un site de arhivare al unei terțe părți v5.6.3 Editor offline.</string>
-    <string name="making_models_desc_general">    · Puteți folosi diverse instrumente pentru a vă crea modelul de avatar.\n    · În ceea ce priveșteDragonBones, vă recomandăm să utilizați noua versiune a editorului online, dar puteți folosi și versiunea veche v5.6.3 Editor offline.</string>
-    <string name="exporting_files">2. Fișiere exportate:</string>
     <string name="exporting_files_desc">    · Indiferent de versiunea utilizată, vă rugăm să selectați tipul atunci când exportați datele JSON, Vă rugăm să selectați versiunea 5.5(Funcția nu este încă disponibilă) 6.0 (în timpul rulării).\n    · Fișierele principale exportate sunt:*_ske.json,*_tex.json,*_tex.png.</string>
-    <string name="exporting_files_desc_general">    · Vă rugăm să urmați instrucțiunile de export pentru formatul ales.\n    · În ceea ce priveșteDragonBones, la exportarea datelor, vă rugăm să selectați tipul JSON, Vă rugăm să selectați versiunea 5.5(Funcția nu este încă disponibilă) 6.0 (în timpul rulării).\n    · Fișierele principale exportate sunt:*_ske.json,*_tex.json,*_tex.png.</string>
-    <string name="configuring_interaction">3. Interacțiuni de configurare:</string>
-    <string name="configuring_interaction_desc">    · Pentru a activa funcția de urmărire a capului, adăugați IK restricționează și denumește scheletul țintă ik_target.\n    · idle Animație: Asigurați-vă că există un fișier numit idle Animația respectivă, folosită ca animație de bază în modul de așteptare, se va reda automat în buclă.\n    · Animații aleatorii: se pot adăuga, de exemplu, blink(clipire),shake_head(scuturând din cap),wag_tail(mișcarea cozii) și alte animații,\n      Sistemul va declanșa automat și aleatoriu aceste animații, îmbogățind comportamentul animalului de companie.</string>
-    <string name="packaging_and_importing">4. Pachetizare și import:</string>
-    <string name="packaging_and_importing_desc">    · Combinați cele trei fișiere exportate într-un singur fișier .zip Importați după fișier.</string>
     <string name="important_tip">Notă importantă: Pe pagina de descărcare a versiunii anterioare a editorului,WindowsșiMacLinkul de descărcare a fost plasat invers; vă rugăm să aveți grijă să selectați linkul corect pentru descărcare.</string>
-    <string name="dragonbones_important_tip">Notă importantă: Pe pagina de descărcare a versiunii anterioare a editorului,WindowsșiMacLinkul de descărcare a fost plasat invers; vă rugăm să aveți grijă să selectați linkul corect pentru descărcare.</string>
-    <string name="download_old_editor">Descărcați versiunea anterioară a editorului</string>
-    <string name="visit_online_editor">Accesați editorul online</string>
 
     <string name="voice_wakeup_section_title">Activare vocală</string>
     <string name="voice_wakeup_always_listen_title">Monitorizare continuă</string>
@@ -918,7 +815,6 @@
     <string name="show_samples">Afișează exemple de comenzi</string>
     <string name="hide_samples">Ascunde exemplele de comenzi</string>
     <string name="select_example">Alegeți o comandă de exemplu:</string>
-    <string name="execute_command">Executare comandă</string>
     <string name="result_placeholder">Rezultatele vor fi afișate aici</string>
     <string name="executing">În curs de execuție...</string>
     <string name="command_success">Comanda a fost executată cu succes:\n%1$s</string>
@@ -1426,12 +1322,8 @@
     <string name="chat_function_desc">Funcțiile principale de dialog, configurarea cuvintelor-cheie personalizate pentru chatbot</string>
     <string name="voice_function">Funcții vocale</string>
     <string name="voice_function_desc">Funcția de interacțiune vocală, configurarea cuvintelor-cheie personalizate pentru asistentul vocal</string>
-    <string name="desktop_pet_function">Funcția „maskotă de birou”</string>
-    <string name="desktop_pet_function_desc">Funcția „Animal de companie pe desktop”, personalizarea personalității și a modului de interacțiune al animalului de companie de pe desktop</string>
 
     <!-- 桌宠服务通知 -->
-    <string name="pet_service_notification_title">Servicii pentru animale de companie de birou</string>
-    <string name="pet_service_notification_text">Animalul de companie virtual este în funcțiune</string>
 
     <!-- 设置屏幕新增字符串 -->
     <string name="settings_prompt_section">Configurarea cuvintelor-cheie</string>
@@ -1651,7 +1543,6 @@
     <string name="pip_package_install_success">PIP Pachetul a fost instalat cu succes</string>
     <string name="pip_package_install_failed">PIP Eroare la instalarea pachetului</string>
     <string name="please_press_back_to_return">Vă rugăm să apăsați tasta „Înapoi” pentru a reveni la pagina anterioară</string>
-    <string name="please_input_command">Vă rugăm să introduceți comanda</string>
     <string name="background_image_migrated">Imaginea de fundal a fost mutată în memoria internă</string>
     <string name="background_image_access_failed">Nu se poate accesa imaginea de fundal veche; funcția de imagine de fundal a fost dezactivată</string>
     <string name="avatar_updated">Imaginea de profil a fost actualizată</string>
@@ -1748,8 +1639,6 @@
     <string name="ai_assistant">AIasistent</string>
     <string name="send_message">Trimite mesaj</string>
     <string name="chat_with_pet">Conversația cu animalul de companie</string>
-    <string name="dragonbones_mode">DragonBonesModul</string>
-    <string name="avatar_mode">Modelul personajului virtual</string>
     <string name="loading_failed">Încărcarea a eșuat: %1$s</string>
     <string name="loading">Se încarcă...</string>
     <string name="floating_service_description">AfișareAIServiciul de ferestre plutitoare al asistentului</string>
@@ -1863,27 +1752,8 @@
     <string name="control_info">Informații despre controale</string>
     <string name="current_activity_title">În prezentActivity</string>
     <string name="dimensions">Dimensiuni: %1$d×%2$dpx</string>
-    <string name="ffmpeg_command">FFmpegComandă</string>
-    <string name="common_command_templates">Șabloane de comenzi uzuale</string>
-    <string name="ffmpeg_template_note">Atenție: Când utilizați șablonul, vă rugăm săinput.mp4șioutput.mp4Înlocuiți cu calea reală către fișier</string>
-    <string name="ffmpeg_help">FFmpegAjutor</string>
-    <string name="ffmpeg_description">FFmpegEste un instrument puternic de procesare audio și video. În această interfață, puteți efectua directFFmpegComandă.</string>
 
     <!-- FFmpeg Command Templates -->
-    <string name="ffmpeg_video_conversion_desc">Convertiți videoclipul înMP4Format</string>
-    <string name="ffmpeg_video_compression">Compresia video</string>
-    <string name="ffmpeg_video_compression_desc">Reducerea dimensiunii fișierelor video</string>
-    <string name="ffmpeg_video_trim">Decuparea videoclipurilor</string>
-    <string name="ffmpeg_video_trim_desc">Decuparea unor segmente specifice dintr-un videoclip</string>
-    <string name="ffmpeg_extract_audio">Extragerea fișierului audio</string>
-    <string name="ffmpeg_extract_audio_desc">Extragerea sunetului din videoclip</string>
-    <string name="ffmpeg_create_gif">GIFRealizare</string>
-        <string name="ffmpeg_create_gif_desc">Convertiți videoclipul înGIF</string>
-    <string name="ffmpeg_input_placeholder">IntroducereFFmpegComandă, nu este necesar să conțină\'ffmpeg\'Prefix</string>
-    <string name="ffmpeg_common_parameters">Parametri obișnuiți</string>
-    <string name="ffmpeg_get_info_failed">Eroare la preluarea informațiilor</string>
-    <string name="ffmpeg_view_more_info">Vezi mai multe informații</string>
-    <string name="ffmpeg_executing_command">Se execută comanda, vă rugăm să așteptați...</string>
 
     <!-- Tool Tester Screen -->
     <string name="ai_tools_availability_test">AITestarea accesibilității instrumentelor</string>
@@ -2020,74 +1890,17 @@
     <string name="ui_debugger_start_float">Activare fereastră flotantă</string>
     <string name="tool_stream_markdown_demo">în fluxMarkdownPrezentare</string>
     <string name="tool_stream_markdown_demo_desc">Flux de înaltă performanțăMarkdownDemonstrație de randare, cu suport pentru efectul de curgere a caracterelor în timp real</string>
-    <string name="tool_shell_executor">Executor de comenzi</string>
-    <string name="tool_shell_executor_desc">ExecutareShellExecutați comanda și vizualizați rezultatul; sunt disponibile presetări pentru comenzile uzuale</string>
-    <string name="shell_executor_input_hint">IntroducereShellComandă</string>
-    <string name="shell_executor_command">Comandă</string>
-    <string name="shell_executor_clear">Ștergere</string>
-    <string name="shell_executor_execute">Executare</string>
-    <string name="shell_executor_clear_history">Ștergerea istoricului</string>
-    <string name="shell_executor_show_presets">Afișează comenzile prestabilite</string>
-    <string name="shell_executor_hide_presets">Comandă de ascundere a presetărilor</string>
-    <string name="shell_executor_executing">Se execută comanda...</string>
-    <string name="shell_executor_common_commands">Comenzi frecvente</string>
-    <string name="shell_executor_category_system">Informații despre sistem</string>
-    <string name="shell_executor_category_file">Operațiuni cu fișiere</string>
-    <string name="shell_executor_category_network">Instrumente online</string>
-    <string name="shell_executor_category_hardware">Informații despre hardware</string>
-    <string name="shell_executor_category_package">Gestionarea aplicațiilor</string>
-    <string name="shell_executor_input_command_hint">Introduceți comanda și faceți clic pe „Executare”</string>
-    <string name="shell_executor_view_results">Vizualizarea rezultatelor executării comenzii</string>
-    <string name="shell_executor_view_presets">Vizualizare comenzi prestabilite</string>
-    <string name="shell_executor_error_title">Eroare de execuție</string>
-    <string name="shell_executor_confirm">Confirmare</string>
-    <string name="shell_executor_stdout">Ieșire standard:</string>
-    <string name="shell_executor_stderr">Eroare de standard:</string>
-    <string name="shell_executor_output">Ieșire</string>
-    <string name="shell_executor_exit_code">Cod de ieșire: %s</string>
-    <string name="shell_executor_re_execute">Reexecutare</string>
-    <string name="shell_executor_expand">Extindeți</string>
-    <string name="shell_executor_collapse">Afișează</string>
-    <string name="shell_executor_execute_failed">Eșecul executării comenzii: %s</string>
     <string name="tool_log_viewer">Vizualizator de jurnale</string>
     <string name="tool_log_viewer_desc">Captarea și vizualizarea în timp real a jurnalelor de sistem și ale aplicațiilor, cu funcții de filtrare și căutare</string>
-    <string name="tool_sql_viewer">SQL Vizualizator</string>
-    <string name="tool_sql_viewer_desc">Vizualizarea tabelelor din baza de date a aplicației și executarea acestora SQL Comandă</string>
     <string name="tool_token_config_desc">Deschide API Pagina de obținere și configurare a cheilor, care facilitează integrarea rapidă a modelului</string>
-    <string name="screen_title_sql_viewer">SQL Vizualizator</string>
-    <string name="sql_viewer_title">SQL Vizualizator</string>
-    <string name="sql_viewer_input_label">SQL Introducere</string>
-    <string name="sql_viewer_run">Executare</string>
-    <string name="sql_viewer_clear">Golește</string>
-    <string name="sql_viewer_page_size">Pe fiecare pagină</string>
-    <string name="sql_viewer_paging">Paginare</string>
-    <string name="sql_viewer_tables_chip">Lista tabelelor</string>
-    <string name="sql_viewer_schema_chip">Structura tabelului</string>
-    <string name="sql_viewer_row_count">În total %1$d Bine / %2$d Listă</string>
-    <string name="sql_viewer_affected_rows">Numărul de rânduri afectate:%1$d</string>
-    <string name="sql_viewer_load_more">Încărcă mai multe</string>
-    <string name="sql_viewer_empty_sql">SQL Nu poate fi gol</string>
-    <string name="sql_viewer_controls">Control</string>
-    <string name="sql_viewer_empty_state">Nu există rezultate momentan; faceți clic pe butonul din colțul din dreapta sus pentru a continua SQL</string>
     <string name="tool_process_limit_remover">Eliminarea restricțiilor procesului „Illusion”</string>
     <string name="tool_process_limit_remover_desc">AdministrareAndroid 12+Limita numărului de procese fantomă, care permite un număr mai mare de subprocese în fundal</string>
 
     <string name="tool_html_packager">HTMLMașină de ambalat</string>
     <string name="tool_html_packager_desc">VaHTMLFișierul și dependențele sale sunt împachetate într-un singur fișierHTMLFișiere, ușor de partajat și de implementat</string>
 
-    <string name="tool_autoglm_one_click">AutoGLM Configurare cu un singur clic</string>
-    <string name="tool_autoglm_one_click_desc">Cu un singur clic pentru UI Configurarea controlerului autoglm-phone Model și comutare AutoGLM Set de instrumente</string>
-    <string name="tool_autoglm_tool">AutoGLM Executare</string>
-    <string name="tool_autoglm_tool_desc">Utilizare autoglm-phone Agentul execută sarcinile de automatizare pe telefonul mobil urmând pașii indicați</string>
 
     <!-- AutoGLM One-Click Configuration -->
-    <string name="autoglm_config_name">AutoGLM Configurație</string>
-    <string name="autoglm_one_click_title">AutoGLM Configurare cu un singur clic</string>
-    <string name="autoglm_one_click_subtitle">Pentru UI Controlerul creează automat un profil inteligent autoglm-phone Configurarea modelului și comutarea AutoGLM Set de instrumente.</string>
-    <string name="autoglm_open_apikey_center">Accesați Zhipu API Key Pagină</string>
-    <string name="autoglm_open_apikey_tip">După autentificare, creați și copiați pe platforma Zhipu API Key</string>
-    <string name="autoglm_api_key_placeholder">Lipiți aici codul dvs. Zhipu API Key</string>
-    <string name="autoglm_one_click_button">Configurare cu un singur clic AutoGLM</string>
 
     <!-- Process Limit Remover Screen -->
     <string name="process_limit_title">Eliminarea restricțiilor procesului „Illusion”</string>
@@ -2121,15 +1934,6 @@
     <string name="process_limit_error_output">Afișarea erorilor</string>
     <string name="process_limit_exit_code">Cod de ieșire:%d</string>
     <string name="process_limit_command">Comandă</string>
-    <string name="autoglm_status_running">Se efectuează configurarea cu un singur clic, vă rugăm să așteptați...</string>
-    <string name="autoglm_status_success">Finalizat AutoGLM Configurare cu un singur clic:
-- A fost creat sau actualizat AutoGLM UI Configurarea modelului controlerului (autoglm-phone, Zhipu)
-- S-a înlocuit „UI Funcția „Controler” este comutată la această configurație
-- Este închis Automatic_ui_base, deschideți Automatic_ui_subagent
-
-Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</string>
-    <string name="autoglm_status_error">Eșecul configurării cu un singur clic:%1$s</string>
-    <string name="autoglm_error_empty_api_key">Vă rugăm să completați mai întâi formularul Zhipu API Key.</string>
 
     <!-- MCP Config Screen -->
     <string name="import_or_connect_mcp_service">Importare sau conectareMCPServicii</string>
@@ -2412,35 +2216,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="terminal_auto_config_applying">Se aplică configurația...</string>
 
     <!-- FFmpeg 页面 -->
-    <string name="ffmpeg_input_file">Fișier de intrare</string>
-    <string name="ffmpeg_output_file">Fișier de ieșire</string>
-    <string name="ffmpeg_select_input">Selectați fișierul de intrare</string>
-    <string name="ffmpeg_select_output">Selectați calea de ieșire</string>
-    <string name="ffmpeg_conversion_type">Tip de conversie</string>
-    <string name="ffmpeg_video_conversion">Conversia fișierelor video</string>
-    <string name="ffmpeg_audio_conversion">Conversie audio</string>
-    <string name="ffmpeg_image_conversion">Conversia imaginilor</string>
-    <string name="ffmpeg_start_conversion">Începe conversia</string>
-    <string name="ffmpeg_conversion_progress">Progresul conversiei</string>
-    <string name="ffmpeg_conversion_completed">Conversia s-a finalizat</string>
-    <string name="ffmpeg_conversion_failed">Conversia a eșuat</string>
-    <string name="ffmpeg_quality_settings">Setări de calitate</string>
-    <string name="ffmpeg_bitrate">Rata de biți</string>
-    <string name="ffmpeg_resolution">Rezoluție</string>
-    <string name="ffmpeg_frame_rate">Rata de cadre</string>
-    <string name="ffmpeg_codec">Codec</string>
-    <string name="ffmpeg_advanced_options">Opțiuni avansate</string>
-    <string name="ffmpeg_custom_parameters">Parametri personalizați</string>
-    <string name="ffmpeg_preview">Previzualizare</string>
-    <string name="ffmpeg_file_info">Informații despre fișier</string>
-    <string name="ffmpeg_duration">Durata</string>
     <string name="ffmpeg_file_size">Dimensiunea fișierului</string>
-    <string name="ffmpeg_format">Format</string>
-    <string name="ffmpeg_processing">Se procesează...</string>
-    <string name="ffmpeg_cancel">Anulare</string>
-    <string name="ffmpeg_no_file_selected">Nu s-a selectat niciun fișier</string>
-    <string name="ffmpeg_invalid_file">Format de fișier nevalid</string>
-    <string name="ffmpeg_permission_error">Eroare de permisiuni, nu se poate accesa fișierul</string>
 
     <!-- Log Viewer (Logcat) -->
     <string name="logcat_title">Vizualizator de jurnale</string>
@@ -2963,10 +2739,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="tsinghua_source_error">Eroare de configurare Tsinghua Yuan</string>
     <string name="tsinghua_source_failed">Eroare la configurarea Tsinghua Yuan</string>
     <string name="tsinghua_source_success">Configurarea Tsinghua Yuan a reușit</string>
-    <string name="ffmpeg_video_info">Informații despre videoclip</string>
-    <string name="ffmpeg_video_info_desc">Obțineți informații detaliate despre fișierul video</string>
-    <string name="ffmpeg_video_output_placeholder">Calea către fișierul de ieșire(Opțional)</string>
-    <string name="ffmpeg_video_transcode">Transcodarea videoclipurilor</string>
 
     <!-- ShizukuDemoScreen 字符串 -->
     <string name="loading_app_state">Se încarcă starea aplicației...</string>
@@ -3891,15 +3663,11 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="screen_title_terminal_auto_config">Configurarea automată a terminalelor</string>
     <string name="screen_title_app_permissions">Gestionarea permisiunilor aplicațiilor</string>
     <string name="screen_title_ui_debugger">UIInstrumente de depanare</string>
-    <string name="screen_title_shell_executor">Executor de comenzi</string>
     <string name="screen_title_logcat">Vizualizator de jurnale</string>
-    <string name="screen_title_ffmpeg">FFmpeg</string>
     <string name="screen_title_markdown_demo">în fluxMarkdownPrezentare</string>
     <string name="screen_title_text_to_speech">Conversie text-voce</string>
     <string name="screen_title_speech_to_text">Recunoașterea vocală</string>
     <string name="screen_title_process_limit_remover">Eliminarea restricțiilor procesului „Illusion”</string>
-    <string name="screen_title_autoglm_one_click">AutoGLM Configurare cu un singur clic</string>
-    <string name="screen_title_autoglm_tool">autoglmExecutare</string>
     <string name="screen_title_default_assistant_guide">Setările implicite ale Asistentului</string>
     <string name="screen_title_mcp_market">MCP Piața</string>
     <string name="screen_title_skill_market">Skill Piața</string>
@@ -5451,7 +5219,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="search_content_block">Conținut de căutat</string>
     <string name="status_info_block">Informații privind starea</string>
     <string name="html_content_block">HTMLConținut</string>
-    <string name="mood_tag_block">Etichete emoționale</string>
     <string name="thinking_tools_group_title_with_count">Reflecție și utilizarea instrumentelor (%1$d)</string>
     <string name="tools_group_title_with_count">Apelarea instrumentelor (%1$d)</string>
 
@@ -5610,18 +5377,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="default_assist_expand">Extindeți</string>
 
     <!-- FFmpeg 页面 -->
-    <string name="ffmpeg_param_input">-i: Fișier de intrare</string>
-    <string name="ffmpeg_param_video_codec">-c:v: Codificator video</string>
-    <string name="ffmpeg_param_audio_codec">-c:a: Codificator audio</string>
-    <string name="ffmpeg_param_video_bitrate">-b:v: Rata de biți a videoclipului</string>
-    <string name="ffmpeg_param_audio_bitrate">-b:a: Rata de biți audio</string>
-    <string name="ffmpeg_param_resolution">-s: Rezoluție</string>
-    <string name="ffmpeg_param_framerate">-r: Rata de cadre</string>
-    <string name="ffmpeg_command_success">Comanda a fost executată cu succes</string>
-    <string name="ffmpeg_command_failed">Executarea comenzii a eșuat</string>
-    <string name="ffmpeg_command_label">Comandă: %1$s</string>
-    <string name="ffmpeg_return_code">Cod de returnare: %1$s</string>
-    <string name="ffmpeg_processing_time">Timpul de procesare: %1$sms</string>
 
     <!-- UI Debugger -->
     <string name="uidebugger_current_interface">Interfața de analiză curentă</string>
@@ -6238,7 +5993,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="uidebugger_clear">Ștergere</string>
 
     <!-- Auto GLM Tool Screen -->
-    <string name="autoglm_virtual_screen">De data aceasta se utilizează un ecran virtual</string>
 
     <!-- HTML Packager Screen -->
     <string name="htmlpackager_step1_title">Pasul 1: Selectați folderul proiectului</string>
@@ -6256,20 +6010,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="document_block_label">Bloc %1$d</string>
 
     <!-- Auto GLM One Click Tool Screen -->
-    <string name="autoglm_go_to_model_config">Accesați configurarea modelului</string>
-    <string name="autoglm_custom_endpoint">Personalizare Endpoint(OpenAI (compatibil)</string>
-    <string name="autoglm_model_name">Denumirea modelului</string>
-    <string name="autoglm_restore_original">Restabilirea logicii inițiale de automatizare</string>
-    <string name="autoglm_step1_title">step1 Configurarea modelului de dialog de bază</string>
-    <string name="autoglm_step1_warning">Nu punețiautoglmModelul ca model principal de dialog</string>
-    <string name="autoglm_step1_note">Atenție: dacă ați configurat deja această opțiune, nu este nevoie să vă mai ocupați de ea; nu modificați în niciun caz această setare autoglm și alte modele mici.</string>
-    <string name="autoglm_step2_title">step2 Accesați site-ul oficial al Zhipu pentru a obține API Key</string>
-    <string name="autoglm_step3_title">step3 Completați API Key, faceți clic pe „Configurare cu un singur clic”</string>
-    <string name="autoglm_hide_advanced">Ascunde setările avansate</string>
-    <string name="autoglm_show_advanced">Afișează setările avansate (personalizare) Endpoint / (Numele modelului)</string>
-    <string name="autoglm_step4_title">step4 Restaurare ne- AutoGLM Automatizare (opțional)</string>
-    <string name="autoglm_step4_description">Dacă simți că, atunci când folosești AutoGLM După configurarea cu un singur clic, operațiunile automate devin dificile; puteți face clic pe butonul de mai jos pentru a reveni la logica automată inițială a software-ului (Activați base Pachet, închidere subagent pachet, restul setărilor rămân neschimbate). Dacă doriți să reactivați AutoGLM, trebuie doar să urmați step3 Introduceți cheia și faceți din nou clic pe „Configurare cu un singur clic”.</string>
-    <string name="autoglm_restore_success">S-a revenit la logica de automatizare inițială a software-ului</string>
 
     <!-- UI Debugger Components -->
     <string name="uidebugger_create_new_package">Crearea unui pachet de configurare nou</string>
@@ -6451,9 +6191,6 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="emoticon_shyness">Rușine</string>
     <string name="emoticon_blush">Roșeață</string>
     <string name="emoticon_embarrassed">Îmi pare rău</string>
-    <string name="autoglm_task_complete">✅ Sarcină îndeplinită: %1$s</string>
-    <string name="autoglm_thinking_process">💭 Procesul de gândire:</string>
-    <string name="autoglm_execute_action">🎯 Executarea acțiunii:</string>
     <string name="version_update">Actualizare de versiune</string>
     <string name="mcp_no_zip_selected">Nu s-a selectat nimicZIPDocument</string>
     <string name="mcp_uninstall_failed">Eșecul dezinstalării</string>
@@ -6487,58 +6224,9 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
     <string name="import_key_suffix">Cheia de import %1$s</string>
     <string name="custom_parameters">Parametri personalizați</string>
     <string name="filediff_tool_result">Rezultatele executării instrumentului</string>
-    <string name="ffmpeg_use_template">Utilizați acest șablon</string>
     <string name="filelist_go_back">Înapoi la directorul superior</string>
 
     <!-- Shell Executor Preset Commands -->
-    <string name="shell_cmd_test">Comenzi de testare</string>
-    <string name="shell_cmd_test_command">echo „Testarea executorului de comenzi a reușit”</string>
-    <string name="shell_cmd_test_desc">O comandă simplă de testare</string>
-    <string name="shell_cmd_sys_info">Informații despre sistem</string>
-    <string name="shell_cmd_sys_info_cmd">uname -a</string>
-    <string name="shell_cmd_sys_info_desc">Afișează informațiile despre nucleul sistemului</string>
-    <string name="shell_cmd_disk">Utilizarea discului</string>
-    <string name="shell_cmd_disk_cmd">df -h</string>
-    <string name="shell_cmd_disk_desc">Afișează utilizarea spațiului pe disc</string>
-    <string name="shell_cmd_memory">Informații despre memorie</string>
-    <string name="shell_cmd_memory_cmd">cat /proc/meminfo</string>
-    <string name="shell_cmd_memory_desc">Afișează detalii privind utilizarea memoriei</string>
-    <string name="shell_cmd_cpu">CPUInformații</string>
-    <string name="shell_cmd_cpu_cmd">cat /proc/cpuinfo</string>
-    <string name="shell_cmd_cpu_desc">AfișareCPUInformații detaliate</string>
-    <string name="shell_cmd_network">Interfață de rețea</string>
-    <string name="shell_cmd_network_cmd">ip addr</string>
-    <string name="shell_cmd_network_desc">Afișează informațiile despre interfața de rețea</string>
-    <string name="shell_cmd_route">Tabelul de rutare</string>
-    <string name="shell_cmd_route_cmd">ip route</string>
-    <string name="shell_cmd_route_desc">Afișează informațiile din tabelul de rutare</string>
-    <string name="shell_cmd_connection">Conexiune la internet</string>
-    <string name="shell_cmd_connection_cmd">cat /proc/net/tcp</string>
-    <string name="shell_cmd_connection_desc">Afișează starea conexiunii la rețea</string>
-    <string name="shell_cmd_installed_apps">Aplicații instalate</string>
-    <string name="shell_cmd_installed_apps_cmd">pm list packages</string>
-    <string name="shell_cmd_installed_apps_desc">Afișează numele tuturor pachetelor de aplicații instalate</string>
-    <string name="shell_cmd_system_apps">Aplicații ale sistemului</string>
-    <string name="shell_cmd_system_apps_cmd">pm list packages -s</string>
-    <string name="shell_cmd_system_apps_desc">Afișează toate aplicațiile de sistem</string>
-    <string name="shell_cmd_3rd_apps">Aplicații terțe</string>
-    <string name="shell_cmd_3rd_apps_cmd">pm list packages -3</string>
-    <string name="shell_cmd_3rd_apps_desc">Afișează toate aplicațiile terțe</string>
-    <string name="shell_cmd_current_dir">Directorul curent</string>
-    <string name="shell_cmd_current_dir_cmd">ls -la</string>
-    <string name="shell_cmd_current_dir_desc">Afișează toate fișierele din directorul curent</string>
-    <string name="shell_cmd_root_dir">Directorul rădăcină</string>
-    <string name="shell_cmd_root_dir_cmd">ls -la /</string>
-    <string name="shell_cmd_root_dir_desc">Afișează toate fișierele din directorul rădăcină</string>
-    <string name="shell_cmd_storage">Spațiu de stocare</string>
-    <string name="shell_cmd_storage_cmd">ls -lh /sdcard</string>
-    <string name="shell_cmd_storage_desc">Afișează fișierele din spațiul de stocare extern</string>
-    <string name="shell_cmd_process">Lista proceselor</string>
-    <string name="shell_cmd_process_cmd">ps</string>
-    <string name="shell_cmd_process_desc">Afișează lista proceselor sistemului</string>
-    <string name="shell_cmd_properties">Proprietățile sistemului</string>
-    <string name="shell_cmd_properties_cmd">getprop</string>
-    <string name="shell_cmd_properties_desc">Afișează toate proprietățile sistemului</string>
 
     <!-- Workflow -->
     <string name="workflow_load_failed">Eroare la încărcarea fluxului de lucru</string>

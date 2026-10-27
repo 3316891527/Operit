@@ -26,7 +26,6 @@ import androidx.navigation.NavController
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.NavItem
 import com.ai.assistance.operit.ui.features.support.about.screens.AboutScreen
-import com.ai.assistance.operit.ui.features.conversation.assistant.screens.AssistantConfigScreen
 import com.ai.assistance.operit.ui.features.conversation.chat.screens.AIChatScreen
 import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
 import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalRunMainChatAction
@@ -77,20 +76,15 @@ import com.ai.assistance.operit.ui.features.management.storage.MemoryLibraryStor
 import com.ai.assistance.operit.ui.features.management.storage.WorkspaceMediaStorageScreen
 import com.ai.assistance.operit.ui.features.models.tokenstats.TokenUsageStatisticsScreen
 import com.ai.assistance.operit.ui.features.models.token.TokenConfigWebViewScreen
-import com.ai.assistance.operit.ui.main.screens.ShellExecutorToolScreen
 import com.ai.assistance.operit.ui.features.support.demo.markdown.StreamMarkdownDemoScreen
 import com.ai.assistance.operit.ui.main.screens.TerminalAutoConfigToolScreen
 import com.ai.assistance.operit.ui.features.automation.terminal.EmbeddedTerminalPage
 import com.ai.assistance.operit.ui.features.automation.terminal.TerminalEntryScreen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.main.screens.UIDebuggerToolScreen
-import com.ai.assistance.operit.ui.features.automation.sql.SqlViewerToolScreen
-import com.ai.assistance.operit.ui.features.automation.ffmpeg.FFmpegScreen
 import com.ai.assistance.operit.ui.features.conversation.chat.export.htmlpackager.HtmlPackagerScreen
 import com.ai.assistance.operit.ui.features.management.settings.speech.stt.SpeechToTextToolScreen
 import com.ai.assistance.operit.ui.features.management.settings.speech.tts.TextToSpeechToolScreen
-import com.ai.assistance.operit.ui.features.automation.autoglm.AutoGlmOneClickToolScreen
-import com.ai.assistance.operit.ui.features.automation.autoglm.AutoGlmToolScreen
 import com.ai.assistance.operit.ui.features.management.update.screens.UpdateScreen
 import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowListScreen
 import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowDetailScreen
@@ -695,25 +689,6 @@ sealed class Screen(
             onGestureConsumed: (Boolean) -> Unit
         ) {
             UpdateScreen(onNavigateToThemeSettings = { navigateTo(ThemeSettings) })
-        }
-    }
-
-    data object AssistantConfig :
-            Screen(
-                    navItem = NavItem.AssistantConfig,
-                    participatesInCrossfadeTransition = false
-            ) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AssistantConfigScreen()
         }
     }
 
@@ -1463,22 +1438,6 @@ sealed class Screen(
         }
     }
 
-    data object ShellExecutor :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_shell_executor) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            ShellExecutorToolScreen(navController = navController)
-        }
-    }
-
     data object Logcat :
             Screen(navItem = NavItem.Settings, titleRes = R.string.data_backup_title, usesRouteViewModelStore = true) {
         @Composable
@@ -1492,39 +1451,6 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             DataAndBackupScreen(initialTab = 2, onNavigateToTokenStatistics = { navigateTo(TokenUsageStatistics) })
-        }
-    }
-
-    data object SqlViewer :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_sql_viewer) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            SqlViewerToolScreen(navController = navController)
-        }
-    }
-
-    // FFmpeg 命令页面
-    data object FFmpeg :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_ffmpeg) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            FFmpegScreen(navController = navController)
         }
     }
 
@@ -1612,39 +1538,6 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             HtmlPackagerScreen(onGoBack = onGoBack)
-        }
-    }
-
-    data object AutoGlmOneClick : Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_autoglm_one_click) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AutoGlmOneClickToolScreen(
-                navController = navController,
-                onNavigateToModelConfig = { navigateTo(ModelConfig) }
-            )
-        }
-    }
-    
-    data object AutoGlmTool : Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_autoglm_tool) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            AutoGlmToolScreen()
         }
     }
 

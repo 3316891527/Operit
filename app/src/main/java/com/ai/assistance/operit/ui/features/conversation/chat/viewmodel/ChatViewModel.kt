@@ -75,7 +75,7 @@ import com.ai.assistance.operit.ui.features.automation.terminal.EmbeddedTerminal
 import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceHubPage
 import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryAction
 import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryRequest
-import com.ai.assistance.operit.ui.floating.ui.pet.AvatarEmotionManager
+import com.ai.assistance.operit.util.text.XmlTagCleaner
 import com.ai.assistance.operit.api.speech.tts.TtsService
 import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
@@ -1513,7 +1513,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 val timestampOfFirstDeletedMessage = currentHistory[index].timestamp
                 chatHistoryDelegate.truncateChatHistory(timestampOfFirstDeletedMessage)
 
-                val plainText = AvatarEmotionManager.stripXmlLikeTags(targetMessage.content)
+                val plainText = XmlTagCleaner.stripXmlLikeTags(targetMessage.content)
                 updateUserMessage(TextFieldValue(plainText))
 
                 OKToast.info(context, context.getString(R.string.chat_rolled_back_message_in_input)).show()

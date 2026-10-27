@@ -24,7 +24,7 @@ import androidx.core.content.ContextCompat
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
-import com.ai.assistance.operit.ui.features.conversation.assistant.components.CompactSwitchRow
+import com.ai.assistance.operit.ui.features.management.settings.components.speech.CompactSwitchRow
 import com.ai.assistance.operit.ui.features.management.settings.components.speech.workbench.*
 import com.ai.assistance.operit.ui.main.components.LocalIsCurrentScreen
 import com.ai.assistance.operit.util.logging.AppLogger

@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences.VoiceAutoAttachItem
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences.VoiceAutoAttachType
-import com.ai.assistance.operit.ui.features.conversation.assistant.components.CompactSwitchRow
+import com.ai.assistance.operit.ui.features.management.settings.components.speech.CompactSwitchRow
 import java.util.UUID
 
 /** 保留附件项目、启用状态和关键词，只调整设置页的选择与编辑方式。 */

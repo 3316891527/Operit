@@ -1,5 +1,7 @@
 # 包名与废弃命名收尾验证
 
+> 当前清理后的完整回归项目见[最新验证记录](verification-removal.md)，本文件中的页面可达性要求只描述 f2d9a9ca 历史快照。
+
 > 本记录固定到命名收尾快照 `f2d9a9ca`。后续资源目录变更由[资源同步记录](05-offline-resource-sync.md)核对；命名检查器应在该快照运行，不能用固定基线检查器代替后续任务验证。
 
 基线为 `5efa22eceb33738ca57dcca528eafb2b7c118797`。第一轮和第二轮已完成的静态证据分别保留在 [API 历史验证](verification.md) 与 [第二轮历史验证](verification-round2.md)，本记录覆盖其后批准的接口与组件名称收尾。

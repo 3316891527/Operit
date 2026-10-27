@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.components.CustomScaffold
-import com.ai.assistance.operit.ui.features.automation.shell.ShellExecutorScreen
 import com.ai.assistance.operit.ui.features.support.diagnostics.uidebugger.UIDebuggerScreen
 
 /** 显示终端自动配置工具屏幕 */
@@ -37,17 +36,6 @@ fun UIDebuggerToolScreen(navController: NavController) {
         CustomScaffold() { paddingValues ->
                 Box(modifier = Modifier.padding(paddingValues)) {
                         UIDebuggerScreen(navController = navController)
-                }
-        }
-}
-
-/** 显示Shell命令执行器屏幕 */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ShellExecutorToolScreen(navController: NavController) {
-        CustomScaffold() { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) {
-                        ShellExecutorScreen(navController = navController)
                 }
         }
 }

@@ -60,7 +60,6 @@ private val XmlTagSuggestions = listOf(
     XmlTagSuggestion("tool_result", R.string.tool_result_block),
     XmlTagSuggestion("status", R.string.status_info_block),
     XmlTagSuggestion("html", R.string.html_content_block),
-    XmlTagSuggestion("mood", R.string.mood_tag_block),
     XmlTagSuggestion("font", R.string.xml_tag_desc_font),
     XmlTagSuggestion("details", R.string.xml_tag_desc_details),
     XmlTagSuggestion("detail", R.string.xml_tag_desc_details),

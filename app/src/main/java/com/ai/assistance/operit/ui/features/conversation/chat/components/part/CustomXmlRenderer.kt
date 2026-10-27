@@ -76,7 +76,7 @@ class CustomXmlRenderer(
 ) : XmlContentRenderer {
     // 定义渲染器能够处理的内置标签集合
     private val builtInTags =
-            setOf("think", "thinking", "search", "tool", "status", "tool_result", "html", "mood", "font", "details", "detail", "meta")
+            setOf("think", "thinking", "search", "tool", "status", "tool_result", "html", "font", "details", "detail", "meta")
 
     private data class ToolRequestRenderState(
         val rawToolName: String,
@@ -134,7 +134,6 @@ class CustomXmlRenderer(
             "search" -> stringResource(R.string.search_content_block)
             "status" -> stringResource(R.string.status_info_block)
             "html" -> stringResource(R.string.html_content_block)
-            "mood" -> stringResource(R.string.mood_tag_block)
             "font" -> stringResource(R.string.xml_block)
             "details", "detail" -> stringResource(R.string.xml_block)
             else -> stringResource(R.string.tool_call_block)
@@ -203,7 +202,6 @@ class CustomXmlRenderer(
             "tool_result" -> renderToolResult(trimmedContent, Modifier, textColor)
             "status" -> renderStatus(trimmedContent, Modifier, textColor)
             "html" -> renderHtmlContent(trimmedContent, Modifier, textColor)
-            "mood" -> renderMoodTag(trimmedContent, Modifier, textColor)
             "font" -> FontTagRenderer.Render(trimmedContent, Modifier, textColor)
             "details", "detail" -> DetailsTagRenderer.Render(trimmedContent, Modifier, textColor, enableDialogs = enableDialogs)
             else -> fallback.RenderXmlContent(trimmedContent, Modifier, textColor, xmlStream, renderInstanceKey)
@@ -1776,19 +1774,4 @@ class CustomXmlRenderer(
         """.trimIndent()
     }
 
-    /** 
-     * 渲染 <mood> 标签 - 这是一个虚拟形象动画触发器，不应在聊天界面显示
-     * 
-     * mood标签的格式: <mood>happy</mood>、<mood>angry</mood>、
-     * 或用户在助手配置里自定义的任意 trigger key（例如 <mood>sleepy</mood>）。
-     * 
-     * 注意：此标签不会在UI中渲染任何内容。虚拟形象的情感控制
-     * 是在虚拟形象控制器中通过 trigger / emotion 映射实现的。
-     */
-    @Composable
-    private fun renderMoodTag(_content: String, _modifier: Modifier, _textColor: Color) {
-        // mood标签不显示任何内容
-        // 它只是作为一个标记存在于文本中，供虚拟形象系统解析
-        // 实际的情感触发由 AvatarEmotionManager.analyzeEmotion() 处理
-    }
 }

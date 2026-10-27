@@ -381,7 +381,6 @@ fun OperitApp(
     val navItems = listOf(
         NavItem.AiChat,
         // 助手配置暂不展示在侧边栏，路由与业务逻辑仍保留。
-        // NavItem.AssistantConfig,
         NavItem.Packages,
         NavItem.ShizukuCommands,
         NavItem.Workflow,

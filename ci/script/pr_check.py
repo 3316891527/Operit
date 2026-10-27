@@ -60,9 +60,6 @@ ANDROID_FULL_PATTERNS = (
 ANDROID_MODULE_ROOTS = (
     "a2ui-compat",
     "material-icons-subset",
-    "avator/dragonbones",
-    "avator/fbx",
-    "avator/mmd",
     "llm/llama",
     "llm/mnn",
     "quickjs",

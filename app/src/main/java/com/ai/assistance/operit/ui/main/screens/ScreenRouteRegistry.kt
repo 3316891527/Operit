@@ -103,15 +103,6 @@ object ScreenRouteRegistry {
                 order = 10
             ),
             hostEntryDefinition(
-                entryId = "main.assistant_config",
-                screen = Screen.AssistantConfig,
-                // surface = NavigationSurface.MAIN_SIDEBAR_AI,
-                // 暂停侧边栏展示；保留路由及现有助手配置逻辑。
-                launchNavItem = NavItem.AssistantConfig,
-                icon = NavItem.AssistantConfig.icon,
-                order = 20
-            ),
-            hostEntryDefinition(
                 entryId = "main.memory_base",
                 screen = Screen.MemoryBase,
                 launchNavItem = NavItem.MemoryBase,
@@ -190,29 +181,9 @@ object ScreenRouteRegistry {
                 screen = Screen.DefaultAssistantGuide
             ),
             hostEntryDefinition(
-                entryId = "hidden.auto_glm_one_click",
-                screen = Screen.AutoGlmOneClick
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.auto_glm_tool",
-                screen = Screen.AutoGlmTool
-            ),
-            hostEntryDefinition(
                 entryId = "hidden.terminal",
                 screen = Screen.Terminal,
                 launchNavItem = NavItem.Terminal
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.ffmpeg",
-                screen = Screen.FFmpeg
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.shell_executor",
-                screen = Screen.ShellExecutor
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.sql_viewer",
-                screen = Screen.SqlViewer
             ),
             hostEntryDefinition(
                 entryId = "hidden.token_config",

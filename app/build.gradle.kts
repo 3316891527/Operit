@@ -740,7 +740,6 @@ kotlin {
 
 dependencies {
     implementation("com.github.jelmerk:hnswlib-core:1.2.1")
-    implementation(project(":dragonbones"))
     implementation(project(":terminal")) {
         // 终端保留独立编译依赖，应用只打包图标子集，避免完整扩展库产生重复类。
         exclude(group = "androidx.compose.material", module = "material-icons-extended")
@@ -748,17 +747,11 @@ dependencies {
     }
     implementation(project(":mnn"))
     implementation(project(":llama"))
-    implementation(project(":mmd"))
-    implementation(project(":fbx"))
     implementation(project(":showerclient"))
     // 原生动态界面兼容层使用当前 SDK 和 Compose 版本编译。
     implementation(project(":a2ui-compat"))
     implementation(project(":quickjs"))
 
-    // glTF runtime rendering (Filament)
-    implementation("com.google.android.filament:filament-android:1.69.2")
-    implementation("com.google.android.filament:gltfio-android:1.69.2")
-    implementation("com.google.android.filament:filament-utils-android:1.69.2")
     implementation(libs.androidx.ui.graphics.android)
     // The only vendored artifact is the custom FFmpegKit AAR.
     implementation(files("libs/ffmpeg-kit-local.aar"))
