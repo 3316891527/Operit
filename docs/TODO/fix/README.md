@@ -104,3 +104,5 @@
 - [use_package 激活失败状态](use-package-result/index.md)
 
 - [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)
+
+- [GitHub 工具包保留终端失败输出](github-terminal-result/index.md)
