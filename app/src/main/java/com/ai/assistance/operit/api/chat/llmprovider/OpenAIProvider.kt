@@ -1,5 +1,12 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
+import com.ai.assistance.operit.api.chat.error.RequestFailure
+import com.ai.assistance.operit.api.chat.error.RequestFailureTrace
+import com.ai.assistance.operit.api.chat.error.RequestFailureCode
+import com.ai.assistance.operit.api.chat.error.RequestFailureException
+import com.ai.assistance.operit.api.chat.error.ResponseJson
+import com.ai.assistance.operit.api.chat.error.ProviderResponseErrors
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.keypool.*
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import android.content.Context
@@ -212,7 +219,7 @@ open class OpenAIProvider(
         val exceptionMessage = context.getString(R.string.openai_error_response_failed, detail)
 
         AppLogger.e("AIService", "【发送消息】响应中包含错误对象: $detail")
-        throw IOException(exceptionMessage)
+        throw ProviderResponseErrors.exception("openai", error, exceptionMessage)
     }
 
     // 重置token计数
@@ -2811,7 +2818,9 @@ open class OpenAIProvider(
                         ?: "Responses stream returned $eventType"
 
                 AppLogger.w("AIService", "Responses流式事件错误: $errorMessage")
-                throw IOException(context.getString(R.string.openai_error_response_failed, errorMessage))
+                throw ProviderResponseErrors.exception(
+                    "openai_responses", error ?: responseObj?.optJSONObject("error"), errorMessage,
+                )
             }
         }
     }
@@ -3133,6 +3142,7 @@ open class OpenAIProvider(
                 }
                 
                 val data = line.substring(5).trim()
+                if (data.isEmpty()) continue
                 if (data == "[DONE]") {
                     flushImageBuffers(state, emitter)
                     closeAllOpenToolCalls(state, emitter)
@@ -3150,7 +3160,7 @@ open class OpenAIProvider(
                 }
 
                 try {
-                    val jsonResponse = JSONObject(data)
+                    val jsonResponse = ResponseJson.parseObject(data, streaming = true)
                     throwIfOpenAiErrorPayload(context, jsonResponse)
 
                     if (useResponsesApi) {
@@ -3172,11 +3182,12 @@ open class OpenAIProvider(
                 } catch (e: Exception) {
                     AppLogger.w("AIService", "【发送消息】JSON解析错误: ${e.message}")
                     logLargeString("AIService", data, "[Send message] Original data when JSON parsing failed: ")
+                    throw ResponseJson.schemaFailure(e)
                 }
             }
             
             if (!state.streamCompletionConfirmed) {
-                throw IOException(context.getString(R.string.openai_error_network_interrupted))
+                throw RequestFailureException(RequestFailureCode.STREAM_COMPLETION_MISSING, context.getString(R.string.openai_error_network_interrupted))
             }
 
             closeAllOpenToolCalls(state, emitter)
@@ -3261,6 +3272,7 @@ open class OpenAIProvider(
                 // 在循环开始时检查是否已被取消
                 checkCancellation(context)
 
+                var attemptCall: okhttp3.Call? = null
                 try {
                     outputStoppedByLimit = false
                     if (retryCount > 0) {
@@ -3303,7 +3315,8 @@ open class OpenAIProvider(
                 AppLogger.d("AIService", "[req=$requestTraceId] 【发送消息】准备连接到AI服务...")
 
                 // 创建Call对象并保存到activeCall中，以便可以取消
-                val call = client.newCall(request)
+                val call = client.newCall(RequestFailureTrace.attach(request, requestTraceId))
+                attemptCall = call
                 activeCall = call
                 watchdog.start(call)
 
@@ -3342,7 +3355,7 @@ open class OpenAIProvider(
                             "AIService",
                             "[req=$requestTraceId] 【发送消息】连接成功(状态码: ${response.code})，准备处理响应..."
                         )
-                        val responseBody = response.body ?: throw IOException(context.getString(R.string.openai_error_response_empty))
+                        val responseBody = response.body ?: throw RequestFailureException(RequestFailureCode.RESPONSE_BODY_MISSING, context.getString(R.string.openai_error_response_empty))
 
                         // 根据stream参数处理响应
                         if (stream) {
@@ -3364,7 +3377,7 @@ open class OpenAIProvider(
                             var hasEmittedRegularContent = false
 
                             try {
-                                val jsonResponse = JSONObject(responseText)
+                                val jsonResponse = ResponseJson.parseObject(responseText, streaming = false)
                                 throwIfOpenAiErrorPayload(context, jsonResponse)
                                 val handledImages = tryHandleOpenAiImageResponse(jsonResponse, emitter, null)
 
@@ -3460,7 +3473,7 @@ open class OpenAIProvider(
                                 throw e
                             } catch (e: Exception) {
                                 AppLogger.e("AIService", "【发送消息】解析非流式响应失败", e)
-                                throw IOException(context.getString(R.string.openai_error_parse_response_failed, e.message ?: ""), e)
+                                throw ResponseJson.schemaFailure(e)
                             }
                         }
                     } finally {
@@ -3502,7 +3515,10 @@ open class OpenAIProvider(
                 lastException = e
                 retryCount = handleRetryableError(
                     context = context,
-                    exception = if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
+                    exception = RequestFailure.capture(
+                        if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
+                        attemptCall,
+                    ),
                     retryCount = retryCount,
                     maxRetries = maxRetries,
                     enableRetry = enableRetry,

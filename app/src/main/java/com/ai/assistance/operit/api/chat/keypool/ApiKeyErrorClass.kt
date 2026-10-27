@@ -11,11 +11,6 @@ enum class ApiKeyErrorClass {
     FIRST_TOKEN_TIMEOUT,
 }
 
-class FirstTokenTimeoutException(
-    message: String = "Waiting for the first token timed out",
-    cause: Throwable? = null,
-) : java.io.IOException(message, cause)
-
 class ApiKeyPoolExhaustedException(
     message: String,
     val summary: ApiKeyTriedSummary,

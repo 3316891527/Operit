@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import android.content.Context
 import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
 import com.ai.assistance.operit.util.AppLogger
@@ -112,7 +113,7 @@ class ApiKeyRetryNoticeTest {
 
         val error = JSONObject(notices.single()).getJSONObject("error")
         assertEquals(5004, error.getInt("code"))
-        assertEquals(300_000L, error.getLong("timeoutMs"))
+        assertEquals(600_000L, error.getLong("timeoutMs"))
         assertEquals(2, error.getJSONObject("retry").getInt("nextAttempt"))
         assertEquals(0L, error.getJSONObject("retry").getLong("delayMs"))
     }

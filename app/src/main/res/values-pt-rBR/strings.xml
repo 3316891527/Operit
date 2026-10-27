@@ -7851,7 +7851,7 @@ Agora é possível usar o modo AutoGLM na interface de diálogo.</string>
 <string name="model_config_save_group_order_failed">Falha ao salvar a ordem dos grupos</string>
 <string name="model_config_save_order_failed">Falha ao salvar a ordem das configurações</string>
 <string name="model_config_toggle_group">Recolher ou expandir o grupo de configurações</string>
-<string name="api_key_first_token_timeout">Tempo de espera do primeiro token esgotado, trocando de chave</string>
+<string name="api_key_first_token_timeout">Sem primeira saída em 10 minutos; o cliente cancelou esta solicitação</string>
 <string name="api_key_pool_add_short">Adicionar chave</string>
 <string name="api_key_pool_delete_hint">Não é possível desfazer. A chave API principal não é removida.</string>
 <string name="api_key_pool_delete_keys">Excluir chaves</string>

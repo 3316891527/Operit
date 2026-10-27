@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.error.RequestFailure
 import java.util.Locale
 
 internal enum class ApiRequestRetryMode {
@@ -37,7 +38,27 @@ internal object ApiRequestRetryPolicy {
 
     fun mode(exception: Throwable): ApiRequestRetryMode {
         if (ApiKeyFailureClassifier.poolExhausted(exception) != null) return ApiRequestRetryMode.STOP
+        val description = RequestFailure.describe(exception)
+        description?.reason?.let { reason ->
+            return if (reason.retryable) ApiRequestRetryMode.RETRY else ApiRequestRetryMode.STOP
+        }
+        val providerFields = description?.providerError?.let { listOfNotNull(it.providerCode, it.providerType) }
+        if (providerFields?.any { it.lowercase() in setOf(
+                "invalid_parameter", "unsupported_parameter", "context_length_exceeded",
+                "content_policy_violation", "content_filter", "refusal",
+            ) } == true
+        ) return ApiRequestRetryMode.STOP
         val errorClass = ApiKeyFailureClassifier.classify(exception)
+        // 结构化服务端错误只根据业务字段决策，诊断文案不再覆盖其类型。
+        if (description?.providerError != null) {
+            return when (errorClass) {
+                ApiKeyErrorClass.AUTH, ApiKeyErrorClass.MODEL -> ApiRequestRetryMode.ROTATE_KEY
+                ApiKeyErrorClass.QUOTA, ApiKeyErrorClass.RATE_LIMIT -> ApiRequestRetryMode.RETRY
+                else -> if (providerFields?.any { it.lowercase() in invalidRequestMarkers } == true) {
+                    ApiRequestRetryMode.STOP
+                } else ApiRequestRetryMode.RETRY
+            }
+        }
         // 余额可在等待期间补充，保留原有额度重试策略。
         if (errorClass == ApiKeyErrorClass.QUOTA) return ApiRequestRetryMode.RETRY
 

@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
 import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
 import java.io.IOException
@@ -151,6 +152,44 @@ class ApiRequestRetryPolicyTest {
             assertTrue(decision.switchedKey)
             assertEquals(0L, decision.delayMs)
         }
+    }
+
+    @Test
+    fun typedProtocolAndCertificateFailuresStopWithoutChangingKeys() {
+        listOf(
+            com.ai.assistance.operit.api.chat.error.RequestFailureCode.STREAM_JSON_INVALID,
+            com.ai.assistance.operit.api.chat.error.RequestFailureCode.RESPONSE_JSON_INVALID,
+            com.ai.assistance.operit.api.chat.error.RequestFailureCode.RESPONSE_SHAPE_INVALID,
+            com.ai.assistance.operit.api.chat.error.RequestFailureCode.CERTIFICATE_EXPIRED,
+        ).forEach { code ->
+            val error = com.ai.assistance.operit.api.chat.error.RequestFailureException(code, "invalid_api_key timeout")
+            assertEquals(ApiRequestRetryMode.STOP, ApiRequestRetryPolicy.mode(error))
+        }
+    }
+
+    @Test
+    fun providerFieldsDetermineBusinessClassWithoutScanningDiagnosticText() {
+        val provider = com.ai.assistance.operit.api.chat.error.ProviderResponseException(
+            "openai", "rate_limit_exceeded", "rate_limit_error", "certificate credit timeout",
+        )
+        assertEquals(ApiKeyErrorClass.RATE_LIMIT, ApiKeyFailureClassifier.classify(provider))
+        assertEquals(ApiRequestRetryMode.RETRY, ApiRequestRetryPolicy.mode(provider))
+        val blocked = com.ai.assistance.operit.api.chat.error.ProviderResponseException(
+            "openai", "content_filter", "policy_error", "blocked",
+        )
+        assertEquals(ApiRequestRetryMode.STOP, ApiRequestRetryPolicy.mode(blocked))
+    }
+
+    @Test
+    fun structuredServerAndTransportFailuresIgnoreUnrelatedDiagnosticKeywords() {
+        val server = com.ai.assistance.operit.api.chat.error.ProviderResponseException(
+            "openai", "server_error", "server_error", "unsupported parameter credit invalid_api_key",
+        )
+        assertEquals(ApiKeyErrorClass.SERVER, ApiKeyFailureClassifier.classify(server))
+        assertEquals(ApiRequestRetryMode.RETRY, ApiRequestRetryPolicy.mode(server))
+        val timeout = FirstTokenTimeoutException("invalid_api_key unsupported parameter")
+        assertEquals(ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT, ApiKeyFailureClassifier.classify(timeout))
+        assertEquals(ApiRequestRetryMode.RETRY, ApiRequestRetryPolicy.mode(timeout))
     }
 
     private class HttpFailure(

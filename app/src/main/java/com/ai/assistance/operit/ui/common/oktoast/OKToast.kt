@@ -17,7 +17,6 @@ import android.widget.PopupWindow
 import androidx.annotation.StringRes
 import com.ai.assistance.operit.util.AppLogger
 import java.lang.ref.WeakReference
-import java.util.ArrayDeque
 
 /** 应用内提示统一入口，状态必须由调用方根据操作结果明确选择。 */
 object OKToast {
@@ -49,7 +48,8 @@ object OKToast {
     fun typed(context: Context, text: CharSequence, kind: Kind, duration: Int = LENGTH_SHORT) = Notice(text.toString(), kind, duration)
 
     private val main = Handler(Looper.getMainLooper())
-    private val queue = ArrayDeque<Notice>()
+    private val queue = RetainedNoticeQueue<Notice> { it.placement == Placement.Top }
+    private var currentNotice: Notice? = null
     private var activityHost: WeakReference<View>? = null
     private val windowHosts = mutableListOf<WeakReference<View>>()
     private var popup: PopupWindow? = null
@@ -68,15 +68,14 @@ object OKToast {
         appearance = Appearance(dark, if (dark) 0xFF25272B.toInt() else 0xFFFFFBFF.toInt(), if (dark) 0xFFF0F0F4.toInt() else 0xFF202126.toInt())
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) {
-                queue.clear()
-                dismissCurrent(animate = false)
+                parkNoticesForHostChange()
                 activityHost = WeakReference(activity.window.decorView)
+                activity.window.decorView.post { showNext() }
             }
             override fun onActivityPaused(activity: Activity) {
                 if (activityHost?.get() === activity.window.decorView) {
                     activityHost = null
-                    queue.clear()
-                    dismissCurrent(animate = false)
+                    parkNoticesForHostChange()
                 }
             }
             override fun onActivityDestroyed(activity: Activity) = Unit
@@ -92,10 +91,11 @@ object OKToast {
         check(Looper.myLooper() == Looper.getMainLooper())
         val reference = WeakReference(view)
         windowHosts.add(reference)
+        view.post { showNext() }
         return {
             windowHosts.remove(reference)
-            queue.clear()
-            dismissCurrent(animate = false)
+            parkNoticesForHostChange()
+            main.post { showNext() }
         }
     }
 
@@ -108,24 +108,29 @@ object OKToast {
         return hosts.mapNotNull { it.get() }.lastOrNull { it.isAttachedToWindow && it.isShown }
     }
 
+    private fun parkNoticesForHostChange() {
+        currentNotice?.let { queue.restore(it) }
+        queue.retainForHostChange()
+        dismissCurrent(animate = false)
+    }
+
     private fun enqueue(notice: Notice) {
-        if (notice.message.isBlank() || host() == null) return
+        if (notice.message.isBlank()) return
+        if (host() == null && notice.placement != Placement.Top) return
         val now = SystemClock.uptimeMillis()
         if (notice.kind != Kind.Error && notice.message == lastMessage && notice.kind == lastKind && now - lastAt < 800L) return
         lastMessage = notice.message
         lastKind = notice.kind
         lastAt = now
-        // 保留最近的提示，避免大量后台完成事件形成长时间陈旧队列。
-        if (queue.size == 5) queue.removeFirst()
-        queue.addLast(notice)
+        // 请求错误不受普通操作提示的队列淘汰影响。
+        queue.add(notice)
         if (popup == null) showNext()
     }
 
     private fun showNext() {
-        if (queue.isEmpty()) return
+        if (popup != null || queue.isEmpty) return
         val anchor = host()
-        if (anchor == null) { queue.clear(); return }
-        val notice = queue.removeFirst()
+        if (anchor == null) { queue.retainForHostChange(); return }
         val context = anchor.context
         val density = context.resources.displayMetrics.density
         val bounds = android.graphics.Rect()
@@ -136,6 +141,7 @@ object OKToast {
         // 按当前窗口可见区域定位，键盘、分屏与悬浮窗口都使用各自的可用范围。
         val maxWidth = (bounds.width() * 0.9f).toInt().coerceAtLeast(1)
         val maxHeight = (bounds.height() * 0.25f).toInt().coerceAtLeast(1)
+        val notice = queue.removeFirst()
         val isRequestError = notice.placement == Placement.Top
         val card = OKToastView(context, notice.kind, notice.message, appearance, maxHeight, isRequestError)
         card.measure(
@@ -161,18 +167,22 @@ object OKToast {
             setOnDismissListener {
                 if (popup === this) {
                     popup = null
+                    currentNotice = null
                     main.removeCallbacks(dismiss)
                     showNext()
                 }
             }
         }
         popupPlacement = notice.placement
+        currentNotice = notice
         popup = window
         try {
             window.showAtLocation(anchor, Gravity.TOP or Gravity.LEFT, x, y)
         } catch (error: WindowManager.BadTokenException) {
             popup = null
-            queue.clear()
+            currentNotice = null
+            queue.restore(notice)
+            queue.retainForHostChange()
             AppLogger.w("OKToast", "提示宿主窗口已失效", error)
             return
         }
@@ -193,6 +203,7 @@ object OKToast {
 
     private fun dismissCurrent(animate: Boolean) {
         main.removeCallbacks(dismiss)
+        currentNotice = null
         val window = popup ?: return
         val card = window.contentView
         card.animate().cancel()
