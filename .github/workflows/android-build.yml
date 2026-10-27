@@ -318,7 +318,41 @@ jobs:
           GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
           PREVIOUS_TAG: ${{ inputs.previous_tag }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
+        shell: bash
         run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          script = Path("ci/distribution/updates/publish_release.py")
+          source = script.read_text(encoding="utf-8")
+
+          # 仅发布到统一发行仓库，避免无加号版本再次向源码仓库发布。
+          # 移除源码标签创建，并避免发行摘要引用未创建的源码标签。
+          replacements = {
+              "    destinations = release_repositories(version)\n":
+                  "    destinations = (UPDATE_REPOSITORY,)\n",
+              "    ensure_source_tag(tag, args.commit)\n":
+                  "",
+              "**source_info(args.commit, tag)":
+                  '**{key: value for key, value in source_info(args.commit, tag).items() if key != "sourceTag"}',
+          }
+
+          # 脚本结构变化时明确报错，防止规则失效后继续创建源码标签。
+          for old, new in replacements.items():
+              count = source.count(old)
+              if count != 1:
+                  raise RuntimeError(
+                      f"发布脚本结构已变化，预期匹配一次，实际匹配 {count} 次：{old!r}"
+                  )
+              source = source.replace(old, new, 1)
+
+          compile(source, str(script), "exec")
+          script.write_text(source, encoding="utf-8")
+          print("本次发布仅写入发行仓库，不创建源码仓库版本标签")
+          PY
+
           python3 ci/distribution/updates/publish_release.py \
             --apk app/build/outputs/apk/release/app-kong.apk \
             --build-tools "$ANDROID_HOME/build-tools/35.0.0" \
