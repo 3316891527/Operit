@@ -70,7 +70,8 @@ class ConversationMarkupManager {
                     val message = result.error.orEmpty().trim()
                     val detail = result.result.toString().trim()
                     append(message)
-                    if (detail.isNotEmpty()) {
+                    // 完全相同的错误说明只拼接一次，额外的命令输出仍完整保留。
+                    if (detail.isNotEmpty() && detail != message) {
                         if (message.isNotEmpty()) {
                             append("\n\n")
                         }

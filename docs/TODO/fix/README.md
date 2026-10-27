@@ -110,3 +110,5 @@
 - [移植 DSL 与设置页滚动状态修复](scroll-state-preservation/index.md)
 - [保留消息复制预览选区与滚动位置](copy-preview-state/index.md)
 - [修复浏览器 ref 点击的 WebView 线程访问](browser-ref-main-thread/index.md)
+
+- [工具失败说明去重](tool-error-deduplication/index.md)
