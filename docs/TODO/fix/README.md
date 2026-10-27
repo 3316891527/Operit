@@ -5,6 +5,8 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+
+- [流式气泡停更修复](streaming-bubble-freeze/index.md)
 - [提示、插件配置入口与 Waifu 首次展示](ux-stream-ui-followup/index.md)
 - [语音条 WebView 挂载焦点修复](toolpkg-webview-focus/index.md) · `toolpkg-webview-focus`
 
