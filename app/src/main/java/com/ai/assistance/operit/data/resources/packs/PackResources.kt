@@ -36,8 +36,8 @@ object PackResources {
     const val SPEECH_ENGINE = "engine-sherpa-onnx"
     private val json = Json { ignoreUnknownKeys = true }
     private val locks = ConcurrentHashMap<String, Mutex>()
-    private val stamps = ConcurrentHashMap<String, List<Pair<Long, Long>>>()
     @Volatile private var cachedCatalog: ResourcePackCatalog? = null
+    @Volatile private var cachedHistory: ResourcePackInstallHistory? = null
     private val bundledCache = ConcurrentHashMap<String, Boolean>()
     private val engineLock = Any()
     private var engineLoaded = false
@@ -48,30 +48,39 @@ object PackResources {
         cachedCatalog?.let { return it }
         return context.assets.open("offline-packs.json").bufferedReader().use { json.decodeFromString<ResourcePackCatalog>(it.readText()) }.also {
             require(it.schemaVersion == 1 && it.packs.map(ResourcePackSpec::id).distinct().size == it.packs.size)
-            it.packs.forEach { pack ->
-                storageSegment(pack.id); storageSegment(pack.version)
-                require(pack.files.isNotEmpty() && pack.files.map(ModelFile::path).distinct().size == pack.files.size)
-                pack.files.forEach { file -> validateRelativePath(file.path); require(file.bytes >= 0 && file.sha256.matches(Regex("[0-9a-f]{64}"))) }
-                require(pack.loadOrder.all { name -> pack.files.any { file -> file.path == name } })
-                pack.extension?.let { extension ->
-                    require(extension.kind in setOf("plugin", "sandbox"))
-                    validateRelativePath(extension.path)
-                    require(pack.files.any { file -> file.path == extension.path })
-                    require(extension.packageNames.isNotEmpty() && extension.packageNames.distinct().size == extension.packageNames.size)
-                    require(extension.path.endsWith(if (extension.kind == "plugin") ".toolpkg" else ".js"))
-                }
-            }
+            it.packs.forEach(ResourcePackInstallations::validateSpec)
             cachedCatalog = it
         }
     }
 
     fun spec(context: Context, id: String): ResourcePackSpec = catalog(context).packs.first { it.id == id }
-    fun directory(context: Context, id: String): File {
-        val pack = spec(context, id)
-        val relative = if (id == SPEECH_ENGINE) "runtime/models/local/engines/sherpa-onnx/1.13.2/android-arm64-v8a/${pack.version}"
+    private fun directoryFor(context: Context, pack: ResourcePackSpec): File {
+        val relative = if (pack.id == SPEECH_ENGINE) "runtime/models/local/engines/sherpa-onnx/1.13.2/android-arm64-v8a/${pack.version}"
             else "runtime/resources/${pack.id}/${pack.version}"
         return File(context.filesDir, relative)
     }
+
+    private fun history(context: Context): List<ResourcePackSpec> {
+        cachedHistory?.let { return it.packs }
+        val loaded = context.assets.open("offline-pack-installations.json").bufferedReader().use {
+            json.decodeFromString<ResourcePackInstallHistory>(it.readText())
+        }
+        require(loaded.schemaVersion == 1)
+        require(loaded.packs.map { it.id to it.version }.distinct().size == loaded.packs.size)
+        loaded.packs.forEach(ResourcePackInstallations::validateSpec)
+        cachedHistory = loaded
+        return loaded.packs
+    }
+
+    private fun installed(context: Context, id: String, force: Boolean = false): InstalledResourcePack? =
+        ResourcePackInstallations.find(spec(context, id), history(context), { directoryFor(context, it) }, force)
+
+    fun directory(context: Context, id: String): File =
+        installed(context, id)?.directory ?: directoryFor(context, spec(context, id))
+
+    /** 已安装状态与是否具有清单最新内容分开，只有内容变化才需要下载更新。 */
+    fun isCurrentReady(context: Context, id: String, force: Boolean = false): Boolean =
+        isBundled(context, id) || installed(context, id, force)?.hasCurrentContent(spec(context, id)) == true
 
     fun isBundled(context: Context, id: String): Boolean = bundledCache.getOrPut(id) {
         when {
@@ -84,17 +93,8 @@ object PackResources {
             else -> false
         }
     }
-    fun isReady(context: Context, id: String, force: Boolean = false): Boolean {
-        if (isBundled(context, id)) return true
-        val pack = spec(context, id)
-        val root = directory(context, id)
-        if (!File(root, "operit-resource.json").isFile) return false
-        val stamp = pack.files.map { File(root, it.path).let { file -> file.length() to file.lastModified() } }
-        if (!force && stamps[root.path] == stamp) return true
-        val result = pack.files.all { ModelArchive.verified(root, it) }
-        if (result) stamps[root.path] = stamp else stamps.remove(root.path)
-        return result
-    }
+    fun isReady(context: Context, id: String, force: Boolean = false): Boolean =
+        isBundled(context, id) || installed(context, id, force) != null
 
     fun requireDirectory(context: Context, id: String): File {
         check(isReady(context, id)) { "请先在设置 → 离线资源准备${spec(context, id).name}" }
@@ -102,7 +102,7 @@ object PackResources {
     }
 
     fun resourceFile(context: Context, id: String, relative: String): File {
-        val pack = spec(context, id)
+        val pack = installed(context, id)?.spec ?: spec(context, id)
         require(pack.files.any { it.path == relative }) { "资源路径不在清单内" }
         return requireDirectory(context, id).containedFile(relative)
     }
@@ -111,7 +111,7 @@ object PackResources {
         locks.getOrPut(id) { Mutex() }.withLock {
             check(!isBundled(context, id)) { "包内资源无需重复准备" }
             val pack = spec(context, id)
-            if (isReady(context, id, force = true)) { progress(pack.archive.bytes, pack.archive.bytes); return@withLock }
+            if (isCurrentReady(context, id, force = true)) { progress(pack.archive.bytes, pack.archive.bytes); return@withLock }
             val cache = File(context.cacheDir, "offline-packs/${pack.archive.path}")
             if (cache.usableSpace < pack.archive.bytes + pack.files.sumOf(ModelFile::bytes) + 1024 * 1024 && context.cacheDir.usableSpace < pack.archive.bytes + pack.files.sumOf(ModelFile::bytes) + 1024 * 1024) error("设备空间不足")
             progress(0, pack.archive.bytes)
@@ -144,26 +144,29 @@ object PackResources {
             if (!isReady(context, id)) installExtracted(context, id, stage, checkpoint)
         }
     }
-    internal fun validateExtracted(context: Context, id: String, stage: File, checkpoint: () -> Unit) {
-        val pack = spec(context, id)
+    internal fun validateExtracted(context: Context, id: String, stage: File, checkpoint: () -> Unit): ResourcePackSpec {
+        val current = spec(context, id)
         val info = json.parseToJsonElement(File(stage, "operit-resource.json").readText()).let { it as kotlinx.serialization.json.JsonObject }
-        require(info["id"]?.toString()?.trim('"') == id && info["version"]?.toString()?.trim('"') == pack.version) { "资源包版本与当前应用不匹配" }
+        require(info["id"]?.toString()?.trim('"') == id) { "资源包身份与当前条目不匹配" }
+        val pack = ResourcePackInstallations.supported(current, history(context), directoryFor(context, current).parentFile!!)
+            .firstOrNull { it.version == info["version"]?.toString()?.trim('"') }
+            ?: error("资源包版本不在已验证的安装清单内")
         val expected = pack.files.map(ModelFile::path).toSet() + "operit-resource.json"
         require(stage.walkTopDown().filter(File::isFile).map { it.relativeTo(stage).invariantSeparatorsPath }.toSet() == expected) { "资源包文件清单不匹配" }
         require(pack.files.all { ModelArchive.verified(stage, it, checkpoint) }) { "资源包校验失败" }
+        return pack
     }
     internal fun installExtracted(context: Context, id: String, stage: File, checkpoint: () -> Unit) {
-        validateExtracted(context, id, stage, checkpoint)
-        val pack = spec(context, id)
+        val pack = validateExtracted(context, id, stage, checkpoint)
         checkpoint()
-        val destination = directory(context, id)
+        val destination = directoryFor(context, pack)
         pack.files.forEach { entry ->
             val file = stage.containedFile(entry.path)
             if (entry.executable) check(file.setExecutable(true, true))
             if (id == SPEECH_ENGINE) check(file.setReadOnly())
         }
         ModelArchive.install(stage, destination, checkpoint)
-        stamps.remove(destination.path)
+        ResourcePackInstallations.remember(pack, destination.parentFile!!)
     }
     suspend fun exportArchive(context: Context, id: String, output: OutputStream, progress: (Long, Long) -> Unit) = withContext(Dispatchers.IO) {
         locks.getOrPut(id) { Mutex() }.withLock {
@@ -178,8 +181,9 @@ object PackResources {
     suspend fun delete(context: Context, id: String, onProgress: ((Long, Long) -> Unit)? = null) = withContext(Dispatchers.IO) {
         locks.getOrPut(id) { Mutex() }.withLock {
             check(!isBundled(context, id)) { "不能移除包内资源" }
-            check(LocalModelRuntimeRegistry.deleteIfUnused(directory(context, id), onProgress) == LocalModelDeleteOutcome.DELETED) { "资源正在使用或移除失败" }
-            stamps.remove(directory(context, id).path)
+            // 用户明确删除时清理整个资源组，避免较早安装再次被识别出来。
+            val groupDirectory = directoryFor(context, spec(context, id)).parentFile!!
+            check(LocalModelRuntimeRegistry.deleteIfUnused(groupDirectory, onProgress) == LocalModelDeleteOutcome.DELETED) { "资源正在使用或移除失败" }
         }
     }
 

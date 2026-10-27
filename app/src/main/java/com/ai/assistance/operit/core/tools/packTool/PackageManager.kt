@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.core.tools.packTool
 
 import android.content.Context
+import com.ai.assistance.operit.core.tools.PackageActivationErrorCode
 import android.os.Looper
 import com.ai.assistance.operit.data.resources.extensions.BuiltInExtensionResources
 import com.ai.assistance.operit.data.resources.packs.PackResources
@@ -3365,13 +3366,20 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * @param packageName The name of the enabled package to use
      * @return Package description and tools for AI prompt enhancement, or error message
      */
-    fun usePackage(packageName: String): String {
+    fun usePackage(packageName: String): String = activatePackage(packageName).message
+
+    private fun activatePackage(packageName: String): PackageActivationResult {
         ensureInitialized()
         val normalizedPackageName = normalizePackageName(packageName)
+        fun failure(code: PackageActivationErrorCode, message: String) =
+            PackageActivationResult.Failed(code, normalizedPackageName, message)
+        if (normalizedPackageName.isBlank()) {
+            return failure(PackageActivationErrorCode.MISSING_PACKAGE_NAME, "Missing required parameter: package_name")
+        }
 
         val containerRuntime = toolPkgContainers[normalizedPackageName]
         if (containerRuntime != null) {
-            return "ToolPkg container '$normalizedPackageName' is not a package and cannot be activated."
+            return failure(PackageActivationErrorCode.PACKAGE_NOT_ACTIVATABLE, "ToolPkg container '$normalizedPackageName' is not a package and cannot be activated.")
         }
 
         // First check if packageName is a standard enabled package (priority)
@@ -3380,13 +3388,13 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         if (subpackageRuntime != null &&
             !enabledPackageNames.contains(subpackageRuntime.containerPackageName)
         ) {
-            return "ToolPkg container '${subpackageRuntime.containerPackageName}' is not enabled. Package '$normalizedPackageName' is inactive."
+            return failure(PackageActivationErrorCode.PACKAGE_DISABLED, "ToolPkg container '${subpackageRuntime.containerPackageName}' is not enabled. Package '$normalizedPackageName' is inactive.")
         }
         if (enabledPackageNames.contains(normalizedPackageName)) {
             // Load the full package data for a standard package
             val toolPackage =
                 getPackageTools(normalizedPackageName)
-                    ?: return "Failed to load package data for: $normalizedPackageName"
+                    ?: return failure(PackageActivationErrorCode.PACKAGE_LOAD_FAILED, "Failed to load package data for: $normalizedPackageName")
 
             // Validate required environment variables, if any
             if (toolPackage.env.isNotEmpty()) {
@@ -3447,7 +3455,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                             append(". Please set them before using this package.")
                         }
                     AppLogger.w(TAG, msg)
-                    return msg
+                    return failure(PackageActivationErrorCode.REQUIRED_ENV_MISSING, msg)
                 }
 
                 // Log info about optional env vars using defaults
@@ -3466,27 +3474,31 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             AppLogger.d(TAG, "Successfully loaded and activated package: $normalizedPackageName")
 
             // Generate and return the system prompt enhancement
-            return generatePackageSystemPrompt(selectedPackage)
+            return PackageActivationResult.Activated(generatePackageSystemPrompt(selectedPackage))
+        }
+
+        if (availablePackages.containsKey(normalizedPackageName)) {
+            return failure(PackageActivationErrorCode.PACKAGE_DISABLED, "Package '$normalizedPackageName' is not enabled.")
         }
 
         // Then check if it's a Skill package
         if (skillManager.getAvailableSkills().containsKey(normalizedPackageName) &&
             !skillVisibilityPreferences.isSkillVisibleToAi(normalizedPackageName)
         ) {
-            return "Skill '$normalizedPackageName' is set to not show to AI"
+            return failure(PackageActivationErrorCode.SKILL_HIDDEN, "Skill '$normalizedPackageName' is set to not show to AI")
         }
 
         val skillPrompt = skillManager.getSkillSystemPrompt(normalizedPackageName)
         if (skillPrompt != null) {
-            return skillPrompt
+            return PackageActivationResult.Activated(skillPrompt)
         }
 
         // Next check if it's an MCP server by checking with MCPManager
         if (isRegisteredMCPServer(normalizedPackageName)) {
-            return useMCPServer(normalizedPackageName)
+            return activateMCPServer(normalizedPackageName)
         }
 
-        return "Package not found: $normalizedPackageName. Please import it first or register it as an MCP server."
+        return failure(PackageActivationErrorCode.PACKAGE_NOT_FOUND, "Package not found: $normalizedPackageName. Please import it first or register it as an MCP server.")
     }
 
     fun getActivePackageStateId(packageName: String): String? {
@@ -3499,44 +3511,8 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * Wrapper for tool execution: builds ToolResult for the 'use_package' tool.
      * Keeps registration site minimal by centralizing result construction here.
      */
-    fun executeUsePackageTool(toolName: String, packageName: String): ToolResult {
-        if (packageName.isBlank()) {
-            return ToolResult(
-                toolName = toolName,
-                success = false,
-                result = StringResultData(""),
-                error = "Missing required parameter: package_name"
-            )
-        }
-
-        val normalizedPackageName = normalizePackageName(packageName)
-        if (isToolPkgContainer(normalizedPackageName)) {
-            return ToolResult(
-                toolName = toolName,
-                success = false,
-                result = StringResultData(""),
-                error = "ToolPkg container '$normalizedPackageName' is not a package and cannot be activated."
-            )
-        }
-
-        if (skillManager.getAvailableSkills().containsKey(normalizedPackageName) &&
-            !skillVisibilityPreferences.isSkillVisibleToAi(normalizedPackageName)
-        ) {
-            return ToolResult(
-                toolName = toolName,
-                success = false,
-                result = StringResultData(""),
-                error = "Skill '$normalizedPackageName' is set to not show to AI"
-            )
-        }
-
-        val text = usePackage(normalizedPackageName)
-        return ToolResult(
-            toolName = toolName,
-            success = true,
-            result = StringResultData(text)
-        )
-    }
+    fun executeUsePackageTool(toolName: String, packageName: String): ToolResult =
+        activatePackage(packageName).toToolResult(toolName)
 
     /**
      * 检查是否是已注册的MCP服务器
@@ -3742,8 +3718,9 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         // (e.g. during forceRefresh) causing accidental removal of valid enabled packages.
         synchronized(initLock) {
             val normalizedPackages = normalizeEnabledPackageNames(currentPackages)
+            val builtInNames = BuiltInExtensionResources.packageNames(context)
             val cleanedPackages = normalizedPackages.filter { packageName ->
-                availablePackages.containsKey(packageName)
+                availablePackages.containsKey(packageName) || packageName in builtInNames
             }
 
             if (cleanedPackages.size != currentPackages.size || cleanedPackages != currentPackages) {
@@ -3996,24 +3973,30 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * @param serverName 服务器名称
      * @return 成功或失败的消息
      */
-    fun useMCPServer(serverName: String): String {
+    fun useMCPServer(serverName: String): String = activateMCPServer(serverName).message
+
+    private fun activateMCPServer(serverName: String): PackageActivationResult {
+        fun failure(code: PackageActivationErrorCode, message: String) =
+            PackageActivationResult.Failed(code, serverName, message)
         // 检查服务器是否已注册
         if (!mcpManager.isServerRegistered(serverName)) {
-            return "MCP server '$serverName' does not exist or is not registered."
+            return failure(PackageActivationErrorCode.PACKAGE_NOT_FOUND, "MCP server '$serverName' does not exist or is not registered.")
         }
 
         // 获取服务器配置
         val serverConfig =
             mcpManager.getRegisteredServers()[serverName]
-                ?: return "Cannot get MCP server configuration: $serverName"
+                ?: return failure(PackageActivationErrorCode.PACKAGE_LOAD_FAILED, "Cannot get MCP server configuration: $serverName")
 
         // 创建MCP包
         val mcpLoadResult = MCPPackage.loadFromServer(context, serverConfig)
         val mcpPackage =
             mcpLoadResult.mcpPackage
-                ?: return mcpLoadResult.errorMessage?.let {
-                    "Cannot connect to MCP server '$serverName': $it"
-                } ?: "Cannot connect to MCP server: $serverName"
+                ?: return failure(
+                    PackageActivationErrorCode.MCP_CONNECTION_FAILED,
+                    mcpLoadResult.errorMessage?.let { "Cannot connect to MCP server '$serverName': $it" }
+                        ?: "Cannot connect to MCP server: $serverName",
+                )
 
         // 转换为标准工具包
         val toolPackage = mcpPackage.toToolPackage()
@@ -4034,7 +4017,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             AppLogger.d(TAG, "Registered MCP tool: $toolName")
         }
 
-        return generateMCPSystemPrompt(toolPackage, serverName)
+        return PackageActivationResult.Activated(generateMCPSystemPrompt(toolPackage, serverName))
     }
 
     /** 为MCP服务器生成系统提示 */

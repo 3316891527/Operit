@@ -25,7 +25,7 @@ internal fun HubDetailSheet(entry: HubEntry, state: HubState, busy: Boolean, onD
     SpeechWorkbenchSheet(entry.name, onDismiss) {
         if (entry.description.isNotBlank()) Text(entry.description, style = MaterialTheme.typography.bodyMedium)
         HubDetailLine(stringResource(R.string.hub_type), stringResource(categoryTitle(entry.category)))
-        HubDetailLine(stringResource(R.string.hub_status), stringResource(when { entry.bundled -> R.string.hub_bundled; entry.ready -> R.string.hub_ready; entry.stored -> R.string.hub_incomplete; else -> R.string.hub_unprepared }))
+        HubDetailLine(stringResource(R.string.hub_status), stringResource(when { entry.bundled -> R.string.hub_bundled; entry.updateAvailable -> R.string.hub_update_available; entry.ready -> R.string.hub_ready; entry.stored -> R.string.hub_incomplete; else -> R.string.hub_unprepared }))
         if (entry.bytes > 0) HubDetailLine(stringResource(R.string.hub_download_size), resourceSize(entry.bytes))
         if (state.active != null && state.transferId == entry.id) HubTransferProgress(state)
         if (entry.location.isNotBlank()) {
@@ -61,7 +61,7 @@ internal fun HubDetailSheet(entry: HubEntry, state: HubState, busy: Boolean, onD
         }
         TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }) { Text(stringResource(R.string.offline_resources_source)) }
         if (!entry.bundled) {
-            if (!entry.ready && entry.downloadable) Button(onClick = onDownload, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.offline_resources_download)) }
+            if ((!entry.ready || entry.updateAvailable) && entry.downloadable) Button(onClick = onDownload, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (entry.updateAvailable) R.string.hub_update_resource else R.string.offline_resources_download)) }
             OutlinedButton(onClick = onImport, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.offline_resources_import)) }
             if (entry.ready) OutlinedButton(onClick = onExport, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.resource_save_backup)) }
             if (entry.stored) TextButton(onClick = { onDelete(false) }, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (entry.id == OfflineResources.UBUNTU) R.string.hub_remove_archive else R.string.resource_delete), color = MaterialTheme.colorScheme.error) }
