@@ -104,3 +104,5 @@
 - [use_package 激活失败状态](use-package-result/index.md)
 
 - [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)
+
+- [保留消息复制预览选区与滚动位置](copy-preview-state/index.md)
