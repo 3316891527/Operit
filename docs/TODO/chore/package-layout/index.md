@@ -2,7 +2,7 @@
 repo: https://github.com/3316891527/Operit
 branch: refactor/package-layout
 base: 6a4b9bfb399c670321518089592ae3e02e38897e
-status: implemented-awaiting-completion-ci
+status: implemented-awaiting-resource-sync-ci
 ---
 # 应用包职责与路径整理
 
@@ -15,6 +15,8 @@ status: implemented-awaiting-completion-ci
 
 - [命名与组件包名收尾](04-layout-completion.md)、[当前最终路径](ui-utilities-migration-final.csv)、[受控变更清单](completion-migration.json)与[收尾验证](verification-completion.md)
 
+- [固定内置扩展资源同步](05-offline-resource-sync.md)
+
 ## 已实施
 
 1. [DONE] 第一轮移动 74 个 API 文件，保留 43 个位置，完成五处类名调整和 37 个既有测试路径更新。
@@ -22,8 +24,9 @@ status: implemented-awaiting-completion-ci
 3. [DONE] 第二轮将功能 UI 归入六组，按职责移动 43 个根部工具文件，将 DocumentsProvider 与 Widget 源码归档到 integrations。
 4. [DONE] 第二轮核对 677 个范围文件：643 个移动、34 个保留位置；同步 95 个既有测试路径及全项目调用引用。
 5. [DONE] 第二轮 1,072 个改动源码正文核对、1,350 个范围外源码摘要、完整源码集合、3,020 处隐式引用与 43 份入口摘要检查通过。
-6. [DONE] 清除废弃工具箱模块、插件注册 API、导航面和路由命名，九份 Android 文件包声明全部对齐路径，更新 Manifest 与 Widget XML。
-7. [PENDING] 对收尾最终提交派发 Android Build 和 Android Tests，结果由维护者反馈，不沿用此前提交状态。
+6. [DONE] 整理仍有效的工具箱模块、插件 UI API、导航面和路由命名；旧工具箱 UI 注册接口保留为空操作，默认 Compose DSL 继续支持。九份 Android 文件包声明全部对齐路径，更新 Manifest 与 Widget XML。
+7. [DONE] 同步 40 个扩展指纹与 7 个插件载荷，发布并核对新的固定资源版本，更新应用目录。
+8. [PENDING] 对资源同步后的最新提交重新派发 Android Build 和 Android Tests，结果由维护者反馈。
 
 ## 验证状态与边界
 
