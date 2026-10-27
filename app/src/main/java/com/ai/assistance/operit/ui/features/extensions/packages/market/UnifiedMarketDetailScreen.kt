@@ -78,6 +78,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.extensions.packages.market.transfer.MarketInstallProgressCard
 import com.ai.assistance.operit.data.api.MarketV2Comment
 import com.ai.assistance.operit.ui.common.icons.rememberRemoteLogoPainter
 import com.ai.assistance.operit.ui.common.displays.MarkdownTextComposable
@@ -242,6 +243,7 @@ fun UnifiedMarketDetailScreen(
     metadataRows: List<UnifiedMarketDetailInfoRow>,
     reactions: UnifiedMarketDetailReactionsState?,
     comments: UnifiedMarketDetailCommentsState,
+    installProgress: MarketInstallProgress? = null,
     modifier: Modifier = Modifier
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
@@ -258,7 +260,10 @@ fun UnifiedMarketDetailScreen(
     }
     val detailListContent: LazyListScope.() -> Unit = {
         item {
-            UnifiedMarketDetailHeaderCard(header = header)
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                UnifiedMarketDetailHeaderCard(header = header)
+                installProgress?.let { MarketInstallProgressCard(it) }
+            }
         }
 
         stickyHeader {

@@ -4,10 +4,12 @@ import android.content.Context
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.data.api.ArtifactProjectVersionResponse
 import com.ai.assistance.operit.data.api.MarketV2Entry
+import com.ai.assistance.operit.data.transfer.copyWithTransferProgress
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -193,6 +195,7 @@ suspend fun installArtifactProjectVersion(
         if (tempFile.exists()) {
             tempFile.delete()
         }
+        tempFile.parentFile?.delete()
     }
 }
 
@@ -206,14 +209,18 @@ private fun downloadArtifactProjectVersionToTempFile(
     if (!downloadDir.exists() && !downloadDir.mkdirs()) {
         throw IllegalStateException("Failed to create market download cache")
     }
-
-    val targetFile = File(downloadDir, version.assetName.ifBlank { "${version.runtimePackageId}.bin" })
     val connection = URL(downloadUrl).openConnection() as HttpURLConnection
     connection.instanceFollowRedirects = true
     connection.connectTimeout = 30_000
     connection.readTimeout = 60_000
     connection.requestMethod = "GET"
-
+    // 隔离并行下载，同时保留导入器使用的附件原文件名和扩展名。
+    val transferDirectory = File(downloadDir, UUID.randomUUID().toString())
+    if (!transferDirectory.mkdir()) {
+        throw IllegalStateException("Failed to create market download directory")
+    }
+    val assetName = File(version.assetName.ifBlank { "${version.runtimePackageId}.bin" }).name
+    val targetFile = File(transferDirectory, assetName)
     try {
         onProgress(MarketInstallStage.CONNECTING, null)
         connection.connect()
@@ -221,37 +228,28 @@ private fun downloadArtifactProjectVersionToTempFile(
         if (code !in 200..299) {
             throw IllegalStateException("Download failed: HTTP $code")
         }
-
         val totalBytes = connection.contentLengthLong
-        var downloadedBytes = 0L
         val inputStream = connection.inputStream ?: throw IllegalStateException("Empty download stream")
         inputStream.use { input ->
             targetFile.outputStream().use { output ->
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                while (true) {
-                    val read = input.read(buffer)
-                    if (read <= 0) break
-                    output.write(buffer, 0, read)
-                    downloadedBytes += read
-                    onProgress(
-                        MarketInstallStage.DOWNLOADING,
-                        if (totalBytes > 0) downloadedBytes.toFloat() / totalBytes.toFloat() else null
-                    )
-                }
+                input.copyWithTransferProgress(output, totalBytes, { transfer ->
+                    onProgress(MarketInstallStage.DOWNLOADING, transfer)
+                })
             }
         }
+        onProgress(MarketInstallStage.VERIFYING, null)
+        val actualSha256 = sha256Hex(targetFile)
+        if (!actualSha256.equals(version.sha256, ignoreCase = true)) {
+            throw IllegalStateException("Downloaded file sha256 mismatch")
+        }
+        return targetFile
+    } catch (error: Exception) {
+        targetFile.delete()
+        transferDirectory.delete()
+        throw error
     } finally {
         connection.disconnect()
     }
-
-    onProgress(MarketInstallStage.VERIFYING, null)
-    val actualSha256 = sha256Hex(targetFile)
-    if (!actualSha256.equals(version.sha256, ignoreCase = true)) {
-        targetFile.delete()
-        throw IllegalStateException("Downloaded file sha256 mismatch")
-    }
-
-    return targetFile
 }
 
 private fun sha256Hex(file: File): String {

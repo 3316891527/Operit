@@ -1057,7 +1057,7 @@ fun PackageManagerScreen(
                                 "Lists refreshed. Available: ${availablePackages.value.keys}, Imported: ${importedPackages.value}"
                             )
                             isLoading = false
-                            OKToast.success(context, "Package deleted successfully.", OKToast.LENGTH_SHORT).show()
+                            OKToast.success(context, context.getString(R.string.pkg_delete_success), OKToast.LENGTH_SHORT).show()
                         }
                     }
                 )

@@ -9,6 +9,7 @@ import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.data.api.MarketStatsApiService
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import com.ai.assistance.operit.data.mcp.InstallResult
+import com.ai.assistance.operit.data.mcp.InstallProgress
 import com.ai.assistance.operit.data.mcp.MCPLocalServer
 import com.ai.assistance.operit.data.mcp.McpConfigImportParser
 import com.ai.assistance.operit.data.mcp.MCPRepository
@@ -52,7 +53,11 @@ class MarketEntryInstallController(
         }
         onProgress(MarketInstallStage.IMPORTING_REPOSITORY, null)
         deleteInstalledMarkerRoot(entry)
-        val result = skillRepository.importSkillFromGitHubRepoDetailed(repoUrl)
+        val result = skillRepository.importSkillFromGitHubRepoDetailed(
+            repoUrl = repoUrl,
+            onDownloadProgress = { transfer -> onProgress(MarketInstallStage.DOWNLOADING, transfer) },
+            onImportStarted = { onProgress(MarketInstallStage.IMPORTING_REPOSITORY, null) },
+        )
         val installedDir = result.installedDir ?: throw IllegalStateException(result.message)
         withContext(Dispatchers.IO) {
             writeMarketInstallMarker(installedDir, entry)
@@ -122,7 +127,15 @@ class MarketEntryInstallController(
             type = "local",
             marketConfig = installConfig.ifBlank { null }
         )
-        when (val result = mcpRepository.installMCPServerWithObject(server)) {
+        val result = mcpRepository.installMCPServerWithObject(server) { progress ->
+            when (progress) {
+                is InstallProgress.Downloading -> onProgress(MarketInstallStage.DOWNLOADING, progress.transfer)
+                is InstallProgress.Extracting -> onProgress(MarketInstallStage.INSTALLING, null)
+                InstallProgress.Preparing -> onProgress(MarketInstallStage.FETCHING_METADATA, null)
+                InstallProgress.Finished -> onProgress(MarketInstallStage.RECORDING, null)
+            }
+        }
+        when (result) {
             is InstallResult.Success -> {
                 withContext(Dispatchers.IO) {
                     writeMarketInstallMarker(File(result.pluginPath), entry)

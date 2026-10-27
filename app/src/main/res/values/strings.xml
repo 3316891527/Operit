@@ -9122,4 +9122,6 @@
     <string name="data_storage_detail_tts_models">语音合成</string>
     <string name="data_storage_detail_ocr_models">文字识别</string>
     <string name="data_storage_detail_model_engines">运行引擎</string>
+    <string name="pkg_delete_failed">未能删除扩展安装文件。请检查文件访问权限，或先停用依赖它的插件后重试。</string>
+    <string name="pkg_delete_success">已删除扩展安装文件</string>
 </resources>

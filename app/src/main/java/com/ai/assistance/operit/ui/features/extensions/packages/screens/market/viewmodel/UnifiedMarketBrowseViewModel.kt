@@ -267,15 +267,18 @@ class UnifiedMarketBrowseViewModel(
         viewModelScope.launch {
             _errorMessage.value = null
             try {
-                installController.install(entry) { stage, progress ->
-                    MarketInstallStateStore.update(entryId, stage, progress)
+                installController.install(entry) { stage, transfer ->
+                    MarketInstallStateStore.update(entryId, stage, transfer)
                 }
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: "Failed to install market entry"
                 AppLogger.e(TAG, "Failed to install market entry ${entry.id}", e)
             } finally {
-                refreshLocalInstallStates(_entries.value)
-                MarketInstallStateStore.finish(entryId)
+                try {
+                    refreshLocalInstallStates(_entries.value)
+                } finally {
+                    MarketInstallStateStore.finish(entryId)
+                }
             }
         }
     }

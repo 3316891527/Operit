@@ -9115,4 +9115,6 @@
     <string name="data_storage_detail_tts_models">Sinteză vocală</string>
     <string name="data_storage_detail_ocr_models">Recunoaștere text</string>
     <string name="data_storage_detail_model_engines">Motoare de execuție</string>
+    <string name="pkg_delete_failed">Fișierele extensiei nu au putut fi șterse. Verifică accesul sau dezactivează pluginurile dependente.</string>
+    <string name="pkg_delete_success">Fișierele extensiei au fost șterse</string>
 </resources>

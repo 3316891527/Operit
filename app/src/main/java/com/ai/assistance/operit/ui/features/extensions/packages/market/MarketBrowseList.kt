@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.extensions.packages.market.transfer.MarketInstallProgressCard
 import com.ai.assistance.operit.ui.common.icons.rememberRemoteLogoPainter
 import java.time.Instant
 import java.time.LocalDate
@@ -74,7 +75,8 @@ data class MarketBrowseCardModel(
     val heartCount: Int = 0,
     val downloads: Int = 0,
     val showAction: Boolean = true,
-    val actionState: MarketBrowseActionState = MarketBrowseActionState.Available
+    val actionState: MarketBrowseActionState = MarketBrowseActionState.Available,
+    val installProgress: MarketInstallProgress? = null,
 )
 
 sealed interface MarketBrowseActionState {
@@ -409,16 +411,22 @@ fun MarketBrowseCard(
                 )
             }
 
-            if (model.showAction) {
+            if (model.showAction && model.installProgress == null) {
                 MarketBrowseInstallButton(
                     state = model.actionState,
                     onClick = onInstall
                 )
             }
         }
+        model.installProgress?.let { progress ->
+            MarketInstallProgressCard(
+                state = progress,
+                compact = true,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+            )
+        }
     }
 }
-
 @Composable
 private fun MarketBrowseLeadingIcon(
     title: String,

@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.automation.workflow.components
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -14,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.workflow.runtime.classifyWorkflowIssue
+import com.ai.assistance.operit.core.workflow.runtime.readableWorkflowFailure
 import com.ai.assistance.operit.data.model.*
 import com.ai.assistance.operit.data.repository.WorkflowRepository
 import java.text.SimpleDateFormat
@@ -60,6 +62,7 @@ fun WorkflowRunDetailsDialog(
         loading = false
     }
     val record = records.getOrNull(selectedIndex)
+    val nodeNames = record?.nodes.orEmpty().associate { it.nodeId to it.nodeName }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.workflow_run_details)) },
@@ -96,6 +99,12 @@ fun WorkflowRunDetailsDialog(
                                 }
                                 val issue = record.issue ?: classifyWorkflowIssue(record.failureReason ?: record.message)
                                 Text(stringResource(issue.descriptionRes()), color = MaterialTheme.colorScheme.error)
+                                if (failedNodes.isEmpty()) {
+                                    val reason = readableWorkflowFailure(record.failureReason ?: record.message, nodeNames)
+                                    if (reason.isNotBlank()) SelectionContainer {
+                                        Text(stringResource(R.string.workflow_failure_reason, reason), style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
                             }
                         }
                         if (record.nodes.isEmpty()) {
@@ -118,7 +127,16 @@ fun WorkflowRunDetailsDialog(
                                             style = MaterialTheme.typography.bodySmall,
                                         )
                                     }
+                                    node.actionName?.takeIf { it.isNotBlank() }?.let { action ->
+                                        Text(stringResource(R.string.workflow_failure_action, action), style = MaterialTheme.typography.bodySmall)
+                                    }
                                     node.issue?.let { Text(stringResource(it.descriptionRes()), color = MaterialTheme.colorScheme.error) }
+                                    if (node.status == WorkflowNodeRunStatus.FAILED) {
+                                        val reason = readableWorkflowFailure(node.failureReason, nodeNames)
+                                        if (reason.isNotBlank()) SelectionContainer {
+                                            Text(stringResource(R.string.workflow_failure_reason, reason), style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
                                     node.resultSummary?.takeIf { it.isNotBlank() }?.let { summary ->
                                         Text(summary, style = MaterialTheme.typography.bodySmall, maxLines = 5, overflow = TextOverflow.Ellipsis)
                                     }

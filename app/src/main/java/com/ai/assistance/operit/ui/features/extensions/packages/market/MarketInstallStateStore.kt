@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.extensions.packages.market
 
+import com.ai.assistance.operit.data.transfer.DownloadTransferProgress
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,10 +20,11 @@ enum class MarketInstallStage {
 data class MarketInstallProgress(
     val entryId: String,
     val stage: MarketInstallStage,
-    val progress: Float? = null
+    val progress: Float? = null,
+    val transfer: DownloadTransferProgress? = null,
 )
 
-typealias MarketInstallProgressReporter = (MarketInstallStage, Float?) -> Unit
+typealias MarketInstallProgressReporter = (MarketInstallStage, DownloadTransferProgress?) -> Unit
 
 object MarketInstallStateStore {
     private val _installStates = MutableStateFlow<Map<String, MarketInstallProgress>>(emptyMap())
@@ -38,11 +40,11 @@ object MarketInstallStateStore {
     }
 
     @Synchronized
-    fun update(entryId: String, stage: MarketInstallStage, progress: Float? = null) {
+    fun update(entryId: String, stage: MarketInstallStage, transfer: DownloadTransferProgress? = null) {
         val id = entryId.trim()
         if (id.isBlank() || !_installStates.value.containsKey(id)) return
         _installStates.value =
-            _installStates.value + (id to MarketInstallProgress(id, stage, progress?.coerceIn(0f, 1f)))
+            _installStates.value + (id to MarketInstallProgress(id, stage, transfer?.fraction, transfer))
     }
 
     @Synchronized
