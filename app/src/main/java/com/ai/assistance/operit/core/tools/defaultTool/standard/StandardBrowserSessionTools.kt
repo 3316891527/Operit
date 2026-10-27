@@ -411,14 +411,15 @@ class StandardBrowserSessionTools(internal val context: Context) : ToolExecutor 
 
     private fun dispatchNativeTapByRef(webView: WebView, ref: String): Boolean {
         val rect = resolveElementRect(webView, ref) ?: return false
-        val pageScale = webView.scale.takeIf { it > 0f } ?: 1f
-        val x =
-            (((rect.left + rect.right) / 2f) * pageScale)
-                .coerceIn(1f, (webView.width - 1).coerceAtLeast(1).toFloat())
-        val y =
-            (((rect.top + rect.bottom) / 2f) * pageScale)
-                .coerceIn(1f, (webView.height - 1).coerceAtLeast(1).toFloat())
         return runOnMainSync {
+            // WebView 的缩放与尺寸访问也有线程约束，和触摸派发一起放到主线程。
+            val pageScale = webView.scale.takeIf { it > 0f } ?: 1f
+            val x =
+                (((rect.left + rect.right) / 2f) * pageScale)
+                    .coerceIn(1f, (webView.width - 1).coerceAtLeast(1).toFloat())
+            val y =
+                (((rect.top + rect.bottom) / 2f) * pageScale)
+                    .coerceIn(1f, (webView.height - 1).coerceAtLeast(1).toFloat())
             try {
                 webView.requestFocus()
                 val downTime = SystemClock.uptimeMillis()
