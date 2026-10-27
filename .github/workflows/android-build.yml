@@ -416,4 +416,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.OPERIT_DISTRIBUTION_TOKEN }}
           SOURCE_ARTIFACT_ID: ${{ inputs.resource_artifact_id }}
-        run: python3 ci/distribution/resources/publish_resources.py --source-artifact-id "$SOURCE_ARTIFACT_ID"
+        run: python3 ci/distribution/resources/publish_resources.py --source-artifact-id "${SOURCE_ARTIFACT_ID:-0}"
