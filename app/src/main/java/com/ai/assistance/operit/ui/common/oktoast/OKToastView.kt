@@ -8,6 +8,8 @@ import android.graphics.Path
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
@@ -73,6 +75,40 @@ internal class OKToastView(context: Context, kind: OKToast.Kind, message: String
             }
         }
         val scroller = object : ScrollView(context) {
+            private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+            private var downX = 0f
+            private var downY = 0f
+            private var dragged = false
+
+            override fun onTouchEvent(event: MotionEvent): Boolean {
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = event.x
+                        downY = event.y
+                        dragged = false
+                    }
+                    MotionEvent.ACTION_MOVE,
+                    MotionEvent.ACTION_UP -> {
+                        if (kotlin.math.abs(event.x - downX) > touchSlop ||
+                            kotlin.math.abs(event.y - downY) > touchSlop) dragged = true
+                    }
+                    MotionEvent.ACTION_CANCEL,
+                    MotionEvent.ACTION_POINTER_DOWN -> dragged = true
+                }
+                val handled = super.onTouchEvent(event)
+                // ScrollView 会消费空白区域的触摸，短按也应关闭；滚动或取消不触发。
+                if (event.actionMasked == MotionEvent.ACTION_UP && !dragged && onDismiss != null) {
+                    performClick()
+                }
+                return handled
+            }
+
+            override fun performClick(): Boolean {
+                val handled = super.performClick()
+                onDismiss?.invoke()
+                return onDismiss != null || handled
+            }
+
             override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
                 super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) maxContentHeight else minOf(MeasureSpec.getSize(heightMeasureSpec), maxContentHeight), MeasureSpec.AT_MOST))
             }

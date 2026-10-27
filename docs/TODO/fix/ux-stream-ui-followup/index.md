@@ -1,6 +1,6 @@
 ---
 fork: https://github.com/3316891527/Operit
-status: implementation
+status: implemented
 ---
 
 # 提示、插件配置入口与 Waifu 首次展示修复
@@ -30,4 +30,6 @@ status: implementation
 - 提交后派发 Android Build 的 `assembleDebug` 和 Android Tests，不等待或轮询结果
 - [完整回归项目与独立结果表](verification.md)包含既有 D01—D27 及本轮 U01—U09；用户既有概括反馈单独记录，不将未测项记为通过
 
-当前实现已写入，资源发布、静态核对、提交和工作流派发回执在本轮交付收据中记录。
+实现与静态核对已完成。[固定资源版本](https://github.com/3316891527/Operit-Kong-resources/releases/tag/resources-v2-f67fc0082a8e638c6cc2) 已发布并核验 53 个资产，51 组载荷保持、40 个扩展同步 SDK 源码指纹。工作流的受理与执行结果单独记录；本地不运行构建和测试。
+
+[DONE]
