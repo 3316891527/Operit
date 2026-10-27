@@ -22,6 +22,7 @@ internal data class HubEntry(
     val pack: ResourcePackSpec? = null,
     val legacy: OfflineResources.Group? = null,
     val location: String = "",
+    val updateAvailable: Boolean = false,
 ) {
     val isModel get() = category in setOf("stt", "tts", "ocr")
     val downloadable get() = !bundled && (legacy != null || pack != null || model?.let { it.archive != null || it.hfRepository.isNotBlank() || it.files.all { file -> file.url.isNotBlank() } } == true)
@@ -68,7 +69,8 @@ internal class ResourceHubRepository(private val context: Context) {
                     pack.extension != null -> "packages/${File(pack.extension.path).name}"
                     pack.id.startsWith("template-") -> "templates/${pack.id.removePrefix("template-")}"
                     else -> "mlkit-google-ocr-models"
-                } else PackResources.directory(context, pack.id).absolutePath)
+                } else PackResources.directory(context, pack.id).absolutePath,
+                updateAvailable = !bundled && PackResources.isReady(context, pack.id) && !PackResources.isCurrentReady(context, pack.id))
         }
         return HubSnapshot(entries, OfflineResources.ubuntuInstalled(context), OfflineResources.ubuntuDeletionPending(context), installed.errors)
     }

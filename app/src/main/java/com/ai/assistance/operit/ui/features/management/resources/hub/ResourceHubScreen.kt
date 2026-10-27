@@ -228,7 +228,7 @@ internal fun ResourceHubScreen(model: ResourceHubViewModel, requested: String?, 
     }
     download?.let { entry ->
         AlertDialog(onDismissRequest = { download = null }, title = { Text(entry.name) }, text = { Text(stringResource(R.string.hub_download_confirm, resourceSize(entry.bytes)) + if (entry.model != null) "\n" + stringResource(R.string.hub_engine_dependency) else "") },
-            confirmButton = { TextButton(onClick = { download = null; model.download(entry, source) }) { Text(stringResource(R.string.offline_resources_download)) } },
+            confirmButton = { TextButton(onClick = { download = null; model.download(entry, source) }) { Text(stringResource(if (entry.updateAvailable) R.string.hub_update_resource else R.string.offline_resources_download)) } },
             dismissButton = { TextButton(onClick = { download = null }) { Text(stringResource(R.string.cancel)) } })
     }
     if (confirmTemplates) AlertDialog(onDismissRequest = { confirmTemplates = false }, title = { Text(stringResource(R.string.hub_prepare_all)) },
@@ -248,7 +248,7 @@ private fun HubResourceCard(entry: HubEntry, state: HubState, busy: Boolean, ubu
                 if (entry.ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(stringResource(when { entry.bundled -> R.string.hub_bundled; entry.inUse -> R.string.hub_in_use; entry.ready -> R.string.hub_ready; entry.stored -> R.string.hub_incomplete; else -> R.string.hub_unprepared }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(when { entry.bundled -> R.string.hub_bundled; entry.inUse -> R.string.hub_in_use; entry.updateAvailable -> R.string.hub_update_available; entry.ready -> R.string.hub_ready; entry.stored -> R.string.hub_incomplete; else -> R.string.hub_unprepared }), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 if (entry.bytes > 0) Text(resourceSize(entry.bytes), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 entry.model?.let { Text("${it.driver.type} · ${it.languages.joinToString(" / ")}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 if (entry.id == OfflineResources.UBUNTU && ubuntuInstalled) Text(stringResource(R.string.hub_environment_installed), style = MaterialTheme.typography.labelMedium)
@@ -256,7 +256,7 @@ private fun HubResourceCard(entry: HubEntry, state: HubState, busy: Boolean, ubu
             if (state.active != null && state.transferId == entry.id) HubTransferProgress(state)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onDetails) { Text(stringResource(R.string.hub_details)) }
-                if (!entry.ready && entry.downloadable) FilledTonalButton(onClick = onDownload, enabled = !busy && !entry.inUse) { Text(stringResource(R.string.offline_resources_download)) }
+                if ((!entry.ready || entry.updateAvailable) && entry.downloadable) FilledTonalButton(onClick = onDownload, enabled = !busy && !entry.inUse) { Text(stringResource(if (entry.updateAvailable) R.string.hub_update_resource else R.string.offline_resources_download)) }
             }
         }
     }
