@@ -25,3 +25,5 @@
 
 - [PR Check Android SDK 初始化](pr-sdk-packages/index.md)
 - [固定资源只在变化时发布](resource-publication-idempotence/index.md)
+
+- [+17 统一 Debug 测试](debug17-unified/index.md)
