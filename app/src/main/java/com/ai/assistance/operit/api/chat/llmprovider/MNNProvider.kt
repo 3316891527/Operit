@@ -29,6 +29,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 
 /**
  * MNN本地推理引擎的AI服务实现

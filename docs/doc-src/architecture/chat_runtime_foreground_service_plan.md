@@ -349,7 +349,7 @@ enum class ChatSelectionMode {
 
 必要时可以新增一个很薄的 runtime holder，例如：
 
-- `app/src/main/java/com/ai/assistance/operit/api/chat/ChatRuntimeHolder.kt`
+- `app/src/main/java/com/ai/assistance/operit/core/chat/runtime/ChatRuntimeHolder.kt`
 
 但它只能负责：
 

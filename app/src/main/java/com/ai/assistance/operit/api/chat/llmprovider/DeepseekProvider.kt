@@ -16,6 +16,11 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
+import com.ai.assistance.operit.core.chat.media.ImageLink
 
 /**
  * 针对DeepSeek模型的特定API Provider。

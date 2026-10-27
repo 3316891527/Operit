@@ -12,8 +12,8 @@ import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdownEstimato
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.config.FunctionalPrompts
-import com.ai.assistance.operit.api.chat.enhance.MultiServiceManager
-import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.api.chat.runtime.MultiServiceManager
+import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.ConversationSummaryConfig

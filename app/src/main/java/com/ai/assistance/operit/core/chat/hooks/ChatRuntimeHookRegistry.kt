@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.chat.hooks
 
 import android.content.Context
-import com.ai.assistance.operit.api.chat.ChatRuntimeSlot
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeSlot
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.util.AppLogger
 import java.util.concurrent.CopyOnWriteArrayList

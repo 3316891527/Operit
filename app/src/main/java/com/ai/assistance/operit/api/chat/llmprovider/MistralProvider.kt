@@ -5,6 +5,7 @@ import com.ai.assistance.operit.util.ChatMarkupRegex
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
 
 class MistralProvider(
     apiEndpoint: String,

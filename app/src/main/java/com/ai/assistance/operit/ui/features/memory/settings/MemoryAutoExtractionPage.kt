@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
+import com.ai.assistance.operit.core.memory.extraction.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.data.preferences.MemorySearchSettingsPreferences
 import kotlin.math.roundToInt
 

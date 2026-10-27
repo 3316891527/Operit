@@ -5,20 +5,20 @@ import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
-import com.ai.assistance.operit.api.chat.voice.VoiceAudioRequest
+import com.ai.assistance.operit.core.chat.voice.VoiceAudioRequest
 
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.api.chat.enhance.ConversationMarkupManager
-import com.ai.assistance.operit.api.chat.enhance.ConversationRoundManager
-import com.ai.assistance.operit.api.chat.enhance.ConversationService
-import com.ai.assistance.operit.api.chat.enhance.FileBindingService
-import com.ai.assistance.operit.api.chat.enhance.MultiServiceManager
-import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager
-import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.core.chat.protocol.ConversationMarkupManager
+import com.ai.assistance.operit.core.chat.runtime.ConversationRoundManager
+import com.ai.assistance.operit.core.chat.context.ConversationService
+import com.ai.assistance.operit.core.chat.filebinding.FileBindingService
+import com.ai.assistance.operit.api.chat.runtime.MultiServiceManager
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
+import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.core.chat.context.RequestWindowSnapshot
@@ -543,7 +543,7 @@ class EnhancedAIService private constructor(context: Context) {
     private var lastReplyContent: String? = null
 
     init {
-        com.ai.assistance.operit.api.chat.library.MemoryLibrary.initialize(context)
+        com.ai.assistance.operit.core.memory.extraction.ConversationMemoryExtractor.initialize(context)
         initScope.launch {
             runCatching {
                 ensureInitialized()
@@ -3453,7 +3453,7 @@ class EnhancedAIService private constructor(context: Context) {
         toolProcessingScope.launch {
             try {
                 val memoryService = multiServiceManager.getServiceForFunction(FunctionType.MEMORY)
-                com.ai.assistance.operit.api.chat.library.MemoryLibrary.saveMemoryAsync(
+                com.ai.assistance.operit.core.memory.extraction.ConversationMemoryExtractor.saveMemoryAsync(
                     context = context,
                     toolHandler = toolHandler,
                     conversationHistory = conversationHistory,

@@ -11,10 +11,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ai.assistance.operit.api.chat.AIForegroundService
-import com.ai.assistance.operit.api.speech.SpeechPrerollStore
-import com.ai.assistance.operit.api.speech.WakePhraseSnapshot
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory
+import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
+import com.ai.assistance.operit.api.speech.audio.WakePhraseSnapshot
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.util.TtsCleaner
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import kotlinx.coroutines.CoroutineScope
@@ -55,9 +55,9 @@ class SpeechInteractionManager(
     private var silenceTimeoutJob: Job? = null
 
     // ===== 服务 =====
-    val speechService = SpeechServiceFactory.getInstance(context)
+    val speechService = SttServiceFactory.getInstance(context)
     val voiceService
-        get() = VoiceServiceFactory.getInstance(context)
+        get() = TtsServiceFactory.getInstance(context)
     private val inputMethodManager = context.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
     // 暴露 Flow 给外部使用

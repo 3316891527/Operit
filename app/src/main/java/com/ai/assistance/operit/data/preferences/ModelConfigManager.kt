@@ -2,7 +2,7 @@ package com.ai.assistance.operit.data.preferences
 
 import android.content.Context
 import com.ai.assistance.operit.api.chat.keypool.ApiKeyCooldownRecovery
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.R
 import androidx.datastore.core.DataStore

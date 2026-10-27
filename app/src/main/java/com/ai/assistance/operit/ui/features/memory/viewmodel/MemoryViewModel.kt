@@ -21,8 +21,8 @@ import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryRebuildManager
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryRebuildTimeScope
 import com.ai.assistance.operit.ui.features.memory.settings.MemorySettingsDetails
 import com.ai.assistance.operit.ui.features.memory.settings.MemorySettingsDataSource
 import com.ai.assistance.operit.ui.features.memory.settings.MemorySettingsPolicy

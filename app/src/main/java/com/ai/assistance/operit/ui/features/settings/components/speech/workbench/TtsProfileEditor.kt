@@ -11,15 +11,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.llmprovider.ModelListFetcher
-import com.ai.assistance.operit.api.voice.*
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory.VoiceServiceType
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory.VoiceServiceType
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences.TtsProfile
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences.TtsHttpConfig
 import com.ai.assistance.operit.ui.components.slider.WorkbenchSlider
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException
+import com.ai.assistance.operit.api.speech.tts.DoubaoVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.HttpTtsResponsePipelineStep
+import com.ai.assistance.operit.api.speech.tts.MimoVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.OpenAIRealtimeVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.OpenAIVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.SiliconFlowVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.SimpleVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.TtsService
+import com.ai.assistance.operit.api.speech.tts.VoiceListFetcher
 
 @Composable
 internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft) -> Unit) {
@@ -135,7 +143,7 @@ private fun SystemTtsFields(profile: TtsProfile, onChange: (TtsHttpConfig) -> Un
     val context = LocalContext.current
     val config = profile.httpConfig
     var panel by remember { mutableStateOf<String?>(null) }
-    var voices by remember { mutableStateOf<List<VoiceService.Voice>>(emptyList()) }
+    var voices by remember { mutableStateOf<List<TtsService.Voice>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var revision by remember { mutableStateOf(0) }
@@ -183,7 +191,7 @@ private fun OnlineTtsVoiceFields(profile: TtsProfile, onChange: (TtsHttpConfig) 
     val config = profile.httpConfig
     val type = profile.serviceType
     var panel by remember(type) { mutableStateOf<String?>(null) }
-    var remoteVoices by remember(type, config.urlTemplate, config.apiKey) { mutableStateOf<List<VoiceService.Voice>>(emptyList()) }
+    var remoteVoices by remember(type, config.urlTemplate, config.apiKey) { mutableStateOf<List<TtsService.Voice>>(emptyList()) }
     var models by remember(type, config.urlTemplate, config.apiKey) { mutableStateOf<List<SpeechChoice>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember(type, config.urlTemplate, config.apiKey) { mutableStateOf<String?>(null) }

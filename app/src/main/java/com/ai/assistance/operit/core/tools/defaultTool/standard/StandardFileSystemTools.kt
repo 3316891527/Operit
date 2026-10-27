@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.tools.defaultTool.standard
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.tools.DirectoryListingData
@@ -61,7 +61,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.core.content.FileProvider
 import android.webkit.MimeTypeMap
-import com.ai.assistance.operit.api.chat.enhance.FileBindingService
+import com.ai.assistance.operit.core.chat.filebinding.FileBindingService
 import com.ai.assistance.operit.core.config.FunctionalPrompts
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager

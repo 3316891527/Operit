@@ -57,7 +57,24 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyAttemptReport
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyErrorClass
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyRequestElement
+import com.ai.assistance.operit.api.chat.keypool.FirstTokenWatchdog
+import com.ai.assistance.operit.api.chat.keypool.currentApiKeySession
+import com.ai.assistance.operit.api.chat.keypool.handleKeyAwareRetry
+import com.ai.assistance.operit.api.chat.keypool.parseRetryAfterMs
+import com.ai.assistance.operit.api.chat.keypool.reportKeyAwareFailure
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityWireValue
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
 
 /** Keeps Gemini thinking mapping testable without invoking Android's JVM JSON stubs. */
 internal data class GeminiThinkingConfig(

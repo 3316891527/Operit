@@ -19,7 +19,7 @@ import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.ModelOption
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
-import com.ai.assistance.operit.api.chat.llmprovider.EndpointCompleter
+import com.ai.assistance.operit.api.chat.transport.EndpointCompleter
 import com.ai.assistance.operit.util.ChatUtils
 import com.ai.assistance.operit.util.HttpLogSanitizer
 import com.ai.assistance.operit.util.logging.RequestBodyLogFormatter
@@ -36,7 +36,7 @@ import com.ai.assistance.operit.util.stream.TextStreamEvent
 import com.ai.assistance.operit.util.stream.TextStreamEventType
 import com.ai.assistance.operit.util.stream.withEventChannel
 import com.ai.assistance.operit.util.stream.stream
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -47,6 +47,20 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyAttemptReport
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyErrorClass
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyRequestElement
+import com.ai.assistance.operit.api.chat.keypool.FirstTokenWatchdog
+import com.ai.assistance.operit.api.chat.keypool.currentApiKeySession
+import com.ai.assistance.operit.api.chat.keypool.handleKeyAwareRetry
+import com.ai.assistance.operit.api.chat.keypool.parseRetryAfterMs
+import com.ai.assistance.operit.api.chat.keypool.reportKeyAwareFailure
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
 
 /** Anthropic Claude API的实现，处理Claude特有的API格式 */
 internal fun shouldPropagateClaudeCancellation(isManuallyCancelled: Boolean): Boolean =

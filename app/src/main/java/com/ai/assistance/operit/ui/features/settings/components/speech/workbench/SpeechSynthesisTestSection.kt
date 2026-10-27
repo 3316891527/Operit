@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.voice.VoiceService
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory
+import com.ai.assistance.operit.api.speech.tts.TtsService
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.ui.main.components.LocalIsCurrentScreen
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.util.TtsCleaner
@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 private class SynthesisTestState {
-    var service by mutableStateOf<VoiceService?>(null)
+    var service by mutableStateOf<TtsService?>(null)
     var preparing by mutableStateOf(false)
     var speaking by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
@@ -121,7 +121,7 @@ internal fun SpeechSynthesisTestSection(draft: TtsProfileDraft) {
                             val profile = draft.toProfile()
                             val cleaned = TtsCleaner.clean(text, profile.cleanerRegexs).trim()
                             require(cleaned.isNotBlank()) { context.getString(R.string.tts_input_empty) }
-                            val created = VoiceServiceFactory.createVoiceService(context.applicationContext, profile)
+                            val created = TtsServiceFactory.createVoiceService(context.applicationContext, profile)
                             state.service = created
                             check(created.initialize()) { context.getString(R.string.tts_init_failed) }
                             ensureActive()

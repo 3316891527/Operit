@@ -25,6 +25,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.IOException
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
 
 class ProviderUsageCancellationTest {
 

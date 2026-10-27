@@ -22,7 +22,7 @@ import com.ai.assistance.operit.BuildConfig
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.AIMessageManager
 import com.ai.assistance.operit.api.chat.AIForegroundService
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
+import com.ai.assistance.operit.core.memory.extraction.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.plugins.PluginRegistry
 import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleEvent
 import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleHookParams

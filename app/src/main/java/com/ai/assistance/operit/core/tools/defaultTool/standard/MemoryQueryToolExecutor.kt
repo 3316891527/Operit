@@ -2,7 +2,7 @@ package com.ai.assistance.operit.core.tools.defaultTool.standard
 
 import android.content.Context
 import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import com.ai.assistance.operit.core.tools.MemoryQueryResultData
 import com.ai.assistance.operit.core.tools.MemoryLinkResultData
 import com.ai.assistance.operit.core.tools.MemoryLinkQueryResultData

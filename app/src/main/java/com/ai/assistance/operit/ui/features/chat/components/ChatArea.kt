@@ -122,7 +122,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Summarize
 import androidx.compose.ui.draw.alpha
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuDialogRequest
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuItemDefinition
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuItemParams

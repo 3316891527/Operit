@@ -8,8 +8,8 @@ import android.os.Build
 import android.os.IBinder
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.ChatRuntimeHolder
-import com.ai.assistance.operit.api.chat.ChatRuntimeSlot
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeHolder
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeSlot
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.tools.AgentStatusResultData

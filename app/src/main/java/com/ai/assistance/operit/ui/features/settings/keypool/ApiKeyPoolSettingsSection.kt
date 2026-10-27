@@ -74,7 +74,7 @@ import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceMenu
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.keypool.ApiKeyCooldownStore
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.llmprovider.ApiKeyPoolAvailabilityTester
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyPoolAvailabilityTester
 import com.ai.assistance.operit.data.model.ApiKeyAvailabilityStatus
 import com.ai.assistance.operit.data.model.ApiKeyInfo
 import com.ai.assistance.operit.data.model.ApiProviderType

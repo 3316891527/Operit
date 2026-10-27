@@ -9,6 +9,9 @@ import com.ai.assistance.operit.util.stream.Stream
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
+import com.ai.assistance.operit.core.chat.media.MediaLink
 
 /**
  * 针对阿里巴巴Qwen（通义千问）模型的特定API Provider。

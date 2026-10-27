@@ -6,7 +6,7 @@ import com.ai.assistance.operit.data.model.ModelConfigData
 import com.ai.assistance.operit.data.embedding.isEmbeddingReady
 import com.ai.assistance.operit.data.embedding.memoryEmbeddingEndpoint
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
-import com.ai.assistance.operit.api.chat.llmprovider.MultiApiKeyProvider
+import com.ai.assistance.operit.api.chat.keypool.MultiApiKeyProvider
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import com.ai.assistance.operit.data.model.Embedding

@@ -21,10 +21,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.util.AssetCopyUtils
-import com.ai.assistance.operit.api.chat.llmprovider.AIServiceFactory
-import com.ai.assistance.operit.api.chat.llmprovider.MediaCapabilityProbe
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkBuilder
-import com.ai.assistance.operit.api.chat.llmprovider.ModelConnectionTestOutcome
+import com.ai.assistance.operit.api.chat.AIServiceFactory
+import com.ai.assistance.operit.api.chat.model.MediaCapabilityProbe
+import com.ai.assistance.operit.core.chat.media.MediaLinkBuilder
+import com.ai.assistance.operit.api.chat.model.ModelConnectionTestOutcome
 import com.ai.assistance.operit.ui.features.settings.components.ExpandableStatusText
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn

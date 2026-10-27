@@ -16,8 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences
 import com.ai.assistance.operit.ui.components.CustomScaffold
@@ -50,14 +50,14 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
     val ttsState = remember(tts.id) {
         SpeechProfileEditorState(TtsProfileDraft(tts), tts, acceptExternal = { saved, incoming -> incoming.updatedAt >= saved.updatedAt }) { draft ->
             val saved = prefs.updateTtsProfile(draft.toProfile())
-            VoiceServiceFactory.resetInstance()
+            TtsServiceFactory.resetInstance()
             saved
         }
     }
     val sttState = remember(stt.id) {
         SpeechProfileEditorState(stt, stt, acceptExternal = { saved, incoming -> incoming.updatedAt >= saved.updatedAt }) { draft ->
             val saved = prefs.updateSttProfile(draft)
-            SpeechServiceFactory.resetInstance()
+            SttServiceFactory.resetInstance()
             saved
         }
     }
@@ -185,8 +185,8 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
         enabled = !actionBusy,
         dismissEnabled = !actionBusy,
         onSelect = { id -> perform {
-            if (isTts) { prefs.selectTtsProfile(id); VoiceServiceFactory.resetInstance() }
-            else { prefs.selectSttProfile(id); SpeechServiceFactory.resetInstance() }
+            if (isTts) { prefs.selectTtsProfile(id); TtsServiceFactory.resetInstance() }
+            else { prefs.selectSttProfile(id); SttServiceFactory.resetInstance() }
             panel = null
         } },
         footer = {
@@ -232,7 +232,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                             pitch = SpeechServicesPreferences.DEFAULT_TTS_PITCH,
                         )
                         prefs.createTtsProfile(name, template)
-                        VoiceServiceFactory.resetInstance()
+                        TtsServiceFactory.resetInstance()
                     }
                 }
             } else {
@@ -242,7 +242,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                     else -> {
                         val template = if (action == "copy" || copyCurrent) current else current.copy(serviceType = SpeechServicesPreferences.DEFAULT_STT_SERVICE_TYPE, httpConfig = SpeechServicesPreferences.DEFAULT_STT_HTTP_PRESET)
                         prefs.createSttProfile(name, template)
-                        SpeechServiceFactory.resetInstance()
+                        SttServiceFactory.resetInstance()
                     }
                 }
             }
@@ -264,11 +264,11 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
             if (isTts) {
                 if (currentId == target.id) prefs.selectTtsProfile(profileChoices.first { it.id != target.id }.id)
                 prefs.deleteTtsProfile(target.id)
-                VoiceServiceFactory.resetInstance()
+                TtsServiceFactory.resetInstance()
             } else {
                 if (currentId == target.id) prefs.selectSttProfile(profileChoices.first { it.id != target.id }.id)
                 prefs.deleteSttProfile(target.id)
-                SpeechServiceFactory.resetInstance()
+                SttServiceFactory.resetInstance()
             }
             deletionTarget = null
         } }) { Text(stringResource(R.string.delete)) } },

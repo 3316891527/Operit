@@ -4,12 +4,12 @@ import com.ai.assistance.operit.data.model.ModelConfigDefaults
 
 import android.content.Context
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.llmprovider.ModelConfigConnectionTester
-import com.ai.assistance.operit.api.chat.llmprovider.ModelConnectionTestOutcome
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory
-import com.ai.assistance.operit.api.voice.HttpTtsResponsePipelineStep
-import com.ai.assistance.operit.api.voice.TtsException
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory
+import com.ai.assistance.operit.api.chat.model.ModelConfigConnectionTester
+import com.ai.assistance.operit.api.chat.model.ModelConnectionTestOutcome
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
+import com.ai.assistance.operit.api.speech.tts.HttpTtsResponsePipelineStep
+import com.ai.assistance.operit.api.speech.tts.TtsException
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.core.tools.FunctionModelBindingResultData
 import com.ai.assistance.operit.core.tools.FunctionModelConfigResultData
 import com.ai.assistance.operit.core.tools.FunctionModelConfigsResultData
@@ -581,7 +581,7 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
 
             val ttsServiceType =
                 getParameterValue(tool, "tts_service_type")?.let { raw ->
-                    VoiceServiceFactory.VoiceServiceType.values().firstOrNull {
+                    TtsServiceFactory.VoiceServiceType.values().firstOrNull {
                         it.name.equals(raw.trim(), ignoreCase = true)
                     } ?: throw IllegalArgumentException("Invalid tts_service_type: $raw")
                 } ?: currentTtsServiceType
@@ -590,10 +590,10 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                 getParameterValue(tool, "stt_service_type")?.let { raw ->
                     when {
                         raw.trim().equals("SHERPA_MNN", ignoreCase = true) ->
-                            SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN
+                            SttServiceFactory.SpeechServiceType.SHERPA_NCNN
 
                         else ->
-                            SpeechServiceFactory.SpeechServiceType.values().firstOrNull {
+                            SttServiceFactory.SpeechServiceType.values().firstOrNull {
                                 it.name.equals(raw.trim(), ignoreCase = true)
                             } ?: throw IllegalArgumentException("Invalid stt_service_type: $raw")
                     }
@@ -849,8 +849,8 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                 ),
             )
 
-            VoiceServiceFactory.resetInstance()
-            SpeechServiceFactory.resetInstance()
+            TtsServiceFactory.resetInstance()
+            SttServiceFactory.resetInstance()
 
             ToolResult(
                 toolName = tool.name,
@@ -927,8 +927,8 @@ class StandardSoftwareSettingsModifyTools(private val context: Context) {
                     ttsProfile.pitch
                 }
 
-            VoiceServiceFactory.resetInstance()
-            val voiceService = VoiceServiceFactory.getInstance(context)
+            TtsServiceFactory.resetInstance()
+            val voiceService = TtsServiceFactory.getInstance(context)
             providerClass = voiceService.javaClass.simpleName
             initialized = voiceService.initialize()
             if (!initialized) {

@@ -62,7 +62,7 @@ import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.ui.features.chat.components.attachments.AttachmentViewerDialog
 import com.ai.assistance.operit.ui.features.chat.components.attachments.ChatAttachment
 import com.ai.assistance.operit.ui.features.chat.components.style.common.HiddenUserMessagePlaceholderContent
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.ui.theme.applyFontFamilyToTypography
 import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported

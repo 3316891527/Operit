@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.api.chat.keypool
 
 import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
-import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
 import com.ai.assistance.operit.util.AppLogger
 import java.io.IOException
 import java.net.SocketTimeoutException

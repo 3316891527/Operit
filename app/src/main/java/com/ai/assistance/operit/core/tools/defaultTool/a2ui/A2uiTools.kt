@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.a2ui
 
 import android.content.Context
-import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.data.model.AITool

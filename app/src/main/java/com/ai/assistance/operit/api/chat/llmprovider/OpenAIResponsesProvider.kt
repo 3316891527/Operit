@@ -14,6 +14,8 @@ import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
 
 open class OpenAIResponsesProvider(
     private val responsesApiEndpoint: String,

@@ -23,9 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.voice.SimpleVoiceProvider
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory
-import com.ai.assistance.operit.api.voice.VoiceService
+import com.ai.assistance.operit.api.speech.tts.SimpleVoiceProvider
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
+import com.ai.assistance.operit.api.speech.tts.TtsService
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.launch
@@ -35,7 +35,7 @@ import java.net.ConnectException
 import java.net.ProtocolException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import com.ai.assistance.operit.api.voice.TtsException
+import com.ai.assistance.operit.api.speech.tts.TtsException
 
 /** 文本转语音演示屏幕 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,7 +57,7 @@ fun TextToSpeechScreen(navController: NavController) {
         val httpConfig = activeTtsProfile.httpConfig
         var voiceServiceVersion by remember { mutableStateOf(0) }
         var voiceService by remember(voiceServiceVersion) {
-                mutableStateOf(VoiceServiceFactory.getInstance(context))
+                mutableStateOf(TtsServiceFactory.getInstance(context))
         }
         
         // 状态变量
@@ -71,7 +71,7 @@ fun TextToSpeechScreen(navController: NavController) {
         var debugInfo by remember { mutableStateOf<String?>(null) }
         var ttsLocaleTagInput by remember(httpConfig) { mutableStateOf(httpConfig.localeTag) }
         var ttsVoiceIdInput by remember(httpConfig) { mutableStateOf(httpConfig.voiceId) }
-        var simpleTtsVoices by remember { mutableStateOf<List<VoiceService.Voice>>(emptyList()) }
+        var simpleTtsVoices by remember { mutableStateOf<List<TtsService.Voice>>(emptyList()) }
         var simpleTtsVoicesLoading by remember { mutableStateOf(false) }
         var simpleTtsVoicesError by remember { mutableStateOf<String?>(null) }
         var simpleTtsLocaleExpanded by remember { mutableStateOf(false) }
@@ -92,8 +92,8 @@ fun TextToSpeechScreen(navController: NavController) {
                 }
         }
 
-        fun refreshVoiceService(): VoiceService {
-                val latestVoiceService = VoiceServiceFactory.getInstance(context)
+        fun refreshVoiceService(): TtsService {
+                val latestVoiceService = TtsServiceFactory.getInstance(context)
                 if (voiceService !== latestVoiceService) {
                         voiceService = latestVoiceService
                 }
@@ -118,7 +118,7 @@ fun TextToSpeechScreen(navController: NavController) {
         }
 
         LaunchedEffect(ttsServiceType) {
-                if (ttsServiceType != VoiceServiceFactory.VoiceServiceType.SIMPLE_TTS) return@LaunchedEffect
+                if (ttsServiceType != TtsServiceFactory.VoiceServiceType.SIMPLE_TTS) return@LaunchedEffect
                 simpleTtsVoicesLoading = true
                 simpleTtsVoicesError = null
                 var provider: SimpleVoiceProvider? = null
@@ -146,8 +146,8 @@ fun TextToSpeechScreen(navController: NavController) {
                                                 httpConfig = httpConfig.copy(localeTag = localeTag, voiceId = voiceId)
                                         )
                                 )
-                                VoiceServiceFactory.resetInstance()
-                                voiceService = VoiceServiceFactory.getInstance(context)
+                                TtsServiceFactory.resetInstance()
+                                voiceService = TtsServiceFactory.getInstance(context)
                                 voiceServiceVersion++
                         } catch (error: Exception) {
                                 AppLogger.e("TextToSpeechScreen", "Failed to save TTS profile voice", error)
@@ -302,7 +302,7 @@ fun TextToSpeechScreen(navController: NavController) {
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                                 )
 
-                                if (ttsServiceType == VoiceServiceFactory.VoiceServiceType.SIMPLE_TTS) {
+                                if (ttsServiceType == TtsServiceFactory.VoiceServiceType.SIMPLE_TTS) {
                                         Spacer(modifier = Modifier.height(16.dp))
 
                                         Text(

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.features.chat.attachments.images
 
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 import com.ai.assistance.operit.util.ChatMarkupRegex
 import com.ai.assistance.operit.core.chat.media.unescapeMediaAttribute
 

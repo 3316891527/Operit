@@ -75,7 +75,7 @@ import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.ui.features.chat.components.attachments.AttachmentViewerDialog
 import com.ai.assistance.operit.ui.features.chat.components.attachments.ChatAttachment
 import com.ai.assistance.operit.ui.features.chat.components.style.common.HiddenUserMessagePlaceholderContent
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
 import com.ai.assistance.operit.ui.theme.isLiquidGlassSupported
 import com.ai.assistance.operit.ui.theme.isWaterGlassSupported
 import com.ai.assistance.operit.ui.theme.liquidGlass

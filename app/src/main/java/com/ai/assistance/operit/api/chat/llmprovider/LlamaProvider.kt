@@ -21,6 +21,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
 
 class LlamaProvider(
     private val context: Context,

@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.api.chat.error
 
-import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
-import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.request.LlmRetryPolicy
 import java.util.Locale
 import okhttp3.Call
 import okhttp3.Request

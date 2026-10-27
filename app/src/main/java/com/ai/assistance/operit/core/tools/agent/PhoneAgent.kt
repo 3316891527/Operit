@@ -11,7 +11,7 @@ import android.os.Build
 import android.view.KeyEvent
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.AppListData

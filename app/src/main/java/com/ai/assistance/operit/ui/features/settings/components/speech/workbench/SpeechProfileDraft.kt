@@ -3,7 +3,7 @@ package com.ai.assistance.operit.ui.features.settings.components.speech.workbenc
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.ai.assistance.operit.api.voice.HttpTtsResponsePipelineStep
+import com.ai.assistance.operit.api.speech.tts.HttpTtsResponsePipelineStep
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences.TtsProfile
 import com.ai.assistance.operit.util.AppLogger
 import kotlinx.coroutines.CancellationException

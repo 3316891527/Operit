@@ -10,7 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory.SpeechServiceType
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory.SpeechServiceType
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences.SttProfile
 
 @Composable

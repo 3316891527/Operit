@@ -2,8 +2,8 @@ package com.ai.assistance.operit.ui.features.chat.voicemessages
 
 import android.content.Context
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.voicemessage.RecordedVoiceMessage
-import com.ai.assistance.operit.api.speech.voicemessage.VoiceMessageRecorder
+import com.ai.assistance.operit.api.speech.audio.RecordedVoiceMessage
+import com.ai.assistance.operit.api.speech.audio.VoiceMessageRecorder
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData

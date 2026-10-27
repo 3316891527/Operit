@@ -53,8 +53,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityControl
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import kotlin.math.roundToInt
 import kotlinx.coroutines.isActive

@@ -56,13 +56,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.VisualTransformation
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.llmprovider.EndpointCompleter
+import com.ai.assistance.operit.api.chat.transport.EndpointCompleter
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.llmprovider.AIServiceFactory
+import com.ai.assistance.operit.api.chat.AIServiceFactory
 import com.ai.assistance.operit.api.chat.llmprovider.CodexModelListFetcher
 import com.ai.assistance.operit.api.chat.llmprovider.LlamaProvider
-import com.ai.assistance.operit.api.chat.llmprovider.ModelListFetcher
-import com.ai.assistance.operit.api.chat.llmprovider.ModelFetchErrorHelper
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.model.ModelFetchErrorHelper
 import com.ai.assistance.operit.data.api.AntigravityAuthManager
 import com.ai.assistance.operit.data.api.AntigravityQuotaGroup
 import com.ai.assistance.operit.data.api.CodexAuthManager

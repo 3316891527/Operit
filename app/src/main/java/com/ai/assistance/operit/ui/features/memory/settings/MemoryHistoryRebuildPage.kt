@@ -28,9 +28,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
-import com.ai.assistance.operit.api.chat.library.ChatMemoryWindowPlanner
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryRebuildManager
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryRebuildTimeScope
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryWindowPlanner
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

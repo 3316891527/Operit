@@ -16,9 +16,9 @@ import android.os.SystemClock
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.enhance.InputProcessor
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkBuilder
+import com.ai.assistance.operit.core.chat.hooks.InputProcessor
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkBuilder
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.chat.plugins.MessageProcessingController

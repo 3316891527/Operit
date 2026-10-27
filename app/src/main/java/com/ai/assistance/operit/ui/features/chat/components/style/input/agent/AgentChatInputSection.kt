@@ -115,9 +115,9 @@ import androidx.compose.ui.window.PopupProperties
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.icons.ProviderLogo
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
+import com.ai.assistance.operit.core.memory.extraction.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.core.tools.ToolProgressBus
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.data.model.ChatMessage

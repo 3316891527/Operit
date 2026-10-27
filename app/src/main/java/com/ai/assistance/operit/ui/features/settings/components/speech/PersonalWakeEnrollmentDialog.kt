@@ -15,7 +15,7 @@ import kotlinx.coroutines.Job
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.PersonalWakeEnrollment
+import com.ai.assistance.operit.api.speech.wake.PersonalWakeEnrollment
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences
 import com.ai.assistance.operit.ui.features.settings.components.speech.workbench.SpeechWorkbenchSheet
 import com.ai.assistance.operit.util.AppLogger

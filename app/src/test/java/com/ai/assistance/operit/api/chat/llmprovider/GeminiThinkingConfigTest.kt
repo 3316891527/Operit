@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
 
 class GeminiThinkingConfigTest {
     private var previousSystemLogEnabled = true

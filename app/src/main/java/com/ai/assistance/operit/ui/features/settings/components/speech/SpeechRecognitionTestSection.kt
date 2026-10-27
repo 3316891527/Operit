@@ -26,8 +26,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.SpeechService
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory
+import com.ai.assistance.operit.api.speech.stt.SttService
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences.SttHttpConfig
 import com.ai.assistance.operit.util.AppLogger
 import com.ai.assistance.operit.ui.features.settings.components.speech.workbench.*
@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private class RecognitionTestState {
-    var service: SpeechService? by mutableStateOf(null)
+    var service: SttService? by mutableStateOf(null)
     var initialized by mutableStateOf(false)
     var busy by mutableStateOf(false)
     var changing by mutableStateOf(false)
@@ -52,10 +52,10 @@ private class RecognitionTestState {
     var languages by mutableStateOf<List<String>>(emptyList())
     var commandJob: Job? = null
 
-    fun updateRecognitionState(service: SpeechService, recognitionState: SpeechService.RecognitionState) {
-        busy = recognitionState == SpeechService.RecognitionState.PREPARING ||
-            recognitionState == SpeechService.RecognitionState.RECOGNIZING ||
-            recognitionState == SpeechService.RecognitionState.PROCESSING
+    fun updateRecognitionState(service: SttService, recognitionState: SttService.RecognitionState) {
+        busy = recognitionState == SttService.RecognitionState.PREPARING ||
+            recognitionState == SttService.RecognitionState.RECOGNIZING ||
+            recognitionState == SttService.RecognitionState.PROCESSING
         if (!busy && ownsRecording && !changing) {
             // 最终结果与空闲状态可能先后到达，结束时读取同一次测试的最后结果。
             text = service.recognitionResultFlow.value.text
@@ -69,7 +69,7 @@ private class RecognitionTestState {
 @Composable
 fun SpeechRecognitionTestSection(
     profileId: String,
-    serviceType: SpeechServiceFactory.SpeechServiceType,
+    serviceType: SttServiceFactory.SpeechServiceType,
     httpConfig: SttHttpConfig,
     modifier: Modifier = Modifier,
 ) {
@@ -87,9 +87,9 @@ fun SpeechRecognitionTestSection(
 
     LaunchedEffect(state) {
         if (!hasPermission || !isCurrentScreen) return@LaunchedEffect
-        var created: SpeechService? = null
+        var created: SttService? = null
         try {
-            val service = SpeechServiceFactory.createSpeechService(context.applicationContext, serviceType, httpConfig)
+            val service = SttServiceFactory.createSpeechService(context.applicationContext, serviceType, httpConfig)
             created = service
             state.service = service
             state.initialized = service.initialize()
@@ -209,7 +209,7 @@ fun SpeechRecognitionTestSection(
                             }
                         }
                     } else {
-                        if (service.isRecognizing || service.currentState == SpeechService.RecognitionState.PREPARING || service.currentState == SpeechService.RecognitionState.PROCESSING) {
+                        if (service.isRecognizing || service.currentState == SttService.RecognitionState.PREPARING || service.currentState == SttService.RecognitionState.PROCESSING) {
                             state.error = context.getString(R.string.speech_services_test_stt_busy)
                             return@Button
                         }
@@ -219,7 +219,7 @@ fun SpeechRecognitionTestSection(
                         state.commandJob = scope.launch {
                             try {
                                 state.ownsRecording = true
-                                val local = serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_NCNN || serviceType == SpeechServiceFactory.SpeechServiceType.SHERPA_ONNX
+                                val local = serviceType == SttServiceFactory.SpeechServiceType.SHERPA_NCNN || serviceType == SttServiceFactory.SpeechServiceType.SHERPA_ONNX
                                 if (!service.startRecognition(state.language, continuousMode = local, partialResults = local)) {
                                     state.ownsRecording = false
                                     state.error = context.getString(R.string.start_recognition_error, serviceType.name)

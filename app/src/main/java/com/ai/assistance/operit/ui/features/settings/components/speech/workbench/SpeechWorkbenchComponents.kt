@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory.SpeechServiceType
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory.VoiceServiceType
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory.SpeechServiceType
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory.VoiceServiceType
 
 internal data class SpeechChoice(val id: String, val title: String, val description: String = "")
 

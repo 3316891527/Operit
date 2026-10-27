@@ -53,9 +53,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.databackup.components.*
 import com.ai.assistance.operit.ui.features.memory.settings.ChatMemoryRebuildDateRangeDialog
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildManager
-import com.ai.assistance.operit.api.chat.library.ChatMemoryRebuildTimeScope
-import com.ai.assistance.operit.api.chat.library.ChatMemoryWindowPlanner
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryRebuildManager
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryRebuildTimeScope
+import com.ai.assistance.operit.core.memory.extraction.ChatMemoryWindowPlanner
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.CharacterCardChatStats

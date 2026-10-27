@@ -7,7 +7,7 @@ import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
-import com.ai.assistance.operit.api.chat.enhance.TranslationModelNotConfiguredException
+import com.ai.assistance.operit.api.chat.runtime.TranslationModelNotConfiguredException
 import android.Manifest
 import android.content.Context
 import com.ai.assistance.operit.util.LocaleUtils
@@ -25,8 +25,8 @@ import androidx.core.content.FileProvider
 import com.ai.assistance.operit.ui.features.chat.components.ChatStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ai.assistance.operit.api.chat.ChatRuntimeHolder
-import com.ai.assistance.operit.api.chat.ChatRuntimeSlot
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeHolder
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeSlot
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
 import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
@@ -76,8 +76,8 @@ import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceHubPage
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryAction
 import com.ai.assistance.operit.ui.features.chat.workspace.WorkspaceEntryRequest
 import com.ai.assistance.operit.ui.floating.ui.pet.AvatarEmotionManager
-import com.ai.assistance.operit.api.voice.VoiceService
-import com.ai.assistance.operit.api.voice.VoiceServiceFactory
+import com.ai.assistance.operit.api.speech.tts.TtsService
+import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
@@ -163,7 +163,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     // 添加语音服务
-    private var voiceService: VoiceService? = null
+    private var voiceService: TtsService? = null
     private var voiceStateCollectionJob: Job? = null
     private var speechPlaybackJob: Job? = null
     private var speechControlsHideJob: Job? = null
@@ -3204,8 +3204,8 @@ class ChatViewModel(context: Context) : ViewModel() {
     private suspend fun recreateVoiceService(): Boolean {
         voiceService?.stop()
         voiceStateCollectionJob?.cancel()
-        VoiceServiceFactory.resetInstance()
-        val currentVoiceService = VoiceServiceFactory.getInstance(context)
+        TtsServiceFactory.resetInstance()
+        val currentVoiceService = TtsServiceFactory.getInstance(context)
         voiceService = currentVoiceService
         val initialized = currentVoiceService.initialize()
         if (initialized) {
@@ -3218,8 +3218,8 @@ class ChatViewModel(context: Context) : ViewModel() {
         return initialized
     }
 
-    private suspend fun ensureActiveVoiceService(): VoiceService? {
-        val latestVoiceService = VoiceServiceFactory.getInstance(context)
+    private suspend fun ensureActiveVoiceService(): TtsService? {
+        val latestVoiceService = TtsServiceFactory.getInstance(context)
         if (voiceService !== latestVoiceService) {
             AppLogger.d(TAG, "检测到TTS服务实例已切换，更新聊天页引用")
             voiceStateCollectionJob?.cancel()
@@ -3251,7 +3251,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         speechControlsHideJob = null
     }
 
-    private fun observeVoiceState(service: VoiceService) {
+    private fun observeVoiceState(service: TtsService) {
         voiceStateCollectionJob?.cancel()
         cancelSpeechControlsHide("observeVoiceState.restart provider=${service::class.java.simpleName}")
         voiceStateCollectionJob = viewModelScope.launch {

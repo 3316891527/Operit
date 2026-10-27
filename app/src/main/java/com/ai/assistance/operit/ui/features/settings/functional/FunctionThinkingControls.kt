@@ -14,8 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceMenu
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityControl
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityControl
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.data.model.ModelConfigSummary
 import com.ai.assistance.operit.data.model.getModelByIndex
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping

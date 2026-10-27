@@ -14,6 +14,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
+import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
+import com.ai.assistance.operit.api.chat.model.ModelConfigConnectionTester
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
 
 /**
  * Protocol-level regression tests for the OpenAI tool-call history conversion.

@@ -52,9 +52,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMapping
-import com.ai.assistance.operit.api.chat.llmprovider.ThinkingQualityMappingRegistry
-import com.ai.assistance.operit.api.chat.library.MemoryAutoSaveScheduler
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
+import com.ai.assistance.operit.core.memory.extraction.MemoryAutoSaveScheduler
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.model.FunctionType
