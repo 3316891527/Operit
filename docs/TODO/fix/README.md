@@ -106,3 +106,4 @@
 - [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)
 
 - [GitHub 工具包保留终端失败输出](github-terminal-result/index.md)
+- [对话历史长列表滚动重叠](history-scroll-placement/index.md)
