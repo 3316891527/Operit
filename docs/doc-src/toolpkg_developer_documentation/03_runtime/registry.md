@@ -204,11 +204,11 @@ registerAiProvider(definition: AiProviderRegistration): void
 
 `registerDesktopWidget` 声明包内小组件 ID、布局路由和打开路由，插件不注册 Android 原生接收器。宿主通过 `integrations.appwidget.ToolPkgDesktopWidgetReceiver` 承接桌面实例，再根据所选插件的定义渲染。配置页面为 `integrations.appwidget.ToolPkgDesktopWidgetConfigActivity`，Manifest 与 Widget XML 使用相同的完整类名。
 
-Android 桌面按宿主包名、原生接收器类名及 appWidgetId 记录实例。本轮原生类包名统一到 integrations.appwidget 后，旧桌面实例可能需要删除并重新添加；插件的 `registerDesktopWidget` 调用和已注册布局/路由保持。插件详情界面统一使用 `registerUiModule` 和 `package_details`，旧工具箱注册 API 保留为空操作，旧导航面忽略，不返回内容或注册任何界面与导航。需要实际展示界面时使用新接口，省略 runtime 仍默认使用 compose_dsl。
+Android 桌面按宿主包名、原生接收器类名及 appWidgetId 记录实例。本轮原生类包名统一到 integrations.appwidget 后，旧桌面实例可能需要删除并重新添加；插件的 `registerDesktopWidget` 调用和已注册布局/路由保持。插件详情界面统一使用 `registerUiModule` 和 `package_details`，旧工具箱注册 API 保留调用签名，并将配置模块注册到插件详情；旧导航面继续忽略，JavaScript 调用仍返回 undefined。新插件使用新接口，省略 runtime 仍默认使用 compose_dsl。
 
 
 ## 旧工具箱注册兼容入口
 
-ToolPkg.registerToolboxUiModule 与全局 registerToolPkgToolboxUiModule 保留原调用签名；NativeInterface.registerToolPkgToolboxUiModule 也保留。旧类型 ToolboxUiModuleRegistration 作为 UiModuleRegistration 的类型别名保留。所有旧注册调用均为空操作，JavaScript 返回 undefined，Native 入口为 void，不处理 screen、不读取资源、不收集模块或创建界面、路由与导航。
+ToolPkg.registerToolboxUiModule 与全局 registerToolPkgToolboxUiModule 保留原调用签名；NativeInterface.registerToolPkgToolboxUiModule 也保留。旧类型 ToolboxUiModuleRegistration 作为 UiModuleRegistration 的类型别名保留。旧模块声明与 registerUiModule 共用 screen 归一化、模块收集与路由校验，配置入口显示在插件详情。JavaScript 返回 undefined，Native 入口为 void，不创建旧工具箱导航。旧别名和新方法不要重复注册同一模块 ID，否则仍按重复 ID 报错。
 
-旧 surface=toolbox 的导航声明在路由校验前忽略，避免旧插件引用停用页面时中止整个主入口注册。新插件实际界面使用 registerUiModule 或 registerUiRoute，runtime 省略时默认为 compose_dsl；桌面小组件仍采用本轮新的原生组件包名。
+旧 surface=toolbox 的导航声明在路由校验前忽略，避免旧插件引用停用页面时中止整个主入口注册。已安装插件使用旧模块注册也可打开配置；新插件实际界面使用 registerUiModule 或 registerUiRoute，runtime 省略时默认为 compose_dsl；桌面小组件仍采用本轮新的原生组件包名。

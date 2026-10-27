@@ -1053,7 +1053,7 @@ export namespace ToolPkg {
     export interface Registry {
         /** 注册可从插件详情打开的界面模块。 @since ToolPkg API 1.0.0 */
         registerUiModule(definition: UiModuleRegistration): void;
-        /** @deprecated 兼容空操作，不返回内容，也不注册界面或导航。 */
+        /** @deprecated 兼容注册为插件详情配置模块，不返回内容，也不创建旧工具箱导航；新插件请使用 registerUiModule。 */
         registerToolboxUiModule(definition: ToolboxUiModuleRegistration): void;
         /** @since ToolPkg API 1.0.0 */
         registerUiRoute(definition: UiRouteRegistration): void;
@@ -1108,7 +1108,7 @@ export namespace ToolPkg {
 
 declare global {
     function registerToolPkgUiModule(definition: ToolPkg.UiModuleRegistration): void;
-    /** @deprecated 兼容空操作，不返回内容，也不注册界面或导航。 */
+    /** @deprecated 兼容注册为插件详情配置模块，不返回内容，也不创建旧工具箱导航；新插件请使用 registerUiModule。 */
     function registerToolPkgToolboxUiModule(definition: ToolPkg.ToolboxUiModuleRegistration): void;
 
     function registerToolPkgUiRoute(definition: ToolPkg.UiRouteRegistration): void;

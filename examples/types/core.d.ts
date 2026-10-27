@@ -137,7 +137,7 @@ export namespace NativeInterface {
      */
     function registerToolPkgUiModule(specJson: string): void;
 
-    /** @deprecated 旧工具箱注册入口为空操作，不返回内容或注册任何内容。 */
+    /** @deprecated 兼容注册为插件详情配置模块，不返回内容，也不创建旧工具箱导航；新插件请使用 registerToolPkgUiModule。 */
     function registerToolPkgToolboxUiModule(specJson: string): void;
 
     /**

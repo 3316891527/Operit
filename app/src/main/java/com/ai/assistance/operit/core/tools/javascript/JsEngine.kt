@@ -1984,10 +1984,11 @@ class JsEngine(private val context: Context) {
             toolPkgRegistrationSession.appendUiModule(specJson)
         }
 
-        // 旧工具箱入口仅兼容调用，不收集或注册界面与导航项。
-        @Suppress("UNUSED_PARAMETER")
+        // 已安装旧插件仍可在详情打开配置，与新接口使用同一模块收集器。
         @JavascriptInterface
-        fun registerToolPkgToolboxUiModule(specJson: String) {}
+        fun registerToolPkgToolboxUiModule(specJson: String) {
+            toolPkgRegistrationSession.appendUiModule(specJson)
+        }
 
         @JavascriptInterface
         fun registerToolPkgUiRoute(specJson: String) {

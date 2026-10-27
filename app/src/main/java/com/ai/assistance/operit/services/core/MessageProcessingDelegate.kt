@@ -1302,12 +1302,17 @@ class MessageProcessingDelegate(
                             "创建带流的AI消息, stream is null: ${aiMessage.contentStream == null}, timestamp: ${aiMessage.timestamp}"
                         )
 
-                        suspend fun emitWaifuSegment(segment: String) {
+                        var waifuPreviewIndex: Int? = null
+                        var lastWaifuPreviewPublishedAt = 0L
+                        suspend fun emitWaifuSegment(segment: String, isPreview: Boolean = false) {
                             if (segment.isBlank()) return
 
-                            val interrupt = waifuEmittedMessages.isEmpty()
+                            val previewIndex = waifuPreviewIndex
+                            val segmentIndex = previewIndex ?: waifuEmittedMessages.size
+                            val interrupt = segmentIndex == 0
                             val segmentMessage =
-                                ChatMessage(
+                                if (previewIndex != null) waifuEmittedMessages[previewIndex].copy(content = segment)
+                                else ChatMessage(
                                     sender = "ai",
                                     content = segment,
                                     contentStream = null,
@@ -1319,11 +1324,17 @@ class MessageProcessingDelegate(
                                 )
 
                             withContext(Dispatchers.Main) {
-                                waifuEmittedMessages += segmentMessage
-                                if (effectivePersistTurn && chatId != null) {
+                                if (previewIndex == null) waifuEmittedMessages += segmentMessage
+                                else waifuEmittedMessages[previewIndex] = segmentMessage
+                                waifuPreviewIndex = if (isPreview) segmentIndex else null
+                                val now = messageTimingNow()
+                                // 首次立即显示，后续预览最多每 100ms 刷新并持久化；定稿始终写入。
+                                val shouldPublish = !isPreview || previewIndex == null || now - lastWaifuPreviewPublishedAt >= 100L
+                                if (shouldPublish && effectivePersistTurn && chatId != null) {
                                     addMessageToChat(chatId, segmentMessage)
+                                    lastWaifuPreviewPublishedAt = now
                                 }
-                                if (getIsAutoReadEnabled()) {
+                                if (!isPreview && getIsAutoReadEnabled()) {
                                     didStreamAutoRead = true
                                     AppLogger.d(
                                         TAG,
@@ -1454,7 +1465,10 @@ class MessageProcessingDelegate(
                                                 WaifuMessageProcessor.streamSegmentsWithTypingQueue(
                                                     sourceStream = sharedCharStream,
                                                     removePunctuation = waifuRemovePunctuation,
-                                                    charDelayMs = waifuCharDelay
+                                                    charDelayMs = waifuCharDelay,
+                                                    onFirstSegmentPreview = { preview ->
+                                                        emitWaifuSegment(preview, isPreview = true)
+                                                    },
                                                 ).collect { segment ->
                                                     emitWaifuSegment(segment)
                                                 }

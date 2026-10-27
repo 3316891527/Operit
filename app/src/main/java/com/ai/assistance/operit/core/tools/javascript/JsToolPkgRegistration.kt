@@ -590,8 +590,15 @@ internal fun buildToolPkgRegistrationBridgeScript(): String {
             var toolPkgApi = requireToolPkgApiRuntime();
             var api = toolPkgApi.namespace('ToolPkg', {
                 _m: captureMarketOrigin,
-                // 旧插件的工具箱注册保持空操作，不触发参数处理或 Native 注册。
-                registerToolboxUiModule: function(definition) {},
+                // 旧插件的配置模块接入插件详情，废弃工具箱导航不再创建。
+                registerToolboxUiModule: function(definition) {
+                    registerWithNative(
+                        definition,
+                        'registerToolPkgToolboxUiModule',
+                        'registerToolPkgUiModule',
+                        ''
+                    );
+                },
                 registerUiModule: function(definition) {
                     registerWithNative(
                         definition,

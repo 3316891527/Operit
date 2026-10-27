@@ -119,10 +119,7 @@ fun ModelPromptsSettingsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var showTagSavedHighlight by remember { mutableStateOf(false) }
-    var showSaveSuccessMessage by remember { mutableStateOf(false) }
     var isSavingCharacterCard by remember { mutableStateOf(false) }
-    var showDuplicateSuccessMessage by remember { mutableStateOf(false) }
 
     // 管理器
     val characterCardManager = remember { CharacterCardManager.getInstance(context) }
@@ -164,9 +161,6 @@ fun ModelPromptsSettingsScreen(
     var showResetDefaultConfirm by remember { mutableStateOf(false) }
 
     // 酒馆角色卡导入相关状态
-    var showImportSuccessMessage by remember { mutableStateOf(false) }
-    var showImportErrorMessage by remember { mutableStateOf(false) }
-    var importErrorMessage by remember { mutableStateOf("") }
     var showChatManagementPrompt by remember { mutableStateOf(false) }
 
     var showExportModeDialog by remember { mutableStateOf(false) }
@@ -355,15 +349,15 @@ fun ModelPromptsSettingsScreen(
                     }
 
                     result.onSuccess {
-                        showImportSuccessMessage = true
+                        OKToast.success(context, R.string.tavern_card_import_success).show()
                         refreshTrigger++
                     }.onFailure { exception ->
-                        importErrorMessage = exception.message ?: context.getString(R.string.unknown_error)
-                        showImportErrorMessage = true
+                        val importErrorMessage = exception.message ?: context.getString(R.string.unknown_error)
+                        OKToast.error(context, context.getString(R.string.tavern_card_import_failed) + "\n" + importErrorMessage, OKToast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
-                    importErrorMessage = context.getString(R.string.file_read_error, e.message ?: "")
-                    showImportErrorMessage = true
+                    val importErrorMessage = context.getString(R.string.file_read_error, e.message ?: "")
+                    OKToast.error(context, context.getString(R.string.tavern_card_import_failed) + "\n" + importErrorMessage, OKToast.LENGTH_LONG).show()
                 }
             }
         }
@@ -446,21 +440,21 @@ fun ModelPromptsSettingsScreen(
 
             val result = characterCardManager.createCharacterCardFromTavernJson(jsonContent)
             result.onSuccess {
-                showImportSuccessMessage = true
+                OKToast.success(context, R.string.tavern_card_import_success).show()
                 refreshTrigger++
             }.onFailure { exception ->
-                importErrorMessage = exception.message ?: context.getString(R.string.unknown_error)
-                showImportErrorMessage = true
+                val importErrorMessage = exception.message ?: context.getString(R.string.unknown_error)
+                OKToast.error(context, context.getString(R.string.tavern_card_import_failed) + "\n" + importErrorMessage, OKToast.LENGTH_LONG).show()
             }
         } catch (e: Exception) {
             AppLogger.e("ColorQrImport", "Import failed", e)
             val msg = e.message ?: e::class.java.simpleName
             val causeMsg = e.cause?.message
-            importErrorMessage = context.getString(
+            val importErrorMessage = context.getString(
                 R.string.file_read_error,
                 if (causeMsg.isNullOrBlank() || causeMsg == msg) msg else "$msg (cause: $causeMsg)"
             )
-            showImportErrorMessage = true
+            OKToast.error(context, context.getString(R.string.tavern_card_import_failed) + "\n" + importErrorMessage, OKToast.LENGTH_LONG).show()
         }
     }
 
@@ -671,7 +665,7 @@ fun ModelPromptsSettingsScreen(
                 pendingCharacterAvatarUri = null
                 editingCharacterCard = null
                 editingOriginalName = null
-                showSaveSuccessMessage = true
+                OKToast.success(context, R.string.save_successful).show()
                 refreshTrigger++
                 if (nameChanged) {
                     showChatManagementPrompt = true
@@ -700,7 +694,7 @@ fun ModelPromptsSettingsScreen(
                     )
                     showAddTagDialog = false
                     editingTag = null
-                    showTagSavedHighlight = true
+                    OKToast.success(context, R.string.save_successful).show()
                 } else {
                     // 更新
                     promptTagManager.updatePromptTag(
@@ -710,7 +704,7 @@ fun ModelPromptsSettingsScreen(
                         promptContent = tag.promptContent,
                         tagType = tag.tagType
                     )
-                    showSaveSuccessMessage = true
+                    OKToast.success(context, R.string.save_successful).show()
                 }
                 showEditTagDialog = false
             }
@@ -768,7 +762,7 @@ fun ModelPromptsSettingsScreen(
                 ActivePrompt.CharacterCard(newCardId),
                 duplicatedCard.name.ifEmpty { null },
             )
-            showDuplicateSuccessMessage = true
+            OKToast.success(context, R.string.duplicate_successful).show()
             refreshTrigger++
         }
     }
@@ -794,7 +788,7 @@ fun ModelPromptsSettingsScreen(
                 showAddGroupCardDialog = false
                 showEditGroupCardDialog = false
                 editingGroupCard = null
-                showSaveSuccessMessage = true
+                OKToast.success(context, R.string.save_successful).show()
                 refreshTrigger++
             }
         }
@@ -810,7 +804,7 @@ fun ModelPromptsSettingsScreen(
                     duplicatedName.ifEmpty { null },
                 )
             }
-            showDuplicateSuccessMessage = true
+            OKToast.success(context, R.string.duplicate_successful).show()
             refreshTrigger++
         }
     }
@@ -1061,166 +1055,6 @@ fun ModelPromptsSettingsScreen(
                 }
             }
 
-            // 成功保存消息
-            if (showSaveSuccessMessage) {
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(1500)
-                    showSaveSuccessMessage = false
-                }
-
-                Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(12.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                                    )
-                        ) {
-                            Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                            imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                                    )
-                        Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                            text = stringResource(R.string.save_successful),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                                    )
-                                }
-                            }
-                        }
-
-            // 创建副本成功消息
-            if (showDuplicateSuccessMessage) {
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(1500)
-                    showDuplicateSuccessMessage = false
-                }
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(12.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.duplicate_successful),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-
-            // 导入成功消息
-            if (showImportSuccessMessage) {
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(2000)
-                    showImportSuccessMessage = false
-                }
-
-                Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(12.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                        ) {
-                            Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.tavern_card_import_success),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-
-            // 导入失败消息
-            if (showImportErrorMessage) {
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(3000)
-                    showImportErrorMessage = false
-                }
-
-                Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(12.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                            ) {
-                                Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Column {
-                                    Text(
-                                text = stringResource(R.string.tavern_card_import_failed),
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            if (importErrorMessage.isNotBlank()) {
-                                Text(
-                                    text = importErrorMessage,
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontSize = 12.sp
-                                    )
-                                }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -2038,37 +1872,7 @@ fun ModelPromptsSettingsScreen(
         )
     }
 
-    // 手动添加标签成功的高亮提示（底部显著提示，1.5s 自动消失）
-    if (showTagSavedHighlight) {
-        LaunchedEffect(Unit) {
-            kotlinx.coroutines.delay(1500)
-            showTagSavedHighlight = false
-        }
-        Box(modifier = Modifier.fillMaxSize()) {
-            Surface(
-                modifier = Modifier
-                    .padding(bottom = 16.dp)
-                    .align(Alignment.BottomCenter),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                tonalElevation = 6.dp,
-                shadowElevation = 6.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.save_successful),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-    }
+
 }
 
 enum class CharacterCardSortOption {

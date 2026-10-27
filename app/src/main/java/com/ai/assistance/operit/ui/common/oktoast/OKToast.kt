@@ -33,6 +33,13 @@ object OKToast {
 
     class Notice internal constructor(internal val message: String, internal val kind: Kind, internal val duration: Int, internal val placement: Placement = Placement.Bottom) {
         fun show() { main.post { enqueue(this) } }
+        /** 只关闭本条提示；排队中的提示也可撤销，不影响请求执行。 */
+        fun cancel() {
+            main.post {
+                queue.remove(this)
+                if (currentNotice === this) dismissCurrent(animate = true)
+            }
+        }
     }
 
     fun info(context: Context, text: CharSequence, duration: Int = LENGTH_SHORT) = Notice(text.toString(), Kind.Info, duration)
@@ -143,7 +150,10 @@ object OKToast {
         val maxHeight = (bounds.height() * 0.25f).toInt().coerceAtLeast(1)
         val notice = queue.removeFirst()
         val isRequestError = notice.placement == Placement.Top
-        val card = OKToastView(context, notice.kind, notice.message, appearance, maxHeight, isRequestError)
+        val card = OKToastView(
+            context, notice.kind, notice.message, appearance, maxHeight, isRequestError,
+            onDismiss = if (isRequestError) ({ notice.cancel() }) else null,
+        )
         card.measure(
             View.MeasureSpec.makeMeasureSpec(maxWidth, if (isRequestError) View.MeasureSpec.EXACTLY else View.MeasureSpec.AT_MOST),
             View.MeasureSpec.makeMeasureSpec(maxHeight, View.MeasureSpec.AT_MOST),
@@ -192,11 +202,13 @@ object OKToast {
             card.translationY = (if (isRequestError) -8 else 8) * density
             card.animate().alpha(1f).translationY(0f).setDuration(180).start()
         }
-        val readingTime = (2200 + notice.message.length * 35).coerceIn(2800, 10000)
-        val base = if (notice.duration == LENGTH_LONG) readingTime.coerceAtLeast(5000) else readingTime
+        // 长错误不再按字数延长到十秒；无障碍用户仍采用系统建议时长。
+        val base = if (notice.duration == LENGTH_LONG) 3500 else 2000
         val accessibility = requireNotNull(context.getSystemService(AccessibilityManager::class.java))
         val timeout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            accessibility.getRecommendedTimeoutMillis(base, AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_ICONS)
+            val flags = AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_ICONS or
+                (if (isRequestError) AccessibilityManager.FLAG_CONTENT_CONTROLS else 0)
+            accessibility.getRecommendedTimeoutMillis(base, flags)
         } else base
         main.postDelayed(dismiss, timeout.toLong())
     }
@@ -214,6 +226,7 @@ object OKToast {
             popup = null
             window.setOnDismissListener(null)
             window.dismiss()
+            if (animate) showNext()
         }
     }
 }
