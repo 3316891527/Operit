@@ -22,3 +22,5 @@
 - [STT 模型构建期自动准备](stt_model_asset_sync/index.md) · `stt_model_asset_sync`
 
 - [工作流发布与 dev 检查同步](workflow-publishing-sync/index.md)
+
+- [PR Check Android SDK 初始化](pr-sdk-packages/index.md)
