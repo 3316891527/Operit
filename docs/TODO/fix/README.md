@@ -102,3 +102,5 @@
 - [终端非零退出码统一判为失败](terminal-nonzero-exit/index.md)
 
 - [use_package 激活失败状态](use-package-result/index.md)
+
+- [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)

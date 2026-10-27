@@ -3718,8 +3718,9 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         // (e.g. during forceRefresh) causing accidental removal of valid enabled packages.
         synchronized(initLock) {
             val normalizedPackages = normalizeEnabledPackageNames(currentPackages)
+            val builtInNames = BuiltInExtensionResources.packageNames(context)
             val cleanedPackages = normalizedPackages.filter { packageName ->
-                availablePackages.containsKey(packageName)
+                availablePackages.containsKey(packageName) || packageName in builtInNames
             }
 
             if (cleanedPackages.size != currentPackages.size || cleanedPackages != currentPackages) {
