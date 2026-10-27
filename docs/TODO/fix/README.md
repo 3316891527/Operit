@@ -108,3 +108,4 @@
 - [GitHub 工具包保留终端失败输出](github-terminal-result/index.md)
 - [对话历史长列表滚动重叠](history-scroll-placement/index.md)
 - [移植 DSL 与设置页滚动状态修复](scroll-state-preservation/index.md)
+- [保留消息复制预览选区与滚动位置](copy-preview-state/index.md)
