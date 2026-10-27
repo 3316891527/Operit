@@ -1,9 +1,9 @@
 package com.ai.assistance.operit.core.memory.extraction
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ThinkingMarkup
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.core.tools.AIToolHandler
@@ -13,10 +13,10 @@ import com.ai.assistance.operit.data.preferences.MemorySearchSettingsPreferences
 import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepository
 import com.ai.assistance.operit.data.preferences.preferencesManager
 import com.ai.assistance.operit.data.repository.MemoryRepository
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.core.config.FunctionalPrompts
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

@@ -2,7 +2,7 @@ package com.ai.assistance.operit.integrations.a2a
 
 import android.content.Context
 import com.ai.assistance.operit.BuildConfig
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import fi.iki.elonen.NanoHTTPD
 import java.io.BufferedWriter
 import java.io.FilterInputStream

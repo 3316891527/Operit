@@ -5,7 +5,7 @@ import android.os.Environment
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.LocalModelDeleteOutcome
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

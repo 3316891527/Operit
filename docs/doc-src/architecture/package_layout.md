@@ -1,6 +1,6 @@
 # 应用源码包职责
 
-本文记录原 API 117 个源文件整理后的包布局。源码根前缀为 com.ai.assistance.operit，api 顶层名称保持现状。目录整理表达现有职责，业务算法与执行流程保持原值。
+本文记录 API、功能 UI、工具与 Android 集成整理后的包布局。源码根前缀为 com.ai.assistance.operit，api 顶层名称保持现状。目录整理表达现有职责，业务算法与执行流程保持原值。
 
 ## 模型访问与语音
 
@@ -65,4 +65,56 @@ ToolPkgJsAiProviderService、TokenUsage 与 ToolPkgMainHookRunner 位于 plugins
 
 旧、新路径、五处类名调整、兼容边界与静态核对方式见 [API 包迁移记录](../../TODO/chore/package-layout/index.md)。对应单元与设备测试的包路径随职责调整，测试内容保持原值。
 
-namespace、applicationId、Android 组件、配置枚举、DataStore 键、JSON 字段与已确认的 Java 桥入口均沿用现有定义。根包品牌、util、UI/data、Widget、DocumentsProvider 和其他源码目录的职责审查属于后续工作。
+namespace、applicationId、Android 组件、配置枚举、DataStore 键、JSON 字段与已确认的 Java 桥入口均沿用现有定义。根包品牌、三个 MCP 路径不一致文件及未纳入本轮映射的目录属于后续工作。
+## 功能界面分类
+
+```text
+ui/
+	features/
+		conversation/
+		automation/
+		models/
+		extensions/
+		management/
+		support/
+	main/
+		screens/
+			NativeToolScreens.kt
+```
+
+conversation 放聊天、记忆与助手；automation 放终端、工作流、网页会话及仍在使用的原生工具；models 放模型配置、用量和登录；extensions 放包与 GitHub；management 放设置、存储、备份、更新、性能与资源；support 放帮助、协议、引导、演示与诊断。分类只增加包层级，各页面原路由 ID 沿用现有定义。
+
+空工具箱首页及孤立文件管理器已删除。日志归备份，UI 调试归诊断，HTML 打包归聊天导出，STT/TTS 页面归设置；三个仍有路由调用的页面包装函数位于 ui/main/screens。有效插件模块与动态导航协议继续保留。
+
+## 工具与 Android 集成
+
+```text
+core/
+	diagnostics/
+	speech/
+		text/
+	tools/
+		packTool/
+			minify/
+data/
+	serialization/
+	updates/
+	skill/
+util/
+	files/
+	android/
+	network/
+	media/
+	document/
+	text/
+	logging/
+integrations/
+	documents/
+	appwidget/
+```
+
+43 个根部工具文件按真实职责归位；聊天上下文与标记进入现有 core/chat 对应包，其余明确的工具子包保留。AssetCopyUtils、OCRUtils、WaifuMessageProcessor、ToolPkgWasmRuntime 保留根部完整名称，维持既有 Java 桥和 JNI 入口。
+
+DocumentsProvider 与 Widget 源码物理归档到 integrations。三个 Provider、五个 Widget/Glance/配置 Activity 与 OfflineResourcesActivity 保留原包声明，维持 authority、桌面绑定、Glance 身份和 Manifest 入口；两个普通 Widget 辅助文件使用新的 integrations.appwidget 包。这些例外由迁移清单显式列出，没有旧名转发层。
+
+第二轮的逐文件归属、兼容例外与检查证据见 [功能、工具与集成整理](../../TODO/chore/package-layout/03-ui-utilities-migration.md)。

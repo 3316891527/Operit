@@ -11,7 +11,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream

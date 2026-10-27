@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.chat.protocol
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.ToolExecutionLimits
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

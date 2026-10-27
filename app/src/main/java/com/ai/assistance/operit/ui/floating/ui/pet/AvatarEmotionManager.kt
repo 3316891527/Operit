@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.floating.ui.pet
 
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.avatar.common.state.AvatarEmotion
 import com.ai.assistance.operit.core.avatar.common.state.AvatarMoodTypes
 

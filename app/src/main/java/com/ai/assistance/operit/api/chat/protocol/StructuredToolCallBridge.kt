@@ -5,9 +5,9 @@ import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.data.model.ToolParameterSchema
 import com.ai.assistance.operit.data.model.ToolPrompt
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import kotlin.math.abs
 import org.json.JSONArray
 import org.json.JSONObject

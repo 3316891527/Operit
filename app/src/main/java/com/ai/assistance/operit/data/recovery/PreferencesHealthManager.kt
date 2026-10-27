@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.backup.OperitBackupDirs
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File

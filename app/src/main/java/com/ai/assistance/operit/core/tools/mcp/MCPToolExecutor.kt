@@ -1,15 +1,15 @@
 package com.ai.assistance.operit.core.tools.mcp
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.ToolExecutionLimits
 import com.ai.assistance.operit.core.tools.ToolExecutor
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.data.model.ToolValidationResult
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap

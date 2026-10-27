@@ -6,7 +6,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import rikka.shizuku.Shizuku
 
 internal data class ShizukuConnectionInfo(val uid: Int, val binder: IBinder)

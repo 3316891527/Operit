@@ -9,8 +9,8 @@ import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.db.ObjectBoxManager
 import com.ai.assistance.operit.data.recovery.MainProcessController
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream

@@ -23,7 +23,7 @@ import com.ai.assistance.operit.data.model.MessageEntity
 import com.ai.assistance.operit.data.model.MessageVariantEntity
 import com.ai.assistance.operit.data.model.TokenStatsModelEntity
 import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.util.UUID
 

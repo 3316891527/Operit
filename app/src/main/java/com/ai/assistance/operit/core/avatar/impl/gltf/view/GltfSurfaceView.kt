@@ -7,7 +7,7 @@ import android.util.Base64
 import android.util.AttributeSet
 import android.view.Choreographer
 import android.view.SurfaceView
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.google.android.filament.EntityManager
 import com.google.android.filament.IndirectLight
 import com.google.android.filament.LightManager

@@ -8,7 +8,7 @@ import com.ai.assistance.operit.R
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.k2fsa.sherpa.ncnn.*
 import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry

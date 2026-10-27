@@ -8,7 +8,7 @@ import com.ai.assistance.operit.data.model.TokenUsageRecordEntity
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.stats.ProviderUsageSnapshot
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.stream.RevisableTextStream
 import com.ai.assistance.operit.util.stream.SharedStream
 import com.ai.assistance.operit.util.stream.Stream

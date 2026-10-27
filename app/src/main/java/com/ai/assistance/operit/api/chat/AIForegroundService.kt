@@ -26,7 +26,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.graphics.PixelFormat
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.core.app.NotificationCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat

@@ -12,8 +12,8 @@ import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
 import com.ai.assistance.operit.data.storage.LocalModelUsageHandle
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import kotlinx.coroutines.Dispatchers

@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.util.logging.AppLogger
 
 /**
  * Waifu模式消息处理器
@@ -1293,7 +1296,7 @@ object WaifuMessageProcessor {
                     }
                 }
             } catch (e: Exception) {
-                com.ai.assistance.operit.util.AppLogger.e("WaifuMessageProcessor", "查询自定义表情失败", e)
+                com.ai.assistance.operit.util.logging.AppLogger.e("WaifuMessageProcessor", "查询自定义表情失败", e)
                 null
             }
             
@@ -1303,11 +1306,11 @@ object WaifuMessageProcessor {
             }
             
             // 如果自定义表情中没有找到，则直接返回null
-            com.ai.assistance.operit.util.AppLogger.w("WaifuMessageProcessor", "在自定义表情中未找到对于情绪 '$emotion' 的表情")
+            com.ai.assistance.operit.util.logging.AppLogger.w("WaifuMessageProcessor", "在自定义表情中未找到对于情绪 '$emotion' 的表情")
             return null
             
         } catch (e: Exception) {
-            com.ai.assistance.operit.util.AppLogger.e("WaifuMessageProcessor", "获取表情图片失败: $emotion", e)
+            com.ai.assistance.operit.util.logging.AppLogger.e("WaifuMessageProcessor", "获取表情图片失败: $emotion", e)
             return null
         }
     }

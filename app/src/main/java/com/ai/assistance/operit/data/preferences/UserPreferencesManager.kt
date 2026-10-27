@@ -7,7 +7,7 @@ import com.ai.assistance.operit.data.preferences.glass.GlassThemePreferences
 import android.content.Context
 import com.ai.assistance.operit.data.resources.ManagedResourceFiles
 import com.ai.assistance.operit.data.resources.PrivateResourceCleanup
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -32,7 +32,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import com.ai.assistance.operit.data.db.ObjectBoxManager
-import com.ai.assistance.operit.util.LocaleUtils.LanguageCodes
+import com.ai.assistance.operit.util.android.LocaleUtils.LanguageCodes
 
 private val Context.userPreferencesDataStore: DataStore<Preferences> by
         preferencesDataStore(name = "user_preferences")

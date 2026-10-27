@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.net.URL
 import java.net.URLEncoder
 import java.security.MessageDigest

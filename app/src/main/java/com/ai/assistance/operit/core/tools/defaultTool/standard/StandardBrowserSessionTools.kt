@@ -48,7 +48,7 @@ import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.run
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.storage.UserscriptRepository
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat

@@ -19,9 +19,9 @@ import com.ai.assistance.operit.core.chat.voice.additionalRequestContext
 import com.ai.assistance.operit.core.chat.voice.collectVoiceResponse
 import com.ai.assistance.operit.core.chat.voice.resolveVoiceText
 import com.ai.assistance.operit.data.model.FunctionType
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatUtils
-import com.ai.assistance.operit.util.MediaPoolManager
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.util.media.MediaPoolManager
 import com.ai.assistance.operit.util.stream.MutableSharedStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.TextStreamEvent

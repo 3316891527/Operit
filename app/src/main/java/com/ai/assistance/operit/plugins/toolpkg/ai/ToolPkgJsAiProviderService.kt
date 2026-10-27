@@ -14,7 +14,7 @@ import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistration
 import com.ai.assistance.operit.plugins.toolpkg.decodeToolPkgHookResult
 import com.ai.assistance.operit.plugins.toolpkg.jsonObjectToMap
 import com.ai.assistance.operit.plugins.toolpkg.toolPkgPackageManager
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import com.ai.assistance.operit.util.stream.Stream
 import java.util.UUID
 import kotlinx.coroutines.coroutineScope

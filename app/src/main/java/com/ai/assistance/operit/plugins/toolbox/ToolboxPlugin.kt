@@ -12,7 +12,7 @@ import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleHookPlugin
 import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleHookPluginRegistry
 import com.ai.assistance.operit.plugins.lifecycle.AppLifecycleReplayEvent
 import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAppLifecycleHookRegistration
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers

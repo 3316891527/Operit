@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.chat.hooks
 import android.content.Context
 import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeSlot
 import com.ai.assistance.operit.data.model.InputProcessingState
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

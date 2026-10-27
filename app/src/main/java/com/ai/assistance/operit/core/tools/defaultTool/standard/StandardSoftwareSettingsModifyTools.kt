@@ -67,8 +67,8 @@ import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
-import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingStateRegistry
-import com.ai.assistance.operit.ui.features.packages.screens.mcp.loading.McpLoadingStatus
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.McpLoadingStateRegistry
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.McpLoadingStatus
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
 import com.ai.assistance.operit.ui.permissions.ToolPermissionSystem
 import kotlinx.coroutines.delay

@@ -7,8 +7,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.skill.SkillManager
 import com.ai.assistance.operit.core.tools.skill.SkillPackage
 import com.ai.assistance.operit.data.preferences.SkillVisibilityPreferences
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.SkillRepoZipPoolManager
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.data.skill.SkillRepoZipPoolManager
 import com.google.gson.JsonParser
 import java.io.BufferedInputStream
 import java.io.File

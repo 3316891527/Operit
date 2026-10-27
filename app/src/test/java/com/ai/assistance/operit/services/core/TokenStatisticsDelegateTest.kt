@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.services.core
 
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

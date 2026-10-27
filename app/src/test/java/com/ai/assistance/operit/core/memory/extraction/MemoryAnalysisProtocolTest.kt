@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.core.memory.extraction
 
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

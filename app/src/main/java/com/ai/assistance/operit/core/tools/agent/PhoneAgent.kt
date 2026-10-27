@@ -27,10 +27,10 @@ import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.services.FloatingChatService
 import com.ai.assistance.operit.ui.common.displays.UIAutomationProgressOverlay
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ImageOutputFormat
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.ImageRegistrationOptions
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.media.ImageOutputFormat
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.media.ImageRegistrationOptions
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job

@@ -46,8 +46,8 @@ import com.ai.assistance.operit.core.tools.javascript.JsJavaBridgeDelegates
 import com.ai.assistance.operit.core.tools.javascript.extractJsExecutionErrorMessage
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgComposeDslNode
 import com.ai.assistance.operit.core.tools.packTool.ToolPkgComposeDslParser
-import com.ai.assistance.operit.ui.features.token.webview.WebViewConfig
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.models.token.webview.WebViewConfig
+import com.ai.assistance.operit.util.logging.AppLogger
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File

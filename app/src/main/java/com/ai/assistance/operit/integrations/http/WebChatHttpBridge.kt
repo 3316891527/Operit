@@ -45,9 +45,9 @@ import com.ai.assistance.operit.integrations.http.bridge.WebChatManagementBridge
 import com.ai.assistance.operit.integrations.externalchat.ExternalChatResponseSanitizer
 import com.ai.assistance.operit.services.core.MAX_DISPLAY_PAGE_COUNT
 import com.ai.assistance.operit.services.core.resolveDisplayPageRanges
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.StructuredAssistantContentParser
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.StructuredAssistantContentParser
 import com.ai.assistance.operit.ui.theme.resolveThemeColorScheme
 import fi.iki.elonen.NanoHTTPD
 import java.io.BufferedWriter

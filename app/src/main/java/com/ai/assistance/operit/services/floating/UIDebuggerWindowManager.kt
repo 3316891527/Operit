@@ -31,7 +31,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.ai.assistance.operit.services.ServiceLifecycleOwner
 import com.ai.assistance.operit.services.UIDebuggerService
-import com.ai.assistance.operit.ui.features.toolbox.screens.uidebugger.UIDebuggerOverlay
+import com.ai.assistance.operit.ui.features.support.diagnostics.uidebugger.UIDebuggerOverlay
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner

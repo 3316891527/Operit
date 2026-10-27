@@ -7,7 +7,7 @@ import com.ai.assistance.operit.core.chat.hooks.ChatRuntimeHookRegistry
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.services.ChatServiceCore
 import com.ai.assistance.operit.services.core.ChatSelectionMode
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.core.chat.runtime
 
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.markdown.SmartString
 import java.util.concurrent.atomic.AtomicInteger
 

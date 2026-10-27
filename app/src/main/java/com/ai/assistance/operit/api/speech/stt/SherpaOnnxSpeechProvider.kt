@@ -7,7 +7,7 @@ import android.media.AudioRecord
 import com.ai.assistance.operit.api.speech.stt.SttService
 import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
 import com.ai.assistance.operit.data.resources.models.SpeechModelPurpose
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineStream
 import kotlin.math.sqrt

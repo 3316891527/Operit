@@ -40,8 +40,8 @@ import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.services.ChatServiceCore
 import com.ai.assistance.operit.services.FloatingChatService
 import com.ai.assistance.operit.ui.floating.FloatingMode
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import com.ai.assistance.operit.util.stream.SharedStream
 import java.time.ZoneId

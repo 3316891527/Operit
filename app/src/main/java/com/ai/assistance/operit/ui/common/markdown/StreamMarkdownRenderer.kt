@@ -4,7 +4,7 @@ import com.ai.assistance.operit.data.model.MessageSectionCodec
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import android.widget.ImageView
 import androidx.collection.LruCache
 import androidx.compose.animation.core.animateFloatAsState

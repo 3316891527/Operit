@@ -343,9 +343,9 @@ enum class ChatSelectionMode {
 - `app/src/main/java/com/ai/assistance/operit/services/ChatServiceCore.kt`
 - `app/src/main/java/com/ai/assistance/operit/services/core/ChatHistoryDelegate.kt`
 - `app/src/main/java/com/ai/assistance/operit/services/core/MessageProcessingDelegate.kt`
-- `app/src/main/java/com/ai/assistance/operit/ui/features/chat/viewmodel/ChatViewModel.kt`
+- `app/src/main/java/com/ai/assistance/operit/ui/features/conversation/chat/viewmodel/ChatViewModel.kt`
 - `app/src/main/java/com/ai/assistance/operit/services/FloatingChatService.kt`
-- `app/src/main/java/com/ai/assistance/operit/ui/features/chat/viewmodel/FloatingWindowDelegate.kt`
+- `app/src/main/java/com/ai/assistance/operit/ui/features/conversation/chat/viewmodel/FloatingWindowDelegate.kt`
 
 必要时可以新增一个很薄的 runtime holder，例如：
 

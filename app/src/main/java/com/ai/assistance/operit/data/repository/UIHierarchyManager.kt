@@ -12,7 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.os.RemoteException
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.system.AccessibilityProviderInstaller

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.speech.audio
 
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 
 import android.annotation.SuppressLint
 import android.content.Context

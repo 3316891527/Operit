@@ -25,75 +25,75 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.NavItem
-import com.ai.assistance.operit.ui.features.about.screens.AboutScreen
-import com.ai.assistance.operit.ui.features.assistant.screens.AssistantConfigScreen
-import com.ai.assistance.operit.ui.features.chat.screens.AIChatScreen
-import com.ai.assistance.operit.ui.features.chat.sidebar.LocalMainChatViewModel
-import com.ai.assistance.operit.ui.features.chat.sidebar.LocalRunMainChatAction
-import com.ai.assistance.operit.ui.features.demo.screens.ShizukuDemoScreen
-import com.ai.assistance.operit.ui.features.help.screens.HelpScreen
-import com.ai.assistance.operit.ui.features.memory.screens.MemoryScreen
-import com.ai.assistance.operit.ui.features.memory.screens.MemoryOverviewScreen
+import com.ai.assistance.operit.ui.features.support.about.screens.AboutScreen
+import com.ai.assistance.operit.ui.features.conversation.assistant.screens.AssistantConfigScreen
+import com.ai.assistance.operit.ui.features.conversation.chat.screens.AIChatScreen
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalRunMainChatAction
+import com.ai.assistance.operit.ui.features.support.demo.screens.ShizukuDemoScreen
+import com.ai.assistance.operit.ui.features.support.help.screens.HelpScreen
+import com.ai.assistance.operit.ui.features.conversation.memory.screens.MemoryScreen
+import com.ai.assistance.operit.ui.features.conversation.memory.screens.MemoryOverviewScreen
 
-import com.ai.assistance.operit.ui.features.packages.screens.MarketHomeTab
-import com.ai.assistance.operit.ui.features.packages.screens.PackageManagerScreen
-import com.ai.assistance.operit.ui.features.packages.screens.ArtifactPublishScreen
-import com.ai.assistance.operit.ui.features.packages.screens.RepoMarketPublishScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketManageScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketCategoryScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketAuthorScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketDetailEntryScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketNotificationsScreen
-import com.ai.assistance.operit.ui.features.packages.screens.UnifiedMarketScreen
-import com.ai.assistance.operit.ui.features.packages.screens.marketCategoryLabel
-import com.ai.assistance.operit.ui.features.packages.screens.toArtifactPublishClusterContext
-import com.ai.assistance.operit.ui.features.packages.market.ArtifactPublishClusterContext
-import com.ai.assistance.operit.ui.features.packages.market.MarketStatsType
-import com.ai.assistance.operit.ui.features.packages.market.PluginCreationIntent
-import com.ai.assistance.operit.ui.features.databackup.DataAndBackupScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ExternalHttpChatSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.GlobalDisplaySettingsScreen
-import com.ai.assistance.operit.ui.features.performance.PerformanceMonitorScreen
-import com.ai.assistance.operit.ui.features.packages.market.account.GitHubAccountScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.MarketHomeTab
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.PackageManagerScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.ArtifactPublishScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.RepoMarketPublishScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.UnifiedMarketManageScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.UnifiedMarketCategoryScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.UnifiedMarketAuthorScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.UnifiedMarketDetailEntryScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.UnifiedMarketNotificationsScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.UnifiedMarketScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.marketCategoryLabel
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.toArtifactPublishClusterContext
+import com.ai.assistance.operit.ui.features.extensions.packages.market.ArtifactPublishClusterContext
+import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketStatsType
+import com.ai.assistance.operit.ui.features.extensions.packages.market.PluginCreationIntent
+import com.ai.assistance.operit.ui.features.management.databackup.DataAndBackupScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.ExternalHttpChatSettingsScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.GlobalDisplaySettingsScreen
+import com.ai.assistance.operit.ui.features.management.performance.PerformanceMonitorScreen
+import com.ai.assistance.operit.ui.features.extensions.packages.market.account.GitHubAccountScreen
 
-import com.ai.assistance.operit.ui.features.settings.model.ModelWorkspaceTab
-import com.ai.assistance.operit.ui.features.settings.screens.ModelConfigScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ModelPromptsSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.TagMarketScreen
-import com.ai.assistance.operit.ui.features.settings.screens.SettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.SpeechServicesSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ThemeSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.ToolPermissionSettingsScreen
-import com.ai.assistance.operit.ui.features.settings.screens.MnnModelDownloadScreen
-import com.ai.assistance.operit.ui.features.settings.profile.UserProfileManagementScreen
+import com.ai.assistance.operit.ui.features.management.settings.model.ModelWorkspaceTab
+import com.ai.assistance.operit.ui.features.management.settings.screens.ModelConfigScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.ModelPromptsSettingsScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.TagMarketScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.SettingsScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.SpeechServicesSettingsScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.ThemeSettingsScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.ToolPermissionSettingsScreen
+import com.ai.assistance.operit.ui.features.management.settings.screens.MnnModelDownloadScreen
+import com.ai.assistance.operit.ui.features.management.settings.profile.UserProfileManagementScreen
 import com.ai.assistance.operit.data.storage.StorageCategory
-import com.ai.assistance.operit.ui.features.storage.BackupExportStorageScreen
-import com.ai.assistance.operit.ui.features.storage.ChatHistoryStorageScreen
-import com.ai.assistance.operit.ui.features.storage.ConfigurationResourceStorageScreen
-import com.ai.assistance.operit.ui.features.storage.DataStorageScreen
-import com.ai.assistance.operit.ui.features.storage.LinuxEnvironmentStorageScreen
-import com.ai.assistance.operit.ui.features.storage.LocalModelStorageScreen
-import com.ai.assistance.operit.ui.features.storage.MemoryLibraryStorageScreen
-import com.ai.assistance.operit.ui.features.storage.WorkspaceMediaStorageScreen
-import com.ai.assistance.operit.ui.features.tokenstats.TokenUsageStatisticsScreen
-import com.ai.assistance.operit.ui.features.token.TokenConfigWebViewScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ShellExecutorToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.StreamMarkdownDemoScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.TerminalAutoConfigToolScreen
-import com.ai.assistance.operit.ui.features.terminal.EmbeddedTerminalPage
-import com.ai.assistance.operit.ui.features.terminal.TerminalEntryScreen
+import com.ai.assistance.operit.ui.features.management.storage.BackupExportStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.ChatHistoryStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.ConfigurationResourceStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.DataStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.LinuxEnvironmentStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.LocalModelStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.MemoryLibraryStorageScreen
+import com.ai.assistance.operit.ui.features.management.storage.WorkspaceMediaStorageScreen
+import com.ai.assistance.operit.ui.features.models.tokenstats.TokenUsageStatisticsScreen
+import com.ai.assistance.operit.ui.features.models.token.TokenConfigWebViewScreen
+import com.ai.assistance.operit.ui.main.screens.ShellExecutorToolScreen
+import com.ai.assistance.operit.ui.features.support.demo.markdown.StreamMarkdownDemoScreen
+import com.ai.assistance.operit.ui.main.screens.TerminalAutoConfigToolScreen
+import com.ai.assistance.operit.ui.features.automation.terminal.EmbeddedTerminalPage
+import com.ai.assistance.operit.ui.features.automation.terminal.TerminalEntryScreen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.UIDebuggerToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.sqlviewer.SqlViewerToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.ffmpegtoolbox.FFmpegToolboxScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.htmlpackager.HtmlPackagerScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.speechtotext.SpeechToTextToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.texttospeech.TextToSpeechToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.autoglm.AutoGlmOneClickToolScreen
-import com.ai.assistance.operit.ui.features.toolbox.screens.autoglm.AutoGlmToolScreen
-import com.ai.assistance.operit.ui.features.update.screens.UpdateScreen
-import com.ai.assistance.operit.ui.features.workflow.screens.WorkflowListScreen
-import com.ai.assistance.operit.ui.features.workflow.screens.WorkflowDetailScreen
+import com.ai.assistance.operit.ui.main.screens.UIDebuggerToolScreen
+import com.ai.assistance.operit.ui.features.automation.sql.SqlViewerToolScreen
+import com.ai.assistance.operit.ui.features.automation.ffmpeg.FFmpegToolboxScreen
+import com.ai.assistance.operit.ui.features.conversation.chat.export.htmlpackager.HtmlPackagerScreen
+import com.ai.assistance.operit.ui.features.management.settings.speech.stt.SpeechToTextToolScreen
+import com.ai.assistance.operit.ui.features.management.settings.speech.tts.TextToSpeechToolScreen
+import com.ai.assistance.operit.ui.features.automation.autoglm.AutoGlmOneClickToolScreen
+import com.ai.assistance.operit.ui.features.automation.autoglm.AutoGlmToolScreen
+import com.ai.assistance.operit.ui.features.management.update.screens.UpdateScreen
+import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowListScreen
+import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowDetailScreen
 import com.ai.assistance.operit.ui.main.PendingChatDraftHandler
 import com.ai.assistance.operit.ui.main.navigation.AppRouterGateway
 
@@ -675,7 +675,7 @@ sealed class Screen(
             onError: (String) -> Unit,
             onGestureConsumed: (Boolean) -> Unit
         ) {
-            com.ai.assistance.operit.ui.features.agreement.screens.AgreementScreen()
+            com.ai.assistance.operit.ui.features.support.agreement.screens.AgreementScreen()
         }
     }
 
@@ -890,7 +890,7 @@ sealed class Screen(
             onError: (String) -> Unit,
             onGestureConsumed: (Boolean) -> Unit
         ) {
-            com.ai.assistance.operit.ui.features.settings.screens.PersonaCardGenerationScreen(
+            com.ai.assistance.operit.ui.features.management.settings.screens.PersonaCardGenerationScreen(
                 onNavigateToSettings = { navigateTo(Settings) },
                 onNavigateToModelConfig = { navigateTo(ModelConfig) },
                 onNavigateToModelPrompts = { navigateTo(ModelPromptsSettings) }
@@ -911,7 +911,7 @@ sealed class Screen(
             onError: (String) -> Unit,
             onGestureConsumed: (Boolean) -> Unit
         ) {
-            com.ai.assistance.operit.ui.features.settings.screens.WaifuModeSettingsScreen(
+            com.ai.assistance.operit.ui.features.management.settings.screens.WaifuModeSettingsScreen(
                 onNavigateBack = onGoBack,
                 onNavigateToCustomEmoji = { navigateTo(CustomEmojiManagement) }
             )
@@ -931,7 +931,7 @@ sealed class Screen(
             onError: (String) -> Unit,
             onGestureConsumed: (Boolean) -> Unit
         ) {
-            com.ai.assistance.operit.ui.features.settings.screens.CustomEmojiManagementScreen(
+            com.ai.assistance.operit.ui.features.management.settings.screens.CustomEmojiManagementScreen(
                 onNavigateBack = onGoBack
             )
         }

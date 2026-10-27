@@ -5,7 +5,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.data.model.AttachmentInfo
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout

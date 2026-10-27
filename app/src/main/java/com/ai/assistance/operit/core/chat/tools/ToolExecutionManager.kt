@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.chat.tools
 import com.ai.assistance.operit.ui.common.a2ui.CardFences
 import android.content.Context
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.AIToolHookDecision
 import com.ai.assistance.operit.core.tools.StringResultData
@@ -25,11 +25,11 @@ import kotlinx.coroutines.coroutineScope
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.ui.common.displays.MessageContentParser
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.util.stream.plugins.StreamXmlPlugin
 import com.ai.assistance.operit.util.stream.splitBy
 import com.ai.assistance.operit.util.stream.stream
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch

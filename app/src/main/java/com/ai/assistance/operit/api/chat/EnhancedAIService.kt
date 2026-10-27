@@ -10,8 +10,8 @@ import com.ai.assistance.operit.core.chat.voice.VoiceAudioRequest
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.core.chat.protocol.ConversationMarkupManager
 import com.ai.assistance.operit.core.chat.runtime.ConversationRoundManager
 import com.ai.assistance.operit.core.chat.context.ConversationService
@@ -100,8 +100,8 @@ import com.ai.assistance.operit.data.repository.MemoryAutoSaveCandidateRepositor
 import com.ai.assistance.operit.core.config.SystemToolPrompts
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ToolParameterSchema
-import com.ai.assistance.operit.util.ChatUtils
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 
 /**
  * Enhanced AI service that provides advanced conversational capabilities by integrating various

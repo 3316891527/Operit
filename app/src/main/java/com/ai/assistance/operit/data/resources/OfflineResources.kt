@@ -10,7 +10,7 @@ import com.ai.assistance.operit.data.storage.DataStorageRepository
 import com.ai.assistance.operit.data.storage.DirectoryCleanupRequest
 import com.ai.assistance.operit.data.storage.SafeDirectoryCleaner
 import com.ai.assistance.operit.terminal.TerminalManager
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import java.io.IOException
 import java.util.UUID

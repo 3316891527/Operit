@@ -25,9 +25,9 @@ import com.ai.assistance.operit.services.FloatingChatService
 import com.ai.assistance.operit.ui.common.displays.UIOperationOverlay
 import com.ai.assistance.operit.ui.common.displays.UIAutomationProgressOverlay
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.LocaleUtils
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.android.LocaleUtils
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.core.tools.agent.ActionHandler
 import com.ai.assistance.operit.core.tools.agent.AgentConfig
 import com.ai.assistance.operit.core.tools.agent.PhoneAgent

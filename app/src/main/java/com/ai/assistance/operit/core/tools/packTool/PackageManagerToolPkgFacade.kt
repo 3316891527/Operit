@@ -5,8 +5,8 @@ import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.data.model.Workflow
 import com.ai.assistance.operit.data.repository.WorkflowRepository
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceConfigReader
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceConfigReader
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.chat.error
 
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
 
 interface HttpStatusCodeException {

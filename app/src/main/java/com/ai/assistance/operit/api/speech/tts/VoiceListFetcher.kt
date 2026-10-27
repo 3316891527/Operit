@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.speech.tts
 
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers

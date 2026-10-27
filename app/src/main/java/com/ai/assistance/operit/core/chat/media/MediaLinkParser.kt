@@ -1,9 +1,9 @@
 package com.ai.assistance.operit.core.chat.media
 
-import com.ai.assistance.operit.util.ImagePoolManager
+import com.ai.assistance.operit.util.media.ImagePoolManager
 import com.ai.assistance.operit.data.model.AttachmentInfo
-import com.ai.assistance.operit.util.MediaBase64Limiter
-import com.ai.assistance.operit.util.MediaPoolManager
+import com.ai.assistance.operit.util.media.MediaBase64Limiter
+import com.ai.assistance.operit.util.media.MediaPoolManager
 
 data class MediaLink(
     val type: String,
@@ -105,9 +105,9 @@ object MediaLinkParser {
             val id = link.groupValues[2]
             if (id == "error") continue
             val remaining = message.substring(link.range.last + 1).trimStart()
-            val attachment = com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataTag.find(remaining)
+            val attachment = com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex.attachmentDataTag.find(remaining)
                 ?.takeIf { it.range.first == 0 }
-                ?: com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
+                ?: com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
                     ?.takeIf { it.range.first == 0 }
             if (attachment != null && attachment.groupValues[3].startsWith("image/", ignoreCase = true)) {
                 put(unescapeXml(attachment.groupValues[1]), id)
@@ -123,9 +123,9 @@ object MediaLinkParser {
             val id = link.groupValues[2]
             if (id == "error") continue
             val remaining = message.substring(link.range.last + 1).trimStart()
-            val attachment = com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataTag.find(remaining)
+            val attachment = com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex.attachmentDataTag.find(remaining)
                 ?.takeIf { it.range.first == 0 }
-                ?: com.ai.assistance.operit.util.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
+                ?: com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex.attachmentDataSelfClosingTag.find(remaining)
                     ?.takeIf { it.range.first == 0 }
             if (attachment != null && attachment.groupValues[3].startsWith("$type/", ignoreCase = true)) {
                 put(id, AttachmentInfo(

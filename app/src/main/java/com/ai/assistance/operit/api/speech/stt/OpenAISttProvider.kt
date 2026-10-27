@@ -8,7 +8,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
 import java.io.File
 import java.io.FileOutputStream

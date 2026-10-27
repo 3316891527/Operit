@@ -11,8 +11,8 @@ import com.ai.assistance.operit.data.backup.RawSnapshotBackupManager
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.recovery.PreferencesHealthManager
 import com.ai.assistance.operit.data.recovery.RoomDatabaseHealthManager
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.android.LocaleUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

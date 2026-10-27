@@ -21,7 +21,7 @@ import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_PROMPT_HISTORY
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_PROMPT_INPUT
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_SYSTEM_PROMPT_COMPOSE
 import com.ai.assistance.operit.core.tools.packTool.TOOLPKG_EVENT_TOOL_PROMPT_COMPOSE
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.concurrent.atomic.AtomicBoolean
 import org.json.JSONArray
 import org.json.JSONObject

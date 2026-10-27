@@ -21,8 +21,8 @@ import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.data.preferences.EnvPreferences
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.util.ToolPkgWasmRuntime
 import java.io.ByteArrayOutputStream
 import java.io.File

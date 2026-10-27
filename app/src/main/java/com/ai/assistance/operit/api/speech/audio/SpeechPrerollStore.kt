@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.api.speech.audio
 
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 
 data class WakePhraseSnapshot(
     val phrase: String,

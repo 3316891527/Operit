@@ -7,7 +7,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancelAndJoin
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.hooks.PromptHookContext
 import com.ai.assistance.operit.core.chat.hooks.PromptHookRegistry
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
@@ -40,8 +40,8 @@ import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepos
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.core.avatar.impl.factory.AvatarModelFactoryImpl
 import com.ai.assistance.operit.data.repository.AvatarRepository
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
 import com.ai.assistance.operit.util.stream.TextStreamEventType
@@ -61,7 +61,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import com.ai.assistance.operit.core.tools.ComputerDesktopActionResultData
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import com.ai.assistance.operit.api.chat.runtime.MultiServiceManager
 import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.core.chat.media.MediaLinkBuilder
@@ -1046,7 +1046,7 @@ class ConversationService(
                 customEmojiRepository.initializeStorage()
                 customEmojiRepository.getAllCategories(activePrompt).first()
             } catch (e: Exception) {
-                com.ai.assistance.operit.util.AppLogger.e("ConversationService", "获取表情分组失败", e)
+                com.ai.assistance.operit.util.logging.AppLogger.e("ConversationService", "获取表情分组失败", e)
                 emptyList()
             }
             
@@ -1421,7 +1421,7 @@ class ConversationService(
             val service = multiServiceManager.getServiceForFunction(FunctionType.IMAGE_RECOGNITION)
             
             // 添加图片到池子并获取ID
-            val imageId = com.ai.assistance.operit.util.ImagePoolManager.addImage(imagePath)
+            val imageId = com.ai.assistance.operit.util.media.ImagePoolManager.addImage(imagePath)
             if (imageId == "error") {
                 return "Failed to load image: $imagePath"
             }
@@ -1448,7 +1448,7 @@ class ConversationService(
             }
             
             // 清理图片缓存
-            com.ai.assistance.operit.util.ImagePoolManager.removeImage(imageId)
+            com.ai.assistance.operit.util.media.ImagePoolManager.removeImage(imageId)
             
             ChatUtils.removeThinkingContent(result.toString()).trim()
         } catch (e: Exception) {
@@ -1469,7 +1469,7 @@ class ConversationService(
                 .getMimeTypeFromExtension(java.io.File(audioPath).extension.lowercase())
                 ?: "audio/*"
 
-            val mediaId = com.ai.assistance.operit.util.MediaPoolManager.addMedia(audioPath, mimeType)
+            val mediaId = com.ai.assistance.operit.util.media.MediaPoolManager.addMedia(audioPath, mimeType)
             if (mediaId == "error") {
                 return "Failed to load audio: $audioPath"
             }
@@ -1492,7 +1492,7 @@ class ConversationService(
                 result.append(chunk)
             }
 
-            com.ai.assistance.operit.util.MediaPoolManager.removeMedia(mediaId)
+            com.ai.assistance.operit.util.media.MediaPoolManager.removeMedia(mediaId)
             ChatUtils.removeThinkingContent(result.toString()).trim()
         } catch (e: Exception) {
             AppLogger.e(TAG, "音频识别失败", e)
@@ -1512,7 +1512,7 @@ class ConversationService(
                 .getMimeTypeFromExtension(java.io.File(videoPath).extension.lowercase())
                 ?: "video/*"
 
-            val mediaId = com.ai.assistance.operit.util.MediaPoolManager.addMedia(videoPath, mimeType)
+            val mediaId = com.ai.assistance.operit.util.media.MediaPoolManager.addMedia(videoPath, mimeType)
             if (mediaId == "error") {
                 return "Failed to load video: $videoPath"
             }
@@ -1535,7 +1535,7 @@ class ConversationService(
                 result.append(chunk)
             }
 
-            com.ai.assistance.operit.util.MediaPoolManager.removeMedia(mediaId)
+            com.ai.assistance.operit.util.media.MediaPoolManager.removeMedia(mediaId)
             ChatUtils.removeThinkingContent(result.toString()).trim()
         } catch (e: Exception) {
             AppLogger.e(TAG, "视频识别失败", e)

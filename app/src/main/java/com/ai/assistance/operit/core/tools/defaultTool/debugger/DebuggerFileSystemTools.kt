@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.DirectoryListingData
 import com.ai.assistance.operit.core.tools.FileContentData
@@ -38,9 +38,9 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.math.exp
-import com.ai.assistance.operit.util.FileUtils
+import com.ai.assistance.operit.util.files.FileUtils
 import com.ai.assistance.operit.core.tools.ToolProgressBus
-import com.ai.assistance.operit.util.AndroidUserPathUtils
+import com.ai.assistance.operit.util.files.AndroidUserPathUtils
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay

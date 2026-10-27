@@ -4,7 +4,7 @@ import android.content.Context
 import com.ai.assistance.operit.data.resources.packs.PackResources
 import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
 import com.ai.assistance.operit.data.storage.LocalModelDeleteOutcome
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream

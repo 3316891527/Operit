@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.standard
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.WorkflowDetailResultData
 import com.ai.assistance.operit.core.tools.WorkflowListResultData

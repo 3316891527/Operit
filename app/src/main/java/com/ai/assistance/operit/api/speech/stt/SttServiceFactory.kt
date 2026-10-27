@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.api.speech.stt
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences.SttHttpConfig
 import kotlinx.coroutines.runBlocking

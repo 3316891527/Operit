@@ -2,7 +2,7 @@ package com.ai.assistance.operit.api.speech.tts
 
 import android.media.AudioAttributes
 import android.media.MediaPlayer
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.io.FileInputStream
 import java.util.concurrent.atomic.AtomicBoolean

@@ -52,7 +52,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.ai.assistance.operit.services.ServiceLifecycleOwner
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.agent.ShowerController
 import com.ai.assistance.operit.core.tools.agent.PhoneAgentJobRegistry
 import androidx.compose.ui.geometry.Offset

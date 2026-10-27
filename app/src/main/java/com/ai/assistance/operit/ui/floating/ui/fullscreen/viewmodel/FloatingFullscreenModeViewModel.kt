@@ -12,8 +12,8 @@ import com.ai.assistance.operit.ui.floating.FloatContext
 import com.ai.assistance.operit.ui.floating.ui.fullscreen.XmlTextProcessor
 import com.ai.assistance.operit.ui.floating.ui.pet.AvatarEmotionManager
 import com.ai.assistance.operit.ui.floating.voice.SpeechInteractionManager
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.TtsSegmenter
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.speech.text.TtsSegmenter
 import com.ai.assistance.operit.util.stream.Stream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

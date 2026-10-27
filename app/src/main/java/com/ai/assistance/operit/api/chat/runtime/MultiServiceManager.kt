@@ -2,7 +2,7 @@ package com.ai.assistance.operit.api.chat.runtime
 
 import android.content.Context
 import com.ai.assistance.operit.api.chat.decorator.FunctionalThinkingAIService
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.api.chat.AIServiceFactory
 import com.ai.assistance.operit.api.chat.decorator.RateLimitedAIService

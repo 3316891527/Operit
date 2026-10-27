@@ -4,12 +4,12 @@ import android.content.Context
 import android.os.Environment
 import android.util.Base64
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
-import com.ai.assistance.operit.util.FFmpegUtil
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.MediaPoolManager
+import com.ai.assistance.operit.util.media.FFmpegUtil
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.media.MediaPoolManager
 import com.ai.assistance.mnn.MNNLlmSession
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.ModelOption
@@ -546,12 +546,12 @@ class MNNProvider(
                 }
             val rawContent =
                 if (!preserveThinkInHistory && turn.kind == PromptTurnKind.ASSISTANT) {
-                    com.ai.assistance.operit.util.ChatUtils.removeThinkingContent(turn.content)
+                    com.ai.assistance.operit.core.chat.context.ChatUtils.removeThinkingContent(turn.content)
                 } else {
                     turn.content
                 }
             val content =
-                com.ai.assistance.operit.util.ChatUtils.stripOpenAiResponsesProtocolMarkup(rawContent)
+                com.ai.assistance.operit.core.chat.context.ChatUtils.stripOpenAiResponsesProtocolMarkup(rawContent)
             role to content
         }
     }

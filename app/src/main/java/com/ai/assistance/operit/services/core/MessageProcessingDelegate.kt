@@ -5,8 +5,8 @@ import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.android.LocaleUtils
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ai.assistance.operit.R
@@ -24,7 +24,7 @@ import com.ai.assistance.operit.util.stream.SharedStream
 import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
 import com.ai.assistance.operit.util.stream.TextStreamEventType
 import com.ai.assistance.operit.util.stream.TextStreamRevisionTracker
-import com.ai.assistance.operit.util.TtsSegmenter
+import com.ai.assistance.operit.core.speech.text.TtsSegmenter
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
@@ -32,7 +32,7 @@ import com.ai.assistance.operit.data.preferences.WaifuPreferences
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceBackupManager
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceBackupManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

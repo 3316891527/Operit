@@ -7,7 +7,7 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import android.widget.ImageView
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable

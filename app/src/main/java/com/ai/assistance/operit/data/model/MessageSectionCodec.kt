@@ -1,8 +1,8 @@
 package com.ai.assistance.operit.data.model
 
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ThinkingMarkup
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
 
 /**
  * 旧标记字符串和 sections 的双向转换。

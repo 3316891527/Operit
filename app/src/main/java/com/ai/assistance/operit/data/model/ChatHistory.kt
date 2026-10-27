@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.data.model
 
-import com.ai.assistance.operit.util.LocalDateTimeSerializer
+import com.ai.assistance.operit.data.serialization.LocalDateTimeSerializer
 import java.util.UUID
 import java.time.LocalDateTime
 import kotlinx.serialization.Serializable

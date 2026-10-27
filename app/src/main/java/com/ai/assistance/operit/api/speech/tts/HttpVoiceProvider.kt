@@ -4,8 +4,8 @@ import android.content.Context
 import android.util.Base64
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.HttpLogSanitizer
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.logging.HttpLogSanitizer
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException

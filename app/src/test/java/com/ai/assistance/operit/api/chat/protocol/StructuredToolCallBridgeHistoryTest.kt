@@ -2,7 +2,7 @@ package com.ai.assistance.operit.api.chat.protocol
 
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After

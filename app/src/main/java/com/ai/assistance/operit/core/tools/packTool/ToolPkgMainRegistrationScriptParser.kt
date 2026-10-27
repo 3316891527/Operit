@@ -2,7 +2,7 @@ package com.ai.assistance.operit.core.tools.packTool
 
 import com.ai.assistance.operit.core.tools.LocalizedText
 import com.ai.assistance.operit.core.tools.javascript.JsEngine
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import org.json.JSONArray
 import org.json.JSONObject
 

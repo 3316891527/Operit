@@ -7,7 +7,7 @@ import com.ai.assistance.operit.core.tools.javascript.extractJsExecutionFailure
 import org.json.JSONObject
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async

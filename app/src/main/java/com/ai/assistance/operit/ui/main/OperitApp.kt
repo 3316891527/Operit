@@ -8,8 +8,8 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ai.assistance.operit.ui.features.chat.sidebar.*
-import com.ai.assistance.operit.ui.features.chat.viewmodel.ChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.*
+import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,7 +46,7 @@ import com.ai.assistance.operit.ui.main.navigation.NavigationSurface
 import com.ai.assistance.operit.ui.main.navigation.RouteEntrySource
 import com.ai.assistance.operit.ui.main.navigation.LocalRouteBackGuardRegistry
 import com.ai.assistance.operit.ui.main.navigation.RouteBackGuardRegistry
-import com.ai.assistance.operit.util.NetworkUtils
+import com.ai.assistance.operit.util.network.NetworkUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -57,8 +57,13 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.update.screens.UpdateScreen
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.management.update.screens.UpdateScreen
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalOpenMainChatSidebar
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalRunMainChatAction
+import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.rememberChatSidebarState
 
 // 为TopAppBar的actions提供CompositionLocal
 // 它允许子组件（如AIChatScreen）向上提供它们的action Composable

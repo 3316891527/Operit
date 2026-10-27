@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.standard
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
@@ -39,12 +39,12 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-import com.ai.assistance.operit.util.FileUtils
-import com.ai.assistance.operit.util.PathMapper
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.MediaPoolManager
-import com.ai.assistance.operit.util.HttpMultiPartDownloader
-import com.ai.assistance.operit.util.FFmpegUtil
+import com.ai.assistance.operit.util.files.FileUtils
+import com.ai.assistance.operit.util.files.PathMapper
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.media.MediaPoolManager
+import com.ai.assistance.operit.util.network.HttpMultiPartDownloader
+import com.ai.assistance.operit.util.media.FFmpegUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -70,7 +70,7 @@ import com.ai.assistance.operit.terminal.TerminalManager
 import com.ai.assistance.operit.terminal.provider.filesystem.FileSystemProvider
 import com.ai.assistance.operit.terminal.utils.SSHFileConnectionManager
 import com.ai.assistance.operit.core.tools.defaultTool.PathValidator
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import com.ai.assistance.operit.util.ripgrep.NativeRipgrep
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicInteger
@@ -990,7 +990,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                 try {
                     val sourceFile = File(path)
                     val tempFile = File(tempFilePath)
-                    val success = com.ai.assistance.operit.util.DocumentConversionUtil
+                    val success = com.ai.assistance.operit.util.document.DocumentConversionUtil
                         .extractTextFromWord(sourceFile, tempFile, fileExt)
 
                     if (success && tempFile.exists()) {
@@ -1044,7 +1044,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                 try {
                     val sourceFile = File(path)
                     val tempFile = File(tempFilePath)
-                    val success = com.ai.assistance.operit.util.DocumentConversionUtil
+                    val success = com.ai.assistance.operit.util.document.DocumentConversionUtil
                         .extractTextFromPdf(context, sourceFile, tempFile)
 
                     if (success && tempFile.exists()) {

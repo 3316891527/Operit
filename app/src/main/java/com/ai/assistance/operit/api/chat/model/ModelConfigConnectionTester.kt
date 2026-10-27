@@ -11,9 +11,9 @@ import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
 import com.ai.assistance.operit.util.AssetCopyUtils
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.MediaPoolManager
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.media.MediaPoolManager
 import kotlinx.coroutines.CancellationException
 import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.api.chat.AIServiceFactory

@@ -7,7 +7,7 @@ import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.ui.features.settings.sections.getProviderDisplayName
+import com.ai.assistance.operit.ui.features.management.settings.sections.getProviderDisplayName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext

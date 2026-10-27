@@ -6,7 +6,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import com.ai.assistance.fbx.FbxInspector
 import com.ai.assistance.fbx.FbxModelInfo
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.core.content.edit
 import com.ai.assistance.operit.core.avatar.common.factory.AvatarModelFactory
 import com.ai.assistance.operit.core.avatar.common.model.AvatarModel

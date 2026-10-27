@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import lru_cache
 import hashlib
 import re
 
@@ -146,13 +147,28 @@ def header(text: str):
     return {'package': package.group(1), 'package_start': package.start(), 'package_end': package.end(), 'prefix': text[:package.start()], 'end': last_header, 'imports': imports}
 
 
+@lru_cache(maxsize=16)
+def name_pattern(keys):
+    # 将公共包前缀合并为正则树，避免每个字符都重复尝试上千个完整名称。
+    trie = {}
+    for key in keys:
+        branch = trie
+        for char in key:
+            branch = branch.setdefault(char, {})
+        branch[''] = {}
+    def emit(branch):
+        choices = [re.escape(char) + emit(child) for char, child in sorted(branch.items()) if char]
+        expression = choices[0] if len(choices) == 1 else '(?:' + '|'.join(choices) + ')'
+        if not choices:
+            return ''
+        return '(?:' + expression + ')?' if '' in branch else expression
+    return re.compile(r'(?<![\w$])' + emit(trie) + r'(?![\w])')
+
 def replace_names(text, mapping):
     if not mapping:
         return text
-    pattern = re.compile(r'(?<![\w$])(?:' + '|'.join(re.escape(key) for key in sorted(mapping, key=len, reverse=True)) + r')(?![\w])')
+    pattern = name_pattern(tuple(sorted(mapping)))
     return pattern.sub(lambda match: mapping[match.group()], text)
-
-
 def rename_identifiers(text, mapping, kotlin=True):
     if not mapping:
         return text
@@ -172,11 +188,13 @@ def rename_identifiers(text, mapping, kotlin=True):
 def canonical_body(text, manifest, kotlin=True):
     info = header(text)
     body = info['prefix'] + text[info['end']:].lstrip('\r\n') if info['package'] else text
-    reverse = {new: old for old, new in manifest['qualifiedNames'].items() if old != new}
+    reverse = {new: old for old, new in {**manifest.get('packagePrefixes', {}), **manifest['qualifiedNames']}.items() if old != new}
     body = replace_names(body, reverse)
     reverse_paths = {new: old for old, new in manifest.get('referencePaths', {}).items() if old != new}
     body = replace_names(body, reverse_paths)
     body = rename_identifiers(body, {new: old for old, new in manifest['classRenames'].items()}, kotlin)
+    for replacement in manifest.get('allowedWhitespaceReplacements', []):
+        body = body.replace(replacement['before'], replacement['after'])
     return body
 
 

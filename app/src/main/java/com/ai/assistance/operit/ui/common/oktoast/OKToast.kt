@@ -15,7 +15,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityManager
 import android.widget.PopupWindow
 import androidx.annotation.StringRes
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.lang.ref.WeakReference
 
 /** 应用内提示统一入口，状态必须由调用方根据操作结果明确选择。 */

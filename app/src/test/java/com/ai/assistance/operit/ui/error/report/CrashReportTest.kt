@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.error.report
 
-import com.ai.assistance.operit.ui.features.toolbox.screens.logcat.LogExportOptions
+import com.ai.assistance.operit.ui.features.management.databackup.logcat.LogExportOptions
 import org.junit.Assert.*
 import org.junit.Test
 

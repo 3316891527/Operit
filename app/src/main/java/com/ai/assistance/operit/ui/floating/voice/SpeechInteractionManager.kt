@@ -3,7 +3,7 @@ package com.ai.assistance.operit.ui.floating.voice
 import android.content.Intent
 import android.content.Context
 import android.content.Context.INPUT_METHOD_SERVICE
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.R
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -15,7 +15,7 @@ import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
 import com.ai.assistance.operit.api.speech.audio.WakePhraseSnapshot
 import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
 import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
-import com.ai.assistance.operit.util.TtsCleaner
+import com.ai.assistance.operit.core.speech.text.TtsCleaner
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

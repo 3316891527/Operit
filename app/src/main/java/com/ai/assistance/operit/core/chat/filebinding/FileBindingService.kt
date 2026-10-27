@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.chat.filebinding
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.data.model.FunctionType
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
