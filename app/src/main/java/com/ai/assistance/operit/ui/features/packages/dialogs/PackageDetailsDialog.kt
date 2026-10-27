@@ -73,6 +73,8 @@ fun PackageDetailsDialog(
 ) {
     val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var isDeleting by remember(packageName) { mutableStateOf(false) }
+    var deleteFailed by remember(packageName) { mutableStateOf(false) }
     var showRuntimeMonitorDialog by remember(packageName) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -232,35 +234,48 @@ fun PackageDetailsDialog(
 
     if (showDeleteConfirmDialog) {
         AlertDialog(
-                onDismissRequest = { showDeleteConfirmDialog = false },
-                title = { Text(stringResource(R.string.pkg_confirm_delete)) },
-                text = { Text(stringResource(R.string.pkg_delete_warning, packageName)) },
-                confirmButton = {
-                    Button(
-                            onClick = {
-                                scope.launch {
-                                    val deleted =
-                                        withContext(Dispatchers.IO) {
-                                            packageManager.deletePackage(packageName)
-                                        }
-                                    if (deleted) {
-                                        showDeleteConfirmDialog = false
-                                        onPackageDeleted()
-                                    } else {
-                                        showDeleteConfirmDialog = false
-                                    }
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.pkg_delete))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                        Text(stringResource(R.string.pkg_cancel))
-                    }
+            onDismissRequest = { if (!isDeleting) showDeleteConfirmDialog = false },
+            title = { Text(stringResource(R.string.pkg_confirm_delete)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.pkg_delete_warning, packageName))
+                    if (deleteFailed) Text(
+                        stringResource(R.string.pkg_delete_failed),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
+            },
+            confirmButton = {
+                Button(
+                    enabled = !isDeleting,
+                    onClick = {
+                        isDeleting = true
+                        deleteFailed = false
+                        scope.launch {
+                            try {
+                                val deleted = withContext(Dispatchers.IO) { packageManager.deletePackage(packageName) }
+                                if (deleted) {
+                                    showDeleteConfirmDialog = false
+                                    onPackageDeleted()
+                                } else deleteFailed = true
+                            } catch (error: kotlinx.coroutines.CancellationException) {
+                                throw error
+                            } catch (error: Exception) {
+                                AppLogger.e("PackageDetailsDialog", "Package deletion failed: $packageName", error)
+                                deleteFailed = true
+                            } finally {
+                                isDeleting = false
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.pkg_delete)) }
+            },
+            dismissButton = {
+                TextButton(enabled = !isDeleting, onClick = { showDeleteConfirmDialog = false }) {
+                    Text(stringResource(R.string.pkg_cancel))
+                }
+            },
         )
     }
 
@@ -805,7 +820,8 @@ fun PackageDetailsDialog(
                     Text(stringResource(R.string.pkg_check_update))
                 }
                 OutlinedButton(
-                    onClick = { showDeleteConfirmDialog = true },
+                    onClick = { deleteFailed = false; showDeleteConfirmDialog = true },
+                    enabled = packageManager.isTopLevelPackage(packageName),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
