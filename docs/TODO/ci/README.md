@@ -20,3 +20,5 @@
 - [Pull Request 技术预审重构](pr_check_redesign/index.md) · `pr_check_redesign`
 - [Operit 构建系统重构总计划](refactor_building_sys/index.md) · `refactor_building_sys`
 - [STT 模型构建期自动准备](stt_model_asset_sync/index.md) · `stt_model_asset_sync`
+
+- [工作流发布与 dev 检查同步](workflow-publishing-sync/index.md)
