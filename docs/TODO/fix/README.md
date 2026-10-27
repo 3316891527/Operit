@@ -104,3 +104,5 @@
 - [use_package 激活失败状态](use-package-result/index.md)
 
 - [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)
+
+- [对话历史长列表滚动重叠](history-scroll-placement/index.md)
