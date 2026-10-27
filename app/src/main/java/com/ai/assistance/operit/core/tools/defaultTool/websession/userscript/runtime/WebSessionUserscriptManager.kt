@@ -35,7 +35,7 @@ import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.Use
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.install.UserscriptImportCoordinator
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.storage.UserscriptRepository
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.ui.WebSessionUserscriptUiStateStore
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.UUID

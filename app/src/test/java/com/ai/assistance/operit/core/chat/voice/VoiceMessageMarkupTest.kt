@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.chat.voice
 
 import com.ai.assistance.operit.data.model.AttachmentInfo
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import org.junit.Assert.*
 import org.junit.Test
 

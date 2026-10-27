@@ -12,7 +12,7 @@ import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.os.Handler
 import android.os.Looper
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.io.FileOutputStream
 

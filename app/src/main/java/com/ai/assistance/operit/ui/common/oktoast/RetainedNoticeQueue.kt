@@ -20,5 +20,6 @@ internal class RetainedNoticeQueue<T>(private val retained: (T) -> Boolean) {
         pending.removeAll { !retained(it) }
     }
 
+    fun remove(value: T) { pending.remove(value) }
     fun removeFirst(): T = pending.removeAt(0)
 }

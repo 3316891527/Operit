@@ -24,10 +24,10 @@ import com.ai.assistance.operit.ui.main.navigation.RouteEntrySource
 import com.ai.assistance.operit.ui.main.navigation.RouteRuntime
 import com.ai.assistance.operit.ui.common.composedsl.ComposeDslFilePickerHostRegistry
 import com.ai.assistance.operit.ui.common.composedsl.ComposeDslWebViewHostRegistry
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ImagePoolManager
-import com.ai.assistance.operit.util.LocaleUtils
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.media.ImagePoolManager
+import com.ai.assistance.operit.util.android.LocaleUtils
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -1980,8 +1980,14 @@ class JsEngine(private val context: Context) {
         }
 
         @JavascriptInterface
+        fun registerToolPkgUiModule(specJson: String) {
+            toolPkgRegistrationSession.appendUiModule(specJson)
+        }
+
+        // 已安装旧插件仍可在详情打开配置，与新接口使用同一模块收集器。
+        @JavascriptInterface
         fun registerToolPkgToolboxUiModule(specJson: String) {
-            toolPkgRegistrationSession.appendToolboxUiModule(specJson)
+            toolPkgRegistrationSession.appendUiModule(specJson)
         }
 
         @JavascriptInterface

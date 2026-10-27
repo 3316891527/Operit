@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import android.content.ComponentName
 import android.content.ServiceConnection
 import androidx.lifecycle.ViewModelProvider
-import com.ai.assistance.operit.ui.features.toolbox.screens.uidebugger.UIDebuggerViewModel
+import com.ai.assistance.operit.ui.features.support.diagnostics.uidebugger.UIDebuggerViewModel
 
 /**
  * A service for managing the UI Debugger floating window.

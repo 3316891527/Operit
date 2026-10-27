@@ -2,9 +2,9 @@ package com.ai.assistance.operit.data.mcp.plugins
 
 import android.content.Context
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.OperitPaths
-import com.ai.assistance.operit.util.PortProcessKiller
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.files.OperitPaths
+import com.ai.assistance.operit.util.network.PortProcessKiller
 import com.ai.assistance.operit.core.tools.system.Terminal
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.data.model.AITool

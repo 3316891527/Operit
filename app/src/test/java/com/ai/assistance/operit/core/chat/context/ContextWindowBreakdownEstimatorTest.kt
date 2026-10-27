@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.chat.context
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.data.model.ToolPrompt
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

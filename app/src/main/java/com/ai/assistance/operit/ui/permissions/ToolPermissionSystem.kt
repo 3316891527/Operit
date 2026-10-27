@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.compose.material3.ColorScheme
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

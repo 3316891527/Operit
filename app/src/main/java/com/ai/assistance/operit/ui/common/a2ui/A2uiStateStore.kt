@@ -77,7 +77,7 @@ internal object A2uiStateStore {
                             } catch (e: Exception) {
                                 atomic.failWrite(stream)
                                 failures.update { (it + next.first).toList().takeLast(64).toSet() }
-                                com.ai.assistance.operit.util.AppLogger.w("A2ui", "Unable to persist card state", e)
+                                com.ai.assistance.operit.util.logging.AppLogger.w("A2ui", "Unable to persist card state", e)
                             } finally {
                                 synchronized(pending) {
                                     if (pending[next.first] == next.second) pending.remove(next.first)
@@ -139,11 +139,11 @@ internal object A2uiStateStore {
             names.filter(::copied).forEach { name ->
                 // One unreadable card must not drop the rest of the branch's state.
                 runCatching { writeAtomic(File(target, name), AtomicFile(File(source, name)).readFully()) }
-                    .onFailure { com.ai.assistance.operit.util.AppLogger.w("A2ui", "Unable to copy card state $name", it) }
+                    .onFailure { com.ai.assistance.operit.util.logging.AppLogger.w("A2ui", "Unable to copy card state $name", it) }
             }
             queued.forEach { (file, text) ->
                 runCatching { writeAtomic(file, text.toByteArray(Charsets.UTF_8)) }
-                    .onFailure { com.ai.assistance.operit.util.AppLogger.w("A2ui", "Unable to copy queued card state ${file.name}", it) }
+                    .onFailure { com.ai.assistance.operit.util.logging.AppLogger.w("A2ui", "Unable to copy queued card state ${file.name}", it) }
             }
         }
     }

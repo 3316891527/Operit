@@ -7,7 +7,7 @@ import android.os.Process
 import com.ai.assistance.operit.api.chat.AIForegroundService
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.db.ObjectBoxManager
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlin.system.exitProcess
 
 /** 在默认进程内释放运行时资源，然后退出，供数据库救援流程安全接管文件。 */

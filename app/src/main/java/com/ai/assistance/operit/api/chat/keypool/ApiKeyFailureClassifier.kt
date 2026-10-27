@@ -4,7 +4,7 @@ import com.ai.assistance.operit.api.chat.error.RequestFailure
 import com.ai.assistance.operit.api.chat.error.RequestFailureCode
 import com.ai.assistance.operit.api.chat.error.RequestFailureDomain
 import com.ai.assistance.operit.api.chat.error.ProviderResponseException
-import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
 
 object ApiKeyFailureClassifier {
     fun classify(exception: Throwable): ApiKeyErrorClass {

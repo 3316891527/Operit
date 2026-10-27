@@ -103,15 +103,6 @@ object ScreenRouteRegistry {
                 order = 10
             ),
             hostEntryDefinition(
-                entryId = "main.assistant_config",
-                screen = Screen.AssistantConfig,
-                // surface = NavigationSurface.MAIN_SIDEBAR_AI,
-                // 暂停侧边栏展示；保留路由及现有助手配置逻辑。
-                launchNavItem = NavItem.AssistantConfig,
-                icon = NavItem.AssistantConfig.icon,
-                order = 20
-            ),
-            hostEntryDefinition(
                 entryId = "main.memory_base",
                 screen = Screen.MemoryBase,
                 launchNavItem = NavItem.MemoryBase,
@@ -165,7 +156,7 @@ object ScreenRouteRegistry {
                 order = 30
             ),
             hostEntryDefinition(
-                entryId = "toolbox.agreement",
+                entryId = "support.agreement",
                 screen = Screen.Agreement,
                 launchNavItem = NavItem.Agreement,
                 titleResId = R.string.tool_user_agreement,
@@ -176,7 +167,7 @@ object ScreenRouteRegistry {
             hostEntryDefinition(entryId = "hidden.ui_debugger", screen = Screen.UIDebugger),
             hostEntryDefinition(entryId = "hidden.logcat", screen = Screen.Logcat),
             hostEntryDefinition(entryId = "hidden.html_packager", screen = Screen.HtmlPackager),
-            // 移除工具箱卡片后保留页面路由，供现有内部入口和插件导航使用。
+            // 原生功能页面提供独立路由，供内部入口和插件导航使用。
             hostEntryDefinition(
                 entryId = "hidden.text_to_speech",
                 screen = Screen.TextToSpeech
@@ -190,39 +181,14 @@ object ScreenRouteRegistry {
                 screen = Screen.DefaultAssistantGuide
             ),
             hostEntryDefinition(
-                entryId = "hidden.auto_glm_one_click",
-                screen = Screen.AutoGlmOneClick
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.auto_glm_tool",
-                screen = Screen.AutoGlmTool
-            ),
-            hostEntryDefinition(
                 entryId = "hidden.terminal",
                 screen = Screen.Terminal,
                 launchNavItem = NavItem.Terminal
             ),
             hostEntryDefinition(
-                entryId = "hidden.ffmpeg_toolbox",
-                screen = Screen.FFmpegToolbox
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.shell_executor",
-                screen = Screen.ShellExecutor
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.sql_viewer",
-                screen = Screen.SqlViewer
-            ),
-            hostEntryDefinition(
                 entryId = "hidden.token_config",
                 screen = Screen.TokenConfig,
                 launchNavItem = NavItem.TokenConfig
-            ),
-            hostEntryDefinition(
-                entryId = "hidden.toolbox",
-                screen = Screen.Toolbox,
-                launchNavItem = NavItem.Toolbox
             ),
             hostEntryDefinition(
                 entryId = "hidden.tool_permissions",
@@ -265,15 +231,8 @@ object ScreenRouteRegistry {
     fun mainSidebarEntries(context: Context): List<NavigationEntrySpec> =
         hostEntryDefinitions
             .filter { definition ->
-                definition.surface != null && definition.surface != NavigationSurface.TOOLBOX
+                definition.surface != null
             }
-            .map { definition ->
-            definition.toNavigationEntry(context)
-            }
-
-    fun toolboxEntries(context: Context): List<NavigationEntrySpec> =
-        hostEntryDefinitions
-            .filter { definition -> definition.surface == NavigationSurface.TOOLBOX }
             .map { definition ->
             definition.toNavigationEntry(context)
             }

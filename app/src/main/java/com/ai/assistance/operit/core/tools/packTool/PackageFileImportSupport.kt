@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.tools.packTool
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 
 /** 从分享或文件选择器导入外部包时的文件名判断与拷贝。 */

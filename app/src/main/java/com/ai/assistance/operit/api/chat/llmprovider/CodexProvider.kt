@@ -13,6 +13,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.SharedHttpClient
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
 
 private class CodexAccessTokenProvider(
     private val authManager: CodexAuthManager,

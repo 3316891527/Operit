@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.data.updates
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.ai.assistance.operit.R

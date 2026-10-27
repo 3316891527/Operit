@@ -66,9 +66,6 @@ class ScopeClassificationTest(unittest.TestCase):
 
     def test_relocated_native_modules_use_full_lane(self) -> None:
         for path in (
-            "avator/dragonbones/CMakeLists.txt",
-            "avator/fbx/CMakeLists.txt",
-            "avator/mmd/CMakeLists.txt",
             "llm/llama/CMakeLists.txt",
             "llm/mnn/CMakeLists.txt",
         ):

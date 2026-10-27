@@ -9,8 +9,8 @@ import com.ai.assistance.operit.core.tools.skill.SkillPackage
 import com.ai.assistance.operit.data.preferences.SkillVisibilityPreferences
 import com.ai.assistance.operit.data.transfer.DownloadTransferProgress
 import com.ai.assistance.operit.data.transfer.copyWithTransferProgress
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.SkillRepoZipPoolManager
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.data.skill.SkillRepoZipPoolManager
 import com.google.gson.JsonParser
 import java.io.BufferedInputStream
 import java.io.File

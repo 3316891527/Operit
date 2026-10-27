@@ -4,7 +4,7 @@ import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import android.content.Context
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
 import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
@@ -12,8 +12,8 @@ import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdownEstimato
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.config.FunctionalPrompts
-import com.ai.assistance.operit.api.chat.enhance.MultiServiceManager
-import com.ai.assistance.operit.api.chat.llmprovider.AIService
+import com.ai.assistance.operit.api.chat.runtime.MultiServiceManager
+import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.model.ConversationSummaryConfig
@@ -27,7 +27,7 @@ import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
 import com.ai.assistance.operit.data.model.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.core.tools.ToolProgressBus
-import com.ai.assistance.operit.ui.features.chat.viewmodel.UiStateDelegate
+import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.UiStateDelegate
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
@@ -37,9 +37,9 @@ import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.FunctionalConfigManager
 import com.ai.assistance.operit.data.preferences.FunctionConfigMapping
 import com.ai.assistance.operit.services.ChatServiceUiBridge
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ChatUtils
-import com.ai.assistance.operit.util.LocaleUtils
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.util.android.LocaleUtils
 import com.ai.assistance.operit.data.repository.MemoryAutoSaveCandidateRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

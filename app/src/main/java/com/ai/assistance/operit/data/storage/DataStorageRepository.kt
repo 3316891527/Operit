@@ -9,7 +9,7 @@ import com.ai.assistance.operit.data.model.Memory
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import io.objectbox.Box
 import io.objectbox.kotlin.boxFor
 

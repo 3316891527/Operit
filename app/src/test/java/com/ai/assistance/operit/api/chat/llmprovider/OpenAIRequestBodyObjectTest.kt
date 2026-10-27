@@ -3,7 +3,7 @@ package com.ai.assistance.operit.api.chat.llmprovider
 import android.content.Context
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.json.JSONArray
@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
+import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
 
 class OpenAIRequestBodyObjectTest {
     private var previousSystemLogEnabled = true

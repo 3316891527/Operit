@@ -5,15 +5,17 @@ import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ChatUtils
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.context.ChatUtils
 import java.security.MessageDigest
 import java.util.Base64
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
 
 open class OpenAIResponsesProvider(
     private val responsesApiEndpoint: String,

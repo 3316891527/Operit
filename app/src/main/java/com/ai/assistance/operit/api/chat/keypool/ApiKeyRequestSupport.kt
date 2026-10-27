@@ -3,10 +3,10 @@ package com.ai.assistance.operit.api.chat.keypool
 import com.ai.assistance.operit.api.chat.error.RequestFailure
 import com.ai.assistance.operit.api.chat.error.RequestFailureDescription
 import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
-import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
+import com.ai.assistance.operit.api.chat.request.LlmRetryPolicy
 import android.content.Context
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.exceptions.UserCancellationException
 import java.io.IOException
 import kotlinx.coroutines.CancellationException

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.common.displays
 
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 
 /**
  * A utility class to parse message content with XML markup.

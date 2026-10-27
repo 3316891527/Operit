@@ -33,7 +33,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.application.ActivityLifecycleManager
 import com.ai.assistance.operit.core.tools.defaultTool.standard.StandardBrowserSessionTools
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.UserscriptInstallSourceType
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.LinkedHashSet
 import java.util.Locale
 import java.util.UUID

@@ -6,7 +6,7 @@ import androidx.work.WorkerParameters
 import com.ai.assistance.operit.core.workflow.scheduling.WorkflowScheduleObsoleteException
 import com.ai.assistance.operit.core.workflow.scheduling.WorkflowSchedulePlan
 import com.ai.assistance.operit.data.repository.WorkflowRepository
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 
 /** 按持久计划执行；运行环境未就绪时重试，业务失败不终止后续重复计划。 */

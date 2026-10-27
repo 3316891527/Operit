@@ -15,9 +15,7 @@
     <string name="nav_tool_permissions">Tool Permissions</string>
     <string name="nav_about">About</string>
     <string name="nav_packages">Packages</string>
-    <string name="nav_assistant_config">Assistant Config</string>
     <string name="nav_terminal">Terminal</string>
-    <string name="nav_toolbox">Toolbox</string>
     <string name="nav_item_agreement">User Agreement</string>
 
     <!-- Chat Module -->
@@ -130,7 +128,6 @@
     <string name="menu">Menu</string>
     <string name="token_config">Get API Key</string>
     <string name="package_category_plugin">Plugin</string>
-    <string name="desktop_pet_start">Start Desktop Pet</string>
 
     <!-- Workflow related -->
     <string name="workflow_list_title">Workflow List</string>
@@ -357,9 +354,7 @@
 
     <!-- Assistant Config Screen -->
     <string name="assistant_config_title">Assistant Config</string>
-    <string name="import_model">Import Model</string>
     <string name="scan_user_models">Scan User Models</string>
-    <string name="operation_success">Operation Successful</string>
     <string name="error_occurred_simple">Error Occurred</string>
     <string name="function_config_title">Function Configuration</string>
     <string name="function_config_desc">Chat, Voice and Desktop Pet will automatically select corresponding prompt configurations based on usage</string>
@@ -367,116 +362,17 @@
     <string name="not_configured">Not Configured</string>
     <string name="function_prompt">Function Prompt</string>
     <string name="function_model">Function Model</string>
-    <string name="importing_model">Importing model...</string>
     <string name="processing">Processing...</string>
-    <string name="error_occurred">Error occurred: %1$s</string>
-    <string name="avatar_config">Avatar Configuration</string>
-    <string name="avatar_voice_call_enable_title">Enable virtual avatar</string>
-    <string name="avatar_voice_call_enable_summary">When enabled, the voice call UI uses the virtual avatar and plays emotion actions from returned &lt;mood&gt; tags.</string>
-    <string name="dragon_bones_config">DragonBones Config</string>
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
     <string name="collapsed">Collapsed</string>
     <string name="expanded">Expanded</string>
-    <string name="select_model">Select Model</string>
-    <string name="current_model">Current Model</string>
     <string name="scale">Scale: %1$s</string>
-    <string name="x_translation">X Translation: %1$s</string>
-    <string name="y_translation">Y Translation: %1$s</string>
-    <string name="confirm_delete_model_title">Confirm Delete Model?</string>
-    <string name="confirm_delete_model_message">This action cannot be undone. Are you sure you want to delete this model?</string>
-    <string name="rename_avatar_model_title">Rename Model</string>
-    <string name="rename_avatar_model_message">Enter a new display name for this model</string>
-    <string name="avatar_model_name_label">Model Name</string>
-    <string name="no_models_available">No models available</string>
-    <string name="please_select_model">Please select a model</string>
-    <string name="unsupported_model_type">Unsupported model type: %1$s</string>
-    <string name="avatar_preview_error_log">Avatar preview error: %1$s</string>
     <string name="how_to_import">How to create and import models?</string>
-    <string name="how_to_import_tap_to_expand">How to create and import models? (tap to expand)</string>
-    <string name="how_to_import_tap_to_collapse">How to create and import models? (tap to collapse)</string>
-    <string name="avatar_config_supported_formats">Supported: DragonBones (.json + _tex.json + _tex.png), WebP (.webp), MP4 (.mp4), MMD (.pmx/.pmd + optional .vmd), glTF (.glb/.gltf), FBX (.fbx).</string>
-    <string name="avatar_config_import_methods">Direct file import supports .glb/.gltf/.mp4/.fbx; use .zip for DragonBones, WebP, MP4, MMD, multi-file glTF, or FBX packages with external textures/resources.</string>
-    <string name="avatar_mood_trigger_mapping_title">Mood Trigger Mapping</string>
-    <string name="avatar_mood_trigger_mapping_desc">Returned &lt;mood&gt; values from the desktop pet and voice avatar will match these triggers first. Only custom types that already have an animation binding will be appended to the prompt.</string>
-    <string name="avatar_no_model_actions">No model actions found for this avatar</string>
-    <string name="avatar_custom_types_title">Custom Types</string>
-    <string name="avatar_custom_type_add">Add Custom Type</string>
-    <string name="avatar_custom_type_none">No custom types yet</string>
-    <string name="avatar_trigger_key_label">Trigger Key: %1$s</string>
-    <string name="avatar_fallback_emotion_label">Fallback Emotion: %1$s</string>
-    <string name="avatar_edit_custom_mood_type">Edit custom type</string>
-    <string name="avatar_delete_custom_mood_type">Delete custom type</string>
-    <string name="avatar_mapped_action">Mapped Action</string>
-    <string name="avatar_preview_action">Preview</string>
-    <string name="avatar_unmapped">Unmapped</string>
-    <string name="avatar_custom_type_add_title">Add Custom Type</string>
-    <string name="avatar_custom_type_edit_title">Edit Custom Type</string>
-    <string name="avatar_custom_type_key">Type Key</string>
-    <string name="avatar_custom_type_key_hint">Only lowercase letters, digits, _ and - are allowed. Normalized key: %1$s</string>
-    <string name="avatar_empty_value_placeholder">&lt;empty&gt;</string>
-    <string name="avatar_custom_type_prompt_hint_label">Prompt Hint</string>
-    <string name="avatar_custom_type_prompt_hint_help">This hint will be appended to the desktop pet and voice avatar mood rules so the model knows when to use this type.</string>
-    <string name="avatar_emotion_mapping_title">Emotion Mapping</string>
-    <string name="avatar_emotion_mapping_chip">%1$s: %2$s</string>
-    <string name="avatar_emotion_label">Emotion</string>
-    <string name="avatar_clear_selected_mapping">Clear Selected Mapping</string>
-    <string name="avatar_emotion_idle">Idle</string>
-    <string name="avatar_emotion_listening">Listening</string>
-    <string name="avatar_emotion_thinking">Thinking</string>
-    <string name="avatar_emotion_happy">Happy</string>
-    <string name="avatar_emotion_sad">Sad</string>
-    <string name="avatar_emotion_confused">Confused</string>
-    <string name="avatar_emotion_surprised">Surprised</string>
-    <string name="avatar_mood_angry_name">Angry</string>
-    <string name="avatar_mood_happy_name">Happy</string>
-    <string name="avatar_mood_shy_name">Shy</string>
-    <string name="avatar_mood_aojiao_name">Tsundere</string>
-    <string name="avatar_mood_cry_name">Cry</string>
-    <string name="avatar_mood_angry_hint">Use when the user sounds insulting, unfair, accusatory, angry, or strongly dissatisfied.</string>
-    <string name="avatar_mood_happy_hint">Use when the user is clearly praising, achieving a goal, receiving a gift, or obviously happy.</string>
-    <string name="avatar_mood_shy_hint">Use when the user compliments the character, gets flirtatious, or hits a cute and embarrassing point.</string>
-    <string name="avatar_mood_aojiao_hint">Use when the user is teasing lightly or in a playful argument where the character acts tough but softens.</string>
-    <string name="avatar_mood_cry_hint">Use when the user feels upset, disappointed, frustrated, venting sadness, or becomes low after apologizing.</string>
-    <string name="avatar_custom_type_prompt_hint_required">Prompt hint cannot be empty</string>
-    <string name="avatar_custom_type_invalid_key">Custom type keys may only use lowercase letters, digits, _ or -, and cannot conflict with built-in keys</string>
-    <string name="avatar_custom_type_duplicate_key">Custom type key already exists</string>
-    <string name="avatar_mmd_camera_pitch">MMD Camera Pitch (%1$s)</string>
-    <string name="avatar_mmd_camera_yaw">MMD Camera Yaw (%1$s)</string>
-    <string name="avatar_mmd_camera_distance">MMD Camera Distance (%1$s)</string>
-    <string name="avatar_mmd_orbit_pivot_height">MMD Orbit Pivot Height (%1$s)</string>
-    <string name="avatar_gltf_camera_pitch">glTF Camera Pitch (%1$s)</string>
-    <string name="avatar_gltf_camera_yaw">glTF Camera Yaw (%1$s)</string>
-    <string name="avatar_gltf_camera_distance">glTF Camera Distance (%1$s)</string>
-    <string name="avatar_gltf_orbit_pivot_height">glTF Orbit Pivot Height (%1$s)</string>
-    <string name="avatar_fbx_camera_pitch">FBX Camera Pitch (%1$s)</string>
-    <string name="avatar_fbx_camera_yaw">FBX Camera Yaw (%1$s)</string>
-    <string name="avatar_fbx_camera_distance">FBX Camera Distance (%1$s)</string>
-    <string name="avatar_fbx_orbit_pivot_height">FBX Orbit Pivot Height (%1$s)</string>
-    <string name="avatar_supported_formats_title">Supported formats</string>
-    <string name="avatar_supported_formats_desc">- DragonBones: skeleton .json + *_tex.json + *_tex.png\n- WebP: one or more .webp files\n- MP4: one or more .mp4 files\n- MMD: .pmx or .pmd model, optional .vmd motions\n- glTF: .glb or .gltf (plus referenced .bin/textures when needed)\n- FBX: .fbx (direct upload supports self-contained assets only)</string>
-    <string name="avatar_import_methods_title">Import methods</string>
-    <string name="avatar_import_methods_desc">- Direct file picker: .glb / .gltf / .mp4 / .fbx\n- ZIP import: DragonBones, WebP, MP4, MMD, multi-file glTF, or FBX packages with external textures/resources</string>
-    <string name="import_structure_guide_tap_to_expand">Import structure guide (tap to expand)</string>
-    <string name="import_structure_guide_tap_to_collapse">Import structure guide (tap to collapse)</string>
-    <string name="import_structure_guide_content">This is the IMPORT PACKAGE layout (files inside your ZIP / picked file), not app internal storage.\n\nDragonBones (.zip)\n  my_dragonbones.zip\n    any_folder_name/\n      hero_ske.json\n      hero_tex.json\n      hero_tex.png\n  Requirement: ske/tex json/png files must share the same filename prefix.\n\nWebP (.zip)\n  my_webp.zip\n    any_folder_name/\n      idle.webp\n      talking.webp\n      happy.webp\n  Requirement: include at least one .webp file.\n\nMP4\n  Method A (direct file):\n    avatar.mp4\n  Method B (.zip):\n    my_mp4.zip\n      any_folder_name/\n        idle.mp4\n        talking.mp4\n        happy.mp4\n  Requirement: include at least one .mp4 file.\n\nMMD (.zip)\n  my_mmd.zip\n    any_folder_name/\n      character.pmx (or .pmd)\n      motions/idle.vmd (optional)\n      textures/...\n  Requirement: keep relative paths referenced by PMX/PMD unchanged.\n\nglTF\n  Method A (direct file):\n    avatar.glb\n  Method B (.zip for multi-file glTF):\n    my_gltf.zip\n      any_folder_name/\n        avatar.gltf\n        avatar.bin\n        textures/...\n  Requirement: keep relative paths referenced by .gltf unchanged.\n\nFBX\n  Method A (direct file, self-contained assets only):\n    avatar.fbx\n  Method B (use .zip for external textures/resources):\n    my_fbx.zip\n      any_folder_name/\n        avatar.fbx\n        textures/...\n  Requirement: direct .fbx upload only supports embedded resources; if the model references external textures or other assets, keep the relative paths and package everything in ZIP.</string>
     <string name="enter">Enter</string>
-    <string name="about_avatar_formats">This app supports multiple avatar formats, including DragonBones. Here are instructions for creating and importing models.</string>
-    <string name="dragon_bones_renamed">DragonBones has been renamed to LoongBones, and a new online editor has been launched.\nLoongBones supports professional animation features like IK, mesh deformation, and bone binding.</string>
-    <string name="making_models">1. Creating Models:</string>
     <string name="making_models_desc">    · Recommended: Use the new online editor.\n    · Alternative: Download the old v5.6.3 offline editor from third-party archive sites.</string>
-    <string name="making_models_desc_general">    · You can use various tools to create your avatar models.\n    · For DragonBones, we recommend using the new online editor, or you can use the old v5.6.3 offline editor.</string>
-    <string name="exporting_files">2. Exporting Files:</string>
     <string name="exporting_files_desc">    · Regardless of which version you use, when exporting data, select JSON for type and version 5.5 (current version doesn\'t support 6.0 runtime).\n    · The core export files are: *_ske.json, *_tex.json, *_tex.png.</string>
-    <string name="exporting_files_desc_general">    · Please follow the export guidelines for your chosen format.\n    · For DragonBones, when exporting data, select JSON for type and version 5.5 (current version doesn\'t support 6.0 runtime).\n    · The core export files are: *_ske.json, *_tex.json, *_tex.png.</string>
-    <string name="configuring_interaction">3. Configuring Interaction:</string>
-    <string name="configuring_interaction_desc">    · For head tracking, add an IK constraint and name the target bone \"ik_target\".\n    · idle animation: Make sure you have an animation named \"idle\" as the base idle animation, which will automatically loop.\n    · Random animations: You can add animations like blink, shake_head, wag_tail, etc.,\n      the system will randomly trigger these animations to enrich the pet\'s expression.</string>
-    <string name="packaging_and_importing">4. Packaging and Importing:</string>
-    <string name="packaging_and_importing_desc">    · Package the three exported files into one .zip file for import.</string>
     <string name="important_tip">Important Note: In the old editor download page, the Windows and Mac download links are reversed. Please make sure to select the correct link.</string>
-    <string name="dragonbones_important_tip">Important Note: In the old editor download page, the Windows and Mac download links are reversed. Please make sure to select the correct link.</string>
-    <string name="download_old_editor">Download Old Editor</string>
-    <string name="visit_online_editor">Visit Online Editor</string>
 
     <string name="voice_wakeup_section_title">Voice Wake-up</string>
     <string name="voice_wakeup_always_listen_title">Always Listening</string>
@@ -539,7 +435,6 @@
     <string name="tool_permissions">Tool Permission Settings</string>
     <string name="about">About</string>
     <string name="terminal">Terminal</string>
-    <string name="toolbox">Toolbox</string>
     <string name="mcp">MCP</string>
     <string name="token_config_title">DeepSeek Token Configuration</string>
     <string name="character_card_change_title">Character Card Updated</string>
@@ -996,7 +891,6 @@
     <string name="show_samples">Show Example Commands</string>
     <string name="hide_samples">Hide Example Commands</string>
     <string name="select_example">Select an example command:</string>
-    <string name="execute_command">Execute Command</string>
     <string name="result_placeholder">Results will be displayed here</string>
     <string name="executing">Executing...</string>
     <string name="command_success">Command executed successfully:\n%1$s</string>
@@ -1598,12 +1492,8 @@
     <string name="chat_function_desc">Main conversation function, customize chatbot prompt configuration</string>
     <string name="voice_function">Voice</string>
     <string name="voice_function_desc">Voice interaction function, customize voice assistant prompt configuration</string>
-    <string name="desktop_pet_function">Desktop Pet</string>
-    <string name="desktop_pet_function_desc">Desktop pet function, customize pet personality and interaction style</string>
 
     <!-- Desktop Pet Service Notification -->
-    <string name="pet_service_notification_title">Desktop Pet Service</string>
-    <string name="pet_service_notification_text">Desktop pet is running</string>
 
     <!-- Settings Screen Additional Strings -->
     <string name="settings_prompt_section">Prompt Configuration</string>
@@ -1697,7 +1587,6 @@
     <string name="pip_package_install_success">PIP package installation successful</string>
     <string name="pip_package_install_failed">PIP package installation failed</string>
     <string name="please_press_back_to_return">Please press back button to return</string>
-    <string name="please_input_command">Please enter command</string>
     <string name="background_image_migrated">Background image migrated to internal storage</string>
     <string name="background_image_access_failed">Unable to access old background image, background image feature has been disabled</string>
     <string name="avatar_updated">Avatar updated</string>
@@ -1794,8 +1683,6 @@
     <string name="ai_assistant">AI Assistant</string>
     <string name="send_message">Send Message</string>
     <string name="chat_with_pet">Chat with Pet</string>
-    <string name="dragonbones_mode">DragonBones Mode</string>
-    <string name="avatar_mode">Avatar Mode</string>
     <string name="loading_failed">Loading failed: %1$s</string>
     <string name="loading">Loading...</string>
     <string name="floating_service_description">Display AI assistant floating window service</string>
@@ -1956,11 +1843,6 @@
     <string name="control_info">Control Info</string>
     <string name="current_activity_title">Current Activity</string>
     <string name="dimensions">Dimensions: %1$d×%2$dpx</string>
-    <string name="ffmpeg_command">FFmpeg Command</string>
-    <string name="common_command_templates">Common Command Templates</string>
-    <string name="ffmpeg_template_note">Note: When using templates, please replace input.mp4 and output.mp4 with actual file paths</string>
-    <string name="ffmpeg_help">FFmpeg Help</string>
-    <string name="ffmpeg_description">FFmpeg is a powerful audio/video processing tool. In this interface, you can execute FFmpeg commands directly.</string>
 
     <!-- Status and Error Messages -->
     <string name="check_video_size_error">Error checking video size</string>
@@ -2041,7 +1923,7 @@
     <string name="enter_repo_info">Please enter repository information</string>
     <string name="repo_link">Repository Link</string>
 
-    <!-- Toolbox Categories -->
+    <!-- 工具页面分类 -->
 
     <!-- Tool Names -->
     <string name="tool_file_manager">File Manager</string>
@@ -2100,59 +1982,11 @@
     <string name="ui_debugger_description">Tap the button in the bottom right corner to launch the floating window for UI debugging</string>
     <string name="ui_debugger_launch_floating">Launch Floating Window</string>
     <string name="ui_debugger_start_float">Start Float</string>
-    <string name="tool_ffmpeg_toolbox">FFmpeg Toolbox</string>
-    <string name="tool_ffmpeg_toolbox_desc">Powerful audio/video processing tool supporting conversion, cropping, merging and more</string>
     <string name="tool_stream_markdown_demo">Streaming Markdown Demo</string>
     <string name="tool_stream_markdown_demo_desc">High-performance streaming Markdown rendering demo with real-time character flow effects</string>
-    <string name="tool_shell_executor">Command Executor</string>
-    <string name="tool_shell_executor_desc">Execute Shell commands and view output results with common command presets</string>
-    <string name="shell_executor_input_hint">Enter shell command</string>
-    <string name="shell_executor_command">Command</string>
-    <string name="shell_executor_clear">Clear</string>
-    <string name="shell_executor_execute">Execute</string>
-    <string name="shell_executor_clear_history">Clear History</string>
-    <string name="shell_executor_show_presets">Show Preset Commands</string>
-    <string name="shell_executor_hide_presets">Hide Preset Commands</string>
-    <string name="shell_executor_executing">Executing command...</string>
-    <string name="shell_executor_common_commands">Common Commands</string>
-    <string name="shell_executor_category_system">System Info</string>
-    <string name="shell_executor_category_file">File Operations</string>
-    <string name="shell_executor_category_network">Network Tools</string>
-    <string name="shell_executor_category_hardware">Hardware Info</string>
-    <string name="shell_executor_category_package">App Management</string>
-    <string name="shell_executor_input_command_hint">Enter command and tap execute</string>
-    <string name="shell_executor_view_results">View command execution results</string>
-    <string name="shell_executor_view_presets">View preset commands</string>
-    <string name="shell_executor_error_title">Execution Error</string>
-    <string name="shell_executor_confirm">Confirm</string>
-    <string name="shell_executor_stdout">Stdout:</string>
-    <string name="shell_executor_stderr">Stderr:</string>
-    <string name="shell_executor_output">Output</string>
-    <string name="shell_executor_exit_code">Exit code: %s</string>
-    <string name="shell_executor_re_execute">Re-execute</string>
-    <string name="shell_executor_expand">Expand</string>
-    <string name="shell_executor_collapse">Collapse</string>
-    <string name="shell_executor_execute_failed">Command execution failed: %s</string>
     <string name="tool_log_viewer">Log Viewer</string>
     <string name="tool_log_viewer_desc">Export or clear Operit application logs</string>
-    <string name="tool_sql_viewer">SQL Viewer</string>
-    <string name="tool_sql_viewer_desc">Browse built-in tables and run SQL commands</string>
     <string name="tool_token_config_desc">Open the API key acquisition and configuration page for quick model setup</string>
-    <string name="screen_title_sql_viewer">SQL Viewer</string>
-    <string name="sql_viewer_title">SQL Viewer</string>
-    <string name="sql_viewer_input_label">SQL Input</string>
-    <string name="sql_viewer_run">Run</string>
-    <string name="sql_viewer_clear">Clear</string>
-    <string name="sql_viewer_page_size">Page size</string>
-    <string name="sql_viewer_paging">Paging</string>
-    <string name="sql_viewer_tables_chip">Tables</string>
-    <string name="sql_viewer_schema_chip">Schema</string>
-    <string name="sql_viewer_row_count">%1$d rows / %2$d columns</string>
-    <string name="sql_viewer_affected_rows">Affected rows: %1$d</string>
-    <string name="sql_viewer_load_more">Load more</string>
-    <string name="sql_viewer_empty_sql">SQL cannot be empty</string>
-    <string name="sql_viewer_controls">Controls</string>
-    <string name="sql_viewer_empty_state">No results yet. Tap the top-right button to run SQL.</string>
     <string name="tool_process_limit_remover">Phantom Process Limit Remover</string>
     <string name="tool_process_limit_remover_desc">Manage Android 12+ phantom process count limits to allow more background child processes</string>
     <string name="tool_html_packager">HTML Packager</string>
@@ -2323,7 +2157,7 @@
     <string name="plugin_zip_file">Plugin ZIP File</string>
     <string name="mcp_plugin">MCP Plugin</string>
 
-    <!-- Toolbox Permission Manager -->
+    <!-- 工具权限管理 -->
     <string name="try_different_keywords">Try different keywords</string>
     <string name="try_show_system_apps">Try checking "System apps" to see more apps</string>
     <string name="no_apps_found_anywhere">No apps found anywhere</string>
@@ -2374,7 +2208,7 @@
         <string name="granted">Granted</string>
     <string name="not_granted">Not granted</string>
 
-    <!-- Toolbox Screen -->
+    <!-- 工具页面 -->
 
     <!-- File Manager -->
     <string name="file_manager_title">File Manager</string>
@@ -2503,37 +2337,8 @@
     <string name="terminal_auto_config_detecting">Detecting environment...</string>
         <string name="terminal_auto_config_applying">Applying configuration...</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_toolbox_title">FFmpeg Toolbox</string>
-    <string name="ffmpeg_input_file">Input file</string>
-    <string name="ffmpeg_output_file">Output file</string>
-    <string name="ffmpeg_select_input">Select input file</string>
-    <string name="ffmpeg_select_output">Select output path</string>
-    <string name="ffmpeg_conversion_type">Conversion type</string>
-    <string name="ffmpeg_video_conversion">Video conversion</string>
-    <string name="ffmpeg_audio_conversion">Audio conversion</string>
-    <string name="ffmpeg_image_conversion">Image conversion</string>
-    <string name="ffmpeg_start_conversion">Start conversion</string>
-    <string name="ffmpeg_conversion_progress">Conversion progress</string>
-    <string name="ffmpeg_conversion_completed">Conversion completed</string>
-    <string name="ffmpeg_conversion_failed">Conversion failed</string>
-    <string name="ffmpeg_quality_settings">Quality settings</string>
-    <string name="ffmpeg_bitrate">Bitrate</string>
-    <string name="ffmpeg_resolution">Resolution</string>
-    <string name="ffmpeg_frame_rate">Frame rate</string>
-    <string name="ffmpeg_codec">Codec</string>
-    <string name="ffmpeg_advanced_options">Advanced options</string>
-    <string name="ffmpeg_custom_parameters">Custom parameters</string>
-    <string name="ffmpeg_preview">Preview</string>
-    <string name="ffmpeg_file_info">File info</string>
-    <string name="ffmpeg_duration">Duration</string>
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_file_size">File size</string>
-    <string name="ffmpeg_format">Format</string>
-    <string name="ffmpeg_processing">Processing...</string>
-    <string name="ffmpeg_cancel">Cancel</string>
-    <string name="ffmpeg_no_file_selected">No file selected</string>
-    <string name="ffmpeg_invalid_file">Invalid file format</string>
-    <string name="ffmpeg_permission_error">Permission error, cannot access file</string>
 
     <!-- Log Viewer (Logcat) -->
     <string name="logcat_title">Log Viewer</string>
@@ -3036,24 +2841,6 @@
     <string name="ai_tools_availability_test">AI Tools Availability Test</string>
     <string name="ai_tools_grouped_desc">AI tools grouped by category</string>
     <string name="batch_testing_in_progress">Batch testing in progress</string>
-    <string name="ffmpeg_common_parameters">FFmpeg Common Parameters</string>
-    <string name="ffmpeg_create_gif">Create GIF</string>
-    <string name="ffmpeg_create_gif_desc">Convert video to animated GIF</string>
-    <string name="ffmpeg_executing_command">Executing FFmpeg command</string>
-    <string name="ffmpeg_extract_audio">Extract Audio</string>
-    <string name="ffmpeg_extract_audio_desc">Extract audio track from video</string>
-    <string name="ffmpeg_get_info_failed">Failed to get video information</string>
-    <string name="ffmpeg_input_placeholder">Input file path or URL</string>
-    <string name="ffmpeg_video_compression">Video Compression</string>
-    <string name="ffmpeg_video_compression_desc">Compress video to reduce file size</string>
-    <string name="ffmpeg_video_info">Video Information</string>
-    <string name="ffmpeg_video_info_desc">Get detailed video file information</string>
-    <string name="ffmpeg_video_output_placeholder">Output file path (optional)</string>
-    <string name="ffmpeg_video_transcode">Video Transcoding</string>
-    <string name="ffmpeg_video_conversion_desc">Convert video to different format</string>
-    <string name="ffmpeg_video_trim">Video Trimming</string>
-    <string name="ffmpeg_video_trim_desc">Trim video to specific duration</string>
-    <string name="ffmpeg_view_more_info">View More Information</string>
     <string name="start_comprehensive_test">Start Comprehensive Test</string>
     <string name="terminal_no_n">No (N)</string>
     <string name="terminal_send_custom_input">Send Custom Input</string>
@@ -3216,9 +3003,6 @@
     <string name="emoticon_shyness">Shyness</string>
     <string name="emoticon_blush">Blush</string>
     <string name="emoticon_embarrassed">Embarrassed</string>
-    <string name="autoglm_task_complete">✅ Task completed: %1$s</string>
-    <string name="autoglm_thinking_process">💭 Thinking Process:</string>
-    <string name="autoglm_execute_action">🎯 Execute Action:</string>
     <string name="version_update">Version Update</string>
     <string name="mcp_no_zip_selected">No ZIP file selected</string>
     <string name="mcp_uninstall_failed">Uninstall failed</string>
@@ -3252,7 +3036,6 @@
     <string name="import_key_suffix">Import key %1$s</string>
     <string name="custom_parameters">Custom Parameters</string>
     <string name="filediff_tool_result">Tool execution result</string>
-    <string name="ffmpeg_use_template">Use this template</string>
     <string name="filelist_go_back">Go back to parent directory</string>
 
     <!-- Chat Components -->
@@ -4272,9 +4055,7 @@
     <string name="screen_title_terminal_auto_config">Terminal Auto Configuration</string>
     <string name="screen_title_app_permissions">App Permissions Manager</string>
     <string name="screen_title_ui_debugger">UI Debugger</string>
-    <string name="screen_title_shell_executor">Shell Executor</string>
     <string name="screen_title_logcat">Log Viewer</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpeg Toolbox</string>
     <string name="screen_title_markdown_demo">Streaming Markdown Demo</string>
     <string name="screen_title_text_to_speech">Text to Speech</string>
     <string name="screen_title_speech_to_text">Speech Recognition</string>
@@ -5316,7 +5097,6 @@
     <string name="search_content_block">Search Content</string>
     <string name="status_info_block">Status Info</string>
     <string name="html_content_block">HTML Content</string>
-    <string name="mood_tag_block">Mood Tag</string>
     <string name="thinking_tools_group_title_with_count">Thinking &amp; Tool Calls (%1$d)</string>
     <string name="tools_group_title_with_count">Tool Calls (%1$d)</string>
     <string name="search_group_title">Search</string>
@@ -5536,19 +5316,7 @@
     <string name="default_assist_collapse">Collapse</string>
     <string name="default_assist_expand">Expand</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_param_input">-i: Input file</string>
-    <string name="ffmpeg_param_video_codec">-c:v: Video codec</string>
-    <string name="ffmpeg_param_audio_codec">-c:a: Audio codec</string>
-    <string name="ffmpeg_param_video_bitrate">-b:v: Video bitrate</string>
-    <string name="ffmpeg_param_audio_bitrate">-b:a: Audio bitrate</string>
-    <string name="ffmpeg_param_resolution">-s: Resolution</string>
-    <string name="ffmpeg_param_framerate">-r: Frame rate</string>
-    <string name="ffmpeg_command_success">Command executed successfully</string>
-    <string name="ffmpeg_command_failed">Command execution failed</string>
-    <string name="ffmpeg_command_label">Command: %1$s</string>
-    <string name="ffmpeg_return_code">Return code: %1$s</string>
-    <string name="ffmpeg_processing_time">Processing time: %1$sms</string>
+    <!-- FFmpeg 页面 -->
 
     <!-- UI Debugger -->
     <string name="uidebugger_current_interface">Current analysis interface</string>
@@ -5773,17 +5541,6 @@
     <string name="toolreg_ffmpeg_convert_desc">Convert video: %1$s → %2$s</string>
 
     <!-- AutoGLM One-Click Configuration -->
-    <string name="autoglm_config_name">AutoGLM Configuration</string>
-    <string name="autoglm_one_click_title">AutoGLM One-Click Config</string>
-    <string name="autoglm_one_click_subtitle">Automatically create Zhipu autoglm-phone model configuration for UI controller and switch to AutoGLM toolkit.</string>
-    <string name="autoglm_open_apikey_center">Go to Zhipu API Key Page</string>
-    <string name="autoglm_open_apikey_tip">After logging in, create and copy your API Key on the Zhipu platform</string>
-    <string name="autoglm_api_key_placeholder">Paste your Zhipu API Key here</string>
-    <string name="autoglm_one_click_button">One-Click AutoGLM Config</string>
-    <string name="autoglm_status_running">Running one-click configuration, please wait...</string>
-    <string name="autoglm_status_success">AutoGLM one-click configuration completed:\n- AutoGLM UI controller model configuration was created or updated (autoglm-phone, Zhipu)\n- The "UI Controller" feature was switched to this configuration\n- Automatic_ui_base was disabled and Automatic_ui_subagent was enabled\n\nYou can now use AutoGLM mode in the chat interface.</string>
-    <string name="autoglm_status_error">One-click configuration failed: %1$s</string>
-    <string name="autoglm_error_empty_api_key">Please fill in the Zhipu API Key first.</string>
 
     <!-- Skill Market -->
     <string name="available_skills_market">Available Skills</string>
@@ -5843,8 +5600,6 @@
     <string name="patch_install_confirm_message">New patch version detected: %1$s\n\nInstall now?</string>
     <string name="prepare_patch_update">Preparing patch update...</string>
     <string name="publish_new_skill">Publish New Skill</string>
-    <string name="screen_title_autoglm_one_click">AutoGLM One-Click Config</string>
-    <string name="screen_title_autoglm_tool">AutoGLM Execution</string>
     <string name="screen_title_skill_detail">Skill Detail</string>
     <string name="screen_title_skill_manage">Manage My Skills</string>
     <string name="screen_title_skill_market">Skill Market</string>
@@ -5858,10 +5613,6 @@
     <string name="skill_repo_address_required">GitHub Repository Address *</string>
     <string name="skill_update_success_message">Your Skill information has been successfully updated.</string>
     <string name="skill_zip_package">Skill ZIP Package</string>
-    <string name="tool_autoglm_one_click">AutoGLM One-Click Config</string>
-    <string name="tool_autoglm_one_click_desc">One-click configure autoglm-phone model for UI controller and switch to AutoGLM toolkit</string>
-    <string name="tool_autoglm_tool">AutoGLM Execution</string>
-    <string name="tool_autoglm_tool_desc">Use autoglm-phone agent to execute mobile automation tasks step by step</string>
     <string name="ui_accessibility_mode">Accessibility Mode</string>
     <string name="ui_accessibility_mode_description">Optimize UI automation behavior for accessibility users like TalkBack, prioritize providing readable operation steps, and carefully execute automatic taps.</string>
     <string name="workflow_execution_failed">Execution Failed</string>
@@ -6255,7 +6006,6 @@
     <string name="uidebugger_clear">Clear</string>
 
     <!-- Auto GLM Tool Screen -->
-    <string name="autoglm_virtual_screen">Virtual screen this time</string>
 
     <!-- HTML Packager Screen -->
     <string name="htmlpackager_step1_title">Step 1: Select project folder</string>
@@ -6273,20 +6023,6 @@
     <string name="document_block_label">Block %1$d</string>
 
     <!-- Auto GLM One Click Tool Screen -->
-    <string name="autoglm_go_to_model_config">Go to Model Config</string>
-    <string name="autoglm_custom_endpoint">Custom Endpoint (OpenAI Compatible)</string>
-    <string name="autoglm_model_name">Model Name</string>
-    <string name="autoglm_restore_original">Restore Original Automation Logic</string>
-    <string name="autoglm_step1_title">step1 Configure Basic Conversation Model</string>
-    <string name="autoglm_step1_warning">Do not use the autoglm model as the main conversation model</string>
-    <string name="autoglm_step1_note">Note: If you have already configured it, you don\'t need to worry about it here. Do not change it to autoglm or other small models.</string>
-    <string name="autoglm_step2_title">step2 Visit Zhipu Official Website to Get API Key</string>
-    <string name="autoglm_step3_title">step3 Enter API Key and Click One-Click Configuration</string>
-    <string name="autoglm_hide_advanced">Hide Advanced Settings</string>
-    <string name="autoglm_show_advanced">Show Advanced Settings (Custom Endpoint / Model Name)</string>
-    <string name="autoglm_step4_title">step4 Restore Non-AutoGLM Automation (Optional)</string>
-    <string name="autoglm_step4_description">If you find automation operations difficult after using AutoGLM one-click configuration, you can click the button below to restore the software\'s original automation logic (enable base package, disable subagent package, other settings remain unchanged). If you want to enable AutoGLM again, just follow step3 to enter the key and click one-click configuration again.</string>
-    <string name="autoglm_restore_success">Restored to the software\'s original automation logic</string>
 
     <!-- UI Debugger Components -->
     <string name="uidebugger_create_new_package">Create New Config Package</string>
@@ -6347,54 +6083,6 @@
     <string name="mcp_operation_in_progress">%1$s in progress...</string>
 
     <!-- Shell Executor Preset Commands -->
-    <string name="shell_cmd_test">Test Command</string>
-    <string name="shell_cmd_test_command">echo "Command executor test successful"</string>
-    <string name="shell_cmd_test_desc">A simple test command</string>
-    <string name="shell_cmd_sys_info">System Info</string>
-    <string name="shell_cmd_sys_info_cmd">uname -a</string>
-    <string name="shell_cmd_sys_info_desc">Display system kernel information</string>
-    <string name="shell_cmd_disk">Disk Usage</string>
-    <string name="shell_cmd_disk_cmd">df -h</string>
-    <string name="shell_cmd_disk_desc">Display disk space usage</string>
-    <string name="shell_cmd_memory">Memory Info</string>
-    <string name="shell_cmd_memory_cmd">cat /proc/meminfo</string>
-    <string name="shell_cmd_memory_desc">Display memory usage details</string>
-    <string name="shell_cmd_cpu">CPU Info</string>
-    <string name="shell_cmd_cpu_cmd">cat /proc/cpuinfo</string>
-    <string name="shell_cmd_cpu_desc">Display CPU detailed information</string>
-    <string name="shell_cmd_network">Network Interface</string>
-    <string name="shell_cmd_network_cmd">ip addr</string>
-    <string name="shell_cmd_network_desc">Display network interface information</string>
-    <string name="shell_cmd_route">Routing Table</string>
-    <string name="shell_cmd_route_cmd">ip route</string>
-    <string name="shell_cmd_route_desc">Display routing table information</string>
-    <string name="shell_cmd_connection">Network Connections</string>
-    <string name="shell_cmd_connection_cmd">cat /proc/net/tcp</string>
-    <string name="shell_cmd_connection_desc">Display network connection status</string>
-    <string name="shell_cmd_installed_apps">Installed Apps</string>
-    <string name="shell_cmd_installed_apps_cmd">pm list packages</string>
-    <string name="shell_cmd_installed_apps_desc">List all installed app package names</string>
-    <string name="shell_cmd_system_apps">System Apps</string>
-    <string name="shell_cmd_system_apps_cmd">pm list packages -s</string>
-    <string name="shell_cmd_system_apps_desc">List all system apps</string>
-    <string name="shell_cmd_3rd_apps">Third-party Apps</string>
-    <string name="shell_cmd_3rd_apps_cmd">pm list packages -3</string>
-    <string name="shell_cmd_3rd_apps_desc">List all third-party apps</string>
-    <string name="shell_cmd_current_dir">Current Directory</string>
-    <string name="shell_cmd_current_dir_cmd">ls -la</string>
-    <string name="shell_cmd_current_dir_desc">List all files in current directory</string>
-    <string name="shell_cmd_root_dir">Root Directory</string>
-    <string name="shell_cmd_root_dir_cmd">ls -la /</string>
-    <string name="shell_cmd_root_dir_desc">List all files in root directory</string>
-    <string name="shell_cmd_storage">Storage Space</string>
-    <string name="shell_cmd_storage_cmd">ls -lh /sdcard</string>
-    <string name="shell_cmd_storage_desc">List external storage space files</string>
-    <string name="shell_cmd_process">Process List</string>
-    <string name="shell_cmd_process_cmd">ps</string>
-    <string name="shell_cmd_process_desc">Display system process list</string>
-    <string name="shell_cmd_properties">System Properties</string>
-    <string name="shell_cmd_properties_cmd">getprop</string>
-    <string name="shell_cmd_properties_desc">Display all system properties</string>
 
     <!-- Workflow -->
     <string name="workflow_load_failed">Failed to load workflow</string>

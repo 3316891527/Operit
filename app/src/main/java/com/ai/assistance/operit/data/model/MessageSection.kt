@@ -3,7 +3,7 @@ package com.ai.assistance.operit.data.model
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Transient
-import com.ai.assistance.operit.util.ThinkingMarkup
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
 
 /** 一条消息里按顺序排列的完整片段。 */
 @Serializable

@@ -147,8 +147,8 @@ Prompt 与摘要的每次 ToolPkg bridge dispatch 创建一个共享截止时间
 
 ## 权威调用点
 
-- 输入阶段：`api/chat/enhance/InputProcessor.kt`
-- 历史准备与摘要：`api/chat/enhance/ConversationService.kt`
+- 输入阶段：`core/chat/hooks/InputProcessor.kt`
+- 历史准备与摘要：`core/chat/context/ConversationService.kt`
 - 系统提示词：`core/config/SystemPromptConfig.kt`
 - 工具提示词：`core/config/SystemToolPrompts.kt`
 - 模型发送前：`api/chat/EnhancedAIService.kt`

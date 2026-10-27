@@ -3,7 +3,7 @@ package com.ai.assistance.operit.data.db
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ai.assistance.operit.data.model.MessageSectionCodec
 import com.ai.assistance.operit.data.model.MessageSectionStorage
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext

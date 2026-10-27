@@ -9,7 +9,7 @@ import com.ai.assistance.operit.api.chat.error.ProviderResponseErrors
 import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.keypool.*
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.chat.hooks.toPromptTurns
@@ -19,13 +19,13 @@ import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ParameterCategory
 import com.ai.assistance.operit.data.stats.ProviderUsageNormalizer
-import com.ai.assistance.operit.util.ChatUtils
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ThinkingMarkup
-import com.ai.assistance.operit.util.HttpLogSanitizer
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
+import com.ai.assistance.operit.util.logging.HttpLogSanitizer
 import com.ai.assistance.operit.util.logging.RequestBodyLogFormatter
-import com.ai.assistance.operit.util.StreamingJsonXmlConverter
-import com.ai.assistance.operit.util.TokenCacheManager
+import com.ai.assistance.operit.core.chat.protocol.StreamingJsonXmlConverter
+import com.ai.assistance.operit.core.chat.context.TokenCacheManager
 import com.ai.assistance.operit.util.exceptions.UserCancellationException
 import com.ai.assistance.operit.util.stream.MutableSharedStream
 import com.ai.assistance.operit.util.stream.Stream
@@ -57,7 +57,24 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyAttemptReport
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyErrorClass
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyRequestElement
+import com.ai.assistance.operit.api.chat.keypool.FirstTokenWatchdog
+import com.ai.assistance.operit.api.chat.keypool.currentApiKeySession
+import com.ai.assistance.operit.api.chat.keypool.handleKeyAwareRetry
+import com.ai.assistance.operit.api.chat.keypool.parseRetryAfterMs
+import com.ai.assistance.operit.api.chat.keypool.reportKeyAwareFailure
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityWireValue
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
 
 /** Keeps Gemini thinking mapping testable without invoking Android's JVM JSON stubs. */
 internal data class GeminiThinkingConfig(

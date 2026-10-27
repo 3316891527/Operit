@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.tools
 import com.ai.assistance.operit.core.performance.PerformanceEntityKind
 import com.ai.assistance.operit.core.performance.PerformanceEntitySample
 import com.ai.assistance.operit.core.performance.PerformanceSnapshot
-import com.ai.assistance.operit.api.voice.HttpTtsResponsePipelineStep
+import com.ai.assistance.operit.api.speech.tts.HttpTtsResponsePipelineStep
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi

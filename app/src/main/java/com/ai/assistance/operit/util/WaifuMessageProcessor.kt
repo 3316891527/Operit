@@ -8,6 +8,7 @@ import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import com.ai.assistance.operit.util.streamnative.nativeMarkdownSplitByBlock
+import com.ai.assistance.operit.util.streamnative.NativeMarkdownSplitter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -15,6 +16,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.util.logging.AppLogger
 
 /**
  * Waifu模式消息处理器
@@ -64,6 +68,16 @@ object WaifuMessageProcessor {
         private val removePunctuation: Boolean = false
     ) {
         private val emittedSegments = mutableListOf<String>()
+
+        /** 首句尚未稳定时提供可渲染正文，隐藏的 XML 仍由相同清理器过滤。 */
+        fun collectFirstSegmentPreview(content: String): String? {
+            if (emittedSegments.isNotEmpty()) return null
+            return splitMessageBySentencesInternal(
+                content = buildRenderableContentForWaifu(content),
+                removePunctuation = removePunctuation,
+                includeTrailingIncomplete = true,
+            ).firstOrNull()?.takeIf { it.isNotBlank() }
+        }
 
         fun collectStableSegments(content: String): List<String> {
             return collectSegments(
@@ -119,6 +133,7 @@ object WaifuMessageProcessor {
     fun streamSegments(
         sourceStream: Stream<String>,
         removePunctuation: Boolean = false,
+        onFirstSegmentPreview: (suspend (String) -> Unit)? = null,
     ): Stream<String> = stream {
         val session = StreamingSession(removePunctuation = removePunctuation)
         val renderableBuffer = StringBuilder()
@@ -128,7 +143,11 @@ object WaifuMessageProcessor {
                 return
             }
             renderableBuffer.append(text)
-            session.collectStableSegments(renderableBuffer.toString()).forEach { emit(it) }
+            val snapshot = renderableBuffer.toString()
+            session.collectStableSegments(snapshot).forEach { emit(it) }
+            if (onFirstSegmentPreview != null) {
+                session.collectFirstSegmentPreview(snapshot)?.let { onFirstSegmentPreview(it) }
+            }
         }
 
         sourceStream.nativeMarkdownSplitByBlock().collect { blockGroup ->
@@ -224,14 +243,21 @@ object WaifuMessageProcessor {
         sourceStream: Stream<String>,
         removePunctuation: Boolean = false,
         charDelayMs: Int,
+        onFirstSegmentPreview: (suspend (String) -> Unit)? = null,
     ): Stream<String> = stream {
         coroutineScope {
-            val segmentQueue = Channel<String>(Channel.UNLIMITED)
+            // 预览和定稿共用有序队列，打字等待只影响展示，不阻塞上游读取。
+            data class QueuedSegment(val content: String, val isPreview: Boolean)
+            val segmentQueue = Channel<QueuedSegment>(Channel.UNLIMITED)
+            val previewConsumer: (suspend (String) -> Unit)? = if (onFirstSegmentPreview != null) {
+                { preview: String -> segmentQueue.send(QueuedSegment(preview, isPreview = true)) }
+            } else null
             val producerJob = launch {
                 try {
                     streamSegments(
                         sourceStream = sourceStream,
                         removePunctuation = false,
+                        onFirstSegmentPreview = previewConsumer,
                     ).collect { segment ->
                         val queuedSegment =
                             if (removePunctuation) {
@@ -240,7 +266,7 @@ object WaifuMessageProcessor {
                                 segment
                             }
                         if (queuedSegment.isNotBlank()) {
-                            segmentQueue.send(queuedSegment)
+                            segmentQueue.send(QueuedSegment(queuedSegment, isPreview = false))
                         }
                     }
                 } finally {
@@ -249,7 +275,13 @@ object WaifuMessageProcessor {
             }
 
             var isFirstSegment = true
-            for (segment in segmentQueue) {
+            for (queued in segmentQueue) {
+                if (queued.isPreview) {
+                    val preview = if (removePunctuation) removeSentenceEndPunctuation(queued.content) else queued.content
+                    if (preview.isNotBlank()) onFirstSegmentPreview?.invoke(preview)
+                    continue
+                }
+                val segment = queued.content
                 val waitMs =
                     calculateTypingDelayMs(
                         segmentLength = segment.length,
@@ -1137,41 +1169,50 @@ object WaifuMessageProcessor {
 
         val segments = mutableListOf<Segment>()
 
-        runBlocking {
-            content.stream()
-                .nativeMarkdownSplitByBlock()
-                .collect { blockGroup ->
-                    val blockType = blockGroup.tag ?: MarkdownProcessorType.PLAIN_TEXT
-                    val sb = StringBuilder()
-                    blockGroup.stream.collect { sb.append(it) }
-                    val block = sb.toString()
-                    if (block.isEmpty()) return@collect
-
-                    val isProtected =
-                        when (blockType) {
-                            MarkdownProcessorType.CODE_BLOCK,
-                            MarkdownProcessorType.TABLE,
-                            MarkdownProcessorType.BLOCK_LATEX -> true
-                            MarkdownProcessorType.XML_BLOCK -> shouldPreserveXmlBlockForWaifu(block)
-                            else -> false
-                        }
-
-                    // 原生块公式会剥离 $$；恢复分隔符后气泡才能识别为 LaTeX 块。
-                    val normalizedBlock =
-                        if (blockType == MarkdownProcessorType.BLOCK_LATEX) {
-                            ensureBlockLatexDelimiters(block)
-                        } else {
-                            restoreMarkdownBlockMarkers(block, blockType)
-                        }
-
-                    segments.add(
-                        Segment(
-                            content = normalizedBlock,
-                            isProtected = isProtected,
-                            blockType = blockType,
-                        )
-                    )
+        // 快照一次送入原生解析器，避免每个增量都为整个历史逐字创建协程和 JNI 调用。
+        val session = NativeMarkdownSplitter.createBlockSession()
+        try {
+            val parts = session.push(content)
+            val blockBuilder = StringBuilder()
+            var activeType: MarkdownProcessorType? = null
+            fun flushBlock() {
+                val blockType = activeType ?: return
+                val block = blockBuilder.toString()
+                blockBuilder.clear()
+                activeType = null
+                if (block.isEmpty()) return
+                val isProtected = when (blockType) {
+                    MarkdownProcessorType.CODE_BLOCK,
+                    MarkdownProcessorType.TABLE,
+                    MarkdownProcessorType.BLOCK_LATEX -> true
+                    MarkdownProcessorType.XML_BLOCK -> shouldPreserveXmlBlockForWaifu(block)
+                    else -> false
                 }
+                val normalizedBlock = if (blockType == MarkdownProcessorType.BLOCK_LATEX) {
+                    ensureBlockLatexDelimiters(block)
+                } else {
+                    restoreMarkdownBlockMarkers(block, blockType)
+                }
+                segments.add(Segment(normalizedBlock, isProtected, blockType))
+            }
+            var index = 0
+            while (index + 2 < parts.size) {
+                val ordinal = parts[index]
+                val start = parts[index + 1]
+                val end = parts[index + 2]
+                index += 3
+                if (ordinal < 0) {
+                    flushBlock()
+                    continue
+                }
+                val type = MarkdownProcessorType.entries[ordinal]
+                if (activeType != type) flushBlock()
+                activeType = type
+                blockBuilder.append(content, start, end)
+            }
+            flushBlock()
+        } finally {
+            session.destroy()
         }
 
         return segments
@@ -1293,7 +1334,7 @@ object WaifuMessageProcessor {
                     }
                 }
             } catch (e: Exception) {
-                com.ai.assistance.operit.util.AppLogger.e("WaifuMessageProcessor", "查询自定义表情失败", e)
+                com.ai.assistance.operit.util.logging.AppLogger.e("WaifuMessageProcessor", "查询自定义表情失败", e)
                 null
             }
             
@@ -1303,11 +1344,11 @@ object WaifuMessageProcessor {
             }
             
             // 如果自定义表情中没有找到，则直接返回null
-            com.ai.assistance.operit.util.AppLogger.w("WaifuMessageProcessor", "在自定义表情中未找到对于情绪 '$emotion' 的表情")
+            com.ai.assistance.operit.util.logging.AppLogger.w("WaifuMessageProcessor", "在自定义表情中未找到对于情绪 '$emotion' 的表情")
             return null
             
         } catch (e: Exception) {
-            com.ai.assistance.operit.util.AppLogger.e("WaifuMessageProcessor", "获取表情图片失败: $emotion", e)
+            com.ai.assistance.operit.util.logging.AppLogger.e("WaifuMessageProcessor", "获取表情图片失败: $emotion", e)
             return null
         }
     }

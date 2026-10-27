@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.toolbox.screens.logcat.LogcatExportResult
+import com.ai.assistance.operit.ui.features.management.databackup.logcat.LogcatExportResult
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

@@ -5,7 +5,7 @@ import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
 import com.ai.assistance.operit.core.tools.skill.SkillManager
 import com.ai.assistance.operit.data.mcp.MCPRepository
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.core.tools.defaultTool.standard
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.DirectoryListingData
 import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.core.tools.BinaryFileContentData
@@ -17,7 +17,7 @@ import com.ai.assistance.operit.core.tools.ToolExecutionLimits
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.util.FileUtils
+import com.ai.assistance.operit.util.files.FileUtils
 import com.ai.assistance.operit.core.tools.defaultTool.PathValidator
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex

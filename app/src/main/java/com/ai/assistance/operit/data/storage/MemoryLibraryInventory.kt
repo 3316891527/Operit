@@ -6,7 +6,7 @@ import com.ai.assistance.operit.data.model.Memory
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.repository.MemoryRepository
 import com.ai.assistance.operit.data.repository.MemoryRepository.Companion.normalizeFolderPath
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import io.objectbox.kotlin.boxFor
 import java.io.File
 import kotlinx.coroutines.Dispatchers

@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.common.a2ui
 
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.data.model.MessageSection
 import com.ai.assistance.operit.data.model.MessageSectionCodec
 import com.ai.assistance.operit.util.markdown.MarkdownFence

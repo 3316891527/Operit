@@ -5,7 +5,7 @@ import android.os.Environment
 import com.ai.assistance.operit.data.mnn.DownloadState
 import com.ai.assistance.operit.data.mnn.MnnDownloadSnapshot
 import com.ai.assistance.operit.data.mnn.MnnModelDownloadManager
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.data.resources.models.SpeechModelPurpose
 import com.ai.assistance.operit.data.resources.packs.PackResources
 import java.io.File

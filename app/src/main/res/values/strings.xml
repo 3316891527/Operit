@@ -24,9 +24,7 @@
     <string name="common_expand_more">展开更多</string>
     <string name="nav_packages">包管理</string>
     <string name="nav_memory_base">记忆库</string>
-    <string name="nav_assistant_config">助手配置</string>
     <string name="nav_terminal">终端</string>
-    <string name="nav_toolbox">工具箱</string>
     <string name="nav_item_agreement">用户协议</string>
     <string name="sidebar_permission_short">权限</string>
     <string name="sidebar_status_normal">正常</string>
@@ -120,7 +118,6 @@
     <string name="menu">菜单</string>
     <string name="token_config">获取密钥</string>
     <string name="package_category_plugin">插件</string>
-    <string name="desktop_pet_start">启动桌宠</string>
 
     <!-- 工作流相关 -->
     <string name="workflow_list_title">工作流列表</string>
@@ -347,9 +344,7 @@
 
     <!-- 助手配置界面 -->
     <string name="assistant_config_title">助手配置</string>
-    <string name="import_model">导入模型</string>
     <string name="scan_user_models">扫描用户模型</string>
-    <string name="operation_success">操作成功</string>
     <string name="error_occurred_simple">发生错误</string>
     <string name="function_config_title">功能配置</string>
     <string name="function_config_desc">聊天 语音 桌宠将会根据使用情况自动选择对应的提示词配置</string>
@@ -357,112 +352,13 @@
     <string name="not_configured">未配置</string>
     <string name="function_prompt">功能提示词</string>
     <string name="function_model">功能模型</string>
-    <string name="importing_model">正在导入模型...</string>
     <string name="processing">处理中...</string>
-    <string name="error_occurred">发生错误: %1$s</string>
-    <string name="avatar_config">虚拟形象配置</string>
-    <string name="avatar_voice_call_enable_title">虚拟形象是否启用</string>
-    <string name="avatar_voice_call_enable_summary">启用后，语音通话界面会使用虚拟形象，并根据返回的 &lt;mood&gt; 标签播放情绪动作。</string>
-    <string name="select_model">选择模型</string>
-    <string name="current_model">当前模型</string>
     <string name="scale">缩放: %1$s</string>
-    <string name="x_translation">X轴位移: %1$s</string>
-    <string name="y_translation">Y轴位移: %1$s</string>
-    <string name="confirm_delete_model_title">确认删除模型？</string>
-    <string name="confirm_delete_model_message">删除后不可恢复，确定要删除该模型吗？</string>
-    <string name="rename_avatar_model_title">重命名模型</string>
-    <string name="rename_avatar_model_message">输入新的模型显示名称</string>
-    <string name="avatar_model_name_label">模型名称</string>
-    <string name="no_models_available">没有可用的模型</string>
-    <string name="please_select_model">请选择一个模型</string>
-    <string name="unsupported_model_type">不支持的模型类型: %1$s</string>
-    <string name="avatar_preview_error_log">头像预览错误: %1$s</string>
     <string name="how_to_import">如何制作和导入模型?</string>
-    <string name="how_to_import_tap_to_expand">如何制作和导入模型?（点击展开）</string>
-    <string name="how_to_import_tap_to_collapse">如何制作和导入模型?（点击收起）</string>
-    <string name="avatar_config_supported_formats">支持：DragonBones（.json + _tex.json + _tex.png）、WebP（.webp）、MP4（.mp4）、MMD（.pmx/.pmd + 可选 .vmd）、glTF（.glb/.gltf）、FBX（.fbx）。</string>
-    <string name="avatar_config_import_methods">直接文件导入支持 .glb/.gltf/.mp4/.fbx；DragonBones、WebP、MP4、MMD、多文件 glTF，或带外置贴图/资源的 FBX 请导入 .zip。</string>
-    <string name="avatar_mood_trigger_mapping_title">Mood 触发映射</string>
-    <string name="avatar_mood_trigger_mapping_desc">桌宠和语音头像返回的 &lt;mood&gt; 会优先匹配这里的 trigger。只有绑定了动画的自定义类型才会拼接进提示词。</string>
-    <string name="avatar_no_model_actions">当前虚拟形象没有可用动作</string>
-    <string name="avatar_custom_types_title">自定义类型</string>
-    <string name="avatar_custom_type_add">添加自定义类型</string>
-    <string name="avatar_custom_type_none">还没有自定义类型</string>
-    <string name="avatar_trigger_key_label">触发键：%1$s</string>
-    <string name="avatar_fallback_emotion_label">回退表情：%1$s</string>
-    <string name="avatar_edit_custom_mood_type">编辑自定义类型</string>
-    <string name="avatar_delete_custom_mood_type">删除自定义类型</string>
-    <string name="avatar_mapped_action">绑定动作</string>
-    <string name="avatar_preview_action">预览</string>
-    <string name="avatar_unmapped">未绑定</string>
-    <string name="avatar_custom_type_add_title">添加自定义类型</string>
-    <string name="avatar_custom_type_edit_title">编辑自定义类型</string>
-    <string name="avatar_custom_type_key">类型键</string>
-    <string name="avatar_custom_type_key_hint">仅允许小写字母、数字、_ 和 -。规范化后的 key：%1$s</string>
-    <string name="avatar_empty_value_placeholder">&lt;空&gt;</string>
-    <string name="avatar_custom_type_prompt_hint_label">提示词说明</string>
-    <string name="avatar_custom_type_prompt_hint_help">这个提示会被拼接进桌宠/语音头像的 mood 规则里，引导模型在什么场景下使用该类型。</string>
-    <string name="avatar_emotion_mapping_title">表情映射</string>
-    <string name="avatar_emotion_mapping_chip">%1$s：%2$s</string>
-    <string name="avatar_emotion_label">表情</string>
-    <string name="avatar_clear_selected_mapping">清除当前映射</string>
-    <string name="avatar_emotion_idle">待机</string>
-    <string name="avatar_emotion_listening">监听</string>
-    <string name="avatar_emotion_thinking">思考</string>
-    <string name="avatar_emotion_happy">开心</string>
-    <string name="avatar_emotion_sad">难过</string>
-    <string name="avatar_emotion_confused">困惑</string>
-    <string name="avatar_emotion_surprised">惊讶</string>
-    <string name="avatar_mood_angry_name">生气</string>
-    <string name="avatar_mood_happy_name">开心</string>
-    <string name="avatar_mood_shy_name">害羞</string>
-    <string name="avatar_mood_aojiao_name">傲娇</string>
-    <string name="avatar_mood_cry_name">难过</string>
-    <string name="avatar_mood_angry_hint">用户表达侮辱、不公、责备、生气或强烈不满时使用。</string>
-    <string name="avatar_mood_happy_hint">用户表达明确表扬、达成目标、收到礼物或明显开心时使用。</string>
-    <string name="avatar_mood_shy_hint">用户夸奖、暧昧、戳中可爱点，角色表现害羞时使用。</string>
-    <string name="avatar_mood_aojiao_hint">用户调侃、轻微争执、角色嘴硬又软化时使用。</string>
-    <string name="avatar_mood_cry_hint">用户失落、难过、受挫、哭诉或道歉后低落时使用。</string>
-    <string name="avatar_custom_type_prompt_hint_required">提示词说明不能为空</string>
-    <string name="avatar_custom_type_invalid_key">自定义类型 key 只能使用小写字母、数字、_ 或 -，且不能与内置 key 冲突</string>
-    <string name="avatar_custom_type_duplicate_key">自定义类型 key 已存在</string>
-    <string name="avatar_mmd_camera_pitch">MMD 相机俯仰（%1$s）</string>
-    <string name="avatar_mmd_camera_yaw">MMD 相机偏航（%1$s）</string>
-    <string name="avatar_mmd_camera_distance">MMD 相机距离（%1$s）</string>
-    <string name="avatar_mmd_orbit_pivot_height">MMD 环绕中心高度（%1$s）</string>
-    <string name="avatar_gltf_camera_pitch">glTF 相机俯仰（%1$s）</string>
-    <string name="avatar_gltf_camera_yaw">glTF 相机偏航（%1$s）</string>
-    <string name="avatar_gltf_camera_distance">glTF 相机距离（%1$s）</string>
-    <string name="avatar_gltf_orbit_pivot_height">glTF 环绕中心高度（%1$s）</string>
-    <string name="avatar_fbx_camera_pitch">FBX 相机俯仰（%1$s）</string>
-    <string name="avatar_fbx_camera_yaw">FBX 相机偏航（%1$s）</string>
-    <string name="avatar_fbx_camera_distance">FBX 相机距离（%1$s）</string>
-    <string name="avatar_fbx_orbit_pivot_height">FBX 环绕中心高度（%1$s）</string>
-    <string name="avatar_supported_formats_title">支持格式</string>
-    <string name="avatar_supported_formats_desc">- DragonBones：骨骼 .json + *_tex.json + *_tex.png\n- WebP：一个或多个 .webp 文件\n- MP4：一个或多个 .mp4 文件\n- MMD：.pmx 或 .pmd 模型，可选 .vmd 动作\n- glTF：.glb 或 .gltf（如有引用还需 .bin/贴图等资源）\n- FBX：.fbx（直传仅限自包含资源）</string>
-    <string name="avatar_import_methods_title">导入方式</string>
-    <string name="avatar_import_methods_desc">- 直接选文件：.glb / .gltf / .mp4 / .fbx\n- ZIP 导入：DragonBones、WebP、MP4、MMD、多文件 glTF，或带外置贴图/资源的 FBX 包</string>
-    <string name="import_structure_guide_tap_to_expand">导入结构指南（点击展开）</string>
-    <string name="import_structure_guide_tap_to_collapse">导入结构指南（点击收起）</string>
-    <string name="import_structure_guide_content">这是“导入包”的目录结构（ZIP 或选中文件内部），不是应用内部存储。\n\nDragonBones（.zip）\n  my_dragonbones.zip\n    any_folder_name/\n      hero_ske.json\n      hero_tex.json\n      hero_tex.png\n  要求：ske/tex json/png 文件名前缀一致。\n\nWebP（.zip）\n  my_webp.zip\n    any_folder_name/\n      idle.webp\n      talking.webp\n      happy.webp\n  要求：至少包含一个 .webp 文件。\n\nMP4\n  方式 A（直接文件）:\n    avatar.mp4\n  方式 B（.zip）:\n    my_mp4.zip\n      any_folder_name/\n        idle.mp4\n        talking.mp4\n        happy.mp4\n  要求：至少包含一个 .mp4 文件。\n\nMMD（.zip）\n  my_mmd.zip\n    any_folder_name/\n      character.pmx（或 .pmd）\n      motions/idle.vmd（可选）\n      textures/...\n  要求：保持 PMX/PMD 引用的相对路径不变。\n\nglTF\n  方式 A（直接文件）:\n    avatar.glb\n  方式 B（多文件 glTF 使用 .zip）:\n    my_gltf.zip\n      any_folder_name/\n        avatar.gltf\n        avatar.bin\n        textures/...\n  要求：保持 .gltf 引用的相对路径不变。\n\nFBX\n  方式 A（直接文件，仅限自包含资源）:\n    avatar.fbx\n  方式 B（外置贴图/资源请使用 .zip）:\n    my_fbx.zip\n      any_folder_name/\n        avatar.fbx\n        textures/...\n  要求：直接上传 .fbx 仅支持内嵌资源；若模型引用外置贴图或其他资源，请保持相对路径并放进 ZIP。</string>
     <string name="enter">进入</string>
-    <string name="about_avatar_formats">本应用支持多种虚拟形象格式，包括DragonBones。以下是制作和导入模型的说明。</string>
-    <string name="dragon_bones_config">DragonBones配置</string>
-    <string name="dragon_bones_renamed">DragonBones已更名为LoongBones，并推出了新的在线编辑器。\nLoongBones支持IK、网格变形、骨骼绑定等专业动画功能。</string>
-    <string name="making_models">1. 制作模型：</string>
     <string name="making_models_desc">    · 推荐：使用新版在线编辑器。\n    · 备选：从第三方存档网站下载旧版 v5.6.3 离线编辑器。</string>
-    <string name="making_models_desc_general">    · 您可以使用多种工具来创建您的虚拟形象模型。\n    · 对于DragonBones，推荐使用新版在线编辑器，也可使用旧版 v5.6.3 离线编辑器。</string>
-    <string name="exporting_files">2. 导出文件：</string>
     <string name="exporting_files_desc">    · 无论使用哪个版本，导出数据时类型请选择 JSON，版本请选择 5.5（当前还不支持 6.0 运行时）。\n    · 导出的核心文件为：*_ske.json、*_tex.json、*_tex.png。</string>
-    <string name="exporting_files_desc_general">    · 请遵循您所选格式的导出指南。\n    · 对于DragonBones，导出数据时类型请选择 JSON，版本请选择 5.5（当前还不支持 6.0 运行时）。\n    · 导出的核心文件为：*_ske.json、*_tex.json、*_tex.png。</string>
-    <string name="configuring_interaction">3. 配置交互：</string>
-    <string name="configuring_interaction_desc">    · 如需实现头部跟随，请添加 IK 约束，并将其目标骨骼命名为 ik_target。\n    · idle 动画：请确保有一个命名为 idle 的动画，作为基础待机动画，会自动循环播放。\n    · 随机动画：可添加如 blink（眨眼）、shake_head（摇头）、wag_tail（摇尾巴）等动画，\n      系统会随机自动触发这些动画，丰富宠物表现。</string>
-    <string name="packaging_and_importing">4. 打包与导入：</string>
-    <string name="packaging_and_importing_desc">    · 将导出的三个文件打包成一个 .zip 文件后导入。</string>
     <string name="important_tip">重要提示：旧版编辑器下载页面中，Windows和Mac的下载链接放反了，请注意选择正确的链接下载。</string>
-    <string name="dragonbones_important_tip">重要提示：旧版编辑器下载页面中，Windows和Mac的下载链接放反了，请注意选择正确的链接下载。</string>
-    <string name="download_old_editor">下载旧版编辑器</string>
-    <string name="visit_online_editor">访问在线编辑器</string>
 
     <string name="voice_wakeup_section_title">语音唤醒</string>
     <string name="voice_wakeup_always_listen_title">始终监听</string>
@@ -525,7 +421,6 @@
     <string name="tool_permissions">工具权限设置</string>
     <string name="about">关于</string>
     <string name="terminal">终端</string>
-    <string name="toolbox">工具箱</string>
     <string name="mcp">模型上下文协议</string>
     <string name="token_config_title">DeepSeek Token配置</string>
     <string name="character_card_change_title">角色卡已变更</string>
@@ -931,7 +826,6 @@
     <string name="show_samples">显示示例命令</string>
     <string name="hide_samples">隐藏示例命令</string>
     <string name="select_example">选择一个示例命令:</string>
-    <string name="execute_command">执行命令</string>
     <string name="result_placeholder">结果将显示在这里</string>
     <string name="executing">执行中...</string>
     <string name="command_success">命令执行成功:\n%1$s</string>
@@ -1609,12 +1503,8 @@
     <string name="chat_function_desc">主要的对话功能，自定义聊天机器人的提示词配置</string>
     <string name="voice_function">语音功能</string>
     <string name="voice_function_desc">语音互动功能，自定义语音助手的提示词配置</string>
-    <string name="desktop_pet_function">桌宠功能</string>
-    <string name="desktop_pet_function_desc">桌面宠物功能，自定义桌宠的性格和互动方式</string>
 
     <!-- 桌宠服务通知 -->
-    <string name="pet_service_notification_title">桌面宠物服务</string>
-    <string name="pet_service_notification_text">桌面宠物正在运行中</string>
 
     <!-- 设置屏幕新增字符串 -->
     <string name="settings_prompt_section">提示词配置</string>
@@ -1835,7 +1725,6 @@
     <string name="pip_package_install_success">PIP 包安装成功</string>
     <string name="pip_package_install_failed">PIP 包安装失败</string>
     <string name="please_press_back_to_return">请按返回键返回上一页</string>
-    <string name="please_input_command">请输入命令</string>
     <string name="background_image_migrated">背景图片已迁移到内部存储</string>
     <string name="background_image_access_failed">无法访问旧的背景图片，已关闭背景图片功能</string>
     <string name="avatar_updated">头像已更新</string>
@@ -1932,8 +1821,6 @@
     <string name="ai_assistant">AI助手</string>
     <string name="send_message">发送消息</string>
     <string name="chat_with_pet">和宠物对话</string>
-    <string name="dragonbones_mode">DragonBones模式</string>
-    <string name="avatar_mode">虚拟形象模式</string>
     <string name="loading_failed">加载失败: %1$s</string>
     <string name="loading">正在加载...</string>
     <string name="floating_service_description">显示AI助手的悬浮窗服务</string>
@@ -2047,27 +1934,8 @@
     <string name="control_info">控件信息</string>
     <string name="current_activity_title">当前Activity</string>
     <string name="dimensions">尺寸: %1$d×%2$dpx</string>
-    <string name="ffmpeg_command">FFmpeg命令</string>
-    <string name="common_command_templates">常用命令模板</string>
-    <string name="ffmpeg_template_note">注意: 使用模板时，请将input.mp4和output.mp4替换为实际文件路径</string>
-    <string name="ffmpeg_help">FFmpeg帮助</string>
-    <string name="ffmpeg_description">FFmpeg是一个强大的音视频处理工具。在此界面，您可以直接执行FFmpeg命令。</string>
 
     <!-- FFmpeg Command Templates -->
-    <string name="ffmpeg_video_conversion_desc">将视频转换为MP4格式</string>
-    <string name="ffmpeg_video_compression">视频压缩</string>
-    <string name="ffmpeg_video_compression_desc">压缩视频文件大小</string>
-    <string name="ffmpeg_video_trim">视频裁剪</string>
-    <string name="ffmpeg_video_trim_desc">裁剪视频的特定片段</string>
-    <string name="ffmpeg_extract_audio">提取音频</string>
-    <string name="ffmpeg_extract_audio_desc">从视频中提取音频</string>
-    <string name="ffmpeg_create_gif">GIF制作</string>
-        <string name="ffmpeg_create_gif_desc">将视频转换为GIF</string>
-    <string name="ffmpeg_input_placeholder">输入FFmpeg命令，不需要包含\'ffmpeg\'前缀</string>
-    <string name="ffmpeg_common_parameters">常用参数</string>
-    <string name="ffmpeg_get_info_failed">获取信息失败</string>
-    <string name="ffmpeg_view_more_info">查看更多信息</string>
-    <string name="ffmpeg_executing_command">正在执行命令，请稍候...</string>
 
     <!-- Tool Tester Screen -->
     <string name="ai_tools_availability_test">AI工具可用性测试</string>
@@ -2143,7 +2011,7 @@
 
     <!-- Update History -->
 
-    <!-- Toolbox Categories -->
+    <!-- 工具页面分类 -->
 
     <!-- Tool Names -->
     <string name="tool_file_manager">文件管理器</string>
@@ -2202,78 +2070,19 @@
     <string name="ui_debugger_description">点击右下角的按钮启动悬浮窗进行UI调试</string>
     <string name="ui_debugger_launch_floating">启动悬浮窗</string>
     <string name="ui_debugger_start_float">启动悬浮窗</string>
-    <string name="tool_ffmpeg_toolbox">FFmpeg工具箱</string>
-    <string name="tool_ffmpeg_toolbox_desc">强大的音视频处理工具，支持转换、裁剪、合并等功能</string>
     <string name="tool_stream_markdown_demo">流式Markdown演示</string>
     <string name="tool_stream_markdown_demo_desc">高性能流式Markdown渲染演示，支持实时字符流动效果</string>
-    <string name="tool_shell_executor">命令执行器</string>
-    <string name="tool_shell_executor_desc">执行Shell命令并查看输出结果，支持常用命令预设</string>
-    <string name="shell_executor_input_hint">输入Shell命令</string>
-    <string name="shell_executor_command">命令</string>
-    <string name="shell_executor_clear">清除</string>
-    <string name="shell_executor_execute">执行</string>
-    <string name="shell_executor_clear_history">清除历史</string>
-    <string name="shell_executor_show_presets">显示预设命令</string>
-    <string name="shell_executor_hide_presets">隐藏预设命令</string>
-    <string name="shell_executor_executing">正在执行命令...</string>
-    <string name="shell_executor_common_commands">常用命令</string>
-    <string name="shell_executor_category_system">系统信息</string>
-    <string name="shell_executor_category_file">文件操作</string>
-    <string name="shell_executor_category_network">网络工具</string>
-    <string name="shell_executor_category_hardware">硬件信息</string>
-    <string name="shell_executor_category_package">应用管理</string>
-    <string name="shell_executor_input_command_hint">输入命令并点击执行</string>
-    <string name="shell_executor_view_results">查看命令执行结果</string>
-    <string name="shell_executor_view_presets">查看预设命令</string>
-    <string name="shell_executor_error_title">执行错误</string>
-    <string name="shell_executor_confirm">确定</string>
-    <string name="shell_executor_stdout">标准输出:</string>
-    <string name="shell_executor_stderr">标准错误:</string>
-    <string name="shell_executor_output">输出</string>
-    <string name="shell_executor_exit_code">退出代码: %s</string>
-    <string name="shell_executor_re_execute">重新执行</string>
-    <string name="shell_executor_expand">展开</string>
-    <string name="shell_executor_collapse">收起</string>
-    <string name="shell_executor_execute_failed">执行命令失败: %s</string>
     <string name="tool_log_viewer">日志查看器</string>
     <string name="tool_log_viewer_desc">导出或清理 Operit 应用日志</string>
-    <string name="tool_sql_viewer">SQL 查看器</string>
-    <string name="tool_sql_viewer_desc">查看应用数据库表并执行 SQL 命令</string>
     <string name="tool_token_config_desc">打开 API 密钥获取与配置页面，便于快速完成模型接入</string>
-    <string name="screen_title_sql_viewer">SQL 查看器</string>
-    <string name="sql_viewer_title">SQL 查看器</string>
-    <string name="sql_viewer_input_label">SQL 输入</string>
-    <string name="sql_viewer_run">执行</string>
-    <string name="sql_viewer_clear">清空</string>
-    <string name="sql_viewer_page_size">每页</string>
-    <string name="sql_viewer_paging">分页</string>
-    <string name="sql_viewer_tables_chip">表清单</string>
-    <string name="sql_viewer_schema_chip">表结构</string>
-    <string name="sql_viewer_row_count">共 %1$d 行 / %2$d 列</string>
-    <string name="sql_viewer_affected_rows">影响行数：%1$d</string>
-    <string name="sql_viewer_load_more">加载更多</string>
-    <string name="sql_viewer_empty_sql">SQL 不能为空</string>
-    <string name="sql_viewer_controls">控制</string>
-    <string name="sql_viewer_empty_state">暂无结果，点击右上角按钮执行 SQL</string>
     <string name="tool_process_limit_remover">解除幻象进程限制</string>
     <string name="tool_process_limit_remover_desc">管理Android 12+的幻象进程数量限制，允许更多后台子进程</string>
 
     <string name="tool_html_packager">HTML打包器</string>
     <string name="tool_html_packager_desc">将网页项目导出为 Android 安装包或 Windows ZIP</string>
 
-    <string name="tool_autoglm_one_click">AutoGLM 一键配置</string>
-    <string name="tool_autoglm_one_click_desc">一键为 UI 控制器配置 autoglm-phone 模型并切换 AutoGLM 工具包</string>
-    <string name="tool_autoglm_tool">AutoGLM 执行</string>
-    <string name="tool_autoglm_tool_desc">使用 autoglm-phone 代理按步骤执行手机自动化任务</string>
 
     <!-- AutoGLM One-Click Configuration -->
-    <string name="autoglm_config_name">AutoGLM 配置</string>
-    <string name="autoglm_one_click_title">AutoGLM 一键配置</string>
-    <string name="autoglm_one_click_subtitle">为 UI 控制器自动创建智谱 autoglm-phone 模型配置，并切换 AutoGLM 工具包。</string>
-    <string name="autoglm_open_apikey_center">前往智谱 API Key 页面</string>
-    <string name="autoglm_open_apikey_tip">登录后，在智谱平台创建并复制 API Key</string>
-    <string name="autoglm_api_key_placeholder">在此粘贴您的智谱 API Key</string>
-    <string name="autoglm_one_click_button">一键配置 AutoGLM</string>
 
     <!-- Process Limit Remover Screen -->
     <string name="process_limit_title">解除幻象进程限制</string>
@@ -2307,15 +2116,6 @@
     <string name="process_limit_error_output">错误输出</string>
     <string name="process_limit_exit_code">退出码：%d</string>
     <string name="process_limit_command">命令</string>
-    <string name="autoglm_status_running">正在执行一键配置，请稍候...</string>
-    <string name="autoglm_status_success">已完成 AutoGLM 一键配置：
-- 已创建或更新 AutoGLM UI 控制器模型配置（autoglm-phone, 智谱）
-- 已将“UI 控制器”功能切换为该配置
-- 已关闭 Automatic_ui_base，打开 Automatic_ui_subagent
-
-现在可以在对话界面使用 AutoGLM 模式了。</string>
-    <string name="autoglm_status_error">一键配置失败：%1$s</string>
-    <string name="autoglm_error_empty_api_key">请先填写智谱 API Key。</string>
 
     <!-- MCP Config Screen -->
     <string name="import_or_connect_mcp_service">导入或连接模型上下文协议服务</string>
@@ -2418,7 +2218,7 @@
     <string name="plugin_zip_file">插件压缩包</string>
     <string name="mcp_plugin">模型上下文协议服务</string>
 
-    <!-- Toolbox Permission Manager -->
+    <!-- 工具权限管理 -->
     <string name="try_different_keywords">尝试使用其他关键词搜索</string>
     <string name="try_show_system_apps">尝试勾选"系统应用"查看更多应用</string>
     <string name="no_apps_found_anywhere">未找到任何应用</string>
@@ -2468,7 +2268,7 @@
     <string name="granted">已授权</string>
     <string name="not_granted">未授权</string>
 
-    <!-- Toolbox Screen -->
+    <!-- 工具页面 -->
 
     <!-- File Manager -->
     <string name="file_manager_title">文件管理器</string>
@@ -2597,37 +2397,8 @@
     <string name="terminal_auto_config_detecting">正在检测环境...</string>
     <string name="terminal_auto_config_applying">正在应用配置...</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_toolbox_title">FFmpeg工具箱</string>
-    <string name="ffmpeg_input_file">输入文件</string>
-    <string name="ffmpeg_output_file">输出文件</string>
-    <string name="ffmpeg_select_input">选择输入文件</string>
-    <string name="ffmpeg_select_output">选择输出路径</string>
-    <string name="ffmpeg_conversion_type">转换类型</string>
-    <string name="ffmpeg_video_conversion">视频转换</string>
-    <string name="ffmpeg_audio_conversion">音频转换</string>
-    <string name="ffmpeg_image_conversion">图片转换</string>
-    <string name="ffmpeg_start_conversion">开始转换</string>
-    <string name="ffmpeg_conversion_progress">转换进度</string>
-    <string name="ffmpeg_conversion_completed">转换完成</string>
-    <string name="ffmpeg_conversion_failed">转换失败</string>
-    <string name="ffmpeg_quality_settings">质量设置</string>
-    <string name="ffmpeg_bitrate">比特率</string>
-    <string name="ffmpeg_resolution">分辨率</string>
-    <string name="ffmpeg_frame_rate">帧率</string>
-    <string name="ffmpeg_codec">编解码器</string>
-    <string name="ffmpeg_advanced_options">高级选项</string>
-    <string name="ffmpeg_custom_parameters">自定义参数</string>
-    <string name="ffmpeg_preview">预览</string>
-    <string name="ffmpeg_file_info">文件信息</string>
-    <string name="ffmpeg_duration">时长</string>
+    <!-- FFmpeg 页面 -->
     <string name="ffmpeg_file_size">文件大小</string>
-    <string name="ffmpeg_format">格式</string>
-    <string name="ffmpeg_processing">正在处理...</string>
-    <string name="ffmpeg_cancel">取消</string>
-    <string name="ffmpeg_no_file_selected">未选择文件</string>
-    <string name="ffmpeg_invalid_file">无效的文件格式</string>
-    <string name="ffmpeg_permission_error">权限错误，无法访问文件</string>
 
     <!-- Log Viewer (Logcat) -->
     <string name="logcat_title">日志查看器</string>
@@ -3164,10 +2935,6 @@
     <string name="tsinghua_source_error">清华源配置错误</string>
     <string name="tsinghua_source_failed">清华源配置失败</string>
     <string name="tsinghua_source_success">清华源配置成功</string>
-    <string name="ffmpeg_video_info">视频信息</string>
-    <string name="ffmpeg_video_info_desc">获取详细的视频文件信息</string>
-    <string name="ffmpeg_video_output_placeholder">输出文件路径(可选)</string>
-    <string name="ffmpeg_video_transcode">视频转码</string>
 
     <!-- ShizukuDemoScreen 字符串 -->
     <string name="loading_app_state">正在加载应用状态...</string>
@@ -4246,15 +4013,11 @@
     <string name="screen_title_terminal_auto_config">终端自动配置</string>
     <string name="screen_title_app_permissions">应用权限管理</string>
     <string name="screen_title_ui_debugger">UI调试工具</string>
-    <string name="screen_title_shell_executor">命令执行器</string>
     <string name="screen_title_logcat">日志查看器</string>
-    <string name="screen_title_ffmpeg_toolbox">FFmpeg工具箱</string>
     <string name="screen_title_markdown_demo">流式Markdown演示</string>
     <string name="screen_title_text_to_speech">文本转语音</string>
     <string name="screen_title_speech_to_text">语音识别</string>
     <string name="screen_title_process_limit_remover">解除幻象进程限制</string>
-    <string name="screen_title_autoglm_one_click">AutoGLM 一键配置</string>
-    <string name="screen_title_autoglm_tool">autoglm执行</string>
     <string name="screen_title_default_assistant_guide">默认助手设置</string>
     <string name="screen_title_mcp_market">模型上下文协议市场</string>
     <string name="screen_title_skill_market">技能市场</string>
@@ -5853,7 +5616,6 @@
     <string name="search_content_block">搜索内容</string>
     <string name="status_info_block">状态信息</string>
     <string name="html_content_block">HTML内容</string>
-    <string name="mood_tag_block">情绪标签</string>
     <string name="thinking_tools_group_title_with_count">思考与工具调用（%1$d）</string>
     <string name="tools_group_title_with_count">工具调用（%1$d）</string>
     <string name="search_group_title">搜索</string>
@@ -6018,19 +5780,7 @@
     <string name="default_assist_collapse">收起</string>
     <string name="default_assist_expand">展开</string>
 
-    <!-- FFmpeg Toolbox -->
-    <string name="ffmpeg_param_input">-i: 输入文件</string>
-    <string name="ffmpeg_param_video_codec">-c:v: 视频编码器</string>
-    <string name="ffmpeg_param_audio_codec">-c:a: 音频编码器</string>
-    <string name="ffmpeg_param_video_bitrate">-b:v: 视频比特率</string>
-    <string name="ffmpeg_param_audio_bitrate">-b:a: 音频比特率</string>
-    <string name="ffmpeg_param_resolution">-s: 分辨率</string>
-    <string name="ffmpeg_param_framerate">-r: 帧率</string>
-    <string name="ffmpeg_command_success">命令执行成功</string>
-    <string name="ffmpeg_command_failed">命令执行失败</string>
-    <string name="ffmpeg_command_label">命令: %1$s</string>
-    <string name="ffmpeg_return_code">返回码: %1$s</string>
-    <string name="ffmpeg_processing_time">处理时间: %1$sms</string>
+    <!-- FFmpeg 页面 -->
 
     <!-- UI Debugger -->
     <string name="uidebugger_current_interface">当前分析界面</string>
@@ -6649,7 +6399,6 @@
     <string name="uidebugger_clear">清除</string>
 
     <!-- Auto GLM Tool Screen -->
-    <string name="autoglm_virtual_screen">本次使用虚拟屏幕</string>
 
     <!-- HTML Packager Screen -->
     <string name="htmlpackager_step1_title">第一步：选择项目文件夹</string>
@@ -6667,20 +6416,6 @@
     <string name="document_block_label">区块 %1$d</string>
 
     <!-- Auto GLM One Click Tool Screen -->
-    <string name="autoglm_go_to_model_config">前往模型配置</string>
-    <string name="autoglm_custom_endpoint">自定义 Endpoint（OpenAI 兼容）</string>
-    <string name="autoglm_model_name">模型名称</string>
-    <string name="autoglm_restore_original">恢复原本的自动化逻辑</string>
-    <string name="autoglm_step1_title">step1 配置基本对话模型</string>
-    <string name="autoglm_step1_warning">不要把autoglm模型作为对话主模型</string>
-    <string name="autoglm_step1_note">注意：如果已经配置过就不需要管了，这里切勿改成 autoglm 等小模型。</string>
-    <string name="autoglm_step2_title">step2 访问智谱官网，获取 API Key</string>
-    <string name="autoglm_step3_title">step3 填入 API Key，点击一键配置</string>
-    <string name="autoglm_hide_advanced">隐藏高级设置</string>
-    <string name="autoglm_show_advanced">显示高级设置（自定义 Endpoint / 模型名称）</string>
-    <string name="autoglm_step4_title">step4 恢复非 AutoGLM 自动化（可选）</string>
-    <string name="autoglm_step4_description">如果你觉得在使用 AutoGLM 一键配置后自动化操作变得困难，可以点击下方按钮恢复为软件原本的自动化逻辑（启用 base 包，关闭 subagent 包，其余设置保持不变）。如果你想再次启用 AutoGLM，只需要按照 step3 输入密钥并再次点击一键配置。</string>
-    <string name="autoglm_restore_success">已恢复为软件原本的自动化逻辑</string>
 
     <!-- UI Debugger Components -->
     <string name="uidebugger_create_new_package">创建新配置包</string>
@@ -6862,9 +6597,6 @@
     <string name="emoticon_shyness">羞</string>
     <string name="emoticon_blush">脸红</string>
     <string name="emoticon_embarrassed">不好意思</string>
-    <string name="autoglm_task_complete">✅ 任务完成: %1$s</string>
-    <string name="autoglm_thinking_process">💭 思考过程:</string>
-    <string name="autoglm_execute_action">🎯 执行动作:</string>
     <string name="version_update">版本更新</string>
     <string name="mcp_no_zip_selected">未选择ZIP文件</string>
     <string name="mcp_uninstall_failed">卸载失败</string>
@@ -6898,58 +6630,9 @@
     <string name="import_key_suffix">导入密钥 %1$s</string>
     <string name="custom_parameters">自定义参数</string>
     <string name="filediff_tool_result">工具执行结果</string>
-    <string name="ffmpeg_use_template">使用此模板</string>
     <string name="filelist_go_back">返回上级目录</string>
 
     <!-- Shell Executor Preset Commands -->
-    <string name="shell_cmd_test">测试命令</string>
-    <string name="shell_cmd_test_command">echo "命令执行器测试成功"</string>
-    <string name="shell_cmd_test_desc">一个简单的测试命令</string>
-    <string name="shell_cmd_sys_info">系统信息</string>
-    <string name="shell_cmd_sys_info_cmd">uname -a</string>
-    <string name="shell_cmd_sys_info_desc">显示系统内核信息</string>
-    <string name="shell_cmd_disk">磁盘使用情况</string>
-    <string name="shell_cmd_disk_cmd">df -h</string>
-    <string name="shell_cmd_disk_desc">显示磁盘空间使用情况</string>
-    <string name="shell_cmd_memory">内存信息</string>
-    <string name="shell_cmd_memory_cmd">cat /proc/meminfo</string>
-    <string name="shell_cmd_memory_desc">显示内存使用详情</string>
-    <string name="shell_cmd_cpu">CPU信息</string>
-    <string name="shell_cmd_cpu_cmd">cat /proc/cpuinfo</string>
-    <string name="shell_cmd_cpu_desc">显示CPU详细信息</string>
-    <string name="shell_cmd_network">网络接口</string>
-    <string name="shell_cmd_network_cmd">ip addr</string>
-    <string name="shell_cmd_network_desc">显示网络接口信息</string>
-    <string name="shell_cmd_route">路由表</string>
-    <string name="shell_cmd_route_cmd">ip route</string>
-    <string name="shell_cmd_route_desc">显示路由表信息</string>
-    <string name="shell_cmd_connection">网络连接</string>
-    <string name="shell_cmd_connection_cmd">cat /proc/net/tcp</string>
-    <string name="shell_cmd_connection_desc">显示网络连接状态</string>
-    <string name="shell_cmd_installed_apps">已安装应用</string>
-    <string name="shell_cmd_installed_apps_cmd">pm list packages</string>
-    <string name="shell_cmd_installed_apps_desc">列出所有已安装的应用包名</string>
-    <string name="shell_cmd_system_apps">系统应用</string>
-    <string name="shell_cmd_system_apps_cmd">pm list packages -s</string>
-    <string name="shell_cmd_system_apps_desc">列出所有系统应用</string>
-    <string name="shell_cmd_3rd_apps">第三方应用</string>
-    <string name="shell_cmd_3rd_apps_cmd">pm list packages -3</string>
-    <string name="shell_cmd_3rd_apps_desc">列出所有第三方应用</string>
-    <string name="shell_cmd_current_dir">当前目录</string>
-    <string name="shell_cmd_current_dir_cmd">ls -la</string>
-    <string name="shell_cmd_current_dir_desc">列出当前目录下所有文件</string>
-    <string name="shell_cmd_root_dir">根目录</string>
-    <string name="shell_cmd_root_dir_cmd">ls -la /</string>
-    <string name="shell_cmd_root_dir_desc">列出根目录下所有文件</string>
-    <string name="shell_cmd_storage">存储空间</string>
-    <string name="shell_cmd_storage_cmd">ls -lh /sdcard</string>
-    <string name="shell_cmd_storage_desc">列出外部存储空间文件</string>
-    <string name="shell_cmd_process">进程列表</string>
-    <string name="shell_cmd_process_cmd">ps</string>
-    <string name="shell_cmd_process_desc">显示系统进程列表</string>
-    <string name="shell_cmd_properties">系统属性</string>
-    <string name="shell_cmd_properties_cmd">getprop</string>
-    <string name="shell_cmd_properties_desc">显示全部系统属性</string>
 
     <!-- Workflow -->
     <string name="workflow_load_failed">加载工作流失败</string>

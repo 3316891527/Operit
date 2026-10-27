@@ -26,16 +26,16 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.graphics.PixelFormat
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.core.app.NotificationCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.api.speech.PersonalWakeListener
-import com.ai.assistance.operit.api.speech.SpeechPrerollStore
-import com.ai.assistance.operit.api.speech.SpeechService
-import com.ai.assistance.operit.api.speech.SpeechServiceFactory
+import com.ai.assistance.operit.api.speech.wake.PersonalWakeListener
+import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
+import com.ai.assistance.operit.api.speech.stt.SttService
+import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
 import com.ai.assistance.operit.core.application.OperitApplication
 import com.ai.assistance.operit.core.chat.AIMessageManager
 import com.ai.assistance.operit.core.application.ActivityLifecycleManager
@@ -74,6 +74,7 @@ import kotlin.system.exitProcess
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeHolder
 
 private fun AudioRecordingConfiguration.tryGetClientUid(): Int? {
     return try {
@@ -722,7 +723,7 @@ class AIForegroundService : Service() {
     private val chatRuntimeHolder by lazy { ChatRuntimeHolder.getInstance(applicationContext) }
     private val wakePrefs by lazy { WakeWordPreferences(applicationContext) }
     @Volatile
-    private var wakeSpeechProvider: SpeechService? = null
+    private var wakeSpeechProvider: SttService? = null
     private val workflowRepository by lazy { WorkflowRepository(applicationContext) }
     private val externalHttpPreferences by lazy { ExternalHttpApiPreferences.getInstance(applicationContext) }
 
@@ -787,10 +788,10 @@ class AIForegroundService : Service() {
 
     private var lastSpeechWorkflowCheckAtMs: Long = 0L
 
-    private fun ensureWakeSpeechProvider(): SpeechService {
+    private fun ensureWakeSpeechProvider(): SttService {
         val existing = wakeSpeechProvider
         if (existing != null) return existing
-        return SpeechServiceFactory.createWakeSpeechService(applicationContext).also {
+        return SttServiceFactory.createWakeSpeechService(applicationContext).also {
             wakeSpeechProvider = it
         }
     }
@@ -1603,9 +1604,9 @@ class AIForegroundService : Service() {
             if (!startOk) {
                 val alreadyRunning =
                     provider.isRecognizing ||
-                        provider.currentState == SpeechService.RecognitionState.PREPARING ||
-                        provider.currentState == SpeechService.RecognitionState.PROCESSING ||
-                        provider.currentState == SpeechService.RecognitionState.RECOGNIZING
+                        provider.currentState == SttService.RecognitionState.PREPARING ||
+                        provider.currentState == SttService.RecognitionState.PROCESSING ||
+                        provider.currentState == SttService.RecognitionState.RECOGNIZING
                 if (!alreadyRunning) {
                     AppLogger.w(TAG, "唤醒识别器 startRecognition failed (will retry)")
                     wakeListeningMicActiveForRecordingDetection = false

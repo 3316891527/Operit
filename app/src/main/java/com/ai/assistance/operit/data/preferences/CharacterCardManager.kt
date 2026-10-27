@@ -34,7 +34,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 import java.util.UUID
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import android.util.Base64
 import java.io.InputStream
 import java.io.File

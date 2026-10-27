@@ -5,7 +5,7 @@ import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okio.Buffer
@@ -18,6 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
+import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
 
 class DeepseekPureThinkingHistoryTest {
 

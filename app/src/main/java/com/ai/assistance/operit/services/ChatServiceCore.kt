@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.services
 
 import android.content.Context
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.data.model.AttachmentInfo
@@ -17,8 +17,8 @@ import com.ai.assistance.operit.services.core.MessageCoordinationDelegate
 import com.ai.assistance.operit.services.core.MessageProcessingDelegate
 import com.ai.assistance.operit.services.core.TokenStatisticsDelegate
 import com.ai.assistance.operit.core.tools.AIToolHandler
-import com.ai.assistance.operit.ui.features.chat.viewmodel.UiStateDelegate
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.process.WorkspaceChangeTracker
+import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.UiStateDelegate
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.process.WorkspaceChangeTracker
 import com.ai.assistance.operit.util.stream.SharedStream
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect

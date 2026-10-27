@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.core.tools.defaultTool.a2ui
 
-import com.ai.assistance.operit.api.chat.enhance.ToolExecutionManager.ToolRuntimeContext
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.ToolRuntimeContext
 import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
 import com.ai.assistance.operit.ui.common.a2ui.CardExpress
 import com.ai.assistance.operit.ui.common.a2ui.CardLiveStore

@@ -2,7 +2,7 @@ package com.ai.assistance.operit.services
 
 import android.app.IntentService
 import android.content.Intent
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.system.AndroidShellExecutor.CommandResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

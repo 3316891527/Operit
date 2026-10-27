@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.tools.defaultTool.accessbility
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.SimplifiedUINode
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.UIActionResultData
@@ -12,11 +12,11 @@ import com.ai.assistance.operit.core.tools.defaultTool.standard.StandardUITools
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.data.repository.UIHierarchyManager
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.ai.assistance.operit.util.ImagePoolManager
+import com.ai.assistance.operit.util.media.ImagePoolManager
 import java.io.StringReader
 import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser

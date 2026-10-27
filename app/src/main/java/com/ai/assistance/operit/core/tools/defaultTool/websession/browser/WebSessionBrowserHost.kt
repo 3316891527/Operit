@@ -39,10 +39,10 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.defaultTool.websession.userscript.ui.WebSessionUserscriptUiStateStore
-import com.ai.assistance.operit.ui.features.websession.browser.WebSessionBrowserScreen
-import com.ai.assistance.operit.ui.features.websession.browser.WebSessionFloatingTheme
-import com.ai.assistance.operit.ui.features.websession.browser.WebSessionMinimizedIndicator
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.ui.features.automation.websession.browser.WebSessionBrowserScreen
+import com.ai.assistance.operit.ui.features.automation.websession.browser.WebSessionFloatingTheme
+import com.ai.assistance.operit.ui.features.automation.websession.browser.WebSessionMinimizedIndicator
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlin.math.roundToInt
 import org.json.JSONTokener
 

@@ -20,16 +20,16 @@ import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.ModelOption
 import com.ai.assistance.operit.data.model.ModelParameter
 import com.ai.assistance.operit.data.model.ToolPrompt
-import com.ai.assistance.operit.api.chat.llmprovider.EndpointCompleter
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
-import com.ai.assistance.operit.util.ThinkingMarkup
-import com.ai.assistance.operit.util.ChatUtils
-import com.ai.assistance.operit.util.HttpLogSanitizer
+import com.ai.assistance.operit.api.chat.transport.EndpointCompleter
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
+import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
+import com.ai.assistance.operit.core.chat.context.ChatUtils
+import com.ai.assistance.operit.util.logging.HttpLogSanitizer
 import com.ai.assistance.operit.util.logging.RequestBodyLogFormatter
-import com.ai.assistance.operit.util.LocaleUtils
-import com.ai.assistance.operit.util.StreamingJsonXmlConverter
-import com.ai.assistance.operit.util.TokenCacheManager
+import com.ai.assistance.operit.util.android.LocaleUtils
+import com.ai.assistance.operit.core.chat.protocol.StreamingJsonXmlConverter
+import com.ai.assistance.operit.core.chat.context.TokenCacheManager
 import com.ai.assistance.operit.util.exceptions.UserCancellationException
 import com.ai.assistance.operit.util.stream.MutableSharedStream
 import com.ai.assistance.operit.util.stream.SharedStream
@@ -58,7 +58,24 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import com.ai.assistance.operit.api.chat.llmprovider.MediaLinkParser
+import com.ai.assistance.operit.core.chat.media.MediaLinkParser
+import com.ai.assistance.operit.api.chat.AIService
+import com.ai.assistance.operit.api.chat.LlmRequestTraceContext
+import com.ai.assistance.operit.api.chat.error.HttpStatusCodeException
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyAttemptReport
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyErrorClass
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyRequestElement
+import com.ai.assistance.operit.api.chat.keypool.FirstTokenWatchdog
+import com.ai.assistance.operit.api.chat.keypool.currentApiKeySession
+import com.ai.assistance.operit.api.chat.keypool.handleKeyAwareRetry
+import com.ai.assistance.operit.api.chat.keypool.parseRetryAfterMs
+import com.ai.assistance.operit.api.chat.keypool.reportKeyAwareFailure
+import com.ai.assistance.operit.api.chat.model.ModelListFetcher
+import com.ai.assistance.operit.api.chat.model.ThinkingConfigurationApplier
+import com.ai.assistance.operit.api.chat.protocol.StructuredToolCallBridge
+import com.ai.assistance.operit.core.chat.media.ImageLink
+import com.ai.assistance.operit.core.chat.media.MediaLink
 
 /**
  * OpenAI API格式的实现，支持标准OpenAI接口和兼容此格式的其他提供商

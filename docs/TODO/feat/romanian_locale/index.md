@@ -21,7 +21,7 @@ Add Romanian as a complete application locale from the upstream Chinese resource
 - `app/src/main/res/values-ro/strings.xml`
 - `app/src/main/res/xml/locales_config.xml`
 - `app/src/main/java/com/ai/assistance/operit/util/LocaleUtils.kt`
-- `app/src/main/java/com/ai/assistance/operit/api/chat/enhance/ConversationService.kt`
+- `app/src/main/java/com/ai/assistance/operit/core/chat/context/ConversationService.kt`
 - This TODO directory
 
 No existing locale is removed or renamed. No Gradle build is part of this work.

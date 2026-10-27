@@ -12,7 +12,7 @@ import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuItemDefinitio
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuItemParams
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuItemPlugin
 import com.ai.assistance.operit.plugins.chatmessage.ChatMessageMenuItemRegistry
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

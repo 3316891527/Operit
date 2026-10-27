@@ -3,17 +3,16 @@ package com.ai.assistance.operit.ui.floating.ui.fullscreen.viewmodel
 import android.content.Context
 import androidx.compose.runtime.*
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.core.avatar.common.state.AvatarEmotion
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.InputProcessingState
 import com.ai.assistance.operit.data.model.PromptFunctionType
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences
 import com.ai.assistance.operit.ui.floating.FloatContext
 import com.ai.assistance.operit.ui.floating.ui.fullscreen.XmlTextProcessor
-import com.ai.assistance.operit.ui.floating.ui.pet.AvatarEmotionManager
+import com.ai.assistance.operit.util.text.XmlTagCleaner
 import com.ai.assistance.operit.ui.floating.voice.SpeechInteractionManager
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.TtsSegmenter
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.speech.text.TtsSegmenter
 import com.ai.assistance.operit.util.stream.Stream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -28,13 +27,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "FloatingFullscreenViewModel"
 private const val FULLSCREEN_TTS_CAPTURE_SUPPRESS_MS = 1200L
-
-data class VoiceAvatarMotionRequest(
-    val emotion: AvatarEmotion = AvatarEmotion.IDLE,
-    val triggerName: String? = null,
-    val playOnce: Boolean = false,
-    val sequence: Long = 0L
-)
 
 class FloatingFullscreenModeViewModel(
     private val context: Context,
@@ -58,8 +50,6 @@ class FloatingFullscreenModeViewModel(
     var attachLocation by mutableStateOf(false)
     var hasOcrSelection by mutableStateOf(false)
     var isStreamingTtsMuted by mutableStateOf(false)
-    var voiceAvatarMotionRequest by mutableStateOf(VoiceAvatarMotionRequest())
-        private set
     
     val isInitialLoad = mutableStateOf(true)
 
@@ -80,9 +70,6 @@ class FloatingFullscreenModeViewModel(
     private var suppressRecognitionUntilMs: Long = 0L
     private var waveModeAutoTimeoutEnabled: Boolean = false
     var isVoiceCapturePausedForAi by mutableStateOf(false)
-    private var voiceAvatarSequence: Long = 0L
-    private var lastHandledVoiceAvatarMessageKey: String? = null
-    private var hasInitializedVoiceAvatarFromSnapshot: Boolean = false
     
     // ===== 语音交互管理器 =====
     val speechManager = SpeechInteractionManager(
@@ -94,7 +81,6 @@ class FloatingFullscreenModeViewModel(
             if (finalText.isNotEmpty()) {
                 aiMessage = context.getString(R.string.floating_thinking)
                 coroutineScope.launch {
-                    startVoiceAvatarThinking()
                     prepareVoiceCaptureForAiTurn()
                     try {
                         maybeAutoAttachByKeyword(finalText)
@@ -198,7 +184,7 @@ class FloatingFullscreenModeViewModel(
         
         if (isInitialLoad.value) {
             isInitialLoad.value = false
-            if (message.sender == "ai") aiMessage = stripVoiceAvatarTags(message.content)
+            if (message.sender == "ai") aiMessage = stripVoiceXmlTags(message.content)
             return
         }
         
@@ -261,7 +247,7 @@ class FloatingFullscreenModeViewModel(
     }
 
     private fun handleStaticResponse(content: String) {
-        val plainContent = stripVoiceAvatarTags(content)
+        val plainContent = stripVoiceXmlTags(content)
         aiMessage = plainContent
     }
 
@@ -366,7 +352,6 @@ class FloatingFullscreenModeViewModel(
         showBottomControls = true
         inactivityJob?.cancel()
         inactivityJob = null
-        resetVoiceAvatarToIdle()
     }
 
     private suspend fun playWakeGreetingIfNeeded(wakeLaunched: Boolean) {
@@ -436,9 +421,6 @@ class FloatingFullscreenModeViewModel(
          isInitialLoad.value = true
          isWaveActive = autoEnterVoiceChat
          showBottomControls = true
-         hasInitializedVoiceAvatarFromSnapshot = false
-         lastHandledVoiceAvatarMessageKey = null
-         resetVoiceAvatarToIdle()
          exitEditMode()
 
         // 获取焦点
@@ -473,9 +455,6 @@ class FloatingFullscreenModeViewModel(
 
         wakeEnterJob?.cancel()
         wakeEnterJob = null
-        hasInitializedVoiceAvatarFromSnapshot = false
-        lastHandledVoiceAvatarMessageKey = null
-        resetVoiceAvatarToIdle()
     }
 
     private fun startInactivityMonitor() {
@@ -552,7 +531,6 @@ class FloatingFullscreenModeViewModel(
     
     fun sendEditedMessage() {
         if (editableText.isNotBlank()) {
-            startVoiceAvatarThinking()
             prepareVoiceCaptureForAiTurn()
             floatContext.onSendMessage?.invoke(editableText, PromptFunctionType.VOICE)
             awaitAiTurnAndResumeVoiceCapture()
@@ -578,7 +556,6 @@ class FloatingFullscreenModeViewModel(
         hasOcrSelection = false
         aiMessage = context.getString(R.string.floating_thinking)
 
-        startVoiceAvatarThinking()
         prepareVoiceCaptureForAiTurn()
 
         coroutineScope.launch {
@@ -650,96 +627,8 @@ class FloatingFullscreenModeViewModel(
         return keywords.any { k -> text.contains(k, ignoreCase = true) }
     }
 
-    fun handleVoiceAvatarMessage(message: ChatMessage?) {
-        if (!hasInitializedVoiceAvatarFromSnapshot) {
-            hasInitializedVoiceAvatarFromSnapshot = true
-            if (message?.sender == "ai" && message.contentStream == null) {
-                lastHandledVoiceAvatarMessageKey = buildVoiceAvatarMessageKey(message)
-                return
-            }
-        }
-
-        when (message?.sender) {
-            "think" -> startVoiceAvatarThinking()
-            "ai" -> {
-                if (message.contentStream != null) {
-                    startVoiceAvatarThinking()
-                    return
-                }
-
-                val messageKey = buildVoiceAvatarMessageKey(message)
-                if (lastHandledVoiceAvatarMessageKey == messageKey) {
-                    return
-                }
-                lastHandledVoiceAvatarMessageKey = messageKey
-
-                val triggerName = AvatarEmotionManager.extractMoodTagValue(message.content)
-                if (!triggerName.isNullOrBlank()) {
-                    pushVoiceAvatarMotion(
-                        emotion = AvatarEmotionManager.analyzeEmotion(message.content),
-                        triggerName = triggerName,
-                        playOnce = true
-                    )
-                    return
-                }
-
-                val emotion = AvatarEmotionManager.analyzeEmotion(message.content)
-                if (emotion == AvatarEmotion.IDLE) {
-                    resetVoiceAvatarToIdle()
-                } else {
-                    pushVoiceAvatarMotion(emotion = emotion, playOnce = true)
-                }
-            }
-        }
-    }
-
-    fun syncVoiceAvatarWithProcessingState(
-        state: InputProcessingState,
-        latestMessage: ChatMessage?
-    ) {
-        val shouldResetThinking =
-            (state is InputProcessingState.Idle || state is InputProcessingState.Error) &&
-                voiceAvatarMotionRequest.triggerName.isNullOrBlank() &&
-                voiceAvatarMotionRequest.emotion == AvatarEmotion.THINKING
-        if (!shouldResetThinking) {
-            return
-        }
-
-        val hasCompletedAiMessage =
-            latestMessage?.sender == "ai" && latestMessage.contentStream == null
-        if (!hasCompletedAiMessage) {
-            resetVoiceAvatarToIdle()
-        }
-    }
-
-    private fun buildVoiceAvatarMessageKey(message: ChatMessage): String {
-        return "${message.sender}:${message.timestamp}:${message.content.hashCode()}:${message.contentStream == null}"
-    }
-
-    private fun pushVoiceAvatarMotion(
-        emotion: AvatarEmotion,
-        triggerName: String? = null,
-        playOnce: Boolean
-    ) {
-        voiceAvatarSequence += 1
-        voiceAvatarMotionRequest = VoiceAvatarMotionRequest(
-            emotion = emotion,
-            triggerName = triggerName,
-            playOnce = playOnce,
-            sequence = voiceAvatarSequence
-        )
-    }
-
-    private fun startVoiceAvatarThinking() {
-        pushVoiceAvatarMotion(emotion = AvatarEmotion.THINKING, playOnce = false)
-    }
-
-    private fun resetVoiceAvatarToIdle() {
-        pushVoiceAvatarMotion(emotion = AvatarEmotion.IDLE, playOnce = false)
-    }
-
-    private fun stripVoiceAvatarTags(content: String): String {
-        return AvatarEmotionManager.stripXmlLikeTags(content)
+    private fun stripVoiceXmlTags(content: String): String {
+        return XmlTagCleaner.stripXmlLikeTags(content)
     }
 }
 

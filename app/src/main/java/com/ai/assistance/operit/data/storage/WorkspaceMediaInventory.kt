@@ -2,7 +2,7 @@ package com.ai.assistance.operit.data.storage
 
 import android.content.Context
 import com.ai.assistance.operit.data.repository.ChatHistoryManager
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first

@@ -1,6 +1,11 @@
 package com.ai.assistance.operit.util.stream.plugins
 
 import com.ai.assistance.operit.util.stream.*
+import com.ai.assistance.operit.util.stream.StreamKmpGraph
+import com.ai.assistance.operit.util.stream.StreamKmpGraphBuilder
+import com.ai.assistance.operit.util.stream.StreamKmpMatchResult
+import com.ai.assistance.operit.util.stream.kmpPattern
+import com.ai.assistance.operit.util.stream.state
 
 /**
  * A collection of StreamPlugins for parsing various Markdown constructs.

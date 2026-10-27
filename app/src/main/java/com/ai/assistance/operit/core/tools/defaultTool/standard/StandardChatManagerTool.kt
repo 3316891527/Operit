@@ -8,8 +8,8 @@ import android.os.Build
 import android.os.IBinder
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
-import com.ai.assistance.operit.api.chat.ChatRuntimeHolder
-import com.ai.assistance.operit.api.chat.ChatRuntimeSlot
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeHolder
+import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeSlot
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
 import com.ai.assistance.operit.core.tools.AgentStatusResultData
@@ -40,8 +40,8 @@ import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.services.ChatServiceCore
 import com.ai.assistance.operit.services.FloatingChatService
 import com.ai.assistance.operit.ui.floating.FloatingMode
-import com.ai.assistance.operit.util.AppLogger
-import com.ai.assistance.operit.util.ChatMarkupRegex
+import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import com.ai.assistance.operit.util.stream.SharedStream
 import java.time.ZoneId

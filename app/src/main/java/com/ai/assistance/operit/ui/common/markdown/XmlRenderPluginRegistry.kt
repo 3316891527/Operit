@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.common.markdown
 
-import com.ai.assistance.operit.ui.features.chat.voicemessages.VoiceMessageXmlPlugin
+import com.ai.assistance.operit.ui.features.conversation.chat.voicemessages.VoiceMessageXmlPlugin
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +31,7 @@ import com.ai.assistance.operit.core.tools.packTool.ToolPkgComposeDslRenderResul
 import com.ai.assistance.operit.ui.common.composedsl.LocalComposeDslXmlStream
 import com.ai.assistance.operit.ui.common.composedsl.RenderToolPkgComposeDslNode
 import com.ai.assistance.operit.ui.common.composedsl.RetainToolPkgComposeDslActions
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.stream.Stream
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CancellationException

@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.workflow
 import android.content.Context
 import com.ai.assistance.operit.core.workflow.scheduling.WorkflowSchedulePlan
 import com.ai.assistance.operit.data.repository.WorkflowRepository
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

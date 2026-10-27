@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.work.*
 import com.ai.assistance.operit.core.workflow.scheduling.WorkflowSchedulePlan
 import com.ai.assistance.operit.data.model.Workflow
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

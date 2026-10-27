@@ -256,7 +256,7 @@ object PackageTemplateFactory {
              * 宿主加载这个 .toolpkg 时会调用它，让你声明 UI、钩子、菜单项等。
              *
              * 这里只能做“注册声明”：
-             * - 可以调用 ToolPkg.registerToolboxUiModule / registerChatMessageMenuItem 等
+             * - 可以调用 ToolPkg.registerUiModule / registerChatMessageMenuItem 等
              * - 不可以 ToolPkg.readResource(...)
              * - 不可以 ToolPkg.wasm.call(...)
              * 读资源和调用 WASM 会在注册阶段直接抛错。

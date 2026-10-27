@@ -97,7 +97,7 @@
         tools:targetApi="31"
         tools:replace="android:theme,android:icon,android:roundIcon">
         <activity
-            android:name=".ui.features.resources.OfflineResourcesActivity"
+            android:name=".ui.features.management.resources.OfflineResourcesActivity"
             android:exported="false" />
 
 
@@ -171,7 +171,7 @@
         
         <!-- Workspace Documents Provider for SAF -->
         <provider
-            android:name=".provider.WorkspaceDocumentsProvider"
+            android:name=".integrations.documents.WorkspaceDocumentsProvider"
             android:authorities="${applicationId}.documents.workspace"
             android:exported="true"
             android:grantUriPermissions="true"
@@ -182,7 +182,7 @@
         </provider>
 
         <provider
-            android:name=".provider.MemoryDocumentsProvider"
+            android:name=".integrations.documents.MemoryDocumentsProvider"
             android:authorities="${applicationId}.documents.memory"
             android:exported="true"
             android:grantUriPermissions="true"
@@ -193,7 +193,7 @@
         </provider>
 
         <provider
-            android:name=".provider.OperitDataDocumentsProvider"
+            android:name=".integrations.documents.OperitDataDocumentsProvider"
             android:authorities="${applicationId}.documents.data"
             android:exported="true"
             android:grantUriPermissions="true"
@@ -410,7 +410,7 @@
         
         <!-- Voice Assistant Widget Receiver -->
         <receiver
-            android:name=".widget.VoiceAssistantWidgetReceiver"
+            android:name=".integrations.appwidget.VoiceAssistantWidgetReceiver"
             android:exported="true"
             android:enabled="true">
             <intent-filter>
@@ -422,7 +422,7 @@
         </receiver>
 
         <receiver
-            android:name=".widget.ToolPkgDesktopWidgetReceiver"
+            android:name=".integrations.appwidget.ToolPkgDesktopWidgetReceiver"
             android:exported="true"
             android:enabled="true"
             android:label="@string/toolpkg_widget_host_label">
@@ -435,7 +435,7 @@
         </receiver>
 
         <activity
-            android:name=".widget.ToolPkgDesktopWidgetConfigActivity"
+            android:name=".integrations.appwidget.ToolPkgDesktopWidgetConfigActivity"
             android:exported="true"
             android:excludeFromRecents="true"
             android:label="@string/toolpkg_widget_picker_title"

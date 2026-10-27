@@ -8,7 +8,7 @@ import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
 import com.ai.assistance.operit.data.storage.LocalModelUsageHandle
 import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
-import com.ai.assistance.operit.util.AppLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.PackageToolExecutor
@@ -36,9 +36,9 @@ import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.data.model.PackageToolPromptCategory
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.ui.features.chat.webview.workspace.WorkspaceConfig
-import com.ai.assistance.operit.widget.ToolPkgDesktopWidgetHost
-import com.ai.assistance.operit.util.OperitPaths
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceConfig
+import com.ai.assistance.operit.integrations.appwidget.ToolPkgDesktopWidgetHost
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.util.ToolPkgWasmRuntime
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -166,7 +166,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val workspaceTemplateCount: Int,
         val uiModuleCount: Int,
         val wasmModules: List<ToolPkgWasmModule>,
-        val toolboxUiModules: List<ToolPkgToolboxUiModule>,
+        val uiModules: List<ToolPkgUiModule>,
         val subpackages: List<ToolPkgSubpackageInfo>,
         val workflowTemplates: List<ToolPkgWorkflowTemplate>,
         val workspaceTemplates: List<ToolPkgWorkspaceTemplate>,
@@ -227,7 +227,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val workspaceConfig: WorkspaceConfig
     )
 
-    data class ToolPkgToolboxUiModule(
+    data class ToolPkgUiModule(
         val containerPackageName: String,
         val toolPkgId: String,
         val routeId: String,

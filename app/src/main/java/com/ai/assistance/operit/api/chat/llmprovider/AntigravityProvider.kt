@@ -17,6 +17,7 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import com.ai.assistance.operit.api.chat.keypool.ApiKeyProvider
 
 private class AntigravityAccessTokenProvider(
     private val authManager: AntigravityAuthManager,
