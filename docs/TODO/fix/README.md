@@ -104,3 +104,5 @@
 - [use_package 激活失败状态](use-package-result/index.md)
 
 - [应用升级保留外置扩展安装](upgrade-package-preservation/index.md)
+
+- [移植 DSL 与设置页滚动状态修复](scroll-state-preservation/index.md)
