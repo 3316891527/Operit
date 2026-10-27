@@ -8909,7 +8909,7 @@
 <string name="model_config_save_group_order_failed">保存分组顺序失败</string>
 <string name="model_config_save_order_failed">保存配置顺序失败</string>
 <string name="model_config_toggle_group">折叠或展开配置组</string>
-<string name="api_key_first_token_timeout">等待首字超时，正在切换密钥</string>
+<string name="api_key_first_token_timeout">等待首个有效输出超过10分钟，客户端已取消本次请求</string>
 <string name="api_key_pool_add_short">添加密钥</string>
 <string name="api_key_pool_delete_hint">删除后无法恢复，不会同时清掉主 API</string>
 <string name="api_key_pool_delete_keys">删除密钥</string>

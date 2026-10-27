@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.error.RequestFailure
+import com.ai.assistance.operit.api.chat.error.RequestFailureDescription
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.llmprovider.LlmRetryPolicy
 import android.content.Context
 import com.ai.assistance.operit.R
@@ -95,14 +98,14 @@ internal suspend fun handleKeyAwareRetry(
     ApiKeyFailureClassifier.poolExhausted(exception)?.let { throw it }
     val retryMode = ApiRequestRetryPolicy.mode(exception)
     val errorClass = ApiKeyFailureClassifier.classify(exception)
-    val transportError = if (retryMode == ApiRequestRetryMode.RETRY &&
-        (errorClass == ApiKeyErrorClass.NETWORK || errorClass == ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT)
-    ) ApiTransportError.describe(exception) else null
+    val requestFailure = RequestFailure.describe(exception)?.takeIf {
+        it.reason != null || it.providerError != null || it.requestContext != null
+    }
     val endpointHint = if (ApiKeyFailureClassifier.isEndpointError(exception)) {
         context.getString(R.string.api_key_pool_endpoint_error, exception.message.orEmpty())
     } else null
     val errorText =
-        endpointHint ?: transportError?.json(
+        endpointHint ?: requestFailure?.json(
             attempt = attemptNumber,
             retryable = enableRetry && retryMode == ApiRequestRetryMode.RETRY,
         )
@@ -131,7 +134,7 @@ internal suspend fun handleKeyAwareRetry(
     if (decision.exhausted) {
         val summary = session?.triedSummary()
         val message =
-            transportError?.json(
+            requestFailure?.json(
                 attempt = attemptNumber,
                 retryable = false,
             ) ?: if (summary != null && summary.attempted > 0) {
@@ -152,9 +155,9 @@ internal suspend fun handleKeyAwareRetry(
     onRetryAccepted()
     // 换钥同样报告本次失败，不能只更新“正在重试”却隐藏具体原因。
     val retryMessage =
-        transportError?.json(
+        requestFailure?.json(
             attempt = attemptNumber,
-            retry = ApiTransportErrorDescription.RetryInfo(
+            retry = RequestFailureDescription.RetryInfo(
                 nextAttempt = attemptNumber + 1,
                 delayMs = decision.delayMs,
             ),

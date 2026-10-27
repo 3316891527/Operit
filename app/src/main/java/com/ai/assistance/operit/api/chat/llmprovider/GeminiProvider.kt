@@ -1,5 +1,12 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
+import com.ai.assistance.operit.api.chat.error.RequestFailure
+import com.ai.assistance.operit.api.chat.error.RequestFailureTrace
+import com.ai.assistance.operit.api.chat.error.RequestFailureCode
+import com.ai.assistance.operit.api.chat.error.RequestFailureException
+import com.ai.assistance.operit.api.chat.error.ResponseJson
+import com.ai.assistance.operit.api.chat.error.ProviderResponseErrors
+import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
 import com.ai.assistance.operit.api.chat.keypool.*
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import com.ai.assistance.operit.util.AppLogger
@@ -1081,7 +1088,7 @@ open class GeminiProvider(
         val exceptionMessage = context.getString(R.string.gemini_error_response_failed, detail)
 
         logError("API返回错误: $detail")
-        throw IOException(exceptionMessage)
+        throw ProviderResponseErrors.exception("gemini", error, exceptionMessage)
     }
 
     private fun resolveRetryErrorText(context: Context, exception: Exception): String {
@@ -1216,6 +1223,7 @@ open class GeminiProvider(
                 throw UserCancellationException(context.getString(R.string.gemini_error_request_cancelled))
             }
             
+            var attemptCall: okhttp3.Call? = null
             try {
                 outputStoppedByLimit = false
                 if (retryCount > 0) {
@@ -1233,7 +1241,8 @@ open class GeminiProvider(
                 )
                 val request = createRequest(context, requestBody, stream, requestId) // 根据stream参数决定使用流式还是非流式
 
-                val call = client.newCall(request)
+                val call = client.newCall(RequestFailureTrace.attach(request))
+                attemptCall = call
                 activeCall = call
                 watchdog.start(call)
 
@@ -1322,7 +1331,10 @@ open class GeminiProvider(
                 lastException = e
                 retryCount = handleRetryableError(
                     context = context,
-                    exception = if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
+                    exception = RequestFailure.capture(
+                        if (watchdog.timedOut) FirstTokenTimeoutException(e.message ?: "", e) else e,
+                        attemptCall,
+                    ),
                     retryCount = retryCount,
                     maxRetries = maxRetries,
                     enableRetry = enableRetry,
@@ -1544,7 +1556,7 @@ open class GeminiProvider(
             attemptNumber: Int = 1
     ) {
         AppLogger.d(TAG, "开始处理响应流")
-        val responseBody = response.body ?: throw IOException(context.getString(R.string.gemini_response_empty))
+        val responseBody = response.body ?: throw RequestFailureException(RequestFailureCode.RESPONSE_BODY_MISSING, context.getString(R.string.gemini_response_empty))
         val reader = responseBody.charStream().buffered()
         val responseState = GeminiResponseState()
 
@@ -1577,6 +1589,7 @@ open class GeminiProvider(
                     // 处理SSE数据
                     if (line.startsWith("data: ")) {
                         val data = line.substring(6).trim()
+                        if (data.isEmpty()) return@forEach
                         dataCount++
 
                         // 跳过结束标记
@@ -1588,7 +1601,7 @@ open class GeminiProvider(
 
                         try {
                             // 立即解析每个SSE数据行的JSON
-                            val json = unwrapStreamingPayload(JSONObject(data))
+                            val json = unwrapStreamingPayload(ResponseJson.parseObject(data, streaming = true))
                             jsonCount++
 
                             val extraction = extractContentFromJson(
@@ -1618,6 +1631,7 @@ open class GeminiProvider(
                             throw e
                         } catch (e: Exception) {
                             logError("解析SSE响应数据失败: ${e.message}", e)
+                            throw ResponseJson.schemaFailure(e)
                         }
                     } else if (line.trim().isNotEmpty()) {
                         // 处理可能分段的JSON数据
@@ -1650,9 +1664,9 @@ open class GeminiProvider(
                                     logDebug("尝试解析完整JSON: ${possibleComplete.take(50)}...")
                                     val jsonContent =
                                             if (jsonStartSymbol == '[') {
-                                                JSONArray(possibleComplete)
+                                                ResponseJson.parseArray(possibleComplete, streaming = true)
                                             } else {
-                                                JSONObject(possibleComplete)
+                                                ResponseJson.parseObject(possibleComplete, streaming = true)
                                             }
 
                                     // 解析成功，处理内容
@@ -1732,8 +1746,7 @@ open class GeminiProvider(
                                 } else {
                                     // 深度为0但解析失败，可能是无效JSON
                                     logError("JSON解析失败: ${e.message}", e)
-                                    isCollectingJson = false
-                                    completeJsonBuilder.clear()
+                                    throw ResponseJson.schemaFailure(e)
                                 }
                             }
                         }
@@ -1751,9 +1764,9 @@ open class GeminiProvider(
 
                     val jsonContent =
                             if (jsonStartSymbol == '[') {
-                                JSONArray(finalJson)
+                                ResponseJson.parseArray(finalJson, streaming = true)
                             } else {
-                                JSONObject(finalJson)
+                                ResponseJson.parseObject(finalJson, streaming = true)
                             }
                     // 处理内容
                     when (jsonContent) {
@@ -1811,11 +1824,12 @@ open class GeminiProvider(
                     throw e
                 } catch (e: Exception) {
                     logError("解析最终收集的JSON失败: ${e.message}", e)
+                    throw ResponseJson.schemaFailure(e)
                 }
             }
 
             if (!streamCompletionConfirmed) {
-                throw IOException(context.getString(R.string.provider_error_network_interrupted))
+                throw RequestFailureException(RequestFailureCode.STREAM_COMPLETION_MISSING, context.getString(R.string.provider_error_network_interrupted))
             }
 
             // 确保思考模式正确结束
@@ -1835,7 +1849,7 @@ open class GeminiProvider(
             throw e
         } catch (e: Exception) {
             logError("处理响应时发生异常: ${e.message}", e)
-            throw e
+            throw RequestFailure.captureFromRequest(ResponseJson.schemaFailure(e), response.request)
         } finally {
             activeCall = null
         }
@@ -1854,7 +1868,7 @@ open class GeminiProvider(
             attemptNumber: Int = 1
     ) {
         AppLogger.d(TAG, "开始处理非流式响应")
-        val responseBody = response.body ?: throw IOException(context.getString(R.string.gemini_response_empty))
+        val responseBody = response.body ?: throw RequestFailureException(RequestFailureCode.RESPONSE_BODY_MISSING, context.getString(R.string.gemini_response_empty))
         val responseState = GeminiResponseState()
 
         suspend fun reportUsage(usage: com.ai.assistance.operit.data.stats.ProviderUsageSnapshot?) {
@@ -1866,7 +1880,7 @@ open class GeminiProvider(
             logDebug("收到完整响应，长度: ${responseText.length}")
             
             // 解析JSON响应，并通过 unwrapStreamingPayload 解包外层 response（兼容 Antigravity 等提供商）
-            val json = unwrapStreamingPayload(JSONObject(responseText))
+            val json = unwrapStreamingPayload(ResponseJson.parseObject(responseText, streaming = false))
             
             // 提取内容
             val extraction = extractContentFromJson(
@@ -1903,7 +1917,7 @@ open class GeminiProvider(
             throw e
         } catch (e: Exception) {
             logError("处理非流式响应时发生异常: ${e.message}", e)
-            throw e
+            throw RequestFailure.captureFromRequest(ResponseJson.schemaFailure(e), response.request)
         } finally {
             activeCall = null
         }
@@ -2208,7 +2222,7 @@ open class GeminiProvider(
             throw e
         } catch (e: Exception) {
             logError("提取内容时发生错误: ${e.message}", e)
-            return GeminiContentExtractionResult("", usage)
+            throw ResponseJson.schemaFailure(e)
         }
     }
 

@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.api.chat.llmprovider
 
+import com.ai.assistance.operit.api.chat.error.RequestFailureTrace
+import com.ai.assistance.operit.api.chat.error.RequestPhase
 import android.content.Context
 import com.ai.assistance.operit.api.chat.enhance.streaming.ConfiguredStreamingAIService
 import com.ai.assistance.llama.LlamaSession
@@ -39,19 +41,23 @@ internal data class LlmRequestTraceContext(
 
 private object LlmNetworkEventListenerFactory : EventListener.Factory {
     override fun create(call: Call): EventListener {
-        return LlmNetworkEventListener(call.request().tag(LlmRequestTraceContext::class.java))
+        return LlmNetworkEventListener(
+            call.request().tag(LlmRequestTraceContext::class.java),
+            call.request().tag(RequestFailureTrace::class.java),
+        )
     }
 }
 
 private class LlmNetworkEventListener(
-    private val traceContext: LlmRequestTraceContext?
+    private val traceContext: LlmRequestTraceContext?,
+    private val failureTrace: RequestFailureTrace?,
 ) : EventListener() {
     private val startedAtNs = System.nanoTime()
 
     private fun elapsedMs(): Long = (System.nanoTime() - startedAtNs) / 1_000_000
 
     private fun prefix(): String {
-        val requestId = traceContext?.requestId ?: "unknown"
+        val requestId = traceContext?.requestId ?: failureTrace?.requestId ?: "unknown"
         val provider = traceContext?.provider ?: "unknown"
         val model = traceContext?.model ?: "unknown"
         val attempt = traceContext?.attempt ?: -1
@@ -97,6 +103,7 @@ private class LlmNetworkEventListener(
     }
 
     override fun dnsStart(call: Call, domainName: String) {
+        failureTrace?.phase = RequestPhase.DNS
         log("dnsStart", "host=$domainName")
     }
 
@@ -105,10 +112,12 @@ private class LlmNetworkEventListener(
     }
 
     override fun connectStart(call: Call, inetSocketAddress: InetSocketAddress, proxy: Proxy) {
+        failureTrace?.phase = RequestPhase.CONNECT
         log("connectStart", "target=${formatSocketAddress(inetSocketAddress)}, proxy=${proxy.type()}")
     }
 
     override fun secureConnectStart(call: Call) {
+        failureTrace?.phase = RequestPhase.TLS
         log("secureConnectStart")
     }
 
@@ -155,6 +164,7 @@ private class LlmNetworkEventListener(
     }
 
     override fun requestHeadersStart(call: Call) {
+        failureTrace?.phase = RequestPhase.REQUEST_HEADERS
         log("requestHeadersStart")
     }
 
@@ -163,22 +173,28 @@ private class LlmNetworkEventListener(
     }
 
     override fun requestBodyStart(call: Call) {
+        failureTrace?.phase = RequestPhase.REQUEST_BODY
         log("requestBodyStart")
     }
 
     override fun requestBodyEnd(call: Call, byteCount: Long) {
+        failureTrace?.requestBodySent = true
         log("requestBodyEnd", "bytes=$byteCount")
     }
 
     override fun responseHeadersStart(call: Call) {
+        failureTrace?.phase = RequestPhase.RESPONSE_HEADERS
         log("responseHeadersStart")
     }
 
     override fun responseHeadersEnd(call: Call, response: Response) {
+        failureTrace?.httpStatus = response.code
+        failureTrace?.providerRequestId = response.header("x-request-id") ?: response.header("request-id")
         log("responseHeadersEnd", "code=${response.code}, message=${response.message}")
     }
 
     override fun responseBodyStart(call: Call) {
+        failureTrace?.phase = RequestPhase.RESPONSE_BODY
         log("responseBodyStart")
     }
 

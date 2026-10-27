@@ -8683,7 +8683,7 @@ Acum poate fi utilizat în interfața de dialog AutoGLM A devenit un model.</str
 <string name="model_config_save_group_order_failed">Salvarea ordinii grupurilor a eșuat</string>
 <string name="model_config_save_order_failed">Salvarea ordinii configurațiilor a eșuat</string>
 <string name="model_config_toggle_group">Restrânge sau extinde grupul de configurații</string>
-<string name="api_key_first_token_timeout">Expirarea așteptării primului token, se schimbă cheia</string>
+<string name="api_key_first_token_timeout">Fără primul rezultat în 10 minute; clientul a anulat această cerere</string>
 <string name="api_key_pool_add_short">Adaugă cheie</string>
 <string name="api_key_pool_delete_hint">Nu se poate anula. Cheia API principală nu este ștearsă.</string>
 <string name="api_key_pool_delete_keys">Șterge chei</string>

@@ -1,29 +1,35 @@
 package com.ai.assistance.operit.api.chat.keypool
 
+import com.ai.assistance.operit.api.chat.error.RequestFailure
+import com.ai.assistance.operit.api.chat.error.RequestFailureCode
+import com.ai.assistance.operit.api.chat.error.RequestFailureDomain
+import com.ai.assistance.operit.api.chat.error.ProviderResponseException
 import com.ai.assistance.operit.api.chat.llmprovider.HttpStatusCodeException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 object ApiKeyFailureClassifier {
     fun classify(exception: Throwable): ApiKeyErrorClass {
         if (poolExhausted(exception) != null) return ApiKeyErrorClass.NONE
+        val description = RequestFailure.describe(exception)
+        description?.providerError?.let { return classifyProvider(it) }
+        description?.reason?.let { reason ->
+            return when {
+                reason == RequestFailureCode.FIRST_TOKEN_TIMEOUT -> ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT
+                description.domain == RequestFailureDomain.TRANSPORT -> ApiKeyErrorClass.NETWORK
+                else -> ApiKeyErrorClass.NONE
+            }
+        }
         var current: Throwable? = exception
         while (current != null) {
-            when (current) {
-                is FirstTokenTimeoutException -> return ApiKeyErrorClass.FIRST_TOKEN_TIMEOUT
-                is SocketTimeoutException -> return ApiKeyErrorClass.NETWORK
-                is UnknownHostException -> return ApiKeyErrorClass.NETWORK
-                is HttpStatusCodeException -> return classifyHttp(current.statusCode, current.message)
-            }
+            if (current is HttpStatusCodeException) return classifyHttp(current.statusCode, current.message)
             current = current.cause
         }
-        // 请求层可能包装异常，内层的余额或鉴权信息同样参与错误分类。
+        // 旧的 HTTP/鉴权包装继续兼容，但不为未知异常虚构网络分类。
         current = exception
         while (current != null) {
             classifyByMessage(current.message.orEmpty())?.let { return it }
             current = current.cause
         }
-        return ApiKeyErrorClass.NETWORK
+        return ApiKeyErrorClass.NONE
     }
 
     fun poolExhausted(exception: Throwable): ApiKeyPoolExhaustedException? {
@@ -80,6 +86,17 @@ object ApiKeyFailureClassifier {
             429 -> ApiKeyErrorClass.RATE_LIMIT
             in 500..599 -> ApiKeyErrorClass.SERVER
             else -> classifyByMessage(message.orEmpty()) ?: ApiKeyErrorClass.NETWORK
+        }
+    }
+
+    private fun classifyProvider(error: ProviderResponseException): ApiKeyErrorClass {
+        val fields = listOfNotNull(error.providerCode, error.providerType).map { it.lowercase() }
+        return when {
+            fields.any { it in setOf("insufficient_quota", "quota_exceeded", "402") } -> ApiKeyErrorClass.QUOTA
+            fields.any { it in setOf("rate_limit_exceeded", "rate_limit_error", "resource_exhausted", "429") } -> ApiKeyErrorClass.RATE_LIMIT
+            fields.any { it in setOf("invalid_api_key", "authentication_error", "unauthenticated", "permission_denied", "401", "403") } -> ApiKeyErrorClass.AUTH
+            fields.any { it == "model_not_found" } -> ApiKeyErrorClass.MODEL
+            else -> ApiKeyErrorClass.SERVER
         }
     }
 
