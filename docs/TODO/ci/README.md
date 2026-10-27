@@ -22,3 +22,5 @@
 - [STT 模型构建期自动准备](stt_model_asset_sync/index.md) · `stt_model_asset_sync`
 
 - [工作流发布与 dev 检查同步](workflow-publishing-sync/index.md)
+
+- [固定资源只在变化时发布](resource-publication-idempotence/index.md)
