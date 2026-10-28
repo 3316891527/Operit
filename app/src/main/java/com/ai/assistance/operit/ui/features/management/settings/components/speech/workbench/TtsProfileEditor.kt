@@ -200,7 +200,6 @@ private fun OnlineTtsVoiceFields(profile: TtsProfile, onChange: (TtsHttpConfig) 
     val context = LocalContext.current
     val config = profile.httpConfig
     val type = profile.serviceType
-    val adjustments = draft.adjustmentControls()
     var panel by remember(type) { mutableStateOf<String?>(null) }
     var remoteVoices by remember(type, config.urlTemplate, config.apiKey) { mutableStateOf<List<TtsService.Voice>>(emptyList()) }
     var models by remember(type, config.urlTemplate, config.apiKey) { mutableStateOf<List<SpeechChoice>>(emptyList()) }
