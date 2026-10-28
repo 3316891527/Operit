@@ -8,7 +8,6 @@ import com.ai.assistance.operit.ui.features.management.settings.components.speec
 @Composable
 fun SpeechServicesSettingsScreen(
     onBackPressed: () -> Unit,
-    onNavigateToTextToSpeech: () -> Unit = {},
     initialTabIndex: Int = 0,
 ) {
     SpeechServicesWorkbench(initialTabIndex = initialTabIndex)

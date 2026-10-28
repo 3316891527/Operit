@@ -1827,7 +1827,6 @@
     <string name="text_variable_info">Text Variable: %1$s</string>
     <string name="contains_sub_operations">Contains %1$d sub-operations</string>
     <string name="operation_type">Operation Type: %1$s</string>
-    <string name="tts_demo">Text-to-Speech Demo</string>
     <string name="input_text">Input Text</string>
     <string name="speech_settings">Speech Settings</string>
     <string name="speech_rate">Speech Rate: %1$sx</string>
@@ -1930,39 +1929,13 @@
     <string name="tool_file_manager_desc">Browse and manage device files with various operations support</string>
     <string name="tool_tts">Text-to-Speech</string>
     <string name="tool_tts_desc">Convert text to speech with adjustable speed and pitch</string>
-    <string name="tts_title">Text-to-Speech Demo</string>
     <string name="tts_input_text">Input Text</string>
-    <string name="tts_input_hint">Please enter text to convert to speech</string>
-    <string name="tts_speech_settings">Speech Settings</string>
-    <string name="tts_speech_rate">Speech rate: %sx</string>
-    <string name="tts_speech_pitch">Pitch: %sx</string>
-    <string name="tts_play">Play</string>
-    <string name="tts_play_speech">Play Speech</string>
-    <string name="tts_stop">Stop</string>
     <string name="tts_stop_speech">Stop Playback</string>
-    <string name="tts_engine_initialized">Speech engine initialized</string>
-    <string name="tts_engine_not_initialized">Speech engine not initialized</string>
     <string name="tts_playing">Playing...</string>
-    <string name="tts_not_playing">Not playing</string>
-    <string name="tts_error">Error</string>
-    <string name="tts_error_details">Error Details:</string>
-    <string name="tts_debug_info">Debug Info:</string>
-    <string name="tts_clear_error">Clear Error</string>
-    <string name="tts_clear_error_message">Clear Error Message</string>
-    <string name="tts_usage_instructions">Usage Instructions</string>
-    <string name="tts_accessibility_note">Note: Accessibility service must be enabled in system settings on first use</string>
     <string name="tts_init_failed">Failed to initialize speech engine</string>
-    <string name="tts_init_error">Speech engine initialization error</string>
     <string name="tts_speak_failed">Failed to play text</string>
-    <string name="tts_speak_error">Text playback error: %s</string>
     <string name="tts_stop_error">Stop playback error: %s</string>
     <string name="tts_input_empty">Please enter text to convert to speech</string>
-    <string name="tts_debug_service_type">Service type: %s</string>
-    <string name="tts_debug_params">Request params: Text=\'%1$s\', Rate=%2$sx, Pitch=%3$sx</string>
-    <string name="tts_debug_params_with_service">Request params: Text=\'%1$s\', Rate=%2$sx, Pitch=%3$sx\nService type: %4$s</string>
-    <string name="tts_init_error_details">Service initialization method returned false, but no exception was thrown</string>
-    <string name="tts_speak_error_details">TTS service returned failure status, please check configuration and network connection</string>
-    <string name="tts_usage_instructions_content">1. Enter text to convert to speech in the input box\n2. Adjust speech rate and pitch settings\n3. Click \"Play Speech\" button to start playback\n4. Click \"Stop Playback\" button to stop playback\n5. If an error occurs, view detailed error information and debug info\n6. Use \"Clear Error Message\" button to clear error display</string>
     <string name="tool_speech_recognition">Speech Recognition</string>
     <string name="tool_speech_recognition_desc">Convert speech to text with multiple engines and languages support</string>
     <string name="tool_permission_manager">App Permission Manager</string>
@@ -2425,19 +2398,14 @@
     <string name="speech_services_service_type">Service Type</string>
     <string name="speech_services_tts_engine">TTS Engine</string>
     <string name="speech_services_stt_engine">STT Engine</string>
-    <string name="speech_services_dropdown_expand">Expand dropdown</string>
 
     <!-- TTS Service Types -->
     <string name="speech_services_tts_type_simple">System TTS (Simple)</string>
-    <string name="speech_services_simple_tts_settings">System TTS Settings</string>
-    <string name="speech_services_simple_tts_desc">Choose a specific language and voice for system TTS to avoid devices failing on the default locale.</string>
     <string name="speech_services_simple_tts_locale">Language</string>
     <string name="speech_services_simple_tts_locale_follow_system">Follow system language</string>
     <string name="speech_services_simple_tts_voice">System voice</string>
     <string name="speech_services_simple_tts_voice_default">Use system default voice</string>
     <string name="speech_services_simple_tts_voice_select">Select system voice</string>
-    <string name="speech_services_simple_tts_voice_clear">Clear system voice</string>
-    <string name="speech_services_simple_tts_loading">Loading system TTS voices…</string>
     <string name="speech_services_tts_type_http">HTTP API (Remote)</string>
     <string name="speech_services_tts_type_siliconflow">SiliconFlow TTS</string>
     <string name="speech_services_tts_type_minimax">MiniMax TTS</string>
@@ -4057,7 +4025,6 @@
     <string name="screen_title_ui_debugger">UI Debugger</string>
     <string name="screen_title_logcat">Log Viewer</string>
     <string name="screen_title_markdown_demo">Streaming Markdown Demo</string>
-    <string name="screen_title_text_to_speech">Text to Speech</string>
     <string name="screen_title_speech_to_text">Speech Recognition</string>
     <string name="screen_title_process_limit_remover">Phantom Process Limit Remover</string>
     <string name="screen_title_default_assistant_guide">Default Assistant Setup</string>

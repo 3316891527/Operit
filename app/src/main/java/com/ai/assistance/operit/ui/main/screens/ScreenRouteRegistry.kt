@@ -169,10 +169,6 @@ object ScreenRouteRegistry {
             hostEntryDefinition(entryId = "hidden.html_packager", screen = Screen.HtmlPackager),
             // 原生功能页面提供独立路由，供内部入口和插件导航使用。
             hostEntryDefinition(
-                entryId = "hidden.text_to_speech",
-                screen = Screen.TextToSpeech
-            ),
-            hostEntryDefinition(
                 entryId = "hidden.speech_to_text",
                 screen = Screen.SpeechToText
             ),
