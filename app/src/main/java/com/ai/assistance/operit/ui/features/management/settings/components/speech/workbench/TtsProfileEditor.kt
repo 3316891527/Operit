@@ -54,7 +54,9 @@ internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft
                     InstalledSpeechModelField(com.ai.assistance.operit.data.resources.models.SpeechModelPurpose.TTS, profile.vitsConfig.installedModelKey) { model ->
                         onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(installedModelKey = model.key, speakerId = "0"))))
                     }
-                    SpeechWorkbenchField(stringResource(R.string.speech_services_vits_speaker_id), profile.vitsConfig.speakerId, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(speakerId = it)))) }, hint = stringResource(R.string.hub_speaker_hint))
+                    InstalledSpeechSpeakerField(profile.vitsConfig.installedModelKey, profile.vitsConfig.speakerId) { speakerId ->
+                        onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(speakerId = speakerId))))
+                    }
                 }
                 VoiceServiceType.VITS_TTS -> {
                     SpeechWorkbenchField(stringResource(R.string.speech_services_vits_package_path), profile.vitsConfig.packagePath, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(packagePath = it)))) }, placeholder = stringResource(R.string.speech_services_vits_package_path_placeholder), hint = stringResource(R.string.speech_services_vits_package_path_hint))

@@ -11,5 +11,5 @@ fun SpeechServicesSettingsScreen(
     onNavigateToTextToSpeech: () -> Unit = {},
     initialTabIndex: Int = 0,
 ) {
-    SpeechServicesWorkbench(initialTabIndex = initialTabIndex, onOpenTtsTool = onNavigateToTextToSpeech)
+    SpeechServicesWorkbench(initialTabIndex = initialTabIndex)
 }

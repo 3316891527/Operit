@@ -90,4 +90,5 @@
     <string name="hub_eta_seconds">预计剩余 %1$d 秒</string>
     <string name="hub_local_path">本地存放位置</string>
     <string name="hub_install_path">安装位置</string>
+    <string name="hub_speaker_picker_hint">从当前模型读取可用说话人，选择编号即可，无需手动填写。</string>
 </resources>

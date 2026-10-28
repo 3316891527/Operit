@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
+fun SpeechServicesWorkbench(initialTabIndex: Int) {
     val context = LocalContext.current
     val prefs = remember { SpeechServiceProfilesPreferences(context.applicationContext) }
     val ttsProfiles by prefs.ttsProfilesFlow.collectAsState(initial = emptyList())
@@ -160,9 +160,6 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                 }
                 if (tab == 0) item(key = "tts-preview") {
                     SpeechSynthesisTestSection(ttsState.draft)
-                }
-                if (tab == 0) item(key = "tts-tool") {
-                    TextButton(onClick = { perform { onOpenTtsTool() } }, modifier = Modifier.fillMaxWidth(), enabled = !actionBusy) { Text(stringResource(R.string.tts_demo)) }
                 }
                 if (tab == 1) item(key = "stt-editor") {
                     key(stt.id) { SttProfileEditor(sttState.draft) { sttState.draft = it } }

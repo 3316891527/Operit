@@ -90,4 +90,5 @@
     <string name="hub_eta_seconds">About %1$d s remaining</string>
     <string name="hub_local_path">Local storage location</string>
     <string name="hub_install_path">Installation location</string>
+    <string name="hub_speaker_picker_hint">Choose a speaker provided by the selected model. No manual ID entry is needed.</string>
 </resources>
