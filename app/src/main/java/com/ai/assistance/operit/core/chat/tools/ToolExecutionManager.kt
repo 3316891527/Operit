@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat.tools
 
+import com.ai.assistance.operit.data.model.tooltiming.ToolCallExecution
 import com.ai.assistance.operit.ui.common.a2ui.CardFences
 import android.content.Context
 import com.ai.assistance.operit.R
@@ -18,6 +19,10 @@ import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilitySessi
 import com.ai.assistance.operit.util.stream.StreamCollector
 import com.ai.assistance.operit.data.preferences.CharacterCardToolAccessResolver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import com.ai.assistance.operit.core.chat.tools.timing.ToolExecutionTiming
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -505,11 +510,22 @@ object ToolExecutionManager {
         callerName: String? = null,
         callerChatId: String? = null,
         callerCardId: String? = null,
-        a2uiRunId: String? = null
+        a2uiRunId: String? = null,
+        toolCallOffset: Int = 0,
+        onToolTiming: suspend (ToolCallExecution) -> Unit = {},
     ): ToolExecutionBatch = PermissionCapabilityResolver.withSession(permissionSession) {
+        val outputMutex = Mutex()
+        suspend fun publishMarkup(markup: String) {
+            outputMutex.withLock { collector.emit(ensureOwnLine(markup)) }
+        }
+        val timing = ToolExecutionTiming(invocations.size, onToolTiming, toolCallOffset)
+        try {
+        timing.queued()
         coroutineScope {
-        val orderedResults = OrderedToolResults(invocations.size) { markup ->
-            collector.emit(ensureOwnLine(markup))
+        val orderedResults = OrderedToolResults(invocations.size, ::publishMarkup)
+        suspend fun completeResult(index: Int, result: ToolResult) {
+            timing.completed(index)
+            orderedResults.complete(index, result)
         }
         // 默认工具注册现在可能在启动阶段被延后；这里确保在真正执行工具前已完成注册
         // registerDefaultTools() 是幂等且线程安全的，可安全重复调用
@@ -544,7 +560,7 @@ object ToolExecutionManager {
                 toolExposurePermittedInvocations.add(IndexedValue(index, invocation))
             } else {
                 toolHandler.notifyToolExecutionResult(invocation.tool, deniedResult)
-                orderedResults.complete(index, deniedResult)
+                completeResult(index, deniedResult)
             }
         }
 
@@ -563,7 +579,7 @@ object ToolExecutionManager {
                 roleCardPermittedInvocations.add(IndexedValue(index, invocation))
             } else {
                 toolHandler.notifyToolExecutionResult(invocation.tool, deniedResult)
-                orderedResults.complete(index, deniedResult)
+                completeResult(index, deniedResult)
             }
         }
 
@@ -579,7 +595,7 @@ object ToolExecutionManager {
                     if (hasPermission) {
                         permittedInvocations.add(IndexedValue(index, invocation))
                     } else {
-                        orderedResults.complete(index, checkNotNull(errorResult))
+                        completeResult(index, checkNotNull(errorResult))
                     }
                 }
 
@@ -591,7 +607,7 @@ object ToolExecutionManager {
                         )
                     toolHandler.notifyToolExecutionResult(invocation.tool, interceptedResult)
                     toolHandler.notifyToolExecutionFinished(invocation.tool)
-                    orderedResults.complete(index, interceptedResult)
+                    completeResult(index, interceptedResult)
                 }
             }
         }
@@ -631,6 +647,7 @@ object ToolExecutionManager {
         // 启动并行工具
         val parallelJobs = parallelInvocations.map { (index, invocation) ->
             async {
+                timing.start(index)
                 val result =
                     executeTool(
                         invocation = invocation,
@@ -638,12 +655,13 @@ object ToolExecutionManager {
                         packageManager = packageManager,
                         runtimeContext = toolRuntimeContext
                     )
-                orderedResults.complete(index, result)
+                completeResult(index, result)
             }
         }
 
         // 顺序执行串行工具
         for ((index, invocation) in serialInvocations) {
+            timing.start(index)
             val result =
                 executeTool(
                     invocation = invocation,
@@ -651,13 +669,23 @@ object ToolExecutionManager {
                     packageManager = packageManager,
                     runtimeContext = toolRuntimeContext
                 )
-            orderedResults.complete(index, result)
+            completeResult(index, result)
         }
 
         // 等待所有并行任务完成
         parallelJobs.awaitAll()
 
         return@coroutineScope orderedResults.finish()
+        }
+        } finally {
+            // 取消和异常也冻结计时；关闭的输出流不能用计时错误替换原始执行结果。
+            withContext(NonCancellable) {
+                try {
+                    timing.finish()
+                } catch (error: Exception) {
+                    AppLogger.w(TAG, "工具计时终态未保存", error)
+                }
+            }
         }
     }
 

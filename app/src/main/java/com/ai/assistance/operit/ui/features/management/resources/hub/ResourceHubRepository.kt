@@ -31,6 +31,7 @@ internal data class HubSnapshot(val entries: List<HubEntry>, val ubuntuInstalled
 internal class ResourceHubRepository(private val context: Context) {
     val models = SpeechModels(context)
     suspend fun snapshot(): HubSnapshot {
+        PackResources.cleanupObsoleteExtensions(context)
         val engineReady = PackResources.isReady(context, PackResources.SPEECH_ENGINE)
         val installed = models.installed()
         val catalog = models.catalog().associateBy(SpeechModelManifest::key)
@@ -65,7 +66,7 @@ internal class ResourceHubRepository(private val context: Context) {
             entries += HubEntry(pack.id, title, category,
                 context.getString(when (category) { "ocr" -> R.string.hub_ocr_bundled_hint; "template" -> R.string.hub_template_hint; "plugin", "sandbox" -> R.string.hub_builtin_extension_hint; else -> R.string.hub_engine_hint }),
                 pack.archive.bytes, PackResources.isReady(context, pack.id), bundled || PackResources.directory(context, pack.id).exists(),
-                LocalModelRuntimeRegistry.isInUse(PackResources.directory(context, pack.id)), bundled, pack = pack, location = if (bundled) context.packageResourcePath + "!/assets/" + when {
+                PackResources.isInUse(context, pack.id), bundled, pack = pack, location = if (bundled) context.packageResourcePath + "!/assets/" + when {
                     pack.extension != null -> "packages/${File(pack.extension.path).name}"
                     pack.id.startsWith("template-") -> "templates/${pack.id.removePrefix("template-")}"
                     else -> "mlkit-google-ocr-models"

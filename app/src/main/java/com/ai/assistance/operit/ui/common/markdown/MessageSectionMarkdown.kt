@@ -14,9 +14,11 @@ import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 @Composable
 internal fun rememberDisplayMessageSections(message: ChatMessage): List<MessageSection> {
     if (LocalMarkdownRenderFragment.current != null) return emptyList()
-    return remember(message.content, message.sections) { message.displaySections() }
+    return remember(message.content, message.sections) { messageSectionsForRendering(message) }
 }
 
+/** 协议只用于供应商历史续传，界面不生成对应节点。 */
+internal fun messageSectionsForRendering(message: ChatMessage): List<MessageSection> = message.displaySections()
 /** 已分类的工具、思考和状态片段直接生成 XML 节点，正文继续使用现有 Markdown 解析。 */
 internal suspend fun parseMessageSectionsToNodes(
     sections: List<MessageSection>,

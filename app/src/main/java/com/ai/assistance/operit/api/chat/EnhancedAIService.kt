@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.data.model.tooltiming.ToolCallExecution
 import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
@@ -360,6 +361,7 @@ class EnhancedAIService private constructor(context: Context) {
         var proxySenderName: String? = null,
         var callbacks: SendMessageCallbacks? = null,
         var onToolInvocation: (suspend (String) -> Unit)? = null,
+        var onToolTiming: suspend (ToolCallExecution) -> Unit = {},
         var notifyReplyOverride: Boolean? = null,
         var chatModelConfigIdOverride: String? = null,
         var chatModelIndexOverride: Int? = null,
@@ -448,6 +450,8 @@ class EnhancedAIService private constructor(context: Context) {
         val conversationHistory: MutableList<PromptTurn>,
         val eventChannel: MutableSharedStream<TextStreamEvent>,
         val permissionSession: PermissionCapabilitySession,
+        val onToolTiming: suspend (ToolCallExecution) -> Unit,
+        val toolCallCount: AtomicInteger = AtomicInteger(0),
         var modelExecutionSnapshot: ModelExecutionSnapshot? = null,
         @Volatile var voiceInputJob: Job? = null,
     )
@@ -1033,7 +1037,8 @@ class EnhancedAIService private constructor(context: Context) {
                     executionId = nextExecutionContextId.incrementAndGet(),
                     conversationHistory = chatHistory.toMutableList(),
                     eventChannel = eventChannel,
-                    permissionSession = permissionSession
+                    permissionSession = permissionSession,
+                    onToolTiming = options.onToolTiming,
                 )
             registerExecutionContext(execContext)
             var hadFatalError = false
@@ -2312,6 +2317,7 @@ class EnhancedAIService private constructor(context: Context) {
                 chatModelIndexOverride
             )
             val config = modelSnapshot.config
+            val callOffset = context.toolCallCount.getAndAdd(toolInvocations.size)
             val toolBatch = ToolExecutionManager.executeInvocations(
                 invocations = toolInvocations,
                 context = this@EnhancedAIService.context,
@@ -2323,7 +2329,9 @@ class EnhancedAIService private constructor(context: Context) {
                 callerName = characterName,
                 callerChatId = chatId,
                 callerCardId = roleCardId,
-                a2uiRunId = context.a2uiRunId
+                a2uiRunId = context.a2uiRunId,
+                toolCallOffset = callOffset,
+                onToolTiming = context.onToolTiming,
             )
 
             if (toolBatch.results.isNotEmpty()) {

@@ -1276,8 +1276,7 @@
     <string name="info">정보</string>
     <string name="read_message">메시지 읽기</string>
     <string name="auto_read_message">자동 읽기</string>
-    <string name="auto_read_desc">활성화하면 AI 응답이 자동으로 소리내어 읽혀집니다.</string>
-    <string name="auto_read_active">자동 읽기 활성화됨</string>
+    <string name="auto_read_desc">일반 채팅에서 AI 응답을 자동으로 읽습니다. 음성 통화에서는 이 스위치와 관계없이 항상 응답을 읽습니다.</string>
     <string name="disable_stream_output">스트림 출력 비활성화</string>
     <string name="disable_stream_output_desc">스트림 출력을 비활성화하면 AI 응답이 단어 단위로 스트리밍되는 대신 한꺼번에 표시됩니다.</string>
     <string name="disable_settings_group">옵션 비활성화</string>
@@ -6572,11 +6571,8 @@
     <string name="chat_shared_text_target_dialog_message">공유된 텍스트가 감지되었습니다. 최근 대화 5개 중 하나를 선택하거나 새 대화를 만드세요.</string>
     <string name="chat_shared_text_target_new_chat_hint">새 대화를 만들고 텍스트를 입력창에 채웁니다</string>
     <string name="agent_menu_tools">도구</string>
-    <string name="agent_menu_behavior">동작</string>
     <string name="agent_menu_plugins">플러그인</string>
     <string name="agent_menu_permission_disabled">비활성화</string>
-    <string name="agent_menu_behavior_streaming">스트리밍</string>
-    <string name="agent_menu_behavior_non_streaming">비스트리밍</string>
     <string name="change">변경</string>
     <string name="comma_separator">，</string>
     <string name="github_search_failed">GitHub 검색 실패</string>

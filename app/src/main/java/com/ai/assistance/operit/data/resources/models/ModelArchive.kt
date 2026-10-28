@@ -157,9 +157,14 @@ internal object ModelArchive {
     }
 
     /** 同卷目录切换在独占租约内完成；失败时撤销本次切换，保全原安装。 */
-    fun install(source: File, target: File, checkpoint: () -> Unit) {
+    fun install(source: File, target: File, checkpoint: () -> Unit) =
+        install(source, target, target, checkpoint)
+
+    /** 插件跨版本替换锁定整个资源组，不能绕过旧版本的运行引用。 */
+    fun install(source: File, target: File, exclusiveDirectory: File, checkpoint: () -> Unit) {
         checkpoint()
-        check(LocalModelRuntimeRegistry.withExclusiveAccess(target) {
+        require(target.canonicalFile.toPath().startsWith(exclusiveDirectory.canonicalFile.toPath()))
+        check(LocalModelRuntimeRegistry.withExclusiveAccess(exclusiveDirectory) {
             val previous = File(target.parentFile, ".${target.name}.previous-${UUID.randomUUID()}")
             val existed = target.exists()
             if (existed) move(target, previous)

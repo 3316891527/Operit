@@ -4,6 +4,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.ui.features.conversation.chat.components.timeline.LocalChatMessageSlice
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.rememberMessageToolExecutions
 import com.ai.assistance.operit.ui.common.markdown.rememberDisplayMessageSections
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import android.content.Intent
@@ -107,6 +108,7 @@ fun AiMessageComposable(
             toolCollapseMode = toolCollapseMode,
         )
     }
+    nodeGrouper.executionTimings = rememberMessageToolExecutions(message)
     val rememberedOnLinkClick = remember(context, onLinkClick, enableDialogs) {
         onLinkClick ?: { url ->
             // 如果启用了弹窗，显示链接预览；否则使用系统浏览器打开

@@ -691,7 +691,7 @@ class ConversationService(
                         processChatMessageWithTools(content, xmlTags, preparedHistory, index, effectiveChatHistory.size)
                     } else {
                         // Add the message as is
-                        preparedHistory.add(message)
+                        preparedHistory.add(message.copy(content = content))
                     }
                 } else if (kind == PromptTurnKind.TOOL_RESULT) {
                     preparedHistory.add(message.copy(content = normalizeToolResultMarkupForModel(content)))

@@ -2,81 +2,61 @@ package com.ai.assistance.operit.api.speech.tts
 
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import com.ai.assistance.operit.api.speech.tts.prefetch.OrderedTtsPrefetchQueue
+import com.ai.assistance.operit.core.speech.text.TtsSegmenter
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
-import java.io.FileInputStream
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
 
 internal class QueuedTtsPlayback(
     private val tag: String,
+    private val deleteAudioAfterPlayback: Boolean = true,
+    private val audioUsage: Int = AudioAttributes.USAGE_MEDIA,
     private val prepareAudioFile: suspend (Request) -> File?,
 ) {
     data class Request(
         val text: String,
+        val sequence: Long,
         val rate: Float?,
         val pitch: Float?,
         val extraParams: Map<String, String>,
-        val generation: Long,
-        val completion: CompletableDeferred<Boolean>,
     )
 
-    private data class PreparedRequest(
-        val request: Request,
-        val audioFile: File,
-    )
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val speakQueue = Channel<Request>(Channel.UNLIMITED)
-    private val playbackQueue = Channel<PreparedRequest>(capacity = 1)
-    private val stopGeneration = AtomicLong(0)
-    private val isPaused = AtomicBoolean(false)
-    private val _isSpeaking = MutableStateFlow(false)
+    private val playerLock = Any()
+    private val requestSequence = AtomicLong(0)
+    private val paused = MutableStateFlow(false)
     private var mediaPlayer: MediaPlayer? = null
-
-    val speakingStateFlow: Flow<Boolean> = _isSpeaking.asStateFlow()
-    val isSpeaking: Boolean
-        get() = _isSpeaking.value
-
-    init {
-        scope.launch {
-            for (request in speakQueue) {
-                try {
-                    val audioFile = prepareAudioFile(request)
-                    if (audioFile == null) {
-                        request.completion.complete(false)
-                    } else {
-                        playbackQueue.send(PreparedRequest(request, audioFile))
-                    }
-                } catch (e: Exception) {
-                    request.completion.completeExceptionally(e)
-                }
+    private var playbackDone: CompletableDeferred<Boolean>? = null
+    private val queue = OrderedTtsPrefetchQueue<Request, File>(
+        prepare = { request ->
+            val started = System.nanoTime()
+            AppLogger.d(tag, "云端分句准备开始 sequence=${request.sequence} chars=${request.text.length}")
+            prepareAudioFile(request).also {
+                AppLogger.d(tag, "云端分句准备完成 sequence=${request.sequence} chars=${request.text.length} prepareMs=${(System.nanoTime() - started) / 1_000_000}")
             }
-        }
-
-        scope.launch {
-            for (prepared in playbackQueue) {
-                try {
-                    val result = playPreparedRequest(prepared)
-                    prepared.request.completion.complete(result)
-                } catch (e: Exception) {
-                    prepared.request.completion.completeExceptionally(e)
-                }
+        },
+        play = ::playAudioFile,
+        release = { file ->
+            if (deleteAudioAfterPlayback) {
+                runCatching { file.delete() }.onFailure { AppLogger.w(tag, "清理TTS临时音频失败", it) }
             }
-        }
-    }
+        },
+        stopPlayback = ::stopPlaybackOnly,
+    )
+
+    // 排队和下载也属于本轮朗读，避免句间请求未完成时语音通话提前恢复收音。
+    val speakingStateFlow: Flow<Boolean> = combine(queue.pendingStateFlow, paused) { pending, isPaused ->
+        pending && !isPaused
+    }.distinctUntilChanged()
+    val isSpeaking: Boolean get() = queue.hasPending && !paused.value
 
     suspend fun speak(
         text: String,
@@ -84,185 +64,102 @@ internal class QueuedTtsPlayback(
         rate: Float?,
         pitch: Float?,
         extraParams: Map<String, String>,
-    ): Boolean = withContext(Dispatchers.IO) {
-        if (interrupt) {
-            clearForInterrupt()
-        }
-
-        val completion = CompletableDeferred<Boolean>()
-        val request = Request(
-            text = text,
-            rate = rate,
-            pitch = pitch,
-            extraParams = extraParams,
-            generation = stopGeneration.get(),
-            completion = completion,
-        )
-        speakQueue.send(request)
-        completion.await()
-    }
+    ): Boolean = queue.speak(
+        TtsSegmenter.split(text).map { Request(it, requestSequence.incrementAndGet(), rate, pitch, extraParams.toMap()) },
+        interrupt,
+    )
 
     suspend fun stop(): Boolean = withContext(Dispatchers.IO) {
-        stopGeneration.incrementAndGet()
-        isPaused.set(false)
-        clearPendingRequests()
-        clearPendingPlayback()
-        stopPlaybackOnly()
+        queue.stop()
+        true
     }
 
     suspend fun pause(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    it.pause()
-                    isPaused.set(true)
-                    _isSpeaking.value = false
-                    return@withContext true
-                }
-            }
-            false
-        } catch (e: Exception) {
-            AppLogger.e(tag, "暂停TTS播放失败", e)
-            false
+        val hasPending = queue.hasPending
+        synchronized(playerLock) {
+            paused.value = true
+            mediaPlayer?.let { if (it.isPlaying) it.pause() }
+            hasPending
         }
     }
 
     suspend fun resume(): Boolean = withContext(Dispatchers.IO) {
-        try {
+        val hasPending = queue.hasPending
+        synchronized(playerLock) {
+            paused.value = false
             mediaPlayer?.let {
-                if (!it.isPlaying) {
-                    it.start()
-                    isPaused.set(false)
-                    _isSpeaking.value = true
-                    return@withContext true
-                }
+                it.start()
             }
-            false
-        } catch (e: Exception) {
-            AppLogger.e(tag, "恢复TTS播放失败", e)
-            false
+            hasPending
         }
     }
 
-    fun shutdown() {
-        stopGeneration.incrementAndGet()
-        isPaused.set(false)
-        clearPendingRequests()
-        clearPendingPlayback()
-        stopPlaybackOnly()
-        try {
-            mediaPlayer?.release()
-        } catch (e: Exception) {
-            AppLogger.w(tag, "释放TTS播放器失败", e)
-        }
-        mediaPlayer = null
-        scope.cancel()
-        speakQueue.close()
-        playbackQueue.close()
-    }
+    fun shutdown() = queue.shutdown()
 
-    fun isCurrent(request: Request): Boolean {
-        return request.generation == stopGeneration.get()
-    }
-
-    private fun clearPendingRequests() {
-        while (true) {
-            val request = speakQueue.tryReceive().getOrNull() ?: break
-            request.completion.complete(false)
-        }
-    }
-
-    private fun clearPendingPlayback() {
-        while (true) {
-            val prepared = playbackQueue.tryReceive().getOrNull() ?: break
-            prepared.request.completion.complete(false)
-        }
-    }
-
-    private fun clearForInterrupt() {
-        stopGeneration.incrementAndGet()
-        isPaused.set(false)
-        clearPendingRequests()
-        clearPendingPlayback()
-        stopPlaybackOnly()
-    }
-
-    private fun stopPlaybackOnly(): Boolean {
-        return try {
-            isPaused.set(false)
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    it.stop()
-                }
-                it.reset()
-                _isSpeaking.value = false
-                true
-            } ?: false
-        } catch (e: Exception) {
-            AppLogger.e(tag, "停止TTS播放失败", e)
-            false
-        }
-    }
-
-    private suspend fun playPreparedRequest(prepared: PreparedRequest): Boolean {
-        if (!isCurrent(prepared.request)) {
+    private suspend fun playAudioFile(file: File, isCurrent: () -> Boolean): Boolean {
+        if (!file.exists() || file.length() == 0L) {
+            AppLogger.e(tag, "TTS音频文件为空或已不存在")
             return false
         }
-        playAudioFile(prepared.audioFile)
-        return true
+        val done = CompletableDeferred<Boolean>()
+        var player: MediaPlayer? = null
+        try {
+            synchronized(playerLock) {
+                if (!isCurrent()) return false
+                val created = MediaPlayer()
+                player = created
+                mediaPlayer = created
+                playbackDone = done
+                created.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setUsage(audioUsage)
+                        .build()
+                )
+                created.setDataSource(file.absolutePath)
+                created.setOnCompletionListener { finishPlayback(created, done, true) }
+                created.setOnErrorListener { _, what, extra ->
+                    AppLogger.e(tag, "TTS播放器错误 what=$what extra=$extra")
+                    finishPlayback(created, done, false)
+                    true
+                }
+                created.prepare()
+                if (!paused.value) {
+                    created.start()
+                }
+            }
+            return done.await()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            AppLogger.e(tag, "播放TTS音频失败", error)
+            return false
+        } finally {
+            player?.let { finishPlayback(it, done, false) }
+        }
     }
 
-    private suspend fun playAudioFile(audioFile: File) {
-        if (!audioFile.exists() || audioFile.length() == 0L) {
-            AppLogger.e(tag, "Audio file is invalid: ${audioFile.absolutePath}")
-            return
+    private fun finishPlayback(player: MediaPlayer, done: CompletableDeferred<Boolean>, success: Boolean) {
+        synchronized(playerLock) {
+            // 旧播放器的迟到回调不能释放已经开始播放的新一句。
+            if (mediaPlayer === player) {
+                mediaPlayer = null
+                playbackDone = null
+                runCatching { player.release() }.onFailure { AppLogger.w(tag, "释放TTS播放器失败", it) }
+            }
+            done.complete(success)
         }
+    }
 
-        try {
-            withContext(Dispatchers.IO) {
-                isPaused.set(false)
-                FileInputStream(audioFile).use { fis ->
-                    val mp = MediaPlayer().apply {
-                        setAudioAttributes(
-                            AudioAttributes.Builder()
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                                .setUsage(AudioAttributes.USAGE_MEDIA)
-                                .build()
-                        )
-                        setDataSource(fis.fd)
-                        prepare()
-                        start()
-                    }
-
-                    mediaPlayer?.release()
-                    mediaPlayer = mp
-                    _isSpeaking.value = true
-                }
-            }
-
-            mediaPlayer?.let {
-                while (it.isPlaying || isPaused.get()) {
-                    delay(100)
-                }
-            }
-        } catch (e: Exception) {
-            AppLogger.e(tag, "播放TTS音频失败", e)
-        } finally {
-            _isSpeaking.value = false
-            isPaused.set(false)
-            mediaPlayer?.apply {
-                try {
-                    if (isPlaying) {
-                        stop()
-                    }
-                } catch (_: Exception) {
-                }
-                try {
-                    release()
-                } catch (_: Exception) {
-                }
-            }
+    private fun stopPlaybackOnly() {
+        synchronized(playerLock) {
+            paused.value = false
+            val player = mediaPlayer
+            val done = playbackDone
             mediaPlayer = null
+            playbackDone = null
+            runCatching { player?.release() }.onFailure { AppLogger.w(tag, "停止TTS播放器失败", it) }
+            done?.complete(false)
         }
     }
 }

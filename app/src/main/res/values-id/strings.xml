@@ -1119,8 +1119,7 @@
     <string name="info">Informasi</string>
     <string name="read_message">Bacakan Pesan</string>
     <string name="auto_read_message">Bacakan Otomatis</string>
-    <string name="auto_read_desc">Setelah diaktifkan, balasan AI akan dibacakan secara otomatis</string>
-    <string name="auto_read_active">Bacakan Otomatis Diaktifkan</string>
+    <string name="auto_read_desc">Bacakan balasan AI secara otomatis dalam obrolan biasa. Panggilan suara selalu membacakan balasan, terlepas dari sakelar ini.</string>
     <string name="disable_stream_output">Nonaktifkan Output Streaming</string>
     <string name="disable_stream_output_desc">Setelah dinonaktifkan, balasan AI akan ditampilkan lengkap sekaligus, bukan kata demi kata secara streaming</string>
     <string name="disable_settings_group">Item yang Dinonaktifkan</string>
@@ -6639,11 +6638,8 @@
     <string name="chat_shared_text_target_dialog_message">Teks yang dibagikan terdeteksi. Silakan pilih salah satu dari 5 percakapan terbaru, atau buat percakapan baru.</string>
     <string name="chat_shared_text_target_new_chat_hint">Buat percakapan baru dan isi teks ke dalam kotak input</string>
     <string name="agent_menu_tools">Alat</string>
-    <string name="agent_menu_behavior">Perilaku</string>
     <string name="agent_menu_plugins">Plugin</string>
     <string name="agent_menu_permission_disabled">Nonaktifkan</string>
-    <string name="agent_menu_behavior_streaming">Streaming</string>
-    <string name="agent_menu_behavior_non_streaming">Non-streaming</string>
     <string name="add_selected_to_memory">Masukkan ke Memori Ringkasan</string>
     <string name="speech_services_tts_type_mimo">MiMo TTS</string>
     <string name="speech_services_tts_type_doubao">Doubao TTS</string>

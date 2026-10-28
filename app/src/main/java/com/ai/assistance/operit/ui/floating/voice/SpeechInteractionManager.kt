@@ -14,9 +14,6 @@ import com.ai.assistance.operit.api.chat.AIForegroundService
 import com.ai.assistance.operit.api.speech.audio.SpeechPrerollStore
 import com.ai.assistance.operit.api.speech.audio.WakePhraseSnapshot
 import com.ai.assistance.operit.api.speech.stt.SttServiceFactory
-import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
-import com.ai.assistance.operit.core.speech.text.TtsCleaner
-import com.ai.assistance.operit.util.WaifuMessageProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,7 +23,7 @@ private const val TAG = "SpeechInteractionManager"
 
 /**
  * 通用语音交互管理器
- * 封装了：语音识别、TTS、焦点获取、文本累积、静默检测等逻辑
+ * 封装语音识别、焦点获取、文本累积和静默检测；朗读服务由播放控制器独立持有。
  */
 class SpeechInteractionManager(
     private val context: Context,
@@ -56,8 +53,6 @@ class SpeechInteractionManager(
 
     // ===== 服务 =====
     val speechService = SttServiceFactory.getInstance(context)
-    val voiceService
-        get() = TtsServiceFactory.getInstance(context)
     private val inputMethodManager = context.getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
     // 暴露 Flow 给外部使用
@@ -69,7 +64,6 @@ class SpeechInteractionManager(
         resetState()
         try {
             speechService.initialize()
-            voiceService.initialize()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to initialize speech services", e)
         }
@@ -79,7 +73,6 @@ class SpeechInteractionManager(
         stopListening(isCancel = true)
         coroutineScope.launch {
             speechService.cancelRecognition()
-            voiceService.stop()
         }
         timeoutJob?.cancel()
         silenceTimeoutJob?.cancel()
@@ -303,20 +296,4 @@ class SpeechInteractionManager(
         latestPartialText = ""
     }
     
-    // ===== TTS 辅助 =====
-    
-    fun speak(text: String, interrupt: Boolean = true) {
-        if (text.isBlank()) return
-        coroutineScope.launch {
-            try {
-                voiceService.speak(text, interrupt)
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "TTS Error", e)
-            }
-        }
-    }
-    
-    fun cleanTextForTts(text: String, regexs: List<String>): String {
-        return WaifuMessageProcessor.cleanContentForWaifu(TtsCleaner.clean(text, regexs))
-    }
 }

@@ -74,7 +74,7 @@ class ThemeTransferTest {
         val restored = ThemeShareCode.decode(ThemeShareCode.encode(source))
         assertEquals("雾青极客版", restored.name)
         assertEquals(source, restored)
-        assertEquals(128, restored.fields.size)
+        assertEquals(130, restored.fields.size)
         assertEquals(1.2f, restored.layout.aiMarkdownLineHeightMultiplier)
     }
 
@@ -434,6 +434,41 @@ class ThemeTransferTest {
     fun rejectsInvalidUtf8() {
         failure(ThemeTransferError.INVALID_CONFIG) {
             ThemeTransferSchema.decode(byteArrayOf(0xC3.toByte(), 0x28), false)
+        }
+    }
+
+    @Test
+    fun independentMessageStylesSurviveBothShareFormats() {
+        val values = ThemePreferenceValues.defaultVisual()
+            .withString("user_chat_style", "bubble")
+            .withString("ai_chat_style", "cursor")
+        for (full in listOf(false, true)) {
+            val source = document(full, values)
+            val decoded = ThemeTransferSchema.decode(ThemeTransferSchema.encode(source), full)
+            val merged = ThemeTransferSchema.merge(ThemePreferenceValues.defaultVisual(), decoded)
+            assertEquals("bubble", merged.string("user_chat_style"))
+            assertEquals("cursor", merged.string("ai_chat_style"))
+        }
+    }
+
+    @Test
+    fun legacyShareExpandsBothSidesAndReplacesPreviousMixedStyles() {
+        val current = ThemePreferenceValues.defaultVisual()
+            .withString("user_chat_style", "cursor")
+            .withString("ai_chat_style", "bubble")
+        for (full in listOf(false, true)) {
+            val source = document(full)
+            val legacy = edit(source) { root ->
+                root["config"] = JsonObject(root.getValue("config").jsonObject.toMutableMap().apply {
+                    remove("user_chat_style")
+                    remove("ai_chat_style")
+                    put("chat_style", JsonPrimitive("bubble"))
+                })
+            }
+            val decoded = ThemeTransferSchema.decode(legacy, full)
+            val merged = ThemeTransferSchema.merge(current, decoded)
+            assertEquals("bubble", merged.string("user_chat_style"))
+            assertEquals("bubble", merged.string("ai_chat_style"))
         }
     }
 }

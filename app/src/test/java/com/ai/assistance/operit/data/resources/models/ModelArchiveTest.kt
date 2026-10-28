@@ -179,4 +179,26 @@ class ModelArchiveTest {
         val file = File(folder, "model.onnx").apply { writeText("bad") }
         assertFalse(ModelArchive.verified(folder, ModelFile(file.name, file.length(), "0".repeat(64))))
     }
+
+    @Test fun activeOldVersionPreventsGroupScopedUpgrade() {
+        val group = temporary.newFolder("plugin")
+        val old = File(group, "old").apply { mkdirs() }
+        File(old, "plugin.js").writeText("old")
+        val current = File(group, "current")
+        val stage = temporary.newFolder("plugin-stage")
+        File(stage, "plugin.js").writeText("new")
+        val usage = checkNotNull(LocalModelRuntimeRegistry.acquire(old))
+        try {
+            assertThrows(IllegalStateException::class.java) {
+                ModelArchive.install(stage, current, group, {})
+            }
+            assertEquals("old", File(old, "plugin.js").readText())
+            assertFalse(current.exists())
+            assertTrue(stage.isDirectory)
+        } finally { usage.close() }
+        ModelArchive.install(stage, current, group, {})
+        assertEquals("new", File(current, "plugin.js").readText())
+        val newUsage = checkNotNull(LocalModelRuntimeRegistry.acquire(current))
+        newUsage.close()
+    }
 }

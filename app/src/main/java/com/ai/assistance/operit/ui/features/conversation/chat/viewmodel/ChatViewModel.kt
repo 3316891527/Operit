@@ -77,6 +77,11 @@ import com.ai.assistance.operit.ui.features.conversation.chat.workspace.Workspac
 import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryRequest
 import com.ai.assistance.operit.util.text.XmlTagCleaner
 import com.ai.assistance.operit.api.speech.tts.TtsService
+import com.ai.assistance.operit.api.speech.tts.prefetch.PrefetchingTtsService
+import com.ai.assistance.operit.api.speech.tts.prefetch.TtsSubmissionOrder
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import com.ai.assistance.operit.api.speech.tts.TtsServiceFactory
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
@@ -166,6 +171,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     private var voiceService: TtsService? = null
     private var voiceStateCollectionJob: Job? = null
     private var speechPlaybackJob: Job? = null
+    private val speechSubmissionOrder = TtsSubmissionOrder()
     private var speechControlsHideJob: Job? = null
     private val speechServiceProfiles = SpeechServiceProfilesPreferences(context)
     private val activePromptManager = ActivePromptManager.getInstance(context)
@@ -1179,7 +1185,8 @@ class ChatViewModel(context: Context) : ViewModel() {
         systemTextColor: Color,
         thinkingBackgroundColor: Color,
         thinkingTextColor: Color,
-        chatStyle: ChatStyle,
+        userChatStyle: ChatStyle,
+        aiChatStyle: ChatStyle,
         cursorUserBubbleLiquidGlass: Boolean = false,
         cursorUserBubbleWaterGlass: Boolean = false,
         bubbleUserBubbleLiquidGlass: Boolean = false,
@@ -1225,7 +1232,8 @@ class ChatViewModel(context: Context) : ViewModel() {
                         systemTextColor = systemTextColor,
                         thinkingBackgroundColor = thinkingBackgroundColor,
                         thinkingTextColor = thinkingTextColor,
-                        chatStyle = chatStyle,
+                        userChatStyle = userChatStyle,
+                        aiChatStyle = aiChatStyle,
                         cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
                         cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
                         bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
@@ -2695,6 +2703,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     override fun onCleared() {
+        speechSubmissionOrder.stop()
         super.onCleared()
         inputProcessingStateListenerJob?.cancel()
         voiceStateCollectionJob?.cancel()
@@ -3289,16 +3298,18 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     fun speakMessage(message: String, interrupt: Boolean) {
+        val submission = speechSubmissionOrder.reserve(interrupt)
         if (interrupt) {
             speechPlaybackJob?.cancel()
             logSpeechState("cancelPlaybackJob", "reason=newInterruptingSpeak")
         }
         speechPlaybackJob = viewModelScope.launch {
             try {
+                if (!submission.awaitTurn()) return@launch
                 cancelSpeechControlsHide("newSpeak")
                 val currentVoiceService = ensureActiveVoiceService()
                 _isSpeechSessionActive.value = true
-                _isSpeechPaused.value = false
+                if (interrupt) _isSpeechPaused.value = false
                 logSpeechState(
                     "speakMessage.start",
                     "interrupt=$interrupt provider=${currentVoiceService?.javaClass?.simpleName} rawLen=${message.length} preview=\"${speechPreview(message)}\""
@@ -3326,6 +3337,22 @@ class ChatViewModel(context: Context) : ViewModel() {
                     return@launch
                 }
 
+                if (!submission.awaitTurn()) return@launch
+                if (currentVoiceService is PrefetchingTtsService) {
+                    // 整段文本一次交给云端队列；入队后立即放行后续流式分句，仍等待本段播放结果。
+                    val success = coroutineScope {
+                        val playback = async(start = CoroutineStart.UNDISPATCHED) {
+                            currentVoiceService.speak(cleanMessage, interrupt, rate = null, pitch = null)
+                        }
+                        submission.markSubmitted()
+                        playback.await()
+                    }
+                    if (!success && submission.failIfCurrent()) {
+                        OKToast.error(context, context.getString(R.string.chat_speak_failed)).show()
+                    }
+                    return@launch
+                }
+                submission.markSubmitted()
                 val segments = TtsSegmenter.split(cleanMessage)
                 AppLogger.d(TAG, "speech[segments] count=${segments.size} lengths=${segments.joinToString(prefix = "[", postfix = "]") { it.length.toString() }}")
                 var isFirstSegment = true
@@ -3363,13 +3390,18 @@ class ChatViewModel(context: Context) : ViewModel() {
             } catch (e: Exception) {
                 logSpeechState("speakMessage.exception", "type=${e::class.java.simpleName} message=${e.message}")
                 AppLogger.e(TAG, "朗读消息失败", e)
-                OKToast.error(context, context.getString(R.string.chat_speak_message_failed, e.message ?: "Unknown error")).show()
+                if (submission.failIfCurrent()) {
+                    OKToast.error(context, context.getString(R.string.chat_speak_message_failed, e.message ?: "Unknown error")).show()
+                }
+            } finally {
+                submission.markSubmitted()
             }
         }
     }
 
     /** 停止朗读 */
     fun stopSpeaking() {
+        speechSubmissionOrder.stop()
         viewModelScope.launch {
             try {
                 logSpeechState("stopSpeaking.request")
@@ -3392,10 +3424,13 @@ class ChatViewModel(context: Context) : ViewModel() {
             try {
                 logSpeechState("pauseSpeaking.request")
                 cancelSpeechControlsHide("pauseSpeaking")
-                speechPlaybackJob?.cancel()
-                speechPlaybackJob = null
-                logSpeechState("pauseSpeaking.cancelPlaybackJob")
-                val success = ensureActiveVoiceService()?.pause() == true
+                val service = ensureActiveVoiceService()
+                if (service !is PrefetchingTtsService) {
+                    speechPlaybackJob?.cancel()
+                    speechPlaybackJob = null
+                    logSpeechState("pauseSpeaking.cancelPlaybackJob")
+                }
+                val success = service?.pause() == true
                 if (success) {
                     _isSpeechPaused.value = true
                     _isSpeechSessionActive.value = true
@@ -3427,21 +3462,6 @@ class ChatViewModel(context: Context) : ViewModel() {
             } catch (e: Exception) {
                 logSpeechState("resumeSpeaking.exception", "type=${e::class.java.simpleName} message=${e.message}")
                 AppLogger.e(TAG, "继续朗读失败", e)
-            }
-        }
-    }
-
-    fun toggleAutoRead() {
-        AppLogger.d(TAG, "speech[toggleAutoRead] before=${isAutoReadEnabled.value}")
-        apiConfigDelegate.toggleAutoRead()
-        // Stop speaking if auto-read is being turned off.
-        // We check the new value directly from the delegate's state flow.
-        viewModelScope.launch {
-            // A small delay to allow the state flow to update, although it's often fast.
-            delay(50)
-            AppLogger.d(TAG, "speech[toggleAutoRead] after=${isAutoReadEnabled.value}")
-            if (!isAutoReadEnabled.value) {
-                stopSpeaking()
             }
         }
     }

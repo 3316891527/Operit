@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.speech.tts
 
+import com.ai.assistance.operit.api.speech.tts.prefetch.PrefetchingTtsService
 import android.content.Context
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 class MimoVoiceProvider(
     private val context: Context,
     private val config: SpeechServicesPreferences.TtsHttpConfig
-) : TtsService {
+) : PrefetchingTtsService {
 
     companion object {
         const val DEFAULT_ENDPOINT_URL = "https://api.xiaomimimo.com/v1/chat/completions"

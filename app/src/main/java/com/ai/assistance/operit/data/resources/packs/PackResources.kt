@@ -78,6 +78,22 @@ object PackResources {
     fun directory(context: Context, id: String): File =
         installed(context, id)?.directory ?: directoryFor(context, spec(context, id))
 
+    /** 使用检查覆盖整个版本组，旧版本的运行引用也会阻止替换和删除。 */
+    fun isInUse(context: Context, id: String): Boolean =
+        LocalModelRuntimeRegistry.isInUse(directoryFor(context, spec(context, id)).parentFile!!)
+
+    suspend fun cleanupObsoleteExtensions(context: Context) = withContext(Dispatchers.IO) {
+        val job = currentCoroutineContext()
+        for (pack in catalog(context).packs.filter { it.extension != null }) {
+            job.ensureActive()
+            locks.getOrPut(pack.id) { Mutex() }.withLock {
+                ResourcePackInstallations.cleanupObsolete(pack, history(context), { directoryFor(context, it) }) {
+                    job.ensureActive()
+                }
+            }
+        }
+    }
+
     /** 已安装状态与是否具有清单最新内容分开，只有内容变化才需要下载更新。 */
     fun isCurrentReady(context: Context, id: String, force: Boolean = false): Boolean =
         isBundled(context, id) || installed(context, id, force)?.hasCurrentContent(spec(context, id)) == true
@@ -165,8 +181,10 @@ object PackResources {
             if (entry.executable) check(file.setExecutable(true, true))
             if (id == SPEECH_ENGINE) check(file.setReadOnly())
         }
-        ModelArchive.install(stage, destination, checkpoint)
+        val exclusiveDirectory = if (pack.extension != null) destination.parentFile!! else destination
+        ModelArchive.install(stage, destination, exclusiveDirectory, checkpoint)
         ResourcePackInstallations.remember(pack, destination.parentFile!!)
+        ResourcePackInstallations.cleanupObsolete(spec(context, id), history(context), { directoryFor(context, it) }, checkpoint)
     }
     suspend fun exportArchive(context: Context, id: String, output: OutputStream, progress: (Long, Long) -> Unit) = withContext(Dispatchers.IO) {
         locks.getOrPut(id) { Mutex() }.withLock {

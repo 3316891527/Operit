@@ -3,6 +3,7 @@ import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
 import com.ai.assistance.operit.ui.features.conversation.chat.components.timeline.LocalChatMessageSlice
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.rememberMessageToolExecutions
 import com.ai.assistance.operit.ui.common.markdown.rememberDisplayMessageSections
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import android.annotation.SuppressLint
@@ -204,6 +205,7 @@ fun BubbleAiMessageComposable(
             toolCollapseMode = toolCollapseMode,
         )
     }
+    nodeGrouper.executionTimings = rememberMessageToolExecutions(message)
     val rememberedOnLinkClick = remember(context, onLinkClick, enableDialogs) {
         if (!enableDialogs) {
             { _: String -> }

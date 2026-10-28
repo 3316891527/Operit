@@ -124,6 +124,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (tab == 0) item(key = "tts-auto-read") { TtsAutoReadSetting() }
                 if (tab < 2) {
                     item(key = "profile") {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

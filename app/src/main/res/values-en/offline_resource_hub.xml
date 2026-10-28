@@ -90,4 +90,5 @@
     <string name="hub_eta_seconds">About %1$d s remaining</string>
     <string name="hub_local_path">Local storage location</string>
     <string name="hub_install_path">Installation location</string>
+    <string name="hub_disable_extension_before_delete">Disable the plugin in package management before deleting it.</string>
 </resources>

@@ -90,4 +90,5 @@
     <string name="hub_eta_seconds">预计剩余 %1$d 秒</string>
     <string name="hub_local_path">本地存放位置</string>
     <string name="hub_install_path">安装位置</string>
+    <string name="hub_disable_extension_before_delete">请先在包管理中关闭已启用的插件，再删除。</string>
 </resources>
