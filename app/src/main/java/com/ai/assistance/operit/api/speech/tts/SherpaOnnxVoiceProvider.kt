@@ -5,12 +5,15 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.PlaybackParams
+import android.os.SystemClock
 import com.ai.assistance.operit.api.speech.tts.TtsService
 import com.ai.assistance.operit.data.resources.models.SpeechModelPurpose
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.k2fsa.sherpa.onnx.OfflineTts
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import com.k2fsa.sherpa.onnx.GeneratedAudio
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
@@ -68,21 +71,42 @@ class SherpaOnnxVoiceProvider(
                 val job = currentCoroutineContext()
                 speaking.value = true
                 try {
-                    // 长文本分句处理，取消在原生回调和每个音频块处生效，避免积累整篇 PCM。
+                    // 当前句播放期间只预合成下一句；无缓冲通道限制 PCM 占用，不积累整篇音频。
                     val sentences = text.split(Regex("(?<=[。！？.!?\n])")).flatMap { it.chunked(240) }.filter(String::isNotBlank)
-                    for (sentence in sentences) {
-                        job.ensureActive()
-                        if (token != generation.get()) return@withContext false
-                        val audio = synchronized(nativeLock) {
-                            checkNotNull(engine).generateWithCallback(sentence, speaker, speed) {
-                                if (job.isActive && token == generation.get() && !closed) 1 else 0
+                    coroutineScope {
+                        val audioChunks = Channel<GeneratedAudio>(Channel.RENDEZVOUS)
+                        val producer = launch {
+                            try {
+                                for ((index, sentence) in sentences.withIndex()) {
+                                    ensureActive()
+                                    if (token != generation.get() || closed) break
+                                    val started = SystemClock.elapsedRealtime()
+                                    val audio = synchronized(nativeLock) {
+                                        checkNotNull(engine).generateWithCallback(sentence, speaker, speed) {
+                                            if (isActive && token == generation.get() && !closed) 1 else 0
+                                        }
+                                    }
+                                    ensureActive()
+                                    if (token != generation.get() || closed) break
+                                    AppLogger.d("SherpaOnnxTTS", "分句合成 index=$index chars=${sentence.length} inferenceMs=${SystemClock.elapsedRealtime() - started} audioMs=${audio.samples.size.toLong() * 1000 / audio.sampleRate}")
+                                    audioChunks.send(audio)
+                                }
+                            } finally {
+                                audioChunks.close()
                             }
                         }
-                        job.ensureActive()
-                        if (token != generation.get()) return@withContext false
-                        if (!play(audio.samples, audio.sampleRate, tone, token)) return@withContext false
+                        try {
+                            for (audio in audioChunks) {
+                                job.ensureActive()
+                                if (token != generation.get() || closed) return@coroutineScope false
+                                if (!play(audio.samples, audio.sampleRate, tone, token)) return@coroutineScope false
+                            }
+                            token == generation.get() && !closed
+                        } finally {
+                            producer.cancel()
+                            audioChunks.cancel()
+                        }
                     }
-                    true
                 } catch (cancel: CancellationException) { throw cancel } catch (error: Exception) {
                     AppLogger.e("SherpaOnnxTTS", "本地语音合成失败", error)
                     throw error
