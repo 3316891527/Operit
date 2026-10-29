@@ -18,3 +18,11 @@ pr-check.yml 将 pull_request.branches 从 development 改为 dev，保留事件
 交付时派发工作分支 Debug 构建，不开启发行；受理和执行结果分别记录，派发后不等待或轮询 CI。下载工具消失的问题按维护者要求暂不检查。
 
 [DONE] 源码修改与静态验证完成，远端同步与工作流受理另存交付收据。
+
+## 当前构建工作流入口
+
+构建工作流文件已由 `.github/workflows/android-build.yml` 改名为 `.github/workflows/build.yml`，Actions 显示名称为 `Build`。使用文件名派发时改为 `gh workflow run build.yml`；构建任务、手动输入、签名、发行目的地和固定资源发布逻辑沿用原配置。
+
+工作流自身的 push 路径过滤、PR 变更范围识别及原有路径回归数据同步采用新文件名。历史说明中的旧文件名记录当时入口，当前操作统一使用 `build.yml`。
+
+本轮仅进行 YAML 结构与前后等价核对、修改 Python 的 AST 解析及差异空白检查，没有执行本地编译、构建或测试。编号从实际创建的新工作流运行记录确认，文件改名本身不作为已重置的验证结果。

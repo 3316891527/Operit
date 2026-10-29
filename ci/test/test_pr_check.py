@@ -57,7 +57,7 @@ class ScopeClassificationTest(unittest.TestCase):
 
     def test_android_workflow_changes_use_full_lane(self) -> None:
         for path in (
-            ".github/workflows/android-build.yml",
+            ".github/workflows/build.yml",
             ".github/workflows/android-tests.yml",
             ".github/workflows/pr-check.yml",
         ):
