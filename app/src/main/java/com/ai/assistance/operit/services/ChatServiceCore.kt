@@ -53,6 +53,16 @@ class ChatServiceCore(
     private lateinit var uiStateDelegate: UiStateDelegate
     private lateinit var messageCoordinationDelegate: MessageCoordinationDelegate
 
+    private class MessageSpeechBinding(
+        val shouldRead: () -> Boolean,
+        val speak: (String, Boolean) -> Unit,
+    )
+    private val speechBindingLock = Any()
+    private val defaultSpeechBinding = MessageSpeechBinding(
+        shouldRead = { apiConfigDelegate.enableAutoRead.value },
+        speak = { _, _ -> },
+    )
+    @Volatile private var speechBinding = defaultSpeechBinding
     // 初始化状态
     private var initialized = false
 
@@ -229,12 +239,8 @@ class ChatServiceCore(
                 tokenStatisticsDelegate.setTokenCounts(chatId, inputTokens, outputTokens, windowSize)
                 additionalOnTurnComplete?.invoke(chatId, Triple(inputTokens, outputTokens, windowSize))
             },
-            getIsAutoReadEnabled = {
-                apiConfigDelegate.enableAutoRead.value
-            },
-            speakMessageHandler = { text, _ ->
-                AppLogger.d(TAG, "朗读消息: $text")
-            },
+            getIsAutoReadEnabled = { speechBinding.shouldRead() },
+            speakMessageHandler = { text, interrupt -> speechBinding.speak(text, interrupt) },
             onTokenLimitExceeded = { chatId, roleCardId, isGroupOrchestrationTurn, groupParticipantNamesText ->
                 messageCoordinationDelegate.handleTokenLimitExceeded(
                     chatId = chatId,
@@ -556,8 +562,23 @@ class ChatServiceCore(
     }
 
     fun setSpeakMessageHandler(handler: (String, Boolean) -> Unit) {
-        if (::messageProcessingDelegate.isInitialized) {
-            messageProcessingDelegate.setSpeakMessageHandler(handler)
+        synchronized(speechBindingLock) {
+            speechBinding = MessageSpeechBinding(defaultSpeechBinding.shouldRead, handler)
+        }
+    }
+
+    /** 通话只绑定本运行时的朗读条件，不改写普通聊天的自动朗读偏好。 */
+    fun bindMessageSpeech(
+        shouldRead: () -> Boolean,
+        speak: (String, Boolean) -> Unit,
+    ): () -> Unit {
+        val binding = MessageSpeechBinding(shouldRead, speak)
+        synchronized(speechBindingLock) { speechBinding = binding }
+        return {
+            synchronized(speechBindingLock) {
+                // 旧界面释放时不能清掉后来绑定的新界面。
+                if (speechBinding === binding) speechBinding = defaultSpeechBinding
+            }
         }
     }
     

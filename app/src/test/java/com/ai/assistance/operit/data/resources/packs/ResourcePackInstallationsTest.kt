@@ -158,4 +158,99 @@ class ResourcePackInstallationsTest {
         File(group, ".installed/current.json.pending.tmp").writeText("unfinished")
         assertNull(find(current))
     }
+
+    @Test fun successfulUpgradePrunesObsoletePayloadAndRecord() {
+        val old = spec("old"); val current = spec("current", "updated")
+        val oldRoot = install(old)
+        assertNotNull(find(current, old))
+        val currentRoot = install(current, "updated")
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+        assertFalse(oldRoot.exists())
+        assertFalse(File(currentRoot.parentFile, ".installed/old.json").exists())
+        assertTrue(File(currentRoot.parentFile, ".installed/current.json").isFile)
+        assertEquals("updated", File(currentRoot, "packages/test.js").readText())
+        assertEquals(current, checkNotNull(find(current, old)).spec)
+    }
+
+    @Test fun corruptRetainedVersionDoesNotDeleteUsableOldInstallation() {
+        val old = spec("old"); val current = spec("current", "updated")
+        val oldRoot = install(old)
+        assertNotNull(find(current, old))
+        val currentRoot = install(current, "updated")
+        assertNotNull(find(current, old))
+        val payload = File(currentRoot, "packages/test.js")
+        val modified = payload.lastModified()
+        payload.writeText("damaged")
+        check(payload.setLastModified(modified))
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+        assertEquals("original", File(oldRoot, "packages/test.js").readText())
+        assertTrue(File(oldRoot.parentFile, ".installed/old.json").isFile)
+    }
+
+    @Test fun inUseObsoleteVersionIsRemovedOnlyAfterItsHandleCloses() {
+        val old = spec("old"); val current = spec("current", "updated")
+        val oldRoot = install(old)
+        assertNotNull(find(current, old))
+        install(current, "updated")
+        val usage = checkNotNull(LocalModelRuntimeRegistry.acquire(oldRoot))
+        try {
+            ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+            assertTrue(oldRoot.isDirectory)
+            assertTrue(File(oldRoot.parentFile, ".installed/old.json").isFile)
+        } finally { usage.close() }
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+        assertFalse(oldRoot.exists())
+        assertFalse(File(oldRoot.parentFile, ".installed/old.json").exists())
+        assertTrue(directory(current).isDirectory)
+    }
+
+    @Test fun metadataOnlyUpgradeKeepsItsRecognizedHistoricalInstallation() {
+        val oldest = spec("oldest", "stale"); val old = spec("old"); val current = spec("current")
+        val oldestRoot = install(oldest, "stale")
+        assertNotNull(find(oldest))
+        val oldRoot = install(old)
+        assertNotNull(find(current, old, oldest))
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old, oldest), ::directory)
+        assertFalse(oldestRoot.exists())
+        assertTrue(oldRoot.isDirectory)
+        assertFalse(directory(current).exists())
+        assertEquals(old, checkNotNull(find(current, old, oldest)).spec)
+    }
+
+    @Test fun cleanupPreservesUnknownVersionsAndOtherResourceGroups() {
+        val old = spec("old"); val current = spec("current", "updated")
+        install(old)
+        assertNotNull(find(current, old))
+        install(current, "updated")
+        val unknown = install(spec("unknown", "untracked"), "untracked")
+        val other = install(spec("other").copy(id = "sandbox-other"))
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+        assertTrue(directory(current).isDirectory)
+        assertEquals("untracked", File(unknown, "packages/test.js").readText())
+        assertEquals("original", File(other, "packages/test.js").readText())
+    }
+
+    @Test fun cleanupRemovesRecordsWhoseObsoletePayloadIsAlreadyGone() {
+        val old = spec("old"); val current = spec("current", "updated")
+        val oldRoot = install(old)
+        assertNotNull(find(current, old))
+        check(oldRoot.deleteRecursively())
+        install(current, "updated")
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+        assertFalse(File(directory(current).parentFile, ".installed/old.json").exists())
+        assertTrue(directory(current).isDirectory)
+    }
+
+    @Test fun currentExtensionMetadataStillAllowsPruningTheSameResourceHistory() {
+        val old = spec("old")
+        val current = spec("current", "updated").copy(
+            extension = old.extension!!.copy(packageNames = listOf("new-package")),
+        )
+        val oldRoot = install(old)
+        assertNotNull(find(old))
+        install(current, "updated")
+        ResourcePackInstallations.cleanupObsolete(current, listOf(old), ::directory)
+        assertFalse(oldRoot.exists())
+        assertEquals(current, checkNotNull(find(current)).spec)
+    }
 }

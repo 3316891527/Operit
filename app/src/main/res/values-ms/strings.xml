@@ -1111,8 +1111,7 @@
     <string name="info">Maklumat</string>
     <string name="read_message">Bacakan Mesej</string>
     <string name="auto_read_message">Bacaan Automatik</string>
-    <string name="auto_read_desc">Apabila dihidupkan, balasan AI akan dibacakan secara automatik</string>
-    <string name="auto_read_active">Bacaan Automatik Dihidupkan</string>
+    <string name="auto_read_desc">Bacakan balasan AI secara automatik dalam sembang biasa. Panggilan suara sentiasa membacakan balasan tanpa bergantung pada suis ini.</string>
     <string name="disable_stream_output">Lumpuhkan Output Aliran</string>
     <string name="disable_stream_output_desc">Apabila dilumpuhkan, balasan AI akan dipaparkan sekali gus secara lengkap, bukan secara aliran perkataan demi perkataan</string>
     <string name="disable_settings_group">Item Dilumpuhkan</string>
@@ -6604,11 +6603,8 @@
     <string name="chat_shared_text_target_dialog_message">Teks yang dikongsi dikesan. Sila pilih salah satu daripada 5 perbualan terbaru, atau buat perbualan baharu.</string>
     <string name="chat_shared_text_target_new_chat_hint">Cipta perbualan baharu dan isi teks ke dalam kotak input</string>
     <string name="agent_menu_tools">Alatan</string>
-    <string name="agent_menu_behavior">Tingkah Laku</string>
     <string name="agent_menu_plugins">Pemalam</string>
     <string name="agent_menu_permission_disabled">Lumpuhkan</string>
-    <string name="agent_menu_behavior_streaming">Penstriman</string>
-    <string name="agent_menu_behavior_non_streaming">Bukan Penstriman</string>
     <string name="add_selected_to_memory">Masukkan ke dalam Ingatan Ringkasan</string>
     <string name="speech_services_tts_type_mimo">MiMo TTS</string>
     <string name="speech_services_tts_type_doubao">Doubao TTS</string>

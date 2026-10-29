@@ -55,6 +55,8 @@ data class ThemePreferenceValues(
                     "theme_mode" to UserPreferencesManager.THEME_MODE_LIGHT,
                     "background_media_type" to UserPreferencesManager.MEDIA_TYPE_IMAGE,
                     "chat_style" to UserPreferencesManager.CHAT_STYLE_CURSOR,
+                    "user_chat_style" to UserPreferencesManager.CHAT_STYLE_CURSOR,
+                    "ai_chat_style" to UserPreferencesManager.CHAT_STYLE_CURSOR,
                     "avatar_shape" to UserPreferencesManager.AVATAR_SHAPE_CIRCLE,
                     "on_color_mode" to UserPreferencesManager.ON_COLOR_MODE_AUTO,
                     "input_style" to UserPreferencesManager.INPUT_STYLE_AGENT,
@@ -182,7 +184,8 @@ data class ThemePreferenceSnapshot(
     val chatInputWaterGlass: Boolean get() = values.requiredBoolean("chat_input_water_glass")
     val useBackgroundBlur: Boolean get() = values.requiredBoolean("use_background_blur")
     val backgroundBlurRadius: Float get() = values.requiredFloat("background_blur_radius")
-    val chatStyle: String get() = values.requiredString("chat_style")
+    val userChatStyle: String get() = values.requiredString("user_chat_style")
+    val aiChatStyle: String get() = values.requiredString("ai_chat_style")
     val inputStyle: String get() = values.requiredString("input_style")
     val bubbleShowAvatar: Boolean get() = values.requiredBoolean("bubble_show_avatar")
     val bubbleWideLayoutEnabled: Boolean get() = values.requiredBoolean("bubble_wide_layout_enabled")

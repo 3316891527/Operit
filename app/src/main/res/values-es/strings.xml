@@ -1764,8 +1764,7 @@
     <string name="chat_hidden_user_message_placeholder">Mensaje de usuario activado automáticamente (contenido oculto)</string>
     <string name="info">Información</string>
     <string name="auto_read_message">Lectura automática</string>
-    <string name="auto_read_desc">Al activarlo, las respuestas de la IA se leerán automáticamente en voz alta</string>
-    <string name="auto_read_active">Lectura automática activada</string>
+    <string name="auto_read_desc">Leer automáticamente las respuestas de la IA en los chats normales. Las llamadas de voz siempre leen las respuestas, independientemente de este interruptor.</string>
     <string name="disable_stream_output">Deshabilitar salida en streaming</string>
     <string name="disable_stream_output_desc">Al deshabilitarlo, las respuestas de la IA se mostrarán completas de una vez, en lugar de mostrarse carácter por carácter en streaming</string>
     <string name="disable_settings_group">Deshabilitaciones</string>
@@ -6672,11 +6671,8 @@
     <string name="chat_shared_text_target_dialog_message">Se detectó texto compartido. Seleccione una de las últimas 5 conversaciones o cree una nueva.</string>
     <string name="chat_shared_text_target_new_chat_hint">Crear una nueva conversación y pegar el texto en el campo de entrada</string>
     <string name="agent_menu_tools">Herramientas</string>
-    <string name="agent_menu_behavior">Comportamiento</string>
     <string name="agent_menu_plugins">Complementos</string>
     <string name="agent_menu_permission_disabled">Deshabilitado</string>
-    <string name="agent_menu_behavior_streaming">Streaming</string>
-    <string name="agent_menu_behavior_non_streaming">No streaming</string>
     <string name="add_selected_to_memory">Incluir en la memoria de resumen</string>
     <string name="speech_services_tts_type_mimo">MiMo TTS</string>
     <string name="speech_services_tts_type_doubao">Doubao TTS</string>

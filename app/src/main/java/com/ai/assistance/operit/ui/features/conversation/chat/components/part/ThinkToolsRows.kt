@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.components.part
 
 import androidx.compose.runtime.Composable
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.ToolTimingSummary
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.toolTimingTitle
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
@@ -14,6 +16,8 @@ internal data class ThinkToolsGroupInfo(
     val toolCount: Int,
     val searchCount: Int,
     val autoExpand: Boolean,
+    val thoughtCount: Int = 0,
+    val timing: ToolTimingSummary = ToolTimingSummary(emptyList()),
 )
 
 internal sealed interface ThinkToolsRow {
@@ -74,6 +78,7 @@ internal fun buildThinkToolsRows(
 
 @Composable
 internal fun thinkToolsGroupTitle(info: ThinkToolsGroupInfo): String = when {
+    info.toolCount > 0 -> toolTimingTitle(info.timing, info.thoughtCount, info.searchCount)
     info.group.stableKey.startsWith("tools-only-") -> stringResource(R.string.tools_group_title_with_count, info.toolCount)
     info.group.stableKey.startsWith("search-only-") -> stringResource(R.string.search_group_title)
     info.searchCount > 0 && info.toolCount > 0 -> stringResource(R.string.thinking_search_tools_group_title_with_count, info.toolCount)

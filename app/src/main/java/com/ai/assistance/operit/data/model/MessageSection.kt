@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.model
 
+import com.ai.assistance.operit.data.model.tooltiming.ToolCallExecution
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Transient
@@ -44,6 +45,7 @@ sealed class MessageSection {
         val name: String,
         val params: Map<String, String> = emptyMap(),
         val raw: String = "",
+        val execution: ToolCallExecution? = null,
     ) : MessageSection() {
         override val type: String get() = TYPE
 

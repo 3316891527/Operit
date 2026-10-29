@@ -43,6 +43,7 @@ data class MessageVariantEntity(
         return baseMessage.copy(
             content = MessageSectionCodec.render(parsed),
             sections = parsed,
+            toolTimingState = null,
             roleName = roleName.ifBlank { baseMessage.roleName },
             selectedVariantIndex = variantIndex,
             variantCount = variantCount,

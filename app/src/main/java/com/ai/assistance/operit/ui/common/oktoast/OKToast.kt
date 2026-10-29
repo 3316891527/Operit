@@ -93,10 +93,11 @@ object OKToast {
         })
     }
 
-    /** 悬浮聊天窗口使用自己已有的窗口 token，不请求额外权限。返回值用于对称注销。 */
+    /** 对话框、面板和悬浮窗口使用自己的根视图及窗口 token，返回值用于对称注销。 */
     fun registerWindow(view: View): () -> Unit {
         check(Looper.myLooper() == Looper.getMainLooper())
-        val reference = WeakReference(view)
+        parkNoticesForHostChange()
+        val reference = WeakReference(view.rootView)
         windowHosts.add(reference)
         view.post { showNext() }
         return {
@@ -202,15 +203,17 @@ object OKToast {
             card.translationY = (if (isRequestError) -8 else 8) * density
             card.animate().alpha(1f).translationY(0f).setDuration(180).start()
         }
-        // 长错误不再按字数延长到十秒；无障碍用户仍采用系统建议时长。
-        val base = if (notice.duration == LENGTH_LONG) 3500 else 2000
+        // 请求错误至少显示五秒，长文本递增到十二秒；普通操作提示沿用原时长。
+        val base = if (isRequestError) RequestErrorDuration.baseMillis(notice.message)
+            else if (notice.duration == LENGTH_LONG) 3500 else 2000
         val accessibility = requireNotNull(context.getSystemService(AccessibilityManager::class.java))
         val timeout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val flags = AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_ICONS or
                 (if (isRequestError) AccessibilityManager.FLAG_CONTENT_CONTROLS else 0)
             accessibility.getRecommendedTimeoutMillis(base, flags)
         } else base
-        main.postDelayed(dismiss, timeout.toLong())
+        val displayMillis = if (isRequestError) RequestErrorDuration.limitMillis(timeout) else timeout
+        main.postDelayed(dismiss, displayMillis.toLong())
     }
 
     private fun dismissCurrent(animate: Boolean) {

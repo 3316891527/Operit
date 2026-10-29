@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.error
 
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import okhttp3.Request
 
 internal enum class RequestPhase {
@@ -14,6 +15,11 @@ internal data class RequestFailureContext(
     val httpStatus: Int?,
     val requestBodySent: Boolean,
     val providerRequestId: String?,
+    val responseBodyBytesRead: Long = 0L,
+    val clientCancelled: Boolean = false,
+    val streamEventsParsed: Long? = null,
+    val outputCharsParsed: Long? = null,
+    val protocolCompleted: Boolean? = null,
 )
 
 /** 每个 Call 独立持有阶段，避免并发聊天共用最后一次请求的状态。 */
@@ -23,10 +29,22 @@ internal class RequestFailureTrace(val requestId: String = "http_${UUID.randomUU
     @Volatile var httpStatus: Int? = null
     @Volatile var requestBodySent = false
     @Volatile var providerRequestId: String? = null
+    @Volatile var clientCancelled = false
+    @Volatile var streamEventsParsed: Long? = null
+    @Volatile var outputCharsParsed: Long? = null
+    @Volatile var protocolCompleted: Boolean? = null
+    private val responseBytes = AtomicLong()
+    val responseBodyBytesRead: Long get() = responseBytes.get()
+
+    fun recordResponseBytes(count: Long) {
+        require(count >= 0L)
+        responseBytes.addAndGet(count)
+    }
 
     fun snapshot() = RequestFailureContext(
         requestId, phase, (System.nanoTime() - startedAtNs) / 1_000_000,
         httpStatus, requestBodySent, providerRequestId,
+        responseBodyBytesRead, clientCancelled, streamEventsParsed, outputCharsParsed, protocolCompleted,
     )
 
     companion object {

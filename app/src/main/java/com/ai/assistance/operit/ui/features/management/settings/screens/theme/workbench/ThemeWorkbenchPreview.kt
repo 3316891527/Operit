@@ -48,7 +48,6 @@ internal fun ThemeWorkbenchPreview(
     full: Boolean = false,
     layoutPreview: Boolean = false,
     showDescription: Boolean = true,
-    showSidebar: Boolean = true,
 ) {
     val values by editorSession.values.collectAsState()
     val userName by editorSession.globalUserNameFlow.collectAsState()
@@ -121,11 +120,18 @@ internal fun ThemeWorkbenchPreview(
                             ThemePreviewMessage(values, user = true, userName = userName)
                             ThemePreviewMessage(values, user = false, userName = userName)
                             ThemePreviewInput(values)
-                            if (full && showSidebar) ThemePreviewSidebar(values)
                         }
                     }
                 }
             }
+            Text(
+                stringResource(R.string.theme_message_style_summary,
+                    themeMessageStyleLabel(values.requiredString("user_chat_style")),
+                    themeMessageStyleLabel(values.requiredString("ai_chat_style"))),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

@@ -248,7 +248,8 @@ fun ChatArea(
     onRevealMessageForLocator: (suspend (Long) -> Boolean)? = null,
     topPadding: Dp = 0.dp,
     bottomPadding: Dp = 0.dp,
-    chatStyle: ChatStyle = ChatStyle.CURSOR, // 新增参数，默认为CURSOR风格
+    userChatStyle: ChatStyle = ChatStyle.CURSOR,
+    aiChatStyle: ChatStyle = ChatStyle.CURSOR,
     cursorUserBubbleLiquidGlass: Boolean = false,
     cursorUserBubbleWaterGlass: Boolean = false,
     bubbleUserBubbleLiquidGlass: Boolean = false,
@@ -359,7 +360,7 @@ fun ChatArea(
     val shouldHideLastAiMessage =
         isLatestMessageVisible &&
             showLoadingIndicator &&
-            chatStyle == ChatStyle.BUBBLE &&
+            aiChatStyle == ChatStyle.BUBBLE &&
             lastMessage?.sender == "ai"
     // 跟随只由新消息和流式正文推进，展开历史卡片不会触发跳到底部。
     LaunchedEffect(currentChatId, autoScrollToBottom, messagesCount, hasNewerDisplayHistory, isLoadingDisplayWindow, lastMessageContentLength, lastMessage?.contentStream, lastRenderNodes?.size, lastRenderNodes?.lastOrNull()?.content?.length) {
@@ -435,7 +436,7 @@ fun ChatArea(
                     onInsertSummary = onInsertSummary,
                     onTranslateMessage = onTranslateMessage,
                     onMentionRoleFromAvatar = onMentionRoleFromAvatar,
-                    chatStyle = chatStyle,
+                    chatStyle = if (message.sender == "user") userChatStyle else aiChatStyle,
                     showMessageTokenStats = showMessageTokenStats,
                     showMessageTimingStats = showMessageTimingStats,
                     showMessageTokenSpeed = showMessageTokenSpeed,

@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat
 
+import com.ai.assistance.operit.data.model.tooltiming.ToolCallExecution
 import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.media.currentTurnMediaHistory
@@ -342,6 +343,7 @@ object AIMessageManager {
         groupParticipantNamesText: String? = null,
         proxySenderName: String? = null,
         onToolInvocation: (suspend (String) -> Unit)? = null,
+        onToolTiming: suspend (ToolCallExecution) -> Unit = {},
         notifyReplyOverride: Boolean? = null,
         chatModelConfigIdOverride: String? = null,
         chatModelIndexOverride: Int? = null,
@@ -454,6 +456,7 @@ object AIMessageManager {
                     groupParticipantNamesText = groupParticipantNamesText,
                     proxySenderName = proxySenderName,
                     onToolInvocation = onToolInvocation,
+                    onToolTiming = onToolTiming,
                     notifyReplyOverride = notifyReplyOverride,
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,

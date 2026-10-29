@@ -35,7 +35,7 @@ internal fun sortDirectoryEntries(entries: List<DirectoryEntry>, mode: Int, desc
 @Composable
 internal fun FileBrowserContextMenu(name: String, isDirectory: Boolean, canPaste: Boolean,
     onDismiss: () -> Unit, onCopy: (Boolean) -> Unit, onPaste: () -> Unit,
-    onRename: () -> Unit, onOpenWith: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+    onRename: () -> Unit, onProperties: () -> Unit, onOpenWith: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
             Column(Modifier.fillMaxWidth().padding(16.dp)) {
@@ -50,12 +50,12 @@ internal fun FileBrowserContextMenu(name: String, isDirectory: Boolean, canPaste
                     Action(Modifier.weight(1f), Icons.Default.DriveFileRenameOutline, R.string.file_menu_rename, onClick = onRename)
                 }
                 Row {
+                    Action(Modifier.weight(1f), Icons.Default.Info, R.string.workspace_properties_title, onClick = onProperties)
                     Action(Modifier.weight(1f), Icons.Default.OpenInNew, R.string.workspace_open_with, !isDirectory, onClick = onOpenWith)
-                    Action(Modifier.weight(1f), Icons.Default.Share, R.string.file_menu_share, !isDirectory, onClick = onShare)
                 }
                 Row {
+                    Action(Modifier.weight(1f), Icons.Default.Share, R.string.file_menu_share, !isDirectory, onClick = onShare)
                     Action(Modifier.weight(1f), Icons.Default.Delete, R.string.file_manager_delete, destructive = true, onClick = onDelete)
-                    Spacer(Modifier.weight(1f))
                 }
             }
         }

@@ -35,6 +35,8 @@ internal object ThemeTransferSchema {
             "bubble_user_image_uri",
             "bubble_user_system_font_name",
             "chat_style",
+            "user_chat_style",
+            "ai_chat_style",
             "custom_ai_avatar_uri",
             "custom_font_path",
             "custom_user_avatar_uri",
@@ -328,7 +330,9 @@ internal object ThemeTransferSchema {
             val allowed = if (full) allKeys else ordinaryKeys
             checkValue(config.keys.all { it in allowed })
             val fontFields = fontPrefixes.flatMap { fontKeys(it) }.toSet()
-            checkValue(config.keys.containsAll(if (full) allowed else allowed - fontFields))
+            // 旧版分享仍只有 chat_style；新增分侧字段在导入时从旧值明确迁移。
+            val legacyRequired = allowed - com.ai.assistance.operit.data.preferences.messagestyle.MessageStylePreferences.sideKeys
+            checkValue(config.keys.containsAll(if (full) legacyRequired else legacyRequired - fontFields))
             val strings = mutableMapOf<String, String>()
             val booleans = mutableMapOf<String, Boolean>()
             val ints = mutableMapOf<String, Int>()
@@ -367,7 +371,10 @@ internal object ThemeTransferSchema {
                     }
                 }
             }
-            val values = ThemePreferenceValues(strings, booleans, ints, floats)
+            val values = ThemePreferenceValues(
+                com.ai.assistance.operit.data.preferences.messagestyle.MessageStylePreferences.expandLegacy(strings),
+                booleans, ints, floats,
+            )
             fontPrefixes.forEach { prefix ->
                 val fields = fontKeys(prefix)
                 checkValue(
@@ -402,7 +409,11 @@ internal object ThemeTransferSchema {
                     layoutValue("ai_markdown_paragraph_spacing"),
                 )
             settings.validate()
-            return ThemeTransferDocument(name, author, values, config.keys, settings, full)
+            return ThemeTransferDocument(
+                name, author, values,
+                config.keys + com.ai.assistance.operit.data.preferences.messagestyle.MessageStylePreferences.sideKeys,
+                settings, full,
+            )
         } catch (e: ThemeTransferException) {
             throw e
         } catch (e: Exception) {
@@ -468,7 +479,7 @@ internal object ThemeTransferSchema {
         val allowed =
             when (key) {
                 "theme_mode" -> setOf("light", "dark")
-                "chat_style" -> setOf("cursor", "bubble")
+                "chat_style", "user_chat_style", "ai_chat_style" -> setOf("cursor", "bubble")
                 "avatar_shape" -> setOf("circle", "square")
                 "on_color_mode" -> setOf("auto", "light", "dark")
                 "input_style" -> setOf("classic", "agent")

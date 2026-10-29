@@ -4483,16 +4483,12 @@
     <string name="info">情報</string>
     <string name="read_message">メッセージを読み上げ</string>
     <string name="auto_read_message">自動読み上げ</string>
-    <string name="auto_read_desc">有効にすると AI の応答を自動で読み上げます</string>
-    <string name="auto_read_active">自動読み上げを有効にしました</string>
+    <string name="auto_read_desc">通常のチャットで AI の返答を自動的に読み上げます。音声通話では、このスイッチに関係なく常に読み上げます。</string>
     <string name="disable_stream_output">ストリーミング出力を無効化</string>
     <string name="disable_stream_output_desc">有効にすると、AI の応答を逐次表示せず、全体をまとめて表示します</string>
     <string name="disable_settings_group">無効化する機能</string>
     <string name="disable_settings_group_desc">応答の動作に影響する無効化設定をまとめて管理します</string>
     <string name="manage_tools">ツール管理</string>
-    <string name="agent_menu_behavior">動作</string>
-    <string name="agent_menu_behavior_streaming">ストリーミング</string>
-    <string name="agent_menu_behavior_non_streaming">一括表示</string>
     <string name="tool_prompt_manager_title">ツールのプロンプト管理</string>
     <string name="manage_packages">パッケージを管理</string>
     <string name="disable_user_preference_description">user.md を無効化</string>

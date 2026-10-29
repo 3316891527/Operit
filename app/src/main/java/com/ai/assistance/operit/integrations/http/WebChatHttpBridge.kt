@@ -277,7 +277,7 @@ class WebChatHttpBridge(
             WebBootstrapResponse(
                 versionName = BuildConfig.VERSION_NAME,
                 currentChatId = currentChatId,
-                defaultChatStyle = snapshot.chatStyle,
+                defaultChatStyle = snapshot.aiChatStyle,
                 defaultInputStyle = snapshot.inputStyle,
                 showThinkingProcess = snapshot.showThinkingProcess,
                 showStatusTags = snapshot.showStatusTags,
@@ -2411,7 +2411,7 @@ class WebChatHttpBridge(
                 },
                 scale = snapshot.fontScale
             ),
-            chatStyle = snapshot.chatStyle,
+            chatStyle = snapshot.aiChatStyle,
             showThinkingProcess = snapshot.showThinkingProcess,
             showStatusTags = snapshot.showStatusTags,
             showInputProcessingStatus = snapshot.showInputProcessingStatus,

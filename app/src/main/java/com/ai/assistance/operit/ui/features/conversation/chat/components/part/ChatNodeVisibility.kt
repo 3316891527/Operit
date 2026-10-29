@@ -5,7 +5,7 @@ import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
 
 private val hiddenProtocolMetaProvider = Regex(
-    """\bprovider\s*=\s*["'](?:gemini:thought_signature|openai:responses_reasoning|openai:responses_output_item)["']""",
+    """\bprovider\s*=\s*["'](?:gemini:thought_signature|openai:responses_reasoning|openai:responses_output_item|operit:tool_timing)["']""",
     RegexOption.IGNORE_CASE,
 )
 

@@ -548,7 +548,8 @@ internal fun ThemeSettingsChatTab(
     val defaultBubbleUserBubbleColor = MaterialTheme.colorScheme.primaryContainer.toArgb()
     val defaultBubbleAiBubbleColor = MaterialTheme.colorScheme.surface.toArgb()
 
-    val chatStyleInput = values.requiredString("chat_style")
+    val userChatStyleInput = values.requiredString("user_chat_style")
+    val aiChatStyleInput = values.requiredString("ai_chat_style")
     val inputStyleInput = values.requiredString("input_style")
     val bubbleShowAvatarInput = values.requiredBoolean("bubble_show_avatar")
     val bubbleWideLayoutEnabledInput = values.requiredBoolean("bubble_wide_layout_enabled")
@@ -687,7 +688,8 @@ internal fun ThemeSettingsChatTab(
     ThemeSettingsChatStyleSection(
         cardColors = cardColors,
         editorSession = editorSession,
-        chatStyleInput = chatStyleInput,
+        userChatStyleInput = userChatStyleInput,
+        aiChatStyleInput = aiChatStyleInput,
         inputStyleInput = inputStyleInput,
         bubbleShowAvatarInput = bubbleShowAvatarInput,
         bubbleWideLayoutEnabledInput = bubbleWideLayoutEnabledInput,

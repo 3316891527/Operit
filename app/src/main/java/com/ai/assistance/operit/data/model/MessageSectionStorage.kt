@@ -39,7 +39,9 @@ object MessageSectionStorage {
     }
 
     private fun restoreToolResultContent(sections: List<MessageSection>): List<MessageSection> {
-        return sections.map { section ->
+        return sections.filterNot {
+            it is MessageSection.Protocol && it.provider == "operit:tool_timing"
+        }.map { section ->
             if (section is MessageSection.ToolResult && section.raw.isNotEmpty() &&
                 ToolResultMarkup.isCompleteBlock(section.raw)) {
                 val content = ToolResultMarkup.contentFromBlock(section.raw).trim()
@@ -71,7 +73,7 @@ object MessageSectionStorage {
     /** 只在旧库升级、旧备份导入时调用，保留已写入的开发版前缀记录。 */
     fun decodeLegacy(content: String): List<MessageSection> {
         val marker = "operit-sections:1:"
-        if (!content.startsWith(marker)) return MessageSectionCodec.parse(content)
+        if (!content.startsWith(marker)) return restoreToolResultContent(MessageSectionCodec.parse(content))
         val envelope = json.parseToJsonElement(content.removePrefix(marker)).jsonObject
         return decodeLegacySections(envelope.getValue("sections"))
     }
@@ -92,6 +94,6 @@ object MessageSectionStorage {
             }
             fields["type"] = JsonPrimitive(type)
             json.decodeFromJsonElement<MessageSection>(JsonObject(fields))
-        }
+        }.let(::restoreToolResultContent)
     }
 }

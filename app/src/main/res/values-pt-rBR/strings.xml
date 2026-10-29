@@ -1200,8 +1200,7 @@
     <string name="info">Informação</string>
     <string name="read_message">Leia mensagens em voz alta</string>
     <string name="auto_read_message">Ler em voz alta automaticamente</string>
-    <string name="auto_read_desc">Quando ativado, as respostas da IA ​​serão lidas automaticamente</string>
-    <string name="auto_read_active">A leitura automática em voz alta está ativada</string>
+    <string name="auto_read_desc">Ler automaticamente as respostas da IA em conversas comuns. As chamadas de voz sempre leem as respostas, independentemente desta opção.</string>
     <string name="disable_stream_output">Desativar saída de streaming</string>
     <string name="disable_stream_output_desc">Quando desativadas, as respostas da IA ​​serão exibidas na íntegra de uma só vez, em vez de serem transmitidas literalmente</string>
     <string name="disable_settings_group">Itens desativados</string>
@@ -6445,11 +6444,8 @@
     <string name="chat_shared_text_target_dialog_message">Texto compartilhado detectado. Selecione um dos 5 chats recentes ou crie um novo.</string>
     <string name="chat_shared_text_target_new_chat_hint">Criar um novo chat e inserir o texto no campo de entrada</string>
     <string name="agent_menu_tools">Ferramentas</string>
-    <string name="agent_menu_behavior">Comportamento</string>
     <string name="agent_menu_plugins">Plugins</string>
     <string name="agent_menu_permission_disabled">Desativado</string>
-    <string name="agent_menu_behavior_streaming">Streaming</string>
-    <string name="agent_menu_behavior_non_streaming">Não streaming</string>
     <string name="add_selected_to_memory">Adicionar à memória de resumo</string>
     <string name="speech_services_tts_type_mimo">MiMo TTS</string>
     <string name="speech_services_tts_type_doubao">Doubao TTS</string>

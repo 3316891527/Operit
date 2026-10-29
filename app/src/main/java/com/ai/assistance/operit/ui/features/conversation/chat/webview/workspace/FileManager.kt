@@ -4,6 +4,10 @@ import android.content.Intent
 import android.net.Uri
 import android.annotation.SuppressLint
 import android.os.Environment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ai.assistance.operit.data.resources.OfflineResources
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.Color
@@ -68,6 +72,8 @@ import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserClipboardItem
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserContextMenu
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserOperations
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.properties.WorkspacePropertiesTarget
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.properties.WorkspacePropertiesDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserSelectionBar
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserSortDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.isValidWorkspaceEntryName
@@ -133,6 +139,7 @@ fun FileBrowser(
     var renameInput by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<DirectoryEntry?>(null) }
     var openWithTarget by remember { mutableStateOf<DirectoryEntry?>(null) }
+    var propertiesTarget by remember { mutableStateOf<WorkspacePropertiesTarget?>(null) }
     val listState = rememberLazyListState()
     val operations = remember(context) { FileBrowserOperations(context) }
     val clipboard by FileBrowserClipboard.content.collectAsState()
@@ -186,25 +193,35 @@ fun FileBrowser(
         return if (parent.isBlank()) "/" else parent
     }
 
-    // 快速路径定义
-    val quickPaths = remember {
-        listOf(
-            QuickPathEntry(
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var installationRevision by remember { mutableIntStateOf(0) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) installationRevision++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val linuxInstalled = remember(installationRevision) { OfflineResources.ubuntuInstalled(context) }
+    // 入口只依据安装完成标记，浏览文件不创建终端会话。
+    val quickPaths = remember(linuxInstalled) {
+        buildList {
+            if (linuxInstalled) add(QuickPathEntry(
                 name = "Linux",
                 path = "/",
                 icon = Icons.Default.Terminal
-            ),
-            QuickPathEntry(
+            ))
+            add(QuickPathEntry(
                 name = "SDCard",
                 path = Environment.getExternalStorageDirectory().absolutePath,
                 icon = Icons.Default.SdCard
-            ),
-            QuickPathEntry(
+            ))
+            add(QuickPathEntry(
                 name = "Workspace",
                 path = File(context.filesDir, "workspace").absolutePath,
                 icon = Icons.Default.Folder
-            )
-        )
+            ))
+        }
     }
 
     // 本机 Android 路径直接使用 File API，避免权限级文件工具的 shell 列表解析漏掉普通文件。
@@ -513,7 +530,13 @@ fun FileBrowser(
         }
     }
 
-    LaunchedEffect(initialPath, environment) { loadDirectory(initialPath, environment) }
+    LaunchedEffect(initialPath, environment, linuxInstalled) {
+        if (environment.equals("linux", ignoreCase = true) && !linuxInstalled) {
+            errorMessage = context.getString(R.string.hub_unprepared)
+        } else {
+            loadDirectory(initialPath, environment)
+        }
+    }
 
     if (showCreateFileDialog) {
         AlertDialog(
@@ -635,6 +658,11 @@ fun FileBrowser(
                 }) { Text(stringResource(R.string.workspace_open_external)) }
             } }, confirmButton = {})
     }
+    propertiesTarget?.let { target ->
+        WorkspacePropertiesDialog(target,
+            onDismiss = { propertiesTarget = null },
+            onModified = { loadDirectory(currentPath, currentEnvironment) })
+    }
     contextMenuExpandedFor?.let { target ->
         FileBrowserContextMenu(target.name, target.isDirectory, clipboard.isNotEmpty(),
             onDismiss = { contextMenuExpandedFor = null },
@@ -648,6 +676,10 @@ fun FileBrowser(
                 runOperation { operations.paste(destination, currentEnvironment) }
             },
             onRename = { contextMenuExpandedFor = null; renameTarget = target; renameInput = target.name },
+            onProperties = {
+                propertiesTarget = WorkspacePropertiesTarget(joinPath(currentPath, target.name), currentEnvironment)
+                contextMenuExpandedFor = null
+            },
             onOpenWith = { contextMenuExpandedFor = null; openWithTarget = target },
             onShare = { contextMenuExpandedFor = null; runOperation {
                 operations.externalOpen(joinPath(currentPath, target.name), currentEnvironment, true)

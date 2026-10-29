@@ -2,6 +2,7 @@ package com.ai.assistance.operit.api.chat.llmprovider
 
 import com.ai.assistance.operit.api.chat.error.RequestFailure
 import com.ai.assistance.operit.api.chat.error.RequestFailureTrace
+import com.ai.assistance.operit.api.chat.transport.readResponseLine
 import com.ai.assistance.operit.api.chat.error.RequestFailureCode
 import com.ai.assistance.operit.api.chat.error.RequestFailureException
 import com.ai.assistance.operit.api.chat.error.ResponseJson
@@ -1560,6 +1561,7 @@ open class OpenAIProvider(
         private val onFirstOutput: () -> Unit = {}
     ) {
         private val savepointLengths = mutableMapOf<String, Int>()
+        var failureTrace: RequestFailureTrace? = null
 
         private fun markFirstOutputIfNeeded() {
             // 思考标签会先写入缓冲，不能把缓冲为空当成还没收到输出。
@@ -1569,6 +1571,7 @@ open class OpenAIProvider(
         suspend fun emitContent(content: String) {
             if (content.isNotNullOrEmpty()) {
                 markFirstOutputIfNeeded()
+                failureTrace?.let { it.outputCharsParsed = (it.outputCharsParsed ?: 0L) + content.length }
                 emit(content)
                 receivedContent.append(content)
                 tokenCacheManager.addOutputTokens(ChatUtils.estimateTokenCount(content))
@@ -1583,6 +1586,7 @@ open class OpenAIProvider(
         suspend fun emitThinkContent(thinkContent: String) {
             if (thinkContent.isNotNullOrEmpty()) {
                 markFirstOutputIfNeeded()
+                failureTrace?.let { it.outputCharsParsed = (it.outputCharsParsed ?: 0L) + thinkContent.length }
                 val wrapped = ThinkingMarkup.wrap(thinkContent)
                 emit(wrapped)
                 receivedContent.append(wrapped)
@@ -3148,11 +3152,19 @@ open class OpenAIProvider(
         attemptNumber: Int = 1
     ) {
         val state = StreamingState()
+        val trace = emitter.failureTrace
+        trace?.let {
+            it.streamEventsParsed = 0L
+            it.outputCharsParsed = 0L
+            it.protocolCompleted = false
+        }
 
         try {
             // 使用 while 循环读取流式响应
             while (true) {
-                val line = reader.readLine() ?: break
+                val line = reader.readResponseLine(state.streamCompletionConfirmed) {
+                    isManuallyCancelled || trace?.clientCancelled == true
+                } ?: break
 
                 if (!line.startsWith("data:")) {
                     continue
@@ -3165,6 +3177,7 @@ open class OpenAIProvider(
                     closeAllOpenToolCalls(state, emitter)
                     closeReasoningModeIfOpen(state, emitter)
                     state.streamCompletionConfirmed = true
+                    trace?.protocolCompleted = true
                     AppLogger.d("AIService", "【发送消息】收到流结束标记[DONE]")
                     break
                 }
@@ -3179,9 +3192,15 @@ open class OpenAIProvider(
                 try {
                     val jsonResponse = ResponseJson.parseObject(data, streaming = true)
                     throwIfOpenAiErrorPayload(context, jsonResponse)
+                    trace?.streamEventsParsed = state.chunkCount.toLong()
 
                     if (useResponsesApi) {
                         processResponsesStreamingEvent(context, jsonResponse, state, emitter, onTokensUpdated, onUsageReported, attemptNumber)
+                        if (state.streamCompletionConfirmed) {
+                            trace?.protocolCompleted = true
+                            // Responses 最终事件已含用量，协议不要求后续出现 [DONE] 或断开连接。
+                            break
+                        }
                         continue
                     }
 
@@ -3192,6 +3211,11 @@ open class OpenAIProvider(
                         }
                     }
                     processResponseChunk(jsonResponse, state, emitter, onTokensUpdated, onUsageReported, attemptNumber)
+                    if (state.streamCompletionConfirmed) {
+                        trace?.protocolCompleted = true
+                        // Chat Completions 的 usage 可以晚于 finish_reason；收到后即可结束补读。
+                        if (jsonResponse.optJSONObject("usage") != null) break
+                    }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: IOException) {
@@ -3332,7 +3356,9 @@ open class OpenAIProvider(
                 AppLogger.d("AIService", "[req=$requestTraceId] 【发送消息】准备连接到AI服务...")
 
                 // 创建Call对象并保存到activeCall中，以便可以取消
-                val call = client.newCall(RequestFailureTrace.attach(request, requestTraceId))
+                val tracedRequest = RequestFailureTrace.attach(request, requestTraceId)
+                emitter.failureTrace = tracedRequest.tag(RequestFailureTrace::class.java)
+                val call = client.newCall(tracedRequest)
                 attemptCall = call
                 activeCall = call
                 watchdog.start(call)

@@ -11,21 +11,18 @@ import com.ai.assistance.operit.ui.floating.FloatContext
 import com.ai.assistance.operit.ui.floating.ui.fullscreen.XmlTextProcessor
 import com.ai.assistance.operit.util.text.XmlTagCleaner
 import com.ai.assistance.operit.ui.floating.voice.SpeechInteractionManager
-import com.ai.assistance.operit.util.logging.AppLogger
-import com.ai.assistance.operit.core.speech.text.TtsSegmenter
+import com.ai.assistance.operit.ui.floating.voice.MessageSpeechPlayback
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.util.stream.Stream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
-private const val TAG = "FloatingFullscreenViewModel"
 private const val FULLSCREEN_TTS_CAPTURE_SUPPRESS_MS = 1200L
 
 class FloatingFullscreenModeViewModel(
@@ -51,12 +48,10 @@ class FloatingFullscreenModeViewModel(
     var hasOcrSelection by mutableStateOf(false)
     var isStreamingTtsMuted by mutableStateOf(false)
     
-    val isInitialLoad = mutableStateOf(true)
 
      private var aiStreamJob: Job? = null
      private var activeAiStreamIdentity: Int? = null
      private var activeAiMessageTimestamp: Long? = null
-     private var ttsSpeakJob: Job? = null
 
     private val wakePrefs by lazy { WakeWordPreferences(context.applicationContext) }
     private var inactivityTimeoutSeconds: Int = WakeWordPreferences.DEFAULT_VOICE_CALL_INACTIVITY_TIMEOUT_SECONDS
@@ -94,6 +89,11 @@ class FloatingFullscreenModeViewModel(
         onStateChange = { msg -> aiMessage = msg }
     )
     
+    private val messagePlayback = MessageSpeechPlayback(context, coroutineScope) {
+        OKToast.error(context, context.getString(R.string.chat_speak_failed)).show()
+    }
+    private var releaseMessageSpeech: (() -> Unit)? = null
+
     // 代理属性，方便 UI 访问
     val isRecording: Boolean get() = speechManager.isRecording
     val isProcessingSpeech: Boolean get() = speechManager.isProcessingSpeech
@@ -113,14 +113,10 @@ class FloatingFullscreenModeViewModel(
         }
     }
 
-    private fun stopCurrentTtsPlayback() {
-        ttsSpeakJob?.cancel()
-        ttsSpeakJob = null
-        coroutineScope.launch { speechManager.voiceService.stop() }
-    }
+    private fun stopCurrentTtsPlayback(): Job = messagePlayback.stop()
 
     private fun isAiBusyOrSpeaking(): Boolean {
-        return isAiBusy() || speechManager.voiceService.isSpeaking
+        return isAiBusy() || messagePlayback.hasPending || messagePlayback.isSpeaking
     }
 
     private fun shouldInterceptCenterAvatarClick(): Boolean {
@@ -170,126 +166,39 @@ class FloatingFullscreenModeViewModel(
         resumeVoiceCaptureJob = null
     }
 
-    fun processAndSpeakAiMessage(lastMessage: ChatMessage?, ttsCleanerRegexs: List<String>) {
+    fun processAiMessage(lastMessage: ChatMessage?) {
         val message = lastMessage ?: return
+        val stream = message.contentStream
+        val streamIdentity = stream?.let { System.identityHashCode(it) }
+        if (activeAiMessageTimestamp == message.timestamp &&
+            streamIdentity != null && activeAiStreamIdentity == streamIdentity) return
 
-         // If we are switching to a new message, stop any previous stream collector.
-         // This avoids duplicate collectors (and duplicated replay) when the upstream SharedStream replays history.
-         if (activeAiMessageTimestamp != null && activeAiMessageTimestamp != message.timestamp) {
-             aiStreamJob?.cancel()
-             aiStreamJob = null
-             activeAiStreamIdentity = null
-         }
-         activeAiMessageTimestamp = message.timestamp
-        
-        if (isInitialLoad.value) {
-            isInitialLoad.value = false
-            if (message.sender == "ai") aiMessage = stripVoiceXmlTags(message.content)
-            return
-        }
-        
-        stopCurrentTtsPlayback()
-        
+        aiStreamJob?.cancel()
+        aiStreamJob = null
+        activeAiMessageTimestamp = message.timestamp
+        activeAiStreamIdentity = streamIdentity
+        // 这里只更新文字；朗读由消息处理层提交，消息定稿不会停止正在准备的音频。
         when (message.sender) {
-            "think" -> {
-                aiStreamJob?.cancel()
-                aiStreamJob = null
-                activeAiStreamIdentity = null
-                aiMessage = context.getString(R.string.floating_thinking)
-            }
+            "think" -> aiMessage = context.getString(R.string.floating_thinking)
             "ai" -> {
-                val stream = message.contentStream
-                if (stream != null) {
-                    val streamIdentity = System.identityHashCode(stream)
-                    if (aiStreamJob?.isActive == true && activeAiStreamIdentity == streamIdentity) {
-                        return
-                    }
-                    aiStreamJob?.cancel()
-                    aiStreamJob = null
-                    activeAiStreamIdentity = streamIdentity
-
-                    // 不要立即清空，等待流内容到达
-                    aiStreamJob = coroutineScope.launch {
-                        handleStreamResponse(stream, ttsCleanerRegexs)
-                    }
+                if (stream == null) {
+                    aiMessage = stripVoiceXmlTags(message.content)
                 } else {
-                    aiStreamJob?.cancel()
-                    aiStreamJob = null
-                    activeAiStreamIdentity = null
-                    handleStaticResponse(message.content)
+                    aiStreamJob = coroutineScope.launch { displayStreamResponse(stream) }
                 }
             }
         }
     }
 
-    private suspend fun handleStreamResponse(stream: Stream<String>, cleaners: List<String>) {
-        val sb = StringBuilder()
-        var isFirstSentence = true
-        var isFirstChar = true
+    private suspend fun displayStreamResponse(stream: Stream<String>) {
+        var first = true
         XmlTextProcessor.processStreamToText(stream).collect { char ->
-            if (isFirstChar) {
-                aiMessage = "" // 收到第一个字符时才清空等待提示
-                isFirstChar = false
+            if (first) {
+                aiMessage = ""
+                first = false
             }
             aiMessage += char
-            sb.append(char)
-            
-            val cutIdx = TtsSegmenter.nextSegmentEnd(sb)
-            if (cutIdx >= 0) {
-                val segment = sb.substring(0, cutIdx)
-                if (trySpeak(segment, isFirstSentence, cleaners, armMicSuppression = isFirstSentence)) {
-                    isFirstSentence = false
-                    sb.delete(0, cutIdx)
-                }
-            }
         }
-        trySpeak(sb.toString(), isFirstSentence, cleaners, armMicSuppression = isFirstSentence)
-    }
-
-    private fun handleStaticResponse(content: String) {
-        val plainContent = stripVoiceXmlTags(content)
-        aiMessage = plainContent
-    }
-
-    private fun trySpeak(
-        text: String,
-        interrupt: Boolean,
-        cleaners: List<String>,
-        armMicSuppression: Boolean = false
-    ): Boolean {
-        val cleanText = speechManager.cleanTextForTts(text.trim(), cleaners)
-        if (cleanText.isNotEmpty()) {
-            // 仅在非直接对话模式（底部输入模式）下应用静音
-            if (isStreamingTtsMuted && !isWaveActive) {
-                return true
-            }
-            if (armMicSuppression && isWaveActive) {
-                suppressRecognitionUntilMs = System.currentTimeMillis() + FULLSCREEN_TTS_CAPTURE_SUPPRESS_MS
-            }
-            enqueueSpeak(cleanText, interrupt)
-            return true
-        }
-        return false
-    }
-
-    private fun enqueueSpeak(text: String, interrupt: Boolean) {
-        val previousJob = if (interrupt) {
-            ttsSpeakJob?.cancel()
-            null
-        } else {
-            ttsSpeakJob
-        }
-
-        ttsSpeakJob =
-            coroutineScope.launch {
-                try {
-                    previousJob?.join()
-                    speechManager.voiceService.speak(text, interrupt)
-                } catch (_: kotlinx.coroutines.CancellationException) {
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "TTS playback failed", e)
-                }
-            }
     }
 
     // ===== 语音交互 =====
@@ -347,7 +256,7 @@ class FloatingFullscreenModeViewModel(
         suppressRecognitionUntilMs = 0L
         waveModeAutoTimeoutEnabled = false
         stopVoiceCapture(true)
-        coroutineScope.launch { speechManager.voiceService.stop() }
+        stopCurrentTtsPlayback()
         isWaveActive = false
         showBottomControls = true
         inactivityJob?.cancel()
@@ -370,7 +279,7 @@ class FloatingFullscreenModeViewModel(
         if (isWaveActive) {
             suppressRecognitionUntilMs = System.currentTimeMillis() + FULLSCREEN_TTS_CAPTURE_SUPPRESS_MS
         }
-        speechManager.speak(text, interrupt = true)
+        messagePlayback.speak(text, interrupt = true)
     }
 
     fun onCenterAvatarClick() {
@@ -380,8 +289,9 @@ class FloatingFullscreenModeViewModel(
             if (shouldCancelAiTurn) {
                 floatContext.onCancelMessage?.invoke()
             }
+            val stopped = stopCurrentTtsPlayback()
             coroutineScope.launch {
-                speechManager.voiceService.stop()
+                stopped.join()
                 if (!speechManager.isRecording && !speechManager.isProcessingSpeech) {
                     startVoiceCapture()
                 }
@@ -411,6 +321,20 @@ class FloatingFullscreenModeViewModel(
 
      suspend fun initialize(autoEnterVoiceChat: Boolean = false, wakeLaunched: Boolean = false) {
          speechManager.initialize()
+         val core = floatContext.chatService?.getChatCore()
+         releaseMessageSpeech?.invoke()
+         releaseMessageSpeech = core?.let { activeCore ->
+             activeCore.bindMessageSpeech(
+                 // 通话始终朗读；底部输入模式遵循普通开关及本界面的静音状态。
+                 shouldRead = { isWaveActive || (!isStreamingTtsMuted && activeCore.enableAutoRead.value) },
+                 speak = { text, interrupt ->
+                     if (interrupt && isWaveActive) {
+                         suppressRecognitionUntilMs = System.currentTimeMillis() + FULLSCREEN_TTS_CAPTURE_SUPPRESS_MS
+                     }
+                     messagePlayback.speak(text, interrupt)
+                 },
+             )
+         }
          cancelPendingVoiceCaptureResume()
          prefsJob?.cancel()
          prefsJob = coroutineScope.launch {
@@ -418,7 +342,6 @@ class FloatingFullscreenModeViewModel(
                  inactivityTimeoutSeconds = seconds.coerceIn(1, 600)
              }
          }
-         isInitialLoad.value = true
          isWaveActive = autoEnterVoiceChat
          showBottomControls = true
          exitEditMode()
@@ -437,11 +360,12 @@ class FloatingFullscreenModeViewModel(
      }
 
      fun cleanup() {
+        releaseMessageSpeech?.invoke()
+        releaseMessageSpeech = null
+        messagePlayback.shutdown()
         val view = floatContext.chatService?.getComposeView()
         speechManager.releaseFocus(view)
         speechManager.cleanup()
-        ttsSpeakJob?.cancel()
-        ttsSpeakJob = null
         cancelPendingVoiceCaptureResume()
 
         prefsJob?.cancel()
@@ -467,11 +391,8 @@ class FloatingFullscreenModeViewModel(
                 if (remaining <= 0L) {
                     // 如果 AI 正在朗读，不要在朗读过程中退出/关闭。
                     // 等朗读结束后再重新评估 remaining。
-                    val voiceService = speechManager.voiceService
-                    if (voiceService.isSpeaking) {
-                        withTimeoutOrNull(20_000L) {
-                            voiceService.speakingStateFlow.filter { speaking -> !speaking }.first()
-                        }
+                    if (messagePlayback.hasPending || messagePlayback.isSpeaking) {
+                        delay(120L)
                         // 朗读结束后重置计时，给用户一个完整的超时窗口
                         lastVoiceActivityAtMs = System.currentTimeMillis()
                         continue

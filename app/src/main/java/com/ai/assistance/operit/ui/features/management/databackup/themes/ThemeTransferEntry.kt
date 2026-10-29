@@ -373,7 +373,7 @@ private fun ThemeImportPreview(
                 ThemeEditorSession(preferences, values, userName, theme.document.layout)
             }
         DisposableEffect(session) { onDispose { session.dispose() } }
-        ThemeWorkbenchPreview(session, full = true, showDescription = false, showSidebar = false)
+        ThemeWorkbenchPreview(session, full = true, showDescription = false)
     }
     Row(
         Modifier.fillMaxWidth().padding(vertical = 2.dp),

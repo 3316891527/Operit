@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -17,7 +18,6 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ChatStyle
 import com.ai.assistance.operit.ui.features.conversation.chat.components.style.bubble.BubbleImageStyleConfig
 import com.ai.assistance.operit.ui.features.management.settings.components.ChatStyleOption
 import com.ai.assistance.operit.ui.features.management.settings.components.bubble.BubbleImageStyleEditor
@@ -32,7 +32,8 @@ import com.ai.assistance.operit.ui.theme.*
 internal fun ThemeSettingsChatStyleSection(
     cardColors: CardColors,
     editorSession: ThemeEditorSession,
-    chatStyleInput: String,
+    userChatStyleInput: String,
+    aiChatStyleInput: String,
     inputStyleInput: String,
     bubbleShowAvatarInput: Boolean,
     bubbleWideLayoutEnabledInput: Boolean,
@@ -182,84 +183,67 @@ internal fun ThemeSettingsChatStyleSection(
                 null
             }
         }
-    val previewChatStyle =
-        if (chatStyleInput == UserPreferencesManager.CHAT_STYLE_BUBBLE) {
-            ChatStyle.BUBBLE
-        } else {
-            ChatStyle.CURSOR
-        }
-
-    val isCursorStyle = previewChatStyle == ChatStyle.CURSOR
-    val userBaseColor =
-        when {
-            isCursorStyle && cursorUserBubbleFollowThemeInput ->
-                MaterialTheme.colorScheme.primaryContainer
-            isCursorStyle -> Color(cursorUserBubbleColorInput)
-            else -> Color(bubbleUserBubbleColorInput)
-        }
-    val aiBaseColor =
-        if (isCursorStyle) MaterialTheme.colorScheme.surface else Color(bubbleAiBubbleColorInput)
-    val userOpacityKey =
-        if (isCursorStyle) ThemeTransparencyPreferences.CURSOR_USER
-        else ThemeTransparencyPreferences.BUBBLE_USER
-    val aiOpacityKey =
-        if (isCursorStyle) ThemeTransparencyPreferences.CURSOR_AI
-        else ThemeTransparencyPreferences.BUBBLE_AI
-    val userGlassEnabled =
-        if (isCursorStyle) {
-            (cursorUserBubbleWaterGlassInput && isWaterGlassSupported()) ||
-                (cursorUserBubbleLiquidGlassInput && isLiquidGlassSupported())
-        } else {
-            (bubbleUserBubbleWaterGlassInput && isWaterGlassSupported()) ||
-                (bubbleUserBubbleLiquidGlassInput && isLiquidGlassSupported())
-        }
-    val aiGlassEnabled =
-        !isCursorStyle &&
-            ((bubbleAiBubbleWaterGlassInput && isWaterGlassSupported()) ||
-                (bubbleAiBubbleLiquidGlassInput && isLiquidGlassSupported()))
-    val legacyUserOpacity =
-        when {
-            userGlassEnabled -> values.requiredFloat("glass_tint_opacity")
-            !isCursorStyle && previewUserImageStyle != null -> 1f
-            else -> userBaseColor.alpha
-        }
-    val legacyAiOpacity =
-        when {
-            isCursorStyle -> 0f
-            aiGlassEnabled -> values.requiredFloat("glass_tint_opacity")
-            previewAiImageStyle != null -> 1f
-            else -> aiBaseColor.alpha
-        }
-    val userOpacity =
-        ThemeTransparencyPreferences.opacity(values, userOpacityKey, legacyUserOpacity)
+    val userIsCursor = userChatStyleInput == UserPreferencesManager.CHAT_STYLE_CURSOR
+    val aiIsCursor = aiChatStyleInput == UserPreferencesManager.CHAT_STYLE_CURSOR
+    val userBaseColor = when {
+        userIsCursor && cursorUserBubbleFollowThemeInput -> MaterialTheme.colorScheme.primaryContainer
+        userIsCursor -> Color(cursorUserBubbleColorInput)
+        else -> Color(bubbleUserBubbleColorInput)
+    }
+    val aiBaseColor = if (aiIsCursor) MaterialTheme.colorScheme.surface else Color(bubbleAiBubbleColorInput)
+    val userOpacityKey = if (userIsCursor) ThemeTransparencyPreferences.CURSOR_USER else ThemeTransparencyPreferences.BUBBLE_USER
+    val aiOpacityKey = if (aiIsCursor) ThemeTransparencyPreferences.CURSOR_AI else ThemeTransparencyPreferences.BUBBLE_AI
+    val userGlassEnabled = if (userIsCursor) {
+        (cursorUserBubbleWaterGlassInput && isWaterGlassSupported()) ||
+            (cursorUserBubbleLiquidGlassInput && isLiquidGlassSupported())
+    } else {
+        (bubbleUserBubbleWaterGlassInput && isWaterGlassSupported()) ||
+            (bubbleUserBubbleLiquidGlassInput && isLiquidGlassSupported())
+    }
+    val aiGlassEnabled = !aiIsCursor &&
+        ((bubbleAiBubbleWaterGlassInput && isWaterGlassSupported()) ||
+            (bubbleAiBubbleLiquidGlassInput && isLiquidGlassSupported()))
+    val legacyUserOpacity = when {
+        userGlassEnabled -> values.requiredFloat("glass_tint_opacity")
+        !userIsCursor && previewUserImageStyle != null -> 1f
+        else -> userBaseColor.alpha
+    }
+    val legacyAiOpacity = when {
+        aiIsCursor -> 0f
+        aiGlassEnabled -> values.requiredFloat("glass_tint_opacity")
+        previewAiImageStyle != null -> 1f
+        else -> aiBaseColor.alpha
+    }
+    val userOpacity = ThemeTransparencyPreferences.opacity(values, userOpacityKey, legacyUserOpacity)
     val aiOpacity = ThemeTransparencyPreferences.opacity(values, aiOpacityKey, legacyAiOpacity)
     ThemeWorkbenchCard(
         stringResource(R.string.chat_style_title),
         icon = Icons.Default.ChatBubbleOutline,
     ) {
-        ThemeWorkbenchSegments(
-            options =
-                listOf(
-                    UserPreferencesManager.CHAT_STYLE_BUBBLE to
-                        stringResource(R.string.chat_style_bubble),
-                    UserPreferencesManager.CHAT_STYLE_CURSOR to
-                        stringResource(R.string.chat_style_cursor),
-                ),
-            selected = chatStyleInput,
-            onSelected = { editorSession.setString("chat_style", it) },
-        )
-        if (chatStyleInput == UserPreferencesManager.CHAT_STYLE_BUBBLE) {
-            ThemeWorkbenchSwitchRow(
-                stringResource(R.string.chat_style_bubble_show_avatar),
-                bubbleShowAvatarInput,
-            ) {
+        ThemeMessageStyleSelector(stringResource(R.string.theme_workbench_user_message), userChatStyleInput) {
+            editorSession.setString("user_chat_style", it)
+        }
+        ThemeWorkbenchDivider()
+        ThemeMessageStyleSelector(stringResource(R.string.theme_workbench_ai_message), aiChatStyleInput) {
+            editorSession.setString("ai_chat_style", it)
+        }
+        if (!userIsCursor || !aiIsCursor) {
+            ThemeWorkbenchDivider()
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.theme_message_bubble_options), Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(when {
+                    !userIsCursor && !aiIsCursor -> R.string.theme_message_bubble_scope_both
+                    !userIsCursor -> R.string.theme_message_bubble_scope_user
+                    else -> R.string.theme_message_bubble_scope_ai
+                }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            ThemeWorkbenchSwitchRow(stringResource(R.string.chat_style_bubble_show_avatar), bubbleShowAvatarInput) {
                 editorSession.setBoolean("bubble_show_avatar", it)
             }
-            ThemeWorkbenchSwitchRow(
-                stringResource(R.string.chat_style_bubble_wide_layout),
-                bubbleWideLayoutEnabledInput,
-                subtitle = stringResource(R.string.theme_workbench_wide_hint),
-            ) {
+            ThemeWorkbenchSwitchRow(stringResource(R.string.chat_style_bubble_wide_layout), bubbleWideLayoutEnabledInput,
+                subtitle = stringResource(R.string.theme_workbench_wide_hint)) {
                 editorSession.setBoolean("bubble_wide_layout_enabled", it)
             }
         }
@@ -273,12 +257,12 @@ internal fun ThemeSettingsChatStyleSection(
             subtitle =
                 stringResource(
                     when {
-                        !isCursorStyle && bubbleUserUseImageInput && !userGlassEnabled ->
+                        !userIsCursor && bubbleUserUseImageInput && !userGlassEnabled ->
                             R.string.chat_style_bubble_user_image_title
-                        (if (isCursorStyle) cursorUserBubbleWaterGlassInput
+                        (if (userIsCursor) cursorUserBubbleWaterGlassInput
                         else bubbleUserBubbleWaterGlassInput) ->
                             R.string.theme_workbench_water_glass
-                        (if (isCursorStyle) cursorUserBubbleLiquidGlassInput
+                        (if (userIsCursor) cursorUserBubbleLiquidGlassInput
                         else bubbleUserBubbleLiquidGlassInput) ->
                             R.string.theme_workbench_liquid_glass
                         else -> R.string.theme_workbench_default
@@ -287,7 +271,7 @@ internal fun ThemeSettingsChatStyleSection(
             leadingContent = {
                 ThemeWorkbenchColorPair(
                     userBaseColor,
-                    if (isCursorStyle) MaterialTheme.colorScheme.onSurface
+                    if (userIsCursor) MaterialTheme.colorScheme.onSurface
                     else Color(bubbleUserTextColorInput),
                 )
             },
@@ -300,11 +284,11 @@ internal fun ThemeSettingsChatStyleSection(
             subtitle =
                 stringResource(
                     when {
-                        !isCursorStyle && bubbleAiUseImageInput && !aiGlassEnabled ->
+                        !aiIsCursor && bubbleAiUseImageInput && !aiGlassEnabled ->
                             R.string.chat_style_bubble_ai_image_title
-                        !isCursorStyle && bubbleAiBubbleWaterGlassInput ->
+                        !aiIsCursor && bubbleAiBubbleWaterGlassInput ->
                             R.string.theme_workbench_water_glass
-                        !isCursorStyle && bubbleAiBubbleLiquidGlassInput ->
+                        !aiIsCursor && bubbleAiBubbleLiquidGlassInput ->
                             R.string.theme_workbench_liquid_glass
                         else -> R.string.theme_workbench_default
                     }
@@ -312,7 +296,7 @@ internal fun ThemeSettingsChatStyleSection(
             leadingContent = {
                 ThemeWorkbenchColorPair(
                     aiBaseColor,
-                    if (isCursorStyle) MaterialTheme.colorScheme.onSurface
+                    if (aiIsCursor) MaterialTheme.colorScheme.onSurface
                     else Color(bubbleAiTextColorInput),
                 )
             },
@@ -338,7 +322,7 @@ internal fun ThemeSettingsChatStyleSection(
                 stringResource(R.string.theme_workbench_colors_text),
                 icon = Icons.Default.Palette,
             ) {
-                if (!isCursorStyle) {
+                if (!userIsCursor) {
                     ThemeWorkbenchColorRow(
                         stringResource(R.string.theme_workbench_background_color),
                         Color(bubbleUserBubbleColorInput),
@@ -374,7 +358,7 @@ internal fun ThemeSettingsChatStyleSection(
                         editorSession.setBoolean("bubble_rounded_corners_enabled", it)
                     }
                 }
-                if (isCursorStyle) {
+                if (userIsCursor) {
                     ThemeWorkbenchSwitchRow(
                         stringResource(R.string.chat_style_cursor_user_follow_theme),
                         cursorUserBubbleFollowThemeInput,
@@ -404,16 +388,16 @@ internal fun ThemeSettingsChatStyleSection(
             ) {
                 ThemeWorkbenchTextureEditor(
                     editorSession,
-                    (if (isCursorStyle) "cursor_user_bubble" else "bubble_user_bubble"),
-                    (if (isCursorStyle) cursorUserBubbleLiquidGlassInput
+                    (if (userIsCursor) "cursor_user_bubble" else "bubble_user_bubble"),
+                    (if (userIsCursor) cursorUserBubbleLiquidGlassInput
                     else bubbleUserBubbleLiquidGlassInput),
-                    (if (isCursorStyle) cursorUserBubbleWaterGlassInput
+                    (if (userIsCursor) cursorUserBubbleWaterGlassInput
                     else bubbleUserBubbleWaterGlassInput),
                 )
                 ThemeWorkbenchDivider()
                 GlassParametersEntry(editorSession, GlassRegion.USER_MESSAGE)
             }
-            if (!isCursorStyle)
+            if (!userIsCursor)
                 ThemeWorkbenchCard(
                     stringResource(R.string.theme_workbench_image_bubble),
                     icon = Icons.Default.Image,
@@ -575,7 +559,7 @@ internal fun ThemeSettingsChatStyleSection(
                 stringResource(R.string.theme_workbench_colors_text),
                 icon = Icons.Default.Palette,
             ) {
-                if (!isCursorStyle) {
+                if (!aiIsCursor) {
                     ThemeWorkbenchColorRow(
                         stringResource(R.string.theme_workbench_background_color),
                         Color(bubbleAiBubbleColorInput),
@@ -620,7 +604,7 @@ internal fun ThemeSettingsChatStyleSection(
                     }
                 }
             }
-            if (!isCursorStyle) {
+            if (!aiIsCursor) {
                 ThemeWorkbenchCard(
                     stringResource(R.string.theme_workbench_background_texture),
                     icon = Icons.Default.BlurOn,
@@ -635,7 +619,7 @@ internal fun ThemeSettingsChatStyleSection(
                     GlassParametersEntry(editorSession, GlassRegion.AI_MESSAGE)
                 }
             }
-            if (!isCursorStyle)
+            if (!aiIsCursor)
                 ThemeWorkbenchCard(
                     stringResource(R.string.theme_workbench_image_bubble),
                     icon = Icons.Default.Image,

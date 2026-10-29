@@ -194,14 +194,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val hasBackgroundImageFromPrefs = useBackgroundImage && backgroundImageUri != null
     val effectiveHasBackgroundImage = hasBackgroundImage || hasBackgroundImageFromPrefs
 
-    // Collect chat style from preferences
-    val chatStyleSetting = themeSnapshot.chatStyle
-    val chatStyle = remember(chatStyleSetting) {
-        when (chatStyleSetting) {
-            UserPreferencesManager.CHAT_STYLE_BUBBLE -> ChatStyle.BUBBLE
-            else -> ChatStyle.CURSOR
-        }
-    }
+    // 用户和 AI 分别选择渲染风格，输入框风格仍保持独立。
+    val userChatStyle = if (themeSnapshot.userChatStyle == UserPreferencesManager.CHAT_STYLE_BUBBLE) ChatStyle.BUBBLE else ChatStyle.CURSOR
+    val aiChatStyle = if (themeSnapshot.aiChatStyle == UserPreferencesManager.CHAT_STYLE_BUBBLE) ChatStyle.BUBBLE else ChatStyle.CURSOR
     val inputStyle = themeSnapshot.inputStyle
     val cursorUserBubbleFollowTheme = themeSnapshot.cursorUserBubbleFollowTheme
     val cursorUserBubbleLiquidGlassRaw = themeSnapshot.cursorUserBubbleLiquidGlass
@@ -279,7 +274,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val disableUserPreferenceDescription by
             actualViewModel.disableUserPreferenceDescription.collectAsState()
     val summaryTokenThreshold by actualViewModel.summaryTokenThreshold.collectAsState()
-    val isAutoReadEnabled by actualViewModel.isAutoReadEnabled.collectAsState()
     val showChatHistorySelector by actualViewModel.showChatHistorySelector.collectAsState()
     val chatHistories by actualViewModel.chatHistories.collectAsState()
     val currentChatId by actualViewModel.currentChatId.collectAsState()
@@ -452,7 +446,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val bubbleCustomAiTextColor = bubbleAiTextColorValue?.let(::Color)
 
     val userMessageColor =
-        when (chatStyle) {
+        when (userChatStyle) {
             ChatStyle.CURSOR -> {
                 if (cursorUserBubbleFollowTheme) {
                     defaultUserMessageColor
@@ -463,7 +457,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
             ChatStyle.BUBBLE -> bubbleCustomUserMessageColor ?: defaultUserMessageColor
         }.let { color ->
-            val key = if (chatStyle == ChatStyle.CURSOR) {
+            val key = if (userChatStyle == ChatStyle.CURSOR) {
                 ThemeTransparencyPreferences.CURSOR_USER
             } else {
                 ThemeTransparencyPreferences.BUBBLE_USER
@@ -471,11 +465,11 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             color.copy(alpha = ThemeTransparencyPreferences.opacity(themeSnapshot.values, key, color.alpha))
         }
     val aiMessageColor =
-        when (chatStyle) {
+        when (aiChatStyle) {
             ChatStyle.BUBBLE -> bubbleCustomAiMessageColor ?: defaultAiMessageColor
             ChatStyle.CURSOR -> defaultAiMessageColor
         }.let { color ->
-            val key = if (chatStyle == ChatStyle.CURSOR) {
+            val key = if (aiChatStyle == ChatStyle.CURSOR) {
                 ThemeTransparencyPreferences.CURSOR_AI
             } else {
                 ThemeTransparencyPreferences.BUBBLE_AI
@@ -484,17 +478,17 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
     val userTextColor =
         when {
-            chatStyle == ChatStyle.CURSOR && cursorUserBubbleFollowTheme ->
+            userChatStyle == ChatStyle.CURSOR && cursorUserBubbleFollowTheme ->
                 MaterialTheme.colorScheme.onPrimaryContainer
-            chatStyle == ChatStyle.BUBBLE && bubbleCustomUserTextColor != null ->
+            userChatStyle == ChatStyle.BUBBLE && bubbleCustomUserTextColor != null ->
                 bubbleCustomUserTextColor
             else -> getTextColorForBackground(userMessageColor.copy(alpha = 1f))
         }
     val aiTextColor =
         when {
-            chatStyle == ChatStyle.BUBBLE && bubbleCustomAiTextColor != null ->
+            aiChatStyle == ChatStyle.BUBBLE && bubbleCustomAiTextColor != null ->
                 bubbleCustomAiTextColor
-            chatStyle == ChatStyle.BUBBLE ->
+            aiChatStyle == ChatStyle.BUBBLE ->
                 getTextColorForBackground(aiMessageColor.copy(alpha = 1f))
             else -> MaterialTheme.colorScheme.onSurface
         }
@@ -505,7 +499,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
     val bubbleUserImageStyle =
         remember(
-            chatStyle,
+            userChatStyle,
             bubbleUserBubbleLiquidGlass,
             bubbleUserBubbleWaterGlass,
             bubbleUserUseImage,
@@ -523,7 +517,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         ) {
             val imageUri = bubbleUserImageUri
             if (
-                chatStyle == ChatStyle.BUBBLE &&
+                userChatStyle == ChatStyle.BUBBLE &&
                     !bubbleUserBubbleLiquidGlass &&
                     !bubbleUserBubbleWaterGlass &&
                     bubbleUserUseImage &&
@@ -549,7 +543,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
     val bubbleAiImageStyle =
         remember(
-            chatStyle,
+            aiChatStyle,
             bubbleAiUseImage,
             bubbleAiBubbleLiquidGlass,
             bubbleAiBubbleWaterGlass,
@@ -567,7 +561,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         ) {
             val imageUri = bubbleAiImageUri
             if (
-                chatStyle == ChatStyle.BUBBLE &&
+                aiChatStyle == ChatStyle.BUBBLE &&
                     !bubbleAiBubbleLiquidGlass &&
                     !bubbleAiBubbleWaterGlass &&
                     bubbleAiUseImage &&
@@ -829,7 +823,8 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                             coroutineScope = coroutineScope,
                             chatHistories = chatHistories,
                             currentChatId = currentChatId ?: "",
-                            chatStyle = chatStyle, // Pass chat style
+                            userChatStyle = userChatStyle,
+                            aiChatStyle = aiChatStyle,
                             cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
                             cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
                             bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
@@ -900,8 +895,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                 onNavigateToModelConfig = onNavigateToModelConfig,
                                 onNavigateToModelPrompts = onNavigateToModelPrompts,
                                 onNavigateToPackageManager = onNavigateToPackageManager,
-                                isAutoReadEnabled = isAutoReadEnabled,
-                                onToggleAutoRead = { actualViewModel.toggleAutoRead() },
                                 enableTools = enableTools,
                                 onToggleTools = { actualViewModel.toggleTools() },
                                 toolPromptVisibility = toolPromptVisibility,
@@ -961,7 +954,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                             thinkingOptionId = thinkingOptionId,
                             featureStates = featureStates,
                             enableMemoryAutoUpdate = enableMemoryAutoUpdate,
-                            isAutoReadEnabled = isAutoReadEnabled,
                             disableStreamOutput = disableStreamOutput,
                             disableUserPreferenceDescription =
                                     disableUserPreferenceDescription,
@@ -1305,7 +1297,6 @@ private fun ChatInputBottomBar(
     thinkingOptionId: String,
     featureStates: Map<String, Boolean>,
     enableMemoryAutoUpdate: Boolean,
-    isAutoReadEnabled: Boolean,
     disableStreamOutput: Boolean,
     disableUserPreferenceDescription: Boolean,
     onNavigateToMemoryBase: () -> Unit,
@@ -1809,8 +1800,6 @@ private fun ChatInputBottomBar(
                 onSetPermissionLevel = actualViewModel::setMasterPermissionLevel,
                 enableMemoryAutoUpdate = enableMemoryAutoUpdate,
                 onToggleMemoryAutoUpdate = actualViewModel::toggleMemoryAutoUpdate,
-                isAutoReadEnabled = isAutoReadEnabled,
-                onToggleAutoRead = actualViewModel::toggleAutoRead,
                 onToggleTools = actualViewModel::toggleTools,
                 disableStreamOutput = disableStreamOutput,
                 onToggleDisableStreamOutput = actualViewModel::toggleDisableStreamOutput,

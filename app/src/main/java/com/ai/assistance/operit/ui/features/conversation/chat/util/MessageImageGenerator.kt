@@ -74,7 +74,8 @@ object MessageImageGenerator {
      * @param systemTextColor 系统消息文字颜色
      * @param thinkingBackgroundColor 思考块背景色
      * @param thinkingTextColor 思考块文字颜色
-     * @param chatStyle 聊天风格
+     * @param userChatStyle 用户消息风格
+     * @param aiChatStyle AI 消息风格
      * @param width 图片宽度（像素）
      * @return 生成的图片文件
      */
@@ -89,7 +90,8 @@ object MessageImageGenerator {
         systemTextColor: Color,
         thinkingBackgroundColor: Color,
         thinkingTextColor: Color,
-        chatStyle: ChatStyle = ChatStyle.CURSOR,
+        userChatStyle: ChatStyle = ChatStyle.CURSOR,
+        aiChatStyle: ChatStyle = ChatStyle.CURSOR,
         cursorUserBubbleLiquidGlass: Boolean = false,
         cursorUserBubbleWaterGlass: Boolean = false,
         bubbleUserBubbleLiquidGlass: Boolean = false,
@@ -104,7 +106,7 @@ object MessageImageGenerator {
         width: Int = 1440
     ): File {
         try {
-            AppLogger.d(TAG, "开始生成消息图片（ComposeView），消息数量: ${messages.size}, 宽度: $width, 风格: $chatStyle")
+            AppLogger.d(TAG, "开始生成消息图片（ComposeView），消息数量: ${messages.size}, 宽度: $width, 用户风格: $userChatStyle, AI 风格: $aiChatStyle")
 
             if (messages.isEmpty()) {
                 throw IllegalArgumentException("Message list cannot be empty")
@@ -259,7 +261,7 @@ object MessageImageGenerator {
                                                     }
 
                                                     staticMessages.forEach { message ->
-                                                        when (chatStyle) {
+                                                        when (if (message.sender == "user") userChatStyle else aiChatStyle) {
                                                             ChatStyle.BUBBLE -> {
                                                                 BubbleStyleChatMessage(
                                                                     message = message,

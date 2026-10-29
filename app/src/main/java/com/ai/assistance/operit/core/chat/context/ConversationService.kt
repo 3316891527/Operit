@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat.context
 
+import com.ai.assistance.operit.util.media.ImagePoolManager
 import com.ai.assistance.operit.api.chat.request.LlmRetryPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -691,7 +692,7 @@ class ConversationService(
                         processChatMessageWithTools(content, xmlTags, preparedHistory, index, effectiveChatHistory.size)
                     } else {
                         // Add the message as is
-                        preparedHistory.add(message)
+                        preparedHistory.add(message.copy(content = content))
                     }
                 } else if (kind == PromptTurnKind.TOOL_RESULT) {
                     preparedHistory.add(message.copy(content = normalizeToolResultMarkupForModel(content)))
@@ -1365,43 +1366,30 @@ class ConversationService(
         userIntent: String?,
         multiServiceManager: MultiServiceManager
     ): String {
-        return try {
-            val service = multiServiceManager.getServiceForFunction(FunctionType.IMAGE_RECOGNITION)
-            
-            // 添加图片到池子并获取ID
-            val imageId = com.ai.assistance.operit.util.media.ImagePoolManager.addImage(imagePath)
-            if (imageId == "error") {
-                return "Failed to load image: $imagePath"
-            }
-
-            // 构建提示词，包含用户意图和图片链接
+        // 配置缺失和请求异常必须交给工具层返回失败，不能包装成成功的识别正文。
+        check(multiServiceManager.hasImageRecognitionConfigured()) {
+            context.getString(R.string.tool_image_recognition_not_configured)
+        }
+        val service = multiServiceManager.getServiceForFunction(FunctionType.IMAGE_RECOGNITION)
+        val imageId = ImagePoolManager.addImage(imagePath)
+        check(imageId != "error") { context.getString(R.string.image_read_error) }
+        try {
             val imageLink = MediaLinkBuilder.image(context, imageId)
             val prompt = if (userIntent.isNullOrBlank()) {
                 "$imageLink\n${context.getString(R.string.conversation_analyze_image_prompt)}"
             } else {
                 "$imageLink\n$userIntent"
             }
-            
-            // 获取模型参数
             val modelParameters = multiServiceManager.getModelParametersForFunction(FunctionType.IMAGE_RECOGNITION)
-            
-            // 调用AI服务分析图片
             val result = StringBuilder()
             service.sendMessage(
                 context = context,
                 chatHistory = listOf(PromptTurn(kind = PromptTurnKind.USER, content = prompt)),
                 modelParameters = modelParameters,
-            ).collect { chunk ->
-                result.append(chunk)
-            }
-            
-            // 清理图片缓存
-            com.ai.assistance.operit.util.media.ImagePoolManager.removeImage(imageId)
-            
-            ChatUtils.removeThinkingContent(result.toString()).trim()
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "识图分析失败", e)
-            "Image recognition failed: ${e.message}"
+            ).collect { result.append(it) }
+            return ChatUtils.removeThinkingContent(result.toString()).trim()
+        } finally {
+            ImagePoolManager.removeImage(imageId)
         }
     }
 

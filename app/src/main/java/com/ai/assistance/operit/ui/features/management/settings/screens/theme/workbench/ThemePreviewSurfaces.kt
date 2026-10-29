@@ -36,7 +36,7 @@ internal fun ThemePreviewMessage(values: ThemePreferenceValues, user: Boolean, u
     val context = LocalContext.current
     val preferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
     val globalAvatar by preferences.globalUserAvatarUri.collectAsState(initial = null)
-    val cursor = values.requiredString("chat_style") == UserPreferencesManager.CHAT_STYLE_CURSOR
+    val cursor = values.requiredString(if (user) "user_chat_style" else "ai_chat_style") == UserPreferencesManager.CHAT_STYLE_CURSOR
     val side = if (user) "user" else "ai"
     val prefix = "bubble_" + side
     val region = if (user) GlassRegion.USER_MESSAGE else GlassRegion.AI_MESSAGE
@@ -378,71 +378,4 @@ internal fun ThemePreviewInput(values: ThemePreferenceValues) {
             }
         }
     }
-}
-
-@Composable
-internal fun ThemePreviewSidebar(values: ThemePreferenceValues) {
-    val water = values.requiredBoolean("navigation_drawer_water_glass") && isWaterGlassSupported()
-    val buttonGlass =
-        values.requiredBoolean("navigation_drawer_button_liquid_glass") && isLiquidGlassSupported()
-    val appearance =
-        com.ai.assistance.operit.ui.main.components.rememberNavigationDrawerAppearance()
-    val color = appearance.containerColor
-    val accent = appearance.selectedContainerColor
-    val shape = RoundedCornerShape(14.dp)
-    Surface(
-        Modifier.fillMaxWidth().waterGlass(water, shape, color, region = GlassRegion.SIDEBAR),
-        shape = shape,
-        color = if (water) Color.Transparent else color,
-        contentColor = appearance.titleColor,
-    ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                stringResource(R.string.theme_navigation_drawer_title),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Surface(
-                Modifier.fillMaxWidth()
-                    .liquidGlass(buttonGlass, shape, accent, region = GlassRegion.SIDEBAR_BUTTONS),
-                shape = shape,
-                color = if (buttonGlass) Color.Transparent else accent,
-                contentColor = appearance.selectedContentColor,
-            ) {
-                Text(
-                    stringResource(R.string.theme_workbench_example_conversation),
-                    Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-    }
-    listOf(
-            Triple(
-                GlassRegion.CONVERSATION_LIST,
-                "glass_conversation_list",
-                R.string.glass_conversation_list,
-            ),
-            Triple(
-                GlassRegion.SETTINGS_CARDS,
-                "glass_settings_cards",
-                R.string.glass_settings_cards,
-            ),
-            Triple(GlassRegion.PACKAGE_CARDS, "glass_package_cards", R.string.glass_package_cards),
-        )
-        .forEach { (region, key, label) ->
-            if (values.requiredBoolean(key)) {
-                Surface(
-                    Modifier.fillMaxWidth()
-                        .liquidGlass(isLiquidGlassSupported(), shape, color, region = region),
-                    shape = shape,
-                    color = if (isLiquidGlassSupported()) Color.Transparent else color,
-                ) {
-                    Text(
-                        stringResource(label),
-                        Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
-        }
 }
