@@ -32,7 +32,7 @@ status: implemented-user-verified
 
 来源数量、顺序与提交可追溯性、资源 XML、重复资源、孤立翻译及 diff 空白检查已通过。对手动协调的 Kotlin 文件及原生围栏插件做了辅助语法扫描；静态检查不能代替 Android 编译和运行验证。
 
-新增数据库联合迁移和 CSV 兼容回归，尚未运行。本轮不在本地执行 Android 构建或 JVM 测试，由本分支 [Android Build](https://github.com/3316891527/Operit/actions/workflows/android-build.yml?query=branch%3Afeat%2Fintegrated-distribution) 和 [Android Tests](https://github.com/3316891527/Operit/actions/workflows/android-tests.yml?query=branch%3Afeat%2Fintegrated-distribution) 工作流执行，实际通过与 APK 产出以对应运行结果为准。
+新增数据库联合迁移和 CSV 兼容回归，尚未运行。本轮不在本地执行 Android 构建或 JVM 测试，由本分支 [Android Build](https://github.com/3316891527/Operit/actions/workflows/build.yml?query=branch%3Afeat%2Fintegrated-distribution) 和 [Android Tests](https://github.com/3316891527/Operit/actions/workflows/android-tests.yml?query=branch%3Afeat%2Fintegrated-distribution) 工作流执行，实际通过与 APK 产出以对应运行结果为准。
 
 设备功能回归已按用户本次确认补录为通过。[聊天 UI 原有 216 项清单](../../feat/chat_ui_redesign/24-回归清单.md) 和本轮集成清单均保留，历史通过不等于本轮集成版本通过。
 

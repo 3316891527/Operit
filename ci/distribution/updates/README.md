@@ -12,13 +12,13 @@
 
 ## 发布方法
 
-源码仓库的 Android Build 工作流选择 `main`、任务 `:app:verifyCiPreviewRelease`，勾选 `publish_release`，填写非空 Markdown 更新说明和可选 `previous_tag`。本次使用已发布的 `v1.12.2+17` 为基础；留空时选择补丁仓库中同一基础版本且低于目标的最新已公开 APK。普通构建保持 `publish_release=false`。
+源码仓库的 [Build 工作流](../../../.github/workflows/build.yml)选择 `main`、任务 `:app:verifyCiPreviewRelease`，勾选 `publish_release`，填写非空 Markdown 更新说明和可选 `previous_tag`。本次使用已发布的 `v1.12.2+17` 为基础；留空时选择补丁仓库中同一基础版本且低于目标的最新已公开 APK。普通构建保持 `publish_release=false`。
 
 工作流需要源码仓库的 Actions secret `OPERIT_DISTRIBUTION_TOKEN`，授予源码、补丁、资源仓库的 Contents 写入权限及源码仓库 Actions 读取权限。内置 `github.token` 不能向另外两个仓库发布。权限预检在签名构建前执行；缺少配置时明确失败。既有发行仓库和专用 secret 继续使用；本次保持 `complete_repository_migration=false`，不重复执行历史迁移清理。
 
 发布脚本读取 APK 的真实版本，检查 Kong 包名、固定证书和递增内部版本号。所有应用版本均只发往补丁仓库，先完成草稿上传及核验再公开；源码仓库不发布应用副本。已有 Release 不覆盖。
 
-当前 Android Build 发行步骤仅向统一更新仓库发布，不创建源码仓库版本标签，发行摘要也不再声明 sourceTag。源码提交和源码归档地址仍记录在正文与摘要中。发行仓库自己的 tag 继续承载 Release，已有标签不删除或移动。直接调用未变换的 publish_release.py 仍保留历史源码标签逻辑，正式发行应通过当前工作流。
+当前 Build 发行步骤仅向统一更新仓库发布，不创建源码仓库版本标签，发行摘要也不再声明 sourceTag。源码提交和源码归档地址仍记录在正文与摘要中。发行仓库自己的 tag 继续承载 Release，已有标签不删除或移动。直接调用未变换的 publish_release.py 仍保留历史源码标签逻辑，正式发行应通过当前工作流。
 
 ## 不公开版本的准备
 
