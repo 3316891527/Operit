@@ -6,13 +6,16 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import org.json.JSONArray
 import org.json.JSONObject
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_AI_PROVIDER
+import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_APP_LIFECYCLE_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_CHAT_INPUT_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_CHAT_MESSAGE_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_CHAT_MESSAGE_MENU_ITEM
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_CHAT_RUNTIME_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_CHAT_VIEW_HOOK
+import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_DESKTOP_WIDGET
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_INPUT_MENU_TOGGLE_PLUGIN
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_MESSAGE_PROCESSING_PLUGIN
+import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_NAVIGATION_ENTRY
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_PROMPT_ESTIMATE_FINALIZE_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_PROMPT_ESTIMATE_HISTORY_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_PROMPT_FINALIZE_HOOK
@@ -22,6 +25,8 @@ import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATIO
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_SYSTEM_PROMPT_COMPOSE_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_TOOL_LIFECYCLE_HOOK
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_TOOL_PROMPT_COMPOSE_HOOK
+import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_UI_MODULE
+import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_UI_ROUTE
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_REGISTRATION_XML_RENDER_PLUGIN
 import com.ai.assistance.operit.core.tools.packTool.metadata.TOOLPKG_RUNTIME_COMPOSE_DSL
 import com.ai.assistance.operit.core.tools.packTool.metadata.ToolPkgMarketOriginCodec
