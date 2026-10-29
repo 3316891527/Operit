@@ -1393,17 +1393,8 @@
     <string name="tool_file_manager_desc">Jelajahi dan kelola berkas perangkat, mendukung berbagai operasi</string>
     <string name="tool_tts">Teks ke Ucapan</string>
     <string name="tool_tts_desc">Konversi teks menjadi ucapan, mendukung penyesuaian kecepatan dan nada</string>
-    <string name="tts_title">Demo Teks ke Ucapan</string>
     <string name="tts_input_text">Masukkan Teks</string>
-    <string name="tts_input_hint">Masukkan teks untuk dikonversi menjadi ucapan</string>
-    <string name="tts_speech_settings">Pengaturan Ucapan</string>
-    <string name="tts_speech_rate">Kecepatan: %sx</string>
-    <string name="tts_speech_pitch">Nada: %sx</string>
-    <string name="tts_play">Putar</string>
-    <string name="tts_play_speech">Putar Ucapan</string>
-    <string name="tts_stop">Berhenti</string>
     <string name="tts_stop_speech">Hentikan Pemutaran</string>
-    <string name="tts_engine_initialized">Mesin ucapan telah diinisialisasi</string>
 
     <string name="recognition_language">Bahasa Pengenalan</string>
     <string name="start_recording">Mulai Rekam</string>
@@ -1451,7 +1442,6 @@
     <string name="text_variable_info">Variabel Teks: %1$s</string>
     <string name="contains_sub_operations">Berisi %1$d sub-operasi</string>
     <string name="operation_type">Jenis Operasi: %1$s</string>
-    <string name="tts_demo">Demo Teks-ke-Suara</string>
     <string name="input_text">Masukkan Teks</string>
     <string name="speech_settings">Pengaturan Suara</string>
     <string name="speech_rate">Kecepatan Bicara: %1$sx</string>
@@ -1589,28 +1579,11 @@
     <string name="tool_log_viewer">Penampil Log</string>
     <string name="tool_log_viewer_desc">Tangkap dan lihat log sistem dan aplikasi secara real-time, mendukung penyaringan dan pencarian</string>
 
-    <string name="tts_engine_not_initialized">Mesin TTS belum diinisialisasi</string>
     <string name="tts_playing">Sedang diputar...</string>
-    <string name="tts_not_playing">Tidak diputar</string>
-    <string name="tts_error">Kesalahan</string>
-    <string name="tts_error_details">Detail kesalahan:</string>
-    <string name="tts_debug_info">Info debug:</string>
-    <string name="tts_clear_error">Hapus kesalahan</string>
-    <string name="tts_clear_error_message">Hapus pesan kesalahan</string>
-    <string name="tts_usage_instructions">Petunjuk penggunaan</string>
-    <string name="tts_accessibility_note">Catatan: Saat pertama kali digunakan, perlu mengaktifkan layanan aksesibilitas di pengaturan sistem</string>
     <string name="tts_init_failed">Gagal menginisialisasi mesin TTS</string>
-    <string name="tts_init_error">Kesalahan inisialisasi mesin TTS</string>
-    <string name="tts_init_error_details">Metode inisialisasi layanan mengembalikan false, tetapi tidak ada pengecualian yang dilemparkan</string>
     <string name="tts_speak_failed">Gagal memutar teks</string>
-    <string name="tts_speak_error">Kesalahan pemutaran teks: %s</string>
-    <string name="tts_speak_error_details">Layanan TTS mengembalikan status gagal, periksa konfigurasi dan koneksi jaringan</string>
     <string name="tts_stop_error">Kesalahan penghentian pemutaran: %s</string>
     <string name="tts_input_empty">Masukkan teks yang akan dikonversi menjadi ucapan</string>
-    <string name="tts_debug_service_type">Jenis layanan: %s</string>
-    <string name="tts_debug_params">Parameter permintaan: teks=\'%1$s\', kecepatan=%2$sx, nada=%3$sx</string>
-    <string name="tts_debug_params_with_service">Parameter permintaan: teks=\'%1$s\', kecepatan=%2$sx, nada=%3$sx\nJenis layanan: %4$s</string>
-    <string name="tts_usage_instructions_content">1. Masukkan teks yang akan dikonversi menjadi ucapan di kotak input\n2. Sesuaikan pengaturan kecepatan dan nada\n3. Klik tombol "Putar Ucapan" untuk mulai memutar\n4. Klik tombol "Hentikan Pemutaran" untuk menghentikan pemutaran\n5. Jika terjadi kesalahan, lihat informasi kesalahan dan debug yang detail\n6. Gunakan tombol "Hapus Pesan Kesalahan" untuk menghapus tampilan kesalahan</string>
     <string name="tool_speech_recognition">Pengenalan Ucapan</string>
     <string name="tool_speech_recognition_desc">Mengonversi ucapan menjadi teks, mendukung berbagai mesin dan bahasa</string>
     <string name="tool_permission_manager">Manajer Izin Aplikasi</string>
@@ -1994,17 +1967,12 @@
     <string name="speech_services_service_type">Jenis Layanan</string>
     <string name="speech_services_tts_engine">Mesin TTS</string>
     <string name="speech_services_stt_engine">Mesin STT</string>
-    <string name="speech_services_dropdown_expand">Perluas menu tarik-turun</string>
     <string name="speech_services_tts_type_simple">TTS Sistem (Sederhana)</string>
-    <string name="speech_services_simple_tts_settings">Pengaturan TTS Sistem</string>
-    <string name="speech_services_simple_tts_desc">Dapat memilih bahasa dan suara spesifik untuk TTS Sistem, menghindari situasi di mana bahasa default perangkat tidak didukung oleh mesin saat ini.</string>
     <string name="speech_services_simple_tts_locale">Bahasa</string>
     <string name="speech_services_simple_tts_locale_follow_system">Ikuti bahasa sistem</string>
     <string name="speech_services_simple_tts_voice">Suara Sistem</string>
     <string name="speech_services_simple_tts_voice_default">Gunakan suara default sistem</string>
     <string name="speech_services_simple_tts_voice_select">Pilih suara sistem</string>
-    <string name="speech_services_simple_tts_voice_clear">Hapus suara sistem</string>
-    <string name="speech_services_simple_tts_loading">Membaca suara TTS Sistem…</string>
     <string name="speech_services_tts_type_http">HTTP API (Jarak Jauh)</string>
     <string name="speech_services_tts_type_siliconflow">TTS SiliconFlow</string>
     <string name="speech_services_tts_type_minimax">TTS MiniMax</string>
@@ -3006,7 +2974,6 @@
     <string name="screen_title_ui_debugger">Alat Debug UI</string>
     <string name="screen_title_logcat">Penampil Log</string>
     <string name="screen_title_markdown_demo">Demo Markdown Streaming</string>
-    <string name="screen_title_text_to_speech">Teks ke Ucapan</string>
     <string name="screen_title_speech_to_text">Pengenalan Ucapan</string>
     <string name="screen_title_process_limit_remover">Hapus Batasan Proses Ilusi</string>
     <string name="screen_title_default_assistant_guide">Pengaturan Asisten Default</string>

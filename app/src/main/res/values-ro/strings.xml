@@ -1736,7 +1736,6 @@
     <string name="text_variable_info">Variabile de text: %1$s</string>
     <string name="contains_sub_operations">Include %1$d Operațiuni individuale</string>
     <string name="operation_type">Tipul operațiunii: %1$s</string>
-    <string name="tts_demo">Demonstrație de conversie text-vorbire</string>
     <string name="input_text">Introduceți textul</string>
     <string name="speech_settings">Setări audio</string>
     <string name="speech_rate">Viteza de vorbire: %1$sx</string>
@@ -1836,39 +1835,13 @@
     <string name="tool_file_manager_desc">Răsfoirea și gestionarea fișierelor de pe dispozitive, cu suport pentru diverse operații</string>
     <string name="tool_tts">Conversie text-voce</string>
     <string name="tool_tts_desc">Convertește textul în vorbire, cu posibilitatea de a regla viteza și tonul vocii</string>
-    <string name="tts_title">Demonstrație de conversie text-voce</string>
     <string name="tts_input_text">Introduceți textul</string>
-    <string name="tts_input_hint">Vă rugăm să introduceți textul pe care doriți să îl transformați în vorbire</string>
-    <string name="tts_speech_settings">Setări audio</string>
-    <string name="tts_speech_rate">Viteza de vorbire: %sx</string>
-    <string name="tts_speech_pitch">Tonul: %sx</string>
-    <string name="tts_play">Redare</string>
-    <string name="tts_play_speech">Redare audio</string>
-    <string name="tts_stop">Oprire</string>
     <string name="tts_stop_speech">Oprește redarea</string>
-    <string name="tts_engine_initialized">Motorul vocal a fost inițializat</string>
-    <string name="tts_engine_not_initialized">Motorul vocal nu a fost inițializat</string>
     <string name="tts_playing">Se redă...</string>
-    <string name="tts_not_playing">Nu a fost redat</string>
-    <string name="tts_error">Eroare</string>
-    <string name="tts_error_details">Detalii despre eroare:</string>
-    <string name="tts_debug_info">Informații de depanare:</string>
-    <string name="tts_clear_error">Eliminarea erorilor</string>
-    <string name="tts_clear_error_message">Ștergerea mesajelor de eroare</string>
-    <string name="tts_usage_instructions">Instrucțiuni de utilizare</string>
-    <string name="tts_accessibility_note">Atenție: La prima utilizare, trebuie să activați serviciile de accesibilitate din setările sistemului.</string>
     <string name="tts_init_failed">Eșec la inițializarea motorului vocal</string>
-    <string name="tts_init_error">Eroare la inițializarea motorului vocal</string>
-    <string name="tts_init_error_details">Metoda de inițializare a serviciului returnează false, dar nu s-a generat nicio excepție</string>
     <string name="tts_speak_failed">Eșec la redarea textului</string>
-    <string name="tts_speak_error">Eroare la redarea textului: %s</string>
-    <string name="tts_speak_error_details">TTS Serviciul a returnat o stare de eroare; vă rugăm să verificați configurația și conexiunea la rețea</string>
     <string name="tts_stop_error">Eroare la oprirea redării: %s</string>
     <string name="tts_input_empty">Vă rugăm să introduceți textul pe care doriți să îl transformați în vorbire</string>
-    <string name="tts_debug_service_type">Tipuri de servicii: %s</string>
-    <string name="tts_debug_params">Parametrii cererii: Text=\'%1$s\', viteza de vorbire=%2$sx, tonul=%3$sx</string>
-    <string name="tts_debug_params_with_service">Parametrii cererii: Text=\'%1$s\', viteza de vorbire=%2$sx, tonul=%3$sx\nTipuri de servicii: %4$s</string>
-    <string name="tts_usage_instructions_content">1. Introduceți în câmpul de introducere textul pe care doriți să îl transformați în vorbire\n2. Reglarea vitezei de vorbire și a tonului\n3. Faceți clic pe butonul „Redare audio” pentru a începe redarea\n4. Faceți clic pe butonul „Oprește redarea” pentru a opri redarea\n5. Dacă apare o eroare, consultați informațiile detaliate despre eroare și informațiile de depanare\n6. Utilizați butonul „Ștergeți mesajele de eroare” pentru a șterge mesajele de eroare afișate</string>
     <string name="tool_speech_recognition">Recunoașterea vocală</string>
     <string name="tool_speech_recognition_desc">Conversia vorbirii în text, cu suport pentru mai multe motoare și limbi</string>
     <string name="tool_permission_manager">Gestionarea permisiunilor aplicațiilor</string>
@@ -2293,19 +2266,14 @@
     <string name="speech_services_service_type">Tipuri de servicii</string>
     <string name="speech_services_tts_engine">TTS Motor</string>
     <string name="speech_services_stt_engine">STT Motor</string>
-    <string name="speech_services_dropdown_expand">Deschide meniul derulant</string>
 
     <!-- TTS Service Types -->
     <string name="speech_services_tts_type_simple">Sistem TTS (Simplu)</string>
-    <string name="speech_services_simple_tts_settings">Sistem TTS Setări</string>
-    <string name="speech_services_simple_tts_desc">Sistem compatibil TTS Alegeți o limbă și o tonalitate specifice, pentru a evita ca limba implicită a anumitor dispozitive să nu fie acceptată de motorul actual.</string>
     <string name="speech_services_simple_tts_locale">Limba</string>
     <string name="speech_services_simple_tts_locale_follow_system">Adaptează-te la limba sistemului</string>
     <string name="speech_services_simple_tts_voice">Sunete de sistem</string>
     <string name="speech_services_simple_tts_voice_default">Utilizarea sunetelor implicite ale sistemului</string>
     <string name="speech_services_simple_tts_voice_select">Selectarea sunetului sistemului</string>
-    <string name="speech_services_simple_tts_voice_clear">Ștergerea sunetelor de sistem</string>
-    <string name="speech_services_simple_tts_loading">Se citește sistemul TTS Timbrul…</string>
     <string name="speech_services_tts_type_http">HTTP API (La distanță)</string>
     <string name="speech_services_tts_type_siliconflow">Fluxul pe bază de siliciu TTS</string>
     <string name="speech_services_tts_type_minimax">MiniMax TTS</string>
@@ -3665,7 +3633,6 @@
     <string name="screen_title_ui_debugger">UIInstrumente de depanare</string>
     <string name="screen_title_logcat">Vizualizator de jurnale</string>
     <string name="screen_title_markdown_demo">în fluxMarkdownPrezentare</string>
-    <string name="screen_title_text_to_speech">Conversie text-voce</string>
     <string name="screen_title_speech_to_text">Recunoașterea vocală</string>
     <string name="screen_title_process_limit_remover">Eliminarea restricțiilor procesului „Illusion”</string>
     <string name="screen_title_default_assistant_guide">Setările implicite ale Asistentului</string>

@@ -225,11 +225,14 @@ object SttServiceFactory {
 
     /** 重置单例实例 在需要更改语音识别服务类型或释放资源时调用 */
     fun resetInstance() {
-        try {
-            instance?.shutdown()
-        } catch (_: Exception) {
-        }
+        // 与 TTS 一致，先解除单例引用再等待旧引擎释放。
+        val retiring = instance
         instance = null
         currentProfileId = null
+        try {
+            retiring?.shutdown()
+        } catch (failure: Exception) {
+            AppLogger.w(TAG, "释放旧识别服务失败", failure)
+        }
     }
 }

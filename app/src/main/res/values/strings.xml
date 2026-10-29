@@ -1918,7 +1918,6 @@
     <string name="text_variable_info">文本变量: %1$s</string>
     <string name="contains_sub_operations">包含 %1$d 个子操作</string>
     <string name="operation_type">操作类型: %1$s</string>
-    <string name="tts_demo">文本转语音演示</string>
     <string name="input_text">输入文本</string>
     <string name="speech_settings">语音设置</string>
     <string name="speech_rate">语速: %1$sx</string>
@@ -2018,39 +2017,13 @@
     <string name="tool_file_manager_desc">浏览和管理设备文件，支持多种操作</string>
     <string name="tool_tts">文本转语音</string>
     <string name="tool_tts_desc">将文本转换为语音，支持调整语速和音调</string>
-    <string name="tts_title">文本转语音演示</string>
     <string name="tts_input_text">输入文本</string>
-    <string name="tts_input_hint">请输入要转换为语音的文本</string>
-    <string name="tts_speech_settings">语音设置</string>
-    <string name="tts_speech_rate">语速: %sx</string>
-    <string name="tts_speech_pitch">音调: %sx</string>
-    <string name="tts_play">播放</string>
-    <string name="tts_play_speech">播放语音</string>
-    <string name="tts_stop">停止</string>
     <string name="tts_stop_speech">停止播放</string>
-    <string name="tts_engine_initialized">语音引擎已初始化</string>
-    <string name="tts_engine_not_initialized">语音引擎未初始化</string>
     <string name="tts_playing">正在播放中...</string>
-    <string name="tts_not_playing">未播放</string>
-    <string name="tts_error">错误</string>
-    <string name="tts_error_details">错误详情:</string>
-    <string name="tts_debug_info">调试信息:</string>
-    <string name="tts_clear_error">清除错误</string>
-    <string name="tts_clear_error_message">清除错误信息</string>
-    <string name="tts_usage_instructions">使用说明</string>
-    <string name="tts_accessibility_note">注意：首次使用时需要在系统设置中启用无障碍服务</string>
     <string name="tts_init_failed">初始化语音引擎失败</string>
-    <string name="tts_init_error">初始化语音引擎错误</string>
-    <string name="tts_init_error_details">服务初始化方法返回 false，但未抛出异常</string>
     <string name="tts_speak_failed">播放文本失败</string>
-    <string name="tts_speak_error">播放文本错误: %s</string>
-    <string name="tts_speak_error_details">TTS 服务返回失败状态，请检查配置和网络连接</string>
     <string name="tts_stop_error">停止播放错误: %s</string>
     <string name="tts_input_empty">请输入要转换为语音的文本</string>
-    <string name="tts_debug_service_type">服务类型: %s</string>
-    <string name="tts_debug_params">请求参数: 文本=\'%1$s\', 语速=%2$sx, 音调=%3$sx</string>
-    <string name="tts_debug_params_with_service">请求参数: 文本=\'%1$s\', 语速=%2$sx, 音调=%3$sx\n服务类型: %4$s</string>
-    <string name="tts_usage_instructions_content">1. 在输入框中输入要转换为语音的文本\n2. 调整语速和音调设置\n3. 点击「播放语音」按钮开始播放\n4. 点击「停止播放」按钮停止播放\n5. 如果出现错误，查看详细的错误信息和调试信息\n6. 使用「清除错误信息」按钮清除错误显示</string>
     <string name="tool_speech_recognition">语音识别</string>
     <string name="tool_speech_recognition_desc">将语音转换为文本，支持多种引擎和语言</string>
     <string name="tool_permission_manager">应用权限管理</string>
@@ -2485,19 +2458,14 @@
     <string name="speech_services_service_type">服务类型</string>
     <string name="speech_services_tts_engine">TTS 引擎</string>
     <string name="speech_services_stt_engine">STT 引擎</string>
-    <string name="speech_services_dropdown_expand">展开下拉菜单</string>
 
     <!-- TTS Service Types -->
     <string name="speech_services_tts_type_simple">系统 TTS (简单)</string>
-    <string name="speech_services_simple_tts_settings">系统 TTS 设置</string>
-    <string name="speech_services_simple_tts_desc">可为系统 TTS 选择具体语言和音色，避免部分设备默认语言不被当前引擎支持。</string>
     <string name="speech_services_simple_tts_locale">语言</string>
     <string name="speech_services_simple_tts_locale_follow_system">跟随系统语言</string>
     <string name="speech_services_simple_tts_voice">系统音色</string>
     <string name="speech_services_simple_tts_voice_default">使用系统默认音色</string>
     <string name="speech_services_simple_tts_voice_select">选择系统音色</string>
-    <string name="speech_services_simple_tts_voice_clear">清除系统音色</string>
-    <string name="speech_services_simple_tts_loading">正在读取系统 TTS 音色…</string>
     <string name="speech_services_tts_type_http">HTTP API (远程)</string>
     <string name="speech_services_tts_type_siliconflow">硅基流动 TTS</string>
     <string name="speech_services_tts_type_minimax">MiniMax TTS</string>
@@ -4015,7 +3983,6 @@
     <string name="screen_title_ui_debugger">UI调试工具</string>
     <string name="screen_title_logcat">日志查看器</string>
     <string name="screen_title_markdown_demo">流式Markdown演示</string>
-    <string name="screen_title_text_to_speech">文本转语音</string>
     <string name="screen_title_speech_to_text">语音识别</string>
     <string name="screen_title_process_limit_remover">解除幻象进程限制</string>
     <string name="screen_title_default_assistant_guide">默认助手设置</string>

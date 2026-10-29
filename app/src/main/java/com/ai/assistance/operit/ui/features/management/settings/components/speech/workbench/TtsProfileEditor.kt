@@ -35,6 +35,7 @@ internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft
     val profile = draft.profile
     val config = profile.httpConfig
     val type = profile.serviceType
+    val adjustments = draft.adjustmentControls()
     var enginePanel by remember { mutableStateOf(false) }
     fun updateConfig(updated: TtsHttpConfig) { onChange(draft.copy(profile = profile.copy(httpConfig = updated))) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -54,7 +55,9 @@ internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft
                     InstalledSpeechModelField(com.ai.assistance.operit.data.resources.models.SpeechModelPurpose.TTS, profile.vitsConfig.installedModelKey) { model ->
                         onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(installedModelKey = model.key, speakerId = "0"))))
                     }
-                    SpeechWorkbenchField(stringResource(R.string.speech_services_vits_speaker_id), profile.vitsConfig.speakerId, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(speakerId = it)))) }, hint = stringResource(R.string.hub_speaker_hint))
+                    InstalledSpeechSpeakerField(profile.vitsConfig.installedModelKey, profile.vitsConfig.speakerId) { speakerId ->
+                        onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(speakerId = speakerId))))
+                    }
                 }
                 VoiceServiceType.VITS_TTS -> {
                     SpeechWorkbenchField(stringResource(R.string.speech_services_vits_package_path), profile.vitsConfig.packagePath, { onChange(draft.copy(profile = profile.copy(vitsConfig = profile.vitsConfig.copy(packagePath = it)))) }, placeholder = stringResource(R.string.speech_services_vits_package_path_placeholder), hint = stringResource(R.string.speech_services_vits_package_path_hint))
@@ -110,17 +113,24 @@ internal fun TtsProfileEditor(draft: TtsProfileDraft, onChange: (TtsProfileDraft
         }
         SpeechSectionLabel(stringResource(R.string.speech_workbench_voice_style))
         SpeechWorkbenchCard {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.speech_services_tts_speech_rate_value, profile.speechRate), style = MaterialTheme.typography.bodySmall)
-                    WorkbenchSlider(value = profile.speechRate, onValueChange = { onChange(draft.copy(profile = profile.copy(speechRate = it))) }, valueRange = 0.5f..2.0f, steps = 5)
+            if (adjustments.rate || adjustments.pitch) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    if (adjustments.rate) Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.speech_services_tts_speech_rate_value, profile.speechRate), style = MaterialTheme.typography.bodySmall)
+                        WorkbenchSlider(value = profile.speechRate, onValueChange = { onChange(draft.copy(profile = profile.copy(speechRate = it))) }, valueRange = 0.5f..2.0f, steps = 5)
+                    }
+                    if (adjustments.pitch) Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.speech_services_tts_pitch_value, profile.pitch), style = MaterialTheme.typography.bodySmall)
+                        WorkbenchSlider(value = profile.pitch, onValueChange = { onChange(draft.copy(profile = profile.copy(pitch = it))) }, valueRange = 0.5f..2.0f, steps = 5)
+                    }
                 }
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.speech_services_tts_pitch_value, profile.pitch), style = MaterialTheme.typography.bodySmall)
-                    WorkbenchSlider(value = profile.pitch, onValueChange = { onChange(draft.copy(profile = profile.copy(pitch = it))) }, valueRange = 0.5f..2.0f, steps = 5)
-                }
+                if (type == VoiceServiceType.MIMO_TTS) Text(
+                    stringResource(R.string.speech_workbench_mimo_adjustment_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             TtsCleanerEditor(profile.cleanerRegexs) { onChange(draft.copy(profile = profile.copy(cleanerRegexs = it))) }
         }
     }

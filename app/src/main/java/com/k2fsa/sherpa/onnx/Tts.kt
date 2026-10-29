@@ -3,6 +3,8 @@
 
 package com.k2fsa.sherpa.onnx
 
+import androidx.annotation.Keep
+
 import android.content.res.AssetManager
 
 data class OfflineTtsVitsModelConfig(
@@ -166,7 +168,7 @@ class OfflineTts(
             text = text,
             sid = sid,
             speed = speed,
-            callback = callback
+            callback = OfflineTtsCallback(callback)
         )
     }
 
@@ -182,7 +184,7 @@ class OfflineTts(
         config: GenerationConfig,
         callback: (samples: FloatArray) -> Int
     ): GeneratedAudio {
-        return generateWithConfigImpl(ptr, text, config, callback)
+        return generateWithConfigImpl(ptr, text, config, OfflineTtsCallback(callback))
     }
 
     fun allocate(assetManager: AssetManager? = null) {
@@ -251,4 +253,15 @@ class OfflineTts(
         callback: ((samples: FloatArray) -> Int)?
     ): GeneratedAudio
 
+}
+
+/**
+ * JNI 按 invoke(float[]) -> Integer 查找方法，不能直接传入只实现擦除签名的合成 lambda。
+ * 显式类保留具类型的 invoke 及编译器桥接方法，内部仍执行原有取消回调。
+ */
+@Keep
+internal class OfflineTtsCallback(
+    private val callback: (FloatArray) -> Int,
+) : (FloatArray) -> Int {
+    override fun invoke(samples: FloatArray): Int = callback(samples)
 }

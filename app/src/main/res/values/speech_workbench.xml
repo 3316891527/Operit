@@ -32,7 +32,7 @@
     <string name="speech_workbench_preview_hint">使用当前编辑的朗读配置</string>
     <string name="speech_workbench_preview_play">试听这段文字</string>
     <string name="speech_workbench_preparing">正在准备语音…</string>
-    <string name="speech_workbench_sample_text">你好，这里是 Operit。试着调整一下语速和音调，听听现在的声音。</string>
+    <string name="speech_workbench_sample_text">你好，这是一段语音试听。试着调整一下语速和音调，听听现在的声音。</string>
     <string name="speech_workbench_stt_preview_title">试着说一句</string>
     <string name="speech_workbench_local_stt_hint">使用设备上的 Sherpa NCNN 识别，无需在线地址或密钥。请先准备对应的离线资源。</string>
     <string name="speech_workbench_wake_listening">后台监听</string>

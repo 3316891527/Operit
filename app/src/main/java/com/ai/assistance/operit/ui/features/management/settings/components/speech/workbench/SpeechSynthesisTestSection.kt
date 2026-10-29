@@ -22,6 +22,9 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.speech.text.TtsCleaner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.ai.assistance.operit.api.speech.runtime.SpeechServiceDisposal
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -36,16 +39,20 @@ private class SynthesisTestState {
 
     fun release() {
         generation++
-        command?.cancel()
+        val pending = command
+        val retiring = service
+        pending?.cancel()
         command = null
-        try {
-            service?.shutdown()
-        } catch (failure: Exception) {
-            AppLogger.e("SpeechSynthesisTest", "释放试听服务失败", failure)
-        } finally {
-            service = null
-            preparing = false
-            speaking = false
+        service = null
+        preparing = false
+        speaking = false
+        // 先解除界面引用，再在独立 IO 协程等待原生任务结束，禁止在滑块重组时等待推理锁。
+        if (pending != null || retiring != null) SpeechServiceDisposal.submit("SpeechSynthesisTest") {
+            try {
+                pending?.join()
+            } finally {
+                retiring?.shutdown()
+            }
         }
     }
 }
@@ -101,7 +108,7 @@ internal fun SpeechSynthesisTestSection(draft: TtsProfileDraft) {
                     state.preparing = true
                     state.command = scope.launch {
                         try {
-                            playingService?.stop()
+                            withContext(Dispatchers.IO) { playingService?.stop() }
                         } catch (failure: CancellationException) {
                             throw failure
                         } catch (failure: Exception) {
