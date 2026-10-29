@@ -2,6 +2,7 @@ package com.ai.assistance.operit.core.chat.tools
 
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import com.ai.assistance.operit.core.tools.TerminalCommandResultData
+import com.ai.assistance.operit.core.tools.FileOperationData
 import com.ai.assistance.operit.core.tools.javascript.JsToolResultJson
 import com.ai.assistance.operit.core.tools.javascript.extractJsExecutionFailure
 import org.json.JSONObject
@@ -235,6 +236,42 @@ class OrderedToolResultsTest {
         val formatted = content(ConversationMarkupManager.formatToolResultForMessage(finalResult))
         assertTrue(formatted.contains(finalResult.result.toString()))
         assertEquals(1, Regex(Regex.escape(failure.message)).findAll(formatted).count())
+    }
+
+    @Test
+    fun structuredFileErrorIsCanonicalBeforeFinalMarkupIsGenerated() = runBlocking {
+        val raw = ToolResult("create_file", false,
+            FileOperationData("create", "android", "/a", false, "File exists"), error = "File exists")
+        val finalResult = ToolExecutionManager.aggregateToolResults("create_file", flowOf(raw))
+        assertEquals("[android] File exists", finalResult.error)
+        assertEquals("", finalResult.result.toString())
+        val emitted = mutableListOf<String>()
+        val ordered = OrderedToolResults(1) { emitted += it }
+        ordered.complete(0, finalResult)
+        val batch = ordered.finish()
+        assertEquals("<error>[android] File exists</error>", content(batch.message))
+        assertEquals(emitted.single(), batch.message)
+    }
+
+    @Test
+    fun structuredErrorsFromDifferentStepsKeepTheirOwnSources() = runBlocking {
+        val first = ToolResult("write_file", false,
+            FileOperationData("write", "android", "/a", false, "Denied"), error = "Denied")
+        val last = ToolResult("write_file", false,
+            FileOperationData("write", "linux", "/a", false, "Denied"), error = "Denied")
+        val finalResult = ToolExecutionManager.aggregateToolResults("write_file", flowOf(first, result("progress"), last))
+        assertEquals("[linux] Denied", finalResult.error)
+        assertEquals("Step error: [android] Denied\nprogress", finalResult.result.toString())
+        assertEquals("<error>[linux] Denied\n\nStep error: [android] Denied\nprogress</error>",
+            content(ConversationMarkupManager.formatToolResultForMessage(finalResult)))
+    }
+
+    @Test
+    fun earlierFailureRetainsIndependentCommandOutput() = runBlocking {
+        val first = ToolResult("shell", false, StringResultData("stderr: details"), error = "first")
+        val finalResult = ToolExecutionManager.aggregateToolResults("shell", flowOf(first, result("done")))
+        assertTrue(finalResult.success)
+        assertEquals("Step error: first\n\nstderr: details\ndone", finalResult.result.toString())
     }
 
     private fun result(text: String) = ToolResult("read_file", true, StringResultData(text))

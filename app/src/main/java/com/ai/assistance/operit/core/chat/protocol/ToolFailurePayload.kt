@@ -1,18 +1,33 @@
 package com.ai.assistance.operit.core.chat.protocol
 
-/** 环境标记是来源信息；只有整个错误正文等价时去重，不删除真正的附加输出。 */
-internal fun toolFailurePayload(error: String?, output: String): String {
-    val message = error.orEmpty().trim()
-    val detail = output.trim()
-    if (message.isEmpty()) return detail
-    if (detail.isEmpty() || detail == message) return message
-    val environment = Regex("""^\[(?:android|linux|repo:[^\]\r\n]+)\][ \t]*""", RegexOption.IGNORE_CASE)
-    val messageBody = message.replaceFirst(environment, "").trim()
-    val detailBody = detail.replaceFirst(environment, "").trim()
-    val messageEnvironment = environment.find(message)?.value?.trim()
-    val detailEnvironment = environment.find(detail)?.value?.trim()
-    val sameSource = messageEnvironment == null || detailEnvironment == null ||
-        messageEnvironment.equals(detailEnvironment, ignoreCase = true)
-    if (sameSource && messageBody == detailBody) return if (detailBody != detail) detail else message
-    return "$message\n\n$detail"
+import com.ai.assistance.operit.core.tools.FileApplyResultData
+import com.ai.assistance.operit.core.tools.FileOperationData
+import com.ai.assistance.operit.core.tools.PackageActivationErrorData
+import com.ai.assistance.operit.data.model.ToolResult
+
+/** 在结果生成阶段分开错误说明和独立输出，最终正文只组装一次。 */
+internal data class ToolFailurePayload(val message: String, val output: String) {
+    fun render(): String = listOf(message, output).filter { it.isNotEmpty() }.joinToString("\n\n")
+}
+
+/** 来源取自结构化数据，不从已生成的正文中剥离或匹配来源标签。 */
+internal fun toolFailurePayload(result: ToolResult): ToolFailurePayload {
+    when (val data = result.result) {
+        is FileOperationData -> if (!data.successful) {
+            return ToolFailurePayload(data.toString().trim(), "")
+        }
+        is FileApplyResultData -> if (!data.operation.successful) {
+            val output = listOfNotNull(
+                data.diffContent,
+                data.aiDiffInstructions.takeIf { it.isNotEmpty() && !it.startsWith("Error") },
+            ).filter { it.isNotBlank() }.joinToString("\n").trim()
+            return ToolFailurePayload(data.operation.toString().trim(), output)
+        }
+        is PackageActivationErrorData -> return ToolFailurePayload(data.message.trim(), "")
+        else -> Unit
+    }
+    val message = result.error.orEmpty().trim()
+    val output = result.result.toString().trim()
+    // 原有纯文本结果全文相同时不重复拼接；不同输出原样保留，不逐行清理。
+    return ToolFailurePayload(message, if (output == message) "" else output)
 }

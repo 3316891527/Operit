@@ -7,6 +7,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.AIToolHookDecision
+import com.ai.assistance.operit.core.chat.protocol.toolFailurePayload
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.ToolExecutor
 import com.ai.assistance.operit.core.tools.climode.CliToolModeSupport
@@ -749,19 +750,23 @@ object ToolExecutionManager {
             )
         }
         val lastResult = collectedResults.last()
-        // 最终错误由 error 字段统一展示；正文保留分段输出和前序步骤错误，避免重复。
+        // 在类型信息尚未丢失时归并失败：来源和说明进入 error，独立输出进入 result。
+        val failures = collectedResults.map { if (it.success) null else toolFailurePayload(it) }
         val combinedResultString = collectedResults.mapIndexed { index, res ->
-            if (res.success || (index == collectedResults.lastIndex && !res.error.isNullOrBlank())) {
-                res.result.toString().trim()
-            } else {
-                "Step error: ${res.error ?: "Unknown error"}".trim()
+            val failure = failures[index]
+            when {
+                res.success -> res.result.toString().trim()
+                index == collectedResults.lastIndex && !failure?.message.isNullOrBlank() -> checkNotNull(failure).output
+                else -> "Step error: ${checkNotNull(failure).render().ifBlank { "Unknown error" }}"
             }
         }.filter { it.isNotEmpty() }.joinToString("\n")
+        val finalFailure = failures.last()
+        val finalError = if (finalFailure != null && finalFailure.message.isNotBlank()) finalFailure.message else lastResult.error
         return ToolResult(
             toolName = displayToolName,
             success = lastResult.success,
             result = StringResultData(combinedResultString),
-            error = lastResult.error
+            error = finalError,
         )
     }
 

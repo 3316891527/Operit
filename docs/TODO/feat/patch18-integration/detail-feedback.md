@@ -22,7 +22,7 @@ status: 源码修正完成，仓库构建与设备复测待回填
 
 ## 普通工具错误
 
-ConversationMarkupManager 使用 toolFailurePayload 比较完整错误和输出。完全相同，或仅多一个相同来源的 android、linux、repo 标记时，只保留一次并保留来源。不同来源的相同错误、真正不同的正文和终端附加输出继续保留；不按包含关系或逐行重复机械删减。
+统一聚合器在转成文字前使用 toolFailurePayload 读取结构化失败，文件操作的 env 和 details 形成唯一错误说明，独立输出另存。ConversationMarkupManager 仅在生成最终 XML 时组装这些字段。不同步骤的来源和附加命令输出继续保留；不解析来源前缀，也不在界面中过滤错误行。详见 [失败结果归并](error-result-contract.md)。
 
 新增三项带来源错误的回归源码，原有终端额外输出与结构化错误回归保留。
 

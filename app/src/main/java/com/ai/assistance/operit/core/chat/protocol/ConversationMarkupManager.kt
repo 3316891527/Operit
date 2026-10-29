@@ -66,7 +66,7 @@ class ConversationMarkupManager {
 
                 appendImageLinksWithinResultLimit(toolResultXml, imageLinkPayload)
             } else {
-                val errorPayload = toolFailurePayload(result.error, result.result.toString())
+                val errorPayload = toolFailurePayload(result).render()
                 createBoundedToolResultXml(
                     toolName = result.toolName,
                     status = "error",
