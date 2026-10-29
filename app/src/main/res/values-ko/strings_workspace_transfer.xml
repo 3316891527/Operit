@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_transfer_copying">복사 중...</string>
+    <string name="workspace_transfer_moving">이동 중...</string>
+    <string name="workspace_transfer_scanning">파일 집계 중...</string>
+    <string name="workspace_transfer_processing">처리 중...</string>
+    <string name="workspace_transfer_finishing">원본 삭제 중...</string>
+    <string name="workspace_transfer_name">이름</string>
+    <string name="workspace_transfer_source">원본</string>
+    <string name="workspace_transfer_destination">대상</string>
+    <string name="workspace_transfer_copied">복사됨</string>
+    <string name="workspace_transfer_remaining">남은 용량</string>
+    <string name="workspace_transfer_speed">속도</string>
+    <string name="workspace_transfer_item">항목 %1$d / %2$d · 현재 항목 진행률</string>
+    <string name="workspace_transfer_files">파일: %1$d / %2$d</string>
+    <string name="workspace_transfer_percent">%1$d%%</string>
+    <string name="workspace_transfer_cancelling">취소 중...</string>
+</resources>

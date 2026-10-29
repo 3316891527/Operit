@@ -5,6 +5,13 @@ import android.content.Intent
 import android.util.Base64
 import androidx.core.content.FileProvider
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.core.files.transfer.FileCopyObserver
+import com.ai.assistance.operit.core.files.transfer.FileCopyObservers
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.transfer.WorkspaceCopyProgress
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.BinaryFileContentData
 import com.ai.assistance.operit.core.tools.FileExistsData
@@ -19,6 +26,8 @@ import kotlinx.coroutines.withContext
 internal class FileBrowserOperations(context: Context) {
     private val context = context.applicationContext
     private val handler = AIToolHandler.getInstance(this.context)
+    private val copyState = MutableStateFlow<WorkspaceCopyProgress?>(null)
+    val copyProgress = copyState.asStateFlow()
 
     private fun parameters(environment: String?, vararg values: Pair<String, String>) = buildList {
         values.forEach { (name, value) -> add(ToolParameter(name, value)) }
@@ -51,37 +60,68 @@ internal class FileBrowserOperations(context: Context) {
         val items = FileBrowserClipboard.content.value
         if (items.isEmpty()) return@withContext
         val destinationEnv = environment ?: "android"
-        val parent = execute("file_exists", parameters(environment, "path" to directory)).result
-        check(parent is FileExistsData && parent.exists && parent.isDirectory) {
-            context.getString(R.string.workspace_error_invalid_path, directory)
-        }
-        val targets = items.map { item ->
-            val sourceEnv = item.environment ?: "android"
-            val destination = directory.trimEnd('/') + "/" + item.path.substringAfterLast('/')
-            check(sourceEnv != destinationEnv ||
-                (destination != item.path && !destination.startsWith(item.path.trimEnd('/') + "/"))) {
-                context.getString(R.string.workspace_invalid_paste)
+        val executionContext = currentCoroutineContext()
+        fun progress(item: FileBrowserClipboardItem, index: Int) = WorkspaceCopyProgress(
+            source = item.path,
+            destination = directory.trimEnd('/') + "/" + item.path.trimEnd('/').substringAfterLast('/'),
+            sourceEnvironment = item.environment ?: "android",
+            destinationEnvironment = destinationEnv,
+            itemIndex = index + 1,
+            itemCount = items.size,
+            moving = item.cut,
+        )
+        copyState.value = progress(items.first(), 0)
+        try {
+            val parent = execute("file_exists", parameters(environment, "path" to directory)).result
+            check(parent is FileExistsData && parent.exists && parent.isDirectory) {
+                context.getString(R.string.workspace_error_invalid_path, directory)
             }
-            item to destination
-        }
-        check(targets.map { it.second }.distinct().size == targets.size) {
-            context.getString(R.string.file_op_confirm_overwrite)
-        }
-        // 全批次先检查目标，避免遇到重名时已经移动了前面的文件。
-        targets.forEach { (_, destination) -> requireNewDestination(destination, environment) }
-        for ((item, destination) in targets) {
-            val sourceEnv = item.environment ?: "android"
-            requireNewDestination(destination, environment)
-            if (item.cut && sourceEnv == destinationEnv) {
-                execute("move_file", parameters(environment, "source" to item.path, "destination" to destination))
-            } else {
-                execute("copy_file", listOf(ToolParameter("source", item.path), ToolParameter("destination", destination),
-                    ToolParameter("source_environment", sourceEnv), ToolParameter("dest_environment", destinationEnv),
-                    ToolParameter("recursive", item.isDirectory.toString())))
-                // 每项复制成功才删除其来源，失败后剩余剪切项仍可继续粘贴。
-                if (item.cut) delete(item.path, item.environment, item.isDirectory)
+            val targets = items.map { item ->
+                val sourceEnv = item.environment ?: "android"
+                val destination = directory.trimEnd('/') + "/" + item.path.trimEnd('/').substringAfterLast('/')
+                check(sourceEnv != destinationEnv ||
+                    (destination != item.path && !destination.startsWith(item.path.trimEnd('/') + "/"))) {
+                    context.getString(R.string.workspace_invalid_paste)
+                }
+                item to destination
             }
-            if (item.cut) FileBrowserClipboard.clear(item)
+            check(targets.map { it.second }.distinct().size == targets.size) {
+                context.getString(R.string.file_op_confirm_overwrite)
+            }
+            // 全批次先检查目标，避免遇到重名时已经移动了前面的文件。
+            targets.forEach { (_, destination) -> requireNewDestination(destination, environment) }
+            for ((index, target) in targets.withIndex()) {
+                executionContext.ensureActive()
+                val (item, destination) = target
+                val sourceEnv = item.environment ?: "android"
+                val itemProgress = progress(item, index)
+                copyState.value = itemProgress
+                requireNewDestination(destination, environment)
+                if (item.cut && sourceEnv == destinationEnv) {
+                    execute("move_file", parameters(environment, "source" to item.path, "destination" to destination))
+                } else {
+                    val token = FileCopyObservers.register(FileCopyObserver(
+                        onProgress = { copyState.value = itemProgress.copy(detail = it) },
+                        checkCancelled = { executionContext.ensureActive() },
+                    ))
+                    try {
+                        execute("copy_file", listOf(ToolParameter("source", item.path), ToolParameter("destination", destination),
+                            ToolParameter("source_environment", sourceEnv), ToolParameter("dest_environment", destinationEnv),
+                            ToolParameter("recursive", item.isDirectory.toString()), ToolParameter(FileCopyObservers.PARAMETER, token)))
+                    } finally {
+                        FileCopyObservers.remove(token)
+                    }
+                    // 取消或复制失败时不删除来源；整项成功后才允许完成跨环境剪切。
+                    executionContext.ensureActive()
+                    if (item.cut) {
+                        copyState.value = checkNotNull(copyState.value).copy(finishing = true)
+                        delete(item.path, item.environment, item.isDirectory)
+                    }
+                }
+                if (item.cut) FileBrowserClipboard.clear(item)
+            }
+        } finally {
+            copyState.value = null
         }
     }
 

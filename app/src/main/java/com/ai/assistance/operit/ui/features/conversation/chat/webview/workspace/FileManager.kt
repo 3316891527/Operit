@@ -68,6 +68,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.text.readWorkspaceTextWithinLimit
 import com.ai.assistance.operit.util.files.FileUtils
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.*
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.transfer.WorkspaceCopyProgressDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserClipboard
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserClipboardItem
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.FileBrowserContextMenu
@@ -114,6 +115,8 @@ fun FileBrowser(
     var currentEnvironment by rememberSaveable(initialPath, environment) { mutableStateOf(environment) }
     var fileList by remember { mutableStateOf<List<DirectoryEntry>>(emptyList()) }
     var isOperationLoading by remember { mutableStateOf(false) }
+    var fileOperationJob by remember { mutableStateOf<Job?>(null) }
+    var cancellingFileOperation by remember { mutableStateOf(false) }
     var isDirectoryLoading by remember { mutableStateOf(false) }
     var directoryLoadJob by remember { mutableStateOf<Job?>(null) }
     var directoryLoadVersion by remember { mutableIntStateOf(0) }
@@ -143,6 +146,7 @@ fun FileBrowser(
     val listState = rememberLazyListState()
     val operations = remember(context) { FileBrowserOperations(context) }
     val clipboard by FileBrowserClipboard.content.collectAsState()
+    val copyProgress by operations.copyProgress.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
     var selectionMode by rememberSaveable(currentPath, currentEnvironment) { mutableStateOf(false) }
     var selectedNames by rememberSaveable(currentPath, currentEnvironment) { mutableStateOf(emptySet<String>()) }
@@ -450,7 +454,8 @@ fun FileBrowser(
     fun runOperation(block: suspend () -> Unit) {
         if (isLoading) return
         isOperationLoading = true
-        coroutineScope.launch {
+        cancellingFileOperation = false
+        fileOperationJob = coroutineScope.launch {
             try {
                 block()
                 errorMessage = null
@@ -461,8 +466,9 @@ fun FileBrowser(
                 errorMessage = e.message
             } finally {
                 isOperationLoading = false
+                fileOperationJob = null
+                loadDirectory(currentPath)
             }
-            loadDirectory(currentPath)
         }
     }
 
@@ -657,6 +663,14 @@ fun FileBrowser(
                     runOperation { operations.externalOpen(joinPath(currentPath, target.name), currentEnvironment, false) }
                 }) { Text(stringResource(R.string.workspace_open_external)) }
             } }, confirmButton = {})
+    }
+    copyProgress?.let { progress ->
+        key(progress.sourceEnvironment, progress.source, progress.destinationEnvironment, progress.destination) {
+            WorkspaceCopyProgressDialog(progress, cancelling = cancellingFileOperation, onCancel = {
+                cancellingFileOperation = true
+                fileOperationJob?.cancel()
+            })
+        }
     }
     propertiesTarget?.let { target ->
         WorkspacePropertiesDialog(target,
@@ -891,7 +905,7 @@ fun FileBrowser(
             }
 
             // 文件列表
-            if (isLoading) {
+            if (isLoading && copyProgress == null) {
                 Box(
                         modifier = Modifier.fillMaxSize().weight(1f),
                         contentAlignment = Alignment.Center
