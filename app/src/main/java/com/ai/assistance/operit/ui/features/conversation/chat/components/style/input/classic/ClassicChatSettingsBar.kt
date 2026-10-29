@@ -24,12 +24,9 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Portrait
-import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.TipsAndUpdates
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.automirrored.outlined.VolumeOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -114,8 +111,6 @@ fun ClassicChatSettingsBar(
     onNavigateToModelConfig: () -> Unit,
     onNavigateToModelPrompts: () -> Unit,
     onNavigateToPackageManager: () -> Unit,
-    isAutoReadEnabled: Boolean,
-    onToggleAutoRead: () -> Unit,
     enableTools: Boolean,
     onToggleTools: () -> Unit,
     toolPromptVisibility: Map<String, Boolean>,
@@ -144,7 +139,6 @@ fun ClassicChatSettingsBar(
     var showMemorySection by remember { mutableStateOf(false) }
     var showModelSection by remember { mutableStateOf(false) }
     var showToolsSection by remember { mutableStateOf(false) }
-    var showBehaviorSection by remember { mutableStateOf(false) }
     var showPluginsSection by remember { mutableStateOf(false) }
     var showModelDropdown by remember { mutableStateOf(false) }
     var showMemoryDropdown by remember { mutableStateOf(false) }
@@ -268,8 +262,6 @@ fun ClassicChatSettingsBar(
             PermissionLevel.ASK -> stringResource(R.string.permission_level_ask)
             PermissionLevel.ALLOW -> stringResource(R.string.permission_level_allow)
         }
-    val behaviorSummary = stringResource(R.string.auto_read_message) + " · " +
-        stringResource(if (isAutoReadEnabled) R.string.enabled else R.string.disabled)
 
     val buildMemoryAutoSaveDetail: suspend () -> String = {
         val pendingCandidateCount =
@@ -407,7 +399,6 @@ fun ClassicChatSettingsBar(
                 showMemorySection = false
                 showModelSection = false
                 showToolsSection = false
-                showBehaviorSection = false
                 showPluginsSection = false
             },
             modifier = Modifier
@@ -433,7 +424,6 @@ fun ClassicChatSettingsBar(
                     showMemorySection = false
                     showModelSection = false
                     showToolsSection = false
-                    showBehaviorSection = false
                     showPluginsSection = false
                 },
                     properties =
@@ -649,35 +639,6 @@ fun ClassicChatSettingsBar(
                                     }
                                 )
                             }
-                            }
-
-                            ClassicSettingsFoldSection(
-                                title = stringResource(R.string.agent_menu_behavior),
-                                value = behaviorSummary,
-                                icon = Icons.Outlined.Speed,
-                                expanded = showBehaviorSection,
-                                onExpandedChange = { showBehaviorSection = it }
-                            ) {
-                            SettingItem(
-                                title = stringResource(R.string.auto_read_message),
-                                    icon =
-                                            if (isAutoReadEnabled) Icons.AutoMirrored.Rounded.VolumeUp
-                                            else Icons.AutoMirrored.Outlined.VolumeOff,
-                                    iconTint =
-                                            if (isAutoReadEnabled)
-                                                    MaterialTheme.colorScheme.primary
-                                            else
-                                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                            alpha = 0.7f
-                                                    ),
-                                isChecked = isAutoReadEnabled,
-                                onToggle = onToggleAutoRead,
-                                onInfoClick = {
-                                        infoPopupContent =
-                                                context.getString(R.string.auto_read_message) to context.getString(R.string.auto_read_desc)
-                                    showMenu = false
-                                }
-                            )
                             }
 
                             ClassicSettingsFoldSection(

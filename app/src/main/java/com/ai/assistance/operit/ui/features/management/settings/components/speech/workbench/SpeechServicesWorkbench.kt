@@ -25,6 +25,7 @@ import com.ai.assistance.operit.ui.features.management.settings.components.speec
 import com.ai.assistance.operit.ui.features.management.settings.components.speech.WakeSettingsSection
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.collect
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
+fun SpeechServicesWorkbench(initialTabIndex: Int) {
     val context = LocalContext.current
     val prefs = remember { SpeechServiceProfilesPreferences(context.applicationContext) }
     val ttsProfiles by prefs.ttsProfilesFlow.collectAsState(initial = emptyList())
@@ -50,14 +51,14 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
     val ttsState = remember(tts.id) {
         SpeechProfileEditorState(TtsProfileDraft(tts), tts, acceptExternal = { saved, incoming -> incoming.updatedAt >= saved.updatedAt }) { draft ->
             val saved = prefs.updateTtsProfile(draft.toProfile())
-            TtsServiceFactory.resetInstance()
+            withContext(Dispatchers.IO) { TtsServiceFactory.resetInstance() }
             saved
         }
     }
     val sttState = remember(stt.id) {
         SpeechProfileEditorState(stt, stt, acceptExternal = { saved, incoming -> incoming.updatedAt >= saved.updatedAt }) { draft ->
             val saved = prefs.updateSttProfile(draft)
-            SttServiceFactory.resetInstance()
+            withContext(Dispatchers.IO) { SttServiceFactory.resetInstance() }
             saved
         }
     }
@@ -124,6 +125,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (tab == 0) item(key = "tts-auto-read") { TtsAutoReadSetting() }
                 if (tab < 2) {
                     item(key = "profile") {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -161,9 +163,6 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                 if (tab == 0) item(key = "tts-preview") {
                     SpeechSynthesisTestSection(ttsState.draft)
                 }
-                if (tab == 0) item(key = "tts-tool") {
-                    TextButton(onClick = { perform { onOpenTtsTool() } }, modifier = Modifier.fillMaxWidth(), enabled = !actionBusy) { Text(stringResource(R.string.tts_demo)) }
-                }
                 if (tab == 1) item(key = "stt-editor") {
                     key(stt.id) { SttProfileEditor(sttState.draft) { sttState.draft = it } }
                 }
@@ -185,8 +184,8 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
         enabled = !actionBusy,
         dismissEnabled = !actionBusy,
         onSelect = { id -> perform {
-            if (isTts) { prefs.selectTtsProfile(id); TtsServiceFactory.resetInstance() }
-            else { prefs.selectSttProfile(id); SttServiceFactory.resetInstance() }
+            if (isTts) { prefs.selectTtsProfile(id); withContext(Dispatchers.IO) { TtsServiceFactory.resetInstance() } }
+            else { prefs.selectSttProfile(id); withContext(Dispatchers.IO) { SttServiceFactory.resetInstance() } }
             panel = null
         } },
         footer = {
@@ -232,7 +231,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                             pitch = SpeechServicesPreferences.DEFAULT_TTS_PITCH,
                         )
                         prefs.createTtsProfile(name, template)
-                        TtsServiceFactory.resetInstance()
+                        withContext(Dispatchers.IO) { TtsServiceFactory.resetInstance() }
                     }
                 }
             } else {
@@ -242,7 +241,7 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
                     else -> {
                         val template = if (action == "copy" || copyCurrent) current else current.copy(serviceType = SpeechServicesPreferences.DEFAULT_STT_SERVICE_TYPE, httpConfig = SpeechServicesPreferences.DEFAULT_STT_HTTP_PRESET)
                         prefs.createSttProfile(name, template)
-                        SttServiceFactory.resetInstance()
+                        withContext(Dispatchers.IO) { SttServiceFactory.resetInstance() }
                     }
                 }
             }
@@ -264,11 +263,11 @@ fun SpeechServicesWorkbench(initialTabIndex: Int, onOpenTtsTool: () -> Unit) {
             if (isTts) {
                 if (currentId == target.id) prefs.selectTtsProfile(profileChoices.first { it.id != target.id }.id)
                 prefs.deleteTtsProfile(target.id)
-                TtsServiceFactory.resetInstance()
+                withContext(Dispatchers.IO) { TtsServiceFactory.resetInstance() }
             } else {
                 if (currentId == target.id) prefs.selectSttProfile(profileChoices.first { it.id != target.id }.id)
                 prefs.deleteSttProfile(target.id)
-                SttServiceFactory.resetInstance()
+                withContext(Dispatchers.IO) { SttServiceFactory.resetInstance() }
             }
             deletionTarget = null
         } }) { Text(stringResource(R.string.delete)) } },

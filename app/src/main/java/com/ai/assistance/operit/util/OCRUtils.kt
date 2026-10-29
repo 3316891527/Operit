@@ -236,19 +236,26 @@ object OCRUtils {
      * @param context 上下文
      * @param bitmap 图像
      * @param quality 识别质量
-     * @return 识别到的文本，如果失败则返回空字符串
+     * @param failOnError 工具读取时启用，识别异常抛出而不伪装成空识别结果
+     * @return 识别到的文本
      */
     @WorkerThread
     suspend fun recognizeText(
             context: Context,
             bitmap: Bitmap,
-            quality: Quality = Quality.LOW
+            quality: Quality = Quality.LOW,
+            failOnError: Boolean = false,
     ): String {
         withContext(Dispatchers.IO) { com.ai.assistance.operit.data.resources.ocr.OcrModelResources.requireAvailable(context) }
         // 同时进行拉丁文和中文识别
         val latinResult = recognizeTextFromBitmap(bitmap, Language.LATIN, quality)
         val chineseResult = recognizeTextFromBitmap(bitmap, Language.CHINESE, quality)
 
+        if (failOnError) {
+            val errors = listOf(latinResult, chineseResult).filterIsInstance<OCRResult.Error>()
+                .map { it.message }.distinct()
+            check(errors.isEmpty()) { errors.joinToString("\n") }
+        }
         val latinText = if (latinResult is OCRResult.Success) latinResult.getFullText() else ""
         val chineseText = if (chineseResult is OCRResult.Success) chineseResult.getFullText() else ""
 

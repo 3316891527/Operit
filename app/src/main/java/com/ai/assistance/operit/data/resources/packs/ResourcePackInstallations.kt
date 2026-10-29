@@ -5,6 +5,8 @@ import com.ai.assistance.operit.data.resources.models.ModelFile
 import com.ai.assistance.operit.data.resources.models.containedFile
 import com.ai.assistance.operit.data.resources.models.storageSegment
 import com.ai.assistance.operit.data.resources.models.validateRelativePath
+import com.ai.assistance.operit.data.storage.LocalModelDeleteOutcome
+import com.ai.assistance.operit.data.storage.LocalModelRuntimeRegistry
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -59,14 +61,52 @@ internal object ResourcePackInstallations {
         history: List<ResourcePackSpec>,
         groupDirectory: File,
     ): List<ResourcePackSpec> {
-        val records = if (current.extension == null) emptyList() else
-            File(groupDirectory, ".installed").listFiles().orEmpty()
-                .filter { it.isFile && it.extension == "json" }
-                .mapNotNull { file ->
-                    runCatching { json.decodeFromString<ResourcePackSpec>(file.readText()).also(::validateSpec) }.getOrNull()
-                }
+        val records = if (current.extension == null) emptyList() else installationRecords(groupDirectory)
         return (listOf(current) + (history + records).filter { compatible(current, it) })
             .distinctBy { it.version }
+    }
+
+    private fun installationRecords(groupDirectory: File): List<ResourcePackSpec> =
+        File(groupDirectory, ".installed").listFiles().orEmpty()
+            .filter { it.isFile && it.extension == "json" }
+            .mapNotNull { file ->
+                runCatching { json.decodeFromString<ResourcePackSpec>(file.readText()).also(::validateSpec) }.getOrNull()
+            }
+
+    /** 新内容已就绪才回收已知旧版本；运行中的旧版本留待释放后重试清理。 */
+    @Synchronized
+    fun cleanupObsolete(
+        current: ResourcePackSpec,
+        history: List<ResourcePackSpec>,
+        directoryFor: (ResourcePackSpec) -> File,
+        checkpoint: () -> Unit = {},
+    ) {
+        if (current.extension == null) return
+        val retained = find(current, history, directoryFor) ?: return
+        if (!retained.hasCurrentContent(current)) return
+        val group = directoryFor(current).parentFile!!.canonicalFile
+        val obsolete = (history + installationRecords(group))
+            .filter { it.id == current.id && it.version != retained.spec.version }
+            .distinctBy { it.version }
+            .filter { directoryFor(it).exists() || group.containedFile(".installed/${it.version}.json").exists() }
+        if (obsolete.isEmpty()) return
+        // 清理前重新核对真实内容，不能因校验缓存命中就删掉唯一可用的旧安装。
+        if (!verified(retained.directory, retained.spec, force = true)) return
+        for (pack in obsolete) {
+            checkpoint()
+            validateSpec(pack)
+            val directory = directoryFor(pack)
+            if (directory.canonicalFile.parentFile != group || directory.canonicalFile == retained.directory.canonicalFile) continue
+            when (LocalModelRuntimeRegistry.deleteIfUnused(directory)) {
+                LocalModelDeleteOutcome.IN_USE -> continue
+                LocalModelDeleteOutcome.FAILED -> error("无法清理旧插件版本：${pack.version}")
+                LocalModelDeleteOutcome.DELETED -> {
+                    verified.remove(directory.path)
+                    val record = group.containedFile(".installed/${pack.version}.json")
+                    check(!record.exists() || record.delete()) { "无法清理旧插件安装记录：${pack.version}" }
+                }
+            }
+        }
     }
 
     @Synchronized

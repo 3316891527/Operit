@@ -1,24 +1,22 @@
 package com.ai.assistance.operit.api.speech.tts
 
+import com.ai.assistance.operit.api.speech.tts.prefetch.PrefetchingTtsService
+import com.ai.assistance.operit.api.speech.tts.prefetch.executeTtsRequest
+import kotlinx.coroutines.CancellationException
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.MediaPlayer
+import com.ai.assistance.operit.api.speech.tts.prefetch.writeTtsAudio
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -34,7 +32,7 @@ class OpenAIVoiceProvider(
     private val apiKey: String,
     private val model: String,
     initialVoiceId: String
-) : TtsService {
+) : PrefetchingTtsService {
 
     companion object {
         private const val TAG = "OpenAIVoiceProvider"
@@ -73,18 +71,9 @@ class OpenAIVoiceProvider(
     override val isInitialized: Boolean
         get() = _isInitialized.value
 
-    private val _isSpeaking = MutableStateFlow(false)
-    override val isSpeaking: Boolean
-        get() = _isSpeaking.value
-
-    override val speakingStateFlow: Flow<Boolean> = _isSpeaking.asStateFlow()
-
-    private var mediaPlayer: MediaPlayer? = null
-
-    private val playbackMutex = Mutex()
-    private val playerLock = Any()
-    private var currentPlaybackDone: CompletableDeferred<Boolean>? = null
-    private var currentPlaybackFile: File? = null
+    private val playback = QueuedTtsPlayback(TAG, audioUsage = AudioAttributes.USAGE_ASSISTANT) { fetchAudioFile(it) }
+    override val isSpeaking: Boolean get() = playback.isSpeaking
+    override val speakingStateFlow: Flow<Boolean> get() = playback.speakingStateFlow
 
     override suspend fun initialize(): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -122,234 +111,56 @@ class OpenAIVoiceProvider(
         interrupt: Boolean,
         rate: Float?,
         pitch: Float?,
-        extraParams: Map<String, String>
-    ): Boolean = withContext(Dispatchers.IO) {
-        playbackMutex.withLock {
-            if (!isInitialized) {
-                val initOk = initialize()
-                if (!initOk) return@withLock false
+        extraParams: Map<String, String>,
+    ): Boolean = playback.speak(text, interrupt, rate, pitch, mapOf("voice" to voiceId) + extraParams)
+
+    private suspend fun fetchAudioFile(request: QueuedTtsPlayback.Request): File? {
+        if (!isInitialized && !initialize()) return null
+        try {
+            val prefs = SpeechServicesPreferences(context.applicationContext)
+            val effectiveRate = request.rate ?: prefs.ttsSpeechRateFlow.first()
+            val requestModel = request.extraParams["model"]?.takeIf { it.isNotBlank() } ?: model
+            val requestVoice = request.extraParams["voice"]?.takeIf { it.isNotBlank() } ?: voiceId
+            val responseFormat = request.extraParams["response_format"]?.takeIf { it.isNotBlank() } ?: "mp3"
+            val speed = (request.extraParams["speed"]?.toDoubleOrNull() ?: effectiveRate.toDouble()).coerceIn(0.25, 4.0)
+            val payload = OpenAiSpeechRequest(requestModel, request.text, requestVoice, responseFormat, speed)
+            val httpRequest = Request.Builder()
+                .url(endpointUrl)
+                .post(Json.encodeToString(payload).toRequestBody("application/json".toMediaType()))
+                .addHeader("Authorization", "Bearer $apiKey")
+                .addHeader("Content-Type", "application/json")
+                .build()
+            val response = try {
+                httpClient.executeTtsRequest(httpRequest)
+            } catch (error: IOException) {
+                throw TtsException(context.getString(R.string.openai_tts_error_request_failed), cause = error)
             }
-
-            try {
-                if (interrupt && isSpeaking) {
-                    stop()
-                }
-
-                val prefs = SpeechServicesPreferences(context.applicationContext)
-                val effectiveRate = rate ?: prefs.ttsSpeechRateFlow.first()
-
-                val requestModel = extraParams["model"]?.takeIf { it.isNotBlank() } ?: model
-                val requestVoice = extraParams["voice"]?.takeIf { it.isNotBlank() } ?: voiceId
-                val responseFormat =
-                    extraParams["response_format"]?.takeIf { it.isNotBlank() } ?: "mp3"
-                val speed = (extraParams["speed"]?.toDoubleOrNull() ?: effectiveRate.toDouble())
-                    .coerceIn(0.25, 4.0)
-
-                val payload = OpenAiSpeechRequest(
-                    model = requestModel,
-                    input = text,
-                    voice = requestVoice,
-                    response_format = responseFormat,
-                    speed = speed
+            if (!response.isSuccessful) {
+                throw TtsException(
+                    message = "OpenAI TTS request failed with code ${response.code}",
+                    httpStatusCode = response.code,
+                    errorBody = response.text(),
                 )
-
-                val bodyJson = Json.encodeToString(payload)
-
-                val requestBody = bodyJson.toRequestBody("application/json".toMediaType())
-                val request = Request.Builder()
-                    .url(endpointUrl)
-                    .post(requestBody)
-                    .addHeader("Authorization", "Bearer $apiKey")
-                    .addHeader("Content-Type", "application/json")
-                    .build()
-
-                val response = try {
-                    httpClient.newCall(request).execute()
-                } catch (e: IOException) {
-                    throw TtsException(context.getString(R.string.openai_tts_error_request_failed), cause = e)
-                }
-
-                if (!response.isSuccessful) {
-                    val errorBody = response.body?.string()
-                    response.close()
-                    throw TtsException(
-                        message = "OpenAI TTS request failed with code ${response.code}",
-                        httpStatusCode = response.code,
-                        errorBody = errorBody
-                    )
-                }
-
-                val safeExt = when (responseFormat.lowercase()) {
-                    "mp3", "opus", "aac", "flac", "wav", "pcm" -> responseFormat.lowercase()
-                    else -> "mp3"
-                }
-                val tempFile = File(context.cacheDir, "openai_tts_${UUID.randomUUID()}.$safeExt")
-                response.body?.byteStream()?.use { input ->
-                    FileOutputStream(tempFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                response.close()
-
-                return@withLock playAudioFileAndAwait(tempFile)
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "OpenAI TTS speak failed", e)
-                if (e is TtsException) throw e
-                throw TtsException("OpenAI TTS speak failed", cause = e)
             }
+            val safeExt = when (responseFormat.lowercase()) {
+                "mp3", "opus", "aac", "flac", "wav", "pcm" -> responseFormat.lowercase()
+                else -> "mp3"
+            }
+            return File(context.cacheDir, "openai_tts_${UUID.randomUUID()}.$safeExt").writeTtsAudio(response.bytes)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "OpenAI TTS合成失败", error)
+            if (error is TtsException) throw error
+            throw TtsException("OpenAI TTS speak failed", cause = error)
         }
     }
 
-     private suspend fun playAudioFileAndAwait(file: File): Boolean {
-         val done = CompletableDeferred<Boolean>()
-         synchronized(playerLock) {
-             currentPlaybackDone = done
-             currentPlaybackFile = file
-         }
-
-         try {
-             withContext(Dispatchers.Main) {
-                 try {
-                     synchronized(playerLock) {
-                         mediaPlayer?.release()
-                         mediaPlayer = null
-                     }
-
-                     val mp = MediaPlayer().apply {
-                         setAudioAttributes(
-                             AudioAttributes.Builder()
-                                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                                 .setUsage(AudioAttributes.USAGE_ASSISTANT)
-                                 .build()
-                         )
-                         setDataSource(file.absolutePath)
-                         setOnCompletionListener {
-                             finishPlayback(true, done, file)
-                         }
-                         setOnErrorListener { _, what, extra ->
-                             AppLogger.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
-                             finishPlayback(false, done, file)
-                             true
-                         }
-                         prepare()
-                         start()
-                     }
-
-                     synchronized(playerLock) {
-                         mediaPlayer = mp
-                     }
-                     _isSpeaking.value = true
-                 } catch (e: Exception) {
-                     AppLogger.e(TAG, "Play audio failed", e)
-                     finishPlayback(false, done, file)
-                 }
-             }
-
-             return done.await()
-         } finally {
-             if (!done.isCompleted) {
-                 finishPlayback(false, done, file)
-             }
-         }
-     }
-
-     private fun finishPlayback(success: Boolean, done: CompletableDeferred<Boolean>, file: File) {
-         synchronized(playerLock) {
-             if (currentPlaybackDone === done) {
-                 currentPlaybackDone = null
-             }
-             if (currentPlaybackFile == file) {
-                 currentPlaybackFile = null
-             }
-             mediaPlayer?.apply {
-                 try {
-                     if (isPlaying) {
-                         stop()
-                     }
-                 } catch (_: Exception) {
-                 }
-                 try {
-                     release()
-                 } catch (_: Exception) {
-                 }
-             }
-             mediaPlayer = null
-         }
-
-         _isSpeaking.value = false
-         try {
-             file.delete()
-         } catch (_: Exception) {
-         }
-
-         if (!done.isCompleted) {
-             done.complete(success)
-         }
-     }
-
-    override suspend fun stop(): Boolean = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val done: CompletableDeferred<Boolean>?
-            val file: File?
-            synchronized(playerLock) {
-                done = currentPlaybackDone
-                file = currentPlaybackFile
-                currentPlaybackDone = null
-                currentPlaybackFile = null
-                mediaPlayer?.apply {
-                    if (isPlaying) {
-                        stop()
-                    }
-                    release()
-                }
-                mediaPlayer = null
-            }
-            _isSpeaking.value = false
-            file?.delete()
-            if (done != null && !done.isCompleted) {
-                done.complete(false)
-            }
-            true
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Stop failed", e)
-            false
-        }
-    }
-
-    override suspend fun pause(): Boolean = withContext(Dispatchers.IO) {
-        return@withContext try {
-            synchronized(playerLock) {
-                mediaPlayer?.pause()
-            }
-            _isSpeaking.value = false
-            true
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Pause failed", e)
-            false
-        }
-    }
-
-    override suspend fun resume(): Boolean = withContext(Dispatchers.IO) {
-        return@withContext try {
-            synchronized(playerLock) {
-                mediaPlayer?.start()
-            }
-            _isSpeaking.value = true
-            true
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Resume failed", e)
-            false
-        }
-    }
-
+    override suspend fun stop(): Boolean = playback.stop()
+    override suspend fun pause(): Boolean = playback.pause()
+    override suspend fun resume(): Boolean = playback.resume()
     override fun shutdown() {
-        synchronized(playerLock) {
-            mediaPlayer?.release()
-            mediaPlayer = null
-            currentPlaybackDone = null
-            currentPlaybackFile = null
-        }
-        _isSpeaking.value = false
+        playback.shutdown()
         _isInitialized.value = false
     }
 

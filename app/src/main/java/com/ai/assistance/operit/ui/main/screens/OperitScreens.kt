@@ -84,7 +84,6 @@ import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.main.screens.UIDebuggerToolScreen
 import com.ai.assistance.operit.ui.features.conversation.chat.export.htmlpackager.HtmlPackagerScreen
 import com.ai.assistance.operit.ui.features.management.settings.speech.stt.SpeechToTextToolScreen
-import com.ai.assistance.operit.ui.features.management.settings.speech.tts.TextToSpeechToolScreen
 import com.ai.assistance.operit.ui.features.management.update.screens.UpdateScreen
 import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowListScreen
 import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowDetailScreen
@@ -813,8 +812,7 @@ sealed class Screen(
                 onGestureConsumed: (Boolean) -> Unit
         ) {
             SpeechServicesSettingsScreen(
-                onBackPressed = onGoBack,
-                onNavigateToTextToSpeech = { navigateTo(TextToSpeech) }
+                onBackPressed = onGoBack
             )
         }
     }
@@ -1471,23 +1469,6 @@ sealed class Screen(
         }
     }
 
-    // 在MarkdownDemo对象后添加TextToSpeech对象
-    data object TextToSpeech :
-            Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_text_to_speech) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            TextToSpeechToolScreen(navController = navController)
-        }
-    }
-
     // Tools screens
     data object SpeechToText :
             Screen(navItem = NavItem.Settings, titleRes = R.string.screen_title_speech_to_text) {
@@ -1519,7 +1500,6 @@ sealed class Screen(
         ) {
             SpeechServicesSettingsScreen(
                 onBackPressed = onGoBack,
-                onNavigateToTextToSpeech = { navigateTo(TextToSpeech) },
                 initialTabIndex = 2,
             )
         }

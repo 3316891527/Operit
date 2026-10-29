@@ -3,15 +3,23 @@ package com.ai.assistance.operit.ui.features.management.resources.hub
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.data.resources.OfflineResources
 import com.ai.assistance.operit.data.resources.models.*
 import com.ai.assistance.operit.ui.features.management.settings.components.speech.workbench.*
@@ -23,6 +31,11 @@ import com.ai.assistance.operit.ui.features.management.settings.components.speec
 internal fun HubDetailSheet(entry: HubEntry, state: HubState, busy: Boolean, onDismiss: () -> Unit, onDownload: () -> Unit, onImport: () -> Unit, onExport: () -> Unit, onDelete: (Boolean) -> Unit) {
     val context = LocalContext.current
     SpeechWorkbenchSheet(entry.name, onDismiss) {
+        val windowView = LocalView.current.rootView
+        DisposableEffect(windowView) {
+            val unregister = OKToast.registerWindow(windowView)
+            onDispose { unregister() }
+        }
         if (entry.description.isNotBlank()) Text(entry.description, style = MaterialTheme.typography.bodyMedium)
         HubDetailLine(stringResource(R.string.hub_type), stringResource(categoryTitle(entry.category)))
         HubDetailLine(stringResource(R.string.hub_status), stringResource(when { entry.bundled -> R.string.hub_bundled; entry.updateAvailable -> R.string.hub_update_available; entry.ready -> R.string.hub_ready; entry.stored -> R.string.hub_incomplete; else -> R.string.hub_unprepared }))
@@ -64,7 +77,35 @@ internal fun HubDetailSheet(entry: HubEntry, state: HubState, busy: Boolean, onD
             if ((!entry.ready || entry.updateAvailable) && entry.downloadable) Button(onClick = onDownload, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (entry.updateAvailable) R.string.hub_update_resource else R.string.offline_resources_download)) }
             OutlinedButton(onClick = onImport, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.offline_resources_import)) }
             if (entry.ready) OutlinedButton(onClick = onExport, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.resource_save_backup)) }
-            if (entry.stored) TextButton(onClick = { onDelete(false) }, enabled = !busy && !entry.inUse, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (entry.id == OfflineResources.UBUNTU) R.string.hub_remove_archive else R.string.resource_delete), color = MaterialTheme.colorScheme.error) }
+            if (entry.stored) {
+                val deleteWarning = when {
+                    entry.pack?.extension != null -> R.string.hub_disable_extension_before_delete
+                    entry.category in setOf("engine", "ocr") -> R.string.hub_restart_resource_hint
+                    else -> R.string.hub_in_use_hint
+                }
+                val deleteLabel = stringResource(if (entry.id == OfflineResources.UBUNTU) R.string.hub_remove_archive else R.string.resource_delete)
+                // 禁用按钮的手势节点仍会消费点击；独立覆盖层承接说明，不能依赖父级 clickable。
+                Box(Modifier.fillMaxWidth()) {
+                    TextButton(
+                        onClick = { onDelete(false) },
+                        enabled = !busy && !entry.inUse,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth().then(
+                            if (entry.inUse && !busy) Modifier.clearAndSetSemantics {} else Modifier
+                        ),
+                    ) {
+                        Text(deleteLabel)
+                    }
+                    if (entry.inUse && !busy) Box(
+                        Modifier.matchParentSize().semantics { contentDescription = deleteLabel }.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                            onClickLabel = stringResource(deleteWarning),
+                        ) { OKToast.warning(context, deleteWarning).show() }
+                    )
+                }
+            }
             if (entry.id == OfflineResources.UBUNTU && (state.ubuntuInstalled || state.ubuntuPending)) TextButton(onClick = { onDelete(true) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.hub_remove_environment), color = MaterialTheme.colorScheme.error) }
         }
     }

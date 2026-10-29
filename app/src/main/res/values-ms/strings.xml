@@ -1111,8 +1111,7 @@
     <string name="info">Maklumat</string>
     <string name="read_message">Bacakan Mesej</string>
     <string name="auto_read_message">Bacaan Automatik</string>
-    <string name="auto_read_desc">Apabila dihidupkan, balasan AI akan dibacakan secara automatik</string>
-    <string name="auto_read_active">Bacaan Automatik Dihidupkan</string>
+    <string name="auto_read_desc">Bacakan balasan AI secara automatik dalam sembang biasa. Panggilan suara sentiasa membacakan balasan tanpa bergantung pada suis ini.</string>
     <string name="disable_stream_output">Lumpuhkan Output Aliran</string>
     <string name="disable_stream_output_desc">Apabila dilumpuhkan, balasan AI akan dipaparkan sekali gus secara lengkap, bukan secara aliran perkataan demi perkataan</string>
     <string name="disable_settings_group">Item Dilumpuhkan</string>
@@ -1354,7 +1353,6 @@
     <string name="tool_file_manager_desc">Layari dan urus fail peranti, menyokong pelbagai operasi</string>
     <string name="tool_tts">Teks ke pertuturan</string>
     <string name="tool_tts_desc">Tukar teks kepada pertuturan, menyokong pelarasan kelajuan dan nada suara</string>
-    <string name="tts_title">Demonstrasi Teks ke Pertuturan</string>
 
     <string name="tuna_source_setup_failed">Penyediaan sumber Tuna gagal</string>
     <string name="tuna_source_setup_error">Ralat dalam mengkonfigurasi sumber Tuna</string>
@@ -1451,7 +1449,6 @@
     <string name="text_variable_info">Pembolehubah Teks: %1$s</string>
     <string name="contains_sub_operations">Mengandungi %1$d suboperasi</string>
     <string name="operation_type">Jenis Operasi: %1$s</string>
-    <string name="tts_demo">Demonstrasi Teks ke Pertuturan</string>
     <string name="input_text">Masukkan Teks</string>
     <string name="speech_settings">Tetapan Pertuturan</string>
     <string name="speech_rate">Kadar Pertuturan: %1$sx</string>
@@ -1598,37 +1595,12 @@
     <string name="process_limit_subtitle">Urus had bilangan proses hantu Android 12+</string>
 
     <string name="tts_input_text">Teks Input</string>
-    <string name="tts_input_hint">Sila masukkan teks untuk ditukar kepada pertuturan</string>
-    <string name="tts_speech_settings">Tetapan Pertuturan</string>
-    <string name="tts_speech_rate">Kadar Pertuturan: %sx</string>
-    <string name="tts_speech_pitch">Nada Suara: %sx</string>
-    <string name="tts_play">Main</string>
-    <string name="tts_play_speech">Main Pertuturan</string>
-    <string name="tts_stop">Hentikan</string>
     <string name="tts_stop_speech">Hentikan Main</string>
-    <string name="tts_engine_initialized">Enjin pertuturan telah dipermulaan</string>
-    <string name="tts_engine_not_initialized">Enjin pertuturan belum dipermulaan</string>
     <string name="tts_playing">Sedang dimainkan...</string>
-    <string name="tts_not_playing">Tidak dimainkan</string>
-    <string name="tts_error">Ralat</string>
-    <string name="tts_error_details">Butiran Ralat:</string>
-    <string name="tts_debug_info">Maklumat Nyahpepijat:</string>
-    <string name="tts_clear_error">Kosongkan Ralat</string>
-    <string name="tts_clear_error_message">Kosongkan Mesej Ralat</string>
-    <string name="tts_usage_instructions">Arahan Penggunaan</string>
-    <string name="tts_accessibility_note">Nota: Perkhidmatan kebolehcapaian perlu diaktifkan dalam tetapan sistem pada penggunaan pertama</string>
     <string name="tts_init_failed">Gagal memulakan enjin pertuturan</string>
-    <string name="tts_init_error">Ralat permulaan enjin pertuturan</string>
-    <string name="tts_init_error_details">Kaedah permulaan perkhidmatan mengembalikan false, tetapi tiada pengecualian dilontarkan</string>
     <string name="tts_speak_failed">Gagal memainkan teks</string>
-    <string name="tts_speak_error">Ralat main teks: %s</string>
-    <string name="tts_speak_error_details">Perkhidmatan TTS mengembalikan status kegagalan, sila semak konfigurasi dan sambungan rangkaian</string>
     <string name="tts_stop_error">Ralat henti main: %s</string>
     <string name="tts_input_empty">Sila masukkan teks untuk ditukar kepada pertuturan</string>
-    <string name="tts_debug_service_type">Jenis Perkhidmatan: %s</string>
-    <string name="tts_debug_params">Parameter Permintaan: teks=\'%1$s\', kadar=%2$sx, nada=%3$sx</string>
-    <string name="tts_debug_params_with_service">Parameter Permintaan: teks=\'%1$s\', kadar=%2$sx, nada=%3$sx\nJenis Perkhidmatan: %4$s</string>
-    <string name="tts_usage_instructions_content">1. Masukkan teks untuk ditukar kepada pertuturan dalam kotak input\n2. Laraskan tetapan kadar pertuturan dan nada suara\n3. Klik butang "Main Pertuturan" untuk mula main\n4. Klik butang "Hentikan Main" untuk berhenti main\n5. Jika ralat berlaku, semak butiran ralat dan maklumat nyahpepijat\n6. Gunakan butang "Kosongkan Mesej Ralat" untuk membersihkan paparan ralat</string>
     <string name="tool_speech_recognition">Pengecaman Pertuturan</string>
     <string name="tool_speech_recognition_desc">Tukar pertuturan kepada teks, menyokong pelbagai enjin dan bahasa</string>
     <string name="tool_permission_manager">Pengurus Kebenaran Aplikasi</string>
@@ -1959,10 +1931,7 @@
     <string name="speech_services_service_type">Jenis Perkhidmatan</string>
     <string name="speech_services_tts_engine">Enjin TTS</string>
     <string name="speech_services_stt_engine">Enjin STT</string>
-    <string name="speech_services_dropdown_expand">Kembangkan menu lungsur</string>
     <string name="speech_services_tts_type_simple">TTS Sistem (Mudah)</string>
-    <string name="speech_services_simple_tts_settings">Tetapan TTS Sistem</string>
-    <string name="speech_services_simple_tts_desc">Boleh memilih bahasa dan suara tertentu untuk TTS sistem, mengelakkan bahasa lalai sesetengah peranti tidak disokong oleh enjin semasa.</string>
     <string name="speech_services_simple_tts_locale">Bahasa</string>
 
     <string name="speech_services_test_tts">Uji fungsi TTS</string>
@@ -2010,8 +1979,6 @@
     <string name="speech_services_simple_tts_voice">Suara Sistem</string>
     <string name="speech_services_simple_tts_voice_default">Guna Suara Lalai Sistem</string>
     <string name="speech_services_simple_tts_voice_select">Pilih Suara Sistem</string>
-    <string name="speech_services_simple_tts_voice_clear">Kosongkan Suara Sistem</string>
-    <string name="speech_services_simple_tts_loading">Membaca suara TTS sistem…</string>
     <string name="speech_services_tts_type_http">HTTP API (Jauh)</string>
     <string name="speech_services_tts_type_siliconflow">TTS SiliconFlow</string>
     <string name="speech_services_tts_type_minimax">TTS MiniMax</string>
@@ -3250,7 +3217,6 @@
     <string name="screen_title_ui_debugger">Alat Nyahpepijat UI</string>
     <string name="screen_title_logcat">Pemerhati Log</string>
     <string name="screen_title_markdown_demo">Demo Markdown Aliran</string>
-    <string name="screen_title_text_to_speech">Teks ke Pertuturan</string>
 
     <string name="tag_export_select_at_least_one">Sila pilih sekurang-kurangnya satu tag</string>
     <string name="tag_import_invalid_format">Format fail tag tidak sah</string>
@@ -6637,11 +6603,8 @@
     <string name="chat_shared_text_target_dialog_message">Teks yang dikongsi dikesan. Sila pilih salah satu daripada 5 perbualan terbaru, atau buat perbualan baharu.</string>
     <string name="chat_shared_text_target_new_chat_hint">Cipta perbualan baharu dan isi teks ke dalam kotak input</string>
     <string name="agent_menu_tools">Alatan</string>
-    <string name="agent_menu_behavior">Tingkah Laku</string>
     <string name="agent_menu_plugins">Pemalam</string>
     <string name="agent_menu_permission_disabled">Lumpuhkan</string>
-    <string name="agent_menu_behavior_streaming">Penstriman</string>
-    <string name="agent_menu_behavior_non_streaming">Bukan Penstriman</string>
     <string name="add_selected_to_memory">Masukkan ke dalam Ingatan Ringkasan</string>
     <string name="speech_services_tts_type_mimo">MiMo TTS</string>
     <string name="speech_services_tts_type_doubao">Doubao TTS</string>

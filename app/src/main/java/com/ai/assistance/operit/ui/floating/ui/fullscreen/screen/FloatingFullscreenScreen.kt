@@ -58,7 +58,6 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.model.ActivePrompt
-import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.WakeWordPreferences
 import com.ai.assistance.operit.ui.floating.FloatContext
@@ -131,9 +130,6 @@ fun FloatingFullscreenMode(floatContext: FloatContext) {
     val themeSnapshot = LocalThemePreferenceSnapshot.current
     val aiAvatarUri = activeCharacterAvatarUri ?: themeSnapshot.customAiAvatarUri
 
-    val speechServiceProfiles = remember { SpeechServiceProfilesPreferences(context) }
-    val currentTtsProfile by speechServiceProfiles.currentTtsProfileOrNullFlow.collectAsState(initial = null)
-    val ttsCleanerRegexs = currentTtsProfile?.cleanerRegexs
     
     val wakePrefs = remember { WakeWordPreferences(context.applicationContext) }
     val autoNewChatGroup by wakePrefs.autoNewChatGroupFlow.collectAsState(initial = WakeWordPreferences.DEFAULT_AUTO_NEW_CHAT_GROUP)
@@ -198,13 +194,9 @@ fun FloatingFullscreenMode(floatContext: FloatContext) {
 
     val latestMessage = floatContext.messages.lastOrNull()
 
-    // 监听最新的AI消息
-    LaunchedEffect(latestMessage?.timestamp, ttsCleanerRegexs) {
-        val activeCleanerRegexs = ttsCleanerRegexs ?: return@LaunchedEffect
-        viewModel.processAndSpeakAiMessage(
-            latestMessage,
-            activeCleanerRegexs
-        )
+    // 文字预览跟踪流与定稿；朗读不依赖这个界面监听器。
+    LaunchedEffect(latestMessage?.timestamp, latestMessage?.contentStream, latestMessage?.content) {
+        viewModel.processAiMessage(latestMessage)
     }
 
     // 清理资源

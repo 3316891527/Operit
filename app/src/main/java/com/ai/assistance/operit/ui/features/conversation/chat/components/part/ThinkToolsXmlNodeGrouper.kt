@@ -1,6 +1,9 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.components.part
 
 import androidx.compose.runtime.CompositionLocalProvider
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.ToolTimingIndex
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.LocalToolTimingIndex
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.LocalInsideToolGroup
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -24,6 +27,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
+import com.ai.assistance.operit.data.model.tooltiming.ToolCallExecution
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
 import com.ai.assistance.operit.ui.common.markdown.MarkdownNodeGrouper
 import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
@@ -41,6 +45,25 @@ class ThinkToolsXmlNodeGrouper(
 ) : MarkdownNodeGrouper {
     // 聊天列表可注入消息持有的展开选择，其他完整渲染入口自行持有状态。
     internal var expansionOverrides = mutableStateMapOf<String, Boolean>()
+
+    internal var executionTimings by mutableStateOf<List<ToolCallExecution>>(emptyList())
+    private var timingNodes: List<Pair<MarkdownProcessorType, String>>? = null
+    private var timingRecords: List<ToolCallExecution>? = null
+    private var timingIndex = ToolTimingIndex.Empty
+    private fun timingFor(nodes: List<MarkdownNodeStable>): ToolTimingIndex {
+        val snapshot = nodes.map { it.type to it.content }
+        val records = executionTimings
+        if (timingNodes != snapshot || timingRecords != records) {
+            timingIndex = ToolTimingIndex.parse(nodes, records)
+            timingNodes = snapshot
+            timingRecords = records
+        }
+        return timingIndex
+    }
+    @Composable
+    override fun RenderScope(nodes: List<MarkdownNodeStable>, content: @Composable () -> Unit) {
+        CompositionLocalProvider(LocalToolTimingIndex provides timingFor(nodes)) { content() }
+    }
 
     override fun group(nodes: List<MarkdownNodeStable>, rendererId: String): List<MarkdownGroupedItem> {
         val out = ArrayList<MarkdownGroupedItem>(nodes.size)
@@ -228,7 +251,13 @@ class ThinkToolsXmlNodeGrouper(
                 else -> true
             }
         }
-        return ThinkToolsGroupInfo(group, toolCount, searchCount, hasStream && !hasNonConformingTail)
+        val thoughtCount = slice.count {
+            it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) in setOf("think", "thinking")
+        }
+        return ThinkToolsGroupInfo(
+            group, toolCount, searchCount, hasStream && !hasNonConformingTail,
+            thoughtCount, timingFor(nodes).group(group.startIndex, group.endIndexInclusive),
+        )
     }
 
     @Composable
@@ -279,6 +308,7 @@ class ThinkToolsXmlNodeGrouper(
             }
         }
 
+        CompositionLocalProvider(LocalInsideToolGroup provides true) {
         Column(
             modifier =
                 modifier
@@ -369,6 +399,7 @@ class ThinkToolsXmlNodeGrouper(
                     }
                 }
             }
+        }
         }
     }
 }

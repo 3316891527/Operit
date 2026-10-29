@@ -307,18 +307,18 @@ internal fun ThemeSettingsDisplayOptionsSection(
     val values by editorSession.values.collectAsState()
     val options =
         listOf(
-            "show_thinking_process" to R.string.show_thinking_process,
-            "show_model_provider" to R.string.show_model_provider,
-            "show_model_name" to R.string.show_model_name,
-            "show_role_name" to R.string.show_role_name,
-            "show_user_name" to R.string.show_user_name,
-            "show_message_token_stats" to R.string.show_message_token_stats,
-            "show_message_token_speed" to R.string.show_message_token_speed,
-            "show_message_timing_stats" to R.string.show_message_timing_stats,
-            "show_message_timestamp" to R.string.show_message_timestamp,
-            "show_status_tags" to R.string.show_status_tags,
-            "show_input_processing_status" to R.string.show_input_processing_status,
-            "show_chat_floating_dots_animation" to R.string.show_chat_floating_dots_animation,
+            Triple("show_thinking_process", R.string.show_thinking_process, R.string.show_thinking_process_desc),
+            Triple("show_model_provider", R.string.show_model_provider, R.string.show_model_provider_description),
+            Triple("show_model_name", R.string.show_model_name, R.string.show_model_name_description),
+            Triple("show_role_name", R.string.show_role_name, R.string.show_role_name_description),
+            Triple("show_user_name", R.string.show_user_name, R.string.show_user_name_description),
+            Triple("show_message_token_stats", R.string.show_message_token_stats, R.string.show_message_token_stats_description),
+            Triple("show_message_token_speed", R.string.show_message_token_speed, R.string.show_message_token_speed_description),
+            Triple("show_message_timing_stats", R.string.show_message_timing_stats, R.string.show_message_timing_stats_description),
+            Triple("show_message_timestamp", R.string.show_message_timestamp, R.string.show_message_timestamp_description),
+            Triple("show_status_tags", R.string.show_status_tags, R.string.show_status_tags_desc),
+            Triple("show_input_processing_status", R.string.show_input_processing_status, R.string.show_input_processing_status_desc),
+            Triple("show_chat_floating_dots_animation", R.string.show_chat_floating_dots_animation, R.string.show_chat_floating_dots_animation_desc),
         )
     ThemeWorkbenchDisclosure(
         title = stringResource(R.string.theme_workbench_message_information),
@@ -329,9 +329,9 @@ internal fun ThemeSettingsDisplayOptionsSection(
                 options.size,
             ),
     ) {
-        options.forEachIndexed { index, (key, label) ->
+        options.forEachIndexed { index, (key, label, description) ->
             if (index > 0) ThemeWorkbenchDivider()
-            ThemeWorkbenchSwitchRow(stringResource(label), values.requiredBoolean(key)) {
+            ThemeWorkbenchSwitchRow(stringResource(label), values.requiredBoolean(key), subtitle = stringResource(description)) {
                 editorSession.setBoolean(key, it)
             }
         }

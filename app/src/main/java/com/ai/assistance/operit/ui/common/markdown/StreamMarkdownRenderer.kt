@@ -1180,6 +1180,7 @@ internal fun UnifiedMarkdownCanvas(
         remember(groupingKey, rendererId, nodeGrouper) {
             nodeGrouper.group(nodes, rendererId)
         }
+    nodeGrouper.RenderScope(nodes) {
     Column(modifier = modifier) {
         groupedItems.forEach { item ->
             when (item) {
@@ -1228,8 +1229,8 @@ internal fun UnifiedMarkdownCanvas(
             }
         }
     }
+    }
 }
-
 /** 批量节点更新器 - 负责将原始节点列表的更新批量应用到渲染节点列表 */
 internal class BatchNodeUpdater(
         private val nodes: SnapshotStateList<MarkdownNode>,

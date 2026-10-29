@@ -1,6 +1,9 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.components.timeline
 
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.rememberMessageToolExecutions
+import com.ai.assistance.operit.ui.common.markdown.messageSectionsForRendering
+import com.ai.assistance.operit.ui.features.conversation.chat.components.part.tooltiming.LocalInsideToolGroup
 import com.ai.assistance.operit.ui.common.markdown.lazy.MarkdownCardStateStore
 import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
 import androidx.compose.animation.core.animateFloatAsState
@@ -112,13 +115,15 @@ internal fun rememberChatTimelineEntries(
                     val grouper = remember(showThinkingProcess, toolCollapseMode) {
                         ThinkToolsXmlNodeGrouper(showThinkingProcess, toolCollapseMode = toolCollapseMode).also { it.expansionOverrides = overrides }
                     }
+                    val timingSnapshot = rememberMessageToolExecutions(message)
+                    grouper.executionTimings = timingSnapshot
                     val stream = rememberRevisableTextStream(message.contentStream)
                     if (stream != null) {
                         val charStream = remember(stream) { stream.toCharStream() }
                         StreamMarkdownRenderer(markdownStream = charStream, state = state, renderContent = false)
                     } else {
                         // 已恢复的片段直接生成节点，工具结果不再进入全文 Markdown 扫描。
-                        val sections = remember(message.content, message.sections) { message.displaySections() }
+                        val sections = remember(message.content, message.sections) { messageSectionsForRendering(message) }
                         StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
@@ -137,7 +142,7 @@ internal fun rememberChatTimelineEntries(
                     val expansionSnapshot = overrides.toMap()
                     val xmlStreamsSnapshot = state.xmlNodeStreams.toMap()
                     val rows = remember(
-                        split, groups, nodes, grouper, expansionSnapshot, xmlStreamsSnapshot,
+                        split, groups, nodes, grouper, expansionSnapshot, xmlStreamsSnapshot, timingSnapshot,
                         showThinkingProcess, showStatusTags,
                     ) {
                         if (split && nodes.isNotEmpty()) {
@@ -211,6 +216,7 @@ private class ChatMarkdownFragment(
         fillMaxWidth: Boolean,
     ) {
         CompositionLocalProvider(LocalMarkdownRenderMode provides mode, LocalMarkdownCardStateStore provides cardStore) {
+            grouper.RenderScope(nodes) {
             Box(modifier = modifier) {
                 when (val item = row) {
                     null -> UnifiedMarkdownCanvas(
@@ -245,6 +251,7 @@ private class ChatMarkdownFragment(
                     is ThinkToolsRow.Content -> {
                         Box(Modifier.fillMaxWidth().padding(start = if (item.inGroup) 24.dp else 0.dp)) {
                             // 已出现的块离屏后重新进入时不重播淡入，避免快速滑动时闪烁。
+                            CompositionLocalProvider(LocalInsideToolGroup provides item.inGroup) {
                             AnimatedNode(
                                 nodeKey = item.key,
                                 node = item.node ?: nodes[item.index],
@@ -259,10 +266,12 @@ private class ChatMarkdownFragment(
                                 fillMaxWidth = true,
                                 isLastNode = item.index == nodes.lastIndex,
                             )
+                            }
                         }
                     }
                 }
             }
+        }
         }
     }
 }

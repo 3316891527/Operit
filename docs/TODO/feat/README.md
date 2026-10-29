@@ -83,3 +83,13 @@
 - [语音服务配置交互设计](speech-services-design/index.md)
 
 - [语音服务原生工作区](speech-services-workbench/index.md)：按已选 HTML 设计重构 TTS、STT 和唤醒配置
+
+- [补丁 18：工作区文件属性](patch18-workspace-properties/index.md)
+
+- [补丁 18：双方消息风格独立设置](patch18-independent-message-style/index.md)
+- [补丁 18：云端 TTS 分句并行预取](patch18-cloud-tts-prefetch/index.md)
+- [补丁 18：自动朗读入口与语音通话朗读](patch18-voice-call-autoread/index.md)
+- [补丁 18：请求错误提示时长](patch18-request-error-duration/index.md)
+- [补丁 18：工具调用耗时与完成标题](patch18-tool-execution-timing/index.md)
+- [补丁 18：终端显示与键盘输入](patch18-terminal-input/index.md)
+- [补丁 18：统一集成与完整回归](patch18-integration/index.md)

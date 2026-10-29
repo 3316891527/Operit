@@ -1,22 +1,23 @@
 package com.ai.assistance.operit.api.speech.tts
 
+import com.ai.assistance.operit.api.speech.tts.prefetch.PrefetchingTtsService
+import com.ai.assistance.operit.api.speech.tts.prefetch.executeTtsRequest
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import android.content.Context
+import com.ai.assistance.operit.api.speech.tts.prefetch.writeTtsAudio
 import android.util.Base64
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.preferences.SpeechServicesPreferences
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.logging.HttpLogSanitizer
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
@@ -29,14 +30,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.Call
-import okhttp3.Callback
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 
 /**
  * 基于HTTP请求的TTS语音服务实现
@@ -45,7 +43,7 @@ import okhttp3.Response
  */
 open class HttpVoiceProvider(
     private val context: Context
-) : TtsService {
+) : PrefetchingTtsService {
 
     private var httpConfig: SpeechServicesPreferences.TtsHttpConfig = SpeechServicesPreferences.DEFAULT_HTTP_TTS_PRESET
 
@@ -74,7 +72,7 @@ open class HttpVoiceProvider(
         get() = _isInitialized.value
 
     private val playbackQueue =
-        QueuedTtsPlayback(TAG) { request ->
+        QueuedTtsPlayback(TAG, deleteAudioAfterPlayback = false) { request ->
             fetchAudioFile(request)
         }
 
@@ -86,6 +84,8 @@ open class HttpVoiceProvider(
 
     // 缓存的音频文件映射表
     private val audioCache = ConcurrentHashMap<String, File>()
+    private val cacheLock = Any()
+    private var closed = false
 
     // 当前语音参数
     private var currentRate: Float = 1.0f
@@ -191,17 +191,17 @@ open class HttpVoiceProvider(
         rate: Float?,
         pitch: Float?,
         extraParams: Map<String, String>
-    ): Boolean = withContext(Dispatchers.IO) {
+    ): Boolean {
         AppLogger.d(
             TAG,
             "speak request interrupt=$interrupt len=${text.length} preview=\"${speechPreview(text)}\" rate=$rate pitch=$pitch voice=$currentVoiceId initialized=$isInitialized extraKeys=${extraParams.keys}"
         )
-        playbackQueue.speak(
+        return playbackQueue.speak(
             text = text,
             interrupt = interrupt,
             rate = rate,
             pitch = pitch,
-            extraParams = extraParams
+            extraParams = currentVoiceId?.let { mapOf("voice" to it) }.orEmpty() + extraParams
         )
     }
 
@@ -214,9 +214,7 @@ open class HttpVoiceProvider(
             }
         }
 
-        if (!playbackQueue.isCurrent(request)) {
-            return null
-        }
+        currentCoroutineContext().ensureActive()
 
         val prefs = SpeechServicesPreferences(context.applicationContext)
         val effectiveRate = request.rate ?: prefs.ttsSpeechRateFlow.first()
@@ -228,32 +226,44 @@ open class HttpVoiceProvider(
                 request.text,
                 effectiveRate,
                 effectivePitch,
-                currentVoiceId,
+                request.extraParams["voice"] ?: currentVoiceId,
                 request.extraParams
             )
-            var audioFile = audioCache[cacheKey]
+            var audioFile = synchronized(cacheLock) { audioCache[cacheKey] }
 
-            // 如果缓存中没有，则请求新的音频
             if (audioFile == null || !audioFile.exists()) {
-                audioFile = fetchAudioFromServer(
+                val downloaded = fetchAudioFromServer(
                     request.text,
                     effectiveRate,
                     effectivePitch,
-                    currentVoiceId,
-                    request.extraParams
-                )
-                if (audioFile != null) {
-                    audioCache[cacheKey] = audioFile
-                } else {
-                    return null
+                    request.extraParams["voice"] ?: currentVoiceId,
+                    request.extraParams,
+                ) ?: return null
+                try {
+                    currentCoroutineContext().ensureActive()
+                    audioFile = synchronized(cacheLock) {
+                        if (closed) throw CancellationException("TTS服务已关闭")
+                        // 相同分句同时返回时只保留一个缓存文件，其余文件立即清理。
+                        val existing = audioCache[cacheKey]
+                        if (existing != null && existing.exists()) {
+                            downloaded.delete()
+                            existing
+                        } else {
+                            audioCache[cacheKey] = downloaded
+                            downloaded
+                        }
+                    }
+                } catch (error: Exception) {
+                    downloaded.delete()
+                    throw error
                 }
             }
 
-            if (!playbackQueue.isCurrent(request)) {
-                return null
-            }
+            currentCoroutineContext().ensureActive()
 
             return audioFile
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             AppLogger.e(TAG, "HTTP TTS播放失败", e)
             throw e
@@ -261,26 +271,18 @@ open class HttpVoiceProvider(
     }
 
     /** 停止当前正在播放的语音 */
-    override suspend fun stop(): Boolean = withContext(Dispatchers.IO) {
-        if (!isInitialized) return@withContext false
-        playbackQueue.stop()
-    }
+    override suspend fun stop(): Boolean = playbackQueue.stop()
 
     /** 暂停当前正在播放的语音 */
-    override suspend fun pause(): Boolean = withContext(Dispatchers.IO) {
-        if (!isInitialized) return@withContext false
-        playbackQueue.pause()
-    }
+    override suspend fun pause(): Boolean = playbackQueue.pause()
 
     /** 继续播放暂停的语音 */
-    override suspend fun resume(): Boolean = withContext(Dispatchers.IO) {
-        if (!isInitialized) return@withContext false
-        playbackQueue.resume()
-    }
+    override suspend fun resume(): Boolean = playbackQueue.resume()
 
     /** 释放TTS引擎资源 */
     override fun shutdown() {
         try {
+            synchronized(cacheLock) { closed = true }
             playbackQueue.shutdown()
             _isInitialized.value = false
             clearCache()
@@ -316,14 +318,15 @@ open class HttpVoiceProvider(
         pitch: Float,
         voiceId: String?,
         extraParams: Map<String, String>
-    ): File? = withContext(Dispatchers.IO) {
+    ): File? {
+        val config = httpConfig
         AppLogger.d(
             TAG,
             "fetchAudioFromServer len=${text.length} preview=\"${speechPreview(text)}\" rate=$rate pitch=$pitch voice=${voiceId?.length ?: 0} chars extraKeys=${extraParams.keys}"
         )
-        if (httpConfig.urlTemplate.isBlank()) {
+        if (config.urlTemplate.isBlank()) {
             AppLogger.e(TAG, "HTTP TTS URL template is not configured.")
-            return@withContext null
+            return null
         }
 
         try {
@@ -338,9 +341,9 @@ open class HttpVoiceProvider(
                     "text" to text,
                     "rate" to encodedRate,
                     "pitch" to encodedPitch,
-                    "apiKey" to httpConfig.apiKey,
-                    "model" to httpConfig.modelName,
-                    "locale" to httpConfig.localeTag,
+                    "apiKey" to config.apiKey,
+                    "model" to config.modelName,
+                    "locale" to config.localeTag,
                     "uuid" to requestId
                 ).apply {
                     voiceId?.let { put("voice", it) }
@@ -349,33 +352,33 @@ open class HttpVoiceProvider(
 
             val requestBuilder = Request.Builder()
 
-            if (httpConfig.httpMethod.uppercase() == "POST") {
+            if (config.httpMethod.uppercase() == "POST") {
                 // For POST requests, use the URL as base and put parameters in body
-                val baseUrl = httpConfig.urlTemplate
+                val baseUrl = config.urlTemplate
                 val httpUrl = baseUrl.toHttpUrlOrNull()
                 if (httpUrl == null) {
                     AppLogger.e(TAG, "Base URL is invalid: $baseUrl")
-                    return@withContext null
+                    return null
                 }
 
                 // Replace placeholders in the request body template
                 val requestBody =
                     replaceBodyPlaceholders(
-                        template = httpConfig.requestBody,
+                        template = config.requestBody,
                         replacements = bodyPlaceholders,
-                        contentType = httpConfig.contentType
+                        contentType = config.contentType
                     )
 
-                val mediaType = httpConfig.contentType.toMediaType()
+                val mediaType = config.contentType.toMediaType()
                 val body = requestBody.toRequestBody(mediaType)
 
                 requestBuilder
                     .url(httpUrl)
                     .post(body)
-                    .addHeader("Content-Type", httpConfig.contentType)
+                    .addHeader("Content-Type", config.contentType)
             } else {
                 // For GET requests, use the existing logic with URL parameters
-                var finalUrl = httpConfig.urlTemplate
+                var finalUrl = config.urlTemplate
                     .replace("{text}", encodedText, ignoreCase = true)
                     .replace("{rate}", encodedRate, ignoreCase = true)
                     .replace("{pitch}", encodedPitch, ignoreCase = true)
@@ -392,7 +395,7 @@ open class HttpVoiceProvider(
                 val httpUrl = finalUrl.toHttpUrlOrNull()
                 if (httpUrl == null) {
                     AppLogger.e(TAG, "Constructed URL is invalid: $finalUrl")
-                    return@withContext null
+                    return null
                 }
 
                 requestBuilder
@@ -401,15 +404,15 @@ open class HttpVoiceProvider(
             }
 
             val hasConfiguredAuthorization =
-                httpConfig.headers.keys.any { it.equals("Authorization", ignoreCase = true) }
+                config.headers.keys.any { it.equals("Authorization", ignoreCase = true) }
 
             // Add API key if present
-            if (httpConfig.apiKey.isNotBlank() && !hasConfiguredAuthorization) {
-                requestBuilder.addHeader("Authorization", "Bearer ${httpConfig.apiKey}")
+            if (config.apiKey.isNotBlank() && !hasConfiguredAuthorization) {
+                requestBuilder.addHeader("Authorization", "Bearer ${config.apiKey}")
             }
 
             // Add custom headers
-            httpConfig.headers.forEach { (key, value) ->
+            config.headers.forEach { (key, value) ->
                 requestBuilder.addHeader(
                     key,
                     replacePlainPlaceholders(value, bodyPlaceholders)
@@ -422,18 +425,15 @@ open class HttpVoiceProvider(
             AppLogger.i(TAG, "Request Headers:\n${HttpLogSanitizer.headersForLog(request.headers)}")
             val initialPayload = executeBinaryRequest(request, "HTTP TTS request")
             val finalPayload =
-                if (httpConfig.responsePipeline.isEmpty()) {
+                if (config.responsePipeline.isEmpty()) {
                     initialPayload
                 } else {
-                    resolvePipelineAudio(initialPayload, httpConfig.responsePipeline)
+                    resolvePipelineAudio(initialPayload, config.responsePipeline)
                 }
 
-            val tempFile = File(cacheDir, "tts_${UUID.randomUUID()}.bin")
-            FileOutputStream(tempFile).use { output ->
-                output.write(finalPayload.bytes)
-            }
-
-            return@withContext tempFile
+            return File(cacheDir, "tts_${UUID.randomUUID()}.bin").writeTtsAudio(finalPayload.bytes)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             AppLogger.e(TAG, "获取HTTP TTS音频失败", e)
             if (e is TtsException) throw e
@@ -560,45 +560,26 @@ open class HttpVoiceProvider(
         }
     }
 
-    private suspend fun executeRequest(request: Request): Response =
-        suspendCoroutine { continuation ->
-            httpClient.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    continuation.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response)
-                }
-            })
-        }
-
     private suspend fun executeBinaryRequest(
         request: Request,
         requestLabel: String
-    ): BinaryPayload = withContext(Dispatchers.IO) {
-        val response = executeRequest(request)
-        response.use { safeResponse ->
-            val responseBody = safeResponse.body
-                ?: throw TtsException("$requestLabel returned an empty response body")
-
-            if (!safeResponse.isSuccessful) {
-                val errorBody = responseBody.string()
-                AppLogger.e(TAG, "$requestLabel failed. Code: ${safeResponse.code}, Body: $errorBody")
-                throw TtsException(
-                    message = "$requestLabel failed with code ${safeResponse.code}",
-                    httpStatusCode = safeResponse.code,
-                    errorBody = errorBody
-                )
-            }
-
-            val mediaType = responseBody.contentType()
-            return@withContext BinaryPayload(
-                bytes = responseBody.bytes(),
-                contentType = mediaType?.toString(),
-                charset = mediaType?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
+    ): BinaryPayload {
+        val response = httpClient.executeTtsRequest(request)
+        if (!response.isSuccessful) {
+            val errorBody = response.text()
+            AppLogger.e(TAG, "$requestLabel failed. Code: ${response.code}, Body: $errorBody")
+            throw TtsException(
+                message = "$requestLabel failed with code ${response.code}",
+                httpStatusCode = response.code,
+                errorBody = errorBody,
             )
         }
+        if (response.bytes.isEmpty()) throw TtsException("$requestLabel returned an empty response body")
+        return BinaryPayload(
+            bytes = response.bytes,
+            contentType = response.contentType?.toString(),
+            charset = response.contentType?.charset(Charsets.UTF_8) ?: Charsets.UTF_8,
+        )
     }
 
     private suspend fun resolvePipelineAudio(
@@ -981,14 +962,14 @@ open class HttpVoiceProvider(
      */
     private fun clearCache() {
         try {
-            for (file in audioCache.values) {
-                if (file.exists()) {
-                    file.delete()
+            synchronized(cacheLock) {
+                for (file in audioCache.values) {
+                    if (file.exists()) file.delete()
                 }
+                audioCache.clear()
             }
-            audioCache.clear()
         } catch (e: Exception) {
             AppLogger.e(TAG, "清除HTTP TTS缓存失败", e)
         }
     }
-} 
+}

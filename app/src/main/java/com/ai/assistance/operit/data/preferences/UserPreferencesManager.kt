@@ -156,6 +156,8 @@ class UserPreferencesManager private constructor(private val context: Context) {
 
         // Chat style preference
         private val CHAT_STYLE = stringPreferencesKey("chat_style")
+        private val USER_CHAT_STYLE = stringPreferencesKey("user_chat_style")
+        private val AI_CHAT_STYLE = stringPreferencesKey("ai_chat_style")
         private val INPUT_STYLE = stringPreferencesKey("input_style")
 
         private val BUBBLE_SHOW_AVATAR = booleanPreferencesKey("bubble_show_avatar")
@@ -815,7 +817,7 @@ class UserPreferencesManager private constructor(private val context: Context) {
     private fun getAllStringThemeKeys(): List<Preferences.Key<String>> {
         return listOf(
             THEME_MODE, BACKGROUND_IMAGE_URI, BACKGROUND_MEDIA_TYPE,
-            CHAT_STYLE, KEY_CUSTOM_USER_AVATAR_URI, KEY_CUSTOM_AI_AVATAR_URI, KEY_AVATAR_SHAPE,
+            CHAT_STYLE, USER_CHAT_STYLE, AI_CHAT_STYLE, KEY_CUSTOM_USER_AVATAR_URI, KEY_CUSTOM_AI_AVATAR_URI, KEY_AVATAR_SHAPE,
             KEY_ON_COLOR_MODE, KEY_CUSTOM_CHAT_TITLE, INPUT_STYLE, FONT_TYPE, SYSTEM_FONT_NAME,
             CUSTOM_FONT_PATH, BUBBLE_USER_FONT_TYPE, BUBBLE_USER_SYSTEM_FONT_NAME,
             BUBBLE_USER_CUSTOM_FONT_PATH, BUBBLE_AI_FONT_TYPE, BUBBLE_AI_SYSTEM_FONT_NAME,
@@ -876,6 +878,14 @@ class UserPreferencesManager private constructor(private val context: Context) {
         targetPrefix: String,
         clearMissingTargetValues: Boolean,
     ) {
+        val styleNames = com.ai.assistance.operit.data.preferences.messagestyle.MessageStylePreferences
+        val sourceStyles = buildMap {
+            listOf(styleNames.LEGACY, styleNames.USER, styleNames.AI).forEach { name ->
+                val key = stringPreferencesKey((sourcePrefix ?: "") + name)
+                preferences[key]?.let { put(name, it) }
+            }
+        }
+        val expandedStyles = styleNames.expandLegacy(sourceStyles)
         getAllStringThemeKeys().forEach { key ->
             val sourceKey = sourcePrefix?.let { stringPreferencesKey("${it}${key.name}") } ?: key
             val targetKey = stringPreferencesKey("${targetPrefix}${key.name}")
@@ -911,6 +921,10 @@ class UserPreferencesManager private constructor(private val context: Context) {
             } else if (clearMissingTargetValues) {
                 preferences.remove(targetKey)
             }
+        }
+        // 复制旧主题时展开双方风格，避免残留目标主题以前的选择。
+        styleNames.sideKeys.forEach { name ->
+            preferences[stringPreferencesKey(targetPrefix + name)] = expandedStyles.getValue(name)
         }
     }
 
@@ -956,10 +970,13 @@ class UserPreferencesManager private constructor(private val context: Context) {
         val ints = defaults.ints.toMutableMap()
         val floats = defaults.floats.toMutableMap()
 
-        getAllStringThemeKeys().forEach { key ->
-            val sourceKey = stringPreferencesKey("${prefix}${key.name}")
-            preferences[sourceKey]?.let { strings[key.name] = it }
+        val storedStrings = buildMap {
+            getAllStringThemeKeys().forEach { key ->
+                val sourceKey = stringPreferencesKey("${prefix}${key.name}")
+                preferences[sourceKey]?.let { put(key.name, it) }
+            }
         }
+        strings.putAll(com.ai.assistance.operit.data.preferences.messagestyle.MessageStylePreferences.expandLegacy(storedStrings))
         getAllBooleanThemeKeys().forEach { key ->
             val sourceKey = booleanPreferencesKey("${prefix}${key.name}")
             preferences[sourceKey]?.let { booleans[key.name] = it }

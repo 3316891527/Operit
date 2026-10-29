@@ -33,6 +33,7 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.ui.features.management.settings.components.speech.workbench.*
 import com.ai.assistance.operit.ui.main.components.LocalIsCurrentScreen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
@@ -130,12 +131,12 @@ fun SpeechRecognitionTestSection(
                 state.commandJob?.join()
                 try {
                     // 本地识别服务可能由唤醒功能共享，只取消由测试区发起的录音。
-                    if (state.ownsRecording) created?.cancelRecognition()
+                    if (state.ownsRecording) withContext(Dispatchers.IO) { created?.cancelRecognition() }
                 } catch (error: Exception) {
                     AppLogger.e("SpeechRecognitionTest", "取消识别测试失败", error)
                 } finally {
                     try {
-                        created?.shutdown()
+                        withContext(Dispatchers.IO) { created?.shutdown() }
                     } catch (error: Exception) {
                         AppLogger.e("SpeechRecognitionTest", "释放识别测试服务失败", error)
                     } finally {
@@ -155,7 +156,7 @@ fun SpeechRecognitionTestSection(
                 scope.launch {
                     try {
                         pendingCommand?.join()
-                        if (state.ownsRecording) state.service?.cancelRecognition()
+                        if (state.ownsRecording) withContext(Dispatchers.IO) { state.service?.cancelRecognition() }
                     } catch (error: CancellationException) {
                         throw error
                     } catch (error: Exception) {
@@ -201,7 +202,7 @@ fun SpeechRecognitionTestSection(
                         state.changing = true
                         state.commandJob = scope.launch {
                             try {
-                                if (!service.stopRecognition()) state.error = context.getString(R.string.stop_recognition_error, serviceType.name)
+                                if (!withContext(Dispatchers.IO) { service.stopRecognition() }) state.error = context.getString(R.string.stop_recognition_error, serviceType.name)
                             } catch (error: CancellationException) {
                                 throw error
                             } catch (error: Exception) {
@@ -224,7 +225,7 @@ fun SpeechRecognitionTestSection(
                             try {
                                 state.ownsRecording = true
                                 val local = serviceType == SttServiceFactory.SpeechServiceType.SHERPA_NCNN || serviceType == SttServiceFactory.SpeechServiceType.SHERPA_ONNX
-                                if (!service.startRecognition(state.language, continuousMode = local, partialResults = local)) {
+                                if (!withContext(Dispatchers.IO) { service.startRecognition(state.language, continuousMode = local, partialResults = local) }) {
                                     state.ownsRecording = false
                                     state.error = context.getString(R.string.start_recognition_error, serviceType.name)
                                 }

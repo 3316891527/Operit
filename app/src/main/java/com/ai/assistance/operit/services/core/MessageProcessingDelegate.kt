@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.data.model.tooltiming.ToolTimingState
 import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
@@ -94,6 +95,7 @@ class MessageProcessingDelegate(
             snapshot: TurnCancellationSnapshot?,
             completedAt: Long,
         ): ChatMessage {
+            streamingMessage.toolTimingState?.stopActive(messageTimingNow())
             val messageWithMetrics =
                 snapshot?.let { stats ->
                     streamingMessage.copy(
@@ -105,9 +107,7 @@ class MessageProcessingDelegate(
                         waitDurationMs = stats.waitDurationMs,
                     )
                 } ?: streamingMessage
-            return messageWithMetrics.copy(
-                content = finalContent,
-                sections = MessageSectionCodec.parse(finalContent),
+            return messageWithMetrics.freezeToolTimings(finalContent).copy(
                 contentStream = null,
                 completedAt = completedAt,
             )
@@ -380,7 +380,7 @@ class MessageProcessingDelegate(
 
     private fun syncSections(aiMessage: ChatMessage, content: String) {
         aiMessage.content = content
-        aiMessage.sections = MessageSectionCodec.parse(content)
+        aiMessage.sections = aiMessage.resolvedSections(content)
     }
 
     private fun ChatMessage.withTurnMetrics(
@@ -1220,6 +1220,7 @@ class MessageProcessingDelegate(
                             addMessageToChat(chatId, userMessage)
                         }
 
+                        val toolTimingState = ToolTimingState()
                         val prepareResponseStreamStartTime = messageTimingNow()
                         val responseStream = AIMessageManager.sendMessage(
                             enhancedAiService = service,
@@ -1260,6 +1261,7 @@ class MessageProcessingDelegate(
                             onToolInvocation = {
                                 incrementCurrentTurnToolInvocationCount(chatId)
                             },
+                            onToolTiming = { toolTimingState.update(it) },
                             notifyReplyOverride = turnOptions.notifyReply,
                             chatModelConfigIdOverride = chatModelConfigIdOverride,
                             chatModelIndexOverride = chatModelIndexOverride,
@@ -1282,7 +1284,8 @@ class MessageProcessingDelegate(
                             roleName = currentRoleName,
                             provider = provider,
                             modelName = modelName,
-                            sentAt = requestSentAt
+                            sentAt = requestSentAt,
+                            toolTimingState = toolTimingState,
                         )
                         if (effectivePersistTurn && chatId != null) {
                             chatRuntime.activeStreamingTurn =
@@ -1760,6 +1763,7 @@ class MessageProcessingDelegate(
                     requestMessageContent
                 }
 
+            val toolTimingState = ToolTimingState()
             val responseStream =
                 AIMessageManager.sendMessage(
                     enhancedAiService = service,
@@ -1780,6 +1784,7 @@ class MessageProcessingDelegate(
                     groupOrchestrationMode = groupOrchestrationMode,
                     groupParticipantNamesText = groupParticipantNamesText,
                     onToolInvocation = { incrementCurrentTurnToolInvocationCount(chatId) },
+                    onToolTiming = { toolTimingState.update(it) },
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
                     memorySpaceIdOverride = memorySpaceIdOverride,
@@ -1797,6 +1802,7 @@ class MessageProcessingDelegate(
                     sender = "ai",
                     contentStream = sharedResponseStream,
                     timestamp = targetMessageTimestamp,
+                    toolTimingState = toolTimingState,
                     roleName = currentRoleName,
                     provider = provider,
                     modelName = modelName,
@@ -1885,8 +1891,7 @@ class MessageProcessingDelegate(
                     sentAt = requestSentAt,
                     outputDurationMs = outputDurationMs,
                     waitDurationMs = waitDurationMs,
-                ).copy(
-                    content = finalContent,
+                ).freezeToolTimings(finalContent).copy(
                     contentStream = null,
                     completedAt = completedAt,
                 )
@@ -1975,9 +1980,7 @@ class MessageProcessingDelegate(
                 } else {
                     // 普通模式，直接清理流
                     val finalMessage =
-                        aiMessage.copy(
-                            content = finalContent,
-                            sections = MessageSectionCodec.parse(finalContent),
+                        aiMessage.freezeToolTimings(finalContent).copy(
                             contentStream = null,
                             completedAt = completedAt,
                         )
@@ -2008,9 +2011,7 @@ class MessageProcessingDelegate(
                 val aiMessage = aiMessageProvider()
                 val finalContent = aiMessage.content
                 val finalMessage =
-                    aiMessage.copy(
-                        content = finalContent,
-                        sections = MessageSectionCodec.parse(finalContent),
+                    aiMessage.freezeToolTimings(finalContent).copy(
                         contentStream = null,
                         completedAt = System.currentTimeMillis(),
                     )

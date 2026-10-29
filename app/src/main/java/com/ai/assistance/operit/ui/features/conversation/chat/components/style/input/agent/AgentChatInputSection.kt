@@ -30,8 +30,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.automirrored.outlined.VolumeOff
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
@@ -44,7 +42,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Security
-import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.TipsAndUpdates
 import androidx.compose.material.icons.rounded.Psychology
@@ -218,8 +215,6 @@ fun AgentChatInputSection(
     onSetPermissionLevel: (PermissionLevel) -> Unit = {},
     enableMemoryAutoUpdate: Boolean = false,
     onToggleMemoryAutoUpdate: () -> Unit = {},
-    isAutoReadEnabled: Boolean = false,
-    onToggleAutoRead: () -> Unit = {},
     onToggleTools: () -> Unit = {},
     disableStreamOutput: Boolean = false,
     onToggleDisableStreamOutput: () -> Unit = {},
@@ -1462,8 +1457,6 @@ fun AgentChatInputSection(
                 featureStates = featureStates,
                 onToggleFeature = onToggleFeature,
                 inputMenuRuntime = inputMenuRuntime,
-                isAutoReadEnabled = isAutoReadEnabled,
-                onToggleAutoRead = onToggleAutoRead,
                 permissionLevel = permissionLevel,
                 onSetPermissionLevel = onSetPermissionLevel,
                 enableTools = enableTools,
@@ -2049,8 +2042,6 @@ private fun AgentExtraSettingsPopup(
     featureStates: Map<String, Boolean>,
     onToggleFeature: (String) -> Unit,
     inputMenuRuntime: String,
-    isAutoReadEnabled: Boolean,
-    onToggleAutoRead: () -> Unit,
     permissionLevel: PermissionLevel,
     onSetPermissionLevel: (PermissionLevel) -> Unit,
     enableTools: Boolean,
@@ -2071,7 +2062,6 @@ private fun AgentExtraSettingsPopup(
 
     var showMemoryDropdown by remember { mutableStateOf(false) }
     var showToolPermissionDropdown by remember { mutableStateOf(false) }
-    var showBehaviorDropdown by remember { mutableStateOf(false) }
     var showPluginDropdown by remember { mutableStateOf(false) }
     var showToolPromptManagerDialog by remember { mutableStateOf(false) }
     var infoPopupContent by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -2226,23 +2216,6 @@ private fun AgentExtraSettingsPopup(
                             infoPopupContent =
                                 context.getString(R.string.agent_menu_tools) to
                                     context.getString(R.string.auto_approve_desc)
-                        },
-                    )
-
-                    AgentBehaviorSettingsGroupItem(
-                        isAutoReadEnabled = isAutoReadEnabled,
-                        onToggleAutoRead = onToggleAutoRead,
-                        expanded = showBehaviorDropdown,
-                        onExpandedChange = { showBehaviorDropdown = it },
-                        onInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.agent_menu_behavior) to
-                                    context.getString(R.string.auto_read_desc)
-                        },
-                        onAutoReadInfoClick = {
-                            infoPopupContent =
-                                context.getString(R.string.auto_read_message) to
-                                    context.getString(R.string.auto_read_desc)
                         },
                     )
 
@@ -2631,51 +2604,6 @@ private fun AgentPermissionSegmentedControl(
                 Spacer(modifier = Modifier.width(6.dp))
             }
         }
-        }
-    }
-}
-
-@Composable
-private fun AgentBehaviorSettingsGroupItem(
-    isAutoReadEnabled: Boolean,
-    onToggleAutoRead: () -> Unit,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    onInfoClick: () -> Unit,
-    onAutoReadInfoClick: () -> Unit,
-) {
-    val valueText = stringResource(R.string.auto_read_message) + " · " +
-        stringResource(if (isAutoReadEnabled) R.string.enabled else R.string.disabled)
-
-    AgentSettingsGroupHeader(
-        title = stringResource(R.string.agent_menu_behavior),
-        value = valueText,
-        icon = Icons.Outlined.Speed,
-        expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        onInfoClick = onInfoClick,
-    )
-
-    if (expanded) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                    .padding(horizontal = 12.dp),
-        ) {
-            AgentSimpleToggleSettingItem(
-                title = stringResource(R.string.auto_read_message),
-                icon =
-                    if (isAutoReadEnabled) {
-                        Icons.AutoMirrored.Rounded.VolumeUp
-                    } else {
-                        Icons.AutoMirrored.Outlined.VolumeOff
-                    },
-                isChecked = isAutoReadEnabled,
-                onToggle = onToggleAutoRead,
-                onInfoClick = onAutoReadInfoClick,
-            )
         }
     }
 }
