@@ -18,7 +18,7 @@ class ActionListenerFactory {
                 val listener = when (backend) {
                     PermissionBackend.STANDARD -> StandardActionListener(appContext)
                     PermissionBackend.ACCESSIBILITY -> AccessibilityActionListener(appContext)
-                    PermissionBackend.SHIZUKU -> DebuggerActionListener(appContext)
+                    PermissionBackend.SHIZUKU -> ShizukuActionListener(appContext)
                     PermissionBackend.ROOT -> RootActionListener(appContext)
                 }
                 listener.initialize()

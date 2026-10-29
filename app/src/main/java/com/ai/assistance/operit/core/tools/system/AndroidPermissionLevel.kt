@@ -17,7 +17,6 @@ enum class AndroidPermissionLevel {
         fun fromString(value: String?): AndroidPermissionLevel {
             return when(value?.uppercase(Locale.ROOT)) {
                 "STANDARD" -> STANDARD
-                "ACCESSIBILITY", "DEBUGGER" -> ADMIN
                 "ADMIN" -> ADMIN
                 "ROOT" -> ROOT
                 else -> STANDARD // 默认为最低权限

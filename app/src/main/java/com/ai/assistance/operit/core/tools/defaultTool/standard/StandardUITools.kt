@@ -56,7 +56,7 @@ open class StandardUITools(protected val context: Context) : ToolImplementations
         private const val TAG = "UITools"
         private const val COMMAND_TIMEOUT_SECONDS = 10L
         private const val OPERATION_NOT_SUPPORTED =
-                "This operation is not supported in the standard version. Please use the accessibility or debugger version."
+                "This operation is not supported in the standard version. Please select administrator or root mode and grant the required authorization."
 
         internal val APP_PACKAGES: MutableMap<String, String> =
                 mutableMapOf(

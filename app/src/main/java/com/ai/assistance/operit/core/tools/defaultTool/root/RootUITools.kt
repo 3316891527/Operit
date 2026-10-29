@@ -21,10 +21,7 @@ import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
-/**
- * Root-level UI tools that use shell commands (uiautomator, input) for robust UI automation.
- * This implementation is modeled after DebuggerUITools but operates without accessibility fallbacks.
- */
+/** Root UI 工具复用管理员公共实现，并按 Root 能力执行界面操作。 */
 open class RootUITools(context: Context) : AdminUITools(context) {
 
     companion object {

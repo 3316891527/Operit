@@ -38,9 +38,9 @@ import moe.shizuku.server.IRemoteProcess
 import moe.shizuku.server.IShizukuService
 
 /** 基于Shizuku的Shell命令执行器 作为管理员模式的 Shizuku 后端 */
-class DebuggerShellExecutor(private val context: Context) : ShellExecutor {
+class ShizukuShellExecutor(private val context: Context) : ShellExecutor {
     companion object {
-        private const val TAG = "DebuggerShellExecutor"
+        private const val TAG = "ShizukuShellExecutor"
         private val serviceCache = ConcurrentHashMap<Int, IShizukuService>()
 
         /** 添加状态变更监听器 */
@@ -449,7 +449,7 @@ class DebuggerShellExecutor(private val context: Context) : ShellExecutor {
  * stdout 与 stderr 必须同时消费，否则任一管道写满都会阻塞远程进程；stdin
  * 也必须主动关闭，否则需要 EOF 的命令会一直等待输入。
  */
-private const val DEBUGGER_SHELL_TAG = "DebuggerShellExecutor"
+private const val SHIZUKU_SHELL_TAG = "ShizukuShellExecutor"
 private const val REMOTE_PROCESS_POLL_INTERVAL_MS = 100L
 private const val POST_EXIT_OUTPUT_DRAIN_GRACE_MS = 1_000L
 private const val OUTPUT_TRUNCATION_NOTICE =
@@ -553,10 +553,10 @@ private suspend fun executeRemoteProcess(
         // cancellation is allowed to leave this function.
         throw e
     } catch (e: RemoteException) {
-        AppLogger.e(DEBUGGER_SHELL_TAG, "Remote process operation failed: $command", e)
+        AppLogger.e(SHIZUKU_SHELL_TAG, "Remote process operation failed: $command", e)
         ShellExecutor.CommandResult(false, "", "Remote exception: ${e.message}")
     } catch (e: Exception) {
-        AppLogger.e(DEBUGGER_SHELL_TAG, "Remote process execution failed: $command", e)
+        AppLogger.e(SHIZUKU_SHELL_TAG, "Remote process execution failed: $command", e)
         ShellExecutor.CommandResult(false, "", "Error: ${e.message}")
     } finally {
         // Covers failures before the structured reader scope was created.
@@ -585,7 +585,7 @@ private fun closeRemoteStdin(process: IRemoteProcess) {
         process.getOutputStream()?.close()
     } catch (e: Exception) {
         // A command may still be usable when the optional stdin descriptor is unavailable.
-        AppLogger.v(DEBUGGER_SHELL_TAG, "Unable to close remote stdin", e)
+        AppLogger.v(SHIZUKU_SHELL_TAG, "Unable to close remote stdin", e)
     }
 }
 
@@ -594,7 +594,7 @@ private fun destroyRemoteProcess(process: IRemoteProcess?) {
     try {
         process.destroy()
     } catch (e: Exception) {
-        AppLogger.v(DEBUGGER_SHELL_TAG, "Unable to destroy remote process", e)
+        AppLogger.v(SHIZUKU_SHELL_TAG, "Unable to destroy remote process", e)
     }
 }
 
@@ -603,7 +603,7 @@ private fun closeDescriptor(descriptor: ParcelFileDescriptor?, label: String) {
     try {
         descriptor.close()
     } catch (e: Exception) {
-        AppLogger.v(DEBUGGER_SHELL_TAG, "Unable to close $label", e)
+        AppLogger.v(SHIZUKU_SHELL_TAG, "Unable to close $label", e)
     }
 }
 
@@ -626,9 +626,9 @@ private fun drainDescriptor(
         }
     } catch (e: IOException) {
         // Closing a descriptor during cancellation or post-exit cleanup is expected.
-        AppLogger.v(DEBUGGER_SHELL_TAG, "Reading remote $label stopped", e)
+        AppLogger.v(SHIZUKU_SHELL_TAG, "Reading remote $label stopped", e)
     } catch (e: Exception) {
-        AppLogger.w(DEBUGGER_SHELL_TAG, "Reading remote $label failed", e)
+        AppLogger.w(SHIZUKU_SHELL_TAG, "Reading remote $label failed", e)
     }
 }
 
@@ -742,7 +742,7 @@ private class ShizukuShellProcess(
             completion.complete(-1)
             throw e
         } catch (e: Exception) {
-            AppLogger.e(DEBUGGER_SHELL_TAG, "Interactive Shizuku process failed: $command", e)
+            AppLogger.e(SHIZUKU_SHELL_TAG, "Interactive Shizuku process failed: $command", e)
             completion.complete(-1)
         } finally {
             if (!processFinished && !destroyed.get()) {
@@ -771,11 +771,11 @@ private class ShizukuShellProcess(
             }
         } catch (e: IOException) {
             if (!destroyed.get()) {
-                AppLogger.v(DEBUGGER_SHELL_TAG, "Reading interactive $label stopped", e)
+                AppLogger.v(SHIZUKU_SHELL_TAG, "Reading interactive $label stopped", e)
             }
         } catch (e: Exception) {
             if (!destroyed.get()) {
-                AppLogger.w(DEBUGGER_SHELL_TAG, "Reading interactive $label failed", e)
+                AppLogger.w(SHIZUKU_SHELL_TAG, "Reading interactive $label failed", e)
             }
         } finally {
             channel.close()

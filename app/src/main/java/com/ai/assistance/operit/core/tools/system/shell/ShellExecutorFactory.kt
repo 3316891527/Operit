@@ -17,7 +17,7 @@ class ShellExecutorFactory {
                 val appContext = context.applicationContext
                 val executor = when (backend) {
                     PermissionBackend.STANDARD -> StandardShellExecutor(appContext)
-                    PermissionBackend.SHIZUKU -> DebuggerShellExecutor(appContext)
+                    PermissionBackend.SHIZUKU -> ShizukuShellExecutor(appContext)
                     PermissionBackend.ROOT -> RootShellExecutor(appContext)
                     PermissionBackend.ACCESSIBILITY -> error("Accessibility does not provide a shell backend")
                 }

@@ -17,8 +17,7 @@ object ToolGetter {
      */
     fun getFileSystemTools(context: Context): StandardFileSystemTools {
         return when (androidPermissionPreferences.getPreferredPermissionLevel()) {
-            AndroidPermissionLevel.ROOT -> RootFileSystemTools(context)
-            AndroidPermissionLevel.ADMIN -> AdminFileSystemTools(context)
+            AndroidPermissionLevel.ADMIN, AndroidPermissionLevel.ROOT -> AdminFileSystemTools(context)
             AndroidPermissionLevel.STANDARD -> StandardFileSystemTools(context)
             null -> StandardFileSystemTools(context) // 默认使用标准权限级别
         }
@@ -54,8 +53,7 @@ object ToolGetter {
      */
     fun getSystemOperationTools(context: Context): StandardSystemOperationTools {
         return when (androidPermissionPreferences.getPreferredPermissionLevel()) {
-            AndroidPermissionLevel.ROOT -> RootSystemOperationTools(context)
-            AndroidPermissionLevel.ADMIN -> AdminSystemOperationTools(context)
+            AndroidPermissionLevel.ADMIN, AndroidPermissionLevel.ROOT -> AdminSystemOperationTools(context)
             AndroidPermissionLevel.STANDARD -> StandardSystemOperationTools(context)
             null -> StandardSystemOperationTools(context) // 默认使用标准权限级别
         }
@@ -67,12 +65,8 @@ object ToolGetter {
      * @return 根据首选权限级别的设备信息工具执行器实现
      */
     fun getDeviceInfoToolExecutor(context: Context): StandardDeviceInfoToolExecutor {
-        return when (androidPermissionPreferences.getPreferredPermissionLevel()) {
-            AndroidPermissionLevel.ROOT -> RootDeviceInfoToolExecutor(context)
-            AndroidPermissionLevel.ADMIN -> AdminDeviceInfoToolExecutor(context)
-            AndroidPermissionLevel.STANDARD -> StandardDeviceInfoToolExecutor(context)
-            null -> StandardDeviceInfoToolExecutor(context) // 默认使用标准权限级别
-        }
+        // 原有各权限版本均没有设备信息特有行为，共享实现按实际能力执行操作。
+        return StandardDeviceInfoToolExecutor(context)
     }
 
     /**

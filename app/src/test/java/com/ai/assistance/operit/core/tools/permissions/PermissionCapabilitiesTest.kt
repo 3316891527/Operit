@@ -8,21 +8,21 @@ import org.junit.Test
 import java.util.Locale
 
 class PermissionCapabilitiesTest {
-    @Test fun userModesAreExactlyThreeAndLegacyNamesMapToAdmin() {
+    @Test fun userModesAreExactlyThreeAndLegacyNamesAreNotRuntimeModes() {
         assertEquals(listOf("STANDARD", "ADMIN", "ROOT"), AndroidPermissionLevel.values().map { it.name })
-        for (name in listOf("ACCESSIBILITY", "DEBUGGER", "accessibility", "debugger", "ADMIN")) {
-            assertEquals(AndroidPermissionLevel.ADMIN, AndroidPermissionLevel.fromString(name))
+        for (name in listOf("ACCESSIBILITY", "DEBUGGER", "accessibility", "debugger")) {
+            assertEquals(AndroidPermissionLevel.STANDARD, AndroidPermissionLevel.fromString(name))
         }
         assertEquals(AndroidPermissionLevel.STANDARD, AndroidPermissionLevel.fromString(null))
         assertEquals(AndroidPermissionLevel.STANDARD, AndroidPermissionLevel.fromString("unknown"))
         assertEquals(AndroidPermissionLevel.ROOT, AndroidPermissionLevel.fromString("ROOT"))
     }
 
-    @Test fun legacyNamesDoNotDependOnDeviceLocale() {
+    @Test fun modeNamesDoNotDependOnDeviceLocale() {
         val previous = Locale.getDefault()
         try {
             Locale.setDefault(Locale.forLanguageTag("tr-TR"))
-            assertEquals(AndroidPermissionLevel.ADMIN, AndroidPermissionLevel.fromString("accessibility"))
+            assertEquals(AndroidPermissionLevel.ROOT, AndroidPermissionLevel.fromString("root"))
             assertEquals(AndroidPermissionLevel.ADMIN, AndroidPermissionLevel.fromString("admin"))
         } finally {
             Locale.setDefault(previous)

@@ -19,9 +19,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /** 基于Shizuku的UI操作监听器 作为管理员模式的 Shizuku 后端 */
-class DebuggerActionListener(private val context: Context) : ActionListener {
+class ShizukuActionListener(private val context: Context) : ActionListener {
     companion object {
-        private const val TAG = "DebuggerActionListener"
+        private const val TAG = "ShizukuActionListener"
 
         /** 添加状态变更监听器 */
         fun addStateChangeListener(listener: () -> Unit) {
@@ -96,7 +96,7 @@ class DebuggerActionListener(private val context: Context) : ActionListener {
                 // 启动系统级事件监控
                 startSystemEventMonitoring()
 
-                return@withContext ActionListener.ListeningResult.success(context.getString(R.string.debugger_ui_listener_started))
+                return@withContext ActionListener.ListeningResult.success(context.getString(R.string.shizuku_ui_listener_started))
             } catch (e: Exception) {
                 AppLogger.e(TAG, "启动调试器UI操作监听失败", e)
                 isListening.set(false)
