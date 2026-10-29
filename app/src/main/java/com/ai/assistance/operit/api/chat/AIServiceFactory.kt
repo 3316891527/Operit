@@ -50,6 +50,7 @@ import com.ai.assistance.operit.api.chat.llmprovider.OpenRouterProvider
 import com.ai.assistance.operit.api.chat.llmprovider.QwenAIProvider
 import com.ai.assistance.operit.api.chat.llmprovider.XaiProvider
 import com.ai.assistance.operit.api.chat.transport.UnsafeModelSsl
+import com.ai.assistance.operit.api.chat.transport.ResponseProgressInterceptor
 import com.ai.assistance.operit.plugins.toolpkg.ai.ToolPkgJsAiProviderService
 
 /**
@@ -232,8 +233,14 @@ private class LlmNetworkEventListener(
         log("callEnd")
     }
 
+    override fun canceled(call: Call) {
+        failureTrace?.clientCancelled = true
+        log("canceled", "responseBodyBytesRead=${failureTrace?.responseBodyBytesRead}")
+    }
+
     override fun callFailed(call: Call, ioe: IOException) {
-        logFailure("callFailed", ioe)
+        logFailure("callFailed", ioe,
+            "phase=${failureTrace?.phase}, responseBodyBytesRead=${failureTrace?.responseBodyBytesRead}, clientCancelled=${call.isCanceled()}")
     }
 }
 
@@ -247,6 +254,7 @@ internal object SharedHttpClient {
                 .readTimeout(1000, TimeUnit.SECONDS)
                 .writeTimeout(1000, TimeUnit.SECONDS)
                 .eventListenerFactory(LlmNetworkEventListenerFactory)
+                .addInterceptor(ResponseProgressInterceptor)
                 // Use a connection pool to reuse connections, improving latency and reducing resource usage.
                 // Increased idle connections to 10 from the default of 5.
                 .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))

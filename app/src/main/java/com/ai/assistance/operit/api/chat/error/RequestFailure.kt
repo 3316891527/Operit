@@ -44,6 +44,11 @@ internal data class RequestFailureDescription(
                 .put("phase", info.phase.name.lowercase(Locale.ROOT))
                 .put("elapsedMs", info.elapsedMs)
                 .put("requestBodySent", info.requestBodySent)
+                .put("responseBodyBytesRead", info.responseBodyBytesRead)
+                .put("clientCancelled", info.clientCancelled)
+            info.streamEventsParsed?.let { error.put("streamEventsParsed", it) }
+            info.outputCharsParsed?.let { error.put("outputCharsParsed", it) }
+            info.protocolCompleted?.let { error.put("protocolCompleted", it) }
             info.httpStatus?.let { error.put("httpStatus", it) }
             info.providerRequestId?.let { error.put("providerRequestId", it) }
         }
@@ -91,6 +96,7 @@ internal object RequestFailure {
 
     fun capture(exception: Exception, call: Call?): Exception {
         val request = call?.request() ?: return exception
+        if (call.isCanceled()) request.tag(RequestFailureTrace::class.java)?.clientCancelled = true
         return captureFromRequest(exception, request)
     }
 

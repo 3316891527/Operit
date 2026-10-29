@@ -222,6 +222,54 @@ class RequestFailureTest {
         assertSame(beforeCall, RequestFailure.capture(beforeCall, null))
     }
 
+    @Test
+    fun abortDescriptionCarriesReceivedProgressWithoutChangingItsIdentity() {
+        val request = RequestFailureTrace.attach(Request.Builder().url("https://api.example.test").build(), "progress")
+        val trace = request.tag(RequestFailureTrace::class.java)!!
+        trace.phase = RequestPhase.RESPONSE_BODY
+        trace.httpStatus = 200
+        trace.recordResponseBytes(1234L)
+        trace.streamEventsParsed = 7L
+        trace.outputCharsParsed = 2048L
+        trace.protocolCompleted = false
+        val description = RequestFailure.describe(RequestFailure.captureFromRequest(
+            SocketException("Software caused connection abort"), request))!!
+        val error = JSONObject(description.json(2)).getJSONObject("error")
+        assertEquals(5003, error.getInt("code"))
+        assertEquals("transport", error.getString("domain"))
+        assertEquals(1234L, error.getLong("responseBodyBytesRead"))
+        assertEquals(7L, error.getLong("streamEventsParsed"))
+        assertEquals(2048L, error.getLong("outputCharsParsed"))
+        assertFalse(error.getBoolean("protocolCompleted"))
+        assertFalse(error.getBoolean("clientCancelled"))
+        // 异常持有不可变快照，后续进度不能改写已经记录的失败。
+        trace.recordResponseBytes(1000L)
+        assertEquals(1234L, description.requestContext!!.responseBodyBytesRead)
+    }
+
+    @Test
+    fun unobservedStreamProgressIsNotInventedAsZeroOutput() {
+        val request = RequestFailureTrace.attach(Request.Builder().url("https://api.example.test").build())
+        val description = RequestFailure.describe(RequestFailure.captureFromRequest(
+            SocketException("Software caused connection abort"), request))!!
+        val error = JSONObject(description.json(1)).getJSONObject("error")
+        assertEquals(0L, error.getLong("responseBodyBytesRead"))
+        assertFalse(error.has("streamEventsParsed"))
+        assertFalse(error.has("outputCharsParsed"))
+        assertFalse(error.has("protocolCompleted"))
+    }
+
+    @Test
+    fun actualCallCancellationIsIncludedWithoutSendingARequest() {
+        val request = RequestFailureTrace.attach(Request.Builder().url("https://api.example.test").build())
+        val call = okhttp3.OkHttpClient().newCall(request)
+        call.cancel()
+        val description = RequestFailure.describe(RequestFailure.capture(
+            SocketException("Software caused connection abort"), call))!!
+        assertTrue(description.requestContext!!.clientCancelled)
+        assertEquals(5003, description.reason!!.code)
+    }
+
     private fun contextual(cause: Exception, phase: RequestPhase) = RequestFailureContextException(
         cause, RequestFailureContext(
             "local-request", phase, 1234L, if (phase == RequestPhase.RESPONSE_BODY) 200 else null,
