@@ -1,7 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.process
 
 import android.content.Context
-import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
 import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ToolParameter

@@ -8,8 +8,8 @@ import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.core.tools.FileExistsData
 import com.ai.assistance.operit.core.tools.FileInfoData
 import com.ai.assistance.operit.core.tools.FindFilesResultData
-import com.ai.assistance.operit.core.tools.AIToolHandler
-import com.ai.assistance.operit.core.tools.AIToolHook
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
+import com.ai.assistance.operit.core.tools.runtime.AIToolHook
 import com.ai.assistance.operit.data.model.ToolResult
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.serialization.Serializable

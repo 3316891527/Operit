@@ -79,8 +79,8 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.conversation.chat.attachments.images.ChatImagePickerDialog
-import com.ai.assistance.operit.core.tools.AIToolHandler
-import com.ai.assistance.operit.core.tools.packTool.PackageManager as ToolPackageManager
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
+import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager as ToolPackageManager
 import com.ai.assistance.operit.data.skill.SkillRepository
 import kotlinx.coroutines.launch
 import java.io.File

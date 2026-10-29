@@ -30,7 +30,7 @@ import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeSlot
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
 import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
-import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
 import com.ai.assistance.operit.core.tools.FileOperationData
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.AttachmentInfo
@@ -95,7 +95,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspacePreviewRefreshBus
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspacePreviewRefreshEvent
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.toWorkspaceCommandOutputEntries
-import com.ai.assistance.operit.core.tools.system.Terminal
+import com.ai.assistance.operit.core.tools.system.terminal.Terminal
 import com.ai.assistance.operit.core.speech.text.TtsCleaner
 import com.ai.assistance.operit.core.speech.text.TtsSegmenter
 import com.ai.assistance.operit.ui.features.conversation.chat.util.findMentionTokens

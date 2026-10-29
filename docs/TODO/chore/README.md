@@ -6,6 +6,8 @@
 
 ## 计划索引
 
+- [工具权限收口与目录整理](tools-permissions-layout/index.md)
+
 - [1.12.2+15 分仓与布局修复发行](release-1.12.2-plus-15/index.md)
 
 - [正式版、补丁与离线资源分仓](release-repositories/index.md)

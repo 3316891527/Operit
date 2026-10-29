@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.tools.system.action
 import android.content.Context
 import com.ai.assistance.operit.core.tools.permissions.PermissionBackend
 import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilityResolver
-import com.ai.assistance.operit.core.tools.system.AndroidPermissionLevel
+import com.ai.assistance.operit.core.tools.permissions.AndroidPermissionLevel
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 
 /** 监听器实例按后端缓存，授权状态不随实例一起缓存。 */

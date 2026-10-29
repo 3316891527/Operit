@@ -4,9 +4,9 @@ import android.content.Context
 import android.os.ParcelFileDescriptor
 import android.os.RemoteException
 import com.ai.assistance.operit.util.logging.AppLogger
-import com.ai.assistance.operit.core.tools.system.AndroidPermissionLevel
-import com.ai.assistance.operit.core.tools.system.ShizukuAuthorizer
-import com.ai.assistance.operit.core.tools.system.ShellIdentity
+import com.ai.assistance.operit.core.tools.permissions.AndroidPermissionLevel
+import com.ai.assistance.operit.core.tools.permissions.authorization.ShizukuAuthorizer
+import com.ai.assistance.operit.core.tools.system.shell.ShellIdentity
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream

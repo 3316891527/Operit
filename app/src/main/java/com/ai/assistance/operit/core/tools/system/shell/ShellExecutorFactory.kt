@@ -3,7 +3,7 @@ package com.ai.assistance.operit.core.tools.system.shell
 import android.content.Context
 import com.ai.assistance.operit.core.tools.permissions.PermissionBackend
 import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilityResolver
-import com.ai.assistance.operit.core.tools.system.AndroidPermissionLevel
+import com.ai.assistance.operit.core.tools.permissions.AndroidPermissionLevel
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 
 /** 实例按后端缓存，模式到后端的选择在每次操作前重新计算。 */

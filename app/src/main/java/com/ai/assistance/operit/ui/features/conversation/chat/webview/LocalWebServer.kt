@@ -7,7 +7,7 @@ import android.system.Os
 import android.system.OsConstants
 import android.util.Base64
 import android.webkit.CookieManager
-import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
 import com.ai.assistance.operit.core.tools.BinaryFileContentData
 import com.ai.assistance.operit.core.tools.DirectoryListingData
 import com.ai.assistance.operit.data.model.AITool

@@ -51,7 +51,7 @@ import androidx.compose.ui.zIndex
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryAction
 import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryRequest
-import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
 import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ChatHistory
