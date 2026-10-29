@@ -7,4 +7,5 @@
     <string name="tool_timing_running">Running</string>
     <string name="tool_timing_stopped">Stopped</string>
     <string name="tool_timing_searches">%1$d searches</string>
+    <string name="tool_timing_elapsed_millis"> (%1$d ms)</string>
 </resources>

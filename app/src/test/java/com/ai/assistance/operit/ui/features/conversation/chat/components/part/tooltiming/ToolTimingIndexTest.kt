@@ -76,4 +76,12 @@ class ToolTimingIndexTest {
         val nodes = listOf(tool(), result(false))
         assertFalse(checkNotNull(ToolTimingIndex.parse(nodes, listOf(record(0, 1_000L, 2_000L))).tool(0)).complete)
     }
+    @Test
+    fun parallelSubsecondGroupRetainsMillisecondsInsteadOfSummingOverlaps() {
+        val nodes = listOf(tool(), tool(), result(), result())
+        val saved = ToolTimingIndex.parse(nodes, listOf(record(0, 10_000L, 175L), record(1, 10_050L, 125L)))
+        assertEquals(175L, saved.group(0, nodes.lastIndex).elapsedMillis(100_000L, false))
+        assertEquals(125L, saved.tool(1)?.elapsedMillis(100_000L, false))
+        assertTrue(saved.group(0, nodes.lastIndex).complete)
+    }
 }

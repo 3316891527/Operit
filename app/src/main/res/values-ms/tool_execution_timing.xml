@@ -7,4 +7,5 @@
     <string name="tool_timing_running">Sedang berjalan</string>
     <string name="tool_timing_stopped">Dihentikan</string>
     <string name="tool_timing_searches">%1$d carian</string>
+    <string name="tool_timing_elapsed_millis"> (%1$d ms)</string>
 </resources>

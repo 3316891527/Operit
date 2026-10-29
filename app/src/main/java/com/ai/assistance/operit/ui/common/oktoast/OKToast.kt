@@ -93,10 +93,11 @@ object OKToast {
         })
     }
 
-    /** 悬浮聊天窗口使用自己已有的窗口 token，不请求额外权限。返回值用于对称注销。 */
+    /** 对话框、面板和悬浮窗口使用自己的根视图及窗口 token，返回值用于对称注销。 */
     fun registerWindow(view: View): () -> Unit {
         check(Looper.myLooper() == Looper.getMainLooper())
-        val reference = WeakReference(view)
+        parkNoticesForHostChange()
+        val reference = WeakReference(view.rootView)
         windowHosts.add(reference)
         view.post { showNext() }
         return {

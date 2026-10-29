@@ -1103,7 +1103,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                     try {
                         val imageId = ImagePoolManager.addImage(path)
                         if (imageId == "error") {
-                            AppLogger.e(TAG, "Failed to register image for direct_image, falling back to intent/OCR: $path")
+                            return ToolResult(tool.name, false, StringResultData(""), context.getString(R.string.image_read_error))
                         } else {
                             val link = "<link type=\"image\" id=\"$imageId\"></link>"
                             AppLogger.d(TAG, "Generated image link for direct_image: $link")
@@ -1118,10 +1118,12 @@ open class StandardFileSystemTools(protected val context: Context) {
                                 error = ""
                             )
                         }
+                    } catch (cancel: kotlinx.coroutines.CancellationException) {
+                        throw cancel
                     } catch (e: Exception) {
-                        AppLogger.e(TAG, "Error generating direct image link, falling back to intent/OCR", e)
+                        AppLogger.e(TAG, "直接图片读取失败", e)
+                        return ToolResult(tool.name, false, StringResultData(""), e.message ?: context.getString(R.string.image_read_error))
                     }
-                    // 如果生成图片链接失败，则继续走下面的 intent/OCR 逻辑
                 }
 
                 // 情况2：提供了 intent，使用后端识图模型
@@ -1129,9 +1131,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                     try {
                         val enhancedService =
                             com.ai.assistance.operit.api.chat.EnhancedAIService.getInstance(context)
-                        val analysisResult = kotlinx.coroutines.runBlocking {
-                            enhancedService.analyzeImageWithIntent(path, intent)
-                        }
+                        val analysisResult = enhancedService.analyzeImageWithIntent(path, intent)
 
                         return ToolResult(
                             toolName = tool.name,
@@ -1143,9 +1143,16 @@ open class StandardFileSystemTools(protected val context: Context) {
                             ),
                             error = ""
                         )
+                    } catch (cancel: kotlinx.coroutines.CancellationException) {
+                        throw cancel
                     } catch (e: Exception) {
-                        AppLogger.e(TAG, "识图模型调用失败，回退到OCR", e)
-                        // 回退到默认OCR处理
+                        AppLogger.e(TAG, "图片理解失败", e)
+                        return ToolResult(
+                            toolName = tool.name,
+                            success = false,
+                            result = StringResultData(""),
+                            error = e.message ?: context.getString(R.string.image_read_error),
+                        )
                     }
                 }
 
@@ -1156,13 +1163,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                     }
                     if (bitmap != null) {
                         val ocrText =
-                            kotlinx.coroutines.runBlocking {
-                                com.ai.assistance.operit.util
-                                    .OCRUtils.recognizeText(
-                                        context,
-                                        bitmap
-                                    )
-                            }
+                            com.ai.assistance.operit.util.OCRUtils.recognizeText(context, bitmap, failOnError = true)
                         if (ocrText.isNotBlank()) {
                             AppLogger.d(
                                 TAG,
@@ -1209,35 +1210,20 @@ open class StandardFileSystemTools(protected val context: Context) {
                         )
                         ToolResult(
                             toolName = tool.name,
-                            success = true,
-                            result =
-                            FileContentData(
-                                path = path,
-                                content =
-                                "Failed to decode image file.",
-                                size =
-                                "Failed to decode image file."
-                                    .length
-                                    .toLong()
-                            ),
-                            error = ""
+                            success = false,
+                            result = StringResultData(""),
+                            error = context.getString(R.string.image_parse_error),
                         )
                     }
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+                    throw cancel
                 } catch (e: Exception) {
-                    AppLogger.e(TAG, "Error during OCR text extraction", e)
+                    AppLogger.e(TAG, "图片文字识别失败", e)
                     ToolResult(
                         toolName = tool.name,
-                        success = true,
-                        result =
-                        FileContentData(
-                            path = path,
-                            content =
-                            "Error extracting text from image: ${e.message}",
-                            size =
-                            "Error extracting text from image: ${e.message}"
-                                .length.toLong()
-                        ),
-                        error = ""
+                        success = false,
+                        result = StringResultData(""),
+                        error = e.message ?: context.getString(R.string.image_read_error),
                     )
                 }
             }

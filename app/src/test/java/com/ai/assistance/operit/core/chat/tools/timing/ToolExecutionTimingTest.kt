@@ -80,4 +80,15 @@ class ToolExecutionTimingTest {
         assertTrue(state.records.value[1].stopped)
         assertNull(state.records.value[1].durationMs)
     }
+    @Test
+    fun subsecondExecutionIsStoredWithoutSecondRounding() = runBlocking {
+        var now = 10_000L
+        val state = ToolTimingState()
+        val timing = ToolExecutionTiming(1, { state.update(it) }, now = { now })
+        timing.queued()
+        timing.start(0)
+        now += 175L
+        timing.completed(0)
+        assertEquals(175L, state.records.value.single().durationMs)
+    }
 }

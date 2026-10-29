@@ -45,12 +45,18 @@ internal fun toolTimingTitle(
     val now by produceState(SystemClock.elapsedRealtime(), summary, ticking) {
         value = SystemClock.elapsedRealtime()
         while (ticking) {
-            delay(1_000L)
+            // 亚秒阶段以较短间隔刷新，让毫秒显示在工具尚未返回时也能推进。
+            val elapsed = summary.elapsedMillis(value, streaming)
+            delay(if (elapsed != null && elapsed < 1_000L) 100L else 1_000L)
             value = SystemClock.elapsedRealtime()
         }
     }
     val millis = summary.elapsedMillis(now, streaming)
-    val elapsed = if (millis == null) "" else stringResource(R.string.tool_timing_elapsed, millis / 1_000L)
+    val elapsed = when {
+        millis == null -> ""
+        millis < 1_000L -> stringResource(R.string.tool_timing_elapsed_millis, millis)
+        else -> stringResource(R.string.tool_timing_elapsed, millis / 1_000L)
+    }
     val status = when {
         summary.complete -> R.string.tool_timing_completed
         summary.stopped -> R.string.tool_timing_stopped
