@@ -31,3 +31,5 @@
 - [1.12.2+16 发行集成](release-plus16/index.md)
 
 - [1.12.2+17 紧急发行](release-plus17/index.md)
+
+- [1.12.2+18 发行集成](release-plus18/index.md)
