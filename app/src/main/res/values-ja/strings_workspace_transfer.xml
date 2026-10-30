@@ -15,4 +15,8 @@
     <string name="workspace_transfer_files">ファイル：%1$d / %2$d</string>
     <string name="workspace_transfer_percent">%1$d%%</string>
     <string name="workspace_transfer_cancelling">キャンセル中...</string>
+    <string name="workspace_transfer_deleting">削除中...</string>
+    <string name="workspace_transfer_deleted_items">%1$d / %2$d 項目を削除済み</string>
+    <string name="workspace_transfer_delete_scope">進捗は選択した項目数です。各フォルダー内の進捗は不明です。</string>
+    <string name="workspace_transfer_delete_cancel_note">キャンセルすると現在の削除処理が戻った後に次の項目を停止します。削除済みの内容は復元されません。</string>
 </resources>

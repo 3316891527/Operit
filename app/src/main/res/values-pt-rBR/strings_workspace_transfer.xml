@@ -15,4 +15,8 @@
     <string name="workspace_transfer_files">Arquivos: %1$d / %2$d</string>
     <string name="workspace_transfer_percent">%1$d%%</string>
     <string name="workspace_transfer_cancelling">Cancelando...</string>
+    <string name="workspace_transfer_deleting">Excluindo...</string>
+    <string name="workspace_transfer_deleted_items">%1$d / %2$d itens excluídos</string>
+    <string name="workspace_transfer_delete_scope">O progresso conta os itens selecionados, não os arquivos de cada pasta.</string>
+    <string name="workspace_transfer_delete_cancel_note">Cancelar interrompe os próximos itens após a exclusão atual retornar. O conteúdo excluído não é restaurado.</string>
 </resources>

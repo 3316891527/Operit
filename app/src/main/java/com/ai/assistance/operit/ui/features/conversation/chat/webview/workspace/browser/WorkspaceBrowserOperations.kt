@@ -8,6 +8,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.files.transfer.FileCopyObserver
 import com.ai.assistance.operit.core.files.transfer.FileCopyObservers
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.transfer.WorkspaceCopyProgress
+import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.browser.transfer.WorkspaceDeleteOperation
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,10 @@ internal class FileBrowserOperations(context: Context) {
     private val handler = AIToolHandler.getInstance(this.context)
     private val copyState = MutableStateFlow<WorkspaceCopyProgress?>(null)
     val copyProgress = copyState.asStateFlow()
+    private val deletion = WorkspaceDeleteOperation { target ->
+        deleteEntry(target.path, target.environment, target.isDirectory)
+    }
+    val deleteProgress = deletion.progress
 
     private fun parameters(environment: String?, vararg values: Pair<String, String>) = buildList {
         values.forEach { (name, value) -> add(ToolParameter(name, value)) }
@@ -51,9 +56,18 @@ internal class FileBrowserOperations(context: Context) {
         Unit
     }
 
-    suspend fun delete(path: String, environment: String?, directory: Boolean) = withContext(Dispatchers.IO) {
+    private fun deleteEntry(path: String, environment: String?, directory: Boolean) {
         execute("delete_file", parameters(environment, "path" to path, "recursive" to directory.toString()))
-        Unit
+    }
+
+    suspend fun delete(path: String, environment: String?, directory: Boolean): Unit =
+        delete(listOf(FileBrowserClipboardItem(path, environment, cut = false, isDirectory = directory)))
+
+    suspend fun delete(
+        targets: List<FileBrowserClipboardItem>,
+        onDeleted: suspend (FileBrowserClipboardItem) -> Unit = {},
+    ): Unit = withContext(Dispatchers.IO) {
+        deletion.run(targets, onDeleted)
     }
 
     suspend fun paste(directory: String, environment: String?) = withContext(Dispatchers.IO) {
@@ -115,7 +129,8 @@ internal class FileBrowserOperations(context: Context) {
                     executionContext.ensureActive()
                     if (item.cut) {
                         copyState.value = checkNotNull(copyState.value).copy(finishing = true)
-                        delete(item.path, item.environment, item.isDirectory)
+                        // 剪切收尾仍属于移动任务，不弹出第二个删除进度窗口。
+                        deleteEntry(item.path, item.environment, item.isDirectory)
                     }
                 }
                 if (item.cut) FileBrowserClipboard.clear(item)

@@ -15,4 +15,8 @@
     <string name="workspace_transfer_files">Files: %1$d / %2$d</string>
     <string name="workspace_transfer_percent">%1$d%%</string>
     <string name="workspace_transfer_cancelling">Cancelling...</string>
+    <string name="workspace_transfer_deleting">Deleting...</string>
+    <string name="workspace_transfer_deleted_items">Deleted %1$d / %2$d items</string>
+    <string name="workspace_transfer_delete_scope">Progress counts selected items, not files inside each directory.</string>
+    <string name="workspace_transfer_delete_cancel_note">Cancel stops subsequent items after the current deletion returns. Deleted content is not restored.</string>
 </resources>

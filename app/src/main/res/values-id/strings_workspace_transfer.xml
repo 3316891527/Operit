@@ -15,4 +15,8 @@
     <string name="workspace_transfer_files">File: %1$d / %2$d</string>
     <string name="workspace_transfer_percent">%1$d%%</string>
     <string name="workspace_transfer_cancelling">Membatalkan...</string>
+    <string name="workspace_transfer_deleting">Menghapus...</string>
+    <string name="workspace_transfer_deleted_items">%1$d / %2$d item dihapus</string>
+    <string name="workspace_transfer_delete_scope">Progres menghitung item yang dipilih, bukan file di dalam setiap folder.</string>
+    <string name="workspace_transfer_delete_cancel_note">Pembatalan menghentikan item berikutnya setelah penghapusan saat ini selesai. Konten yang dihapus tidak dipulihkan.</string>
 </resources>

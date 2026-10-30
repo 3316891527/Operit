@@ -15,4 +15,8 @@
     <string name="workspace_transfer_files">Fișiere: %1$d / %2$d</string>
     <string name="workspace_transfer_percent">%1$d%%</string>
     <string name="workspace_transfer_cancelling">Se anulează...</string>
+    <string name="workspace_transfer_deleting">Se șterge...</string>
+    <string name="workspace_transfer_deleted_items">%1$d / %2$d elemente șterse</string>
+    <string name="workspace_transfer_delete_scope">Progresul numără elementele selectate, nu fișierele din fiecare dosar.</string>
+    <string name="workspace_transfer_delete_cancel_note">Anularea oprește elementele următoare după încheierea ștergerii curente. Conținutul șters nu este restaurat.</string>
 </resources>
