@@ -3,9 +3,18 @@ use crate::PathConvention;
 use crate::PathUri;
 use crate::PathUriParseError;
 
+pub(super) fn has_url_ignored_bytes(path: &str) -> bool {
+    path.bytes()
+        .any(|byte| matches!(byte, b'\t' | b'\n' | b'\r'))
+}
+
 impl PathUri {
     pub fn join_native_bytes(&self, path: &[u8]) -> Result<Self, PathUriParseError> {
-        if let Ok(path) = std::str::from_utf8(path) {
+        // 合法 UTF-8 也可能包含 URL 库会丢弃的字节，此类路径直接使用下方编码流程。
+        if let Ok(path) = std::str::from_utf8(path)
+            && (self.infer_path_convention() != Some(PathConvention::Posix)
+                || !has_url_ignored_bytes(path))
+        {
             return self.join(path);
         }
         if self.infer_path_convention() != Some(PathConvention::Posix)

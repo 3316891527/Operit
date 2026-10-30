@@ -160,34 +160,36 @@
 | `diff_json_combines_check_policy_and_quiet_without_ansi` | 组合预览、检查、禁止覆盖、静默和 JSON：单个无颜色 JSON 对象 |
 | `failed_diff_has_no_partial_stdout_and_keeps_original_files` | 预览有效前缀后失败或输入缺失：没有部分差异，文件不变，JSON diff 为 null |
 | `diff_reports_binary_empty_files_and_symbolic_link_deletion` | 二进制、空文件和链接删除：显示标记或路径，不误显示为删除链接目标 |
-| `diff_quotes_paths_and_disables_color_when_redirected` | 含空格和制表符的路径：头部正确转义，重定向无颜色 |
+| `diff_quotes_paths_and_disables_color_when_redirected` | 含空格和制表符的路径：头部正确转义，重定向无颜色；检查及实际应用保留文件名，去掉制表符的另一份文件不变 |
 | `quiet_hides_summaries_but_keeps_errors_and_requested_output` | 两种静默写法：隐藏摘要，保留错误、差异、JSON、帮助和版本 |
 | `help_documents_custom_rules_and_strict_is_not_an_alias` | 帮助显示自定义规则与示例，strict 不是接受的别名 |
 | `new_option_names_are_valid_file_arguments` | 新选项名称作为 -f 文件名：按文件名读取，不改变模式 |
 | `diff_unchanged_update_outputs_nothing` | 内容未变化的更新：预览成功且不输出虚假差异 |
 | `no_overwrite_and_no_follow_keep_exclusive_creation_and_link_rules` | 内部禁止跟随链接模式：独占创建成功、同名拒绝、父路径及叶子链接规则保留 |
+| `native_path_joins_preserve_url_ignored_bytes` | 相对/绝对路径、字符串/字节入口保留制表符与换行；百分号和非 UTF-8 字节不被误解码，NUL 仍拒绝 |
 | ARM64 新选项组合 | QEMU 预览不写入、应用静默、重复新增拒绝；全部原版场景仍核对快照 |
 
 ### 新增用例结果表
 
 | 用例 | 结果 |
 | --- | --- |
-| `no_overwrite_rejects_existing_add_targets_in_all_modes` | 待 CI |
-| `no_overwrite_refuses_move_destination_and_preserves_source` | 待 CI |
-| `no_overwrite_allows_updates_and_explicit_delete_then_add` | 待 CI |
-| `no_overwrite_observes_sequential_creations_and_partial_apply` | 待 CI |
-| `concurrent_no_overwrite_creations_have_one_winner` | 待 CI |
-| `diff_previews_all_operations_without_writes` | 待 CI |
-| `diff_preserves_execution_order_for_new_then_updated_files` | 待 CI |
-| `diff_json_combines_check_policy_and_quiet_without_ansi` | 待 CI |
-| `failed_diff_has_no_partial_stdout_and_keeps_original_files` | 待 CI |
-| `diff_reports_binary_empty_files_and_symbolic_link_deletion` | 待 CI |
-| `diff_quotes_paths_and_disables_color_when_redirected` | 待 CI |
-| `quiet_hides_summaries_but_keeps_errors_and_requested_output` | 待 CI |
-| `help_documents_custom_rules_and_strict_is_not_an_alias` | 待 CI |
-| `new_option_names_are_valid_file_arguments` | 待 CI |
-| `diff_unchanged_update_outputs_nothing` | 待 CI |
+| `no_overwrite_rejects_existing_add_targets_in_all_modes` | 4510d853 已通过；本次待 CI |
+| `no_overwrite_refuses_move_destination_and_preserves_source` | 4510d853 已通过；本次待 CI |
+| `no_overwrite_allows_updates_and_explicit_delete_then_add` | 4510d853 已通过；本次待 CI |
+| `no_overwrite_observes_sequential_creations_and_partial_apply` | 4510d853 已通过；本次待 CI |
+| `concurrent_no_overwrite_creations_have_one_winner` | 4510d853 已通过；本次待 CI |
+| `diff_previews_all_operations_without_writes` | 4510d853 已通过；本次待 CI |
+| `diff_preserves_execution_order_for_new_then_updated_files` | 4510d853 已通过；本次待 CI |
+| `diff_json_combines_check_policy_and_quiet_without_ansi` | 4510d853 已通过；本次待 CI |
+| `failed_diff_has_no_partial_stdout_and_keeps_original_files` | 4510d853 已通过；本次待 CI |
+| `diff_reports_binary_empty_files_and_symbolic_link_deletion` | 4510d853 已通过；本次待 CI |
+| `diff_quotes_paths_and_disables_color_when_redirected` | 4510d853 失败；本次待 CI |
+| `quiet_hides_summaries_but_keeps_errors_and_requested_output` | 4510d853 已通过；本次待 CI |
+| `help_documents_custom_rules_and_strict_is_not_an_alias` | 4510d853 已通过；本次待 CI |
+| `new_option_names_are_valid_file_arguments` | 4510d853 已通过；本次待 CI |
+| `diff_unchanged_update_outputs_nothing` | 4510d853 已通过；本次待 CI |
 | `no_overwrite_and_no_follow_keep_exclusive_creation_and_link_rules` | 待 CI |
+| `native_path_joins_preserve_url_ignored_bytes` | 待 CI |
 | ARM64 新选项组合 | 待 CI |
 
 ### 新选项实机结果表

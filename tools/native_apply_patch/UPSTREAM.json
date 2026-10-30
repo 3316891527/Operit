@@ -158,15 +158,17 @@
       "source": "utils/path-uri/src/lib.rs",
       "target": "vendor/path-uri/src/lib.rs",
       "sourceSha256": "6337866e5f19ad36bf605e9da03970c83b1e9c8c5766804db5b90b106467231a",
-      "sha256": "23ba550ca19ccfb2d301df99f5add99ddba716ea318de022094e9934fddd5153",
-      "codeTokensEqual": true
+      "sha256": "e8aaca7f76b895dffc975523647f2cfad1265541d87d0afa2383ea4366813db5",
+      "codeTokensEqual": false,
+      "adaptation": "本地原生路径含制表符或换行字节时使用显式字节编码，避免 URL 分段解析丢失文件名字节"
     },
     {
       "source": "utils/path-uri/src/native_path_bytes.rs",
       "target": "vendor/path-uri/src/native_path_bytes.rs",
       "sourceSha256": "6295f7e680d774d38cd6d6c5ad9245e58b8e0321d6f5a248260b14cc941411d1",
-      "sha256": "a9febd8d26b7792a4236cb382ec0f1a14803c6339b90f8bb09f18a36a431f20d",
-      "codeTokensEqual": true
+      "sha256": "ad66e45c96b71fd3577bb70193a336b72ebb650f1a86080211c9b11cabe752d3",
+      "codeTokensEqual": false,
+      "adaptation": "UTF-8 原生路径若含 URL 会忽略的字节，则直接编码；其余既有路径处理保留"
     },
     {
       "source": "utils/path-uri/src/platform.rs",
@@ -531,7 +533,8 @@
     "保留原版路径工具实现，移除不再使用的 Bazel 构建文件",
     "CLI、tool 和 scenarios 测试仅调整 Cargo 产物/fixture 定位；no_follow 保留直接引擎测试，省略依赖 Codex 调用验证器的专用测试",
     "新增 Android 资源安装、Linux 命令安装、打包、ARM64 执行验证和应用构建工作流集成",
-    "src/cli/ 提供参数、文件输入、内存检查、JSON、禁止覆盖策略、只读逐操作差异预览与静默摘要；帮助列出全部自定义规则和组合示例，默认补丁调用保持来源行为"
+    "src/cli/ 提供参数、文件输入、内存检查、JSON、禁止覆盖策略、只读逐操作差异预览与静默摘要；帮助列出全部自定义规则和组合示例，默认补丁调用保持来源行为",
+    "原生路径拼接对 URL 会忽略的制表符、换行和回车先按字节编码；保留文件名原字节，避免预览或实际应用误指向去掉控制字符后的另一条路径"
   ],
   "operitExtensions": {
     "src/cli/options.rs": "1995eaaa3bb1da7da7d2f149133aa5f861ccd65ea2bdf256c03f1f6ad4200780",

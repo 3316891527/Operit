@@ -325,6 +325,10 @@ impl PathUri {
                     path: self.to_string(),
                 })?;
 
+        // URL 路径分段解析会忽略制表符和换行，原生文件名必须先按字节编码。
+        if convention == PathConvention::Posix && native_path_bytes::has_url_ignored_bytes(path) {
+            return self.join_native_bytes(path.as_bytes());
+        }
         if let Some(absolute) = Self::from_absolute_native_path(path, convention) {
             return Ok(absolute);
         }

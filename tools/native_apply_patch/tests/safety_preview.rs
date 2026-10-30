@@ -342,6 +342,10 @@ fn diff_reports_binary_empty_files_and_symbolic_link_deletion() {
 #[test]
 fn diff_quotes_paths_and_disables_color_when_redirected() {
     let dir = tempdir().unwrap();
+    let normalized = dir.path().join("含 空格file");
+    let literal = dir.path().join("含 空格\tfile");
+    // 去掉制表符后是另一份文件，预览和应用都不能误操作它。
+    fs::write(&normalized, "keep\n").unwrap();
     let patch = "*** Begin Patch\n*** Add File: 含 空格\tfile\n+text\n*** End Patch";
     let output = command(dir.path())
         .env("TERM", "xterm-256color")
@@ -350,9 +354,21 @@ fn diff_quotes_paths_and_disables_color_when_redirected() {
         .unwrap();
     assert!(output.status.success());
     let text = String::from_utf8(output.stdout).unwrap();
-    assert!(text.contains("+++ \"b/含 空格\\tfile\""));
+    assert!(text.contains("+++ \"b/含 空格\\tfile\""), "{text}");
     assert!(!text.contains('\u{1b}'));
-    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0);
+    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    assert!(!literal.exists());
+    command(dir.path())
+        .args(["--check", "--no-overwrite", patch])
+        .assert()
+        .success();
+    assert!(!literal.exists());
+    command(dir.path())
+        .args(["--no-overwrite", patch])
+        .assert()
+        .success();
+    assert_eq!(fs::read_to_string(&literal).unwrap(), "text\n");
+    assert_eq!(fs::read_to_string(&normalized).unwrap(), "keep\n");
 }
 
 #[test]
