@@ -8,7 +8,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.*
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.*
 import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,11 +59,11 @@ import androidx.compose.runtime.DisposableEffect
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.features.management.update.screens.UpdateScreen
 import com.ai.assistance.operit.util.logging.AppLogger
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatSidebarState
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalOpenMainChatSidebar
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalRunMainChatAction
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.rememberChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalOpenMainChatSidebar
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalRunMainChatAction
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.rememberChatSidebarState
 
 // 为TopAppBar的actions提供CompositionLocal
 // 它允许子组件（如AIChatScreen）向上提供它们的action Composable

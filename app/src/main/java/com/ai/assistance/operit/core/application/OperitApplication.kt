@@ -43,8 +43,8 @@ import com.ai.assistance.operit.data.preferences.initUserPreferencesManager
 import com.ai.assistance.operit.data.preferences.preferencesManager
 import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.LocalWebServer
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.editor.language.LanguageFactory
+import com.ai.assistance.operit.ui.features.conversation.workspace.preview.LocalWebServer
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.language.LanguageFactory
 import com.ai.assistance.operit.core.diagnostics.GlobalExceptionHandler
 import com.ai.assistance.operit.util.media.ImagePoolManager
 import com.ai.assistance.operit.util.android.LocaleUtils

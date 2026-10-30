@@ -60,11 +60,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.ChatSidebarContent
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.SidebarButtonSurface
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalRunMainChatAction
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.ChatSidebarContent
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.SidebarButtonSurface
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalRunMainChatAction
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatSidebarState
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 import com.ai.assistance.operit.core.tools.AIToolHandler
 import com.ai.assistance.operit.core.tools.packTool.PackageManager
