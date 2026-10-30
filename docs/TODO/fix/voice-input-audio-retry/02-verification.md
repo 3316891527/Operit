@@ -1,9 +1,12 @@
 # 语音输入回归
 
-全量保留原有语音顺序、取消、空响应、部分输出、缓存及重试分类测试；下列项目交由 Android Tests 运行。本地不运行测试。
+全量保留原有语音顺序、取消、空响应、部分输出、缓存及重试分类测试，并增加服务商出站音频结构检查；下列项目交由 Android Tests 运行。本地不运行测试。
 
 ## 场景与预期
 
+- 硅基流动直接音频：发送 `audio_url.url`，保留 WAV/MP3 的 MIME 类型、Base64 数据及附加文字
+- OpenAI 与阿里云直接音频：分别保留原始 Base64 和 Data URL 的 `input_audio` 格式
+- 音视频混合、音频开关关闭及非用户消息角色：保持视频结构、文本处理及角色限制；摘要角色按原能力开关携带音频
 - 对话与音频理解拒绝 `input_audio`，STT 成功：不重复换钥发送同一无效请求，聊天只保留最终采用的回答
 - 音频请求临时重试后成功：首段正文前发布该请求自己的重试通知
 - 文字请求临时重试：照常发布文字请求通知；最终失败保留实际异常及音频尝试证据
@@ -60,11 +63,21 @@
 | `providerFieldsDetermineBusinessClassWithoutScanningDiagnosticText` | `ApiRequestRetryPolicyTest` | 待 CI |
 | `structuredServerAndTransportFailuresIgnoreUnrelatedDiagnosticKeywords` | `ApiRequestRetryPolicyTest` | 待 CI |
 | `unsupportedAudioContentStopsEvenWhenGatewayReports503` | `ApiRequestRetryPolicyTest` | 待 CI |
+| `siliconFlowWavUsesAudioUrlAndKeepsText` | `ProviderAudioContentTest` | 待 CI |
+| `siliconFlowMpegPreservesMimeTypeAndBase64` | `ProviderAudioContentTest` | 待 CI |
+| `openAiStillUsesRawBase64InputAudio` | `ProviderAudioContentTest` | 待 CI |
+| `aliyunStillUsesDataUrlInputAudio` | `ProviderAudioContentTest` | 待 CI |
+| `siliconFlowVideoKeepsVideoUrlAlongsideAudio` | `ProviderAudioContentTest` | 待 CI |
+| `siliconFlowDisabledAudioKeepsTextOnly` | `ProviderAudioContentTest` | 待 CI |
+| `siliconFlowNonUserRolesDoNotAttachAudio` | `ProviderAudioContentTest` | 待 CI |
+| `siliconFlowSummaryUsesAudioUrl` | `ProviderAudioContentTest` | 待 CI |
 
 ## 实机结果表
 
 | 操作 | 预期 | 结果 |
 | --- | --- | --- |
+| 使用支持音频的硅基流动 Qwen3-Omni 配置发送录音 | 首次请求采用 `audio_url` 并可识别录音 | 待填写 |
+| 直接使用硅基 STT 转写录音 | multipart 上传并返回识别文字 | 待填写 |
 | 重复报告中的语音输入 | 识别成功后无已放弃的音频错误卡片 | 待填写 |
 | 手动重试已识别语音 | 复用转写文字 | 待填写 |
 | 取消录音理解或响应 | 停止后续处理 | 待填写 |
