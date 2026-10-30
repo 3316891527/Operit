@@ -21,10 +21,10 @@ import com.ai.assistance.operit.plugins.OperitPlugin
 import com.ai.assistance.operit.ui.common.markdown.XmlRenderPlugin
 import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
 import com.ai.assistance.operit.ui.common.markdown.XmlRenderResult
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.InputMenuToggleDefinition
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.InputMenuToggleHookParams
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.InputMenuTogglePlugin
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.InputMenuTogglePluginRegistry
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.InputMenuToggleDefinition
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.InputMenuToggleHookParams
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.InputMenuTogglePlugin
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.InputMenuTogglePluginRegistry
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.core.tools.packTool.runtime.ToolPkgXmlRenderHookComposeDslResult

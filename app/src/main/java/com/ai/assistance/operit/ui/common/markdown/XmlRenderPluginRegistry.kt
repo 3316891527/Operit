@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.common.markdown
 
-import com.ai.assistance.operit.ui.features.conversation.chat.voicemessages.VoiceMessageXmlPlugin
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceMessageXmlPlugin
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable

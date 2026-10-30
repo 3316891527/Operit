@@ -6,7 +6,13 @@
 
 ## 计划索引
 
+- [工具、文件操作与聊天目录联合验证](chat-workspace-tools-integration/index.md)
+
 - [工具权限收口与目录整理](tools-permissions-layout/index.md)
+
+- [聊天代码按职责归类](chat-responsibility-layout/index.md)
+
+- [会话工作区按职责归类](conversation-workspace-layout/index.md)
 
 - [1.12.2+15 分仓与布局修复发行](release-1.12.2-plus-15/index.md)
 

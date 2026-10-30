@@ -22,7 +22,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextFieldValue.Companion
 import androidx.core.content.FileProvider
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ChatStyle
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatStyle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ai.assistance.operit.core.chat.runtime.ChatRuntimeHolder
@@ -45,7 +45,7 @@ import com.ai.assistance.operit.data.repository.MessageTranslationRepository
 import com.ai.assistance.operit.data.model.PromptFunctionType
 import com.ai.assistance.operit.data.model.ToolParameter
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.LocalWebServer
+import com.ai.assistance.operit.ui.features.conversation.workspace.preview.LocalWebServer
 import com.ai.assistance.operit.ui.floating.FloatingMode
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
 import com.ai.assistance.operit.ui.permissions.ToolPermissionSystem
@@ -72,9 +72,9 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.filterNotNull
 import com.ai.assistance.operit.ui.features.automation.terminal.EmbeddedTerminalPage
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceHubPage
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryAction
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceEntryRequest
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubPage
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceEntryAction
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceEntryRequest
 import com.ai.assistance.operit.util.text.XmlTagCleaner
 import com.ai.assistance.operit.api.speech.tts.TtsService
 import com.ai.assistance.operit.api.speech.tts.prefetch.PrefetchingTtsService
@@ -88,28 +88,28 @@ import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.util.WaifuMessageProcessor
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceBackupManager
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.CommandConfig
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceCommandExecutionState
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceConfigReader
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspacePreviewRefreshBus
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspacePreviewRefreshEvent
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.toWorkspaceCommandOutputEntries
+import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceBackupManager
+import com.ai.assistance.operit.ui.features.conversation.workspace.CommandConfig
+import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceCommandExecutionState
+import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceConfigReader
+import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WorkspacePreviewRefreshBus
+import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WorkspacePreviewRefreshEvent
+import com.ai.assistance.operit.ui.features.conversation.workspace.toWorkspaceCommandOutputEntries
 import com.ai.assistance.operit.core.tools.system.terminal.Terminal
 import com.ai.assistance.operit.core.speech.text.TtsCleaner
 import com.ai.assistance.operit.core.speech.text.TtsSegmenter
-import com.ai.assistance.operit.ui.features.conversation.chat.util.findMentionTokens
-import com.ai.assistance.operit.ui.features.conversation.chat.util.findMentionTokenEndingAtCursor
-import com.ai.assistance.operit.ui.features.conversation.chat.util.isMentionContinuation
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.mentions.findMentionTokens
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.mentions.findMentionTokenEndingAtCursor
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.mentions.isMentionContinuation
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import java.io.File
 // 使用 services/core 的 Delegate 类
 import com.ai.assistance.operit.services.core.MessageProcessingDelegate
-import com.ai.assistance.operit.ui.features.conversation.chat.batch.ChatBatchAction
-import com.ai.assistance.operit.ui.features.conversation.chat.batch.ChatBatchController
-import com.ai.assistance.operit.ui.features.conversation.chat.batch.ChatBatchItemResult
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatBatchAction
+import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.history.ChatBatchController
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatBatchItemResult
 import com.ai.assistance.operit.services.core.ChatHistoryDelegate
 import com.ai.assistance.operit.services.core.ApiConfigDelegate
 import com.ai.assistance.operit.services.core.TokenStatisticsDelegate
@@ -120,22 +120,11 @@ import com.ai.assistance.operit.data.model.WorkspaceRenameResult
 import com.ai.assistance.operit.services.ChatServiceCore
 import com.ai.assistance.operit.services.ChatServiceUiBridge
 import com.ai.assistance.operit.services.EmptyChatServiceUiBridge
-import com.ai.assistance.operit.ui.features.conversation.chat.util.MessageImageGenerator
-import com.ai.assistance.operit.ui.features.conversation.chat.components.CharacterSelectorTarget
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.PendingQueueMessageItem
-enum class ChatHistoryDisplayMode {
-    BY_CHARACTER_CARD,
-    BY_FOLDER,
-    CURRENT_CHARACTER_ONLY
-}
-
-data class TranslationUiState(
-    val isLoading: Boolean = false,
-    val translatedText: String? = null,
-    val errorMessage: String? = null,
-    val isFromCache: Boolean = false,
-)
-
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing.MessageImageGenerator
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.CharacterSelectorTarget
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.PendingQueueMessageItem
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatHistoryDisplayMode
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.TranslationUiState
 class ChatViewModel(context: Context) : ViewModel() {
     private val context: Context = LocaleUtils.getLocalizedContext(context.applicationContext)
 
@@ -791,7 +780,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     // 聊天历史相关方法
-    val chatListMotion = com.ai.assistance.operit.ui.features.conversation.chat.motion.ChatListMotionState()
+    val chatListMotion = com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.history.ChatListMotionState()
 
     fun createNewChat(
         characterCardName: String? = null, characterGroupId: String? = null,

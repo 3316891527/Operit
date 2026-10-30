@@ -37,7 +37,7 @@ import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
 import com.ai.assistance.operit.data.model.PackageToolPromptCategory
 import com.ai.assistance.operit.data.model.ToolPrompt
 import com.ai.assistance.operit.data.model.ToolResult
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.workspace.WorkspaceConfig
+import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceConfig
 import com.ai.assistance.operit.integrations.appwidget.ToolPkgDesktopWidgetHost
 import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.util.ToolPkgWasmRuntime
