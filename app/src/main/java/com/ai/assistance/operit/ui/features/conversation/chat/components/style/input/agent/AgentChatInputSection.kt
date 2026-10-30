@@ -115,7 +115,7 @@ import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
 import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.core.memory.extraction.MemoryAutoSaveScheduler
-import com.ai.assistance.operit.core.tools.ToolProgressBus
+import com.ai.assistance.operit.core.tools.runtime.ToolProgressBus
 import com.ai.assistance.operit.data.model.AttachmentInfo
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode

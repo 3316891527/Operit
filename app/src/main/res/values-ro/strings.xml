@@ -7300,8 +7300,8 @@
     <string name="ocr_cannot_decode_bitmap_from_uri">Nu se poate de laURIDecodareBitmap</string>
     <string name="ocr_cannot_open_uri_stream">Nu se poate deschideURIfluxul de intrare</string>
 
-    <!-- DebuggerActionListener -->
-    <string name="debugger_ui_listener_started">DebuggerUIMonitorizarea operațiunilor a fost activată</string>
+    <!-- ShizukuActionListener -->
+    <string name="shizuku_ui_listener_started">Ascultătorul UI Shizuku a pornit</string>
 
     <!-- ModelConfigManager -->
     <string name="model_config_default_name">Configurația implicită</string>

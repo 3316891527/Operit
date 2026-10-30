@@ -18,8 +18,8 @@ import com.ai.assistance.operit.ui.features.conversation.chat.webview.createAndG
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.ai.assistance.operit.core.tools.AIToolHandler
-import com.ai.assistance.operit.core.tools.packTool.PackageManager
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
+import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager
 import com.ai.assistance.operit.ui.features.conversation.chat.webview.createAndResetWorkspaceDirectory
 import kotlinx.coroutines.*
 
