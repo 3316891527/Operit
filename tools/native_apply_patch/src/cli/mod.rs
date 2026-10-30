@@ -1,6 +1,7 @@
 mod check;
 mod options;
 mod output;
+mod preview;
 
 use codex_exec_server::ExecutorFileSystem;
 use codex_utils_absolute_path::AbsolutePathBuf;
@@ -20,9 +21,40 @@ Options:
   -h, --help        Show this help
   -c, --check       Check sequential patch operations without writing files
       --dry-run     Alias for --check
+  -D, --diff        Preview per-operation unified diffs without writing files
+      --no-overwrite
+                    Refuse existing Add File and Move to destinations
+  -q, --quiet       Suppress success summaries; keep errors and requested output
   -f, --file PATH   Read UTF-8 patch text from PATH; '-' means standard input
       --json        Print one JSON result object, including errors
       --            End option parsing; the following argument is PATCH
+
+Operit rules:
+  --no-overwrite is opt-in. Existing files, directories and symbolic links
+  (including dangling links) block Add File and Move to destinations.
+  Update File may still edit existing files. Delete then Add is allowed.
+  The same policy applies to --check and --diff; actual creation is exclusive.
+  Without --no-overwrite, the original Add File/Move to overwrite rules apply.
+
+  --diff implies a read-only check; it can be combined with --check.
+  Changes appear in execution order; moves show destination write and source
+  removal. Binary changes are marked, and empty-file changes keep path headers.
+  A failed preview emits an error, not a partial diff. Input stays Codex format.
+  Color is automatic on a terminal; redirects, NO_COLOR or TERM=dumb disable it.
+  --diff --json puts the plain preview in the JSON 'diff' field (null on error).
+  A successful diff exits 0 even when changes exist; it does not run git diff.
+
+  --quiet hides only human success summaries. Diffs, JSON, help/version and
+  errors remain visible. No files are written by --check or --diff, even if
+  a later operation fails. Checks cannot guarantee permissions, disk space
+  or absence of concurrent changes during a later apply.
+  Apply mode runs sequentially: failure does not undo earlier file changes.
+
+Examples:
+  apply_patch --no-overwrite --file change.patch
+  apply_patch --diff --no-overwrite --file change.patch
+  apply_patch --diff --file change.patch --json
+  apply_patch --check --no-overwrite --quiet < change.patch
 
 Patch format:
   *** Begin Patch
@@ -37,8 +69,6 @@ Patch format:
 Delete a file with '*** Delete File: path'.
 Move a file with '*** Move to: new/path' after an Update File header.
 Quote heredoc delimiters (<<'PATCH') to preserve shell characters.
-Check mode evaluates content and paths in memory; permissions, disk space
-and concurrent changes still need to be resolved by the actual apply.
 Exit codes: 0 = success, 1 = patch/I/O error, 2 = usage error.
 "#;
 
@@ -67,7 +97,14 @@ fn run() -> i32 {
         print!("{message}");
         return 0;
     }
-    let mode = if options.check { "check" } else { "apply" };
+    let read_only = options.check || options.diff;
+    let mode = if options.diff {
+        "diff"
+    } else if options.check {
+        "check"
+    } else {
+        "apply"
+    };
     let patch = if let Some(argument) = options.patch {
         match argument.into_string() {
             Ok(patch) => patch,
@@ -146,29 +183,71 @@ fn run() -> i32 {
             );
         }
     };
-    let check_fs = check::CheckFileSystem::default();
-    let filesystem: &dyn ExecutorFileSystem = if options.check {
+    let check_fs = if options.diff {
+        check::CheckFileSystem::with_preview()
+    } else {
+        check::CheckFileSystem::default()
+    };
+    let filesystem: &dyn ExecutorFileSystem = if read_only {
         &check_fs
     } else {
         codex_exec_server::LOCAL_FS.as_ref()
     };
     let mut out = Vec::new();
     let mut err = Vec::new();
-    let result = runtime.block_on(crate::apply_patch(
-        &patch, &cwd, &mut out, &mut err, filesystem, None,
+    let result = runtime.block_on(crate::apply_patch_with_options(
+        &patch,
+        crate::ApplyPatchOptions {
+            no_overwrite: options.no_overwrite,
+            ..Default::default()
+        },
+        &cwd,
+        &mut out,
+        &mut err,
+        filesystem,
+        None,
     ));
     let (code, delta) = match &result {
         Ok(delta) => (0, delta),
         Err(error) => (1, error.delta()),
     };
-    if options.check && code == 0 {
+    if read_only && code == 0 {
         out = String::from_utf8_lossy(&out)
             .replacen(
                 "Success. Updated the following files:",
-                "Success. Checked the following files (no files written):",
+                if options.diff {
+                    "Success. Previewed the following files (no files written):"
+                } else {
+                    "Success. Checked the following files (no files written):"
+                },
                 1,
             )
             .into_bytes();
+    }
+    let diff = if options.diff && code == 0 {
+        match check_fs.diff(&cwd) {
+            Ok(diff) => Some(diff),
+            Err(error) => {
+                return failure(
+                    options.json,
+                    mode,
+                    1,
+                    "io",
+                    &format!("Error: Failed to render preview.\n{error}"),
+                );
+            }
+        }
+    } else {
+        None
+    };
+    if let Some(diff) = &diff
+        && !options.json
+    {
+        out = if preview::terminal_colors_enabled() {
+            preview::colorize(diff).into_bytes()
+        } else {
+            diff.as_bytes().to_vec()
+        };
     }
     if options.json {
         let message = String::from_utf8_lossy(if code == 0 { &out } else { &err });
@@ -182,7 +261,13 @@ fn run() -> i32 {
         if code == 0 {
             value["changes"] = serde_json::json!(output::completed_changes(&patch, &cwd));
         }
+        if options.diff {
+            value["diff"] = serde_json::json!(diff);
+        }
         return emit_json(&value, code);
+    }
+    if options.quiet && !options.diff && code == 0 {
+        out.clear();
     }
     if let Err(error) = io::stdout()
         .write_all(&out)

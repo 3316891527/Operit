@@ -4,6 +4,9 @@ use std::path::PathBuf;
 #[derive(Default)]
 pub(super) struct Options {
     pub check: bool,
+    pub diff: bool,
+    pub no_overwrite: bool,
+    pub quiet: bool,
     pub json: bool,
     pub help: bool,
     pub version: bool,
@@ -47,6 +50,18 @@ impl Options {
                     }
                     Some("--check" | "-c" | "--dry-run") => {
                         options.check = true;
+                        continue;
+                    }
+                    Some("--diff" | "-D") => {
+                        options.diff = true;
+                        continue;
+                    }
+                    Some("--no-overwrite") => {
+                        options.no_overwrite = true;
+                        continue;
+                    }
+                    Some("--quiet" | "-q") => {
+                        options.quiet = true;
                         continue;
                     }
                     Some("--help" | "-h") => {

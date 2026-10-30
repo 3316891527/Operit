@@ -52,6 +52,10 @@ fn version_and_help_do_not_read_input_or_modify_files() {
             "--file",
             "--check",
             "--json",
+            "--no-overwrite",
+            "--diff",
+            "--quiet",
+            "Operit rules",
             "*** Begin Patch",
             "Exit codes",
         ] {
@@ -395,6 +399,17 @@ fn all_original_scenarios_have_matching_check_status_and_unchanged_inputs() {
             .args(["--check", &patch])
             .output()
             .unwrap();
+        let previewed = command(check_dir.path())
+            .args(["--diff", &patch])
+            .output()
+            .unwrap();
+        assert_eq!(
+            previewed.status.code(),
+            checked.status.code(),
+            "{}",
+            scenario.display()
+        );
+        assert_eq!(snapshot(check_dir.path()), before, "{}", scenario.display());
         let applied = command(apply_dir.path()).arg(&patch).output().unwrap();
         assert_eq!(
             checked.status.code(),

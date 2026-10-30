@@ -4,6 +4,7 @@ use std::future::Future;
 use std::io;
 use std::pin::Pin;
 use std::sync::{Arc, LazyLock};
+use tokio::io::AsyncWriteExt;
 
 // 独立命令只使用本地文件系统，不接受执行服务的沙箱上下文。
 pub enum FileSystemSandboxContext {}
@@ -25,6 +26,8 @@ impl Default for ReadFileOptions {
 #[derive(Clone, Copy)]
 pub struct WriteFileOptions {
     pub follow_symlinks: bool,
+    // 新增及移动目标可要求原子独占创建，避免检查后被其他进程抢先写入。
+    pub create_new: bool,
 }
 #[derive(Clone, Copy)]
 pub struct GetMetadataOptions {
@@ -121,9 +124,18 @@ impl ExecutorFileSystem for LocalFileSystem {
         Box::pin(async move {
             let path = path.to_abs_path()?;
             if options.follow_symlinks {
-                tokio::fs::write(path.as_path(), contents).await
+                if options.create_new {
+                    let mut file = tokio::fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(path.as_path())
+                        .await?;
+                    file.write_all(&contents).await
+                } else {
+                    tokio::fs::write(path.as_path(), contents).await
+                }
             } else {
-                no_follow::write_file(path.as_path(), contents).await
+                no_follow::write_file(path.as_path(), contents, options.create_new).await
             }
         })
     }

@@ -15,8 +15,9 @@
       "source": "exec-server/src/no_follow/unix.rs",
       "target": "compat/fs/src/no_follow/unix.rs",
       "sourceSha256": "cf001c0e5cfb655611e23e49b81f8e0b94447d0b48cb441c340b11ef6b195435",
-      "sha256": "3bb48f7e1555e18062db257936e4d6af3983cf2ad975ca81dd85370a3172f035",
-      "codeTokensEqual": true
+      "sha256": "8b19c74d98b511f4b6d9f0eefc1d5ccadcdb7d7e8faf4d3ec0582459659c1c5a",
+      "codeTokensEqual": false,
+      "adaptation": "Unix 文件描述符写入增加可选 O_EXCL 独占创建；默认写入及链接限制保留"
     },
     {
       "source": "exec-server/src/regular_file.rs",
@@ -43,9 +44,9 @@
       "source": "apply-patch/src/lib.rs",
       "target": "src/lib.rs",
       "sourceSha256": "81eeac02181ffb6b1c8e1bdb18457372f11ef800f18675f77f0e10f3ee5dd9f2",
-      "sha256": "fec5b449b5c5d8a425ace64f53a642bba16d198361efa9acef47c629be7ae831",
+      "sha256": "1a67c435bfbd3ec0733450987bb4276588a8b17e8d706e17c2666a41df68363c",
       "codeTokensEqual": false,
-      "adaptation": "独立 CLI 扩展注册或入口转发；补丁引擎仍由来源实现执行"
+      "adaptation": "独立 CLI 注册与可选 no_overwrite 写入策略；新增/移动目标使用独占创建，默认补丁语义保留"
     },
     {
       "source": "apply-patch/src/main.rs",
@@ -525,17 +526,18 @@
   ],
   "changes": [
     "移除原版注释，补充中文说明并运行 rustfmt；代码语句及字面量已静态逐项对比",
-    "lib.rs 只移除 invocation 模块导出、ExtractHeredocError 导入及 MaybeApplyPatchVerified 类型；独立 CLI 入口与补丁引擎保持一致",
-    "独立文件系统门面只提供补丁引擎实际依赖的方法；沿用原版有界读取、普通文件检查和 Unix 不跟随符号链接操作",
+    "lib.rs 移除不属于独立 CLI 的调用验证器类型，注册命令行扩展并增加默认关闭的 no_overwrite 标志；补丁解析、匹配与默认覆盖行为保留",
+    "独立文件系统门面只提供补丁引擎实际依赖的方法；沿用有界读取和 Unix 文件描述符操作，新增可选独占创建，禁止覆盖时叶子路径以原子方式判定",
     "保留原版路径工具实现，移除不再使用的 Bazel 构建文件",
     "CLI、tool 和 scenarios 测试仅调整 Cargo 产物/fixture 定位；no_follow 保留直接引擎测试，省略依赖 Codex 调用验证器的专用测试",
     "新增 Android 资源安装、Linux 命令安装、打包、ARM64 执行验证和应用构建工作流集成",
-    "新增 src/cli/ 参数、文件输入、内存检查与 JSON 输出，独立入口转发到扩展模块，lib.rs 注册新模块；补丁解析及应用语义不变"
+    "src/cli/ 提供参数、文件输入、内存检查、JSON、禁止覆盖策略、只读逐操作差异预览与静默摘要；帮助列出全部自定义规则和组合示例，默认补丁调用保持来源行为"
   ],
   "operitExtensions": {
-    "src/cli/options.rs": "914d3fd070a3cf2fb4a6ffee15f5d151df5aea473ffa53ed6bc963b683f46cfc",
-    "src/cli/check.rs": "7ac0de9be7d6967958b9c250ccfab25bebb20df41d749b5e5aa36e0a7167e47f",
-    "src/cli/output.rs": "2f4abde2489f044c736ad7aef35e9cd816491b0437e1e3cbf11c8fb1973e4e57",
-    "src/cli/mod.rs": "87dd2f62abf648c89bae52f01d0becf01779d766c5d225049df51bcdf9a28691"
+    "src/cli/options.rs": "1995eaaa3bb1da7da7d2f149133aa5f861ccd65ea2bdf256c03f1f6ad4200780",
+    "src/cli/check.rs": "b3ad6b0c42dbde940cb816542c6f68c16ac8b11d5c02cad744e7d66c4904e264",
+    "src/cli/output.rs": "e9e4c6e016f0d41235a4676586c121eec40e45241881702cae2d5a7dca4e833c",
+    "src/cli/mod.rs": "3e9f10045475f5f52c7cdeda3d75144b36d8b38f1375297f57412346303236cd",
+    "src/cli/preview.rs": "6174c1861d21eb9e9203e840cd5c8284b63e65121020e77761babb09be5eb71a"
   }
 }

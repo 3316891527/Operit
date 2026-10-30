@@ -114,17 +114,21 @@ pub(super) fn open_file_sync(path: &Path) -> io::Result<std::fs::File> {
     Ok(file)
 }
 
-pub(super) async fn write_file(path: PathBuf, contents: Vec<u8>) -> io::Result<()> {
+pub(super) async fn write_file(
+    path: PathBuf,
+    contents: Vec<u8>,
+    create_new: bool,
+) -> io::Result<()> {
     tokio::task::spawn_blocking(move || {
         let (parent, leaf) = parent(&path)?;
 
-        let file = openat(
-            &parent,
-            leaf,
-            OFlags::WRONLY | OFlags::CREATE | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC,
-            Mode::from_raw_mode(0o666),
-        )
-        .map_err(io::Error::from)?;
+        let mut flags =
+            OFlags::WRONLY | OFlags::CREATE | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC;
+        if create_new {
+            flags |= OFlags::EXCL;
+        }
+        let file =
+            openat(&parent, leaf, flags, Mode::from_raw_mode(0o666)).map_err(io::Error::from)?;
         let mut file = std::fs::File::from(file);
         if !file.metadata()?.is_file() {
             return Err(io::Error::new(

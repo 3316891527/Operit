@@ -29,9 +29,14 @@ apply_patch --help
 apply_patch --check --file change.patch
 apply_patch -c -f change.patch --json
 apply_patch --file change.patch --json
+apply_patch --no-overwrite --file change.patch
+apply_patch --diff --no-overwrite --file change.patch
+apply_patch --quiet --file change.patch
 ```
 
 版本读取当前移植包的 `0.1.0`，支持 `-v/-V`；帮助支持 `-h`。`--check/-c/--dry-run` 使用同一补丁引擎在内存里按顺序检查，不写入目标文件或目录。`--file/-f` 读取 UTF-8 补丁文件，`-f -` 读取 stdin，补丁内相对路径仍以当前目录为准。`--json` 对成功、错误、帮助和版本均输出单个 JSON 对象，不混入普通文本摘要。
+
+`--no-overwrite` 禁止新增文件和移动目标覆盖已有路径，包括符号链接；普通更新以及显式删除后重建仍允许。`--diff/-D` 在内存中按操作顺序预览变化，不写盘，终端自动显示颜色，重定向或 `NO_COLOR` 禁用颜色。`--diff --json` 把无颜色差异放入 `diff` 字段。`--quiet/-q` 隐藏成功摘要，保留错误和明确请求的差异、JSON、帮助与版本输出。完整自定义规则和示例也直接列在 `--help` 中。
 
 检查不能保证实际执行时的写权限、磁盘空间或无并发修改。参数组合、JSON 字段和检查语义见[命令行契约](../../docs/TODO/feat/terminal-apply-patch/03-cli-options.md)。
 
@@ -72,7 +77,7 @@ tools/native_apply_patch/
 	NOTICE
 ```
 
-[UPSTREAM.json](UPSTREAM.json) 记录来源快照与逐文件 SHA-256。提供的归档没有 Git 提交元数据，因此不填未经核实的上游提交号。初次移植对 26 个 Rust 来源文件完成静态代码与字面量对照。命令行扩展只调整库模块注册和独立入口转发，其余 24 个来源文件保持哈希一致；25 个场景 fixture 保持字节一致。
+[UPSTREAM.json](UPSTREAM.json) 记录来源快照与逐文件 SHA-256。提供的归档没有 Git 提交元数据，因此不填未经核实的上游提交号。初次移植对 26 个 Rust 来源文件完成静态代码与字面量对照。命令行扩展调整库选项和独立入口，并为新增/移动目标提供可选的独占创建；Unix 文件描述符写入增加可选 `O_EXCL`。这 3 个来源文件显式记录适配，其余 23 个来源文件保持原哈希；25 个场景 fixture 保持字节一致。默认补丁行为保持来源语义。
 
 `compat/fs` 仅实现补丁引擎需要的本地文件系统方法，沿用原版有界读取和 Unix 文件描述符操作。`invocation.rs` 用于在 Codex 执行框架中识别外层 shell 调用，独立 CLI 已由 Bash 提供参数和标准输入，因而未携带该模块及 Tree-sitter Bash 依赖。与之配套的验证器专用用例不属于此命令入口；直接补丁引擎、CLI、综合命令、场景和符号链接用例均保留；扩展另外覆盖新选项及全部场景的内存检查。
 
@@ -95,7 +100,7 @@ python3 tools/native_apply_patch/package_assets.py \
 
 以上命令从仓库根目录执行，需预先安装 `gcc-aarch64-linux-gnu` 和 `libc6-dev-arm64-cross`，后者提供交叉链接所需的 glibc 启动对象与开发文件；使用 `--no-install-recommends` 时也必须显式安装。当前构建环境为 Ubuntu 24.04，与内置 Ubuntu Noble 对应。这里固定 `1.95.0` 以对应来源工作区，未声称这是最低可用 Rust 版本。
 
-Build 与 PR Android build 会核对最终 APK 中的命令、清单和许可文件。Android Tests 与 PR Android JVM tests 另运行 Rust 工作区回归、QEMU ARM64 的全部 25 个场景以及安装升级回归。该功能源码与复用步骤的改动均触发完整 Android 检查。
+Build 与 PR Android build 会核对最终 APK 中的命令、清单和许可文件。Android Tests 与 PR Android JVM tests 另运行 Rust 工作区回归、QEMU ARM64 的全部 25 个场景的检查/预览/应用对照以及安装升级回归。该功能源码与复用步骤的改动均触发完整 Android 检查。
 
 ## 验证状态与许可
 

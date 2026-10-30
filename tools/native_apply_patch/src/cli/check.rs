@@ -1,3 +1,4 @@
+use super::preview::{self, Change, Content};
 use codex_exec_server::{
     CreateDirectoryOptions, ExecutorFileSystem, ExecutorFileSystemFuture, FileMetadata,
     FileSystemSandboxContext, GetMetadataOptions, LOCAL_FS, ReadFileOptions, RemoveOptions,
@@ -29,11 +30,90 @@ struct Location {
 #[derive(Default)]
 pub(super) struct CheckFileSystem {
     entries: Mutex<HashMap<PathBuf, Node>>,
+    preview: Option<Mutex<Vec<Change>>>,
     // 原有硬链接共享内容；内存里模拟写入时也保持同一个 inode 的别名一致。
     inodes: Mutex<HashMap<(u64, u64), Arc<Mutex<Vec<u8>>>>>,
 }
 
 impl CheckFileSystem {
+    pub fn with_preview() -> Self {
+        Self {
+            preview: Some(Mutex::new(Vec::new())),
+            ..Self::default()
+        }
+    }
+
+    pub fn diff(&self, cwd: &PathUri) -> io::Result<String> {
+        let changes = self
+            .preview
+            .as_ref()
+            .ok_or_else(|| io::Error::other("preview recording is not enabled"))?
+            .lock()
+            .map_err(|_| io::Error::other("preview lock poisoned"))?;
+        Ok(preview::render(&changes, cwd.to_abs_path()?.as_path()))
+    }
+
+    async fn preview_content(&self, path: &Path, node: &Node) -> io::Result<Content> {
+        match node {
+            Node::Missing => Ok(Content::Missing),
+            Node::Link(target) => Ok(Content::Link(target.clone())),
+            Node::File(bytes) => Ok(Content::from_bytes(
+                bytes
+                    .lock()
+                    .map_err(|_| io::Error::other("check content lock poisoned"))?
+                    .clone(),
+            )),
+            Node::Other => {
+                let uri = PathUri::from_host_native_path(path).map_err(io::Error::other)?;
+                match LOCAL_FS
+                    .read_file_text(&uri, ReadFileOptions::default(), None)
+                    .await
+                {
+                    Ok(text) => Ok(Content::from_bytes(text.into_bytes())),
+                    Err(error) if error.kind() == io::ErrorKind::InvalidData => {
+                        Ok(Content::Binary(None))
+                    }
+                    Err(error) => Err(error),
+                }
+            }
+            Node::Directory => Err(io::Error::from(io::ErrorKind::IsADirectory)),
+        }
+    }
+
+    fn record_preview(&self, change: Option<Change>) -> io::Result<()> {
+        if let (Some(changes), Some(change)) = (&self.preview, change) {
+            changes
+                .lock()
+                .map_err(|_| io::Error::other("preview lock poisoned"))?
+                .push(change);
+        }
+        Ok(())
+    }
+
+    // 独占创建只解析父目录，叶子即使是断开的符号链接也视为已存在。
+    fn locate_new(&self, path: &Path, follow: bool) -> io::Result<Location> {
+        let parent = path
+            .parent()
+            .ok_or_else(|| io::Error::from(io::ErrorKind::AlreadyExists))?;
+        let leaf = path
+            .file_name()
+            .ok_or_else(|| io::Error::from(io::ErrorKind::AlreadyExists))?;
+        let directory = self.locate(parent, follow, true)?;
+        match self.node(&directory.path)? {
+            Node::Directory => {}
+            Node::Missing => return Err(io::Error::from(io::ErrorKind::NotFound)),
+            _ => return Err(io::Error::from(io::ErrorKind::NotADirectory)),
+        }
+        let path = directory.path.join(leaf);
+        if !matches!(self.node(&path)?, Node::Missing) {
+            return Err(io::Error::from(io::ErrorKind::AlreadyExists));
+        }
+        Ok(Location {
+            path,
+            leaf_link: false,
+        })
+    }
+
     fn saved(&self, path: &Path) -> io::Result<Option<Node>> {
         self.entries
             .lock()
@@ -206,15 +286,29 @@ impl ExecutorFileSystem for CheckFileSystem {
         _: Option<&'a FileSystemSandboxContext>,
     ) -> ExecutorFileSystemFuture<'a, ()> {
         Box::pin(async move {
-            let location =
-                self.locate(path.to_abs_path()?.as_path(), options.follow_symlinks, true)?;
-            match self.node(&location.path)? {
-                Node::Directory => Err(io::Error::from(io::ErrorKind::IsADirectory)),
+            let absolute = path.to_abs_path()?;
+            let location = if options.create_new {
+                self.locate_new(absolute.as_path(), options.follow_symlinks)?
+            } else {
+                self.locate(absolute.as_path(), options.follow_symlinks, true)?
+            };
+            let node = self.node(&location.path)?;
+            let preview = if self.preview.is_some() {
+                Some(Change {
+                    path: location.path.clone(),
+                    before: self.preview_content(&location.path, &node).await?,
+                    after: Content::from_bytes(contents.clone()),
+                })
+            } else {
+                None
+            };
+            match node {
+                Node::Directory => return Err(io::Error::from(io::ErrorKind::IsADirectory)),
                 Node::File(shared) => {
                     *shared
                         .lock()
                         .map_err(|_| io::Error::other("check content lock poisoned"))? = contents;
-                    self.save(location.path, Node::File(shared))
+                    self.save(location.path, Node::File(shared))?;
                 }
                 Node::Other => {
                     let metadata = std::fs::metadata(&location.path)?;
@@ -229,10 +323,11 @@ impl ExecutorFileSystem for CheckFileSystem {
                         .lock()
                         .map_err(|_| io::Error::other("check inode lock poisoned"))?
                         .insert((metadata.dev(), metadata.ino()), shared.clone());
-                    self.save(location.path, Node::File(shared))
+                    self.save(location.path, Node::File(shared))?;
                 }
-                _ => self.save(location.path, Node::File(Arc::new(Mutex::new(contents)))),
+                _ => self.save(location.path, Node::File(Arc::new(Mutex::new(contents))))?,
             }
+            self.record_preview(preview)
         })
     }
 
@@ -307,15 +402,29 @@ impl ExecutorFileSystem for CheckFileSystem {
                 options.follow_symlinks,
                 false,
             )?;
-            match self.node(&location.path)? {
-                Node::Missing if options.force => Ok(()),
-                Node::Missing => Err(io::Error::from(io::ErrorKind::NotFound)),
-                Node::Directory => Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "path is a directory",
-                )),
-                _ => self.save(location.path, Node::Missing),
+            let node = self.node(&location.path)?;
+            match node {
+                Node::Missing if options.force => return Ok(()),
+                Node::Missing => return Err(io::Error::from(io::ErrorKind::NotFound)),
+                Node::Directory => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "path is a directory",
+                    ));
+                }
+                _ => {}
             }
+            let preview = if self.preview.is_some() {
+                Some(Change {
+                    path: location.path.clone(),
+                    before: self.preview_content(&location.path, &node).await?,
+                    after: Content::Missing,
+                })
+            } else {
+                None
+            };
+            self.save(location.path, Node::Missing)?;
+            self.record_preview(preview)
         })
     }
 }

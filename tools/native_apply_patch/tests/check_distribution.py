@@ -119,7 +119,8 @@ class DistributionTest(unittest.TestCase):
         for flag in ['-h', '--help']:
             result = self.run_command([flag])
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn('--check', result.stdout)
+            for option in ['--check', '--no-overwrite', '--diff', '--quiet', 'Operit rules']:
+                self.assertIn(option, result.stdout)
         result = self.run_command(['--json', '--version'])
         value = json.loads(result.stdout)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -136,6 +137,25 @@ class DistributionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)['mode'], 'apply')
         self.assertEqual((self.directory / 'new/nested.txt').read_text(), 'second\n')
+
+    def test_arm64_no_overwrite_diff_and_quiet(self):
+        self.require_install()
+        patch = chr(10).join(['*** Begin Patch', '*** Add File: guarded/new.txt', '+hello', '*** End Patch'])
+        result = self.run_command(['--diff', '--no-overwrite', '--quiet', '--json', patch])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        value = json.loads(result.stdout)
+        self.assertEqual(value['mode'], 'diff')
+        self.assertIn('+hello', value['diff'])
+        self.assertNotIn(chr(27), value['diff'])
+        self.assertFalse((self.directory / 'guarded').exists())
+        result = self.run_command(['--no-overwrite', '--quiet', patch])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, '')
+        for mode in [[], ['--check'], ['--diff']]:
+            result = self.run_command([*mode, '--no-overwrite', '--json', patch])
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertFalse(json.loads(result.stdout)['partial'])
+            self.assertEqual((self.directory / 'guarded/new.txt').read_text(), 'hello' + chr(10))
 
     def test_all_original_scenarios_on_arm64(self):
         self.require_install()
@@ -157,6 +177,12 @@ class DistributionTest(unittest.TestCase):
                     cwd=work, capture_output=True, timeout=30,
                 )
                 self.assertEqual(snapshot(work), original, checked.stderr)
+                previewed = subprocess.run(
+                    ['qemu-aarch64', '-L', SYSROOT, str(self.installed), '--diff', patch],
+                    cwd=work, capture_output=True, timeout=30,
+                )
+                self.assertEqual(previewed.returncode, checked.returncode, previewed.stderr)
+                self.assertEqual(snapshot(work), original, previewed.stderr)
                 result = subprocess.run(
                     ['qemu-aarch64', '-L', SYSROOT, str(self.installed), patch],
                     cwd=work, capture_output=True, timeout=30,

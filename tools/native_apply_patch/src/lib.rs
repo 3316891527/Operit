@@ -45,12 +45,15 @@ pub const CODEX_APPLY_PATCH_PRESERVE_LINE_ENDINGS_ENV_VAR: &str =
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ApplyPatchOptions {
     pub follow_symlinks: bool,
+    // 仅保护新增文件和移动目标；普通更新继续按原上下文修改文件。
+    pub no_overwrite: bool,
 }
 
 impl Default for ApplyPatchOptions {
     fn default() -> Self {
         Self {
             follow_symlinks: true,
+            no_overwrite: false,
         }
     }
 }
@@ -384,7 +387,10 @@ async fn apply_hunks_to_files(
     sandbox: Option<&FileSystemSandboxContext>,
     delta: &mut AppliedPatchDelta,
 ) -> anyhow::Result<AffectedPaths> {
-    let ApplyPatchOptions { follow_symlinks } = options;
+    let ApplyPatchOptions {
+        follow_symlinks,
+        no_overwrite,
+    } = options;
     if hunks.is_empty() {
         anyhow::bail!("No files were modified.");
     }
@@ -398,7 +404,13 @@ async fn apply_hunks_to_files(
             match $result {
                 Ok(value) => value,
                 Err(error) => {
-                    delta.exact = false;
+                    // 独占创建被同名路径拒绝时尚未写入，不能误报为可能已有部分修改。
+                    if !(no_overwrite
+                        && error.downcast_ref::<io::Error>()
+                            .is_some_and(|error| error.kind() == io::ErrorKind::AlreadyExists))
+                    {
+                        delta.exact = false;
+                    }
                     return Err(anyhow::Error::from(error));
                 }
             }
@@ -410,20 +422,25 @@ async fn apply_hunks_to_files(
         let path_uri = hunk.resolve_path(cwd)?;
         match hunk {
             Hunk::AddFile { contents, .. } => {
-                let overwritten_content = read_optional_file_text_for_delta(
-                    &path_uri,
-                    fs,
-                    follow_symlinks,
-                    sandbox,
-                    &mut delta.exact,
-                )
-                .await;
+                let overwritten_content = if no_overwrite {
+                    None
+                } else {
+                    read_optional_file_text_for_delta(
+                        &path_uri,
+                        fs,
+                        follow_symlinks,
+                        sandbox,
+                        &mut delta.exact,
+                    )
+                    .await
+                };
                 try_write!(
                     write_file_with_missing_parent_retry(
                         fs,
                         &path_uri,
                         contents.clone().into_bytes(),
                         follow_symlinks,
+                        no_overwrite,
                         sandbox,
                     )
                     .await
@@ -521,20 +538,25 @@ async fn apply_hunks_to_files(
                 .await?;
                 if let Some(dest) = move_path {
                     let dest_uri = cwd.join(&dest.to_string_lossy())?;
-                    let overwritten_move_content = read_optional_file_text_for_delta(
-                        &dest_uri,
-                        fs,
-                        follow_symlinks,
-                        sandbox,
-                        &mut delta.exact,
-                    )
-                    .await;
+                    let overwritten_move_content = if no_overwrite {
+                        None
+                    } else {
+                        read_optional_file_text_for_delta(
+                            &dest_uri,
+                            fs,
+                            follow_symlinks,
+                            sandbox,
+                            &mut delta.exact,
+                        )
+                        .await
+                    };
                     try_write!(
                         write_file_with_missing_parent_retry(
                             fs,
                             &dest_uri,
                             new_contents.clone().into_bytes(),
                             follow_symlinks,
+                            no_overwrite,
                             sandbox,
                         )
                         .await
@@ -598,7 +620,10 @@ async fn apply_hunks_to_files(
                         fs.write_file(
                             &path_uri,
                             new_contents.clone().into_bytes(),
-                            WriteFileOptions { follow_symlinks },
+                            WriteFileOptions {
+                                follow_symlinks,
+                                create_new: false,
+                            },
                             sandbox,
                         )
                         .await
@@ -706,19 +731,33 @@ async fn write_file_with_missing_parent_retry(
     path: &PathUri,
     contents: Vec<u8>,
     follow_symlinks: bool,
+    create_new: bool,
     sandbox: Option<&FileSystemSandboxContext>,
 ) -> anyhow::Result<()> {
+    let options = WriteFileOptions {
+        follow_symlinks,
+        create_new,
+    };
+    let write_error = |error: io::Error| {
+        let context = if create_new && error.kind() == io::ErrorKind::AlreadyExists {
+            format!(
+                "--no-overwrite refuses existing path {}",
+                path.inferred_native_path_string()
+            )
+        } else {
+            format!(
+                "Failed to write file {}",
+                path.inferred_native_path_string()
+            )
+        };
+        anyhow::Error::new(error).context(context)
+    };
     match fs
-        .write_file(
-            path,
-            contents.clone(),
-            WriteFileOptions { follow_symlinks },
-            sandbox,
-        )
+        .write_file(path, contents.clone(), options, sandbox)
         .await
     {
         Ok(()) => Ok(()),
-        Err(err) if err.kind() == io::ErrorKind::NotFound => {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
             if let Some(parent) = path.parent() {
                 fs.create_directory(
                     &parent,
@@ -736,27 +775,11 @@ async fn write_file_with_missing_parent_retry(
                     )
                 })?;
             }
-            fs.write_file(
-                path,
-                contents,
-                WriteFileOptions { follow_symlinks },
-                sandbox,
-            )
-            .await
-            .with_context(|| {
-                format!(
-                    "Failed to write file {}",
-                    path.inferred_native_path_string()
-                )
-            })?;
-            Ok(())
+            fs.write_file(path, contents, options, sandbox)
+                .await
+                .map_err(write_error)
         }
-        Err(err) => Err(err).with_context(|| {
-            format!(
-                "Failed to write file {}",
-                path.inferred_native_path_string()
-            )
-        }),
+        Err(error) => Err(write_error(error)),
     }
 }
 

@@ -22,7 +22,7 @@ pub(super) fn document(
         if let Some(destination) = destination { value["destination"] = json!(destination); }
         value
     }).collect()).unwrap_or_default();
-    json!({
+    let mut value = json!({
         "schema_version": 1,
         "tool": "apply_patch",
         "version": VERSION,
@@ -34,7 +34,11 @@ pub(super) fn document(
         "exact": delta.map(AppliedPatchDelta::is_exact),
         "message": message,
         "error": error_kind.map(|kind| json!({"kind": kind, "message": message})),
-    })
+    });
+    if mode == "diff" {
+        value["diff"] = Value::Null;
+    }
+    value
 }
 
 pub(super) fn emit_json(value: &Value, exit_code: i32) -> i32 {
