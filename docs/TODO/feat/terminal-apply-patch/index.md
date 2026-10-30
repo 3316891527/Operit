@@ -24,6 +24,8 @@ status: implemented-verification-pending
 
 终端核心改动单独保存在维护者的 `OperitTerminalCore` 仓库工作分支，主仓库固定引用对应提交。初始化钩子在登录就绪标记之前运行，安装失败时不执行后续会话任务。`apply_patch` 位于 `/usr/local/bin`，无需重打 Ubuntu 归档。
 
+交叉构建显式安装 `gcc-aarch64-linux-gnu` 与 `libc6-dev-arm64-cross`，完整提供 ARM64 glibc 启动对象和开发文件，不依赖推荐包的隐式安装。此依赖声明由所有构建/测试入口共用。
+
 - [使用、构建与来源说明](../../../../tools/native_apply_patch/README.md)
 - [完整回归清单与结果表](02-verification.md)
 

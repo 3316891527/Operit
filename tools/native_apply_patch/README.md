@@ -79,7 +79,7 @@ python3 tools/native_apply_patch/package_assets.py \
   --output app/build/generated/terminal-command-assets
 ```
 
-以上命令从仓库根目录执行，交叉链接器需预先安装。当前构建环境为 Ubuntu 24.04，与内置 Ubuntu Noble 对应。这里固定 `1.95.0` 以对应来源工作区，未声称这是最低可用 Rust 版本。
+以上命令从仓库根目录执行，需预先安装 `gcc-aarch64-linux-gnu` 和 `libc6-dev-arm64-cross`，后者提供交叉链接所需的 glibc 启动对象与开发文件；使用 `--no-install-recommends` 时也必须显式安装。当前构建环境为 Ubuntu 24.04，与内置 Ubuntu Noble 对应。这里固定 `1.95.0` 以对应来源工作区，未声称这是最低可用 Rust 版本。
 
 Build 与 PR Android build 会核对最终 APK 中的命令、清单和许可文件。Android Tests 与 PR Android JVM tests 另运行 Rust 工作区回归、QEMU ARM64 的全部 25 个场景以及安装升级回归。该功能源码与复用步骤的改动均触发完整 Android 检查。
 
