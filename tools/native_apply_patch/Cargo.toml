@@ -52,6 +52,7 @@ name = "apply_patch"
 path = "src/main.rs"
 
 [dependencies]
+serde_json.workspace = true
 anyhow.workspace = true
 similar.workspace = true
 thiserror.workspace = true

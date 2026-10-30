@@ -21,6 +21,20 @@ PATCH
 
 相对路径以命令当前目录为基准，也接受绝对路径。输出保留上游的 `Success. Updated the following files:` 及 `A`、`M`、`D` 摘要。退出码为 `0` 成功、`1` 补丁或文件操作失败、`2` 用法错误。
 
+## 扩展选项
+
+```bash
+apply_patch --version
+apply_patch --help
+apply_patch --check --file change.patch
+apply_patch -c -f change.patch --json
+apply_patch --file change.patch --json
+```
+
+版本读取当前移植包的 `0.1.0`，支持 `-v/-V`；帮助支持 `-h`。`--check/-c/--dry-run` 使用同一补丁引擎在内存里按顺序检查，不写入目标文件或目录。`--file/-f` 读取 UTF-8 补丁文件，`-f -` 读取 stdin，补丁内相对路径仍以当前目录为准。`--json` 对成功、错误、帮助和版本均输出单个 JSON 对象，不混入普通文本摘要。
+
+检查不能保证实际执行时的写权限、磁盘空间或无并发修改。参数组合、JSON 字段和检查语义见[命令行契约](../../docs/TODO/feat/terminal-apply-patch/03-cli-options.md)。
+
 ## 保留的行为
 
 - 支持新增、修改、删除文件和修改时移动路径，保留多段更新及 `*** End of File` 标记
@@ -58,9 +72,9 @@ tools/native_apply_patch/
 	NOTICE
 ```
 
-[UPSTREAM.json](UPSTREAM.json) 记录来源快照与逐文件 SHA-256。提供的归档没有 Git 提交元数据，因此不填未经核实的上游提交号。核心补丁代码、路径工具和三个文件系统实现文件经过静态代码与字面量对照，25 个场景 fixture 保持字节一致。
+[UPSTREAM.json](UPSTREAM.json) 记录来源快照与逐文件 SHA-256。提供的归档没有 Git 提交元数据，因此不填未经核实的上游提交号。初次移植对 26 个 Rust 来源文件完成静态代码与字面量对照。命令行扩展只调整库模块注册和独立入口转发，其余 24 个来源文件保持哈希一致；25 个场景 fixture 保持字节一致。
 
-`compat/fs` 仅实现补丁引擎需要的本地文件系统方法，沿用原版有界读取和 Unix 文件描述符操作。`invocation.rs` 用于在 Codex 执行框架中识别外层 shell 调用，独立 CLI 已由 Bash 提供参数和标准输入，因而未携带该模块及 Tree-sitter Bash 依赖。与之配套的验证器专用用例不属于此命令入口；直接补丁引擎、CLI、综合命令、场景和符号链接用例均保留。
+`compat/fs` 仅实现补丁引擎需要的本地文件系统方法，沿用原版有界读取和 Unix 文件描述符操作。`invocation.rs` 用于在 Codex 执行框架中识别外层 shell 调用，独立 CLI 已由 Bash 提供参数和标准输入，因而未携带该模块及 Tree-sitter Bash 依赖。与之配套的验证器专用用例不属于此命令入口；直接补丁引擎、CLI、综合命令、场景和符号链接用例均保留；扩展另外覆盖新选项及全部场景的内存检查。
 
 ## 构建接入
 
@@ -85,6 +99,6 @@ Build 与 PR Android build 会核对最终 APK 中的命令、清单和许可文
 
 ## 验证状态与许可
 
-本轮完成源码对照、资源与会话入口静态核对、Python/TOML/YAML 解析及 Git 差异检查。本地未编译或运行测试；仓库工作流结果待确认。完整项目与可填写记录见[回归清单](../../docs/TODO/feat/terminal-apply-patch/02-verification.md)。
+维护者已在 Android 实机确认旧入口的 `Add File` 可用，未据此宣称其他操作或新选项通过。本轮完成来源文件哈希、资源与会话入口静态核对、Python/TOML/YAML 解析及 Git 差异检查。本地未编译或运行测试；仓库工作流结果待确认。完整项目与可填写记录见[回归清单](../../docs/TODO/feat/terminal-apply-patch/02-verification.md)。
 
 派生代码遵循 [Apache-2.0](LICENSE)，保留上游 [NOTICE](NOTICE)。打包脚本将许可和 NOTICE 一并写入 APK，应用的开源许可页增加 Codex apply_patch 来源入口。

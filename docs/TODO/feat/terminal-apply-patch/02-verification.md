@@ -109,3 +109,37 @@
 | S02 | 待确认 | |
 | S03 | 待确认 | |
 | S04 | 待确认 | |
+
+## 命令行扩展完整回归
+
+以上原有 C/R/I/A/P/S 清单全部保留。新增项目随同一工作流运行，所有项目在确认结果前保持待定。全部 25 个场景同时比较 `--check` 和实际应用退出状态，检查前后原目录快照必须相同。
+
+| 用例 | 操作与预期 | 结果 |
+| --- | --- | --- |
+| `version_and_help_do_not_read_input_or_modify_files` | 版本/帮助各别名返回 0，不读 stdin 或创建文件 | 待 CI |
+| `help_and_version_support_json_output` | 版本/帮助也返回单个 JSON 对象 | 待 CI |
+| `file_input_supports_short_long_equal_and_non_utf8_paths` | 文件输入各写法、特殊字符及非 UTF-8 路径正常 | 待 CI |
+| `stdin_and_end_of_options_preserve_original_patch_input` | 保留 stdin 及 -- 后补丁参数的行为 | 待 CI |
+| `usage_and_input_failures_are_single_json_objects` | 缺参数、冲突、未知选项与 I/O 错误只输出一个 JSON 对象 | 待 CI |
+| `file_name_equal_to_json_option_is_not_an_output_flag` | --json 作为 -f 文件名时不切换输出格式 | 待 CI |
+| `check_aliases_never_create_directories_or_files` | 三个检查别名都不创建文件或目录 | 待 CI |
+| `check_simulates_sequential_add_update_move_and_delete` | 新增、移动、目标继续更新和删除按顺序检查 | 待 CI |
+| `failed_check_leaves_all_files_unchanged_even_after_valid_prefix` | 失败前的模拟写入不改变实际文件、inode 或目录 | 待 CI |
+| `json_apply_preserves_partial_failure_and_reports_moves` | JSON 应用失败仍保留已写入结果，准确标记部分变更 | 待 CI |
+| `check_follows_leaf_and_directory_links_without_modifying_targets` | 符号链接别名共享模拟内容，实际目标不变 | 待 CI |
+| `check_hard_link_aliases_share_changes_but_recreated_names_do_not` | 硬链接共享模拟内容，删除重建后独立 | 待 CI |
+| `check_rejects_a_file_used_as_a_parent_without_touching_it` | 文件作为父目录时失败且原文件不变 | 待 CI |
+| `successful_json_reports_binary_deletions_even_without_text_snapshots` | 成功删除非 UTF-8 内容仍列出 delete 操作 | 待 CI |
+| `all_original_scenarios_have_matching_check_status_and_unchanged_inputs` | 全部 25 个原版场景检查状态一致且不写入 | 待 CI |
+| ARM64 扩展入口 | QEMU 执行版本、帮助、文件输入、检查与 JSON；25 个场景检查不写入 | 待 CI |
+
+## 实机反馈
+
+维护者已确认旧命令入口的 `Add File` 在 Android 实机可用，仅记录该操作。
+
+| 操作 | 预期 | 结果 |
+| --- | --- | --- |
+| 原入口 Add File | 正常新增文件 | 维护者实机反馈通过 |
+| --version 与 -h | 显示 0.1.0 和帮助 | 待填写 |
+| -c -f change.patch | 检查成功且文件未修改 | 待填写 |
+| -f change.patch --json | 按补丁修改并输出单个 JSON 对象 | 待填写 |

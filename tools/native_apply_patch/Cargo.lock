@@ -291,6 +291,7 @@ dependencies = [
  "codex-utils-path-uri",
  "operit-patch-fs",
  "pretty_assertions",
+ "serde_json",
  "similar",
  "tempfile",
  "thiserror",

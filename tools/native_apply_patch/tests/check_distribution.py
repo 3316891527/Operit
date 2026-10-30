@@ -2,6 +2,7 @@ from pathlib import Path
 import argparse
 import concurrent.futures
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -113,6 +114,29 @@ class DistributionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(target.read_text(), 'absolute\n')
 
+    def test_arm64_help_version_and_json_check(self):
+        self.require_install()
+        for flag in ['-h', '--help']:
+            result = self.run_command([flag])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('--check', result.stdout)
+        result = self.run_command(['--json', '--version'])
+        value = json.loads(result.stdout)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(value['version'], '0.1.0')
+        patch = self.directory / 'input.patch'
+        patch.write_text('*** Begin Patch\n*** Add File: new/nested.txt\n+first\n*** Update File: new/nested.txt\n@@\n-first\n+second\n*** End Patch')
+        result = self.run_command(['--check', '--file', str(patch), '--json'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        value = json.loads(result.stdout)
+        self.assertEqual(value['mode'], 'check')
+        self.assertTrue(value['success'])
+        self.assertFalse((self.directory / 'new').exists())
+        result = self.run_command(['--file', str(patch), '--json'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['mode'], 'apply')
+        self.assertEqual((self.directory / 'new/nested.txt').read_text(), 'second\n')
+
     def test_all_original_scenarios_on_arm64(self):
         self.require_install()
         for scenario in sorted((ROOT / 'tests/fixtures/scenarios').iterdir()):
@@ -124,12 +148,20 @@ class DistributionTest(unittest.TestCase):
                 source = scenario / 'input'
                 if source.is_dir():
                     shutil.copytree(source, work, dirs_exist_ok=True)
-                result = subprocess.run(
-                    ['qemu-aarch64', '-L', SYSROOT, str(self.installed), (scenario / 'patch.txt').read_text()],
-                    cwd=work, capture_output=True, timeout=30,
-                )
                 def snapshot(directory):
                     return {str(path.relative_to(directory)): None if path.is_dir() else path.read_bytes() for path in directory.rglob('*')}
+                original = snapshot(work)
+                patch = (scenario / 'patch.txt').read_text()
+                checked = subprocess.run(
+                    ['qemu-aarch64', '-L', SYSROOT, str(self.installed), '--check', patch],
+                    cwd=work, capture_output=True, timeout=30,
+                )
+                self.assertEqual(snapshot(work), original, checked.stderr)
+                result = subprocess.run(
+                    ['qemu-aarch64', '-L', SYSROOT, str(self.installed), patch],
+                    cwd=work, capture_output=True, timeout=30,
+                )
+                self.assertEqual(checked.returncode, result.returncode, checked.stderr)
                 self.assertEqual(snapshot(work), snapshot(scenario / 'expected'), result.stderr)
 
 
