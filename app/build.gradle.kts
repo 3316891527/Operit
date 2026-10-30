@@ -399,16 +399,33 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
     dependsOn(verifyOfflineHubDistribution)
 }
 
+val generatedTerminalCommandAssetsDir = layout.buildDirectory.dir("generated/terminal-command-assets")
+val verifyTerminalCommandAssets by tasks.registering {
+    description = "Verifies the ARM64 Linux terminal command and its asset manifest."
+    inputs.dir(generatedTerminalCommandAssetsDir)
+    inputs.file(rootProject.file("tools/native_apply_patch/package_assets.py"))
+    doLast {
+        val execution = providers.exec {
+            commandLine(
+                "python3", rootProject.file("tools/native_apply_patch/package_assets.py").path,
+                "--verify", "--output", generatedTerminalCommandAssetsDir.get().asFile.path,
+            )
+        }
+        execution.result.get().assertNormalExitValue()
+    }
+}
+
 val syncMainAssets by tasks.registering(Sync::class) {
     description = "Assembles application assets with verified generated STT model files."
     group = "build setup"
-    dependsOn(syncSttModelAssets)
+    dependsOn(syncSttModelAssets, verifyTerminalCommandAssets)
 
     from("src/main/assets") {
         exclude("models/**", "subpack/**")
         if (!bundleProjectResources) exclude("templates/**", "packages/**")
     }
     from(generatedSttModelAssetsDir)
+    from(generatedTerminalCommandAssetsDir)
     from("config/offline-resources.properties")
     from("config/local-speech-models.json")
     from("config/offline-packs.json")
