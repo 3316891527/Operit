@@ -1,6 +1,13 @@
 package com.ai.assistance.operit.core.tools.builtin.filesystem
 
 import android.content.Context
+import com.ai.assistance.operit.core.files.transfer.FileCopyObserver
+import com.ai.assistance.operit.core.files.transfer.FileCopyObservers
+import com.ai.assistance.operit.core.files.transfer.LocalTransferPaths
+import com.ai.assistance.operit.core.files.transfer.StreamingFileCopy
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
@@ -2418,30 +2425,52 @@ open class StandardFileSystemTools(protected val context: Context) {
         }
     }
 
-    /** Helper method to recursively copy a directory */
-    private fun copyDirectory(sourceDir: File, destDir: File): Boolean {
+    /** 目录内任一项失败都必须失败，避免移动操作在不完整复制后删除来源。 */
+    private fun copyDirectory(sourceDir: File, destDir: File): Boolean = try {
+        StreamingFileCopy.copy(sourceDir, destDir, overwrite = true)
+        true
+    } catch (e: Exception) {
+        AppLogger.e(TAG, "Error copying directory", e)
+        false
+    }
+
+    /** 本机复制直接连接两个文件流，保持二进制内容并提供任务独立的进度。 */
+    private suspend fun copyLocalFile(
+        toolName: String,
+        sourcePath: String,
+        destPath: String,
+        sourceEnvironment: String,
+        destEnvironment: String,
+        recursive: Boolean,
+        observer: FileCopyObserver?,
+    ): ToolResult = withContext(Dispatchers.IO) {
         try {
-            if (!destDir.exists()) {
-                destDir.mkdirs()
-            }
-
-            sourceDir.listFiles()?.forEach { file ->
-                val destFile = File(destDir, file.name)
-                if (file.isDirectory) {
-                    copyDirectory(file, destFile)
-                } else {
-                    file.inputStream().use { input ->
-                        destFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                }
-            }
-
-            return true
+            val executionContext = currentCoroutineContext()
+            val progress = StreamingFileCopy.copy(
+                source = LocalTransferPaths.resolve(context, sourcePath, sourceEnvironment),
+                destination = LocalTransferPaths.resolve(context, destPath, destEnvironment),
+                recursive = recursive,
+                overwrite = observer == null,
+                onProgress = { observer?.onProgress?.invoke(it) },
+                checkCancelled = {
+                    executionContext.ensureActive()
+                    observer?.checkCancelled?.invoke()
+                },
+            )
+            ToolResult(
+                toolName = toolName,
+                success = true,
+                result = FileOperationData(operation = "copy", path = sourcePath, successful = true,
+                    details = "Copied $sourceEnvironment:$sourcePath to $destEnvironment:$destPath (${progress.copiedBytes} bytes)"),
+                error = "",
+            )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Error copying directory", e)
-            return false
+            AppLogger.e(TAG, "Error streaming local file copy", e)
+            ToolResult(toolName = toolName, success = false,
+                result = FileOperationData(operation = "copy", path = sourcePath, successful = false, details = e.message.orEmpty()),
+                error = "Failed to copy $sourcePath: ${e.message}")
         }
     }
 
@@ -2705,7 +2734,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                     if (result.success) {
                         copiedDirs++
                     } else {
-                        AppLogger.w(TAG, "Failed to copy directory: $srcFullPath")
+                        return result
                     }
                 } else {
                     val result = copyFileCrossEnvironment(
@@ -2719,7 +2748,7 @@ open class StandardFileSystemTools(protected val context: Context) {
                     if (result.success) {
                         copiedFiles++
                     } else {
-                        AppLogger.w(TAG, "Failed to copy file: $srcFullPath")
+                        return result
                     }
                 }
             }
@@ -2798,6 +2827,23 @@ open class StandardFileSystemTools(protected val context: Context) {
                 ),
                 error = "Repository environment cannot be used with linux environment"
             )
+        }
+
+        val observer = FileCopyObservers.find(tool.parameters.find { it.name == FileCopyObservers.PARAMETER }?.value)
+        val localEnvironments = listOf(srcEnv, dstEnv).all {
+            it.equals("android", ignoreCase = true) || it.equals("linux", ignoreCase = true)
+        }
+        val usesLinux = isLinuxEnvironment(srcEnv) || isLinuxEnvironment(dstEnv)
+        // 按实际后端选择传输：SSH 保持远程提供方，本机路径使用终端相同的软挂载映射。
+        if (localEnvironments && (!usesLinux || !isSshFileSystemActive()) &&
+            (usesLinux || observer != null)) {
+            if (!isLinuxEnvironment(srcEnv)) {
+                PathValidator.validateAndroidPath(sourcePath, tool.name, "source")?.let { return it }
+            }
+            if (!isLinuxEnvironment(dstEnv)) {
+                PathValidator.validateAndroidPath(destPath, tool.name, "destination")?.let { return it }
+            }
+            return copyLocalFile(tool.name, sourcePath, destPath, srcEnv, dstEnv, recursive, observer)
         }
 
         // 检查是否是跨环境复制
