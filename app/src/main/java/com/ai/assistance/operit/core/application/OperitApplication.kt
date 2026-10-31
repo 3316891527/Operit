@@ -122,6 +122,9 @@ class OperitApplication : Application(), ImageLoaderFactory, WorkConfiguration.P
         appStartupTimeMs = startTime
         instance = this
         AppLogger.bindContext(this)
+        com.ai.assistance.operit.terminal.TerminalManager.setLocalSessionInitializer { context ->
+            com.ai.assistance.operit.core.terminal.commands.NativeTerminalCommands.sessionInitializer(context)
+        }
         com.ai.assistance.operit.terminal.TerminalManager.setUbuntuArchivePreparer { context, destination ->
             com.ai.assistance.operit.data.resources.OfflineResources.prepareUbuntuArchive(context, destination)
         }
