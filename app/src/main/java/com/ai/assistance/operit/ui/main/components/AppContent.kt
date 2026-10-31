@@ -1,8 +1,8 @@
 package com.ai.assistance.operit.ui.main.components
 
 import androidx.compose.foundation.background
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceHubPage
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubPage
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatViewModel
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.MainChatControls
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.MainChatControls
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft

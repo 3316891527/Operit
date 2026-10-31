@@ -7115,8 +7115,8 @@
     <string name="ocr_cannot_decode_bitmap_from_uri">Cannot decode Bitmap from URI</string>
     <string name="ocr_cannot_open_uri_stream">Cannot open input stream for URI</string>
 
-    <!-- DebuggerActionListener -->
-    <string name="debugger_ui_listener_started">Debugger UI operation listener started</string>
+    <!-- ShizukuActionListener -->
+    <string name="shizuku_ui_listener_started">Shizuku UI listener started</string>
 
     <!-- ModelConfigManager -->
     <string name="model_config_default_name">Default Config</string>

@@ -7720,8 +7720,8 @@
     <string name="ocr_cannot_decode_bitmap_from_uri">无法从URI解码Bitmap</string>
     <string name="ocr_cannot_open_uri_stream">无法打开URI的输入流</string>
 
-    <!-- DebuggerActionListener -->
-    <string name="debugger_ui_listener_started">调试器UI操作监听已启动</string>
+    <!-- ShizukuActionListener -->
+    <string name="shizuku_ui_listener_started">Shizuku UI 监听器已启动</string>
 
     <!-- ModelConfigManager -->
     <string name="model_config_default_name">默认配置</string>

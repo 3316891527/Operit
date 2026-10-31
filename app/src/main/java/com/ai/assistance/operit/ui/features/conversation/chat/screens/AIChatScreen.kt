@@ -1,12 +1,12 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.screens
 
-import com.ai.assistance.operit.ui.features.conversation.chat.voicemessages.VoiceMessageSheet
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceMessageSheet
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
-import com.ai.assistance.operit.ui.features.conversation.chat.components.animateScrollToEnd
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.list.animateScrollToEnd
 import android.content.ClipboardManager
 import android.os.Build
 import android.provider.Settings
@@ -44,7 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.core.tools.AIToolHandler
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
 import com.ai.assistance.operit.data.model.AITool
 import com.ai.assistance.operit.data.model.ApiProviderType
 import com.ai.assistance.operit.data.model.CharacterCardChatModelBindingMode
@@ -56,28 +56,27 @@ import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.WaifuPreferences
 import com.ai.assistance.operit.ui.components.ErrorDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.components.*
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.agent.AgentChatInputSection
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.classic.ClassicChatInputSection
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.ChatInputEvents
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.ChatInputHookContext
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.ChatInputHookRegistry
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.ChatInputSubmitActions
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.classic.ClassicChatSettingsBar
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.input.common.PendingQueueMessageItem
-import com.ai.assistance.operit.ui.features.conversation.chat.components.style.bubble.BubbleImageStyleConfig
-import com.ai.assistance.operit.ui.features.conversation.chat.components.AndroidExportDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ExportCompleteDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ExportPlatformDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ExportProgressDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.components.WindowsExportDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.MentionSuggestionPanelStyle
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceHubScreen
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceHubOverlay
-import com.ai.assistance.operit.ui.features.conversation.chat.workspace.WorkspaceHubPage
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.agent.AgentChatInputSection
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic.ClassicChatInputSection
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputEvents
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputHookContext
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputHookRegistry
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputSubmitActions
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic.ClassicChatSettingsBar
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.PendingQueueMessageItem
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.bubble.BubbleImageStyleConfig
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.AndroidExportDialog
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.ExportCompleteDialog
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.ExportPlatformDialog
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.ExportProgressDialog
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.WindowsExportDialog
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.mentions.MentionSuggestionPanelStyle
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubScreen
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubOverlay
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubPage
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import com.ai.assistance.operit.ui.features.conversation.chat.webview.MentionSuggestionPanel
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.*
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.mentions.MentionSuggestionPanel
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.*
 import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.main.LocalTopBarActions
 import com.ai.assistance.operit.ui.main.PendingChatDraftHandler
@@ -104,20 +103,18 @@ import com.ai.assistance.operit.plugins.chatview.ChatViewEvent
 import com.ai.assistance.operit.plugins.chatview.ChatViewHookParams
 import com.ai.assistance.operit.plugins.chatview.ChatViewHookPluginRegistry
 import java.util.UUID
-import com.ai.assistance.operit.ui.features.conversation.chat.components.CharacterSelectorPanel
-import com.ai.assistance.operit.ui.features.conversation.chat.components.CharacterSelectorTarget
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ChatHistorySelectorPanel
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ChatScreenContent
-import com.ai.assistance.operit.ui.features.conversation.chat.components.ChatStyle
-import com.ai.assistance.operit.ui.features.conversation.chat.components.MemoryFolderSelectionDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.components.SharedIncomingContentHandler
-import com.ai.assistance.operit.ui.features.conversation.chat.components.exportAndroidApp
-import com.ai.assistance.operit.ui.features.conversation.chat.components.exportWindowsApp
-import com.ai.assistance.operit.ui.features.conversation.chat.components.extractClipboardPastedText
-import com.ai.assistance.operit.ui.features.conversation.chat.components.extractInsertedText
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatSidebarState
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalOpenMainChatSidebar
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.rememberChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.characters.CharacterSelectorPanel
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.CharacterSelectorTarget
+import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatStyle
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.memory.MemoryFolderSelectionDialog
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.imports.SharedIncomingContentHandler
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.exportAndroidApp
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.exportWindowsApp
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.extractClipboardPastedText
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.extractInsertedText
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalOpenMainChatSidebar
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.rememberChatSidebarState
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -1229,7 +1226,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             )
         }
 
-        com.ai.assistance.operit.ui.features.conversation.chat.motion.NewChatIntro(
+        com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.motion.NewChatIntro(
             requestId = newChatIntroId, currentChatId = currentChatId,
             ready = loadedChatId == currentChatId && currentChatId != null && !isLoading && !isLoadingDisplayWindow && !showChatHistorySelector, empty = chatHistory.isEmpty(),
             hasDraft = introDraft.text.isNotEmpty(), onConsumed = actualViewModel.chatListMotion::consumeIntro,

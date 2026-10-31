@@ -60,16 +60,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.ChatSidebarContent
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.SidebarButtonSurface
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalRunMainChatAction
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatViewModel
-import com.ai.assistance.operit.ui.features.conversation.chat.sidebar.LocalMainChatSidebarState
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.ChatSidebarContent
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.SidebarButtonSurface
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalRunMainChatAction
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatViewModel
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatSidebarState
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
-import com.ai.assistance.operit.core.tools.AIToolHandler
-import com.ai.assistance.operit.core.tools.packTool.PackageManager
+import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
+import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager
 import com.ai.assistance.operit.core.tools.permissions.PermissionCapabilityResolver
-import com.ai.assistance.operit.core.tools.system.AndroidPermissionLevel
+import com.ai.assistance.operit.core.tools.permissions.AndroidPermissionLevel
 
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.androidPermissionPreferences
