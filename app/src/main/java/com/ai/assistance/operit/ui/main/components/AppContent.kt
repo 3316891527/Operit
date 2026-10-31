@@ -1,5 +1,11 @@
 package com.ai.assistance.operit.ui.main.components
 
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
+
 import androidx.compose.foundation.background
 import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubPage
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatViewModel
@@ -29,7 +35,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -79,6 +85,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -248,6 +255,9 @@ fun AppContent(
                     // 单一工具栏 - 使用小型化的设计
                     // 使用 windowInsets 参数让 TopAppBar 自己处理状态栏的 insets
                     TopAppBar(
+                        modifier = Modifier.clip(themeScriptShape("appBar", androidx.compose.ui.graphics.RectangleShape))
+                            .background(themeScriptFill("appBar", appBarContainerColor))
+                            .themeScriptDecoration("appBar", drawFill = false),
                         expandedHeight = 48.dp,
                         windowInsets = WindowInsets.statusBars,
                         title = {
@@ -284,8 +294,9 @@ fun AppContent(
                                     }
                                 }
                             ) {
-                                Icon(
-                                    if (canGoBack) Icons.Default.ArrowBack
+                                ThemeScriptIcon(
+                                    id = if (canGoBack) "appBar.back" else "appBar.menu",
+                                    imageVector = if (canGoBack) Icons.Default.ArrowBack
                                     else if (useTabletLayout)
                                     // 平板模式下使用开关图标表示收起/展开
                                         if (isTabletSidebarExpanded) Icons.Filled.ChevronLeft
@@ -306,8 +317,8 @@ fun AppContent(
                         actions = actions,
                         colors =
                         TopAppBarDefaults.topAppBarColors(
-                            containerColor = appBarContainerColor,
-                            scrolledContainerColor = appBarContainerColor,
+                            containerColor = Color.Transparent,
+                            scrolledContainerColor = Color.Transparent,
                             titleContentColor = appBarContentColor,
                             navigationIconContentColor = appBarContentColor,
                             actionIconContentColor = appBarContentColor

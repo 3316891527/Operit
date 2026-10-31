@@ -1,5 +1,20 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic
 
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
+import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
+
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+
 import androidx.compose.material.icons.filled.Mic
 
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
@@ -129,6 +144,101 @@ fun ClassicChatInputSection(
     onEditPendingQueueMessage: (Long) -> Unit = {},
     onSendPendingQueueMessage: (Long) -> Unit = {}
 ) {
+    val runtime = rememberChatInputRuntime(actualViewModel)
+    ClassicChatInputContent(
+        runtime = runtime,
+        userMessage = userMessage,
+        onUserMessageChange = onUserMessageChange,
+        enableEnterToSend = enableEnterToSend,
+        onSendMessage = onSendMessage,
+        onRecordVoiceMessage = onRecordVoiceMessage,
+        onContinueGeneration = onContinueGeneration,
+        continueGenerationEnabled = continueGenerationEnabled,
+        onQueueMessage = onQueueMessage,
+        onCancelMessage = onCancelMessage,
+        isLoading = isLoading,
+        inputState = inputState,
+        allowTextInputWhileProcessing = allowTextInputWhileProcessing,
+        onAttachmentRequest = onAttachmentRequest,
+        attachments = attachments,
+        onRemoveAttachment = onRemoveAttachment,
+        onInsertAttachment = onInsertAttachment,
+        onAttachScreenContent = onAttachScreenContent,
+        onAttachNotifications = onAttachNotifications,
+        onAttachLocation = onAttachLocation,
+        onAttachMemory = onAttachMemory,
+        onAttachPackage = onAttachPackage,
+        onTakePhoto = onTakePhoto,
+        hasBackgroundImage = hasBackgroundImage,
+        chatInputTransparent = chatInputTransparent,
+        chatInputOpacity = chatInputOpacity,
+        chatInputFloating = chatInputFloating,
+        chatInputLiquidGlass = chatInputLiquidGlass,
+        chatInputWaterGlass = chatInputWaterGlass,
+        modifier = modifier,
+        externalAttachmentPanelState = externalAttachmentPanelState,
+        onAttachmentPanelStateChange = onAttachmentPanelStateChange,
+        showInputProcessingStatus = showInputProcessingStatus,
+        enableTools = enableTools,
+        replyToMessage = replyToMessage,
+        onClearReply = onClearReply,
+        isWorkspaceOpen = isWorkspaceOpen,
+        pendingQueueMessages = pendingQueueMessages,
+        isPendingQueueExpanded = isPendingQueueExpanded,
+        onPendingQueueExpandedChange = onPendingQueueExpandedChange,
+        onDeletePendingQueueMessage = onDeletePendingQueueMessage,
+        onEditPendingQueueMessage = onEditPendingQueueMessage,
+        onSendPendingQueueMessage = onSendPendingQueueMessage,
+    )
+}
+
+/** 正式页面和主题预览共用输入布局，业务动作由 runtime 提供。 */
+@Composable
+internal fun ClassicChatInputContent(
+    runtime: ChatInputRuntime,
+    userMessage: TextFieldValue,
+    onUserMessageChange: (TextFieldValue) -> Unit,
+    enableEnterToSend: Boolean = false,
+    onSendMessage: () -> Unit,
+    onRecordVoiceMessage: (() -> Unit)? = null,
+    onContinueGeneration: () -> Unit,
+    continueGenerationEnabled: Boolean,
+    onQueueMessage: () -> Unit,
+    onCancelMessage: () -> Unit,
+    isLoading: Boolean,
+    inputState: InputProcessingState = InputProcessingState.Idle,
+    allowTextInputWhileProcessing: Boolean = false,
+    onAttachmentRequest: (String) -> Unit = {},
+    attachments: List<AttachmentInfo> = emptyList(),
+    onRemoveAttachment: (String) -> Unit = {},
+    onInsertAttachment: (AttachmentInfo) -> Unit = {},
+    onAttachScreenContent: () -> Unit = {},
+    onAttachNotifications: () -> Unit = {},
+    onAttachLocation: () -> Unit = {},
+    onAttachMemory: () -> Unit = {},
+    onAttachPackage: (String) -> Unit = {},
+    onTakePhoto: (Uri) -> Unit,
+    hasBackgroundImage: Boolean = false,
+    chatInputTransparent: Boolean = false,
+    chatInputOpacity: Float? = null,
+    chatInputFloating: Boolean = false,
+    chatInputLiquidGlass: Boolean = false,
+    chatInputWaterGlass: Boolean = false,
+    modifier: Modifier = Modifier,
+    externalAttachmentPanelState: Boolean? = null,
+    onAttachmentPanelStateChange: ((Boolean) -> Unit)? = null,
+    showInputProcessingStatus: Boolean = true,
+    enableTools: Boolean = true,
+    replyToMessage: ChatMessage? = null, // 回复目标消息
+    onClearReply: (() -> Unit)? = null, // 清除回复状态的回调
+    isWorkspaceOpen: Boolean = false,
+    pendingQueueMessages: List<PendingQueueMessageItem> = emptyList(),
+    isPendingQueueExpanded: Boolean = true,
+    onPendingQueueExpandedChange: (Boolean) -> Unit = {},
+    onDeletePendingQueueMessage: (Long) -> Unit = {},
+    onEditPendingQueueMessage: (Long) -> Unit = {},
+    onSendPendingQueueMessage: (Long) -> Unit = {}
+) {
     val showTokenLimitDialog = remember { mutableStateOf(false) }
     val showFullscreenInput = remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -177,8 +287,8 @@ fun ClassicChatInputSection(
     val toolProgressEvent by ToolProgressBus.progress.collectAsState()
 
     // Token limit calculation
-    val currentWindowSize by actualViewModel.currentWindowSize.collectAsState()
-    val maxWindowSizeInK by actualViewModel.maxWindowSizeInK.collectAsState()
+    val currentWindowSize = runtime.currentWindowSize
+    val maxWindowSizeInK = runtime.maxWindowSizeInK
     val maxTokens = (maxWindowSizeInK * 1024).toLong().coerceAtLeast(0L)
     val userMessageTokens = remember(userMessage.text) { ChatUtils.estimateTokenCount(userMessage.text) }
     val projectedTokens = userMessageTokens.toLong() + currentWindowSize
@@ -198,20 +308,6 @@ fun ClassicChatInputSection(
         canStartVoiceMessage(userMessage.text, attachments.size, isProcessing, replyToMessage != null)
     val sendButtonEnabled = isProcessing || canSendMessage || showVoiceRecordAction
 
-    val voicePermissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            if (isGranted) {
-                actualViewModel.launchFloatingModeIn(
-                    FloatingMode.FULLSCREEN,
-                    colorScheme,
-                    typography
-                )
-            } else {
-                OKToast.warning(context, context.getString(R.string.microphone_permission_denied_toast)).show()
-            }
-        }
 
     // 控制附件面板的展开状态 - 使用外部状态或本地状态
     val (showAttachmentPanel, setShowAttachmentPanel) =
@@ -246,13 +342,13 @@ fun ClassicChatInputSection(
     }
 
     val hasTransparentBackground = chatInputOpacity?.let { it < 1f } ?: chatInputTransparent
-    val surfaceColor = MaterialTheme.colorScheme.surface.copy(
-        alpha = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
-            chatInputTransparent -> 0f
-            hasBackgroundImage -> 0.85f
-            else -> 1f
-        },
-    )
+    // 图片边框与原生填色分别合成，透明填色不应隐藏装饰素材。
+    val inputDecorationOpacity = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
+        chatInputTransparent -> 0f
+        hasBackgroundImage -> 0.85f
+        else -> 1f
+    }
+    val surfaceColor = themeScriptFill("composer", MaterialTheme.colorScheme.surface, inputDecorationOpacity)
     val queueContainerColor = when {
         hasTransparentBackground -> MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
         else -> surfaceColor
@@ -286,28 +382,29 @@ fun ClassicChatInputSection(
                 )
                 .waterGlass(
                     enabled = inputWaterGlassEnabled,
-                    shape = containerShape,
+                    shape = themeScriptShape("composer", containerShape),
                     containerColor = MaterialTheme.colorScheme.surface,
                     backgroundOpacity = chatInputOpacity,
                     region = GlassRegion.INPUT,
                 )
                 .liquidGlass(
                     enabled = inputLiquidGlassEnabled,
-                    shape = containerShape,
+                    shape = themeScriptShape("composer", containerShape),
                     containerColor = MaterialTheme.colorScheme.surface,
                     backgroundOpacity = chatInputOpacity,
                     // 保留输入框原有透镜，避免共享默认值变化移除折射。
                     enableLens = true,
                     region = GlassRegion.INPUT,
                 )
-                .clip(containerShape)
+                .clip(themeScriptShape("composer", containerShape))
                 .background(
                     if (inputLiquidGlassEnabled || inputWaterGlassEnabled) {
                         Color.Transparent
                     } else {
                         surfaceColor
                     }
-                ),
+                )
+                .themeScriptDecoration("composer", inputDecorationOpacity, drawFill = false),
     ) {
         Column {
             // Reply preview section
@@ -529,7 +626,7 @@ fun ClassicChatInputSection(
                                 false
                             }
                         },
-                    textStyle = modernTextStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                    textStyle = themeScriptTextStyle("input", themeScriptTextStyle("composer", modernTextStyle.copy(color = themeScriptContentColor("composer", MaterialTheme.colorScheme.onSurface)))),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     visualTransformation = mentionVisualTransformation,
                     maxLines = 5,
@@ -590,7 +687,8 @@ fun ClassicChatInputSection(
                                 onClick = { showFullscreenInput.value = true },
                                 modifier = Modifier.size(30.dp),
                             ) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = "composer.fullscreen",
                                     imageVector = Icons.Default.Fullscreen,
                                     contentDescription = stringResource(R.string.chat_fullscreen_input),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -628,7 +726,8 @@ fun ClassicChatInputSection(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    ThemeScriptIcon(
+                id = "composer.attachment",
                         imageVector = Icons.Default.Add,
                         contentDescription = context.getString(R.string.add_attachment),
                         tint =
@@ -713,7 +812,14 @@ fun ClassicChatInputSection(
 
                             else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         }
-                    Icon(
+                    ThemeScriptIcon(
+                id = when {
+                showCancelAction -> "composer.stop"
+                showQueueAction -> "composer.queue"
+                canSendMessage -> "composer.send"
+                showVoiceRecordAction -> "composer.microphone"
+                else -> "composer.send"
+            },
                         imageVector =
                         when {
                             showCancelAction -> Icons.Default.Close
@@ -768,12 +874,7 @@ fun ClassicChatInputSection(
                 onAttachNotifications = onAttachNotifications,
                 onAttachLocation = onAttachLocation,
                 onVoiceCall = {
-                    actualViewModel.onFloatingButtonClick(
-                        FloatingMode.FULLSCREEN,
-                        voicePermissionLauncher,
-                        colorScheme,
-                        typography
-                    )
+                    runtime.onVoiceCall()
                 },
                 onAttachMemory = onAttachMemory,
                 onAttachPackage = onAttachPackage,

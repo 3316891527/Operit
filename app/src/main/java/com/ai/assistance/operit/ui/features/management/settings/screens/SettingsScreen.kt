@@ -1,4 +1,9 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens
+
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
@@ -246,12 +251,12 @@ private fun SettingsSection(
                                 region = GlassRegion.SETTINGS_CARDS,
                             ),
                         colors = CardDefaults.cardColors(
-                                containerColor = if (glassEnabled) Color.Transparent else containerColor,
+                                containerColor = themeScriptFill("settingsCard", if (glassEnabled) Color.Transparent else containerColor),
                                 contentColor = MaterialTheme.colorScheme.onSurface
                         )
                 ) {
                         Column(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.themeScriptDecoration("settingsCard", drawFill = false).padding(12.dp),
                                 content = content
                         )
                 }
@@ -270,6 +275,7 @@ private fun CompactSettingsItem(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(6.dp))
                         .clickable { onClick() }
+                        .themeScriptDecoration("listItem")
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
         ) {
