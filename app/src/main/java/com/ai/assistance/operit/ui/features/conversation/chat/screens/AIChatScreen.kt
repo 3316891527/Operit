@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.screens
 
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.chatMessageAppearance
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
@@ -438,153 +439,17 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     
 
 
-    val defaultUserMessageColor = MaterialTheme.colorScheme.primaryContainer
-    val defaultAiMessageColor = MaterialTheme.colorScheme.surface
-    val cursorCustomUserMessageColor = cursorUserBubbleColorValue?.let(::Color)
-    val bubbleCustomUserMessageColor = bubbleUserBubbleColorValue?.let(::Color)
-    val bubbleCustomAiMessageColor = bubbleAiBubbleColorValue?.let(::Color)
-    val bubbleCustomUserTextColor = bubbleUserTextColorValue?.let(::Color)
-    val bubbleCustomAiTextColor = bubbleAiTextColorValue?.let(::Color)
-
-    val userMessageColor =
-        when (userChatStyle) {
-            ChatStyle.CURSOR -> {
-                if (cursorUserBubbleFollowTheme) {
-                    defaultUserMessageColor
-                } else {
-                    cursorCustomUserMessageColor ?: defaultUserMessageColor
-                }
-            }
-
-            ChatStyle.BUBBLE -> bubbleCustomUserMessageColor ?: defaultUserMessageColor
-        }.let { color ->
-            val key = if (userChatStyle == ChatStyle.CURSOR) {
-                ThemeTransparencyPreferences.CURSOR_USER
-            } else {
-                ThemeTransparencyPreferences.BUBBLE_USER
-            }
-            color.copy(alpha = ThemeTransparencyPreferences.opacity(themeSnapshot.values, key, color.alpha))
-        }
-    val aiMessageColor =
-        when (aiChatStyle) {
-            ChatStyle.BUBBLE -> bubbleCustomAiMessageColor ?: defaultAiMessageColor
-            ChatStyle.CURSOR -> defaultAiMessageColor
-        }.let { color ->
-            val key = if (aiChatStyle == ChatStyle.CURSOR) {
-                ThemeTransparencyPreferences.CURSOR_AI
-            } else {
-                ThemeTransparencyPreferences.BUBBLE_AI
-            }
-            color.copy(alpha = ThemeTransparencyPreferences.opacity(themeSnapshot.values, key, color.alpha))
-        }
-    val userTextColor =
-        when {
-            userChatStyle == ChatStyle.CURSOR && cursorUserBubbleFollowTheme ->
-                MaterialTheme.colorScheme.onPrimaryContainer
-            userChatStyle == ChatStyle.BUBBLE && bubbleCustomUserTextColor != null ->
-                bubbleCustomUserTextColor
-            else -> getTextColorForBackground(userMessageColor.copy(alpha = 1f))
-        }
-    val aiTextColor =
-        when {
-            aiChatStyle == ChatStyle.BUBBLE && bubbleCustomAiTextColor != null ->
-                bubbleCustomAiTextColor
-            aiChatStyle == ChatStyle.BUBBLE ->
-                getTextColorForBackground(aiMessageColor.copy(alpha = 1f))
-            else -> MaterialTheme.colorScheme.onSurface
-        }
-    val systemMessageColor = MaterialTheme.colorScheme.surfaceVariant
-    val systemTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val thinkingBackgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-    val thinkingTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val bubbleUserImageStyle =
-        remember(
-            userChatStyle,
-            bubbleUserBubbleLiquidGlass,
-            bubbleUserBubbleWaterGlass,
-            bubbleUserUseImage,
-            bubbleUserImageUri,
-            bubbleUserImageCropLeft,
-            bubbleUserImageCropTop,
-            bubbleUserImageCropRight,
-            bubbleUserImageCropBottom,
-            bubbleUserImageRepeatStart,
-            bubbleUserImageRepeatEnd,
-            bubbleUserImageRepeatYStart,
-            bubbleUserImageRepeatYEnd,
-            bubbleUserImageScale,
-            bubbleImageRenderMode,
-        ) {
-            val imageUri = bubbleUserImageUri
-            if (
-                userChatStyle == ChatStyle.BUBBLE &&
-                    !bubbleUserBubbleLiquidGlass &&
-                    !bubbleUserBubbleWaterGlass &&
-                    bubbleUserUseImage &&
-                    !imageUri.isNullOrBlank()
-            ) {
-                BubbleImageStyleConfig(
-                    imageUri = imageUri,
-                    cropLeftRatio = bubbleUserImageCropLeft,
-                    cropTopRatio = bubbleUserImageCropTop,
-                    cropRightRatio = bubbleUserImageCropRight,
-                    cropBottomRatio = bubbleUserImageCropBottom,
-                    repeatXStartRatio = bubbleUserImageRepeatStart,
-                    repeatXEndRatio = bubbleUserImageRepeatEnd,
-                    repeatYStartRatio = bubbleUserImageRepeatYStart,
-                    repeatYEndRatio = bubbleUserImageRepeatYEnd,
-                    imageScale = bubbleUserImageScale,
-                    renderMode = bubbleImageRenderMode,
-                )
-            } else {
-                null
-            }
-        }
-
-    val bubbleAiImageStyle =
-        remember(
-            aiChatStyle,
-            bubbleAiUseImage,
-            bubbleAiBubbleLiquidGlass,
-            bubbleAiBubbleWaterGlass,
-            bubbleAiImageUri,
-            bubbleAiImageCropLeft,
-            bubbleAiImageCropTop,
-            bubbleAiImageCropRight,
-            bubbleAiImageCropBottom,
-            bubbleAiImageRepeatStart,
-            bubbleAiImageRepeatEnd,
-            bubbleAiImageRepeatYStart,
-            bubbleAiImageRepeatYEnd,
-            bubbleAiImageScale,
-            bubbleImageRenderMode,
-        ) {
-            val imageUri = bubbleAiImageUri
-            if (
-                aiChatStyle == ChatStyle.BUBBLE &&
-                    !bubbleAiBubbleLiquidGlass &&
-                    !bubbleAiBubbleWaterGlass &&
-                    bubbleAiUseImage &&
-                    !imageUri.isNullOrBlank()
-            ) {
-                BubbleImageStyleConfig(
-                    imageUri = imageUri,
-                    cropLeftRatio = bubbleAiImageCropLeft,
-                    cropTopRatio = bubbleAiImageCropTop,
-                    cropRightRatio = bubbleAiImageCropRight,
-                    cropBottomRatio = bubbleAiImageCropBottom,
-                    repeatXStartRatio = bubbleAiImageRepeatStart,
-                    repeatXEndRatio = bubbleAiImageRepeatEnd,
-                    repeatYStartRatio = bubbleAiImageRepeatYStart,
-                    repeatYEndRatio = bubbleAiImageRepeatYEnd,
-                    imageScale = bubbleAiImageScale,
-                    renderMode = bubbleImageRenderMode,
-                )
-            } else {
-                null
-            }
-        }
+    val messageAppearance = chatMessageAppearance()
+    val userMessageColor = messageAppearance.userMessageColor
+    val aiMessageColor = messageAppearance.aiMessageColor
+    val userTextColor = messageAppearance.userTextColor
+    val aiTextColor = messageAppearance.aiTextColor
+    val systemMessageColor = messageAppearance.systemMessageColor
+    val systemTextColor = messageAppearance.systemTextColor
+    val thinkingBackgroundColor = messageAppearance.thinkingBackgroundColor
+    val thinkingTextColor = messageAppearance.thinkingTextColor
+    val bubbleUserImageStyle = messageAppearance.bubbleUserImageStyle
+    val bubbleAiImageStyle = messageAppearance.bubbleAiImageStyle
 
     // 滚动状态
     var autoScrollToBottom by remember { mutableStateOf(true) }

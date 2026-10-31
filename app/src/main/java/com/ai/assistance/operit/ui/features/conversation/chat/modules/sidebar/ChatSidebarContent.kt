@@ -38,6 +38,7 @@ import com.ai.assistance.operit.ui.main.components.NavigationDrawerAppearance
 import com.ai.assistance.operit.ui.main.navigation.NavigationEntrySpec
 import com.ai.assistance.operit.ui.main.screens.GestureStateHolder
 import com.ai.assistance.operit.ui.theme.getTextColorForBackground
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
 import kotlinx.coroutines.flow.flowOf
 
 /** 角色和历史优先，插件使用可折叠的大按钮区域，底部保持固定。 */
@@ -88,11 +89,97 @@ fun ChatSidebarContent(
         is ActivePrompt.CharacterCard -> state.activeCharacterCard?.name.orEmpty()
         is ActivePrompt.CharacterGroup -> state.activeCharacterGroup?.name.orEmpty()
     }
-    val textColor = getTextColorForBackground(appearance.containerColor)
+    val textColor = themeScriptContentColor("navigation", getTextColorForBackground(appearance.containerColor))
     var showCharacterSelector by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
         onDispose { GestureStateHolder.isChatScreenGestureConsumed = false }
     }
+    ChatSidebarBody(
+        modifier = modifier,
+        brandName = brandName,
+        appearance = appearance,
+        pluginEntries = pluginEntries,
+        selectedItem = selectedItem,
+        selectedRouteId = selectedRouteId,
+        permissionBadgeText = permissionBadgeText,
+        characterName = characterName,
+        avatar = avatar,
+        onNavItemClick = onNavItemClick,
+        onNavigationEntryClick = onNavigationEntryClick,
+        onOpenCharacterSettings = onOpenCharacterSettings,
+        onCloseSidebar = onCloseSidebar,
+        bottomContent = bottomContent,
+        onOpenCharacterSelector = { showCharacterSelector = true },
+        historyContent = {
+            FolderChatHistoryPanel(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                onNewChat = { cardName, group, folder -> onCreateChat {
+                    viewModel.showChatPage()
+                    viewModel.createNewChat(cardName, group, folder, inheritGroupFromCurrent = false)
+                } },
+                onSelectChat = { id -> onRunChatAction { viewModel.showChatPage(); viewModel.switchChat(id) } },
+                onDeleteChat = viewModel::deleteChatHistory,
+                onUpdateChatTitle = viewModel::updateChatTitle,
+                onSummarizeChatTitle = viewModel::summarizeChatTitle,
+                onUpdateChatBinding = viewModel::updateChatCharacterBinding,
+                chatHistories = state.displayedChatHistories,
+                currentId = currentChatId,
+                activeStreamingChatIds = streamingIds,
+                lazyListState = null,
+                onBack = null,
+                searchQuery = searchQuery,
+                onSearchQueryChange = viewModel::onChatHistorySearchQueryChange,
+                historyDisplayMode = state.historyDisplayMode,
+                onDisplayModeChange = state.onDisplayModeChange,
+                autoSwitchCharacterCard = state.autoSwitchCharacterCard,
+                onAutoSwitchCharacterCardChange = state.onAutoSwitchCharacterCardChange,
+                autoSwitchChatOnCharacterSelect = state.autoSwitchChatOnCharacterSelect,
+                onAutoSwitchChatOnCharacterSelectChange = state.onAutoSwitchChatOnCharacterSelectChange,
+                onQuickScrollInteractionChange = { GestureStateHolder.isChatScreenGestureConsumed = it },
+                activePrompt = state.activePrompt,
+                embeddedInSidebar = true,
+                deletionProgress = deletionProgress,
+                batchProgress = batchProgress,
+                onRunBatch = viewModel::runChatBatch,
+                contentColor = textColor,
+                selectedContainerColor = appearance.selectedContainerColor,
+                selectedContentColor = getTextColorForBackground(appearance.selectedContainerColor),
+            )
+        },
+    )
+    if (showCharacterSelector) {
+        Dialog(onDismissRequest = { showCharacterSelector = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            CharacterSelectorPanel(
+                isVisible = true,
+                onDismiss = { showCharacterSelector = false },
+                onSelectCharacter = onSelectCharacter,
+                onOpenCharacterSettings = { showCharacterSelector = false; onOpenCharacterSettings() },
+            )
+        }
+    }
+}
+
+/** 侧栏展示共用标题、快捷入口、角色行和插件布局，历史区域由调用方提供。 */
+@Composable
+internal fun ChatSidebarBody(
+    modifier: Modifier = Modifier,
+    brandName: String,
+    appearance: NavigationDrawerAppearance,
+    pluginEntries: List<NavigationEntrySpec>,
+    selectedItem: NavItem?,
+    selectedRouteId: String,
+    permissionBadgeText: String,
+    characterName: String,
+    avatar: String?,
+    onNavItemClick: (NavItem) -> Unit,
+    onNavigationEntryClick: (NavigationEntrySpec) -> Unit,
+    onOpenCharacterSettings: () -> Unit,
+    onOpenCharacterSelector: () -> Unit,
+    onCloseSidebar: () -> Unit,
+    bottomContent: @Composable () -> Unit,
+    historyContent: @Composable ColumnScope.() -> Unit,
+) {
+    val textColor = themeScriptContentColor("navigation", getTextColorForBackground(appearance.containerColor))
     Column(modifier = modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp).height(44.dp),
@@ -123,7 +210,7 @@ fun ChatSidebarContent(
         ) {
             Row(
                 modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
-                    .clickable(role = Role.Button) { showCharacterSelector = true }.padding(horizontal = 4.dp, vertical = 6.dp),
+                    .clickable(role = Role.Button, onClick = onOpenCharacterSelector).padding(horizontal = 4.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (avatar.isNullOrBlank()) {
@@ -147,40 +234,7 @@ fun ChatSidebarContent(
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             val pluginListMaxHeight = maxHeight * 0.3f
             Column(Modifier.fillMaxSize()) {
-                FolderChatHistoryPanel(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    onNewChat = { cardName, group, folder -> onCreateChat {
-                        viewModel.showChatPage()
-                        viewModel.createNewChat(cardName, group, folder, inheritGroupFromCurrent = false)
-                    } },
-                    onSelectChat = { id -> onRunChatAction { viewModel.showChatPage(); viewModel.switchChat(id) } },
-                    onDeleteChat = viewModel::deleteChatHistory,
-                    onUpdateChatTitle = viewModel::updateChatTitle,
-                    onSummarizeChatTitle = viewModel::summarizeChatTitle,
-                    onUpdateChatBinding = viewModel::updateChatCharacterBinding,
-                    chatHistories = state.displayedChatHistories,
-                    currentId = currentChatId,
-                    activeStreamingChatIds = streamingIds,
-                    lazyListState = null,
-                    onBack = null,
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = viewModel::onChatHistorySearchQueryChange,
-                    historyDisplayMode = state.historyDisplayMode,
-                    onDisplayModeChange = state.onDisplayModeChange,
-                    autoSwitchCharacterCard = state.autoSwitchCharacterCard,
-                    onAutoSwitchCharacterCardChange = state.onAutoSwitchCharacterCardChange,
-                    autoSwitchChatOnCharacterSelect = state.autoSwitchChatOnCharacterSelect,
-                    onAutoSwitchChatOnCharacterSelectChange = state.onAutoSwitchChatOnCharacterSelectChange,
-                    onQuickScrollInteractionChange = { GestureStateHolder.isChatScreenGestureConsumed = it },
-                    activePrompt = state.activePrompt,
-                    embeddedInSidebar = true,
-                    deletionProgress = deletionProgress,
-                    batchProgress = batchProgress,
-                    onRunBatch = viewModel::runChatBatch,
-                    contentColor = textColor,
-                    selectedContainerColor = appearance.selectedContainerColor,
-                    selectedContentColor = getTextColorForBackground(appearance.selectedContainerColor),
-                )
+                historyContent()
                 SidebarPluginSection(
                     entries = pluginEntries,
                     selectedRouteId = selectedRouteId,
@@ -192,16 +246,6 @@ fun ChatSidebarContent(
         }
         Spacer(Modifier.height(4.dp))
         bottomContent()
-    }
-    if (showCharacterSelector) {
-        Dialog(onDismissRequest = { showCharacterSelector = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            CharacterSelectorPanel(
-                isVisible = true,
-                onDismiss = { showCharacterSelector = false },
-                onSelectCharacter = onSelectCharacter,
-                onOpenCharacterSettings = { showCharacterSelector = false; onOpenCharacterSettings() },
-            )
-        }
     }
 }
 

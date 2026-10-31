@@ -1384,7 +1384,7 @@ private fun MessageCopyPreviewBottomSheet(
 }
 
 @Composable
-private fun MessageFooterBar(
+internal fun MessageFooterBar(
     message: ChatMessage,
     showMessageTokenStats: Boolean,
     showMessageTimingStats: Boolean,

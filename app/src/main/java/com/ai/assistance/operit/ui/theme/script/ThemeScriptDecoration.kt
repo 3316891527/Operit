@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.theme.script
 
+import android.os.Build
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -12,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -22,7 +23,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Outline
@@ -32,9 +32,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,7 +40,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.ai.assistance.operit.data.model.theme.ThemeAppearanceText
 import com.ai.assistance.operit.data.model.theme.ThemeScriptLayer
 import com.ai.assistance.operit.data.model.theme.forState
 import kotlin.math.ceil
@@ -68,7 +65,7 @@ fun ThemeScriptSurface(
     CompositionLocalProvider(LocalThemeSurfaceStates provides (states + (surfaceId to active))) {
         val style = themeSurface(surfaceId)
         val images = (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.images.orEmpty()
-        val typography = applyThemeTypography(MaterialTheme.typography, style?.textStyle ?: ThemeAppearanceText(), images)
+        val typography = applyThemeTypography(MaterialTheme.typography, surfaceTypography(style), images)
         MaterialTheme(typography = typography) {
             CompositionLocalProvider(
                 LocalContentColor provides themeScriptContentColor(surfaceId, LocalContentColor.current),
@@ -107,7 +104,13 @@ fun Modifier.themeScriptDecoration(
     var focused by remember(surfaceId) { mutableStateOf(false) }
     val active = LocalThemeSurfaceStates.current[surfaceId] ?: themeStateName(pressed, focused, selected, enabled, error)
     val surface = base.forState(active)
-    val recordingLayers = surface.layers.mapIndexed { index, layer -> key(layer.id, index) { rememberGraphicsLayer() } }
+    val recordingLayers = surface.layers.mapIndexed { index, layer ->
+        key(layer.id, index) {
+            val node = remember { if (Build.VERSION.SDK_INT >= 31) ThemeBlurRecording() else null }
+            DisposableEffect(node) { onDispose { if (Build.VERSION.SDK_INT >= 31) node?.release() } }
+            node
+        }
+    }
     val opacity = if (surfaceId in LocalThemeHandledOpacity.current) 1f else surface.opacity
     val shape = if (surface.shape == null) RectangleShape else appearanceShape(surface.shape)
     val pointer = if (surface.layers.any { it.state == "pressed" } || "pressed" in surface.states) Modifier.pointerInput(surfaceId) {
@@ -131,12 +134,8 @@ fun Modifier.themeScriptDecoration(
                         else -> false
                     }
                     if (visible && layer.placement == placement) {
-                        if (layer.blur > 0f) {
-                            val recording = recordingLayers[index]
-                            val radius = layer.blur.dp.toPx()
-                            recording.renderEffect = BlurEffect(radius, radius)
-                            recording.record { clipRect { drawThemeLayer(layer, state.images, backgroundOpacity.coerceIn(0f, 1f)) } }
-                            clipRect { drawLayer(recording) }
+                        if (layer.blur > 0f && Build.VERSION.SDK_INT >= 31) {
+                            clipRect { requireNotNull(recordingLayers[index]).draw(this, layer, state.images, backgroundOpacity.coerceIn(0f, 1f)) }
                         } else clipRect { drawThemeLayer(layer, state.images, backgroundOpacity.coerceIn(0f, 1f)) }
                     }
                 }

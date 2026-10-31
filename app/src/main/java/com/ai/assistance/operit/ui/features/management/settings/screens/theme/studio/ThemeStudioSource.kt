@@ -8,6 +8,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -23,6 +25,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.components.ActionSheetItem
+import com.ai.assistance.operit.ui.components.menu.WorkbenchDropdownMenu
 
 /** 三个文件共享一份工程；解析失败时保留原稿，成功同步后再修改可视属性。 */
 @Composable
@@ -49,9 +53,9 @@ internal fun StudioSource(state: ThemeStudioState, onImport: () -> Unit) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.weight(1f)) {
                 TextButton(onClick = { menu = true }) { Text(state.sourceFile, maxLines = 1); Icon(Icons.Default.ArrowDropDown, null) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                WorkbenchDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     listOf("theme.json", "manifest.json", state.bundle.manifest.entry).forEach { name ->
-                        DropdownMenuItem(text = { Text(name) }, onClick = { state.selectFile(name); menu = false })
+                        ActionSheetItem(label = name, icon = if (name.endsWith(".json")) Icons.Default.Description else Icons.Default.Code, selected = state.sourceFile == name, onClick = { state.selectFile(name); menu = false })
                     }
                 }
             }
