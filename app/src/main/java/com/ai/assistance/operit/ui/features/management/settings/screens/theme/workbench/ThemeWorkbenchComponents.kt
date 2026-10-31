@@ -1,5 +1,12 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens.theme.workbench
 
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
+
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -52,11 +59,11 @@ internal fun ThemeWorkbenchCard(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth().padding(bottom = 14.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = themeScriptShape("settingsCard", RoundedCornerShape(18.dp)),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
     ) {
-        Column(Modifier.padding(bottom = 6.dp)) {
+        Column(Modifier.themeScriptDecoration("settingsCard").padding(bottom = 6.dp)) {
             Row(
                 Modifier.fillMaxWidth()
                     .then(

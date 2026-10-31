@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.screens
 
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -132,7 +134,7 @@ fun ChatScreenHeader(
             modifier =
                     modifier
                             .fillMaxWidth()
-                            .background(Color.Transparent)
+                            .background(Color.Transparent).themeScriptDecoration("appBar")
                             .padding(horizontal = 16.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)

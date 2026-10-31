@@ -22,3 +22,4 @@
 - 严禁让发布版或 CDN 直接索引项目目录位置，这会严重限制日后结构改动，且降低稳健性
 
 建议参考[文档撰写指南](before_docing.md)
+角色主题脚本的接口与制作流程见 [JavaScript 外观 API](feature-protocol/theme_script_api.md)。

@@ -1,5 +1,18 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic
 
+import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
+
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+
 import androidx.compose.material.icons.filled.Mic
 
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
@@ -246,13 +259,13 @@ fun ClassicChatInputSection(
     }
 
     val hasTransparentBackground = chatInputOpacity?.let { it < 1f } ?: chatInputTransparent
-    val surfaceColor = MaterialTheme.colorScheme.surface.copy(
-        alpha = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
-            chatInputTransparent -> 0f
-            hasBackgroundImage -> 0.85f
-            else -> 1f
-        },
-    )
+    // 图片边框与原生填色分别合成，透明填色不应隐藏装饰素材。
+    val inputDecorationOpacity = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
+        chatInputTransparent -> 0f
+        hasBackgroundImage -> 0.85f
+        else -> 1f
+    }
+    val surfaceColor = themeScriptFill("composer", MaterialTheme.colorScheme.surface, inputDecorationOpacity)
     val queueContainerColor = when {
         hasTransparentBackground -> MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
         else -> surfaceColor
@@ -286,28 +299,29 @@ fun ClassicChatInputSection(
                 )
                 .waterGlass(
                     enabled = inputWaterGlassEnabled,
-                    shape = containerShape,
+                    shape = themeScriptShape("composer", containerShape),
                     containerColor = MaterialTheme.colorScheme.surface,
                     backgroundOpacity = chatInputOpacity,
                     region = GlassRegion.INPUT,
                 )
                 .liquidGlass(
                     enabled = inputLiquidGlassEnabled,
-                    shape = containerShape,
+                    shape = themeScriptShape("composer", containerShape),
                     containerColor = MaterialTheme.colorScheme.surface,
                     backgroundOpacity = chatInputOpacity,
                     // 保留输入框原有透镜，避免共享默认值变化移除折射。
                     enableLens = true,
                     region = GlassRegion.INPUT,
                 )
-                .clip(containerShape)
+                .clip(themeScriptShape("composer", containerShape))
                 .background(
                     if (inputLiquidGlassEnabled || inputWaterGlassEnabled) {
                         Color.Transparent
                     } else {
                         surfaceColor
                     }
-                ),
+                )
+                .themeScriptDecoration("composer", inputDecorationOpacity, drawFill = false),
     ) {
         Column {
             // Reply preview section
@@ -529,7 +543,7 @@ fun ClassicChatInputSection(
                                 false
                             }
                         },
-                    textStyle = modernTextStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                    textStyle = themeScriptTextStyle("input", themeScriptTextStyle("composer", modernTextStyle.copy(color = themeScriptContentColor("composer", MaterialTheme.colorScheme.onSurface)))),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     visualTransformation = mentionVisualTransformation,
                     maxLines = 5,
@@ -590,7 +604,8 @@ fun ClassicChatInputSection(
                                 onClick = { showFullscreenInput.value = true },
                                 modifier = Modifier.size(30.dp),
                             ) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = "composer.fullscreen",
                                     imageVector = Icons.Default.Fullscreen,
                                     contentDescription = stringResource(R.string.chat_fullscreen_input),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -628,7 +643,8 @@ fun ClassicChatInputSection(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
+                    ThemeScriptIcon(
+                id = "composer.attachment",
                         imageVector = Icons.Default.Add,
                         contentDescription = context.getString(R.string.add_attachment),
                         tint =
@@ -713,7 +729,14 @@ fun ClassicChatInputSection(
 
                             else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         }
-                    Icon(
+                    ThemeScriptIcon(
+                id = when {
+                showCancelAction -> "composer.stop"
+                showQueueAction -> "composer.queue"
+                canSendMessage -> "composer.send"
+                showVoiceRecordAction -> "composer.microphone"
+                else -> "composer.send"
+            },
                         imageVector =
                         when {
                             showCancelAction -> Icons.Default.Close

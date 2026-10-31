@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering
 
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -82,7 +84,7 @@ fun CompactToolDisplay(
         leadingIcon = getToolIcon(displayToolName),
         titleColor = MaterialTheme.colorScheme.primary,
         summaryColor = textColor.copy(alpha = 0.7f),
-        modifier = modifier,
+        modifier = modifier.themeScriptDecoration("toolCard"),
         onClick =
             if (hasParams && enableDialog) {
                 { showDetailDialog = true }
@@ -135,7 +137,7 @@ fun DetailedToolDisplay(
         leadingIcon = getToolIcon(displayToolName),
         titleColor = MaterialTheme.colorScheme.primary,
         summaryColor = textColor.copy(alpha = 0.7f),
-        modifier = modifier,
+        modifier = modifier.themeScriptDecoration("toolCard"),
         onClick =
             if (hasParams && enableDialog) {
                 { showDetailDialog = true }

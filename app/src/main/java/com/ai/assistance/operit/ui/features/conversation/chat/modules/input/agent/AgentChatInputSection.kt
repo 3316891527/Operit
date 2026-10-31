@@ -1,5 +1,15 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.input.agent
 
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
+
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
+
 import androidx.compose.material.icons.filled.Mic
 
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
@@ -48,12 +58,12 @@ import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.TipsAndUpdates
-import androidx.compose.material3.AlertDialog
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -61,7 +71,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -525,14 +535,14 @@ fun AgentChatInputSection(
 
     val hasTransparentBackground = chatInputOpacity?.let { it < 1f } ?: chatInputTransparent
     val inputBaseColor = if (isDarkTheme) darkModeInputColor else MaterialTheme.colorScheme.surface
-    val inputContainerColor = inputBaseColor.copy(
-        alpha = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
-            chatInputTransparent -> 0f
-            isDarkTheme && hasBackgroundImage -> 0.82f
-            hasBackgroundImage -> 0.85f
-            else -> 1f
-        },
-    )
+    // 图片边框与原生填色分别合成，透明填色不应隐藏装饰素材。
+    val inputDecorationOpacity = chatInputOpacity?.coerceIn(0f, 1f) ?: when {
+        chatInputTransparent -> 0f
+        isDarkTheme && hasBackgroundImage -> 0.82f
+        hasBackgroundImage -> 0.85f
+        else -> 1f
+    }
+    val inputContainerColor = themeScriptFill("composer", inputBaseColor, inputDecorationOpacity)
     val popupContainerColor =
         when {
             isDarkTheme && hasTransparentBackground -> darkModeInputColor
@@ -794,7 +804,7 @@ fun AgentChatInputSection(
             val inputContainerEffectModifier =
                 if (isDarkTheme) {
                     Modifier.topEdgeHighlight(
-                        shape = inputCardShape,
+                        shape = themeScriptShape("composer", inputCardShape),
                         lineColor =
                             MaterialTheme.colorScheme.onSurface.copy(
                                 alpha = if (chatInputFloating) 0.03f else 0.05f,
@@ -807,7 +817,7 @@ fun AgentChatInputSection(
                     )
                 } else {
                     Modifier.outerDiffuseShadow(
-                        shape = inputCardShape,
+                        shape = themeScriptShape("composer", inputCardShape),
                         spread = if (chatInputFloating) 3.dp else 6.dp,
                     )
                 }
@@ -822,21 +832,21 @@ fun AgentChatInputSection(
                             .then(if (chatInputOpacity == 0f) Modifier else inputContainerEffectModifier)
                             .waterGlass(
                                 enabled = inputWaterGlassEnabled,
-                                shape = inputCardShape,
+                                shape = themeScriptShape("composer", inputCardShape),
                                 containerColor = inputLiquidGlassTint,
                                 backgroundOpacity = chatInputOpacity,
                                 region = GlassRegion.INPUT,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
-                                shape = inputCardShape,
+                                shape = themeScriptShape("composer", inputCardShape),
                                 containerColor = inputLiquidGlassTint,
                                 backgroundOpacity = chatInputOpacity,
                                 // 保留输入框原有透镜，避免共享默认值变化移除折射。
                                 enableLens = true,
                                 region = GlassRegion.INPUT,
                             )
-                            .clip(inputCardShape)
+                            .clip(themeScriptShape("composer", inputCardShape))
                             .background(
                                 if (inputLiquidGlassEnabled || inputWaterGlassEnabled) {
                                     Color.Transparent
@@ -849,6 +859,7 @@ fun AgentChatInputSection(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .themeScriptDecoration("composer", inputDecorationOpacity, drawFill = false)
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
                     OutlinedTextField(
@@ -865,8 +876,8 @@ fun AgentChatInputSection(
                                 style = inputTextStyle,
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
-                        textStyle = inputTextStyle,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).themeScriptDecoration("input").onPreviewKeyEvent(onEnterToSendKeyEvent),
+                        textStyle = themeScriptTextStyle("input", themeScriptTextStyle("composer", inputTextStyle)),
                         maxLines = 6,
                         minLines = 1,
                         singleLine = false,
@@ -892,7 +903,8 @@ fun AgentChatInputSection(
                         shape = RoundedCornerShape(14.dp),
                         trailingIcon = {
                             IconButton(onClick = { showFullscreenInput.value = true }) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = "composer.fullscreen",
                                     imageVector = Icons.Default.Fullscreen,
                                     contentDescription = stringResource(R.string.chat_fullscreen_input),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -943,7 +955,8 @@ fun AgentChatInputSection(
                                         modifier = Modifier.weight(1f, fill = false).widthIn(max = 160.dp),
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
+                                    ThemeScriptIcon(
+                id = "composer.expand",
                                         imageVector =
                                             if (showModelSelectorPopup.value) {
                                                 Icons.Default.KeyboardArrowUp
@@ -972,7 +985,8 @@ fun AgentChatInputSection(
                                     ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
+                            ThemeScriptIcon(
+                id = "composer.settings",
                                 imageVector = Icons.Outlined.Tune,
                                 contentDescription = context.getString(R.string.settings_options),
                                 tint =
@@ -1000,7 +1014,8 @@ fun AgentChatInputSection(
                                     ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
+                            ThemeScriptIcon(
+                id = "composer.attachment",
                                 imageVector = Icons.Default.Add,
                                 contentDescription = context.getString(R.string.add_attachment),
                                 tint =
@@ -1085,7 +1100,14 @@ fun AgentChatInputSection(
                                         ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = when {
+                showCancelAction -> "composer.stop"
+                showQueueAction -> "composer.queue"
+                canSendMessage -> "composer.send"
+                showVoiceRecordAction -> "composer.microphone"
+                else -> "composer.send"
+            },
                                     imageVector =
                                         when {
                                             showCancelAction -> Icons.Default.Close
@@ -1122,19 +1144,19 @@ fun AgentChatInputSection(
                             .then(if (chatInputOpacity == 0f) Modifier else inputContainerEffectModifier)
                             .waterGlass(
                                 enabled = inputWaterGlassEnabled,
-                                shape = inputCardShape,
+                                shape = themeScriptShape("composer", inputCardShape),
                                 containerColor = inputLiquidGlassTint,
                                 region = GlassRegion.INPUT,
                             )
                             .liquidGlass(
                                 enabled = inputLiquidGlassEnabled,
-                                shape = inputCardShape,
+                                shape = themeScriptShape("composer", inputCardShape),
                                 containerColor = inputLiquidGlassTint,
                                 // 保留输入框原有透镜，避免共享默认值变化移除折射。
                                 enableLens = true,
                                 region = GlassRegion.INPUT,
                             )
-                            .clip(inputCardShape)
+                            .clip(themeScriptShape("composer", inputCardShape))
                             .background(
                                 if (inputLiquidGlassEnabled || inputWaterGlassEnabled) {
                                     Color.Transparent
@@ -1147,6 +1169,7 @@ fun AgentChatInputSection(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
+                                .themeScriptDecoration("composer", inputDecorationOpacity, drawFill = false)
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         OutlinedTextField(
@@ -1163,8 +1186,8 @@ fun AgentChatInputSection(
                                     style = inputTextStyle,
                                 )
                             },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).onPreviewKeyEvent(onEnterToSendKeyEvent),
-                            textStyle = inputTextStyle,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp).themeScriptDecoration("input").onPreviewKeyEvent(onEnterToSendKeyEvent),
+                            textStyle = themeScriptTextStyle("input", themeScriptTextStyle("composer", inputTextStyle)),
                             maxLines = 6,
                             minLines = 1,
                             singleLine = false,
@@ -1190,7 +1213,8 @@ fun AgentChatInputSection(
                             shape = RoundedCornerShape(14.dp),
                             trailingIcon = {
                                 IconButton(onClick = { showFullscreenInput.value = true }) {
-                                    Icon(
+                                    ThemeScriptIcon(
+                id = "composer.fullscreen",
                                         imageVector = Icons.Default.Fullscreen,
                                         contentDescription = stringResource(R.string.chat_fullscreen_input),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1241,7 +1265,8 @@ fun AgentChatInputSection(
                                             modifier = Modifier.weight(1f, fill = false).widthIn(max = 160.dp),
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(
+                                        ThemeScriptIcon(
+                id = "composer.expand",
                                             imageVector =
                                                 if (showModelSelectorPopup.value) {
                                                     Icons.Default.KeyboardArrowUp
@@ -1270,7 +1295,8 @@ fun AgentChatInputSection(
                                             ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = "composer.settings",
                                     imageVector = Icons.Outlined.Tune,
                                     contentDescription = context.getString(R.string.settings_options),
                                     tint =
@@ -1298,7 +1324,8 @@ fun AgentChatInputSection(
                                             ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = "composer.attachment",
                                     imageVector = Icons.Default.Add,
                                     contentDescription = context.getString(R.string.add_attachment),
                                     tint =
@@ -1383,7 +1410,14 @@ fun AgentChatInputSection(
                                             ),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Icon(
+                                    ThemeScriptIcon(
+                id = when {
+                showCancelAction -> "composer.stop"
+                showQueueAction -> "composer.queue"
+                canSendMessage -> "composer.send"
+                showVoiceRecordAction -> "composer.microphone"
+                else -> "composer.send"
+            },
                                         imageVector =
                                             when {
                                                 showCancelAction -> Icons.Default.Close

@@ -1,0 +1,154 @@
+# 角色主题的原生外观接口
+
+`.oktheme` 同时携带原有主题参数、声明式外观、JavaScript 和绘图素材。主题属于角色卡或角色组，沿用草稿、预览、保存、放弃和重置；Android Compose 绘制原生界面，独立 QuickJS 实例计算外观数据。
+
+本轮参照二代主题模板扩展完整配色、输入按钮素材、消息与头像和常用原生组件。没有提供任意页面重排、业务控件创建或场景树布局；素材替换保留原控件的点击、输入和无障碍行为。
+
+## 制作流程
+
+1. 在主题设置选择角色卡或角色组，打开“基础 → 自定义主题 → 制作主题”
+2. 选择森林或信纸模板，或者直接在“可视化制作”中选择部件、颜色、形状、尺寸、排版和背景素材；图标页可替换输入框及顶栏图标，配色页可编辑亮暗两套色板
+3. 在“素材”页填写标识，再导入 PNG、JPEG、WebP 或静态 SVG；相同标识可以替换图片。删除仍被引用的素材会产生校验错误
+4. 展开“预览当前编辑内容”，切换亮暗模式，检查消息、输入框、头像、导航项、按钮和设置卡片；窗口内继续修改会更新预览
+5. 点击“校验并应用到草稿”，返回主题页保存。放弃、重置或移除定制仍走原有草稿会话；关闭制作窗口会丢弃尚未应用的窗口修改
+6. 使用完整主题文件功能导出 `.oktheme`。导入后选择目标角色卡确认应用；角色组仍在自身主题页编辑，不建立额外的全局活动模板
+
+模板会替换窗口中的外观、源码与素材，尚未应用时不写角色偏好。可视化编辑保存在 `script.appearance`，默认源码同步返回它：
+
+```js
+module.exports = {
+  apiVersion: 1,
+  render(context) {
+    return context.appearance;
+  }
+};
+```
+
+需要条件样式时在“脚本”页编辑 JS 或导入源码。自定义 `render` 应显式合并需要保留的 `context.appearance`；可视化编辑不覆写自定义源码。TypeScript 由制作环境编译为 CommonJS JS，Android 不执行 TypeScript。
+
+类型声明位于仓库根目录 `examples/theme-script/oktheme.d.ts`，合并基础外观的示例为 `examples/theme-script/minimal.ts`。在已安装 TypeScript 的制作环境中运行：
+
+```sh
+tsc --strict --target ES2020 --module commonjs --outDir dist examples/theme-script/minimal.ts
+```
+
+导入生成的 `dist/minimal.js`；分享的完整主题仍使用 `.oktheme`。`schema` 和 `apiVersion` 仅供机器校验，不是主题或产品的版本名称。
+
+## 已接入的原生区域
+
+- `background`：主界面与草稿预览的装饰，位于媒体背景上方、业务界面下方
+- `userMessage`、`assistantMessage`：双方 Cursor/Bubble 消息正文、宽度比例、文字样式和原生容器形状；包括现有宽窄布局和图片气泡路径。已有消息分片仍逐片绘制
+- `userAvatar`、`assistantAvatar`：消息头像尺寸、外形和装饰；不修改头像身份数据
+- `composer`：Classic/Agent 输入容器，支持形状、填色、描边、尺寸、留白、图层和字体
+- `input`：Agent 文本输入区域和制作窗口的颜色输入；其他业务表单不自动接入该部件
+- `appBar`：主顶栏和聊天标题栏；不同入口保留各自的原生结构
+- `navigation`、`navigationItem`：手机抽屉、平板侧边栏的内容及导航项，导航项传入选中状态
+- `button`、`iconButton`：已接入适配器的常用 Material3 按钮、描边按钮、文字按钮、色调按钮及图标按钮；业务事件和交互源继续交给原生按钮
+- `settingsCard`、`listItem`：设置首页的卡片和列表行、主题工作台卡片
+- `dialog`：已接入适配器的常用 AlertDialog，支持容器形状、颜色、阴影、装饰和文字样式；自定义内容弹窗仍保留其自身内容布局
+- `sheet`、`menu`：消息复制底部面板与消息菜单；不代表所有业务面板和菜单都已接入
+- `status`、`toolCard`：消息状态行与工具调用条
+
+通用形状、颜色、尺寸和装饰由原生消费入口决定；明确设有颜色或自定义字体的业务内容仍保留其自身优先级。局部字体、文字色和形状以接入的实际内容区域为界。未接入的页面仍可继承全局 Material 色板和排版，不宣称任意布局能力。
+
+## 外观数据
+
+`Appearance` 包含数字 `apiVersion: 1` 和以下可选字段：
+
+- `palette.light/dark`：36 个 Material 颜色 token。包括 primary/secondary/tertiary 的前景与容器、background/surface、surfaceVariant、inverse、error、outline、scrim、surfaceTint，以及 surfaceBright/surfaceDim 和五档 surfaceContainer；完整 token 名称以类型声明为准
+- `typography`：全局字体类别 `default/sans-serif/serif/monospace/cursive`，字号比例 `scale`、行高倍数 `lineHeight` 和字间距 `letterSpacing`
+- `surfaces`：上述 19 个部件的局部外观
+- `icons`：原生按钮图像绑定，只替换图像
+
+每个部件可以配置：
+
+- `shape`：`rounded/cut/circle` 和 `radius`；圆角/切角 `0..128 dp`
+- `fillColor/contentColor/strokeColor/strokeWidth`：底色、前景色、描边；宽度 `0..16 dp`
+- `elevation/minHeight`：阴影 `0..24 dp` 和最小高度 `0..256 dp`
+- `padding`：`start/top/end/bottom` 各 `0..48 dp`，与原有内容内距叠加；背景必须保持零内距
+- `textStyle`：与全局排版同结构的局部排版；字号比例 `0.5..2`，行高倍数 `0.8..2`，字间距 `-2..8 sp`
+- `size`：只用于头像，`16..96 dp`
+- `messageWidth`：只用于消息，为现有最大宽度的 `0.3..1` 倍
+- `layers`：绘图、纹理和九宫格图层
+
+未配置的字段使用原有主题参数和组件默认值。现有自定义文件字体、玻璃、媒体背景、图片气泡与布局仍可组合使用；具体消息已有文件字体设置时保留它的行为。
+
+## 按钮素材
+
+`icons` 的键包括 `composer.settings/attachment/microphone/send/stop/fullscreen/queue/expand`、`appBar.back/menu/history/floating` 和 `navigation.item`，共 13 个绑定。
+
+每个值要求 `asset` 引用已声明的素材标识，可设 `size: 8..64 dp`、`opacity: 0..1` 和 `useContentTint`。设为 `true` 时使用原按钮当前前景色着色，适合单色图标；默认保留素材本色。一个通用 `navigation.item` 绑定会统一替换所有导航项图像。
+
+附件、录音、发送和停止接入两种输入风格；输入设置与展开菜单位于 Agent。队列、展开、全屏等绑定只在原本存在该操作的入口出现，不凭空增加按钮。
+
+## 图层和透明度
+
+图层支持 `rect/ellipse/line/image/nineSlice`，可设 `id`、归一化 `bounds`、`opacity`、`placement` 和 `state`。
+
+`bounds.x/y/width/height` 默认 `0/0/1/1`，宽高必须大于零且不越界。`placement` 为 `background/foreground`，默认背景：原生材质底色、背景图层、原生正文、前景图层与描边依次绘制。前景层不要遮挡正文。
+
+`state` 为 `always/pressed/focused/selected/disabled/error`。按下和聚焦由原生指针与焦点更新；导航项传入选中状态，按钮传入启用状态，制作窗口颜色输入传入错误状态。其余入口只显示它们实际提供的状态，不把这些值解释为任意业务条件，也不逐帧执行 JS。
+
+绘图层至少设置 `color` 或 `strokeColor`，描边 `0..16 dp`、圆角 `0..128 dp`。`line` 连接区域左上与右下，最细为一个物理像素。图片层要求 `asset`，不能配置绘图颜色；`fit` 为 `fill/fit/crop`。九宫格仅接受位图，`slices.start/top/end/bottom` 是原图像素，切片必须留出非空中心；四角保留，边和中心按目标尺寸拉伸。
+
+所有装饰都乘以区域原有背景透明度；背景使用 `background_image_opacity`。区域透明度为零时装饰不可见，正文保持原透明度行为。Cursor 助手背景默认透明，需要提高原有助手背景不透明度才能看到装饰。原生材质已经绘制的底色不在装饰层重复绘制。 `fillColor` 的 alpha 只影响容器填色，图层仍使用区域原有透明度；制作图片边框时，可以将底色设为 `#00000000`，并保持对应区域不透明度大于零。
+
+六位颜色为 `#RRGGBB`，八位颜色为 Android `#AARRGGBB`。
+
+## 像素主题制作
+
+像素风消息框和输入框可以用位图九宫格保留边角与细边，再结合部件留白、宽度、透明度和图层。像素按钮通过图标绑定替换，风景背景沿用媒体背景或背景图层，像素字体通过原有文件字体设置导入。
+
+这些能力承载主题的外观，页面结构仍由当前 Android 原生布局决定。制作需要原始图片、字体文件及九宫格切片参数；当前没有独立的最近邻采样设置，不能保证任意位图缩放后都保持逐像素锐利，实际效果需要在目标密度下确认。
+
+## 脚本上下文与执行限制
+
+同步 `render(context)` 返回可序列化外观对象。`context` 及内部对象在模块加载前冻结，包含：
+
+- `apiVersion`、实际生效的 `mode: light/dark`
+- `appearance`：制作窗口或导入包的基础外观
+- `colors`：将基础外观的当前模式色板应用到原生主题后生成的完整 36 个颜色 token
+- `settings`：当前角色/草稿的 strings、booleans、ints、floats；排除 `_uri`、`_path` 资源位置和 `custom_chat_title`
+
+聊天内容、角色资料和工具配置不进入上下文。不提供 `require`、DOM、网络、定时器、文件读写、工具调用或 Java 桥；加载源码前移除 `NativeInterface`。每次求值创建独立实例。
+
+Promise、循环引用、未知字段、非法数值和不支持的机器版本产生诊断。脚本、参数和模式变化触发求值；草稿预览使用短暂防抖。错误记录日志并显示提示，不改写已保存参数。
+
+容量与执行预算：
+
+- JS 64 KiB，外观结果 128 KiB，独立脚本清单 64 KiB，JSON 深度最多 16 层
+- QuickJS 16 MiB 内存、256 KiB 原生栈，模块加载和 render 分别最多 100 ms
+- 最多 48 个绘图素材，单个最多 4 MiB，源码与素材总计最多 16 MiB
+- 位图总预算 4,194,304 像素，所有部件合计最多 128 层
+- 单 SVG 最多 256 KiB、2048 节点、24 层；允许静态形状、路径、分组、渐变与裁切，禁用脚本、事件、动画、外部资源、样式表、DOCTYPE 和 ENTITY
+
+## 文件与分享码
+
+新导出的完整主题根清单固定 `format: "oktheme"`、`schema: 1`，继续包含 `name/author/config/layout`；可选 `script` 保存如下对象：
+
+```json
+{
+  "apiVersion": 1,
+  "entry": "assets/theme-script.js",
+  "assets": { "send": "assets/theme-script-1.svg" },
+  "appearance": {
+    "apiVersion": 1,
+    "icons": { "composer.send": { "asset": "send", "useContentTint": true } },
+    "surfaces": { "composer": { "shape": { "type": "rounded", "radius": 24 } } }
+  }
+}
+```
+
+资源路径只允许 `assets/` 下的单层安全文件名，禁止路径跳转；源码入口必须是 JS。导出重新分配实际路径，脚本和外观以素材标识引用图像，不分享设备私有位置。完整清单最多 192 KiB；参数分享码解压上限仍为 64 KiB。
+
+参数码使用 `format: "oktheme-params"`、`schema: 1`，链接为 `oktheme://theme/import?schema=1&encoding=zlib-base64url&data=...`；仍接受裸编码正文。参数码不携带脚本和素材，也不删除接收角色现有外观。
+
+已发布的 `operit-theme-v1`、`operit-theme-params-v1` 和 `operit://theme/import?v=1` 按各自明确格式读取，不再输出这些名称。新包不使用带品牌的版本名称。旧应用不认识新格式时会报告不支持。
+
+完整包按完整替换语义应用，没有 `script` 就移除目标原有自定义外观。导入预览只使用缓存；确认后写私有资源束，再将引用保存到目标角色。取消和失败清理暂存，复制角色及应用到全部角色继续使用现有引用规则，最后一个持久引用移除后清理共享资源。
+
+## 验证入口
+
+JVM 用例覆盖格式与机器 schema、旧文件/链接兼容、扩展外观边界、资源归档与引用清理，由 `Android Tests` 工作流执行。`ThemeScriptAndroidTest` 另含模板、原生求值、冻结上下文、执行预算和 SVG 用例，需要 Android 条件；当前仓库工作流不编译或执行仪器测试。
+
+完整操作与可填写结果见 [主题回归记录](../../TODO/feat/theme-script-api/03-verification.md)。实现和静态核对不等于 Android 界面验证通过。

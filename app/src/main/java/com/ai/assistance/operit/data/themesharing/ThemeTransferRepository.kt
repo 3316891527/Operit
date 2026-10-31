@@ -3,6 +3,7 @@ package com.ai.assistance.operit.data.themesharing
 import android.content.Context
 import android.net.Uri
 import android.webkit.MimeTypeMap
+import com.ai.assistance.operit.data.resources.theme.ThemeScriptBundleStore
 import com.ai.assistance.operit.data.model.ActivePrompt
 import com.ai.assistance.operit.data.model.CharacterCard
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
@@ -114,8 +115,14 @@ internal class ThemeTransferRepository(private val context: Context) {
                     }
                 values = values.withString(key, relative)
             }
+            val script = source.values.string(ThemePreferenceValues.SCRIPT_URI_KEY)?.let { reference ->
+                val bundle = ThemeScriptBundleStore.read(ThemeScriptBundleStore.fileForReference(context.filesDir, reference))
+                val (manifest, files) = ThemeScriptBundleStore.exportFiles(bundle, staging)
+                assets.putAll(files)
+                manifest
+            }
             val document =
-                ThemeTransferSchema.create(name, author, values, source.layout, full = true)
+                ThemeTransferSchema.create(name, author, values, source.layout, full = true, script = script)
             archive.outputStream().use { ThemeArchive.write(it, document, assets) }
             if (archive.length() > ThemeArchive.MAX_ARCHIVE_BYTES)
                 throw ThemeTransferException(ThemeTransferError.TOO_LARGE)
@@ -206,6 +213,12 @@ internal class ThemeTransferRepository(private val context: Context) {
                                         else Uri.fromFile(target).toString(),
                                     )
                             }
+                    }
+                    theme.document.script?.let { manifest ->
+                        val bundle = ThemeScriptBundleStore.fromFiles(manifest, theme.assets)
+                        val file = ThemeScriptBundleStore.create(context.filesDir, bundle)
+                        copied += file
+                        values = values.withString(ThemePreferenceValues.SCRIPT_URI_KEY, Uri.fromFile(file).toString())
                     }
                     val document = theme.document.copy(values = values)
                     // 在同一笔 DataStore 写入中再次检查配置，并同时保存全局聊天布局。

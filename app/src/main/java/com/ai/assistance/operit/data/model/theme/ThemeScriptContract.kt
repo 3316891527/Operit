@@ -1,0 +1,154 @@
+package com.ai.assistance.operit.data.model.theme
+
+import kotlinx.serialization.json.Json
+
+/** 主题脚本只输出外观描述；现有主题参数和原生内容不交给脚本持有。 */
+object ThemeScriptContract {
+    const val API_VERSION = 1
+    const val MAX_SOURCE_BYTES = 65536
+    const val MAX_RESULT_BYTES = 131072
+    const val MAX_BUNDLE_BYTES = 16 * 1024 * 1024
+    const val MAX_ASSET_BYTES = 4 * 1024 * 1024
+    const val MAX_MANIFEST_BYTES = 65536
+    val surfaceIds = setOf(
+        "background", "userMessage", "assistantMessage", "composer", "userAvatar", "assistantAvatar",
+        "appBar", "navigation", "navigationItem", "button", "iconButton", "input",
+        "settingsCard", "dialog", "sheet", "menu", "listItem", "status", "toolCard",
+    )
+    val iconIds = setOf(
+        "composer.settings", "composer.attachment", "composer.microphone", "composer.send",
+        "composer.stop", "composer.fullscreen", "composer.queue", "composer.expand",
+        "appBar.back", "appBar.menu", "appBar.history", "appBar.floating", "navigation.item",
+    )
+    val colorTokens = setOf(
+        "primary", "onPrimary", "primaryContainer", "onPrimaryContainer", "inversePrimary",
+        "secondary", "onSecondary", "secondaryContainer", "onSecondaryContainer",
+        "tertiary", "onTertiary", "tertiaryContainer", "onTertiaryContainer",
+        "background", "onBackground", "surface", "onSurface", "surfaceVariant", "onSurfaceVariant",
+        "surfaceTint", "inverseSurface", "inverseOnSurface", "error", "onError", "errorContainer",
+        "onErrorContainer", "outline", "outlineVariant", "scrim", "surfaceBright", "surfaceDim",
+        "surfaceContainerLowest", "surfaceContainerLow", "surfaceContainer", "surfaceContainerHigh", "surfaceContainerHighest",
+    )
+    val json = Json { ignoreUnknownKeys = false; encodeDefaults = true }
+    private val assetName = Regex("[A-Za-z][A-Za-z0-9_-]{0,63}")
+    private val assetPath = Regex("assets/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.[A-Za-z0-9]{1,10}")
+    private val color = Regex("#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?")
+
+    fun validate(manifest: ThemeScriptManifest) {
+        require(manifest.apiVersion == API_VERSION) { "Unsupported theme script API: ${manifest.apiVersion}" }
+        require(isAssetPath(manifest.entry) && manifest.entry.endsWith(".js")) { "Theme script entry must be assets/*.js" }
+        require(json.encodeToString(ThemeScriptManifest.serializer(), manifest).toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST_BYTES) { "Theme script manifest is too large" }
+        require(manifest.assets.size <= 48) { "Theme script declares too many assets" }
+        require(manifest.assets.keys.all { assetName.matches(it) }) { "Invalid theme script asset name" }
+        require(manifest.assets.values.all(::isAssetPath)) { "Invalid theme script asset path" }
+        require(manifest.entry !in manifest.assets.values) { "Script entry cannot be a drawing asset" }
+        validate(manifest.appearance, manifest)
+    }
+
+    fun isAssetPath(path: String): Boolean =
+        path.length <= 160 && !path.contains("..") && assetPath.matches(path)
+
+    fun references(manifest: ThemeScriptManifest): Set<String> {
+        validate(manifest)
+        return manifest.assets.values.toSet() + manifest.entry
+    }
+
+    fun decodeResult(text: String, manifest: ThemeScriptManifest): ThemeScriptAppearance {
+        require(text.toByteArray(Charsets.UTF_8).size <= MAX_RESULT_BYTES) { "Theme script result exceeds size limit" }
+        checkJsonDepth(text)
+        val result = json.decodeFromString<ThemeScriptAppearance>(text)
+        validate(result, manifest)
+        return result
+    }
+
+    fun decodeManifest(text: String): ThemeScriptManifest {
+        require(text.toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST_BYTES) { "Theme script manifest is too large" }
+        checkJsonDepth(text)
+        return json.decodeFromString<ThemeScriptManifest>(text).also(::validate)
+    }
+
+    private fun checkJsonDepth(text: String) {
+        var depth = 0
+        var quoted = false
+        var escaped = false
+        text.forEach { character ->
+            if (quoted) {
+                when {
+                    escaped -> escaped = false
+                    character == '\\' -> escaped = true
+                    character == '"' -> quoted = false
+                }
+            } else when (character) {
+                '"' -> quoted = true
+                '{', '[' -> { depth++; require(depth <= 16) { "Theme JSON is nested too deeply" } }
+                '}', ']' -> { depth--; require(depth >= 0) { "Invalid theme JSON nesting" } }
+            }
+        }
+    }
+
+    fun validate(result: ThemeScriptAppearance, manifest: ThemeScriptManifest) {
+        require(manifest.apiVersion == API_VERSION) { "Unsupported theme manifest" }
+        require(result.apiVersion == API_VERSION) { "Unsupported theme appearance API" }
+        require(result.surfaces.keys.all { it in surfaceIds }) { "Unknown theme script surface" }
+        require(result.icons.keys.all { it in iconIds }) { "Unknown theme icon" }
+        result.icons.values.forEach { icon ->
+            require(icon.asset in manifest.assets.keys) { "Icon references an undeclared asset" }
+            require(icon.size.isFinite() && icon.size in 8f..64f) { "Icon size must be 8..64 dp" }
+            require(icon.opacity.isFinite() && icon.opacity in 0f..1f) { "Invalid icon opacity" }
+        }
+        listOf(result.palette.light, result.palette.dark).forEach { palette ->
+            require(palette.keys.all { it in colorTokens } && palette.values.all(color::matches)) { "Invalid theme palette" }
+        }
+        validateText(result.typography)
+        require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
+        result.surfaces.forEach { (id, surface) ->
+            validateText(surface.textStyle)
+            surface.shape?.let {
+                require(it.type in setOf("rounded", "cut", "circle") && it.radius.isFinite() && it.radius in 0f..128f) { "Invalid surface shape" }
+            }
+            require(listOfNotNull(surface.fillColor, surface.contentColor, surface.strokeColor).all(color::matches)) { "Invalid surface color" }
+            require(surface.strokeWidth.isFinite() && surface.strokeWidth in 0f..16f) { "Invalid surface stroke" }
+            surface.elevation?.let { require(it.isFinite() && it in 0f..24f) { "Invalid surface elevation" } }
+            require(surface.minHeight.isFinite() && surface.minHeight in 0f..256f) { "Invalid surface height" }
+            surface.size?.let { require(id in setOf("userAvatar", "assistantAvatar") && it.isFinite() && it in 16f..96f) { "Invalid avatar size" } }
+            require(surface.messageWidth.isFinite() && surface.messageWidth in 0.3f..1f) { "Invalid message width" }
+            require(id in setOf("userMessage", "assistantMessage") || surface.messageWidth == 1f) { "Width fraction belongs to messages" }
+            val inset = surface.padding
+            require(listOf(inset.start, inset.top, inset.end, inset.bottom).all { it.isFinite() && it in 0f..48f }) {
+                "Theme script padding is outside 0..48 dp"
+            }
+            require(id != "background" || inset == ThemeScriptInsets()) { "Background cannot add content padding" }
+            surface.layers.forEach { layer ->
+                require(layer.type in setOf("rect", "ellipse", "line", "image", "nineSlice")) { "Unknown theme layer type" }
+                require(layer.placement in setOf("background", "foreground")) { "Unknown layer placement" }
+                require(layer.state in setOf("always", "pressed", "focused", "selected", "disabled", "error")) { "Unknown layer state" }
+                require(layer.fit in setOf("fill", "fit", "crop")) { "Unknown image fit" }
+                require(layer.opacity.isFinite() && layer.opacity in 0f..1f) { "Invalid layer opacity" }
+                require(layer.radius.isFinite() && layer.radius in 0f..128f) { "Invalid layer radius" }
+                require(layer.strokeWidth.isFinite() && layer.strokeWidth in 0f..16f) { "Invalid layer stroke" }
+                val b = layer.bounds
+                require(listOf(b.x, b.y, b.width, b.height).all { it.isFinite() && it in 0f..1f }) { "Layer bounds must be normalized" }
+                require(b.width > 0f && b.height > 0f && b.x + b.width <= 1.001f && b.y + b.height <= 1.001f) {
+                    "Layer extends outside its surface"
+                }
+                require(layer.color == null || color.matches(layer.color)) { "Invalid layer color" }
+                require(layer.strokeColor == null || color.matches(layer.strokeColor)) { "Invalid stroke color" }
+                require(layer.id == null || assetName.matches(layer.id)) { "Invalid layer identifier" }
+                require(listOf(layer.slices.start, layer.slices.top, layer.slices.end, layer.slices.bottom).all { it.isFinite() && it in 0f..2048f }) { "Invalid nine-slice insets" }
+                if (layer.type in setOf("image", "nineSlice")) {
+                    require(layer.asset in manifest.assets.keys) { "Layer references an undeclared asset" }
+                    require(layer.color == null && layer.strokeColor == null) { "Image layers cannot declare paint colors" }
+                } else {
+                    require(layer.asset == null) { "Only image layers can declare an asset" }
+                    require(layer.color != null || layer.strokeColor != null) { "Paint layer has no color" }
+                }
+            }
+        }
+    }
+    private fun validateText(text: ThemeAppearanceText) {
+        require(text.family == null || text.family in setOf("default", "sans-serif", "serif", "monospace", "cursive")) { "Unsupported font family" }
+        require(text.scale.isFinite() && text.scale in 0.5f..2f) { "Invalid text scale" }
+        require(text.lineHeight.isFinite() && text.lineHeight in 0.8f..2f) { "Invalid line height" }
+        require(text.letterSpacing.isFinite() && text.letterSpacing in -2f..8f) { "Invalid letter spacing" }
+    }
+}

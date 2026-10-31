@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.screens
 
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -64,7 +68,8 @@ fun ChatHeader(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                        Icon(
+                                        ThemeScriptIcon(
+                id = "appBar.history",
                                                 imageVector = Icons.Default.History,
                                                 contentDescription =
                                                         if (showChatHistorySelector) stringResource(R.string.hide_history) else stringResource(R.string.show_history),
@@ -98,7 +103,8 @@ fun ChatHeader(
                                         onClick = onToggleChatHistorySelector,
                                         modifier = Modifier.matchParentSize()
                                 ) {
-                                        Icon(
+                                        ThemeScriptIcon(
+                id = "appBar.history",
                                                 imageVector = Icons.Default.History,
                                                 contentDescription =
                                                         if (showChatHistorySelector) stringResource(R.string.hide_history) else stringResource(R.string.show_history),
@@ -130,7 +136,8 @@ fun ChatHeader(
                                 onClick = onLaunchFloatingWindow,
                                 modifier = Modifier.matchParentSize()
                         ) {
-                                Icon(
+                                ThemeScriptIcon(
+                id = "appBar.floating",
                                         imageVector = Icons.Default.PictureInPicture,
                                         contentDescription =
                                                 if (isFloatingMode) stringResource(R.string.close_floating_window) else stringResource(R.string.open_floating_window),

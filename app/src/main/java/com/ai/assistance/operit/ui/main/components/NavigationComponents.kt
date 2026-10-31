@@ -1,4 +1,10 @@
 package com.ai.assistance.operit.ui.main.components
+
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
+import com.ai.assistance.operit.ui.theme.script.themeScriptShape
+import com.ai.assistance.operit.ui.theme.script.themeScriptFill
+import com.ai.assistance.operit.ui.theme.script.themeScriptContentColor
+import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 import com.ai.assistance.operit.data.preferences.glass.GlassRegion
 
 import androidx.compose.foundation.background
@@ -45,7 +51,7 @@ fun CompactNavigationDrawerItem(
         appearance: NavigationDrawerAppearance,
         onClick: () -> Unit
 ) {
-    val itemShape = MaterialTheme.shapes.small
+    val itemShape = themeScriptShape("navigationItem", MaterialTheme.shapes.small)
     val glassBaseColor = appearance.buttonContainerColor
     val selectedGlassOverlayColor =
             if (selected) {
@@ -79,15 +85,15 @@ fun CompactNavigationDrawerItem(
             shape = itemShape
     ) {
         Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxSize().themeScriptDecoration("navigationItem", selected = selected).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
+            ThemeScriptIcon(
+                    id = "navigation.item",
                     imageVector = icon,
                     contentDescription = null,
                     tint =
-                            if (selected) appearance.selectedContentColor
-                            else appearance.itemColor,
+                            themeScriptContentColor("navigationItem", if (selected) appearance.selectedContentColor else appearance.itemColor),
                     modifier = Modifier.size(20.dp)
             )
 
@@ -98,8 +104,7 @@ fun CompactNavigationDrawerItem(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                     color =
-                            if (selected) appearance.selectedContentColor
-                            else appearance.itemColor
+                            themeScriptContentColor("navigationItem", if (selected) appearance.selectedContentColor else appearance.itemColor)
             )
         }
     }

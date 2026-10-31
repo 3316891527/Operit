@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar
 
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
+
 import androidx.compose.foundation.background
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
