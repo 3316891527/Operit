@@ -22,3 +22,5 @@
 预览边界：复用正式消息与页脚、聊天顶栏、普通页面原生 TopAppBar、经典/智能体输入和经典设置条；侧栏使用共用布局与真实历史行，工具条与设置卡片复用现有组件。选择器接收触控和无障碍点击，底层不获取键盘焦点。数据仍为制作样例，系统栏、真实内容和运行状态未实测，不声明逐像素一致。
 
 状态委托导入：`ThemeScriptDecoration.kt` 显式保留 `androidx.compose.runtime.setValue`。按下与焦点的四处 `var ... by remember` 通过编译器隐式调用此运算符，不能根据普通标识符的文本引用次数清理。对同批主题修订文件核对状态委托所需的 `getValue/setValue` 导入；本修订只恢复导入并说明用途，完整 51 项回归范围保持不变，仓库编译和 JVM 入口另行派发。
+
+模糊边界回归：`ThemeStudioContractTest.samplingAlignmentBlurAndTintRespectTheirBoundaries` 的合法样例使用编辑器和校验器共用的 `MAX_BLUR_DP`；上限加 0.01、旧的 32 dp 与 NaN 均作为拒绝用例。采样、对齐、图标着色检查及原测试方法保留，现有 8 dp 固定边界回归和完整 51 项操作范围继续有效。本修订只同步测试数据与说明，未运行本地构建或测试，仓库工作流另行派发。
