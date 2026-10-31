@@ -1,5 +1,7 @@
 # 缺陷、崩溃与性能修复
 
+- [硅基流动音频格式、请求重试与临时错误显示](voice-input-audio-retry/index.md)
+
 修复既有行为、兼容性、崩溃和资源开销问题。
 
 [返回 TODO 总览](../README.md)

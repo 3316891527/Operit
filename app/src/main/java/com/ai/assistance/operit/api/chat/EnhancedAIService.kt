@@ -1217,7 +1217,8 @@ class EnhancedAIService private constructor(context: Context) {
                     var usageRequestHistory = requestHistory
                     val responseStream = voiceAudioRequest.send(
                         history = requestHistory,
-                        request = { voiceRequestHistory ->
+                        onNonFatalError = onNonFatalError,
+                        request = { voiceRequestHistory, attemptNotice ->
                             usageRequestHistory = voiceRequestHistory
                             serviceForFunction.sendMessage(
                                     context = this@EnhancedAIService.context,
@@ -1232,7 +1233,7 @@ class EnhancedAIService private constructor(context: Context) {
                                         currentRequestCachedInputTokenCount = cachedInput.coerceAtLeast(0)
                                         _perRequestTokenCounts.value = Pair(input, output)
                                     },
-                                     onNonFatalError = onNonFatalError,
+                                     onNonFatalError = attemptNotice,
                             )
                         },
                         onHistoryResolved = { textHistory ->
