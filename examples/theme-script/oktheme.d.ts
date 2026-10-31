@@ -5,7 +5,7 @@ export type SurfaceId = "background" | "userMessage" | "assistantMessage" | "com
     "listItem" | "status" | "toolCard";
 export type IconId = "composer.settings" | "composer.attachment" | "composer.microphone" |
     "composer.send" | "composer.stop" | "composer.fullscreen" | "composer.queue" |
-    "composer.expand" | "appBar.back" | "appBar.menu" | "appBar.history" |
+    "composer.expand" | "appBar.back" | "appBar.menu" | "appBar.workspace" |
     "appBar.floating" | "navigation.item";
 /** 六位是 RGB，八位是 ARGB。 */
 export type Color = `#${string}`;

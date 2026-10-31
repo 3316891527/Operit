@@ -175,3 +175,5 @@ Promise、循环引用、未知字段、非法数值和不支持的机器版本�
 JVM 用例覆盖格式与机器 schema、旧文件/链接兼容、模式/状态继承、字体声明与图像类型约束、部件页签能力、目录边界、资源归档与引用清理，由 `Android Tests` 工作流执行。`ThemeScriptAndroidTest` 另含模板、原生求值、冻结上下文、执行预算和 SVG 用例，需要 Android 条件；当前仓库工作流不编译或执行仪器测试。
 
 完整操作与可填写结果见 [主题回归记录](../../TODO/feat/theme-script-api/03-verification.md)。实现和静态核对不等于 Android 界面验证通过。
+
+当前聊天控件行与工作室共用展示入口，图标槽包含 `appBar.menu`、`appBar.floating` 和 `appBar.workspace`。重构前的 `appBar.history` 已从此开发协议移除；开发工程请更新对应绑定。

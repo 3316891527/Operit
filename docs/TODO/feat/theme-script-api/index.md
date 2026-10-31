@@ -24,6 +24,7 @@ status: implemented_pending_ci
 10. [工作室配色、触控选项与聊天预览](09-studio-usability.md)
 11. [预览工具栏与统一菜单](10-preview-toolbar-and-menus.md)
 12. [实测反馈与真实预览](11-studio-feedback.md)
+13. [属性修改崩溃与预览界面清理](12-crash-and-preview-cleanup.md)
 
 [DONE] 共享模型、素材存储、角色偏好、去品牌的 `.oktheme` 归档、运行限制、原生绘制、可视化编辑与模板、完整配色、原生组件适配、原生主题工作室、目录资源工程、资源字体与像素采样、JS/TS 示例及接口文档已实现。未增加 data 一级子包。基础为 #92–#98 合入后的 dev。
 

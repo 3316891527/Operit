@@ -115,10 +115,9 @@ private fun StudioChatPreview(state: ThemeStudioState) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun StudioPreviewAppBar(state: ThemeStudioState) {
-    val values = LocalThemePreferenceSnapshot.current.values
     val id = state.target.id.takeIf { it.startsWith("appBar.") } ?: "appBar"
     StudioPick(state, id, Modifier.fillMaxWidth()) {
-        if (id in setOf("appBar.back", "appBar.menu")) {
+        if (id == "appBar.back") {
             val contentColor = themeScriptContentColor("appBar", MaterialTheme.colorScheme.onBackground)
             TopAppBar(
                 modifier = Modifier.clip(themeScriptShape("appBar", androidx.compose.ui.graphics.RectangleShape))
@@ -129,16 +128,18 @@ internal fun StudioPreviewAppBar(state: ThemeStudioState) {
                 title = { Text(state.targetName, style = themeScriptTextStyle("appBar", MaterialTheme.typography.titleSmall), color = contentColor) },
                 navigationIcon = {
                     ThemeScriptIconButton(onClick = {}) {
-                        ThemeScriptIcon(id, if (id == "appBar.back") Icons.Default.ArrowBack else Icons.Default.Menu, null, tint = contentColor)
+                        ThemeScriptIcon(id, Icons.Default.ArrowBack, null, tint = contentColor)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, scrolledContainerColor = Color.Transparent),
             )
-        } else Row(Modifier.fillMaxWidth().themeScriptDecoration("appBar").padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            com.ai.assistance.operit.ui.features.conversation.chat.screens.ChatHeader(
-                showChatHistorySelector = false, onToggleChatHistorySelector = {},
-                activeCharacterName = state.targetName, activeCharacterAvatarUri = values.string("custom_ai_avatar_uri"),
-                onCharacterClick = {}, modifier = Modifier.weight(1f),
+        } else {
+            com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.MainChatControlsContent(
+                title = stringResource(R.string.new_chat), runningTaskCount = 0,
+                isFloatingMode = false, isWorkspacePreparing = false,
+                workspacePage = com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubPage.CHAT,
+                hasWorkspace = false, onOpenSidebar = {}, onLaunchFloatingWindow = {}, onOpenWorkspace = {},
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             )
         }
     }

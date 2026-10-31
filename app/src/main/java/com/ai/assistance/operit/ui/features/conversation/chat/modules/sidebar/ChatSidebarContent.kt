@@ -58,6 +58,7 @@ fun ChatSidebarContent(
     onRunChatAction: (() -> Unit) -> Unit,
     onCreateChat: (() -> Unit) -> Unit,
     onSelectCharacter: (CharacterSelectorTarget) -> Unit,
+    showNavigationShortcuts: Boolean = true,
     bottomContent: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -110,6 +111,7 @@ fun ChatSidebarContent(
         onCloseSidebar = onCloseSidebar,
         bottomContent = bottomContent,
         onOpenCharacterSelector = { showCharacterSelector = true },
+        showNavigationShortcuts = showNavigationShortcuts,
         historyContent = {
             FolderChatHistoryPanel(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -177,6 +179,7 @@ internal fun ChatSidebarBody(
     onOpenCharacterSelector: () -> Unit,
     onCloseSidebar: () -> Unit,
     bottomContent: @Composable () -> Unit,
+    showNavigationShortcuts: Boolean = true,
     historyContent: @Composable ColumnScope.() -> Unit,
 ) {
     val textColor = themeScriptContentColor("navigation", getTextColorForBackground(appearance.containerColor))
@@ -193,16 +196,18 @@ internal fun ChatSidebarBody(
                     tint = appearance.itemColor, modifier = Modifier.size(18.dp))
             }
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SidebarNavigationItem(Modifier.weight(1f), Icons.Default.AdminPanelSettings,
-                    stringResource(R.string.sidebar_permission_short), appearance,
-                    selected = selectedItem == NavItem.ShizukuCommands, detail = permissionBadgeText,
-                    onClick = { onNavItemClick(NavItem.ShizukuCommands) })
-                SidebarNavigationItem(Modifier.weight(1f), NavItem.Workflow.icon,
-                    stringResource(NavItem.Workflow.titleResId), appearance,
-                    selected = selectedItem == NavItem.Workflow, detail = stringResource(R.string.sidebar_workflow_description),
-                    onClick = { onNavItemClick(NavItem.Workflow) })
+        if (showNavigationShortcuts) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SidebarNavigationItem(Modifier.weight(1f), Icons.Default.AdminPanelSettings,
+                        stringResource(R.string.sidebar_permission_short), appearance,
+                        selected = selectedItem == NavItem.ShizukuCommands, detail = permissionBadgeText,
+                        onClick = { onNavItemClick(NavItem.ShizukuCommands) })
+                    SidebarNavigationItem(Modifier.weight(1f), NavItem.Workflow.icon,
+                        stringResource(NavItem.Workflow.titleResId), appearance,
+                        selected = selectedItem == NavItem.Workflow, detail = stringResource(R.string.sidebar_workflow_description),
+                        onClick = { onNavItemClick(NavItem.Workflow) })
+            }
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(44.dp),

@@ -63,7 +63,7 @@ internal data class StudioTarget(
         "composer.expand" -> Icons.Default.ExpandMore
         "appBar.back" -> Icons.AutoMirrored.Filled.ArrowBack
         "appBar.menu" -> Icons.Default.Menu
-        "appBar.history" -> Icons.Default.History
+        "appBar.workspace" -> Icons.Default.Code
         "appBar.floating" -> Icons.Default.PictureInPicture
         "navigation.item" -> Icons.Default.Chat
         else -> error("Unknown studio target: $id")

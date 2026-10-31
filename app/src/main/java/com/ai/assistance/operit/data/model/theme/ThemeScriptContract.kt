@@ -19,7 +19,7 @@ object ThemeScriptContract {
     val iconIds = setOf(
         "composer.settings", "composer.attachment", "composer.microphone", "composer.send",
         "composer.stop", "composer.fullscreen", "composer.queue", "composer.expand",
-        "appBar.back", "appBar.menu", "appBar.history", "appBar.floating", "navigation.item",
+        "appBar.back", "appBar.menu", "appBar.workspace", "appBar.floating", "navigation.item",
     )
     val colorTokens = setOf(
         "primary", "onPrimary", "primaryContainer", "onPrimaryContainer", "inversePrimary",
