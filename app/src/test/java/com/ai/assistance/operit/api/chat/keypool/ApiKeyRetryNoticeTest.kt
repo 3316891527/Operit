@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.keypool
 
 import com.ai.assistance.operit.api.chat.error.FirstTokenTimeoutException
+import com.ai.assistance.operit.api.chat.error.RequestFailure
 import android.content.Context
 import com.ai.assistance.operit.R
 import org.mockito.kotlin.whenever
@@ -245,7 +246,7 @@ class ApiKeyRetryNoticeTest {
             assertEquals(6, session.triedSummary().attempted)
             assertEquals(List(5) { errorText }, notices)
             assertEquals(finalMessage, failure?.message)
-            assertEquals(errorText, failure?.cause?.message)
+            assertHttpFailurePreserved(failure, expectedStatus = 409, expectedMessage = errorText)
         }
     }
     @Test
@@ -269,8 +270,20 @@ class ApiKeyRetryNoticeTest {
             }
         }.exceptionOrNull()
         assertEquals(finalMessage, failure?.message)
-        assertEquals(errorText, failure?.cause?.message)
+        assertHttpFailurePreserved(failure, expectedStatus = 503, expectedMessage = errorText)
     }
+    private fun assertHttpFailurePreserved(
+        failure: Throwable?,
+        expectedStatus: Int,
+        expectedMessage: String,
+    ) {
+        // 协程恢复堆栈时可能增加异常包装层，按类型定位原始 HTTP 原因，不固定 cause 层数。
+        val httpCause = RequestFailure.causeChain(requireNotNull(failure))
+            .first { it is HttpStatusCodeException }
+        assertEquals(expectedStatus, (httpCause as HttpStatusCodeException).statusCode)
+        assertEquals(expectedMessage, httpCause.message)
+    }
+
     private fun httpFailure(code: Int, message: String): Exception =
         object : IOException(message), HttpStatusCodeException {
             override val statusCode: Int = code
