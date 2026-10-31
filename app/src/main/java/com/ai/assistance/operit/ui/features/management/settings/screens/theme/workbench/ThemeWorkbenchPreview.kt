@@ -169,7 +169,7 @@ internal fun ThemeWorkbenchPreview(
 }
 
 @Composable
-private fun ThemePreviewBackground(values: ThemePreferenceValues) {
+internal fun ThemePreviewBackground(values: ThemePreferenceValues) {
     if (!values.requiredBoolean("use_background_image")) return
     val uri = values.string("background_image_uri") ?: return
     val opacity = values.requiredFloat("background_image_opacity").coerceIn(0f, 1f)

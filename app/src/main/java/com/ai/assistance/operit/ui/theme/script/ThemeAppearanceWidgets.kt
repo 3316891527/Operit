@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog as NativeAlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -35,26 +36,30 @@ fun ThemeScriptButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val style = themeSurface("button")
-    val resolvedColors = if (style == null) colors else colors.copy(
-        containerColor = themeScriptFill("button", colors.containerColor),
-        contentColor = themeScriptContentColor("button", colors.contentColor),
-    )
-    NativeButton(
-        onClick = onClick, modifier = modifier, enabled = enabled,
-        shape = themeScriptShape("button", shape), colors = resolvedColors,
-        elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
-        border = themeScriptBorder("button", border),
-        contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
-        interactionSource = interactionSource,
-    ) {
-        if (style == null) content() else {
-            ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
-                Row(
-                    Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                    content = content,
-                )
+    ThemeInteractionScope("button", interactionSource, enabled) { activeSource ->
+        val style = themeSurface("button")
+        val resolvedColors = if (style == null) colors else colors.copy(
+            containerColor = themeScriptFill("button", colors.containerColor),
+            contentColor = themeScriptContentColor("button", colors.contentColor),
+            disabledContainerColor = if ("disabled" in style.states) themeScriptFill("button", colors.disabledContainerColor) else colors.disabledContainerColor,
+            disabledContentColor = if ("disabled" in style.states) themeScriptContentColor("button", colors.disabledContentColor) else colors.disabledContentColor,
+        )
+        NativeButton(
+            onClick = onClick, modifier = modifier.alpha(themeSurface("button")?.opacity ?: 1f), enabled = enabled,
+            shape = themeScriptShape("button", shape), colors = resolvedColors,
+            elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
+            border = themeScriptBorder("button", border),
+            contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
+            interactionSource = activeSource,
+        ) {
+            if (style == null) content() else {
+                ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
+                    Row(
+                        Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                        content = content,
+                    )
+                }
             }
         }
     }
@@ -73,26 +78,30 @@ fun ThemeScriptFilledTonalButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val style = themeSurface("button")
-    val resolvedColors = if (style == null) colors else colors.copy(
-        containerColor = themeScriptFill("button", colors.containerColor),
-        contentColor = themeScriptContentColor("button", colors.contentColor),
-    )
-    NativeFilledTonalButton(
-        onClick = onClick, modifier = modifier, enabled = enabled,
-        shape = themeScriptShape("button", shape), colors = resolvedColors,
-        elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
-        border = themeScriptBorder("button", border),
-        contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
-        interactionSource = interactionSource,
-    ) {
-        if (style == null) content() else {
-            ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
-                Row(
-                    Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                    content = content,
-                )
+    ThemeInteractionScope("button", interactionSource, enabled) { activeSource ->
+        val style = themeSurface("button")
+        val resolvedColors = if (style == null) colors else colors.copy(
+            containerColor = themeScriptFill("button", colors.containerColor),
+            contentColor = themeScriptContentColor("button", colors.contentColor),
+            disabledContainerColor = if ("disabled" in style.states) themeScriptFill("button", colors.disabledContainerColor) else colors.disabledContainerColor,
+            disabledContentColor = if ("disabled" in style.states) themeScriptContentColor("button", colors.disabledContentColor) else colors.disabledContentColor,
+        )
+        NativeFilledTonalButton(
+            onClick = onClick, modifier = modifier.alpha(themeSurface("button")?.opacity ?: 1f), enabled = enabled,
+            shape = themeScriptShape("button", shape), colors = resolvedColors,
+            elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
+            border = themeScriptBorder("button", border),
+            contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
+            interactionSource = activeSource,
+        ) {
+            if (style == null) content() else {
+                ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
+                    Row(
+                        Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                        content = content,
+                    )
+                }
             }
         }
     }
@@ -111,26 +120,30 @@ fun ThemeScriptOutlinedButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val style = themeSurface("button")
-    val resolvedColors = if (style == null) colors else colors.copy(
-        containerColor = themeScriptFill("button", colors.containerColor),
-        contentColor = themeScriptContentColor("button", colors.contentColor),
-    )
-    NativeOutlinedButton(
-        onClick = onClick, modifier = modifier, enabled = enabled,
-        shape = themeScriptShape("button", shape), colors = resolvedColors,
-        elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
-        border = themeScriptBorder("button", border),
-        contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
-        interactionSource = interactionSource,
-    ) {
-        if (style == null) content() else {
-            ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
-                Row(
-                    Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                    content = content,
-                )
+    ThemeInteractionScope("button", interactionSource, enabled) { activeSource ->
+        val style = themeSurface("button")
+        val resolvedColors = if (style == null) colors else colors.copy(
+            containerColor = themeScriptFill("button", colors.containerColor),
+            contentColor = themeScriptContentColor("button", colors.contentColor),
+            disabledContainerColor = if ("disabled" in style.states) themeScriptFill("button", colors.disabledContainerColor) else colors.disabledContainerColor,
+            disabledContentColor = if ("disabled" in style.states) themeScriptContentColor("button", colors.disabledContentColor) else colors.disabledContentColor,
+        )
+        NativeOutlinedButton(
+            onClick = onClick, modifier = modifier.alpha(themeSurface("button")?.opacity ?: 1f), enabled = enabled,
+            shape = themeScriptShape("button", shape), colors = resolvedColors,
+            elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
+            border = themeScriptBorder("button", border),
+            contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
+            interactionSource = activeSource,
+        ) {
+            if (style == null) content() else {
+                ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
+                    Row(
+                        Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                        content = content,
+                    )
+                }
             }
         }
     }
@@ -149,26 +162,30 @@ fun ThemeScriptTextButton(
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val style = themeSurface("button")
-    val resolvedColors = if (style == null) colors else colors.copy(
-        containerColor = themeScriptFill("button", colors.containerColor),
-        contentColor = themeScriptContentColor("button", colors.contentColor),
-    )
-    NativeTextButton(
-        onClick = onClick, modifier = modifier, enabled = enabled,
-        shape = themeScriptShape("button", shape), colors = resolvedColors,
-        elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
-        border = themeScriptBorder("button", border),
-        contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
-        interactionSource = interactionSource,
-    ) {
-        if (style == null) content() else {
-            ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
-                Row(
-                    Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                    content = content,
-                )
+    ThemeInteractionScope("button", interactionSource, enabled) { activeSource ->
+        val style = themeSurface("button")
+        val resolvedColors = if (style == null) colors else colors.copy(
+            containerColor = themeScriptFill("button", colors.containerColor),
+            contentColor = themeScriptContentColor("button", colors.contentColor),
+            disabledContainerColor = if ("disabled" in style.states) themeScriptFill("button", colors.disabledContainerColor) else colors.disabledContainerColor,
+            disabledContentColor = if ("disabled" in style.states) themeScriptContentColor("button", colors.disabledContentColor) else colors.disabledContentColor,
+        )
+        NativeTextButton(
+            onClick = onClick, modifier = modifier.alpha(themeSurface("button")?.opacity ?: 1f), enabled = enabled,
+            shape = themeScriptShape("button", shape), colors = resolvedColors,
+            elevation = if (style?.elevation == null) elevation else ButtonDefaults.buttonElevation(defaultElevation = style.elevation.dp),
+            border = themeScriptBorder("button", border),
+            contentPadding = if (style == null) contentPadding else PaddingValues(0.dp),
+            interactionSource = activeSource,
+        ) {
+            if (style == null) content() else {
+                ThemeScriptSurface("button", enabled = enabled, drawFill = false) {
+                    Row(
+                        Modifier.defaultMinSize(minWidth = ButtonDefaults.MinWidth, minHeight = ButtonDefaults.MinHeight).padding(contentPadding),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                        content = content,
+                    )
+                }
             }
         }
     }
@@ -184,19 +201,23 @@ fun ThemeScriptIconButton(
     shape: Shape = IconButtonDefaults.standardShape,
     content: @Composable () -> Unit,
 ) {
-    val style = themeSurface("iconButton")
-    NativeIconButton(
-        onClick = onClick,
-        modifier = modifier,
-        shape = themeScriptShape("iconButton", shape),
-        enabled = enabled,
-        colors = if (style == null) colors else colors.copy(
-            containerColor = themeScriptFill("iconButton", colors.containerColor),
-            contentColor = themeScriptContentColor("iconButton", colors.contentColor),
-        ),
-        interactionSource = interactionSource,
-    ) {
-        if (style == null) content() else Box(Modifier.fillMaxSize().themeScriptDecoration("iconButton", enabled = enabled, drawFill = false), contentAlignment = Alignment.Center) { content() }
+    ThemeInteractionScope("iconButton", interactionSource, enabled) { activeSource ->
+        val style = themeSurface("iconButton")
+        NativeIconButton(
+            onClick = onClick,
+            modifier = modifier.alpha(themeSurface("iconButton")?.opacity ?: 1f),
+            shape = themeScriptShape("iconButton", shape),
+            enabled = enabled,
+            colors = if (style == null) colors else colors.copy(
+                containerColor = themeScriptFill("iconButton", colors.containerColor),
+                contentColor = themeScriptContentColor("iconButton", colors.contentColor),
+                disabledContainerColor = if ("disabled" in style.states) themeScriptFill("iconButton", colors.disabledContainerColor) else colors.disabledContainerColor,
+                disabledContentColor = if ("disabled" in style.states) themeScriptContentColor("iconButton", colors.disabledContentColor) else colors.disabledContentColor,
+            ),
+            interactionSource = activeSource,
+        ) {
+            if (style == null) content() else Box(Modifier.fillMaxSize().themeScriptDecoration("iconButton", enabled = enabled, drawFill = false), contentAlignment = Alignment.Center) { content() }
+        }
     }
 }
 
@@ -222,7 +243,7 @@ fun ThemeScriptAlertDialog(
     val resolvedModifier = if (style == null) modifier else modifier
         .clip(resolvedShape).background(themeScriptFill("dialog", containerColor))
         .themeScriptDecoration("dialog", drawFill = false)
-    MaterialTheme(typography = applyThemeTypography(MaterialTheme.typography, style?.textStyle ?: com.ai.assistance.operit.data.model.theme.ThemeAppearanceText())) {
+    MaterialTheme(typography = applyThemeTypography(MaterialTheme.typography, style?.textStyle ?: com.ai.assistance.operit.data.model.theme.ThemeAppearanceText(), (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.images.orEmpty())) {
     NativeAlertDialog(
         onDismissRequest = onDismissRequest, confirmButton = confirmButton, modifier = resolvedModifier,
         dismissButton = dismissButton, icon = icon, title = title, text = text,

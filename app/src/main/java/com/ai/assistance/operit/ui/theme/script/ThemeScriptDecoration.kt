@@ -1,46 +1,56 @@
 package com.ai.assistance.operit.ui.theme.script
 
-
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.ai.assistance.operit.data.model.theme.ThemeAppearanceText
 import com.ai.assistance.operit.data.model.theme.ThemeScriptLayer
+import com.ai.assistance.operit.data.model.theme.forState
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-/** 放在原生材质的内容区域，保证装饰位于材质之上、正文之下。 */
+/** 正文、颜色与装饰共用状态；事件仍由原生部件持有。 */
 @Composable
 fun ThemeScriptSurface(
     surfaceId: String,
@@ -51,19 +61,36 @@ fun ThemeScriptSurface(
     drawFill: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val style = themeSurface(surfaceId)
-    val typography = applyThemeTypography(MaterialTheme.typography, style?.textStyle ?: com.ai.assistance.operit.data.model.theme.ThemeAppearanceText())
-    MaterialTheme(typography = typography) {
-        CompositionLocalProvider(
-            LocalContentColor provides themeScriptContentColor(surfaceId, LocalContentColor.current),
-            LocalTextStyle provides themeScriptTextStyle(surfaceId, LocalTextStyle.current),
-        ) {
-            Box(Modifier.themeScriptDecoration(surfaceId, backgroundOpacity, selected, enabled, error, drawFill), propagateMinConstraints = true) { content() }
+    var pressed by remember(surfaceId) { mutableStateOf(false) }
+    var focused by remember(surfaceId) { mutableStateOf(false) }
+    val states = LocalThemeSurfaceStates.current
+    val active = states[surfaceId] ?: themeStateName(pressed, focused, selected, enabled, error)
+    CompositionLocalProvider(LocalThemeSurfaceStates provides (states + (surfaceId to active))) {
+        val style = themeSurface(surfaceId)
+        val images = (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.images.orEmpty()
+        val typography = applyThemeTypography(MaterialTheme.typography, style?.textStyle ?: ThemeAppearanceText(), images)
+        MaterialTheme(typography = typography) {
+            CompositionLocalProvider(
+                LocalContentColor provides themeScriptContentColor(surfaceId, LocalContentColor.current),
+                LocalTextStyle provides themeScriptTextStyle(surfaceId, LocalTextStyle.current),
+            ) {
+                Box(
+                    Modifier.pointerInput(surfaceId) {
+                        try {
+                            awaitPointerEventScope {
+                                while (true) pressed = awaitPointerEvent(PointerEventPass.Initial).changes.any { it.pressed }
+                            }
+                        } finally { pressed = false }
+                    }.onFocusChanged { focused = it.hasFocus }
+                        .themeScriptDecoration(surfaceId, backgroundOpacity, selected, enabled, error, drawFill),
+                    propagateMinConstraints = true,
+                ) { content() }
+            }
         }
     }
 }
 
-/** 装饰单独绘制；现有背景透明度只影响装饰层，不影响正文与原生交互。 */
+/** 容器填色、正文和图层各自合成透明度，不能用填色 alpha 隐藏素材。 */
 @Composable
 fun Modifier.themeScriptDecoration(
     surfaceId: String,
@@ -75,43 +102,42 @@ fun Modifier.themeScriptDecoration(
 ): Modifier {
     val state = LocalThemeScriptState.current
     if (state !is ThemeScriptState.Ready) return this
-    val surface = state.appearance.surfaces[surfaceId] ?: return this
+    val base = state.appearance.surfaces[surfaceId] ?: return this
     var pressed by remember(surfaceId) { mutableStateOf(false) }
     var focused by remember(surfaceId) { mutableStateOf(false) }
-    val pointer =
-        if (surface.layers.any { it.state == "pressed" }) {
-            Modifier.pointerInput(surfaceId) {
-                try {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent(PointerEventPass.Initial)
-                            pressed = event.changes.any { it.pressed }
-                        }
-                    }
-                } finally { pressed = false }
-            }
-        } else Modifier
+    val active = LocalThemeSurfaceStates.current[surfaceId] ?: themeStateName(pressed, focused, selected, enabled, error)
+    val surface = base.forState(active)
+    val recordingLayers = surface.layers.mapIndexed { index, layer -> key(layer.id, index) { rememberGraphicsLayer() } }
+    val opacity = if (surfaceId in LocalThemeHandledOpacity.current) 1f else surface.opacity
     val shape = if (surface.shape == null) RectangleShape else appearanceShape(surface.shape)
-    return this
-        .heightIn(min = surface.minHeight.dp)
+    val pointer = if (surface.layers.any { it.state == "pressed" } || "pressed" in surface.states) Modifier.pointerInput(surfaceId) {
+        try { awaitPointerEventScope { while (true) pressed = awaitPointerEvent(PointerEventPass.Initial).changes.any { it.pressed } } } finally { pressed = false }
+    } else Modifier
+    return this.heightIn(min = surface.minHeight.dp)
+        .alpha(opacity)
         .then(if (surface.elevation == null) Modifier else Modifier.shadow(surface.elevation.dp, shape, clip = false))
         .then(if (surface.shape == null) Modifier else Modifier.clip(shape))
-        .then(pointer)
-        .onFocusChanged { focused = it.hasFocus }
+        .then(pointer).onFocusChanged { focused = it.hasFocus }
         .drawWithContent {
             fun drawPlacement(placement: String) {
-                surface.layers.forEach { layer ->
+                surface.layers.forEachIndexed { index, layer ->
                     val visible = when (layer.state) {
                         "always" -> true
-                        "pressed" -> pressed && enabled
-                        "focused" -> focused
-                        "selected" -> selected
-                        "disabled" -> !enabled
-                        "error" -> error
+                        "pressed" -> (pressed || active == "pressed") && enabled
+                        "focused" -> focused || active == "focused"
+                        "selected" -> selected || active == "selected"
+                        "disabled" -> !enabled || active == "disabled"
+                        "error" -> error || active == "error"
                         else -> false
                     }
                     if (visible && layer.placement == placement) {
-                        clipRect { drawThemeLayer(layer, state.images, backgroundOpacity.coerceIn(0f, 1f)) }
+                        if (layer.blur > 0f) {
+                            val recording = recordingLayers[index]
+                            val radius = layer.blur.dp.toPx()
+                            recording.renderEffect = BlurEffect(radius, radius)
+                            recording.record { clipRect { drawThemeLayer(layer, state.images, backgroundOpacity.coerceIn(0f, 1f)) } }
+                            clipRect { drawLayer(recording) }
+                        } else clipRect { drawThemeLayer(layer, state.images, backgroundOpacity.coerceIn(0f, 1f)) }
                     }
                 }
             }
@@ -128,98 +154,89 @@ fun Modifier.themeScriptDecoration(
                 }
                 drawPath(path, themeColor(surface.strokeColor), alpha = backgroundOpacity.coerceIn(0f, 1f), style = Stroke(surface.strokeWidth.dp.toPx()))
             }
-        }
-        .padding(surface.padding.start.dp, surface.padding.top.dp, surface.padding.end.dp, surface.padding.bottom.dp)
+        }.padding(surface.padding.start.dp, surface.padding.top.dp, surface.padding.end.dp, surface.padding.bottom.dp)
 }
 
-internal fun DrawScope.drawThemeLayer(
-    layer: ThemeScriptLayer,
-    images: Map<String, ThemeScriptImage>,
-    backgroundOpacity: Float,
-    tintColor: Color? = null,
-) {
-    val bounds = layer.bounds
-    val topLeft = Offset(size.width * bounds.x, size.height * bounds.y)
-    val layerSize = Size(size.width * bounds.width, size.height * bounds.height)
-    if (layerSize.width <= 0f || layerSize.height <= 0f) return
+internal fun DrawScope.drawThemeLayer(layer: ThemeScriptLayer, images: Map<String, ThemeScriptImage>, backgroundOpacity: Float, tintColor: Color? = null) {
+    val b = layer.bounds
+    val topLeft = Offset(size.width * b.x, size.height * b.y)
+    val extent = Size(size.width * b.width, size.height * b.height)
+    if (extent.width <= 0f || extent.height <= 0f) return
     val opacity = layer.opacity * backgroundOpacity
     val width = layer.strokeWidth.dp.toPx()
-    val fill = layer.color?.let { Color(android.graphics.Color.parseColor(it)) }
-    val stroke = layer.strokeColor?.let { Color(android.graphics.Color.parseColor(it)) }
+    val fill = layer.color?.let(::themeColor)
+    val stroke = layer.strokeColor?.let(::themeColor)
+    val quality = if (layer.sampling == "nearest") FilterQuality.None else FilterQuality.Low
     when (layer.type) {
         "rect" -> {
             val corner = CornerRadius(layer.radius.dp.toPx())
-            if (fill != null) drawRoundRect(fill, topLeft, layerSize, corner, alpha = opacity)
-            if (stroke != null && width > 0f) drawRoundRect(stroke, topLeft, layerSize, corner, alpha = opacity, style = Stroke(width))
+            if (fill != null) drawRoundRect(fill, topLeft, extent, corner, alpha = opacity)
+            if (stroke != null && width > 0f) drawRoundRect(stroke, topLeft, extent, corner, alpha = opacity, style = Stroke(width))
         }
         "ellipse" -> {
-            if (fill != null) drawOval(fill, topLeft, layerSize, alpha = opacity)
-            if (stroke != null && width > 0f) drawOval(stroke, topLeft, layerSize, alpha = opacity, style = Stroke(width))
+            if (fill != null) drawOval(fill, topLeft, extent, alpha = opacity)
+            if (stroke != null && width > 0f) drawOval(stroke, topLeft, extent, alpha = opacity, style = Stroke(width))
         }
-        "line" -> {
-            val color = requireNotNull(stroke ?: fill)
-            drawLine(color, topLeft, topLeft + Offset(layerSize.width, layerSize.height), strokeWidth = width.coerceAtLeast(1f), alpha = opacity)
-        }
+        "line" -> drawLine(requireNotNull(stroke ?: fill), topLeft, topLeft + Offset(extent.width, extent.height), strokeWidth = width.coerceAtLeast(1f), alpha = opacity)
         "nineSlice" -> {
             val bitmap = (images.getValue(requireNotNull(layer.asset)) as ThemeScriptImage.Bitmap).image
-            val slices = layer.slices
-            val sx = listOf(0, slices.start.roundToInt(), bitmap.width - slices.end.roundToInt(), bitmap.width)
-            val sy = listOf(0, slices.top.roundToInt(), bitmap.height - slices.bottom.roundToInt(), bitmap.height)
-            val horizontal = slices.start + slices.end
-            val vertical = slices.top + slices.bottom
-            val scaleX = if (horizontal > 0f) min(1f, layerSize.width / horizontal.dp.toPx()) else 1f
-            val scaleY = if (vertical > 0f) min(1f, layerSize.height / vertical.dp.toPx()) else 1f
-            val dx = listOf(topLeft.x, topLeft.x + slices.start.dp.toPx() * scaleX, topLeft.x + layerSize.width - slices.end.dp.toPx() * scaleX, topLeft.x + layerSize.width)
-            val dy = listOf(topLeft.y, topLeft.y + slices.top.dp.toPx() * scaleY, topLeft.y + layerSize.height - slices.bottom.dp.toPx() * scaleY, topLeft.y + layerSize.height)
+            val edge = layer.slices
+            val sx = listOf(0, edge.start.roundToInt(), bitmap.width - edge.end.roundToInt(), bitmap.width)
+            val sy = listOf(0, edge.top.roundToInt(), bitmap.height - edge.bottom.roundToInt(), bitmap.height)
+            val scaleX = if (edge.start + edge.end > 0f) min(1f, extent.width / (edge.start + edge.end).dp.toPx()) else 1f
+            val scaleY = if (edge.top + edge.bottom > 0f) min(1f, extent.height / (edge.top + edge.bottom).dp.toPx()) else 1f
+            val dx = listOf(topLeft.x, topLeft.x + edge.start.dp.toPx() * scaleX, topLeft.x + extent.width - edge.end.dp.toPx() * scaleX, topLeft.x + extent.width)
+            val dy = listOf(topLeft.y, topLeft.y + edge.top.dp.toPx() * scaleY, topLeft.y + extent.height - edge.bottom.dp.toPx() * scaleY, topLeft.y + extent.height)
             for (row in 0..2) for (column in 0..2) {
-                val sw = sx[column + 1] - sx[column]
-                val sh = sy[row + 1] - sy[row]
-                val dw = (dx[column + 1] - dx[column]).roundToInt()
-                val dh = (dy[row + 1] - dy[row]).roundToInt()
-                if (sw > 0 && sh > 0 && dw > 0 && dh > 0) drawImage(
-                    bitmap, srcOffset = IntOffset(sx[column], sy[row]), srcSize = IntSize(sw, sh),
-                    dstOffset = IntOffset(dx[column].roundToInt(), dy[row].roundToInt()), dstSize = IntSize(dw, dh), alpha = opacity,
-                )
+                val sw = sx[column + 1] - sx[column]; val sh = sy[row + 1] - sy[row]
+                val dw = (dx[column + 1] - dx[column]).roundToInt(); val dh = (dy[row + 1] - dy[row]).roundToInt()
+                if (sw > 0 && sh > 0 && dw > 0 && dh > 0) drawImage(bitmap, srcOffset = IntOffset(sx[column], sy[row]), srcSize = IntSize(sw, sh), dstOffset = IntOffset(dx[column].roundToInt(), dy[row].roundToInt()), dstSize = IntSize(dw, dh), alpha = opacity, filterQuality = quality)
             }
         }
         "image" -> {
             val image = images.getValue(requireNotNull(layer.asset))
-            val sourceWidth = when (image) {
-                is ThemeScriptImage.Bitmap -> image.image.width.toFloat()
-                is ThemeScriptImage.Vector -> image.picture.width.toFloat()
+            val source = when (image) {
+                is ThemeScriptImage.Bitmap -> Size(image.image.width.toFloat(), image.image.height.toFloat())
+                is ThemeScriptImage.Vector -> Size(image.picture.width.toFloat(), image.picture.height.toFloat())
+                is ThemeScriptImage.Font -> error("Font cannot be used as a drawing layer")
             }
-            val sourceHeight = when (image) {
-                is ThemeScriptImage.Bitmap -> image.image.height.toFloat()
-                is ThemeScriptImage.Vector -> image.picture.height.toFloat()
-            }
-            val scaleX = layerSize.width / sourceWidth
-            val scaleY = layerSize.height / sourceHeight
-            val scale = if (layer.fit == "crop") max(scaleX, scaleY) else min(scaleX, scaleY)
-            val widthPx = if (layer.fit == "fill") layerSize.width else sourceWidth * scale
-            val heightPx = if (layer.fit == "fill") layerSize.height else sourceHeight * scale
-            val left = topLeft.x + (layerSize.width - widthPx) / 2f
-            val top = topLeft.y + (layerSize.height - heightPx) / 2f
-            clipRect(topLeft.x, topLeft.y, topLeft.x + layerSize.width, topLeft.y + layerSize.height) {
-                when (image) {
-                    is ThemeScriptImage.Bitmap -> drawImage(
-                        image.image,
-                        dstOffset = IntOffset(left.roundToInt(), top.roundToInt()),
-                        dstSize = IntSize(widthPx.roundToInt().coerceAtLeast(1), heightPx.roundToInt().coerceAtLeast(1)),
-                        alpha = opacity,
-                        colorFilter = tintColor?.let { androidx.compose.ui.graphics.ColorFilter.tint(it) },
-                    )
-                    is ThemeScriptImage.Vector -> {
-                        val canvas = drawContext.canvas.nativeCanvas
-                        val paint = android.graphics.Paint().apply {
-                            alpha = (opacity * 255).roundToInt()
-                            tintColor?.let { colorFilter = android.graphics.PorterDuffColorFilter(it.toArgb(), android.graphics.PorterDuff.Mode.SRC_IN) }
-                        }
-                        val destination = android.graphics.RectF(left, top, left + widthPx, top + heightPx)
-                        val save = canvas.saveLayer(destination, paint)
-                        try { canvas.drawPicture(image.picture, destination) } finally { canvas.restoreToCount(save) }
+            clipRect(topLeft.x, topLeft.y, topLeft.x + extent.width, topLeft.y + extent.height) {
+                if (layer.fit == "tile" && image is ThemeScriptImage.Bitmap) {
+                    val shader = android.graphics.BitmapShader(image.image.asAndroidBitmap(), android.graphics.Shader.TileMode.REPEAT, android.graphics.Shader.TileMode.REPEAT)
+                    shader.setLocalMatrix(android.graphics.Matrix().apply { setScale(density, density); postTranslate(topLeft.x, topLeft.y) })
+                    val paint = imagePaint(opacity, tintColor, layer.sampling).apply { this.shader = shader }
+                    drawContext.canvas.nativeCanvas.drawRect(topLeft.x, topLeft.y, topLeft.x + extent.width, topLeft.y + extent.height, paint)
+                } else if (layer.fit == "tile") {
+                    val tile = Size(source.width.dp.toPx(), source.height.dp.toPx())
+                    for (y in 0 until ceil(extent.height / tile.height).toInt()) for (x in 0 until ceil(extent.width / tile.width).toInt()) {
+                        drawThemeImage(image, android.graphics.RectF(topLeft.x + x * tile.width, topLeft.y + y * tile.height, topLeft.x + (x + 1) * tile.width, topLeft.y + (y + 1) * tile.height), opacity, tintColor, layer.sampling)
                     }
+                } else {
+                    val scale = if (layer.fit == "crop") max(extent.width / source.width, extent.height / source.height) else min(extent.width / source.width, extent.height / source.height)
+                    val w = if (layer.fit == "fill") extent.width else source.width * scale
+                    val h = if (layer.fit == "fill") extent.height else source.height * scale
+                    val remainingX = extent.width - w; val remainingY = extent.height - h
+                    val left = topLeft.x + when (layer.alignment) { "start" -> if (layoutDirection == LayoutDirection.Ltr) 0f else remainingX; "end" -> if (layoutDirection == LayoutDirection.Ltr) remainingX else 0f; else -> remainingX / 2f }
+                    val top = topLeft.y + when (layer.alignment) { "top" -> 0f; "bottom" -> remainingY; else -> remainingY / 2f }
+                    drawThemeImage(image, android.graphics.RectF(left, top, left + w, top + h), opacity, tintColor, layer.sampling)
                 }
             }
         }
+    }
+}
+
+private fun imagePaint(opacity: Float, tint: Color?, sampling: String) = android.graphics.Paint().apply {
+    alpha = (opacity * 255).roundToInt().coerceIn(0, 255)
+    isFilterBitmap = sampling != "nearest"
+    tint?.let { colorFilter = android.graphics.PorterDuffColorFilter(it.toArgb(), android.graphics.PorterDuff.Mode.SRC_IN) }
+}
+
+private fun DrawScope.drawThemeImage(image: ThemeScriptImage, rect: android.graphics.RectF, opacity: Float, tint: Color?, sampling: String) {
+    val canvas = drawContext.canvas.nativeCanvas
+    val paint = imagePaint(opacity, tint, sampling)
+    when (image) {
+        is ThemeScriptImage.Bitmap -> canvas.drawBitmap(image.image.asAndroidBitmap(), null, rect, paint)
+        is ThemeScriptImage.Vector -> { val save = canvas.saveLayer(rect, paint); try { canvas.drawPicture(image.picture, rect) } finally { canvas.restoreToCount(save) } }
+        is ThemeScriptImage.Font -> error("Font cannot be painted as an image")
     }
 }

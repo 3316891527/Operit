@@ -15,6 +15,7 @@ data/
 			ThemeScriptDefinition.kt
 			ThemeScriptAppearance.kt
 			ThemeAppearanceStyle.kt
+			ThemeStudioMetadata.kt
 			ThemeScriptContract.kt
 	resources/
 		theme/
@@ -26,6 +27,7 @@ data/
 		ThemeArchive.kt
 		ThemeTransferSchema.kt
 		ThemeTransferRepository.kt
+		ThemeResourcePaths.kt
 ui/
 	theme/
 		script/
@@ -38,12 +40,21 @@ ui/
 	features/
 		management/settings/screens/theme/
 			script/
-				ThemeScriptEditorSection.kt
-				ThemeScriptEditorDialog.kt
-				ThemeAppearanceEditor.kt
+				ThemeAppearanceLabels.kt
+			studio/
+				ThemeStudioScreen.kt
+				ThemeStudioState.kt
+				ThemeStudioCatalog.kt
+				ThemeStudioPreview.kt
+				ThemeStudioProperties.kt
+				ThemeStudioResources.kt
+				ThemeStudioSource.kt
+				ThemeStudioColorPicker.kt
+				ThemeStudioNineSliceEditor.kt
+				ThemeStudioComponents.kt
 ```
 
-`data/model/theme`、`data/resources/theme`、`ui/theme/script` 和设置页的 `script` 是本次新增的下级包；其余列出的目录与主题偏好、分享文件均已存在。
+`data/model/theme`、`data/resources/theme`、`ui/theme/script` 和设置页的 `script/studio` 是本次新增的下级包；其余列出的目录与主题偏好、分享文件均已存在。
 
 ## 各部分职责
 
@@ -84,7 +95,7 @@ QuickJS 的通用执行资源限制放在现有 `quickjs` 模块内；主题模�
 
 ### 编辑入口：现有主题设置的下级包
 
-代码编辑、导入操作、诊断反馈和草稿交互位于 `ui/features/management/settings/screens/theme/script`。设置页使用主题解析器验证和预览，不持有文件协议或 QuickJS 底层实现。
+代码编辑、资源目录、取色、预览、工程草稿与导入导出位于 `ui/features/management/settings/screens/theme/studio`；`script` 仅保留共享部件名称映射。设置页使用主题解析器验证和预览，不持有文件协议或 QuickJS 底层实现。
 
 ## 依赖约束
 
@@ -99,4 +110,4 @@ QuickJS 的通用执行资源限制放在现有 `quickjs` 模块内；主题模�
 
 只确定新增功能的位置与依赖边界，不搬迁现有主题偏好、玻璃、透明度、主题分享和聊天组件，也不重做上一轮包整理。
 
-[DONE] 路径与职责核对、布局记录及临时一级包撤回；实现已按此布局完成，编辑对话框与入口同属设置页 script 下级包。
+[DONE] 路径与职责核对、布局记录及临时一级包撤回；实现已按此布局完成，原编辑弹窗已由设置页独立 studio 下级包替代，部件名称映射仍可复用。

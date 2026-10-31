@@ -31,7 +31,6 @@ object ThemeScriptContract {
     )
     val json = Json { ignoreUnknownKeys = false; encodeDefaults = true }
     private val assetName = Regex("[A-Za-z][A-Za-z0-9_-]{0,63}")
-    private val assetPath = Regex("assets/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.[A-Za-z0-9]{1,10}")
     private val color = Regex("#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?")
 
     fun validate(manifest: ThemeScriptManifest) {
@@ -42,11 +41,17 @@ object ThemeScriptContract {
         require(manifest.assets.keys.all { assetName.matches(it) }) { "Invalid theme script asset name" }
         require(manifest.assets.values.all(::isAssetPath)) { "Invalid theme script asset path" }
         require(manifest.entry !in manifest.assets.values) { "Script entry cannot be a drawing asset" }
+        val info = manifest.studio
+        require(info.name.length <= 128 && info.author.length <= 128 && info.version.length <= 32 && info.description.length <= 2048 && info.license.length <= 8192) { "Theme project metadata is too large" }
+        require(info.id.isEmpty() || Regex("[A-Za-z][A-Za-z0-9._-]{0,95}").matches(info.id)) { "Invalid theme project identifier" }
+        require(info.folders.size <= 96 && info.folders.distinct().size == info.folders.size && info.folders.all(ThemeAssetPaths::isFolder)) { "Invalid theme project folders" }
+        val files = (manifest.assets.values + manifest.entry).toSet()
+        require(files.none { file -> files.any { other -> other.startsWith("$file/") } || info.folders.any { folder -> folder == file || folder.startsWith("$file/") } }) { "A resource file conflicts with a folder" }
         validate(manifest.appearance, manifest)
     }
 
     fun isAssetPath(path: String): Boolean =
-        path.length <= 160 && !path.contains("..") && assetPath.matches(path)
+        ThemeAssetPaths.isFile(path)
 
     fun references(manifest: ThemeScriptManifest): Set<String> {
         validate(manifest)
@@ -89,20 +94,34 @@ object ThemeScriptContract {
     fun validate(result: ThemeScriptAppearance, manifest: ThemeScriptManifest) {
         require(manifest.apiVersion == API_VERSION) { "Unsupported theme manifest" }
         require(result.apiVersion == API_VERSION) { "Unsupported theme appearance API" }
+        require(result.modes.keys.all { it in setOf("light", "dark") }) { "Unknown theme appearance mode" }
+        if (result.modes.isNotEmpty()) {
+            validate(result.copy(modes = emptyMap()), manifest)
+            result.modes.keys.forEach { mode -> validate(result.forMode(mode), manifest) }
+            return
+        }
         require(result.surfaces.keys.all { it in surfaceIds }) { "Unknown theme script surface" }
         require(result.icons.keys.all { it in iconIds }) { "Unknown theme icon" }
         result.icons.values.forEach { icon ->
-            require(icon.asset in manifest.assets.keys) { "Icon references an undeclared asset" }
+            require(icon.asset in manifest.assets.keys && manifest.assets.getValue(icon.asset).substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg")) { "Icon references an undeclared asset" }
             require(icon.size.isFinite() && icon.size in 8f..64f) { "Icon size must be 8..64 dp" }
             require(icon.opacity.isFinite() && icon.opacity in 0f..1f) { "Invalid icon opacity" }
+            require(icon.tintColor == null || color.matches(icon.tintColor)) { "Invalid icon tint" }
         }
         listOf(result.palette.light, result.palette.dark).forEach { palette ->
             require(palette.keys.all { it in colorTokens } && palette.values.all(color::matches)) { "Invalid theme palette" }
         }
-        validateText(result.typography)
+        validateText(result.typography, manifest)
         require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
         result.surfaces.forEach { (id, surface) ->
-            validateText(surface.textStyle)
+            validateText(surface.textStyle, manifest)
+            require(surface.opacity.isFinite() && surface.opacity in 0f..1f) { "Invalid surface opacity" }
+            require(surface.states.keys.all { it in setOf("pressed", "focused", "selected", "disabled", "error") }) { "Unknown surface state" }
+            surface.states.values.forEach { state ->
+                require(listOfNotNull(state.fillColor, state.contentColor, state.strokeColor).all(color::matches)) { "Invalid state color" }
+                require(state.opacity.isFinite() && state.opacity in 0f..1f) { "Invalid state opacity" }
+                state.strokeWidth?.let { require(it.isFinite() && it in 0f..16f) { "Invalid state stroke" } }
+            }
             surface.shape?.let {
                 require(it.type in setOf("rounded", "cut", "circle") && it.radius.isFinite() && it.radius in 0f..128f) { "Invalid surface shape" }
             }
@@ -122,7 +141,10 @@ object ThemeScriptContract {
                 require(layer.type in setOf("rect", "ellipse", "line", "image", "nineSlice")) { "Unknown theme layer type" }
                 require(layer.placement in setOf("background", "foreground")) { "Unknown layer placement" }
                 require(layer.state in setOf("always", "pressed", "focused", "selected", "disabled", "error")) { "Unknown layer state" }
-                require(layer.fit in setOf("fill", "fit", "crop")) { "Unknown image fit" }
+                require(layer.fit in setOf("fill", "fit", "crop", "tile")) { "Unknown image fit" }
+                require(layer.sampling in setOf("smooth", "nearest")) { "Unknown image sampling" }
+                require(layer.alignment in setOf("center", "top", "bottom", "start", "end")) { "Unknown image alignment" }
+                require(layer.blur.isFinite() && layer.blur in 0f..32f) { "Invalid layer blur" }
                 require(layer.opacity.isFinite() && layer.opacity in 0f..1f) { "Invalid layer opacity" }
                 require(layer.radius.isFinite() && layer.radius in 0f..128f) { "Invalid layer radius" }
                 require(layer.strokeWidth.isFinite() && layer.strokeWidth in 0f..16f) { "Invalid layer stroke" }
@@ -136,7 +158,7 @@ object ThemeScriptContract {
                 require(layer.id == null || assetName.matches(layer.id)) { "Invalid layer identifier" }
                 require(listOf(layer.slices.start, layer.slices.top, layer.slices.end, layer.slices.bottom).all { it.isFinite() && it in 0f..2048f }) { "Invalid nine-slice insets" }
                 if (layer.type in setOf("image", "nineSlice")) {
-                    require(layer.asset in manifest.assets.keys) { "Layer references an undeclared asset" }
+                    require(layer.asset in manifest.assets.keys && manifest.assets.getValue(requireNotNull(layer.asset)).substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg")) { "Layer references an undeclared asset" }
                     require(layer.color == null && layer.strokeColor == null) { "Image layers cannot declare paint colors" }
                 } else {
                     require(layer.asset == null) { "Only image layers can declare an asset" }
@@ -145,8 +167,12 @@ object ThemeScriptContract {
             }
         }
     }
-    private fun validateText(text: ThemeAppearanceText) {
-        require(text.family == null || text.family in setOf("default", "sans-serif", "serif", "monospace", "cursive")) { "Unsupported font family" }
+    private fun validateText(text: ThemeAppearanceText, manifest: ThemeScriptManifest) {
+        val family = text.family
+        if (family != null && family.startsWith("asset:")) {
+            val path = requireNotNull(manifest.assets[family.removePrefix("asset:")]) { "Font references an undeclared asset" }
+            require(path.substringAfterLast('.').lowercase() in setOf("ttf", "otf")) { "Expected a TTF or OTF font resource" }
+        } else require(family == null || family in setOf("default", "sans-serif", "serif", "monospace", "cursive")) { "Unsupported font family" }
         require(text.scale.isFinite() && text.scale in 0.5f..2f) { "Invalid text scale" }
         require(text.lineHeight.isFinite() && text.lineHeight in 0.8f..2f) { "Invalid line height" }
         require(text.letterSpacing.isFinite() && text.letterSpacing in -2f..8f) { "Invalid letter spacing" }

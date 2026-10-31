@@ -78,6 +78,8 @@ internal data class ThemeSettingsShared(
     val editorSession: ThemeEditorSession,
     val displayPreferencesManager: DisplayPreferencesManager,
     val scope: CoroutineScope,
+    val projectKey: String,
+    val targetName: String,
 )
 
 private data class ThemeEditorState(val target: ActivePrompt, val session: ThemeEditorSession)
@@ -498,6 +500,11 @@ internal fun ThemeSettingsContentEditor(
                     editorSession = draft,
                     displayPreferencesManager = displayPreferencesManager,
                     scope = scope,
+                    projectKey = when (val target = editorTarget) {
+                        is ActivePrompt.CharacterCard -> "card:${target.id}"
+                        is ActivePrompt.CharacterGroup -> "group:${target.id}"
+                    },
+                    targetName = selectedThemeTargetName,
                 )
 
             if (showFullPreview) {

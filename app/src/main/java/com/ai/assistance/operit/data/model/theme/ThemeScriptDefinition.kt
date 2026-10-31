@@ -8,6 +8,7 @@ data class ThemeScriptManifest(
     val entry: String,
     val assets: Map<String, String> = emptyMap(),
     val appearance: ThemeScriptAppearance = ThemeScriptAppearance(1),
+    val studio: ThemeStudioMetadata = ThemeStudioMetadata(),
 )
 
 @Serializable

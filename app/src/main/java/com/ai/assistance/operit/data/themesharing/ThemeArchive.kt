@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.data.themesharing
 
+import com.ai.assistance.operit.data.model.theme.ThemeAssetPaths
 import com.ai.assistance.operit.data.model.theme.ThemeScriptContract
 import com.ai.assistance.operit.data.resources.theme.ThemeScriptBundleStore
 import java.io.File
@@ -15,10 +16,7 @@ internal object ThemeArchive {
     const val MAX_ARCHIVE_BYTES = 512L * 1024 * 1024
     private const val MAX_ASSET_BYTES = 256L * 1024 * 1024
     private const val MAX_ENTRIES = 64
-    private val assetPath = Regex("assets/[A-Za-z0-9_-][A-Za-z0-9._-]*\\.[A-Za-z0-9]{1,10}")
-
-    fun isAssetPath(path: String): Boolean =
-        path.length <= 160 && assetPath.matches(path) && !path.contains("..")
+    fun isAssetPath(path: String): Boolean = ThemeAssetPaths.isFile(path)
 
     fun read(archive: File, directory: File): PreparedTheme {
         try {
@@ -35,7 +33,7 @@ internal object ThemeArchive {
                     val name = entry.name
                     if (!names.add(name) || names.size > MAX_ENTRIES) invalid()
                     if (entry.isDirectory) {
-                        if (name != "assets/") invalid()
+                        if (name != "assets/" && !ThemeAssetPaths.isFolder(name.removeSuffix("/"))) invalid()
                         continue
                     }
                     if (name != "manifest.json" && !isAssetPath(name)) invalid()

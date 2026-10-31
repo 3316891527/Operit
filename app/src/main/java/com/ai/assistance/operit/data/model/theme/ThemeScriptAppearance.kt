@@ -9,6 +9,7 @@ data class ThemeScriptAppearance(
     val icons: Map<String, ThemeAppearanceIcon> = emptyMap(),
     val palette: ThemeAppearancePalette = ThemeAppearancePalette(),
     val typography: ThemeAppearanceText = ThemeAppearanceText(),
+    val modes: Map<String, ThemeAppearanceMode> = emptyMap(),
 )
 
 @Serializable
@@ -25,6 +26,8 @@ data class ThemeScriptSurface(
     val size: Float? = null,
     val messageWidth: Float = 1f,
     val textStyle: ThemeAppearanceText = ThemeAppearanceText(),
+    val states: Map<String, ThemeAppearanceState> = emptyMap(),
+    val opacity: Float = 1f,
 )
 
 @Serializable
@@ -58,4 +61,7 @@ data class ThemeScriptLayer(
     val fit: String = "fill",
     val placement: String = "background",
     val state: String = "always",
+    val sampling: String = "smooth",
+    val alignment: String = "center",
+    val blur: Float = 0f,
 )

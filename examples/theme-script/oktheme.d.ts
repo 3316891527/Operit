@@ -22,13 +22,13 @@ export interface Palette {
     dark?: Partial<Record<ColorToken, Color>>;
 }
 export interface Typography {
-    family?: "default" | "sans-serif" | "serif" | "monospace" | "cursive";
+    family?: "default" | "sans-serif" | "serif" | "monospace" | "cursive" | `asset:${string}`;
     scale?: number;
     lineHeight?: number;
     letterSpacing?: number;
 }
 export interface Shape { type?: "rounded" | "cut" | "circle"; radius?: number; }
-export interface IconAsset { asset: string; size?: number; opacity?: number; useContentTint?: boolean; }
+export interface IconAsset { asset: string; size?: number; opacity?: number; useContentTint?: boolean; tintColor?: Color; }
 /** 坐标和宽高为所在部件的归一化比例。 */
 export interface Bounds { x?: number; y?: number; width?: number; height?: number; }
 /** 内容留白使用 dp，九宫格切片使用原图像素。 */
@@ -38,6 +38,10 @@ interface BaseLayer {
     bounds?: Bounds;
     opacity?: number;
     placement?: "background" | "foreground";
+    sampling?: "smooth" | "nearest";
+    alignment?: "center" | "top" | "bottom" | "start" | "end";
+    /** 单位 dp；非零值要求 Android 12 或更新系统。 */
+    blur?: number;
     state?: "always" | "pressed" | "focused" | "selected" | "disabled" | "error";
 }
 export interface PaintLayer extends BaseLayer {
@@ -50,7 +54,7 @@ export interface PaintLayer extends BaseLayer {
 export interface ImageLayer extends BaseLayer {
     type: "image";
     asset: string;
-    fit?: "fill" | "fit" | "crop";
+    fit?: "fill" | "fit" | "crop" | "tile";
 }
 export interface NineSliceLayer extends BaseLayer {
     type: "nineSlice";
@@ -61,6 +65,8 @@ export type Layer = PaintLayer | ImageLayer | NineSliceLayer;
 export interface Surface {
     padding?: Insets;
     layers?: readonly Layer[];
+    opacity?: number;
+    states?: Partial<Record<"pressed" | "focused" | "selected" | "disabled" | "error", SurfaceState>>;
     shape?: Shape;
     fillColor?: Color;
     contentColor?: Color;
@@ -74,12 +80,27 @@ export interface Surface {
     messageWidth?: number;
     textStyle?: Typography;
 }
+/** 空状态字段继承该部件的默认值，透明度与默认透明度相乘。 */
+export interface SurfaceState {
+    fillColor?: Color;
+    contentColor?: Color;
+    strokeColor?: Color;
+    strokeWidth?: number;
+    opacity?: number;
+}
+/** 只覆盖声明的部件；单个部件以完整局部外观替换公共声明。 */
+export interface AppearanceMode {
+    surfaces?: Partial<Record<SurfaceId, Surface>>;
+    icons?: Partial<Record<IconId, IconAsset>>;
+    typography?: Typography;
+}
 export interface Appearance {
     apiVersion: 1;
     surfaces?: Partial<Record<SurfaceId, Surface>>;
     icons?: Partial<Record<IconId, IconAsset>>;
     palette?: Palette;
     typography?: Typography;
+    modes?: Partial<Record<"light" | "dark", AppearanceMode>>;
 }
 export interface ThemeContext {
     readonly apiVersion: 1;
@@ -97,9 +118,20 @@ export interface ThemeScript {
     apiVersion: 1;
     render(context: ThemeContext): Appearance;
 }
+/** 制作信息与相对 assets/ 空目录随完整主题包保留。 */
+export interface StudioMetadata {
+    id?: string;
+    name?: string;
+    author?: string;
+    version?: string;
+    description?: string;
+    license?: string;
+    folders?: readonly string[];
+}
 export interface ScriptManifest {
     apiVersion: 1;
     entry: string;
     assets?: Record<string, string>;
     appearance?: Appearance;
+    studio?: StudioMetadata;
 }

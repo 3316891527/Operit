@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.theme.script
 
 import com.ai.assistance.operit.core.tools.javascript.QuickJsNativeRuntime
+import com.ai.assistance.operit.data.model.theme.forMode
 import com.ai.assistance.operit.data.model.theme.ThemeScriptAppearance
 import com.ai.assistance.operit.data.model.theme.ThemeScriptContext
 import com.ai.assistance.operit.data.model.theme.ThemeScriptContract
@@ -20,7 +21,8 @@ object ThemeScriptResolver {
                 runtime.setExecutionLimits(memoryBytes = 16L * 1024 * 1024, timeoutMs = 100)
                 ThemeScriptContract.validate(bundle.manifest)
                 require(bundle.source.toByteArray(Charsets.UTF_8).size <= ThemeScriptContract.MAX_SOURCE_BYTES) { "Theme script is too large" }
-                val encoded = ThemeScriptContract.json.encodeToString(context)
+                val input = context.copy(appearance = bundle.manifest.appearance.forMode(context.mode))
+                val encoded = ThemeScriptContract.json.encodeToString(input)
                 val setup = """
                     "use strict";
                     Object.defineProperty(globalThis, "NativeInterface", {
@@ -59,7 +61,7 @@ object ThemeScriptResolver {
                 requireSuccess(runtime.eval(setup, "oktheme.js"))
                 val result = runtime.callFunction("__okthemeRender", "[]", "oktheme.render")
                 requireSuccess(result)
-                ThemeScriptContract.decodeResult(requireNotNull(result.valueJson), bundle.manifest)
+                ThemeScriptContract.decodeResult(requireNotNull(result.valueJson), bundle.manifest).forMode(context.mode)
             }
         }
 

@@ -29,4 +29,5 @@ data class ThemeAppearanceIcon(
     val size: Float = 24f,
     val opacity: Float = 1f,
     val useContentTint: Boolean = false,
+    val tintColor: String? = null,
 )

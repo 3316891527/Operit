@@ -69,7 +69,7 @@ fun ThemeScriptHost(
                 if (draft == null) prepared.load(context.filesDir, File(context.cacheDir, "theme-transfer"), requireNotNull(uri))
                 else {
                     ThemeScriptBundleStore.validate(draft)
-                    PreparedScript(draft, ThemeScriptAssets.prepare(draft))
+                    prepared.loadDraft(draft, File(context.cacheDir, "theme-fonts"))
                 }
             }
             val base = loaded.bundle.manifest.appearance
@@ -89,7 +89,7 @@ fun ThemeScriptHost(
     }
     val ready = state as? ThemeScriptState.Ready
     val activeColors = if (ready == null) colors else applyThemePalette(colors, ready.appearance.palette, dark)
-    val typography = if (ready == null) MaterialTheme.typography else applyThemeTypography(MaterialTheme.typography, ready.appearance.typography)
+    val typography = if (ready == null) MaterialTheme.typography else applyThemeTypography(MaterialTheme.typography, ready.appearance.typography, ready.images)
     CompositionLocalProvider(LocalThemeScriptState provides state) {
         MaterialTheme(colorScheme = activeColors, typography = typography) {
         Box {
@@ -133,10 +133,16 @@ private class ScriptPreparation {
     private var loaded: PreparedScript? = null
 
     @Synchronized
+    fun loadDraft(bundle: ThemeScriptBundle, fontDirectory: File): PreparedScript {
+        val previous = loaded
+        return PreparedScript(bundle, ThemeScriptAssets.prepare(bundle, fontDirectory, previous?.bundle, previous?.images.orEmpty())).also { loaded = it }
+    }
+
+    @Synchronized
     fun load(filesDir: File, previewRoot: File, reference: String): PreparedScript {
         loaded?.let { return it }
         val file = ThemeScriptBundleStore.fileForReference(filesDir, reference, previewRoot)
         val bundle = ThemeScriptBundleStore.read(file)
-        return PreparedScript(bundle, ThemeScriptAssets.prepare(bundle)).also { loaded = it }
+        return PreparedScript(bundle, ThemeScriptAssets.prepare(bundle, File(previewRoot.parentFile, "theme-fonts"))).also { loaded = it }
     }
 }

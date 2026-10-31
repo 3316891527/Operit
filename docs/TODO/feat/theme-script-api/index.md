@@ -18,7 +18,10 @@ status: implemented_pending_ci
 4. [回归范围与验证状态](03-verification.md)
 5. [原生主题范围扩展](04-native-theme-expansion.md)
 6. [原生组件类型与导入约束](05-native-component-compatibility.md)
+7. [原生主题工作室与资源目录](06-theme-studio.md)
+8. [工作室图标子集与模式扩展引用](07-studio-ci-references.md)
+9. [主题 JSON 与 JavaScript 制作参考](08-authoring-reference.md)
 
-[DONE] 共享模型、素材存储、角色偏好、去品牌的 `.oktheme` 归档、运行限制、原生绘制、可视化编辑与模板、完整配色、原生组件适配、JS/TS 示例及接口文档已实现。未增加 data 一级子包。基础为 #92–#98 合入后的 dev。
+[DONE] 共享模型、素材存储、角色偏好、去品牌的 `.oktheme` 归档、运行限制、原生绘制、可视化编辑与模板、完整配色、原生组件适配、原生主题工作室、目录资源工程、资源字体与像素采样、JS/TS 示例及接口文档已实现。未增加 data 一级子包。基础为 #92–#98 合入后的 dev。
 
 当前状态为实现完成、仓库验证结果待回报；未执行本地构建或测试。Android 原生执行与界面场景未实测，不作为本次提交和工作流派发的前置条件。API 文档位于 `docs/doc-src/feature-protocol/theme_script_api.md`，SDK 位于 `examples/theme-script/`。

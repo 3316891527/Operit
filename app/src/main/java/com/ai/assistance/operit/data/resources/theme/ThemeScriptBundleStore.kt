@@ -133,23 +133,22 @@ object ThemeScriptBundleStore {
         }
     }
 
-    /** 导出使用自己的路径前缀，避免与原有背景、字体及头像素材重名。 */
+    /** 制作页路径直接写入归档，重命名和移动只改变清单路径，不改素材标识。 */
     fun exportFiles(bundle: ThemeScriptBundle, directory: File): Pair<ThemeScriptManifest, Map<String, File>> {
         validate(bundle)
-        val sourcePath = "assets/theme-script.js"
-        val paths = bundle.assets.keys.sorted().mapIndexed { index, path ->
-            path to "assets/theme-script-${index + 1}.${path.substringAfterLast('.')}"
-        }.toMap()
-        val manifest = bundle.manifest.copy(
-            entry = sourcePath,
-            assets = bundle.manifest.assets.mapValues { (_, path) -> paths.getValue(path) },
-        )
-        val bytes = bundle.assets.mapKeys { (path, _) -> paths.getValue(path) } +
-            (sourcePath to bundle.source.toByteArray(Charsets.UTF_8))
-        val files = bytes.mapValues { (path, data) ->
-            File(directory, path).also { target -> target.parentFile?.mkdirs(); target.writeBytes(data) }
+        val bytes = bundle.assets + (bundle.manifest.entry to bundle.source.toByteArray(Charsets.UTF_8))
+        val targets = bytes.keys.associateWith { path ->
+            val target = File(directory, path).canonicalFile
+            require(target.toPath().startsWith(directory.canonicalFile.toPath()) && !target.exists()) { "Theme resource path conflicts with another resource: $path" }
+            target
         }
-        return manifest to files
+        val files = bytes.mapValues { (path, data) ->
+            targets.getValue(path).also { target ->
+                require(target.parentFile.isDirectory || target.parentFile.mkdirs()) { "Cannot create theme resource directory" }
+                target.writeBytes(data)
+            }
+        }
+        return bundle.manifest to files
     }
 
     fun readLimited(input: InputStream, limit: Int): ByteArray {
@@ -178,6 +177,12 @@ object ThemeScriptBundleStore {
                 options.outWidth.toLong() * options.outHeight
             }
             "svg" -> { validateSvg(bytes); 0L }
+            "ttf", "otf" -> {
+                require(bytes.size >= 12) { "Theme font header is incomplete" }
+                val magic = bytes.take(4).map { it.toInt() and 255 }
+                require(magic == listOf(0, 1, 0, 0) || bytes.copyOfRange(0, 4).toString(Charsets.US_ASCII) in setOf("OTTO", "true")) { "Invalid theme font header" }
+                0L
+            }
             else -> error("Theme script drawing assets must be PNG, JPEG, WebP or static SVG")
         }
     }

@@ -116,9 +116,11 @@ internal fun themeColorTokens(colors: ColorScheme): Map<String, String> {
     )
 }
 
-internal fun applyThemeText(style: TextStyle, text: ThemeAppearanceText): TextStyle {
+internal fun applyThemeText(style: TextStyle, text: ThemeAppearanceText, images: Map<String, ThemeScriptImage> = emptyMap()): TextStyle {
     if (text == ThemeAppearanceText()) return style
-    val family = when (text.family) {
+    val family = if (text.family?.startsWith("asset:") == true) {
+        (images.getValue(text.family.removePrefix("asset:")) as ThemeScriptImage.Font).family
+    } else when (text.family) {
         null -> style.fontFamily
         "default" -> FontFamily.Default
         "sans-serif" -> FontFamily.SansSerif
@@ -135,27 +137,27 @@ internal fun applyThemeText(style: TextStyle, text: ThemeAppearanceText): TextSt
     )
 }
 
-internal fun applyThemeTypography(base: Typography, text: ThemeAppearanceText): Typography = base.copy(
-    displayLarge = applyThemeText(base.displayLarge, text),
-    displayMedium = applyThemeText(base.displayMedium, text),
-    displaySmall = applyThemeText(base.displaySmall, text),
-    headlineLarge = applyThemeText(base.headlineLarge, text),
-    headlineMedium = applyThemeText(base.headlineMedium, text),
-    headlineSmall = applyThemeText(base.headlineSmall, text),
-    titleLarge = applyThemeText(base.titleLarge, text),
-    titleMedium = applyThemeText(base.titleMedium, text),
-    titleSmall = applyThemeText(base.titleSmall, text),
-    bodyLarge = applyThemeText(base.bodyLarge, text),
-    bodyMedium = applyThemeText(base.bodyMedium, text),
-    bodySmall = applyThemeText(base.bodySmall, text),
-    labelLarge = applyThemeText(base.labelLarge, text),
-    labelMedium = applyThemeText(base.labelMedium, text),
-    labelSmall = applyThemeText(base.labelSmall, text),
+internal fun applyThemeTypography(base: Typography, text: ThemeAppearanceText, images: Map<String, ThemeScriptImage> = emptyMap()): Typography = base.copy(
+    displayLarge = applyThemeText(base.displayLarge, text, images),
+    displayMedium = applyThemeText(base.displayMedium, text, images),
+    displaySmall = applyThemeText(base.displaySmall, text, images),
+    headlineLarge = applyThemeText(base.headlineLarge, text, images),
+    headlineMedium = applyThemeText(base.headlineMedium, text, images),
+    headlineSmall = applyThemeText(base.headlineSmall, text, images),
+    titleLarge = applyThemeText(base.titleLarge, text, images),
+    titleMedium = applyThemeText(base.titleMedium, text, images),
+    titleSmall = applyThemeText(base.titleSmall, text, images),
+    bodyLarge = applyThemeText(base.bodyLarge, text, images),
+    bodyMedium = applyThemeText(base.bodyMedium, text, images),
+    bodySmall = applyThemeText(base.bodySmall, text, images),
+    labelLarge = applyThemeText(base.labelLarge, text, images),
+    labelMedium = applyThemeText(base.labelMedium, text, images),
+    labelSmall = applyThemeText(base.labelSmall, text, images),
 )
 
 @Composable
 internal fun themeSurface(id: String): ThemeScriptSurface? =
-    (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.appearance?.surfaces?.get(id)?.takeUnless { it == ThemeScriptSurface() }
+    (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.appearance?.surfaces?.get(id)?.takeUnless { it == ThemeScriptSurface() }?.let { resolvedThemeSurface(id, it) }
 
 @Composable
 fun themeScriptShape(id: String, original: Shape): Shape {
@@ -179,10 +181,12 @@ internal fun appearanceShape(shape: ThemeAppearanceShape): CornerBasedShape = wh
 
 @Composable
 fun themeScriptFill(id: String, original: Color, backgroundOpacity: Float? = null): Color {
-    val color = themeSurface(id)?.fillColor
-    if (color == null) return if (backgroundOpacity == null) original else original.copy(alpha = backgroundOpacity)
-    val configured = themeColor(color)
-    return configured.copy(alpha = configured.alpha * (backgroundOpacity ?: 1f))
+    val surface = themeSurface(id)
+    val configured = surface?.fillColor?.let(::themeColor)
+    val color = configured ?: original
+    val baseAlpha = if (configured == null) backgroundOpacity ?: original.alpha else configured.alpha * (backgroundOpacity ?: 1f)
+    val opacity = if (id in LocalThemeHandledOpacity.current) 1f else surface?.opacity ?: 1f
+    return color.copy(alpha = baseAlpha * opacity)
 }
 
 @Composable
@@ -202,7 +206,7 @@ fun themeScriptMessageFraction(id: String): Float = themeSurface(id)?.messageWid
 
 @Composable
 fun themeScriptTypography(id: String, original: Typography): Typography =
-    applyThemeTypography(original, themeSurface(id)?.textStyle ?: ThemeAppearanceText())
+    applyThemeTypography(original, themeSurface(id)?.textStyle ?: ThemeAppearanceText(), (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.images.orEmpty())
 
 @Composable
 fun themeScriptMessageWidth(id: String, original: Dp): Dp = original * (themeSurface(id)?.messageWidth ?: 1f)
@@ -217,7 +221,7 @@ internal fun themeScriptBorder(id: String, original: BorderStroke?): BorderStrok
 
 @Composable
 fun themeScriptTextStyle(id: String, original: TextStyle): TextStyle =
-    applyThemeText(original, themeSurface(id)?.textStyle ?: ThemeAppearanceText())
+    applyThemeText(original, themeSurface(id)?.textStyle ?: ThemeAppearanceText(), (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.images.orEmpty())
 
 /** 素材只替换图像，外层原生按钮继续持有点击、长按和无障碍语义。 */
 @Composable
@@ -237,7 +241,7 @@ fun ThemeScriptIcon(
         Canvas(modifier.requiredSize(icon.size.dp).then(
             if (contentDescription == null) Modifier else Modifier.semantics { this.contentDescription = contentDescription }
         )) {
-            drawThemeLayer(ThemeScriptLayer("image", asset = icon.asset, fit = "fit", opacity = icon.opacity), images, 1f, tintColor = if (icon.useContentTint) tint else null)
+            drawThemeLayer(ThemeScriptLayer("image", asset = icon.asset, fit = "fit", opacity = icon.opacity), images, 1f, tintColor = icon.tintColor?.let(::themeColor) ?: if (icon.useContentTint) tint else null)
         }
     }
 }
