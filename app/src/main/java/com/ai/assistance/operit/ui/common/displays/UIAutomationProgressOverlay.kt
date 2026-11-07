@@ -71,6 +71,8 @@ import com.ai.assistance.operit.services.ServiceLifecycleOwner
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /**
  * PhoneAgent UI 自动化进度悬浮卡片。
@@ -139,7 +141,8 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
                         WindowManager.LayoutParams.TYPE_PHONE
                     }
                     // 不获取输入焦点，但允许点击卡片区域
-                    flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    flags = WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
+                            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
                     format = PixelFormat.TRANSLUCENT
@@ -150,6 +153,7 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
                 layoutParams = params
 
                 overlayView = ComposeView(context).apply {
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                     setViewTreeLifecycleOwner(lifecycleOwner)
                     setViewTreeViewModelStoreOwner(lifecycleOwner)
@@ -218,7 +222,8 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
@@ -227,6 +232,7 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
+            alpha = automationPassthroughAlpha(context)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -235,6 +241,7 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
 
         borderLayoutParams = params
         borderView = ComposeView(context).apply {
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setViewTreeLifecycleOwner(lifecycleOwner)
             setViewTreeViewModelStoreOwner(lifecycleOwner)
@@ -344,9 +351,35 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
         }
     }
 
-    /**
-     * 在截图或实际 UI 操作期间临时隐藏卡片（通过调整可见性实现）。
-     */
+    /** Keep the current phase visible while allowing an injected gesture through the card. */
+    suspend fun setInputPassthrough(enabled: Boolean): Unit = withContext(Dispatchers.Main.immediate) {
+        val view = overlayView ?: return@withContext
+        val params = layoutParams ?: return@withContext
+        params.flags = if (enabled) params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            else params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+        params.alpha = if (enabled) automationPassthroughAlpha(context) else 1f
+        try {
+            windowManager?.updateViewLayout(view, params)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Error updating progress input passthrough", e)
+            throw e
+        }
+        if (enabled) {
+            // updateViewLayout schedules a traversal. Resume after that frame's work so DOWN
+            // cannot target the old touchable card while its window update is still pending.
+            suspendCancellableCoroutine<Unit> { continuation ->
+                val resumeAfterTraversal = Runnable { if (continuation.isActive) continuation.resume(Unit) }
+                val nextFrame = Runnable { handler.post(resumeAfterTraversal) }
+                view.postOnAnimation(nextFrame)
+                continuation.invokeOnCancellation {
+                    view.removeCallbacks(nextFrame)
+                    handler.removeCallbacks(resumeAfterTraversal)
+                }
+            }
+        }
+    }
+
+    /** Screenshot capture hides the card; the border represents the entire active tool call. */
     suspend fun setOverlayVisible(visible: Boolean) {
         try {
             withContext(Dispatchers.Main) {
@@ -373,8 +406,9 @@ class UIAutomationProgressOverlay private constructor(private val context: Conte
 
                 layoutParams = params
                 borderView?.let { border ->
-                    border.alpha = if (shouldHide) 0f else 1f
-                    border.visibility = if (shouldHide) View.GONE else View.VISIBLE
+                    val active = borderEnabled && progressInfo != null
+                    border.alpha = if (active) 1f else 0f
+                    border.visibility = if (active) View.VISIBLE else View.GONE
                 }
             }
         } catch (e: Exception) {
