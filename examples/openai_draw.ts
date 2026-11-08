@@ -51,8 +51,8 @@
         { "name": "quality", "description": { "zh": "图片质量（可选；不传则使用接口默认值）。GPT Image 支持 low / medium / high / auto，gpt-image-2.5 系列额外支持 xhigh / max", "en": "Image quality (optional; omitted means the API default). GPT Image supports low / medium / high / auto; the gpt-image-2.5 series also supports xhigh / max" }, "type": "string", "required": false },
         { "name": "background", "description": { "zh": "背景（可选）：auto / opaque / transparent。transparent 仅用于支持透明背景的模型和 png / webp 输出", "en": "Background (optional): auto / opaque / transparent. transparent requires model support and png / webp output." }, "type": "string", "required": false },
         { "name": "output_format", "description": { "zh": "输出格式：png / jpeg / webp / gif；默认 png。GPT Image 2.6 使用 gif 生成动图，保存文件扩展名与格式一致", "en": "Output format: png / jpeg / webp / gif; default png. Use gif with GPT Image 2.6 for animation. The saved extension matches the format." }, "type": "string", "required": false },
-        { "name": "frame_count", "description": { "zh": "仅用于 gif：2–16 帧的整数，不传则由接口使用默认 9 帧", "en": "GIF only: integer from 2 to 16; the API defaults to 9 frames when omitted." }, "type": "number", "required": false },
-        { "name": "frame_duration_ms", "description": { "zh": "仅用于 gif：每帧毫秒数，整数且至少 20；推荐 20–2000，接口默认 200，编码按 10 ms 取整", "en": "GIF only: integer milliseconds per frame, at least 20; recommended 20–2000. The API defaults to 200 and encodes delays rounded to 10 ms." }, "type": "number", "required": false },
+        { "name": "frame_count", "description": { "zh": "仅 GIF 可选：2–16 帧的整数；留空不发送，普通图片请留空", "en": "Optional for GIF: integer from 2 to 16. Leave blank to omit; keep blank for still images." }, "type": "number", "required": false },
+        { "name": "frame_duration_ms", "description": { "zh": "仅 GIF 可选：每帧毫秒数，整数且至少 20；留空不发送，普通图片请留空；编码按 10 ms 取整", "en": "Optional for GIF: integer milliseconds per frame, at least 20. Leave blank to omit; keep blank for still images. Encoded delays are rounded to 10 ms." }, "type": "number", "required": false },
         { "name": "complexity", "description": { "zh": "GPT Image 2.6 规划复杂度：low / medium / high；与图片 quality 独立。不传使用模型默认值", "en": "GPT Image 2.6 planning complexity: low / medium / high, independent of rendering quality. Omit to use the model default." }, "type": "string", "required": false },
         { "name": "image_urls", "description": { "zh": "参考图公网 URL 数组（可选；图生图用）。支持字符串数组、JSON 字符串或逗号分隔字符串", "en": "Public reference image URLs for image-to-image (optional). Accepts a string array, JSON string, or comma-separated string." }, "type": "array", "required": false },
         { "name": "image_paths", "description": { "zh": "参考图本地路径数组（可选；图生图用，直接 multipart 上传，不必先上床）。支持字符串数组、JSON 字符串或逗号分隔字符串", "en": "Local reference image paths for image-to-image (optional; uploaded as multipart, no image host required). Accepts a string array, JSON string, or comma-separated string." }, "type": "array", "required": false },
@@ -220,27 +220,28 @@ const openaiDraw = (function () {
 
     type ImageOutputOptions = {
         output_format?: ImageOutputFormat;
-        frame_count?: number;
-        frame_duration_ms?: number;
+        frame_count?: number | null;
+        frame_duration_ms?: number | null;
         complexity?: "low" | "medium" | "high";
     };
 
     function validateOutputOptions(params: ImageOutputOptions, size?: string, background?: string): ImageOutputFormat {
-        const format = params.output_format ?? "png";
+        const format = params.output_format || "png";
         if (!["png", "jpeg", "webp", "gif"].includes(format)) {
             throw new Error("output_format 必须是 png、jpeg、webp 或 gif。");
         }
-        if (params.complexity !== undefined && !["low", "medium", "high"].includes(params.complexity)) {
+        if (params.complexity && !["low", "medium", "high"].includes(params.complexity)) {
             throw new Error("complexity 必须是 low、medium 或 high。");
         }
-        if (format !== "gif" && (params.frame_count !== undefined || params.frame_duration_ms !== undefined)) {
+        // 宿主将未填写的可选数值参数传为 null；缺省值不能触发 GIF 专属校验。
+        if (format !== "gif" && (params.frame_count != null || params.frame_duration_ms != null)) {
             throw new Error("frame_count 和 frame_duration_ms 只能用于 output_format=gif。");
         }
-        if (params.frame_count !== undefined &&
+        if (params.frame_count != null &&
             (!Number.isInteger(params.frame_count) || params.frame_count < 2 || params.frame_count > 16)) {
             throw new Error("frame_count 必须是 2–16 的整数。");
         }
-        if (params.frame_duration_ms !== undefined &&
+        if (params.frame_duration_ms != null &&
             (!Number.isSafeInteger(params.frame_duration_ms) || params.frame_duration_ms < 20)) {
             throw new Error("frame_duration_ms 必须是至少 20 的整数毫秒数。");
         }
@@ -410,8 +411,8 @@ const openaiDraw = (function () {
                     ...imageFields
                 };
                 // multipart 字段必须是文本；JSON 生成请求中的帧参数则保持数字类型。
-                if (params.frame_count !== undefined) formData.frame_count = params.frame_count.toString();
-                if (params.frame_duration_ms !== undefined) formData.frame_duration_ms = params.frame_duration_ms.toString();
+                if (params.frame_count != null) formData.frame_count = params.frame_count.toString();
+                if (params.frame_duration_ms != null) formData.frame_duration_ms = params.frame_duration_ms.toString();
                 const response = await Tools.Net.uploadFile({
                     url: endpoint,
                     method: "POST",
@@ -437,12 +438,13 @@ const openaiDraw = (function () {
         const endpoint = getImageEndpoint(apiBaseUrl, "generations");
         // 不发送 response_format：GPT Image 系列会以 400 Unknown parameter 拒绝该参数，
         // 且固定返回 b64_json；返回 url 的模型由 parseOpenAIImageResponse 下载保存。
+        // JSON 会保留 null，必须转换为 undefined 才能省略未填写的帧参数。
         const body = {
             model: effectiveModel,
             prompt: params.prompt,
             ...imageFields,
-            frame_count: params.frame_count,
-            frame_duration_ms: params.frame_duration_ms
+            frame_count: params.frame_count ?? undefined,
+            frame_duration_ms: params.frame_duration_ms ?? undefined
         };
 
         const request = client
