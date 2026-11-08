@@ -1196,11 +1196,10 @@ class MessageProcessingDelegate(
 
                         val loadProviderModelStartTime = messageTimingNow()
                         val (provider, modelName) = try {
-                            service.getMessageInfoProviderAndModelForFunction(
+                            service.getDisplayProviderAndModelForFunction(
                                 functionType = com.ai.assistance.operit.data.model.FunctionType.CHAT,
                                 chatModelConfigIdOverride = chatModelConfigIdOverride,
                                 chatModelIndexOverride = chatModelIndexOverride,
-                                enableThinking = enableThinking,
                             )
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             throw e
@@ -1756,11 +1755,10 @@ class MessageProcessingDelegate(
                 }
 
             val (provider, modelName) =
-                service.getMessageInfoProviderAndModelForFunction(
+                service.getDisplayProviderAndModelForFunction(
                     functionType = FunctionType.CHAT,
                     chatModelConfigIdOverride = chatModelConfigIdOverride,
                     chatModelIndexOverride = chatModelIndexOverride,
-                    enableThinking = enableThinking,
                 )
 
             var firstResponseElapsed: Long? = null
