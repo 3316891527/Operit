@@ -116,4 +116,30 @@ class RevisableTextDisplayStateTest {
         state.finish()
         assertEquals(prefix + "正确", state.visibleContent())
     }
+
+    @Test fun unmatchedInlineTicksDoNotDelayTextAfterRollback() {
+        val state = RevisableTextDisplayState()
+        val prefix = "> 空值 ``，继续说明。\n"
+        assertEquals(prefix, state.append(prefix))
+        state.apply(save("retry", prefix.length))
+        val discarded = tag("discarded-secret") + "错误正文\n"
+        assertEquals("错误正文\n", state.append(discarded))
+        assertEquals(prefix, state.apply(undo("retry", prefix.length, discarded.length)))
+        assertEquals("正确正文", state.append(tag("hidden") + "正确正文"))
+        assertEquals("", state.finish())
+        assertEquals(prefix + "正确正文", state.visibleContent())
+    }
+
+    @Test fun aCheckpointInsideAnInvalidInlineExampleCanResumeAtANewLine() {
+        val state = RevisableTextDisplayState()
+        val prefix = "说明 ``" + tag("hidden")
+        assertEquals("说明 ``", state.append(prefix))
+        state.apply(save("line", prefix.length))
+        val discarded = "\n错误正文"
+        assertEquals(discarded, state.append(discarded))
+        assertEquals("说明 ``", state.apply(undo("line", prefix.length, discarded.length)))
+        assertEquals("\r\n正确正文", state.append("\r\n正确正文"))
+        assertEquals("", state.finish())
+        assertEquals("说明 ``\r\n正确正文", state.visibleContent())
+    }
 }

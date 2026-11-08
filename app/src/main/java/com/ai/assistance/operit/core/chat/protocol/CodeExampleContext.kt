@@ -57,6 +57,11 @@ internal class CodeExampleContext {
             return
         }
         if (openingRun > 0 && char != openingMarker) settleOpening()
+        // 与流式 Markdown 行内代码保持相同边界，未配对反引号不能跨行吞入协议和工具。
+        if ((char == '\n' || char == '\r') && code?.fenced == false) {
+            code = null
+            closingTicks = 0
+        }
         val active = code
         if (active != null && !active.fenced && char != '`') {
             if (closingTicks == active.marker.length) code = null

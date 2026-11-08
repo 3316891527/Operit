@@ -20,6 +20,11 @@ internal class ProtocolMetaDisplayFilter(private val preserveCodeExamples: Boole
                 if (pendingLiteral != null && pendingLiteral.closesBefore(char)) {
                     emitVisible(pendingLiteral.content.toString(), this)
                     literal = null
+                } else if (pendingLiteral != null && pendingLiteral.endsAtLineBreak(char)) {
+                    // 行内示例在换行处失效，立即发布去除协议后的正文，不能等整轮结束。
+                    val projection = ProtocolMetaDisplayFilter(preserveCodeExamples = false)
+                    emitVisible(projection.append(pendingLiteral.content.toString()) + projection.finish(), this)
+                    literal = null
                 } else if (pendingLiteral != null) {
                     pendingLiteral.append(char)
                     if (pendingLiteral.closed) {
@@ -192,6 +197,9 @@ internal class ProtocolMetaDisplayFilter(private val preserveCodeExamples: Boole
 
         fun closesBefore(char: Char): Boolean =
             !context.fenced && char != '`' && ticks == context.marker.length
+
+        fun endsAtLineBreak(char: Char): Boolean =
+            !context.fenced && (char == '\n' || char == '\r')
 
         fun checkpoint() = LiteralSnapshot(
             context, content, content.length, ticks, closingLine.toString(), lineCandidate, closed,
