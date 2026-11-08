@@ -3,11 +3,32 @@ package com.ai.assistance.operit.api.chat.llmprovider
 import com.ai.assistance.operit.api.chat.keypool.SingleApiKeyProvider
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
+import com.ai.assistance.operit.util.logging.AppLogger
 import okhttp3.OkHttpClient
+import org.json.JSONArray
+import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ClaudeProviderHistoryTest {
+
+    private var systemLog = true
+    private var fileLog = true
+
+    @Before
+    fun disableAndroidLogging() {
+        systemLog = AppLogger.enableSystemLog
+        fileLog = AppLogger.enableFileLogging
+        AppLogger.enableSystemLog = false
+        AppLogger.enableFileLogging = false
+    }
+
+    @After
+    fun restoreLogging() {
+        AppLogger.enableSystemLog = systemLog
+        AppLogger.enableFileLogging = fileLog
+    }
 
     private fun createProvider(enableToolCall: Boolean = true): ClaudeProvider {
         return ClaudeProvider(
@@ -56,8 +77,15 @@ class ClaudeProviderHistoryTest {
             toolResultTurn
         )
 
-        val serialized = provider.buildSerializedHistory(history)
-        val messages = serialized.messagesArray
+        // Keep the production serializer private, matching existing history tests.
+        val serialize = ClaudeProvider::class.java.getDeclaredMethod(
+            "buildSerializedHistory", List::class.java, Boolean::class.javaPrimitiveType
+        ).apply { isAccessible = true }
+        val serialized = checkNotNull(serialize.invoke(provider, history, false))
+        val messagesField = serialized.javaClass.getDeclaredField("messagesArray").apply {
+            isAccessible = true
+        }
+        val messages = messagesField.get(serialized) as JSONArray
 
         assertEquals(3, messages.length()) // user, then assistant, then user (tool_result)
         val assistantMsg = messages.getJSONObject(1)

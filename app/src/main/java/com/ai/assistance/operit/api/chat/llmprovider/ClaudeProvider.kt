@@ -589,7 +589,7 @@ open class ClaudeProvider(
         }
     }
 
-    internal data class ClaudeSerializedHistory(
+    private data class ClaudeSerializedHistory(
         val messagesArray: JSONArray,
         val systemBlocks: JSONArray?
     )
@@ -700,9 +700,9 @@ open class ClaudeProvider(
         }
     }
 
-    internal fun buildSerializedHistory(
+    private fun buildSerializedHistory(
         chatHistory: List<PromptTurn>,
-        preserveThinkInHistory: Boolean = false
+        preserveThinkInHistory: Boolean
     ): ClaudeSerializedHistory {
         val messagesArray = JSONArray()
         val effectiveHistory =
