@@ -8,8 +8,8 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.data.theme.script.ThemeAssetFormats
-import com.ai.assistance.operit.data.theme.script.ThemeResourceImportException
 import com.ai.assistance.operit.data.theme.script.ThemeResourceLimit
 import com.ai.assistance.operit.data.theme.script.ThemeResourceLimitException
 import androidx.compose.runtime.getValue
@@ -175,7 +175,8 @@ internal class ThemeStudioState(
     }
     fun report(failure: Exception) {
         AppLogger.e("ThemeStudio", "主题工作室操作失败", failure)
-        error = themeResourceErrorMessage(context, failure).take(4096)
+        error = themeResourceErrorMessage(failure).take(4096)
+        themeResourceErrorToast(context, failure)?.let { OKToast.error(context, it).show() }
     }
     fun clearError() { error = null }
     private suspend fun task(action: suspend () -> Unit): Boolean {
@@ -359,14 +360,9 @@ internal class ThemeStudioState(
         return task {
             val original = bundle
             val folder = currentFolder
-            val originalImages = images
             val added = withContext(Dispatchers.IO) {
                 val selected = uris.distinct()
                 val currentBytes = original.source.toByteArray(Charsets.UTF_8).size.toLong() + original.assets.values.sumOf { it.size.toLong() }
-                val currentPixels = original.manifest.assets.entries.distinctBy { it.value }.sumOf { (id, _) ->
-                    val bitmap = originalImages[id] as? ThemeScriptImage.Bitmap
-                    if (bitmap == null) 0L else bitmap.image.width.toLong() * bitmap.image.height
-                }
                 ThemeResourceLimit.AssetCount.check(selected.size.toLong(), used = original.manifest.assets.size.toLong())
                 var next = original
                 var pendingBytes = 0L
@@ -382,8 +378,6 @@ internal class ThemeStudioState(
                         val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
                         requireNotNull(cursor.getString(nameIndex)) { "Resource name is missing" } to if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) cursor.getLong(sizeIndex).takeIf { it >= 0L } else null
                     }
-                    var fileBytes = knownSize
-                    var sizeIsLowerBound = false
                     try {
                         val path = "$folder/$name"
                         require(ThemeAssetFormats.extension(name) in ThemeAssetFormats.resources) {
@@ -395,7 +389,6 @@ internal class ThemeStudioState(
                         val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use {
                             ThemeScriptBundleStore.readLimited(it, budget.maximum.toInt(), budget, knownSize = knownSize, resource = name)
                         }
-                        fileBytes = bytes.size.toLong()
                         pendingBytes += bytes.size
                         ThemeResourceLimit.BundleBytes.check(pendingBytes, used = currentBytes, resource = name)
                         val id = "asset_" + UUID.randomUUID().toString().replace("-", "")
@@ -404,20 +397,8 @@ internal class ThemeStudioState(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (failure: Exception) {
-                        var cause = failure
-                        if (failure is ThemeResourceLimitException) {
-                            cause = when (failure.budget) {
-                                ThemeResourceLimit.BitmapPixels -> failure.relativeTo(currentPixels)
-                                ThemeResourceLimit.AssetCount -> failure.relativeTo(original.manifest.assets.size.toLong())
-                                else -> failure
-                            }
-                            if (failure.budget == ThemeResourceLimit.AssetBytes || failure.budget == ThemeResourceLimit.SvgBytes) {
-                                fileBytes = failure.incoming
-                                sizeIsLowerBound = failure.incomingIsLowerBound
-                            }
-                        }
-                        throw ThemeResourceImportException(name, currentBytes, original.manifest.assets.size,
-                            fileBytes, sizeIsLowerBound, cause)
+                        if (failure is ThemeResourceLimitException) throw failure
+                        throw IllegalArgumentException(name + ": " + failure.message, failure)
                     }
                 }
                 next

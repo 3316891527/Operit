@@ -47,22 +47,26 @@ class ThemeJpegResourcesTest {
         }
     }
 
-    @Test fun localizedFailuresKeepLimitsUsageFileSizeAndLowerBoundVisible() {
+    @Test fun bannerKeepsCompactEnglishTotalsAndToastContainsOnlyLocalizedReason() {
         val target = InstrumentationRegistry.getInstrumentation().targetContext
+        val issue = ThemeResourceLimitException(ThemeResourceLimit.AssetBytes, 8_388_608, 0, 8_388_609,
+            incomingIsLowerBound = true, resource = "photo.JPG")
+        val wrapped = IllegalArgumentException("Invalid archive", issue)
+        val banner = "Theme script resource exceeds size limit (≥8,388,609 B/8,388,608 B)"
         for (language in listOf("zh-CN", "en")) {
             val config = Configuration(target.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)) }
             val context = target.createConfigurationContext(config)
-            val issue = ThemeResourceLimitException(ThemeResourceLimit.AssetBytes, 8_388_608, 0, 8_388_609,
-                incomingIsLowerBound = true, resource = "photo.JPG")
-            val failure = ThemeResourceImportException("photo.JPG", 12_345, 7, 8_388_609, true, issue)
-            val message = themeResourceErrorMessage(context, failure)
-            assertTrue(message.contains("photo.JPG"))
-            assertTrue(message.contains("8,388,608"))
-            assertTrue(message.contains("8,388,609"))
-            assertTrue(message.contains("12,345"))
-            assertTrue(message.contains(if (language == "en") "at least" else "至少"))
-            val wrapped = IllegalArgumentException("Invalid archive", issue)
-            assertEquals(themeResourceErrorMessage(context, issue), themeResourceErrorMessage(context, wrapped))
+            assertEquals(banner, themeResourceErrorMessage(wrapped))
+            val toast = requireNotNull(themeResourceErrorToast(context, wrapped))
+            assertEquals(if (language == "en") "Theme resource file exceeds the size limit" else "主题资源文件超过大小限制", toast)
+            assertFalse(toast.any { it.isDigit() })
+            assertFalse(toast.contains('/'))
+            assertFalse(toast.contains("photo.JPG"))
+            val pixels = ThemeResourceLimitException(ThemeResourceLimit.BitmapPixels, 41_943_040, 40_000_000, 2_000_000)
+            assertEquals("Theme drawing assets exceed the decoded pixel budget (42,000,000/41,943,040)", themeResourceErrorMessage(pixels))
+            assertEquals(if (language == "en") "Theme images exceed the decoded pixel limit" else "主题图片解码后的总像素超过限制",
+                themeResourceErrorToast(context, pixels))
+            assertNull(themeResourceErrorToast(context, IllegalArgumentException("Other error")))
         }
     }
 }

@@ -34,7 +34,7 @@ class ThemeResourceReadLimitTest {
         assertEquals(33, consumed)
         assertEquals(33L, failure.incoming)
         assertTrue(failure.incomingIsLowerBound)
-        assertTrue(failure.message!!.contains("at least 33"))
+        assertTrue(failure.message!!.endsWith("(≥33 B/32 B)"))
     }
 
     @Test fun providerSizeIsUsedWhenItCoversTheObservedBytes() {

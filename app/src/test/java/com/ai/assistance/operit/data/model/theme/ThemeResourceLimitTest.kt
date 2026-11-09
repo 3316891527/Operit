@@ -21,7 +21,7 @@ class ThemeResourceLimitTest {
             assertEquals(budget.maximum + 1, failure.incoming)
             assertEquals("assets/photo.jpg", failure.resource)
             assertFalse(failure.incomingIsLowerBound)
-            assertTrue(failure.message!!.contains("limit=${budget.maximum}"))
+            assertFalse(failure.message!!.contains("\n"))
         }
     }
 
@@ -43,13 +43,12 @@ class ThemeResourceLimitTest {
         assertEquals(3L, failure.incoming)
     }
 
-    @Test fun pixelFailureIsRelativeToTheOriginalProjectIncludingEarlierBatchImages() {
+    @Test fun pixelFailureIncludesExistingAndNewImagesInTheAttemptedTotal() {
         val failure = exceeded { ThemeResourceLimit.BitmapPixels.check(2_000_000, used = 40_000_000, resource = "assets/photo.JPG") }
-        val original = failure.relativeTo(39_000_000)
-        assertEquals(39_000_000L, original.used)
-        assertEquals(3_000_000L, original.incoming)
-        assertEquals("assets/photo.JPG", original.resource)
-        assertEquals(ThemeResourceUnit.Pixels, original.budget.unit)
+        assertEquals(42_000_000L, failure.used + failure.incoming)
+        assertEquals("assets/photo.JPG", failure.resource)
+        assertTrue(failure.message!!.endsWith("(42,000,000/41,943,040)"))
+        assertEquals(ThemeResourceUnit.Pixels, failure.budget.unit)
     }
 
     @Test fun encodedByteAndDecodedPixelBudgetsKeepTheirOwnUnitsAndLimits() {
