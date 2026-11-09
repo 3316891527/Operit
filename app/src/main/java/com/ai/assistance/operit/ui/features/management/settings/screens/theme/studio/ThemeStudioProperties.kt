@@ -72,8 +72,8 @@ internal fun StudioProperties(state: ThemeStudioState) {
         colorRequest = StudioColorRequest(layerTitle, initial, layerSeed, allowInherit = field != "lineColor") { value ->
             state.updateLayer(index) { layer ->
                 when (field) {
-                    "lineColor" -> layer.copy(color = requireNotNull(value), strokeColor = null)
-                    "color" -> layer.copy(color = value)
+                    "lineColor" -> layer.copy(color = requireNotNull(value), gradient = null, strokeColor = null)
+                    "color" -> layer.copy(color = value, gradient = if (value != null) null else layer.gradient)
                     "strokeColor" -> layer.copy(strokeColor = value, strokeWidth = if (value != null && layer.strokeWidth == 0f) 1f else layer.strokeWidth)
                     else -> error("Unknown layer color: $field")
                 }
@@ -107,12 +107,14 @@ internal fun StudioProperties(state: ThemeStudioState) {
                 ThemeScriptContract.colorTokens.filter { token -> token.contains(paletteQuery, true) || context.getString(ThemeStudioPaletteLabels.getValue(token)).contains(paletteQuery, true) }.forEach { token -> StudioColorRow(state, stringResource(ThemeStudioPaletteLabels.getValue(token)), token, ::color) }
             }
         } else if (state.target.kind == StudioKind.Typography) {
+            StudioTextTargetPicker(state)
             StudioTextProperties(state, ::color) { fontPicker = true }
         } else if (state.target.kind == StudioKind.Icon) {
             StudioActionIconProperties(state, ::color) { bindIcon = true }
         } else if (state.property == StudioProperty.Layers) {
             val surface = state.surface()
             StudioSection(stringResource(R.string.studio_fill_color)) { StudioColorHead(); StudioColorRow(state, stringResource(R.string.studio_fill_color), "fillColor", ::color) }
+            StudioSurfaceGradient(state)
             surface.layers.forEachIndexed { index, layer ->
                 key(layer.id, index) {
                     StudioSection((index + 1).toString() + " · " + (layer.asset?.let { state.bundle.manifest.assets.getValue(it).substringAfterLast('/') } ?: stringResource(studioLayerLabel(layer.type)))) {
@@ -147,6 +149,9 @@ internal fun StudioProperties(state: ThemeStudioState) {
                                 StudioSlider(state, stringResource(R.string.studio_stroke_width), layer.strokeWidth, 0f..16f, "dp", precision = 2) { value -> state.updateLayer(index) { it.copy(strokeWidth = value) } }
                             }
                             if (layer.type == "rect") StudioSlider(state, stringResource(R.string.studio_corner_radius), layer.radius, 0f..128f, "dp") { value -> state.updateLayer(index) { it.copy(radius = value) } }
+                        }
+                        if (layer.type !in setOf("image", "nineSlice")) StudioGradientProperties(state, layer.gradient) { value ->
+                            state.updateLayer(index) { it.copy(gradient = value, color = if (value == null) it.gradient?.stops?.first()?.color ?: it.color else null) }
                         }
                         if (state.target.states.isNotEmpty()) StudioChoices(layer.state, (listOf("always") + state.target.states).map { it to studioStateLabel(it) }) { value -> state.updateLayer(index) { it.copy(state = value) } }
                         StudioSlider(state, stringResource(R.string.studio_layer_x), layer.bounds.x * 100, -100f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(x = value / 100)) } }
@@ -205,7 +210,7 @@ private fun StudioSingleColor(label: String, value: String?, onClick: () -> Unit
 
 @Composable
 private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
-    val text = if (state.target.kind == StudioKind.Typography) state.appearance.typography else state.surface().textStyle
+    val text = state.text()
     StudioSection(stringResource(R.string.studio_font)) {
         if (state.target.kind == StudioKind.Typography) {
             StudioColorHead()
@@ -214,6 +219,8 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
         }
         StudioChoices(text.family, listOf(null to stringResource(R.string.studio_inherit), "default" to stringResource(R.string.studio_system_font), "sans-serif" to stringResource(R.string.studio_font_sans), "serif" to stringResource(R.string.studio_font_serif), "monospace" to stringResource(R.string.studio_font_mono), "cursive" to stringResource(R.string.studio_font_cursive))) { value -> state.updateText { it.copy(family = value) } }
         TextButton(onClick = onFont) { Text(text.family?.takeIf { it.startsWith("asset:") }?.removePrefix("asset:")?.let { state.bundle.manifest.assets.getValue(it).substringAfterLast('/') } ?: stringResource(R.string.studio_choose_font)) }
+        Text(stringResource(R.string.studio_text_weight))
+        StudioChoices(text.weight, listOf(null to stringResource(R.string.studio_inherit), 300 to "300", 400 to "400", 500 to "500", 600 to "600", 700 to "700", 900 to "900")) { weight -> state.updateText { it.copy(weight = weight) } }
         StudioSlider(state, stringResource(R.string.studio_font_scale), text.scale, .5f..2f) { value -> state.updateText { it.copy(scale = value) } }
         StudioSlider(state, stringResource(R.string.studio_line_height), text.lineHeight, .8f..2f) { value -> state.updateText { it.copy(lineHeight = value) } }
         StudioSlider(state, stringResource(R.string.studio_letter_spacing), text.letterSpacing, -2f..8f, "sp") { value -> state.updateText { it.copy(letterSpacing = value) } }
@@ -225,6 +232,7 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
     val s = state.surface()
     val target = state.target
+    if (target.id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) TextButton(onClick = { state.resetPageBackground() }) { Text(stringResource(R.string.studio_page_inherit)) }
     StudioSection(stringResource(R.string.studio_colors)) {
         StudioColorHead()
         StudioColorRow(state, stringResource(surfaceColorLabel(target, "fillColor")), "fillColor", onColor)
@@ -233,6 +241,7 @@ private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, S
         if (target.id in setOf("userAvatar", "assistantAvatar")) StudioHint(stringResource(R.string.studio_avatar_fill_hint))
         StudioSlider(state, stringResource(R.string.studio_opacity), s.opacity, 0f..1f) { value -> state.updateSurface { it.copy(opacity = value) } }
     }
+    StudioSurfaceGradient(state)
     if (target.supports(StudioSurfaceControl.Shape)) {
         StudioSection(stringResource(R.string.studio_shape_border)) {
             val shape = when { s.shape == null -> "inherit"; s.shape.type == "rounded" && s.shape.radius == 0f -> "rect"; else -> s.shape.type }
