@@ -67,6 +67,7 @@ internal class ThemeStudioState(
     var mode by mutableStateOf("light")
     var target by mutableStateOf(ThemeStudioTargets.first { it.id == "assistantMessage" })
     var property by mutableStateOf(StudioProperty.Appearance)
+    var textTarget by mutableStateOf("global")
     var previewState by mutableStateOf("always")
     var previewCollapsed by mutableStateOf(false)
     var currentFolder by mutableStateOf("assets")
@@ -132,7 +133,7 @@ internal class ThemeStudioState(
         }
     }
 
-    fun location() = StudioLocation(mode, target.id, workspace, scene, property, previewState, previewInputStyle, previewCollapsed)
+    fun location() = StudioLocation(mode, target.id, workspace, scene, property, previewState, previewInputStyle, previewCollapsed, textTarget)
 
     fun rememberLocation(location: StudioLocation = location()) = locationStore.write(location)
 
@@ -142,6 +143,8 @@ internal class ThemeStudioState(
         require(location.property in selected.properties) { "Invalid studio property" }
         require(location.previewState == "always" || location.previewState in selected.states) { "Invalid studio preview state" }
         require(location.inputStyle in setOf("classic", "agent")) { "Invalid studio input style" }
+        require(location.textTarget == "global" || location.textTarget in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.textIds) { "Invalid text style target" }
+        textTarget = location.textTarget
         mode = location.mode
         target = selected
         workspace = location.workspace
@@ -161,7 +164,7 @@ internal class ThemeStudioState(
     }
     fun selectScene(next: StudioScene) {
         scene = next
-        if (target.scene != next) select(ThemeStudioTargets.first { it.id == when (next) { StudioScene.Chat -> "assistantMessage"; StudioScene.Components -> "settingsCard"; StudioScene.Navigation -> "navigation" } })
+        if (target.scene != next) select(ThemeStudioTargets.first { it.id == when (next) { StudioScene.Chat -> "assistantMessage"; StudioScene.Components -> "settingsCard"; StudioScene.Navigation -> "navigation"; StudioScene.Pages -> "page.packages" } })
     }
     fun report(failure: Exception) {
         AppLogger.e("ThemeStudio", "主题工作室操作失败", failure)
@@ -226,6 +229,10 @@ internal class ThemeStudioState(
         val appearance = bundle.manifest.appearance.forMode(forMode)
         return (if (id in ThemeScriptContract.actionButtonIds) appearance.actionButtonSurface(id) else appearance.surfaces[id]) ?: ThemeScriptSurface()
     }
+    fun resetPageBackground() = updateAppearance { base ->
+        val variant = base.modes[mode] ?: ThemeAppearanceMode()
+        base.copy(modes = base.modes + (mode to variant.copy(surfaces = variant.surfaces + (target.id to ThemeScriptSurface()))))
+    }
     fun resetButtonStyle() = updateAppearance { it.clearActionButtonSurface(target.id, mode) }
     fun updateSurface(id: String = target.id, forMode: String = mode, change: (ThemeScriptSurface) -> ThemeScriptSurface) = updateAppearance { base ->
         val variant = base.modes[forMode] ?: ThemeAppearanceMode()
@@ -234,10 +241,18 @@ internal class ThemeStudioState(
         val updated = change(before ?: ThemeScriptSurface())
         base.copy(modes = base.modes + (forMode to variant.copy(surfaces = variant.surfaces + (id to updated))))
     }
+    fun text(forMode: String = mode): ThemeAppearanceText {
+        val appearance = bundle.manifest.appearance.forMode(forMode)
+        return if (target.kind != StudioKind.Typography) surface(forMode = forMode).textStyle
+            else if (textTarget == "global") appearance.typography
+            else appearance.textStyles[textTarget] ?: ThemeAppearanceText()
+    }
     fun updateText(forMode: String = mode, change: (ThemeAppearanceText) -> ThemeAppearanceText) {
         if (target.kind == StudioKind.Typography) updateAppearance { base ->
             val variant = base.modes[forMode] ?: ThemeAppearanceMode()
-            base.copy(modes = base.modes + (forMode to variant.copy(typography = change(base.forMode(forMode).typography))))
+            val updated = if (textTarget == "global") variant.copy(typography = change(text(forMode)))
+                else variant.copy(textStyles = variant.textStyles + (textTarget to change(text(forMode))))
+            base.copy(modes = base.modes + (forMode to updated))
         } else updateSurface(forMode = forMode) { it.copy(textStyle = change(it.textStyle)) }
     }
     fun icon(id: String = target.id, forMode: String = mode) = bundle.manifest.appearance.forMode(forMode).icons[id]
@@ -260,7 +275,7 @@ internal class ThemeStudioState(
         if (field == "tintColor") return icon(forMode = forMode)?.tintColor
         if (target.kind == StudioKind.Palette) return (if (forMode == "light") bundle.manifest.appearance.palette.light else bundle.manifest.appearance.palette.dark)[field]
         if (target.kind == StudioKind.Icon) return icon(forMode = forMode)?.tintColor
-        if (target.kind == StudioKind.Typography) return bundle.manifest.appearance.forMode(forMode).typography.color
+        if (target.kind == StudioKind.Typography) return text(forMode).color
         if (field == "textColor") return surface(forMode = forMode).textStyle.color
         val value = surface(forMode = forMode).forState(if (property == StudioProperty.States) previewState else "always")
         return when (field) { "fillColor" -> value.fillColor; "contentColor" -> value.contentColor ?: value.textStyle.color; "strokeColor" -> value.strokeColor; else -> error("Unknown color field") }
@@ -275,7 +290,7 @@ internal class ThemeStudioState(
             StudioKind.Palette -> setPalette(field, value, forMode)
             StudioKind.Icon -> icon(forMode = forMode)?.let { setIcon(it.copy(tintColor = value, useContentTint = if (value == null) it.useContentTint else false), forMode = forMode) }
             StudioKind.Surface -> updateSurface(forMode = forMode) { surface ->
-                surface.withStudioColor(
+                surface.copy(fillGradient = if (field == "fillColor" && value != null) null else surface.fillGradient).withStudioColor(
                     field = field,
                     value = value,
                     state = if (property == StudioProperty.States) previewState else "always",
@@ -323,7 +338,7 @@ internal class ThemeStudioState(
     fun assetUsed(id: String): Boolean {
         val base = bundle.manifest.appearance
         val appearances = listOf(base.copy(modes = emptyMap())) + base.modes.keys.map(base::forMode)
-        return appearances.any { appearance -> appearance.icons.values.any { it.asset == id } || appearance.typography.family == "asset:$id" || appearance.surfaces.values.any { it.textStyle.family == "asset:$id" || it.layers.any { layer -> layer.asset == id } } }
+        return appearances.any { appearance -> appearance.icons.values.any { it.asset == id } || appearance.typography.family == "asset:$id" || appearance.textStyles.values.any { it.family == "asset:$id" } || appearance.surfaces.values.any { it.textStyle.family == "asset:$id" || it.layers.any { layer -> layer.asset == id } } }
     }
     fun deleteAsset(id: String) = edit { current ->
         require(!assetUsed(id)) { "Remove the resource bindings before deleting this file" }
