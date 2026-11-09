@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -909,6 +911,8 @@ internal fun TokenStatsConfigurationCardsSection(
     currency: PricingCurrency,
     tokenDisplayUnit: TokenStatsDisplayUnit,
     configurationNames: Map<String, String>,
+    clearingInvalidConfigurations: Boolean,
+    onClearInvalidConfigurations: () -> Unit,
     priceSettings: List<TokenStatsPriceSetting>,
     onEditPrice: (TokenStatsPriceSetting?, TokenStatsPriceDraft, String?) -> Unit,
     onResetConfigurationPrice: (TokenStatsPriceSetting) -> Unit,
@@ -941,6 +945,21 @@ internal fun TokenStatsConfigurationCardsSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End,
                 ) {
+                    TextButton(
+                        onClick = onClearInvalidConfigurations,
+                        enabled = !clearingInvalidConfigurations && configurations.any {
+                            it.configId.isNotBlank() && it.configId !in configurationNames
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        modifier = Modifier.widthIn(max = 132.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.token_stats_clear_invalid_configurations),
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     Text(
                         text = stringResource(
                             R.string.token_stats_configuration_count,

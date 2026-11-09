@@ -20,6 +20,10 @@ interface TokenStatsSettingsStore {
 
     suspend fun saveActivityViewMode(mode: TokenActivityViewMode)
 
+    suspend fun loadHiddenConfigurationIds(): Set<String>
+
+    suspend fun hideConfigurationIds(configIds: Set<String>): Set<String>
+
     suspend fun loadTimeRange(): TokenStatsTimeRange?
 
     suspend fun saveTimeRange(range: TokenStatsTimeRange?)
@@ -60,6 +64,12 @@ class TokenStatsPreferencesStore(context: Context) : TokenStatsSettingsStore {
     override suspend fun saveActivityViewMode(mode: TokenActivityViewMode) {
         preferences.saveActivityViewMode(mode)
     }
+
+    override suspend fun loadHiddenConfigurationIds(): Set<String> =
+        preferences.loadHiddenConfigurationIds()
+
+    override suspend fun hideConfigurationIds(configIds: Set<String>): Set<String> =
+        preferences.hideConfigurationIds(configIds)
 
     override suspend fun loadTimeRange(): TokenStatsTimeRange? {
         return preferences.loadTimeRange()

@@ -44,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.collects.PricingCurrency
+import com.ai.assistance.operit.data.stats.isTokenStatsConfigurationVisible
 import com.ai.assistance.operit.data.stats.TokenStatsDisplayModelBreakdown
 import com.ai.assistance.operit.data.stats.TokenStatsDisplayUnit
 import com.ai.assistance.operit.data.stats.TokenStatsGranularity
@@ -308,6 +309,9 @@ private fun TokenStatsPageContent(
                     currency = state.targetCurrency,
                     tokenDisplayUnit = state.tokenDisplayUnit,
                     configurationNames = state.configurationNames,
+                    hiddenConfigurationIds = state.hiddenConfigurationIds,
+                    clearingInvalidConfigurations = state.loading || state.clearingInvalidConfigurations,
+                    onClearInvalidConfigurations = viewModel::clearInvalidConfigurations,
                     priceSettings = state.priceSettings,
                     onSavePrice = viewModel::savePrice,
                     onDeletePrice = viewModel::deletePrice,
@@ -381,16 +385,25 @@ private fun TokenStatsModelDetailsSection(
     currency: PricingCurrency,
     tokenDisplayUnit: TokenStatsDisplayUnit,
     configurationNames: Map<String, String>,
+    hiddenConfigurationIds: Set<String>,
+    clearingInvalidConfigurations: Boolean,
+    onClearInvalidConfigurations: () -> Unit,
     priceSettings: List<TokenStatsPriceSetting>,
     onSavePrice: (TokenStatsPriceDraft) -> Unit,
     onDeletePrice: (TokenStatsPriceSetting) -> Unit,
 ) {
     var priceEditor by remember { mutableStateOf<PriceEditorTarget?>(null) }
     TokenStatsConfigurationCardsSection(
-        configurations = models.flatMap(TokenStatsDisplayModelBreakdown::identities),
+        configurations = models.flatMap(TokenStatsDisplayModelBreakdown::identities).filter {
+            isTokenStatsConfigurationVisible(
+                it.configId, configurationNames.keys, hiddenConfigurationIds,
+            )
+        },
         currency = currency,
         tokenDisplayUnit = tokenDisplayUnit,
         configurationNames = configurationNames,
+        clearingInvalidConfigurations = clearingInvalidConfigurations,
+        onClearInvalidConfigurations = onClearInvalidConfigurations,
         priceSettings = priceSettings,
         onEditPrice = { existing, draft, configurationName ->
             priceEditor = PriceEditorTarget(existing, draft, configurationName)

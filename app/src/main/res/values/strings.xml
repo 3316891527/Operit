@@ -9352,4 +9352,6 @@
     <string name="studio_text_settings_title">设置项标题</string>
     <string name="studio_text_settings_description">设置项说明</string>
     <string name="studio_scene_pages">页面</string>
+    <string name="token_stats_clear_invalid_configurations">清除无效配置</string>
+    <string name="token_stats_clear_invalid_configurations_failed">清除无效配置失败，用量数据未改动</string>
 </resources>

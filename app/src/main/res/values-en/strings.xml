@@ -9376,4 +9376,6 @@
     <string name="studio_text_settings_title">settings · title</string>
     <string name="studio_text_settings_description">settings · description</string>
     <string name="studio_scene_pages">Pages</string>
+    <string name="token_stats_clear_invalid_configurations">Clear invalid</string>
+    <string name="token_stats_clear_invalid_configurations_failed">Could not clear invalid configurations. Usage data is unchanged.</string>
 </resources>

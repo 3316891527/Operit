@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ai.assistance.operit.data.collects.PricingCurrency
 import kotlinx.coroutines.flow.first
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.first
 private val Context.tokenStatsDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "token_stats_preferences")
 
-/** Scalar statistics settings. Structured usage, grouping, and pricing stay in Room. */
+/** Statistics presentation settings. Usage, grouping, and pricing stay in Room. */
 internal class TokenStatsPreferences(context: Context) {
     companion object {
         private val TARGET_CURRENCY = stringPreferencesKey("target_currency")
@@ -23,6 +24,7 @@ internal class TokenStatsPreferences(context: Context) {
         private val TIME_RANGE_START = longPreferencesKey("time_range_start")
         private val TIME_RANGE_END = longPreferencesKey("time_range_end")
         private val ACTIVITY_VIEW_MODE = stringPreferencesKey("activity_view_mode")
+        private val HIDDEN_CONFIGURATION_IDS = stringSetPreferencesKey("hidden_configuration_ids")
         private val IMPORTED_AT = longPreferencesKey("imported_at_ms")
     }
 
@@ -78,6 +80,17 @@ internal class TokenStatsPreferences(context: Context) {
 
     suspend fun saveActivityViewMode(mode: TokenActivityViewMode) {
         dataStore.edit { preferences -> preferences[ACTIVITY_VIEW_MODE] = mode.name }
+    }
+
+    suspend fun loadHiddenConfigurationIds(): Set<String> =
+        dataStore.data.first()[HIDDEN_CONFIGURATION_IDS].orEmpty().toSet()
+
+    suspend fun hideConfigurationIds(configIds: Set<String>): Set<String> {
+        val updated = dataStore.edit { preferences ->
+            preferences[HIDDEN_CONFIGURATION_IDS] =
+                preferences[HIDDEN_CONFIGURATION_IDS].orEmpty() + configIds.filter(String::isNotBlank)
+        }
+        return updated[HIDDEN_CONFIGURATION_IDS].orEmpty().toSet()
     }
 
     suspend fun loadTimeRange(): TokenStatsTimeRange? {
