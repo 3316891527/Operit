@@ -65,7 +65,7 @@ import com.ai.assistance.operit.ui.main.navigation.ScreenRouteViewModelStoreOwne
 import com.ai.assistance.operit.ui.main.navigation.retainedRouteKeysOnContentAttach
 import com.ai.assistance.operit.ui.main.screens.themePageId
 import com.ai.assistance.operit.ui.theme.script.ThemePageBackground
-import com.ai.assistance.operit.ui.theme.script.hasBackgroundPaint
+import com.ai.assistance.operit.data.theme.script.hasBackgroundPaint
 import com.ai.assistance.operit.ui.main.screens.Screen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
