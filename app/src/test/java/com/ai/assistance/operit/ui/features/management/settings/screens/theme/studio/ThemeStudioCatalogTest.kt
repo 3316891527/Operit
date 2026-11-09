@@ -45,4 +45,16 @@ class ThemeStudioCatalogTest {
         assertEquals(ThemeStudioTargets.size, ThemeStudioTargets.map { it.id }.toSet().size)
     }
 
+    @Test
+    fun pageBackgroundsHaveLayersWithoutContainerGeometryOrInteractionStates() {
+        val ids = com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds
+        val pages = ThemeStudioTargets.filter { it.id in ids }
+        assertEquals(ids, pages.map { it.id }.toSet())
+        pages.forEach { target ->
+            assertEquals(StudioGroup.Backgrounds, target.group)
+            assertEquals(listOf(StudioProperty.Appearance, StudioProperty.Layers), target.properties)
+            assertTrue(ThemeStudioSurfaceControls.getValue(target.id).isEmpty())
+        }
+    }
+
 }

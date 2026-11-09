@@ -30,7 +30,7 @@ fun CustomScaffold(
         snackbarHost = snackbarHost,
         floatingActionButton = floatingActionButton,
         floatingActionButtonPosition = floatingActionButtonPosition,
-        containerColor = containerColor,
+        containerColor = com.ai.assistance.operit.ui.theme.script.themePageContainerColor(containerColor),
         contentColor = contentColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0), // 自动禁用内容窗口插图
         content = content

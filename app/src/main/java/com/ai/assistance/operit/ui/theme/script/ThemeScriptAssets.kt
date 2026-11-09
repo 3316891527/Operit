@@ -67,7 +67,7 @@ internal object ThemeScriptAssets {
     fun validateAppearance(appearance: ThemeScriptAppearance, images: Map<String, ThemeScriptImage>) {
         val modes = listOf(appearance.copy(modes = emptyMap())) + appearance.modes.keys.map(appearance::forMode)
         modes.forEach { current ->
-            val texts = listOf(current.typography) + current.surfaces.values.map { it.textStyle }
+            val texts = listOf(current.typography) + current.textStyles.values + current.surfaces.values.map { it.textStyle }
             texts.mapNotNull { it.family }.filter { it.startsWith("asset:") }.forEach { family ->
                 require(images[family.removePrefix("asset:")] is ThemeScriptImage.Font) { "Theme text requires a font resource" }
             }

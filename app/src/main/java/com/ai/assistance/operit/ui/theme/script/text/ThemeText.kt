@@ -46,29 +46,37 @@ fun ThemeText(
     style: TextStyle = LocalTextStyle.current,
     autoSize: TextAutoSize? = null,
     textStroke: ResolvedThemeTextStroke? = LocalThemeTextStroke.current,
+    themeTarget: String? = null,
 ) {
-    if (textStroke == null) {
+    val targets = themeTextTarget(style, themeTarget)
+    val resolvedStyle = applyTextTargets(style.merge(TextStyle(
+        color = color, fontSize = fontSize, fontStyle = fontStyle, fontWeight = fontWeight,
+        fontFamily = fontFamily, letterSpacing = letterSpacing, textDecoration = textDecoration,
+        textAlign = textAlign ?: androidx.compose.ui.text.style.TextAlign.Unspecified, lineHeight = lineHeight,
+    )), targets)
+    val resolvedStroke = targetTextStroke(textStroke, targets)
+    if (resolvedStroke == null) {
         androidx.compose.material3.Text(
-            text = text, modifier = modifier, color = color, fontSize = fontSize,
-            fontStyle = fontStyle, fontWeight = fontWeight, fontFamily = fontFamily,
-            letterSpacing = letterSpacing, textDecoration = textDecoration, textAlign = textAlign,
-            lineHeight = lineHeight, overflow = overflow, softWrap = softWrap,
-            maxLines = maxLines, minLines = minLines, onTextLayout = { onTextLayout?.invoke(it) }, style = style, autoSize = autoSize,
+            text = text, modifier = modifier, color = Color.Unspecified, fontSize = TextUnit.Unspecified,
+            fontStyle = null, fontWeight = null, fontFamily = null,
+            letterSpacing = TextUnit.Unspecified, textDecoration = null, textAlign = null,
+            lineHeight = TextUnit.Unspecified, overflow = overflow, softWrap = softWrap,
+            maxLines = maxLines, minLines = minLines, onTextLayout = { onTextLayout?.invoke(it) }, style = resolvedStyle, autoSize = autoSize,
         )
     } else {
         var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
         androidx.compose.material3.Text(
             text = text, modifier = modifier.drawWithContent {
                 layout?.let { result ->
-                    drawThemeTextStroke(result, textStroke)
+                    drawThemeTextStroke(result, resolvedStroke)
                 }
                 drawContent()
-            }, color = color, fontSize = fontSize, fontStyle = fontStyle,
-            fontWeight = fontWeight, fontFamily = fontFamily, letterSpacing = letterSpacing,
-            textDecoration = textDecoration, textAlign = textAlign, lineHeight = lineHeight,
+            }, color = Color.Unspecified, fontSize = TextUnit.Unspecified, fontStyle = null,
+            fontWeight = null, fontFamily = null, letterSpacing = TextUnit.Unspecified,
+            textDecoration = null, textAlign = null, lineHeight = TextUnit.Unspecified,
             overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines,
             onTextLayout = { result -> layout = result; onTextLayout?.invoke(result) },
-            style = style, autoSize = autoSize,
+            style = resolvedStyle, autoSize = autoSize,
         )
     }
 }
@@ -97,29 +105,37 @@ fun ThemeText(
     style: TextStyle = LocalTextStyle.current,
     autoSize: TextAutoSize? = null,
     textStroke: ResolvedThemeTextStroke? = LocalThemeTextStroke.current,
+    themeTarget: String? = null,
 ) {
-    if (textStroke == null) {
+    val targets = themeTextTarget(style, themeTarget)
+    val resolvedStyle = applyTextTargets(style.merge(TextStyle(
+        color = color, fontSize = fontSize, fontStyle = fontStyle, fontWeight = fontWeight,
+        fontFamily = fontFamily, letterSpacing = letterSpacing, textDecoration = textDecoration,
+        textAlign = textAlign ?: androidx.compose.ui.text.style.TextAlign.Unspecified, lineHeight = lineHeight,
+    )), targets)
+    val resolvedStroke = targetTextStroke(textStroke, targets)
+    if (resolvedStroke == null) {
         androidx.compose.material3.Text(
-            text = text, modifier = modifier, color = color, fontSize = fontSize,
-            fontStyle = fontStyle, fontWeight = fontWeight, fontFamily = fontFamily,
-            letterSpacing = letterSpacing, textDecoration = textDecoration, textAlign = textAlign,
-            lineHeight = lineHeight, overflow = overflow, softWrap = softWrap,
-            maxLines = maxLines, minLines = minLines, onTextLayout = { onTextLayout?.invoke(it) }, style = style, autoSize = autoSize, inlineContent = inlineContent,
+            text = text, modifier = modifier, color = Color.Unspecified, fontSize = TextUnit.Unspecified,
+            fontStyle = null, fontWeight = null, fontFamily = null,
+            letterSpacing = TextUnit.Unspecified, textDecoration = null, textAlign = null,
+            lineHeight = TextUnit.Unspecified, overflow = overflow, softWrap = softWrap,
+            maxLines = maxLines, minLines = minLines, onTextLayout = { onTextLayout?.invoke(it) }, style = resolvedStyle, autoSize = autoSize, inlineContent = inlineContent,
         )
     } else {
         var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
         androidx.compose.material3.Text(
             text = text, modifier = modifier.drawWithContent {
                 layout?.let { result ->
-                    drawThemeTextStroke(result, textStroke)
+                    drawThemeTextStroke(result, resolvedStroke)
                 }
                 drawContent()
-            }, color = color, fontSize = fontSize, fontStyle = fontStyle,
-            fontWeight = fontWeight, fontFamily = fontFamily, letterSpacing = letterSpacing,
-            textDecoration = textDecoration, textAlign = textAlign, lineHeight = lineHeight,
+            }, color = Color.Unspecified, fontSize = TextUnit.Unspecified, fontStyle = null,
+            fontWeight = null, fontFamily = null, letterSpacing = TextUnit.Unspecified,
+            textDecoration = null, textAlign = null, lineHeight = TextUnit.Unspecified,
             overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines,
             onTextLayout = { result -> layout = result; onTextLayout?.invoke(result) },
-            style = style, autoSize = autoSize, inlineContent = inlineContent,
+            style = resolvedStyle, autoSize = autoSize, inlineContent = inlineContent,
         )
     }
 }

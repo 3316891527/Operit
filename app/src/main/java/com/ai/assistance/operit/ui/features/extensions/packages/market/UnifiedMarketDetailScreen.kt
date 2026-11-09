@@ -357,7 +357,7 @@ fun UnifiedMarketDetailScreen(
     )
 
     Column(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        modifier = modifier.fillMaxSize().background(com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background))
     ) {
         if (selectedTabIndex == 1) {
             PullToRefreshBox(

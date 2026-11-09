@@ -543,6 +543,7 @@ private fun MarketVersionHistoryRow(
             ) {
                 Text(
                     text = "v${normalizeDetailVersionBadge(version.version)}",
+                    themeTarget = "package.version",
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
