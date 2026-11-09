@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.activity.ComponentActivity
+import androidx.activity.viewModels
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import com.ai.assistance.operit.data.repository.ChatHistoryManager
 import com.ai.assistance.operit.data.updates.UpdateManager
 import com.ai.assistance.operit.data.updates.UpdateStatus
 import com.ai.assistance.operit.ui.common.NavItem
+import com.ai.assistance.operit.ui.main.navigation.AppNavigationViewModel
 import com.ai.assistance.operit.ui.features.support.onboarding.screens.WelcomeScreen
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.McpLoadingState
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.loading.LocalMcpLoadingState
@@ -69,6 +71,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val TAG = "MainActivity"
+    private val navigationViewModel: AppNavigationViewModel by viewModels()
 
     // ======== 屏幕方向变更状态 ========
     private var showOrientationChangeDialog by mutableStateOf(false)
@@ -95,18 +98,40 @@ class MainActivity : ComponentActivity() {
 
 
     // 存储待处理的分享文件URIs
-    private var pendingSharedFileUris: List<Uri>? = null
-
-    private var pendingSharedText: String? = null
-    private var pendingShortcutNavItem by mutableStateOf<NavItem?>(null)
-    private var pendingShortcutRequestId by mutableStateOf(0L)
-    private var currentMainNavItem by mutableStateOf<NavItem>(NavItem.AiChat)
-    private var pendingRouteId by mutableStateOf<String?>(null)
-    private var pendingRouteArgs by mutableStateOf<Map<String, Any?>>(emptyMap())
-    private var pendingRouteRequestId by mutableStateOf(0L)
-    private var pendingOpenChatId by mutableStateOf<String?>(null)
-    private var pendingOpenChatRequestId by mutableStateOf(0L)
-    private var nextChatOpenRequestId = 0L
+    // Retain pending external requests with the router across configuration recreation.
+    private var pendingSharedFileUris: List<Uri>?
+        get() = navigationViewModel.pendingSharedFileUris
+        set(value) { navigationViewModel.pendingSharedFileUris = value }
+    private var pendingSharedText: String?
+        get() = navigationViewModel.pendingSharedText
+        set(value) { navigationViewModel.pendingSharedText = value }
+    private var pendingShortcutNavItem: NavItem?
+        get() = navigationViewModel.pendingShortcutNavItem
+        set(value) { navigationViewModel.pendingShortcutNavItem = value }
+    private var pendingShortcutRequestId: Long
+        get() = navigationViewModel.pendingShortcutRequestId
+        set(value) { navigationViewModel.pendingShortcutRequestId = value }
+    private var currentMainNavItem: NavItem
+        get() = navigationViewModel.currentMainNavItem
+        set(value) { navigationViewModel.currentMainNavItem = value }
+    private var pendingRouteId: String?
+        get() = navigationViewModel.pendingRouteId
+        set(value) { navigationViewModel.pendingRouteId = value }
+    private var pendingRouteArgs: Map<String, Any?>
+        get() = navigationViewModel.pendingRouteArgs
+        set(value) { navigationViewModel.pendingRouteArgs = value }
+    private var pendingRouteRequestId: Long
+        get() = navigationViewModel.pendingRouteRequestId
+        set(value) { navigationViewModel.pendingRouteRequestId = value }
+    private var pendingOpenChatId: String?
+        get() = navigationViewModel.pendingOpenChatId
+        set(value) { navigationViewModel.pendingOpenChatId = value }
+    private var pendingOpenChatRequestId: Long
+        get() = navigationViewModel.pendingOpenChatRequestId
+        set(value) { navigationViewModel.pendingOpenChatRequestId = value }
+    private var nextChatOpenRequestId: Long
+        get() = navigationViewModel.nextChatOpenRequestId
+        set(value) { navigationViewModel.nextChatOpenRequestId = value }
 
 
     private fun processPendingSharedText() {
@@ -174,7 +199,9 @@ class MainActivity : ComponentActivity() {
         window.setBackgroundDrawableResource(android.R.color.black)
 
         // Handle the intent that started the activity
-        handleIntent(intent)
+        if (!navigationViewModel.attachActivity()) {
+            handleIntent(intent)
+        }
         restoreRuntimeTaskViewVisibilityIfNeeded()
 
         (application as OperitApplication).initializeMainApplication()
@@ -314,6 +341,10 @@ class MainActivity : ComponentActivity() {
                     AppLogger.d(TAG, "Received shared text")
                 }
             }
+        }
+        if (!pendingSharedFileUris.isNullOrEmpty() || !pendingSharedText.isNullOrBlank()) {
+            pendingShortcutNavItem = NavItem.AiChat
+            pendingShortcutRequestId = System.currentTimeMillis()
         }
         return false
     }
