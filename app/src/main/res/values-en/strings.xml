@@ -9423,16 +9423,6 @@
     <string name="studio_live_page_choose_for">Choose an item for %1$s</string>
     <string name="studio_live_page_picker_hint">Find the existing item in the app page below. Opening the target page returns it to the studio.</string>
     <string name="studio_live_page_no_plugins">No installed plugin screens are available. Import a plugin with a screen to select it here.</string>
-    <string name="theme_resource_limit_asset_bytes">Theme resource file exceeds the size limit</string>
-    <string name="theme_resource_limit_svg_bytes">Theme SVG file exceeds the size limit</string>
-    <string name="theme_resource_limit_bundle_bytes">Theme script and resources exceed the total size limit</string>
-    <string name="theme_resource_limit_bitmap_pixels">Theme images exceed the decoded pixel limit</string>
-    <string name="theme_resource_limit_asset_count">Theme resource count exceeds the limit</string>
-    <string name="theme_resource_limit_source_bytes">Theme JavaScript file exceeds the size limit</string>
-    <string name="theme_resource_limit_manifest_bytes">Theme resource manifest exceeds the size limit</string>
-    <string name="theme_resource_limit_result_bytes">Theme appearance result exceeds the size limit</string>
-    <string name="theme_resource_limit_archive_bytes">Theme resource ZIP exceeds the size limit</string>
-    <string name="theme_resource_limit_archive_entries">Theme resource ZIP entry count exceeds the limit</string>
     <string name="studio_resource_unsupported_format">Unsupported resource format: %1$s. Supported: PNG, JPG/JPEG, WebP, SVG, TTF and OTF.</string>
     <string name="studio_resource_invalid_path">Invalid resource name or path: %1$s. Paths must start with assets/ and use at most 160 characters. Each segment must begin with a letter, number, underscore or hyphen, may contain spaces and single dots, and use at most 96 characters. Consecutive dots, trailing spaces and trailing dots are not allowed.</string>
 </resources>

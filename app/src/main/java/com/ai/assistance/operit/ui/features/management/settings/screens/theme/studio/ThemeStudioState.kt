@@ -8,7 +8,6 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.data.theme.script.ThemeAssetFormats
 import com.ai.assistance.operit.data.theme.script.ThemeResourceLimit
 import com.ai.assistance.operit.data.theme.script.ThemeResourceLimitException
@@ -176,7 +175,6 @@ internal class ThemeStudioState(
     fun report(failure: Exception) {
         AppLogger.e("ThemeStudio", "主题工作室操作失败", failure)
         error = themeResourceErrorMessage(failure).take(4096)
-        themeResourceErrorToast(context, failure)?.let { OKToast.error(context, it).show() }
     }
     fun clearError() { error = null }
     private suspend fun task(action: suspend () -> Unit): Boolean {
