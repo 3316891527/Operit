@@ -175,7 +175,6 @@ export function loadWorldBookModules() {
   const service = require("../../dist/shared/worldbook_service.js");
   const variables = require("../../dist/shared/worldbook_variables.js");
   const main = require("../../dist/main.js");
-  require("../../dist/shared/worldbook_rpc.js").registerWorldBookStorageService();
   const client = require("../../dist/shared/worldbook_client.js");
   return { storage, service, variables, main, client };
 }

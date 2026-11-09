@@ -11,6 +11,10 @@ const worldbook_rpc_js_1 = require("./shared/worldbook_rpc.js");
 const worldbook_storage_js_1 = require("./shared/worldbook_storage.js");
 const worldbook_variables_js_1 = require("./shared/worldbook_variables.js");
 const WORLDBOOK_ROUTE = "toolpkg:com.operit.worldbook:ui:worldbook_manager";
+// Metadata discovery and live IPC use different engines. Bind handlers when the
+// main module loads, before the host dispatches its first UI request. This only
+// declares handlers; storage access stays in the serialized main-runtime service.
+(0, worldbook_rpc_js_1.registerWorldBookStorageService)();
 function matchesEntry(entry, text) {
     if (!entry.keywords || entry.keywords.length === 0) {
         return false;
@@ -317,7 +321,6 @@ async function finalizeHook(event) {
     };
 }
 function registerToolPkg() {
-    (0, worldbook_rpc_js_1.registerWorldBookStorageService)();
     ToolPkg.registerUiRoute({
         id: "worldbook_manager",
         route: WORLDBOOK_ROUTE,
