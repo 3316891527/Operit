@@ -75,7 +75,13 @@ export interface NineSliceLayer extends BaseLayer {
 export type Layer = PaintLayer | ImageLayer | NineSliceLayer;
 /** 仅三个聊天弹起菜单使用；每项为 0..256 dp，向上与向下取差，不提供向右偏移。 */
 export interface PopupOffset { up?: number; down?: number; left?: number; }
+/** 原生按钮和导航项的状态过渡；0..1000 ms，零表示立即切换。 */
+export interface StateTransition { durationMillis?: number; }
+/** 原生按钮和导航项的点击反馈；未声明时继承应用默认设置。 */
+export interface Ripple { enabled?: boolean; color?: Color; }
 export interface Surface {
+    transition?: StateTransition;
+    ripple?: Ripple;
     /** 整个弹起菜单的物理位置偏移，窗口边缘限制与实际命中区域同步生效。 */
     popupOffset?: PopupOffset;
     padding?: Insets;

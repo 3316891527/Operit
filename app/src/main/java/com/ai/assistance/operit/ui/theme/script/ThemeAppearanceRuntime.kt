@@ -171,11 +171,15 @@ internal fun applyThemeTypography(base: Typography, text: ThemeAppearanceText, i
 internal fun surfaceTypography(surface: ThemeScriptSurface?): ThemeAppearanceText =
     if (surface == null) ThemeAppearanceText() else surface.textStyle.copy(color = surface.contentColor ?: surface.textStyle.color)
 @Composable
-internal fun themeSurface(id: String): ThemeScriptSurface? {
+internal fun baseThemeSurface(id: String): ThemeScriptSurface? {
     val appearance = (LocalThemeScriptState.current as? ThemeScriptState.Ready)?.appearance ?: return null
     val surface = if (id in ThemeScriptContract.actionButtonIds) appearance.actionButtonSurface(id) else appearance.surfaces[id]
-    return surface?.takeUnless { it == ThemeScriptSurface() }?.let { resolvedThemeSurface(id, it) }
+    return surface?.takeUnless { it == ThemeScriptSurface() }
 }
+
+@Composable
+internal fun themeSurface(id: String): ThemeScriptSurface? =
+    LocalThemeAnimatedSurfaces.current[id] ?: baseThemeSurface(id)?.let { resolvedThemeSurface(id, it) }
 
 @Composable
 fun themeScriptShape(id: String, original: Shape): Shape {

@@ -118,7 +118,7 @@ fun Modifier.themeScriptDecoration(
     var pressed by remember(surfaceId) { mutableStateOf(false) }
     var focused by remember(surfaceId) { mutableStateOf(false) }
     val active = LocalThemeSurfaceStates.current[surfaceId] ?: themeStateName(pressed, focused, selected, enabled, error)
-    val surface = base.forState(active)
+    val surface = LocalThemeAnimatedSurfaces.current[surfaceId] ?: base.forState(active)
     val recordingLayers = surface.layers.mapIndexed { index, layer ->
         key(layer.id, index) {
             val node = remember { if (Build.VERSION.SDK_INT >= 31) ThemeBlurRecording() else null }

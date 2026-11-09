@@ -42,6 +42,12 @@ data class ThemeScriptSurface(
     @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val popupOffset: ThemeScriptPopupOffset = ThemeScriptPopupOffset(),
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val transition: ThemeStateTransition? = null,
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val ripple: ThemeRipple? = null,
 )
 
 /** 弹起菜单的位置偏移，单位 dp；只提供上、下、左三个物理方向。 */

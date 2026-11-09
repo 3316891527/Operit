@@ -102,6 +102,8 @@ object ThemeScriptContract {
         }
     }
 
+    val interactiveSurfaceIds: Set<String> get() = actionButtonIds + setOf("button", "iconButton", "navigationItem")
+
     fun validate(result: ThemeScriptAppearance, manifest: ThemeScriptManifest) {
         require(manifest.apiVersion == API_VERSION) { "Unsupported theme manifest" }
         require(result.apiVersion == API_VERSION) { "Unsupported theme appearance API" }
@@ -127,6 +129,14 @@ object ThemeScriptContract {
         result.textStyles.values.forEach { validateText(it, manifest) }
         require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
         result.surfaces.forEach { (id, surface) ->
+            surface.transition?.let {
+                require(id in interactiveSurfaceIds) { "State transitions require an interactive surface" }
+                require(it.durationMillis in 0..1000) { "State transition duration must be 0..1000 ms" }
+            }
+            surface.ripple?.let {
+                require(id in interactiveSurfaceIds) { "Ripple requires an interactive surface" }
+                require(it.color == null || color.matches(it.color)) { "Invalid ripple color" }
+            }
             validateText(surface.textStyle, manifest)
             surface.fillGradient?.let { validateGradient(it) }
             require(surface.fillGradient == null || surface.fillColor == null) { "Choose a surface color or gradient" }

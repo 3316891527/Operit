@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.management.settings.screens.theme.s
 
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
+import kotlin.math.roundToInt
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,7 +82,9 @@ internal fun StudioProperties(state: ThemeStudioState) {
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp)) {
+        if (state.target.isBackground) StudioBackgroundTargetPicker(state)
         if (state.property == StudioProperty.States) {
+            StudioInteractionProperties(state)
             StudioSection(stringResource(R.string.studio_preview_state)) {
                 StudioChoices(state.previewState, (listOf("always") + state.target.states).map { it to studioStateLabel(it) }) { state.previewState = it }
                 StudioHint(stringResource(R.string.studio_state_inherit_hint))
@@ -219,8 +222,12 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
         }
         StudioChoices(text.family, listOf(null to stringResource(R.string.studio_inherit), "default" to stringResource(R.string.studio_system_font), "sans-serif" to stringResource(R.string.studio_font_sans), "serif" to stringResource(R.string.studio_font_serif), "monospace" to stringResource(R.string.studio_font_mono), "cursive" to stringResource(R.string.studio_font_cursive))) { value -> state.updateText { it.copy(family = value) } }
         TextButton(onClick = onFont) { Text(text.family?.takeIf { it.startsWith("asset:") }?.removePrefix("asset:")?.let { state.bundle.manifest.assets.getValue(it).substringAfterLast('/') } ?: stringResource(R.string.studio_choose_font)) }
-        Text(stringResource(R.string.studio_text_weight))
-        StudioChoices(text.weight, listOf(null to stringResource(R.string.studio_inherit), 300 to "300", 400 to "400", 500 to "500", 600 to "600", 700 to "700", 900 to "900")) { weight -> state.updateText { it.copy(weight = weight) } }
+        StudioSlider(state, stringResource(R.string.studio_text_weight), (text.weight ?: 400).toFloat(), 1f..1000f, commitOnFinish = true) { weight ->
+            state.updateText { it.copy(weight = weight.roundToInt()) }
+        }
+        TextButton(onClick = { state.updateText { it.copy(weight = null) } }, enabled = text.weight != null) {
+            Text(stringResource(R.string.studio_inherit))
+        }
         StudioSlider(state, stringResource(R.string.studio_font_scale), text.scale, .5f..2f) { value -> state.updateText { it.copy(scale = value) } }
         StudioSlider(state, stringResource(R.string.studio_line_height), text.lineHeight, .8f..2f) { value -> state.updateText { it.copy(lineHeight = value) } }
         StudioSlider(state, stringResource(R.string.studio_letter_spacing), text.letterSpacing, -2f..8f, "sp") { value -> state.updateText { it.copy(letterSpacing = value) } }
@@ -232,7 +239,6 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
     val s = state.surface()
     val target = state.target
-    if (target.id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) TextButton(onClick = { state.resetPageBackground() }) { Text(stringResource(R.string.studio_page_inherit)) }
     StudioSection(stringResource(R.string.studio_colors)) {
         StudioColorHead()
         StudioColorRow(state, stringResource(surfaceColorLabel(target, "fillColor")), "fillColor", onColor)

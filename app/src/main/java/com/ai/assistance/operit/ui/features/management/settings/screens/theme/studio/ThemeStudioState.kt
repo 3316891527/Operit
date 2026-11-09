@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens.theme.studio
 
+import com.ai.assistance.operit.data.theme.script.followChatBackgrounds
 import com.ai.assistance.operit.data.theme.script.actionButtonSurface
 import com.ai.assistance.operit.data.theme.script.clearActionButtonSurface
 
@@ -233,6 +234,7 @@ internal class ThemeStudioState(
         val variant = base.modes[mode] ?: ThemeAppearanceMode()
         base.copy(modes = base.modes + (mode to variant.copy(surfaces = variant.surfaces + (target.id to ThemeScriptSurface()))))
     }
+    fun followChatBackgrounds() = updateAppearance { it.followChatBackgrounds() }
     fun resetButtonStyle() = updateAppearance { it.clearActionButtonSurface(target.id, mode) }
     fun updateSurface(id: String = target.id, forMode: String = mode, change: (ThemeScriptSurface) -> ThemeScriptSurface) = updateAppearance { base ->
         val variant = base.modes[forMode] ?: ThemeAppearanceMode()
