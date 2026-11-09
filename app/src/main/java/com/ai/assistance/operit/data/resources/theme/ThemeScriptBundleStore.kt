@@ -3,6 +3,9 @@ package com.ai.assistance.operit.data.resources.theme
 import android.content.res.AssetManager
 import android.graphics.BitmapFactory
 import android.net.Uri
+import com.ai.assistance.operit.data.theme.script.ThemeAssetFormats
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimit
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimitException
 import com.ai.assistance.operit.data.theme.script.ThemeScriptContract
 import com.ai.assistance.operit.data.theme.script.ThemeScriptManifest
 import java.io.ByteArrayInputStream
@@ -34,11 +37,11 @@ object ThemeScriptBundleStore {
     fun readPreset(assets: AssetManager, id: String): ThemeScriptBundle {
         require(id in setOf("forest", "paper")) { "Unknown theme preset" }
         val root = "theme-script/presets/$id"
-        fun bytes(path: String, limit: Int): ByteArray =
-            assets.open("$root/$path").use { readLimited(it, limit) }
-        val manifest = ThemeScriptContract.decodeManifest(decodeUtf8(bytes("manifest.json", ThemeScriptContract.MAX_MANIFEST_BYTES)))
-        val source = decodeUtf8(bytes(manifest.entry, ThemeScriptContract.MAX_SOURCE_BYTES))
-        val images = manifest.assets.values.toSet().associateWith { bytes(it, ThemeScriptContract.MAX_ASSET_BYTES) }
+        fun bytes(path: String, budget: ThemeResourceLimit): ByteArray =
+            assets.open("$root/$path").use { readLimited(it, budget.maximum.toInt(), budget, resource = path) }
+        val manifest = ThemeScriptContract.decodeManifest(decodeUtf8(bytes("manifest.json", ThemeResourceLimit.ManifestBytes)))
+        val source = decodeUtf8(bytes(manifest.entry, ThemeResourceLimit.SourceBytes))
+        val images = manifest.assets.values.toSet().associateWith { bytes(it, ThemeResourceLimit.AssetBytes) }
         return ThemeScriptBundle(manifest, source, images).also(::validate)
     }
 
@@ -59,14 +62,14 @@ object ThemeScriptBundleStore {
     fun fromFiles(manifest: ThemeScriptManifest, files: Map<String, File>): ThemeScriptBundle {
         ThemeScriptContract.validate(manifest)
         val entry = requireNotNull(files[manifest.entry]) { "Theme script entry is missing" }
-        require(entry.length() <= ThemeScriptContract.MAX_SOURCE_BYTES) { "Theme script is too large" }
+        ThemeResourceLimit.SourceBytes.check(entry.length(), resource = manifest.entry)
         val source = decodeUtf8(entry.readBytes())
-        require(entry.length() + manifest.assets.values.toSet().sumOf { path ->
+        ThemeResourceLimit.BundleBytes.check(manifest.assets.values.toSet().sumOf { path ->
             requireNotNull(files[path]) { "Theme script asset is missing: $path" }.length()
-        } <= ThemeScriptContract.MAX_BUNDLE_BYTES) { "Theme script bundle is too large" }
+        }, used = entry.length())
         val assets = manifest.assets.values.toSet().associateWith { path ->
             val file = requireNotNull(files[path]) { "Theme script asset is missing: $path" }
-            require(file.length() <= ThemeScriptContract.MAX_ASSET_BYTES) { "Theme script asset is too large" }
+            ThemeResourceLimit.AssetBytes.check(file.length(), resource = path)
             file.readBytes()
         }
         return ThemeScriptBundle(manifest, source, assets).also(::validate)
@@ -76,15 +79,14 @@ object ThemeScriptBundleStore {
         ThemeScriptContract.validate(bundle.manifest)
         require(bundle.source.isNotBlank()) { "Theme script is empty" }
         val bytes = bundle.source.toByteArray(Charsets.UTF_8)
-        require(bytes.size <= ThemeScriptContract.MAX_SOURCE_BYTES) { "Theme script is too large" }
+        ThemeResourceLimit.SourceBytes.check(bytes.size.toLong(), resource = bundle.manifest.entry)
         require(bundle.assets.keys == bundle.manifest.assets.values.toSet()) { "Theme script asset set does not match its manifest" }
-        require(bytes.size.toLong() + bundle.assets.values.sumOf { it.size.toLong() } <= ThemeScriptContract.MAX_BUNDLE_BYTES) {
-            "Theme script bundle is too large"
-        }
+        ThemeResourceLimit.BundleBytes.check(bundle.assets.values.sumOf { it.size.toLong() }, used = bytes.size.toLong())
         var pixels = 0L
         bundle.assets.forEach { (path, data) ->
-            pixels += validateAsset(path, data)
-            require(pixels <= ThemeScriptContract.MAX_BITMAP_PIXELS) { "Theme drawing assets exceed the decoded pixel budget" }
+            val incoming = validateAsset(path, data)
+            ThemeResourceLimit.BitmapPixels.check(incoming, used = pixels, resource = path)
+            pixels += incoming
         }
     }
 
@@ -112,34 +114,44 @@ object ThemeScriptBundleStore {
 
     /** Parameter sharing reads configuration only, without loading the media payload. */
     fun readManifest(file: File): ThemeScriptManifest {
-        require(file.isFile && file.length() <= ThemeScriptContract.MAX_BUNDLE_BYTES + 131072L) { "Invalid theme script bundle" }
+        require(file.isFile) { "Invalid theme script bundle" }
+        ThemeResourceLimit.ArchiveBytes.check(file.length(), resource = file.name)
         return ZipFile(file).use { zip ->
             val entry = requireNotNull(zip.getEntry("manifest.json")) { "Theme script manifest is missing" }
             ThemeScriptContract.decodeManifest(
-                decodeUtf8(zip.getInputStream(entry).use { readLimited(it, ThemeScriptContract.MAX_MANIFEST_BYTES) }),
+                decodeUtf8(zip.getInputStream(entry).use { readLimited(it, ThemeScriptContract.MAX_MANIFEST_BYTES, ThemeResourceLimit.ManifestBytes, knownSize = entry.size.takeIf { size -> size >= 0L }, resource = "manifest.json") }),
             )
         }
     }
 
     fun read(file: File): ThemeScriptBundle {
-        require(file.isFile && file.length() <= ThemeScriptContract.MAX_BUNDLE_BYTES + 131072L) { "Invalid theme script bundle" }
+        require(file.isFile) { "Invalid theme script bundle" }
+        ThemeResourceLimit.ArchiveBytes.check(file.length(), resource = file.name)
         return ZipFile(file).use { zip ->
             val entries = zip.entries().toList()
-            require(entries.size <= 50 && entries.map { it.name }.toSet().size == entries.size) { "Invalid theme script entries" }
+            ThemeResourceLimit.ArchiveEntries.check(entries.size.toLong())
+            require(entries.map { it.name }.toSet().size == entries.size) { "Duplicate theme script entries" }
             val manifestEntry = requireNotNull(zip.getEntry("manifest.json")) { "Theme script manifest is missing" }
             val manifest = ThemeScriptContract.decodeManifest(
-                decodeUtf8(zip.getInputStream(manifestEntry).use { readLimited(it, ThemeScriptContract.MAX_MANIFEST_BYTES) }),
+                decodeUtf8(zip.getInputStream(manifestEntry).use { readLimited(it, ThemeScriptContract.MAX_MANIFEST_BYTES, ThemeResourceLimit.ManifestBytes, knownSize = manifestEntry.size.takeIf { size -> size >= 0L }, resource = "manifest.json") }),
             )
             val expected = ThemeScriptContract.references(manifest) + "manifest.json"
             require(entries.map { it.name }.toSet() == expected && entries.none { it.isDirectory }) { "Unexpected theme script file" }
             var remaining = ThemeScriptContract.MAX_BUNDLE_BYTES
-            fun bytes(path: String, limit: Int): ByteArray {
-                val data = zip.getInputStream(requireNotNull(zip.getEntry(path))).use { readLimited(it, minOf(limit, remaining)) }
+            fun bytes(path: String, budget: ThemeResourceLimit): ByteArray {
+                val entry = requireNotNull(zip.getEntry(path))
+                val totalLimited = remaining < budget.maximum
+                val activeBudget = if (totalLimited) ThemeResourceLimit.BundleBytes else budget
+                val used = if (totalLimited) ThemeScriptContract.MAX_BUNDLE_BYTES.toLong() - remaining else 0L
+                val data = zip.getInputStream(entry).use {
+                    readLimited(it, minOf(budget.maximum.toInt(), remaining), activeBudget,
+                        knownSize = entry.size.takeIf { size -> size >= 0L }, used = used, resource = path)
+                }
                 remaining -= data.size
                 return data
             }
-            val source = decodeUtf8(bytes(manifest.entry, ThemeScriptContract.MAX_SOURCE_BYTES))
-            val assets = manifest.assets.values.toSet().associateWith { bytes(it, ThemeScriptContract.MAX_ASSET_BYTES) }
+            val source = decodeUtf8(bytes(manifest.entry, ThemeResourceLimit.SourceBytes))
+            val assets = manifest.assets.values.toSet().associateWith { bytes(it, ThemeResourceLimit.AssetBytes) }
             ThemeScriptBundle(manifest, source, assets).also(::validate)
         }
     }
@@ -162,13 +174,28 @@ object ThemeScriptBundleStore {
         return bundle.manifest to files
     }
 
-    fun readLimited(input: InputStream, limit: Int): ByteArray {
+    fun readLimited(
+        input: InputStream,
+        limit: Int,
+        budget: ThemeResourceLimit = ThemeResourceLimit.AssetBytes,
+        knownSize: Long? = null,
+        used: Long = 0L,
+        resource: String? = null,
+    ): ByteArray {
+        require(limit >= 0 && used >= 0L && (knownSize == null || knownSize >= 0L))
         val output = java.io.ByteArrayOutputStream()
         val buffer = ByteArray(8192)
         while (true) {
-            val count = input.read(buffer)
+            // Read only one byte past the cap; a provider without SIZE must stay bounded too.
+            val count = input.read(buffer, 0, minOf(buffer.size.toLong(), limit.toLong() - output.size() + 1L).toInt())
             if (count < 0) break
-            require(output.size() + count <= limit) { "Theme script resource exceeds size limit" }
+            val observed = output.size().toLong() + count
+            if (observed > limit) {
+                val sizeKnown = knownSize != null && knownSize >= observed
+                throw ThemeResourceLimitException(budget, limit.toLong() + used, used,
+                    if (sizeKnown) requireNotNull(knownSize) else observed,
+                    incomingIsLowerBound = !sizeKnown, resource = resource)
+            }
             output.write(buffer, 0, count)
         }
         return output.toByteArray()
@@ -178,28 +205,28 @@ object ThemeScriptBundleStore {
         Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString()
 
     private fun validateAsset(path: String, bytes: ByteArray): Long {
-        require(bytes.isNotEmpty() && bytes.size <= ThemeScriptContract.MAX_ASSET_BYTES) { "Invalid theme script asset size" }
-        return when (path.substringAfterLast('.').lowercase()) {
-            "png", "jpg", "jpeg", "webp" -> {
+        require(bytes.isNotEmpty()) { "Theme resource is empty: $path" }
+        ThemeResourceLimit.AssetBytes.check(bytes.size.toLong(), resource = path)
+        return when (ThemeAssetFormats.extension(path)) {
+            in ThemeAssetFormats.bitmaps -> {
                 val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-                require(options.outWidth > 0 && options.outHeight > 0 &&
-                    options.outWidth.toLong() * options.outHeight <= ThemeScriptContract.MAX_BITMAP_PIXELS) { "Invalid theme script bitmap" }
+                require(options.outWidth > 0 && options.outHeight > 0) { "Invalid theme script bitmap: $path" }
                 options.outWidth.toLong() * options.outHeight
             }
-            "svg" -> { validateSvg(bytes); 0L }
+            "svg" -> { validateSvg(path, bytes); 0L }
             "ttf", "otf" -> {
                 require(bytes.size >= 12) { "Theme font header is incomplete" }
                 val magic = bytes.take(4).map { it.toInt() and 255 }
                 require(magic == listOf(0, 1, 0, 0) || bytes.copyOfRange(0, 4).toString(Charsets.US_ASCII) in setOf("OTTO", "true")) { "Invalid theme font header" }
                 0L
             }
-            else -> error("Theme script drawing assets must be PNG, JPEG, WebP or static SVG")
+            else -> error("Theme resources must be PNG, JPG/JPEG, WebP, static SVG, TTF or OTF")
         }
     }
 
-    private fun validateSvg(bytes: ByteArray) {
-        require(bytes.size <= ThemeScriptContract.MAX_SVG_BYTES) { "Theme SVG is too large" }
+    private fun validateSvg(path: String, bytes: ByteArray) {
+        ThemeResourceLimit.SvgBytes.check(bytes.size.toLong(), resource = path)
         val text = decodeUtf8(bytes)
         require(!Regex("<!DOCTYPE|<!ENTITY", RegexOption.IGNORE_CASE).containsMatchIn(text)) {
             "Theme SVG cannot declare external content"

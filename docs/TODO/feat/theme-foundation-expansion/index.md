@@ -28,3 +28,4 @@ status: implemented_pending_ci
 5. [原生状态过渡与点击涟漪](06-native-interactions.md)
 
 6. [属性分组与真实页面预览](07-property-groups-and-live-pages.md)
+7. [JPG/JPEG 媒体导入与定量限制提示](08-media-import-and-limits.md)

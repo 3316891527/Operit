@@ -7,6 +7,11 @@ import com.ai.assistance.operit.data.theme.script.clearActionButtonSurface
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.data.theme.script.ThemeAssetFormats
+import com.ai.assistance.operit.data.theme.script.ThemeResourceImportException
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimit
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimitException
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -96,8 +101,8 @@ internal class ThemeStudioState(
     val hasChanges get() = sourceDirty || project != baseline
     val bundle get() = requireNotNull(project) { "Theme studio has not loaded" }
     val appearance get() = bundle.manifest.appearance.forMode(mode)
-    val imageAssets get() = bundle.manifest.assets.filterValues { it.substringAfterLast('.').lowercase() !in setOf("ttf", "otf") }
-    val fontAssets get() = bundle.manifest.assets.filterValues { it.substringAfterLast('.').lowercase() in setOf("ttf", "otf") }
+    val imageAssets get() = bundle.manifest.assets.filterValues { !ThemeAssetFormats.isFont(it) }
+    val fontAssets get() = bundle.manifest.assets.filterValues { ThemeAssetFormats.isFont(it) }
     val folders: List<String> get() {
         val result = mutableSetOf("assets")
         fun addParents(path: String) {
@@ -170,7 +175,7 @@ internal class ThemeStudioState(
     }
     fun report(failure: Exception) {
         AppLogger.e("ThemeStudio", "主题工作室操作失败", failure)
-        error = failure.message.orEmpty().take(4096)
+        error = themeResourceErrorMessage(context, failure).take(4096)
     }
     fun clearError() { error = null }
     private suspend fun task(action: suspend () -> Unit): Boolean {
@@ -188,7 +193,8 @@ internal class ThemeStudioState(
             val next = change(bundle)
             ThemeScriptContract.validate(next.manifest)
             require(next.assets.keys == next.manifest.assets.values.toSet()) { "Resource paths do not match the manifest" }
-            require(next.source.isNotBlank() && next.source.toByteArray().size <= ThemeScriptContract.MAX_SOURCE_BYTES) { "Theme script is empty or too large" }
+            require(next.source.isNotBlank()) { "Theme script is empty" }
+            ThemeResourceLimit.SourceBytes.check(next.source.toByteArray(Charsets.UTF_8).size.toLong(), resource = next.manifest.entry)
             val nextImages = decoded.filterKeys { it in next.manifest.assets.keys }
             ThemeScriptAssets.validateAppearance(next.manifest.appearance, nextImages)
             if (next != project) {
@@ -353,25 +359,66 @@ internal class ThemeStudioState(
         return task {
             val original = bundle
             val folder = currentFolder
+            val originalImages = images
             val added = withContext(Dispatchers.IO) {
+                val selected = uris.distinct()
+                val currentBytes = original.source.toByteArray(Charsets.UTF_8).size.toLong() + original.assets.values.sumOf { it.size.toLong() }
+                val currentPixels = original.manifest.assets.entries.distinctBy { it.value }.sumOf { (id, _) ->
+                    val bitmap = originalImages[id] as? ThemeScriptImage.Bitmap
+                    if (bitmap == null) 0L else bitmap.image.width.toLong() * bitmap.image.height
+                }
+                ThemeResourceLimit.AssetCount.check(selected.size.toLong(), used = original.manifest.assets.size.toLong())
                 var next = original
-                for (uri in uris.distinct()) {
+                var pendingBytes = 0L
+                for (uri in selected) {
                     currentCoroutineContext().ensureActive()
-                    val name = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                        require(cursor.moveToFirst()) { "Resource name is missing" }; cursor.getString(0)
-                    } ?: error("Cannot read resource name")
+                    val (name, knownSize) = requireNotNull(context.contentResolver.query(uri,
+                        arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)) {
+                        "Cannot read resource information"
+                    }.use { cursor ->
+                        require(cursor.moveToFirst()) { "Resource information is missing" }
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        require(nameIndex >= 0 && !cursor.isNull(nameIndex)) { "Resource name is missing" }
+                        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                        requireNotNull(cursor.getString(nameIndex)) { "Resource name is missing" } to if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) cursor.getLong(sizeIndex).takeIf { it >= 0L } else null
+                    }
+                    var fileBytes = knownSize
+                    var sizeIsLowerBound = false
                     try {
                         val path = "$folder/$name"
-                        require(ThemeAssetPaths.isFile(path) && name.substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg", "ttf", "otf")) { "Expected PNG, JPEG, WebP, SVG, TTF or OTF" }
-                        require(path !in next.assets && path != next.manifest.entry) { "A resource with this name already exists" }
-                        val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use {
-                            ThemeScriptBundleStore.readLimited(it, ThemeScriptContract.MAX_ASSET_BYTES)
+                        require(ThemeAssetFormats.extension(name) in ThemeAssetFormats.resources) {
+                            context.getString(R.string.studio_resource_unsupported_format, name)
                         }
+                        require(ThemeAssetPaths.isFile(path)) { context.getString(R.string.studio_resource_invalid_path, path) }
+                        require(path !in next.assets && path != next.manifest.entry) { "A resource with this name already exists" }
+                        val budget = if (ThemeAssetFormats.extension(name) == "svg") ThemeResourceLimit.SvgBytes else ThemeResourceLimit.AssetBytes
+                        val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use {
+                            ThemeScriptBundleStore.readLimited(it, budget.maximum.toInt(), budget, knownSize = knownSize, resource = name)
+                        }
+                        fileBytes = bytes.size.toLong()
+                        pendingBytes += bytes.size
+                        ThemeResourceLimit.BundleBytes.check(pendingBytes, used = currentBytes, resource = name)
                         val id = "asset_" + UUID.randomUUID().toString().replace("-", "")
                         next = next.copy(manifest = next.manifest.copy(assets = next.manifest.assets + (id to path)),
                             assets = next.assets + (path to bytes)).also(ThemeScriptBundleStore::validate)
-                    } catch (cancelled: CancellationException) { throw cancelled }
-                    catch (failure: Exception) { throw IllegalArgumentException("$name: ${failure.message}", failure) }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (failure: Exception) {
+                        var cause = failure
+                        if (failure is ThemeResourceLimitException) {
+                            cause = when (failure.budget) {
+                                ThemeResourceLimit.BitmapPixels -> failure.relativeTo(currentPixels)
+                                ThemeResourceLimit.AssetCount -> failure.relativeTo(original.manifest.assets.size.toLong())
+                                else -> failure
+                            }
+                            if (failure.budget == ThemeResourceLimit.AssetBytes || failure.budget == ThemeResourceLimit.SvgBytes) {
+                                fileBytes = failure.incoming
+                                sizeIsLowerBound = failure.incomingIsLowerBound
+                            }
+                        }
+                        throw ThemeResourceImportException(name, currentBytes, original.manifest.assets.size,
+                            fileBytes, sizeIsLowerBound, cause)
+                    }
                 }
                 next
             }
@@ -443,7 +490,7 @@ internal class ThemeStudioState(
     }
     suspend fun importSource(uri: Uri) = task {
         val text = withContext(Dispatchers.IO) {
-            val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use { ThemeScriptBundleStore.readLimited(it, ThemeScriptContract.MAX_SOURCE_BYTES) }
+            val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use { ThemeScriptBundleStore.readLimited(it, ThemeScriptContract.MAX_SOURCE_BYTES, ThemeResourceLimit.SourceBytes) }
             Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString()
         }
         if (selectFile(bundle.manifest.entry)) setSource(text)

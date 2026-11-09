@@ -88,7 +88,7 @@ fun ThemeScriptHost(
             throw error
         } catch (error: Exception) {
             AppLogger.e("ThemeScript", "主题脚本求值失败", error)
-            state = ThemeScriptState.Failed(error.message.orEmpty().take(4096))
+            state = ThemeScriptState.Failed(themeResourceErrorMessage(context, error).take(4096))
         }
     }
     val ready = state as? ThemeScriptState.Ready
