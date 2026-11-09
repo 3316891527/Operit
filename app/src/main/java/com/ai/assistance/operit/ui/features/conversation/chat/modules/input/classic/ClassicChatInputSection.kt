@@ -142,7 +142,7 @@ fun ClassicChatInputSection(
     onPendingQueueExpandedChange: (Boolean) -> Unit = {},
     onDeletePendingQueueMessage: (Long) -> Unit = {},
     onEditPendingQueueMessage: (Long) -> Unit = {},
-    onSendPendingQueueMessage: (Long) -> Unit = {}
+    onSteerPendingQueueMessage: (Long) -> Unit = {}
 ) {
     val runtime = rememberChatInputRuntime(actualViewModel)
     ClassicChatInputContent(
@@ -188,7 +188,7 @@ fun ClassicChatInputSection(
         onPendingQueueExpandedChange = onPendingQueueExpandedChange,
         onDeletePendingQueueMessage = onDeletePendingQueueMessage,
         onEditPendingQueueMessage = onEditPendingQueueMessage,
-        onSendPendingQueueMessage = onSendPendingQueueMessage,
+        onSteerPendingQueueMessage = onSteerPendingQueueMessage,
     )
 }
 
@@ -237,7 +237,7 @@ internal fun ClassicChatInputContent(
     onPendingQueueExpandedChange: (Boolean) -> Unit = {},
     onDeletePendingQueueMessage: (Long) -> Unit = {},
     onEditPendingQueueMessage: (Long) -> Unit = {},
-    onSendPendingQueueMessage: (Long) -> Unit = {}
+    onSteerPendingQueueMessage: (Long) -> Unit = {},
 ) {
     val showTokenLimitDialog = remember { mutableStateOf(false) }
     val showFullscreenInput = remember { mutableStateOf(false) }
@@ -302,7 +302,7 @@ internal fun ClassicChatInputContent(
 
     val hasDraftText = userMessage.text.isNotBlank()
     val canSendMessage = hasDraftText || attachments.isNotEmpty()
-    val showQueueAction = isProcessing && hasDraftText
+    val showQueueAction = isProcessing && canSendMessage
     val showCancelAction = isProcessing && !showQueueAction
     val showVoiceRecordAction = onRecordVoiceMessage != null &&
         canStartVoiceMessage(userMessage.text, attachments.size, isProcessing, replyToMessage != null)
@@ -465,7 +465,7 @@ internal fun ClassicChatInputContent(
                 onExpandedChange = onPendingQueueExpandedChange,
                 onDeleteMessage = onDeletePendingQueueMessage,
                 onEditMessage = onEditPendingQueueMessage,
-                onSendMessage = onSendPendingQueueMessage,
+                onSteerMessage = onSteerPendingQueueMessage,
                 containerColor = queueContainerColor,
                 itemColor = queueItemColor,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
