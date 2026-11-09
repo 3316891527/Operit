@@ -9351,4 +9351,5 @@
     <string name="studio_text_package_version">扩展版本</string>
     <string name="studio_text_settings_title">设置项标题</string>
     <string name="studio_text_settings_description">设置项说明</string>
+    <string name="studio_scene_pages">页面</string>
 </resources>

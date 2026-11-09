@@ -70,8 +70,8 @@ internal fun StudioPreview(state: ThemeStudioState, viewport: IntSize, modifier:
                                 ThemePreviewBackground(values)
                                 Box(Modifier.fillMaxSize().themeScriptDecoration("background", values.requiredFloat("background_image_opacity")))
                             }
-                            if (state.target.id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) StudioPagePreview(state)
-                            else when (state.scene) {
+                            when (state.scene) {
+                                StudioScene.Pages -> StudioPagePreview(state)
                                 StudioScene.Chat -> StudioChatPreview(state)
                                 StudioScene.Components -> StudioComponentsPreview(state)
                                 StudioScene.Navigation -> StudioNavigationPreview(state)

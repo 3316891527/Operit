@@ -52,6 +52,7 @@ class ThemeStudioCatalogTest {
         assertEquals(ids, pages.map { it.id }.toSet())
         pages.forEach { target ->
             assertEquals(StudioGroup.Backgrounds, target.group)
+            assertEquals(StudioScene.Pages, target.scene)
             assertEquals(listOf(StudioProperty.Appearance, StudioProperty.Layers), target.properties)
             assertTrue(ThemeStudioSurfaceControls.getValue(target.id).isEmpty())
         }

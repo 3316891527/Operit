@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.theme.script.ThemePageBackground
+import com.ai.assistance.operit.ui.theme.script.themePreviewFocus
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 
 @Composable

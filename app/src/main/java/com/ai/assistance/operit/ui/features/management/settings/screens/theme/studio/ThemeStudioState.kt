@@ -164,7 +164,7 @@ internal class ThemeStudioState(
     }
     fun selectScene(next: StudioScene) {
         scene = next
-        if (target.scene != next) select(ThemeStudioTargets.first { it.id == when (next) { StudioScene.Chat -> "assistantMessage"; StudioScene.Components -> "settingsCard"; StudioScene.Navigation -> "navigation" } })
+        if (target.scene != next) select(ThemeStudioTargets.first { it.id == when (next) { StudioScene.Chat -> "assistantMessage"; StudioScene.Components -> "settingsCard"; StudioScene.Navigation -> "navigation"; StudioScene.Pages -> "page.packages" } })
     }
     fun report(failure: Exception) {
         AppLogger.e("ThemeStudio", "主题工作室操作失败", failure)

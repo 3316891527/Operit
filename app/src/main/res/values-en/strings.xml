@@ -9375,4 +9375,5 @@
     <string name="studio_text_package_version">package · version</string>
     <string name="studio_text_settings_title">settings · title</string>
     <string name="studio_text_settings_description">settings · description</string>
+    <string name="studio_scene_pages">Pages</string>
 </resources>

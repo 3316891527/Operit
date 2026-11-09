@@ -13,7 +13,7 @@ import com.ai.assistance.operit.ui.features.management.settings.screens.theme.sc
 import com.ai.assistance.operit.ui.features.management.settings.screens.theme.script.themeAppearanceIconLabel
 
 internal enum class StudioWorkspace(val label: Int) { Design(R.string.studio_design), Source(R.string.studio_source), Resources(R.string.studio_resources) }
-internal enum class StudioScene(val label: Int) { Chat(R.string.studio_scene_chat), Components(R.string.studio_scene_components), Navigation(R.string.studio_scene_navigation) }
+internal enum class StudioScene(val label: Int) { Chat(R.string.studio_scene_chat), Components(R.string.studio_scene_components), Navigation(R.string.studio_scene_navigation), Pages(R.string.studio_scene_pages) }
 internal enum class StudioProperty(val label: Int) { Appearance(R.string.studio_appearance), Layers(R.string.studio_layers), States(R.string.studio_states) }
 internal enum class StudioKind { Surface, Icon, Typography, Palette }
 internal enum class StudioGroup(val label: Int) { Backgrounds(R.string.studio_page_backgrounds), Global(R.string.studio_group_global), Messages(R.string.studio_group_messages), Input(R.string.studio_group_input), Navigation(R.string.studio_group_navigation), Buttons(R.string.studio_group_buttons), Settings(R.string.studio_group_settings), Panels(R.string.studio_group_panels), Icons(R.string.studio_group_icons) }
@@ -86,7 +86,7 @@ internal val ThemeStudioTargets: List<StudioTarget> = buildList {
             "settingsCard", "listItem" -> StudioGroup.Settings
             else -> StudioGroup.Panels
         }
-        val scene = when (group) {
+        val scene = if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) StudioScene.Pages else when (group) {
             StudioGroup.Navigation -> StudioScene.Navigation
             StudioGroup.Settings, StudioGroup.Panels -> StudioScene.Components
             StudioGroup.Messages -> if (id == "toolCard") StudioScene.Components else StudioScene.Chat
