@@ -915,14 +915,11 @@ open class ClaudeProvider(
 
                         if (resultsList.isNotEmpty() && openToolUses.isNotEmpty()) {
                             val contentArray = JSONArray()
-                            val useOrder = openToolUses.mapIndexed { i, c -> c.id to i }.toMap()
                             val matchedCalls =
                                 StructuredToolCallBridge.consumeMatchingToolCalls(
                                     openToolUses,
                                     resultsList.map { it.first }
-                                ).sortedBy { matchedCall ->
-                                    useOrder[matchedCall.call.id] ?: Int.MAX_VALUE
-                                }
+                                )
                             matchedCalls.forEach { matchedCall ->
                                 val resultContent = resultsList[matchedCall.resultIndex].second
                                 contentArray.put(

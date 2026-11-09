@@ -11,7 +11,7 @@ private val geometryControls = setOf(StudioSurfaceControl.Stroke, StudioSurfaceC
 private val textControls = setOf(StudioSurfaceControl.ContentColor, StudioSurfaceControl.Typography)
 
 internal val ThemeStudioSurfaceControls = ThemeScriptContract.surfaceIds.associateWith { id ->
-    if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) emptySet() else if (id in ThemeScriptContract.actionButtonIds) geometryControls + StudioSurfaceControl.ContentColor else when (id) {
+    if (id in ThemeScriptContract.actionButtonIds) geometryControls + StudioSurfaceControl.ContentColor else when (id) {
         "background" -> emptySet()
         "userAvatar", "assistantAvatar" -> geometryControls + StudioSurfaceControl.AvatarSize
         "iconButton" -> geometryControls + StudioSurfaceControl.ContentColor

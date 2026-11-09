@@ -141,7 +141,6 @@ internal fun applyThemeText(style: TextStyle, text: ThemeAppearanceText, images:
     }
     return style.copy(
         fontFamily = family,
-        fontWeight = text.weight?.let { androidx.compose.ui.text.font.FontWeight(it) } ?: style.fontWeight,
         color = text.color?.let(::themeColor) ?: style.color,
         fontSize = if (style.fontSize.isSpecified) style.fontSize * text.scale else style.fontSize,
         lineHeight = if (style.lineHeight.isSpecified) style.lineHeight * (text.scale * text.lineHeight) else style.lineHeight,
@@ -202,7 +201,6 @@ internal fun appearanceShape(shape: ThemeAppearanceShape): CornerBasedShape = wh
 @Composable
 fun themeScriptFill(id: String, original: Color, backgroundOpacity: Float? = null): Color {
     val surface = themeSurface(id)
-    if (surface?.fillGradient != null) return Color.Transparent
     val configured = surface?.fillColor?.let(::themeColor)
     val color = configured ?: original
     val baseAlpha = if (configured == null) backgroundOpacity ?: original.alpha else configured.alpha * (backgroundOpacity ?: 1f)

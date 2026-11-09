@@ -5,8 +5,8 @@ import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
 
 @Composable
-internal fun themeAppearanceAreaLabel(id: String): String = if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) com.ai.assistance.operit.ui.features.management.settings.screens.theme.studio.studioPageLabel(id) else if (id in com.ai.assistance.operit.data.theme.script.ThemeScriptContract.actionButtonIds) themeAppearanceIconLabel(id) else stringResource(when (id) {
-    "background" -> R.string.studio_global_background
+internal fun themeAppearanceAreaLabel(id: String): String = if (id in com.ai.assistance.operit.data.theme.script.ThemeScriptContract.actionButtonIds) themeAppearanceIconLabel(id) else stringResource(when (id) {
+    "background" -> R.string.theme_area_background
     "userMessage" -> R.string.theme_area_user_message
     "assistantMessage" -> R.string.theme_area_assistant_message
     "composer" -> R.string.theme_area_composer

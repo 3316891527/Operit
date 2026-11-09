@@ -28,9 +28,7 @@ fun ThemeBasicText(
     minLines: Int = 1,
     autoSize: TextAutoSize? = null,
 ) {
-    val targets = themeTextTarget(style, null)
-    val resolvedStyle = applyTextTargets(style, targets)
-    val stroke = targetTextStroke(LocalThemeTextStroke.current, targets)
+    val stroke = LocalThemeTextStroke.current
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     BasicText(
         text = text,
@@ -38,7 +36,7 @@ fun ThemeBasicText(
             layout?.let { drawThemeTextStroke(it, stroke) }
             drawContent()
         },
-        style = resolvedStyle, overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines,
+        style = style, overflow = overflow, softWrap = softWrap, maxLines = maxLines, minLines = minLines,
         autoSize = autoSize, onTextLayout = { layout = it; onTextLayout?.invoke(it) },
     )
 }

@@ -13,9 +13,6 @@ data class ThemeScriptAppearance(
     val palette: ThemeAppearancePalette = ThemeAppearancePalette(),
     val typography: ThemeAppearanceText = ThemeAppearanceText(),
     val modes: Map<String, ThemeAppearanceMode> = emptyMap(),
-    @OptIn(ExperimentalSerializationApi::class)
-    @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val textStyles: Map<String, ThemeAppearanceText> = emptyMap(),
 )
 
 @kotlinx.serialization.SerialName("com.ai.assistance.operit.data.model.theme.ThemeScriptSurface")
@@ -25,9 +22,6 @@ data class ThemeScriptSurface(
     val layers: List<ThemeScriptLayer> = emptyList(),
     val shape: ThemeAppearanceShape? = null,
     val fillColor: String? = null,
-    @OptIn(ExperimentalSerializationApi::class)
-    @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val fillGradient: ThemeGradient? = null,
     val contentColor: String? = null,
     val strokeColor: String? = null,
     val strokeWidth: Float = 0f,
@@ -79,9 +73,6 @@ data class ThemeScriptLayer(
     val slices: ThemeScriptInsets = ThemeScriptInsets(),
     val bounds: ThemeScriptBounds = ThemeScriptBounds(),
     val color: String? = null,
-    @OptIn(ExperimentalSerializationApi::class)
-    @EncodeDefault(EncodeDefault.Mode.NEVER)
-    val gradient: ThemeGradient? = null,
     val strokeColor: String? = null,
     val strokeWidth: Float = 0f,
     val radius: Float = 0f,

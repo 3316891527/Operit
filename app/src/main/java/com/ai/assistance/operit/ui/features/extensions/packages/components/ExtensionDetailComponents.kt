@@ -71,10 +71,10 @@ internal fun ExtensionDetailHeader(
             }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, themeTarget = "package.name", style = MaterialTheme.typography.headlineSmall,
+            Text(title, style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             if (!subtitle.isNullOrBlank()) {
-                Text(subtitle, themeTarget = "package.description", style = MaterialTheme.typography.bodyMedium,
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (badges.isNotEmpty()) {

@@ -97,7 +97,6 @@ internal fun ChatContextUsageEntryContent(
                 )
                 Text(
                     text = formatUsagePercent(windowTokens, maxTokens, decimals = 0),
-                    themeTarget = "chat.tokenCount",
                     fontSize = 13.sp,
                     color = indicatorColor
                 )

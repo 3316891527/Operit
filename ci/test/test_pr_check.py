@@ -173,62 +173,6 @@ class CandidateContractTest(unittest.TestCase):
 
             self.assertEqual(paths, ["app/src/main/res/values-ro/strings.xml"])
 
-    def test_historical_event_base_keeps_the_candidate_diff_frozen(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            repository = Path(directory)
-            git(repository, "init", "-b", "main")
-            git(repository, "config", "user.name", "CI Test")
-            git(repository, "config", "user.email", "ci@example.com")
-            (repository / "README.md").write_text("base\n", encoding="utf-8")
-            git(repository, "add", "README.md")
-            git(repository, "commit", "-m", "event base")
-            event_base_sha = git(repository, "rev-parse", "HEAD")
-
-            git(repository, "switch", "-c", "feature")
-            translation = repository / "app/src/main/res/values-ro/strings.xml"
-            translation.parent.mkdir(parents=True)
-            translation.write_text("<resources/>\n", encoding="utf-8")
-            git(repository, "add", ".")
-            git(repository, "commit", "-m", "translation")
-            head_sha = git(repository, "rev-parse", "HEAD")
-
-            git(repository, "switch", "main")
-            native = repository / "app/src/main/cpp/base.cpp"
-            native.parent.mkdir(parents=True)
-            native.write_text("// target branch update\n", encoding="utf-8")
-            git(repository, "add", ".")
-            git(repository, "commit", "-m", "advance target before candidate")
-            base_sha = git(repository, "rev-parse", "HEAD")
-            git(repository, "switch", "-c", "candidate")
-            git(repository, "merge", "--no-ff", "feature", "-m", "candidate")
-            candidate_sha = git(repository, "rev-parse", "HEAD")
-
-            git(repository, "switch", "main")
-            (repository / "app/build.gradle.kts").write_text("// later update\n", encoding="utf-8")
-            git(repository, "add", ".")
-            git(repository, "commit", "-m", "advance target after candidate")
-            later_base_sha = git(repository, "rev-parse", "HEAD")
-
-            previous_directory = Path.cwd()
-            try:
-                os.chdir(repository)
-                context = candidate_context(candidate_sha, event_base_sha, head_sha)
-                paths = changed_paths(context.base_sha, context.candidate_sha)
-                with self.assertRaisesRegex(ValueError, "first parent"):
-                    candidate_context(candidate_sha, later_base_sha, head_sha)
-            finally:
-                os.chdir(previous_directory)
-
-            self.assertEqual(context.base_sha, base_sha)
-            self.assertEqual(context.event_base_sha, event_base_sha)
-            self.assertEqual(context.head_sha, head_sha)
-            self.assertEqual(context.candidate_sha, candidate_sha)
-            self.assertEqual(paths, ["app/src/main/res/values-ro/strings.xml"])
-            plan = classify_paths(paths)
-            self.assertTrue(plan.android_resources)
-            self.assertFalse(plan.android_full)
-            self.assertFalse(plan.android_jvm)
-
     def test_non_merge_candidate_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)

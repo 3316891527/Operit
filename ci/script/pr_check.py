@@ -112,7 +112,6 @@ class CandidateContext:
     base_sha: str
     head_sha: str
     candidate_sha: str
-    event_base_sha: str
 
 
 def boolean(value: bool) -> str:
@@ -191,36 +190,20 @@ def resolve_commit(value: str) -> str:
 
 
 def candidate_context(candidate: str, expected_base: str, expected_head: str) -> CandidateContext:
-    """Validate a pinned candidate using the PR event base as a history anchor."""
     candidate_sha = resolve_commit(candidate)
-    event_base_sha = resolve_commit(expected_base)
+    base_sha = resolve_commit(expected_base)
     head_sha = resolve_commit(expected_head)
     parent_line = str(run_git("rev-list", "--parents", "-n", "1", candidate_sha)).split()
     parents = parent_line[1:]
 
     if len(parents) != 2:
         raise ValueError(f"candidate {candidate_sha} must have exactly two parents, found {len(parents)}")
+    if parents[0] != base_sha:
+        raise ValueError(f"candidate first parent is {parents[0]}, expected base {base_sha}")
     if parents[1] != head_sha:
         raise ValueError(f"candidate second parent is {parents[1]}, expected head {head_sha}")
 
-    # GitHub can create the pinned merge candidate after the event base snapshot.
-    # Diff its first parent so intervening target-branch changes are not blamed on this PR.
-    base_sha = parents[0]
-    try:
-        run_git("merge-base", "--is-ancestor", event_base_sha, base_sha)
-    except subprocess.CalledProcessError as error:
-        if error.returncode != 1:
-            raise
-        raise ValueError(
-            f"candidate first parent {base_sha} does not descend from event base {event_base_sha}"
-        ) from error
-
-    return CandidateContext(
-        base_sha=base_sha,
-        head_sha=head_sha,
-        candidate_sha=candidate_sha,
-        event_base_sha=event_base_sha,
-    )
+    return CandidateContext(base_sha=base_sha, head_sha=head_sha, candidate_sha=candidate_sha)
 
 
 def changed_paths(base_sha: str, candidate_sha: str) -> list[str]:
@@ -244,7 +227,6 @@ def write_github_output(path: Path, context: CandidateContext, plan: ScopePlan) 
         "base_sha": context.base_sha,
         "head_sha": context.head_sha,
         "candidate_sha": context.candidate_sha,
-        "event_base_sha": context.event_base_sha,
         **plan.output_values(),
     }
     with path.open("a", encoding="utf-8") as stream:
@@ -257,7 +239,6 @@ def append_step_summary(path: Path, context: CandidateContext, plan: ScopePlan) 
     with path.open("a", encoding="utf-8") as stream:
         stream.write("## Pull request candidate\n\n")
         stream.write(f"- Base: `{context.base_sha}`\n")
-        stream.write(f"- Event base (history anchor): `{context.event_base_sha}`\n")
         stream.write(f"- Head: `{context.head_sha}`\n")
         stream.write(f"- Candidate: `{context.candidate_sha}`\n")
         stream.write(f"- Changed paths: `{len(plan.paths)}`\n\n")
@@ -289,11 +270,7 @@ def parse_args() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", required=True)
     plan_parser = subparsers.add_parser("plan")
     plan_parser.add_argument("--candidate", required=True)
-    plan_parser.add_argument(
-        "--expected-base",
-        required=True,
-        help="PR event base; must be an ancestor of the pinned candidate's first parent",
-    )
+    plan_parser.add_argument("--expected-base", required=True)
     plan_parser.add_argument("--expected-head", required=True)
     plan_parser.add_argument("--github-output", type=Path)
     plan_parser.add_argument("--step-summary", type=Path)

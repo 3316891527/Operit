@@ -71,35 +71,9 @@ internal fun StudioPreview(state: ThemeStudioState, viewport: IntSize, modifier:
                                 Box(Modifier.fillMaxSize().themeScriptDecoration("background", values.requiredFloat("background_image_opacity")))
                             }
                             when (state.scene) {
-                                StudioScene.Pages -> StudioPagePreview(state)
                                 StudioScene.Chat -> StudioChatPreview(state)
                                 StudioScene.Components -> StudioComponentsPreview(state)
                                 StudioScene.Navigation -> StudioNavigationPreview(state)
-                            }
-                            if (state.target.kind == StudioKind.Typography && state.textTarget != "global") {
-                                androidx.compose.foundation.layout.Box(Modifier.align(Alignment.Center).padding(16.dp)) {
-                                    val typography = MaterialTheme.typography
-                                    val sampleStyle = when (state.textTarget) {
-                                        "displayLarge" -> typography.displayLarge
-                                        "displayMedium" -> typography.displayMedium
-                                        "displaySmall" -> typography.displaySmall
-                                        "headlineLarge" -> typography.headlineLarge
-                                        "headlineMedium" -> typography.headlineMedium
-                                        "headlineSmall" -> typography.headlineSmall
-                                        "titleLarge" -> typography.titleLarge
-                                        "titleMedium" -> typography.titleMedium
-                                        "titleSmall" -> typography.titleSmall
-                                        "bodyLarge" -> typography.bodyLarge
-                                        "bodyMedium" -> typography.bodyMedium
-                                        "bodySmall" -> typography.bodySmall
-                                        "labelLarge" -> typography.labelLarge
-                                        "labelMedium" -> typography.labelMedium
-                                        "labelSmall" -> typography.labelSmall
-                                        else -> typography.bodyMedium
-                                    }
-                                    Text(studioTextTargetLabel(state.textTarget) + " · Aa 123", style = sampleStyle,
-                                        themeTarget = state.textTarget.takeUnless { it in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.textRoles })
-                                }
                             }
                         }
                     }

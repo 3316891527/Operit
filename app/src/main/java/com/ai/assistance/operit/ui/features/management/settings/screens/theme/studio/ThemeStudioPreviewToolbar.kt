@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -99,10 +98,10 @@ private fun StudioSceneSelector(state: ThemeStudioState, modifier: Modifier) {
                     onClick = { expanded = false; state.previewInputStyle = style; state.selectScene(StudioScene.Chat) },
                 )
             }
-            listOf(StudioScene.Components, StudioScene.Navigation, StudioScene.Pages).forEach { scene ->
+            listOf(StudioScene.Components, StudioScene.Navigation).forEach { scene ->
                 ActionSheetItem(
                     label = stringResource(scene.label),
-                    icon = when (scene) { StudioScene.Components -> Icons.Default.Settings; StudioScene.Pages -> Icons.Default.Image; else -> Icons.Default.Menu },
+                    icon = if (scene == StudioScene.Components) Icons.Default.Settings else Icons.Default.Menu,
                     selected = state.scene == scene,
                     onClick = { expanded = false; state.selectScene(scene) },
                 )

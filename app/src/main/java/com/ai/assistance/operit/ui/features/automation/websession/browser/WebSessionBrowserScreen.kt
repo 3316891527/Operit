@@ -143,7 +143,7 @@ internal fun WebSessionBrowserScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background))
+                .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -244,7 +244,7 @@ internal fun WebSessionBrowserScreen(
                                 }
                             }
                         }
-                        .background(com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background))
+                        .background(MaterialTheme.colorScheme.background)
             ) {
                 if (browserState.activeSessionId == null) {
                     Surface(
@@ -284,7 +284,7 @@ internal fun WebSessionBrowserScreen(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .background(com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background)),
+                                .background(MaterialTheme.colorScheme.background),
                         contentAlignment = Alignment.Center
                     ) {
                         AndroidView(

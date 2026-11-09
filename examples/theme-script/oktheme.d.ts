@@ -2,7 +2,7 @@
 export type SurfaceId = "background" | "userMessage" | "assistantMessage" | "composer" |
     "userAvatar" | "assistantAvatar" | "appBar" | "navigation" | "navigationItem" |
     "button" | "iconButton" | "input" | "settingsCard" | "dialog" | "sheet" | "menu" |
-    "listItem" | "status" | "toolCard" | "attachmentMenu" | "modelMenu" | "chatSettingsMenu" | ActionButtonId | PageId;
+    "listItem" | "status" | "toolCard" | "attachmentMenu" | "modelMenu" | "chatSettingsMenu" | ActionButtonId;
 export type IconId = "composer.settings" | "composer.attachment" | "composer.microphone" |
     "composer.send" | "composer.stop" | "composer.fullscreen" | "composer.queue" |
     "composer.expand" | "appBar.back" | "appBar.menu" | "appBar.workspace" |
@@ -26,8 +26,6 @@ export interface Palette {
 /** 文字轮廓使用 dp；区域省略 stroke 时继承全局，width 为 0 时单独关闭。 */
 export interface TextStroke { color?: Color; width?: number; }
 export interface Typography {
-    /** 1..1000; omitted weight retains the parent style. */
-    weight?: number;
     family?: "default" | "sans-serif" | "serif" | "monospace" | "cursive" | `asset:${string}`;
     scale?: number;
     lineHeight?: number;
@@ -56,8 +54,6 @@ interface BaseLayer {
 export interface PaintLayer extends BaseLayer {
     type: "rect" | "ellipse" | "line";
     color?: Color;
-    /** Mutually exclusive with color. */
-    gradient?: Gradient;
     strokeColor?: Color;
     strokeWidth?: number;
     radius?: number;
@@ -84,8 +80,6 @@ export interface Surface {
     states?: Partial<Record<"pressed" | "focused" | "selected" | "disabled" | "error", SurfaceState>>;
     shape?: Shape;
     fillColor?: Color;
-    /** Mutually exclusive with fillColor. */
-    fillGradient?: Gradient;
     contentColor?: Color;
     strokeColor?: Color;
     strokeWidth?: number;
@@ -110,7 +104,6 @@ export interface AppearanceMode {
     surfaces?: Partial<Record<SurfaceId, Surface>>;
     icons?: Partial<Record<IconId, IconAsset>>;
     typography?: Typography;
-    textStyles?: Partial<Record<TextTarget, Typography>>;
 }
 export interface Appearance {
     apiVersion: 1;
@@ -118,7 +111,6 @@ export interface Appearance {
     icons?: Partial<Record<IconId, IconAsset>>;
     palette?: Palette;
     typography?: Typography;
-    textStyles?: Partial<Record<TextTarget, Typography>>;
     modes?: Partial<Record<"light" | "dark", AppearanceMode>>;
 }
 export interface ThemeContext {
@@ -153,112 +145,4 @@ export interface ScriptManifest {
     assets?: Record<string, string>;
     appearance?: Appearance;
     studio?: StudioMetadata;
-}
-
-/** Main route identities, independent of route instance parameters. */
-export type PageId =
-    "page.aiChat"
-    | "page.memoryBase"
-    | "page.memorySpaceDetail"
-    | "page.packages"
-    | "page.packageDetail"
-    | "page.market"
-    | "page.marketCategory"
-    | "page.marketNotifications"
-    | "page.builtInMarketDetail"
-    | "page.marketEntryDetail"
-    | "page.marketAuthor"
-    | "page.marketManage"
-    | "page.artifactPublish"
-    | "page.artifactContinuePublish"
-    | "page.artifactEdit"
-    | "page.repoPublish"
-    | "page.repoEdit"
-    | "page.repoPublishVersion"
-    | "page.shizukuCommands"
-    | "page.settings"
-    | "page.gitHubAccount"
-    | "page.help"
-    | "page.about"
-    | "page.agreement"
-    | "page.updateHistory"
-    | "page.workflow"
-    | "page.workflowDetail"
-    | "page.tokenConfig"
-    | "page.userPreferencesSettings"
-    | "page.toolPermission"
-    | "page.modelConfig"
-    | "page.speechServicesSettings"
-    | "page.mnnModelDownload"
-    | "page.personaCardGeneration"
-    | "page.waifuModeSettings"
-    | "page.customEmojiManagement"
-    | "page.tagMarket"
-    | "page.modelPromptsSettings"
-    | "page.functionalConfig"
-    | "page.themeSettings"
-    | "page.globalDisplaySettings"
-    | "page.dataStorageManagement"
-    | "page.localModelStorage"
-    | "page.linuxEnvironmentStorage"
-    | "page.workspaceMediaStorage"
-    | "page.chatHistoryStorage"
-    | "page.memoryLibraryStorage"
-    | "page.backupExportStorage"
-    | "page.configurationResourceStorage"
-    | "page.chatHistorySettings"
-    | "page.chatBackupSettings"
-    | "page.languageSettings"
-    | "page.tokenUsageStatistics"
-    | "page.performanceMonitor"
-    | "page.contextSummarySettings"
-    | "page.toolPkgComposeDsl"
-    | "page.toolPkgPluginConfig"
-    | "page.terminal"
-    | "page.terminalSetup"
-    | "page.terminalAutoConfig"
-    | "page.uIDebugger"
-    | "page.logcat"
-    | "page.markdownDemo"
-    | "page.speechToText"
-    | "page.defaultAssistantGuide"
-    | "page.htmlPackager";
-
-export type TextTarget =
-    "displayLarge"
-    | "displayMedium"
-    | "displaySmall"
-    | "headlineLarge"
-    | "headlineMedium"
-    | "headlineSmall"
-    | "titleLarge"
-    | "titleMedium"
-    | "titleSmall"
-    | "bodyLarge"
-    | "bodyMedium"
-    | "bodySmall"
-    | "labelLarge"
-    | "labelMedium"
-    | "labelSmall"
-    | "chat.modelName"
-    | "chat.title"
-    | "chat.tokenCount"
-    | "navigation.title"
-    | "package.name"
-    | "package.description"
-    | "package.version"
-    | "settings.title"
-    | "settings.description";
-
-/** Normalized coordinates: x increases rightward, y downward, independent of layout direction. */
-export interface GradientPoint { x: number; y: number; }
-export interface GradientStop { offset: number; color: Color; }
-/** 2..16 strictly increasing stops, spanning 0..1; radius uses the shortest side. */
-export interface Gradient {
-    type?: "linear" | "radial";
-    stops: readonly GradientStop[];
-    start?: GradientPoint;
-    end?: GradientPoint;
-    center?: GradientPoint;
-    radius?: number;
 }

@@ -65,7 +65,7 @@ fun DataAndBackupScreen(onNavigateToTokenStatistics: () -> Unit, initialTab: Int
         state = pager,
         beyondViewportPageCount = 2,
         userScrollEnabled = false,
-        modifier = Modifier.fillMaxSize().background(com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background)),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) { page ->
         // 三个页签保持组合，切换时保留选择、滚动位置和正在执行的任务。
         when (page) {

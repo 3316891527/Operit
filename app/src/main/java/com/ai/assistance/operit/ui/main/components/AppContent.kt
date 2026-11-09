@@ -63,9 +63,6 @@ import com.ai.assistance.operit.ui.main.navigation.RouteEntry
 import com.ai.assistance.operit.ui.main.navigation.LocalRouteInstanceId
 import com.ai.assistance.operit.ui.main.navigation.ScreenRouteViewModelStoreOwnerManager
 import com.ai.assistance.operit.ui.main.navigation.retainedRouteKeysOnContentAttach
-import com.ai.assistance.operit.ui.main.screens.themePageId
-import com.ai.assistance.operit.ui.theme.script.ThemePageBackground
-import com.ai.assistance.operit.ui.theme.script.hasBackgroundPaint
 import com.ai.assistance.operit.ui.main.screens.Screen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
@@ -200,8 +197,7 @@ fun AppContent(
     val backgroundDecoration = themeSurface("background")
     // 工作室背景与媒体背景共用底层画布，内容底色不能盖住已声明的填色或图层。
     val hasBackgroundDecoration = backgroundDecoration != null &&
-        backgroundDecoration.hasBackgroundPaint() ||
-        themeSurface(currentScreen.themePageId)?.hasBackgroundPaint() == true
+        (backgroundDecoration.fillColor != null || backgroundDecoration.layers.isNotEmpty())
 
     // 标准页面顶栏连同状态栏统一使用主题底色，避免聊天壁纸透出。
     val appBarContainerColor = MaterialTheme.colorScheme.background.copy(alpha = 1f)
@@ -273,7 +269,6 @@ fun AppContent(
                                 titleContent.content()
                             } else {
                                 Text(
-                                    themeTarget = "navigation.title",
                                     text = when {
                                         currentScreen.getTitle().isNotBlank() -> currentScreen.getTitle()
                                         selectedItem?.titleResId != null && selectedItem.titleResId != 0 ->
@@ -400,50 +395,47 @@ fun AppContent(
                             val screenSnapshot = currentScreen
                             screenKeepAliveCache[currentScreenKey] = screenSnapshot.keepAlive
                             screenCache[currentScreenKey] = {
-                                ThemePageBackground(screenSnapshot.themePageId) {
-                                    when (screenSnapshot) {
-                                        is Screen.ToolPkgComposeDsl ->
-                                            ToolPkgComposeDslToolScreen(
+                                when (screenSnapshot) {
+                                    is Screen.ToolPkgComposeDsl ->
+                                        ToolPkgComposeDslToolScreen(
+                                            navController = navController,
+                                            routeInstanceId = currentScreenKey,
+                                            containerPackageName = screenSnapshot.containerPackageName,
+                                            uiModuleId = screenSnapshot.uiModuleId,
+                                            fallbackTitle = screenSnapshot.title
+                                        )
+                                    is Screen.ToolPkgPluginConfig ->
+                                        ToolPkgComposeDslToolScreen(
+                                            navController = navController,
+                                            routeInstanceId = currentScreenKey,
+                                            containerPackageName = screenSnapshot.containerPackageName,
+                                            uiModuleId = screenSnapshot.uiModuleId,
+                                            fallbackTitle = screenSnapshot.title
+                                        )
+                                    else -> {
+                                        val content: @Composable () -> Unit = {
+                                            screenSnapshot.Content(
                                                 navController = navController,
-                                                routeInstanceId = currentScreenKey,
-                                                containerPackageName = screenSnapshot.containerPackageName,
-                                                uiModuleId = screenSnapshot.uiModuleId,
-                                                fallbackTitle = screenSnapshot.title
+                                                navigateTo = onScreenChange,
+                                                onGoBack = onGoBack,
+                                                hasBackgroundImage = hasBackgroundImage,
+                                                onLoading = onLoading,
+                                                onError = onError,
+                                                onGestureConsumed = if (screenSnapshot is Screen.AiChat) onGestureConsumed else { _ -> }
                                             )
-                                        is Screen.ToolPkgPluginConfig ->
-                                            ToolPkgComposeDslToolScreen(
-                                                navController = navController,
-                                                routeInstanceId = currentScreenKey,
-                                                containerPackageName = screenSnapshot.containerPackageName,
-                                                uiModuleId = screenSnapshot.uiModuleId,
-                                                fallbackTitle = screenSnapshot.title
-                                            )
-                                        else -> {
-                                            val content: @Composable () -> Unit = {
-                                                screenSnapshot.Content(
-                                                    navController = navController,
-                                                    navigateTo = onScreenChange,
-                                                    onGoBack = onGoBack,
-                                                    hasBackgroundImage = hasBackgroundImage || themeSurface("background")?.hasBackgroundPaint() == true ||
-                                                        themeSurface(screenSnapshot.themePageId)?.hasBackgroundPaint() == true,
-                                                    onLoading = onLoading,
-                                                    onError = onError,
-                                                    onGestureConsumed = if (screenSnapshot is Screen.AiChat) onGestureConsumed else { _ -> }
-                                                )
-                                            }
-                                            if (screenSnapshot.usesRouteViewModelStore) {
-                                                // 路由级 ViewModelStore（P1）：配置变化保留实例，
-                                                // 路由出栈/替换/清栈时 store.clear() 触发 onCleared
-                                                val routeOwner =
-                                                    routeViewModelStoreManager.ownerFor(currentScreenKey)
-                                                CompositionLocalProvider(
-                                                    LocalViewModelStoreOwner provides routeOwner
-                                                ) {
-                                                    content()
-                                                }
-                                            } else {
+                                        }
+                                        if (screenSnapshot.usesRouteViewModelStore) {
+                                            // 路由级 ViewModelStore（P1）：配置变化保留实例，
+                                            // 路由出栈/替换/清栈时 store.clear() 触发 onCleared
+                                            val routeOwner =
+                                                routeViewModelStoreManager.ownerFor(currentScreenKey)
+                                            CompositionLocalProvider(
+                                                LocalViewModelStoreOwner provides routeOwner
+                                            ) {
                                                 content()
                                             }
+                                        } else {
+                                            content()
                                         }
                                     }
                                 }

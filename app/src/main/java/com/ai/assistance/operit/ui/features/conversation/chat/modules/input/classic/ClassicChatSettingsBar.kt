@@ -641,7 +641,6 @@ internal fun ClassicChatSettingsContent(
                             ClassicSettingsFoldSection(
                                 title = stringResource(R.string.model),
                                 value = currentModelName,
-                                valueThemeTarget = "chat.modelName",
                                 icon = Icons.Outlined.DataObject,
                                 expanded = showModelSection,
                                 onExpandedChange = {
@@ -957,7 +956,6 @@ private fun ClassicSettingsFoldSection(
     expanded: Boolean,
     showTopDivider: Boolean = true,
     onExpandedChange: (Boolean) -> Unit,
-    valueThemeTarget: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -993,7 +991,6 @@ private fun ClassicSettingsFoldSection(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = value,
-                themeTarget = valueThemeTarget,
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
@@ -1411,7 +1408,6 @@ private fun ModelSelectorItem(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = displayModelName,
-                    themeTarget = "chat.modelName",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,

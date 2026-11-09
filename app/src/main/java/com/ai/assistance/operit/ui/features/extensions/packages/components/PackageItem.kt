@@ -50,13 +50,11 @@ fun PackageItem(
                         ) {
                                 Text(
                                         text = name,
-            themeTarget = "package.name",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                         text = description,
-            themeTarget = "package.description",
                                         style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

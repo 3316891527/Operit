@@ -32,12 +32,6 @@ object SkillRepoZipPoolManager {
         }
     }
 
-    fun poolKey(owner: String, repo: String, identity: String): String {
-        return "${owner.trim()}/${repo.trim()}@${identity.trim()}"
-    }
-
-    internal fun cacheFileName(key: String): String = "repo_${sha256Hex16(key)}.zip"
-
     private fun sha256Hex16(value: String): String {
         val bytes = MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(Charsets.UTF_8))
@@ -52,7 +46,7 @@ object SkillRepoZipPoolManager {
         return hex.take(16)
     }
 
-    private fun zipFileFor(dir: File, key: String): File = File(dir, cacheFileName(key))
+    private fun zipFileFor(dir: File, key: String): File = File(dir, "repo_${sha256Hex16(key)}.zip")
 
     private fun partFileFor(dir: File, key: String): File = File(dir, "repo_${sha256Hex16(key)}.download")
 
@@ -72,18 +66,8 @@ object SkillRepoZipPoolManager {
         }
     }
 
-    suspend fun invalidate(key: String) {
-        val dir = cacheDir ?: return
-        val mutex = keyMutexes.getOrPut(key) { Mutex() }
-        mutex.withLock {
-            runCatching { zipFileFor(dir, key).delete() }
-            runCatching { partFileFor(dir, key).delete() }
-        }
-    }
-
     suspend fun getOrDownloadZip(
         key: String,
-        forceRefresh: Boolean = false,
         downloadTo: suspend (outFile: File) -> Boolean
     ): File? {
         val dir = cacheDir
@@ -95,14 +79,10 @@ object SkillRepoZipPoolManager {
         val mutex = keyMutexes.getOrPut(key) { Mutex() }
         return mutex.withLock {
             val zipFile = zipFileFor(dir, key)
-            if (!forceRefresh && zipFile.exists() && zipFile.isFile && zipFile.length() > 0L) {
+            if (zipFile.exists() && zipFile.isFile && zipFile.length() > 0L) {
                 AppLogger.d(TAG, "ZIP 命中缓存: key=$key, file=${zipFile.name}, bytes=${zipFile.length()}")
                 touch(zipFile)
                 return@withLock zipFile
-            }
-            if (forceRefresh && zipFile.exists()) {
-                AppLogger.d(TAG, "ZIP 强制刷新，丢弃缓存: key=$key, file=${zipFile.name}")
-                runCatching { zipFile.delete() }
             }
 
             AppLogger.d(TAG, "ZIP 缓存未命中，开始下载: key=$key")

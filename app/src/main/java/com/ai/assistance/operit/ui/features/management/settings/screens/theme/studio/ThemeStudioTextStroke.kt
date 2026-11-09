@@ -24,8 +24,8 @@ import com.ai.assistance.operit.data.theme.script.ThemeTextStroke
 /** 自定义主题的所有字体入口共用文字描边编辑，普通主题设置不增加控件。 */
 @Composable
 internal fun StudioTextStrokeProperties(state: ThemeStudioState) {
-    val global = state.target.kind == StudioKind.Typography && state.textTarget == "global"
-    val text = state.text()
+    val global = state.target.kind == StudioKind.Typography
+    val text = if (global) state.appearance.typography else state.surface().textStyle
     val stroke = text.stroke
     val mode = when {
         stroke == null -> if (global) "off" else "inherit"

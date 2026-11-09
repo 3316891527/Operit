@@ -7,8 +7,9 @@ import com.ai.assistance.operit.core.tools.runtime.ToolExecutor
 import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.core.tools.protocol.ToolValidationResult
-import com.ai.assistance.operit.util.media.FFmpegUtil
+import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
+import com.arthenica.ffmpegkit.FFprobeKit
 import com.arthenica.ffmpegkit.ReturnCode
 import java.io.File
 
@@ -34,7 +35,7 @@ class StandardFFmpegToolExecutor(private val context: Context) : ToolExecutor {
             val startTime = System.currentTimeMillis()
 
             // 执行FFmpeg命令
-            val session = FFmpegUtil.execute(command)
+            val session = FFmpegKit.execute(command)
             val returnCode = session.returnCode
             val output = session.output ?: ""
             val duration = System.currentTimeMillis() - startTime
@@ -103,7 +104,7 @@ class StandardFFmpegInfoToolExecutor : ToolExecutor {
             info.appendLine("Build configuration: ${FFmpegKitConfig.getBuildDate()}")
 
             // 列出支持的编解码器
-            val codecsSession = FFmpegUtil.execute("-codecs")
+            val codecsSession = FFmpegKit.execute("-codecs")
             val codecsOutput = codecsSession.output ?: ""
             val duration = System.currentTimeMillis() - startTime
 
@@ -200,14 +201,14 @@ class StandardFFmpegConvertToolExecutor(private val context: Context) : ToolExec
             val startTime = System.currentTimeMillis()
 
             // 执行FFmpeg命令
-            val session = FFmpegUtil.execute(command)
+            val session = FFmpegKit.execute(command)
             val returnCode = session.returnCode
             val output = session.output ?: ""
             val duration = System.currentTimeMillis() - startTime
 
             if (ReturnCode.isSuccess(returnCode)) {
                 // 获取输出文件的媒体信息
-                val mediaSession = FFmpegUtil.getMediaInformation(outputPath)
+                val mediaSession = FFprobeKit.getMediaInformation(outputPath)
                 val mediaInfo = mediaSession?.mediaInformation
 
                 val ffmpegResult =
@@ -249,7 +250,9 @@ class StandardFFmpegConvertToolExecutor(private val context: Context) : ToolExec
                                             }
                                             .toMutableList()
 
-                            val ffprobeInfo = mediaInfo
+                            // Get additional media information using FFprobe
+                            val ffprobeSession = FFprobeKit.getMediaInformation(outputPath)
+                            val ffprobeInfo = ffprobeSession?.mediaInformation
 
                             if (ffprobeInfo != null) {
                                 // Update stream information with FFprobe data

@@ -22,9 +22,6 @@ data class ThemeAppearanceMode(
     val surfaces: Map<String, ThemeScriptSurface> = emptyMap(),
     val icons: Map<String, ThemeAppearanceIcon> = emptyMap(),
     val typography: ThemeAppearanceText? = null,
-    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
-    @kotlinx.serialization.EncodeDefault(kotlinx.serialization.EncodeDefault.Mode.NEVER)
-    val textStyles: Map<String, ThemeAppearanceText> = emptyMap(),
 )
 
 @kotlinx.serialization.SerialName("com.ai.assistance.operit.data.model.theme.ThemeAppearanceState")
@@ -45,7 +42,6 @@ fun ThemeScriptAppearance.forMode(mode: String): ThemeScriptAppearance {
         surfaces = surfaces + variant.surfaces,
         icons = icons + variant.icons,
         typography = variant.typography ?: typography,
-        textStyles = textStyles + variant.textStyles,
         modes = emptyMap(),
     )
 }
@@ -54,7 +50,6 @@ fun ThemeScriptSurface.forState(state: String): ThemeScriptSurface {
     val variant = states[state] ?: return this
     return copy(
         fillColor = variant.fillColor ?: fillColor,
-        fillGradient = if (variant.fillColor != null) null else fillGradient,
         contentColor = variant.contentColor ?: contentColor,
         strokeColor = variant.strokeColor ?: strokeColor,
         strokeWidth = variant.strokeWidth ?: strokeWidth,

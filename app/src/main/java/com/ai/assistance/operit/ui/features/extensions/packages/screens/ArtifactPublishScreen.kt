@@ -469,7 +469,7 @@ fun ArtifactPublishScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background))
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)

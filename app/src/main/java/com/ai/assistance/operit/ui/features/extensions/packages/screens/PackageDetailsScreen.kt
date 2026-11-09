@@ -314,7 +314,7 @@ internal fun PackageDetailsScreen(
         )
     }
 
-    Surface(Modifier.fillMaxSize(), color = com.ai.assistance.operit.ui.theme.script.themePageContainerColor(MaterialTheme.colorScheme.background)) {
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             Modifier.fillMaxSize().verticalScroll(contentScrollState).padding(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(26.dp),

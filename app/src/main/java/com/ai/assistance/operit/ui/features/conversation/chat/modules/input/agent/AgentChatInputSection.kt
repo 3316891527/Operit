@@ -1086,7 +1086,6 @@ internal fun AgentChatInputContent(
                                     )
                                     Text(
                                         text = modelLabel,
-                                        themeTarget = "chat.modelName",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
@@ -1402,7 +1401,6 @@ internal fun AgentChatInputContent(
                                         )
                                         Text(
                                             text = modelLabel,
-                                        themeTarget = "chat.modelName",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
@@ -1982,7 +1980,6 @@ private fun AgentModelSelectorItem(
                 ProviderLogo(currentConfig?.apiProviderTypeId, Modifier.padding(end = 6.dp), 16.dp)
                 Text(
                     text = displayModelName,
-                    themeTarget = "chat.modelName",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 2,

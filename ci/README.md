@@ -4,7 +4,7 @@
 
 ## Candidate contract
 
-PR 技术预审运行在触发事件固定的 `github.sha` merge candidate 上；一次运行内不跟随可变的分支或 PR merge ref：
+PR 技术预审只运行在 GitHub 为当前 PR 和最新目标分支生成的 merge candidate 上：
 
 ```text
 base = candidate^1
@@ -13,9 +13,7 @@ changed paths = git diff base..candidate
 workspace = candidate
 ```
 
-`ci/script/pr_check.py` 要求候选恰有两个父提交，并验证第二父提交与事件 head 完全一致。事件中的 base 可能早于 GitHub 创建候选时的目标分支，因此它作为历史锚点，必须是第一父提交的祖先；实际比较基准始终取候选的第一父提交。不相关历史、领先于候选的事件 base、错误 head 或非合并提交会使规划失败。
-
-路径分类、静态检查、测试和构建使用同一份固定候选。目标分支在事件之后的变化不混入本次差异，也不改变已检出的候选。Step summary 同时记录事件 base、实际 base、head 和 candidate。
+`ci/script/pr_check.py` 会验证两个父提交与 PR 事件中的 base/head 完全一致。路径分类、静态检查、测试和构建都使用同一个 candidate，不检出贡献者 head，也不比较 base tip 与过时 head。
 
 ## Local checks
 
