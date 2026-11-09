@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.viewmodel
 
+import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
@@ -871,6 +872,7 @@ class ChatViewModel(context: Context) : ViewModel() {
             chatHistoryDelegate.deleteChatHistoryWithResult(id) { result ->
                 if (result == ChatDeletionResult.DELETED) {
                     pendingMessageQueueStore.removeChat(id)
+                    ResponseProcessExpansionState.clear(id)
                     viewModelScope.launch {
                         // 等列表确实移除目标后释放效果，避免数据流更新前标题闪回。
                         chatHistories.first { histories -> histories.none { it.id == id } }
@@ -2745,6 +2747,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 when (chatHistoryDelegate.deleteChatHistoryAndAwait(chatId)) {
                     ChatDeletionResult.DELETED -> {
                         pendingMessageQueueStore.removeChat(chatId)
+                        ResponseProcessExpansionState.clear(chatId)
                         ChatBatchItemResult.SUCCEEDED
                     }
                     ChatDeletionResult.LOCKED, ChatDeletionResult.NOT_FOUND -> ChatBatchItemResult.SKIPPED

@@ -107,6 +107,13 @@ internal fun DisplayChatTab(controller: DisplayBehaviorController, open: (Displa
         stringResource(R.string.display_behavior_message_organization),
         Icons.Default.Layers,
     ) {
+        DisplayToggleSetting(
+            controller,
+            DisplayToggle.RESPONSE_PROCESS,
+            R.string.collapse_completed_process_title,
+            R.string.collapse_completed_process_description,
+        )
+        DisplayDivider()
         DisplayNavigationRow(
             stringResource(R.string.display_behavior_collapse_title),
             stringResource(R.string.display_behavior_collapse_desc),

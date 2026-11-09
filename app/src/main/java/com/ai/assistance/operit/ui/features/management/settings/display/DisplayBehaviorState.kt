@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 internal enum class DisplayToggle(val default: Boolean) {
     ENTER(false),
     NEW_CHAT(false),
+    RESPONSE_PROCESS(true),
     LONG_TEXT(true),
     NOTIFY(true),
     SOUND(false),
@@ -239,6 +240,7 @@ internal class DisplayBehaviorController(context: Context) {
         when (key) {
             DisplayToggle.ENTER -> display.enableEnterToSend.first()
             DisplayToggle.NEW_CHAT -> display.startWithNewChat.first()
+            DisplayToggle.RESPONSE_PROCESS -> display.collapseCompletedProcess.first()
             DisplayToggle.LONG_TEXT -> user.convertLongPastedTextToFile.first()
             DisplayToggle.NOTIFY -> display.enableReplyNotification.first()
             DisplayToggle.SOUND -> display.enableReplyNotificationSound.first()
@@ -281,6 +283,7 @@ internal class DisplayBehaviorController(context: Context) {
         when (key) {
             DisplayToggle.ENTER -> display.saveDisplaySettings(enableEnterToSend = value)
             DisplayToggle.NEW_CHAT -> display.saveDisplaySettings(startWithNewChat = value)
+            DisplayToggle.RESPONSE_PROCESS -> display.saveDisplaySettings(collapseCompletedProcess = value)
             DisplayToggle.LONG_TEXT -> user.saveConvertLongPastedTextToFile(value)
             DisplayToggle.NOTIFY -> display.saveDisplaySettings(enableReplyNotification = value)
             DisplayToggle.SOUND -> display.saveDisplaySettings(enableReplyNotificationSound = value)

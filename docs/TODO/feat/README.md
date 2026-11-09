@@ -95,3 +95,5 @@
 - [补丁 18：工具调用耗时与完成标题](patch18-tool-execution-timing/index.md)
 - [补丁 18：终端显示与键盘输入](patch18-terminal-input/index.md)
 - [补丁 18：统一集成与完整回归](patch18-integration/index.md)
+
+- [折叠已完成的回复过程](collapse-completed-response-process/index.md)
