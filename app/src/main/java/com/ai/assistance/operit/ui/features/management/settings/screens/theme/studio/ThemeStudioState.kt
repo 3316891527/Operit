@@ -70,6 +70,7 @@ internal class ThemeStudioState(
     var property by mutableStateOf(StudioProperty.Appearance)
     var textTarget by mutableStateOf("global")
     var previewState by mutableStateOf("always")
+    val pagePreview = StudioPagePreviewState()
     var previewCollapsed by mutableStateOf(false)
     var currentFolder by mutableStateOf("assets")
     var resourceFilter by mutableStateOf("all")

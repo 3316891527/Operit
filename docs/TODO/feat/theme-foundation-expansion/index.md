@@ -26,3 +26,5 @@ status: implemented_pending_ci
 
 4. [工作室入口与背景跟随](05-studio-feedback.md)
 5. [原生状态过渡与点击涟漪](06-native-interactions.md)
+
+6. [属性分组与真实页面预览](07-property-groups-and-live-pages.md)

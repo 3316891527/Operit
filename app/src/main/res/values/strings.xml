@@ -9379,4 +9379,24 @@
     <string name="studio_ripple_override">独立设置点击涟漪</string>
     <string name="studio_ripple_enable">显示点击涟漪</string>
     <string name="studio_ripple_color">涟漪颜色</string>
+    <string name="studio_group_component_appearance">部件外观</string>
+    <string name="studio_group_message_appearance">消息外观</string>
+    <string name="studio_group_message_text">消息文字</string>
+    <string name="studio_group_text">文字排版</string>
+    <string name="studio_group_layout">布局与位置</string>
+    <string name="studio_group_advanced">高级效果</string>
+    <string name="studio_group_appearance_hint">背景颜色、透明度、形状和描边</string>
+    <string name="studio_group_text_hint">文字颜色、字体、粗细、字号和描边</string>
+    <string name="studio_group_layout_hint">尺寸、内容留白和位置</string>
+    <string name="studio_group_icon_hint">图标素材、大小和着色</string>
+    <string name="studio_group_layers_hint">逐层调整外观、可见状态和位置</string>
+    <string name="studio_group_layer_effects_hint">图层渐变或图像模糊</string>
+    <string name="studio_group_state_text_hint">当前交互状态的文字或图标颜色</string>
+    <string name="studio_group_interaction_hint">状态过渡和点击涟漪</string>
+    <string name="studio_live_page_read_only">真实页面预览 · 只读</string>
+    <string name="studio_live_page_choose">选择预览对象</string>
+    <string name="studio_live_page_choose_hint">此页面需要一个现有对象。选择实际的包、条目或工作流后，将显示应用中同一个页面。</string>
+    <string name="studio_live_page_choose_for">选择对象：%1$s</string>
+    <string name="studio_live_page_picker_hint">在现有页面中找到要预览的对象；打开目标页面时会自动返回工作室。</string>
+    <string name="studio_live_page_no_plugins">没有已安装的插件界面可供预览。导入带界面的插件后可在这里选择。</string>
 </resources>

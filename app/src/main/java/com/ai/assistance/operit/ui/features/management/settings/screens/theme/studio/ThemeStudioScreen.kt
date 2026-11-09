@@ -182,7 +182,7 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
                         }
                         Box(Modifier.weight(1f).fillMaxWidth()) {
                             when (state.workspace) {
-                                StudioWorkspace.Design -> StudioDesign(state, viewport, onPickTarget = { finishEditing(); picker = true }, onFullPreview = { finishEditing(); expandedPreview = true })
+                                StudioWorkspace.Design -> StudioDesign(state, viewport, previewCovered = expandedPreview || state.pagePreview.selectingPage != null, onPickTarget = { finishEditing(); picker = true }, onFullPreview = { finishEditing(); expandedPreview = true })
                                 StudioWorkspace.Source -> StudioSource(state, onImport = { importSource.launch(arrayOf("*/*")) })
                                 StudioWorkspace.Resources -> StudioResources(state, onImport = { importAsset.launch(arrayOf("*/*")) })
                             }
@@ -207,7 +207,8 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
             }
             if (picker) StudioTargetPicker(state) { picker = false }
             if (info) StudioProjectInfo(state) { info = false }
-            if (expandedPreview) StudioFullSheet(stringResource(R.string.studio_preview), { expandedPreview = false }) { StudioPreview(state, viewport, Modifier.fillMaxWidth().weight(1f), fullScreen = true) }
+            if (expandedPreview && state.pagePreview.selectingPage == null) StudioFullSheet(stringResource(R.string.studio_preview), { expandedPreview = false }) { StudioPreview(state, viewport, Modifier.fillMaxWidth().weight(1f), fullScreen = true) }
+            StudioPagePreviewObjectPicker(state)
             if (leaving) AlertDialog(
                 onDismissRequest = { leaving = false },
                 title = { Text(stringResource(R.string.studio_unsaved_title)) },
@@ -226,14 +227,18 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
 }
 
 @Composable
-private fun StudioDesign(state: ThemeStudioState, viewport: IntSize, onPickTarget: () -> Unit, onFullPreview: () -> Unit) {
+private fun StudioDesign(state: ThemeStudioState, viewport: IntSize, previewCovered: Boolean, onPickTarget: () -> Unit, onFullPreview: () -> Unit) {
     val focusManager = LocalFocusManager.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val previewHeight = (maxHeight * .44f).coerceIn(260.dp, 340.dp)
             .coerceAtMost((maxHeight - 160.dp).coerceAtLeast(0.dp))
         Column(Modifier.fillMaxSize()) {
             StudioPreviewToolbar(state, onFullPreview)
-            if (!state.previewCollapsed) StudioPreview(state, viewport, Modifier.fillMaxWidth().height(previewHeight))
+            StudioPagePreviewActions(state)
+            if (!state.previewCollapsed) {
+                if (previewCovered) Spacer(Modifier.fillMaxWidth().height(previewHeight))
+                else StudioPreview(state, viewport, Modifier.fillMaxWidth().height(previewHeight))
+            }
             Row(Modifier.fillMaxWidth().clickable(onClick = onPickTarget).background(StudioPanel).padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StudioTargetThumbnail(state, state.target.rootTarget)
                 Column(Modifier.weight(1f)) { Text(state.target.rootTarget.label(), style = MaterialTheme.typography.titleSmall); Text(stringResource(R.string.studio_select_component), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

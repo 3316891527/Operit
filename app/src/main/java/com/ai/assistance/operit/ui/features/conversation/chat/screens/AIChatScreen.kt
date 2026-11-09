@@ -113,6 +113,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.exp
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.exportWindowsApp
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.extractClipboardPastedText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.extractInsertedText
+import com.ai.assistance.operit.ui.theme.LocalIsThemePagePreview
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalMainChatSidebarState
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.LocalOpenMainChatSidebar
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sidebar.rememberChatSidebarState
@@ -141,11 +142,14 @@ fun AIChatScreen(
     val density = LocalDensity.current
     val colorScheme = MaterialTheme.colorScheme
     val isCurrentScreen = LocalIsCurrentScreen.current
+    val isThemePreview = LocalIsThemePagePreview.current
 // Correctly initialize ViewModel using the viewModel() composable function
 val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(context.applicationContext) }
 
     // 设置权限系统的颜色方案
-    LaunchedEffect(colorScheme) { actualViewModel.setPermissionSystemColorScheme(colorScheme) }
+    LaunchedEffect(colorScheme) {
+        if (!isThemePreview) actualViewModel.setPermissionSystemColorScheme(colorScheme)
+    }
 
     // Monitor shared files from external apps
     val sharedFiles by SharedFileHandler.sharedFiles.collectAsState()
@@ -300,6 +304,8 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         currentChatView?.title,
         chatViewRuntime
     ) {
+        // 预览不注册主聊天视图，否则插件会把它当作另一个真实会话窗口。
+        if (isThemePreview) return@LaunchedEffect
         val event =
             if (hasDispatchedChatViewOpen) {
                 ChatViewEvent.VIEW_UPDATED
@@ -311,7 +317,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     }
     DisposableEffect(chatViewId) {
         onDispose {
-            ChatViewHookPluginRegistry.dispatchAsync(
+            if (hasDispatchedChatViewOpen) ChatViewHookPluginRegistry.dispatchAsync(
                 ChatViewEvent.VIEW_CLOSED,
                 latestChatViewParams
             )
@@ -331,7 +337,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
     // 当模型名称加载后，检查是否为建议更换的模型
     LaunchedEffect(modelName) {
-        if (modelName.isNotBlank() && modelName.contains("deepseek-r1-0528-qwen3-8b:free", ignoreCase = true)) {
+        if (!isThemePreview && modelName.isNotBlank() && modelName.contains("deepseek-r1-0528-qwen3-8b:free", ignoreCase = true)) {
             showModelSuggestionDialog = true
         }
     }
@@ -366,7 +372,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         )
     }
 
-    SharedIncomingContentHandler(
+    if (!isThemePreview) SharedIncomingContentHandler(
         sharedFiles = sharedFiles,
         sharedFileText = sharedFileText,
         sharedText = sharedText,
@@ -474,7 +480,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val snackbarHostState = remember { SnackbarHostState() }
 
     // 用新的错误弹窗替换原有的错误显示逻辑
-    errorMessage?.let { message ->
+    if (!isThemePreview) errorMessage?.let { message ->
         ErrorDialog(errorMessage = message, onDismiss = { actualViewModel.dismissErrorDialog() })
     }
 
@@ -511,6 +517,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     }
     // 当手势状态改变时，通知父组件
     LaunchedEffect(chatScreenGestureConsumed, isWorkspaceHubOpen) {
+        if (isThemePreview) return@LaunchedEffect
         val finalGestureState = chatScreenGestureConsumed
         // 同时更新全局状态持有者，确保PhoneLayout能够访问到状态
         GestureStateHolder.isChatScreenGestureConsumed = finalGestureState
@@ -531,7 +538,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
     // 启动文件选择器
     LaunchedEffect(fileChooserRequest) {
-        fileChooserRequest?.let { fileChooserLauncher.launch(it) }
+        if (!isThemePreview) fileChooserRequest?.let { fileChooserLauncher.launch(it) }
     }
 
     val setScreenSoftInputMode = LocalSetScreenSoftInputMode.current
@@ -972,7 +979,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             )
         }
 
-        com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.motion.NewChatIntro(
+        if (!isThemePreview) com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.motion.NewChatIntro(
             requestId = newChatIntroId, currentChatId = currentChatId,
             ready = loadedChatId == currentChatId && currentChatId != null && !isLoading && !isLoadingDisplayWindow, empty = chatHistory.isEmpty(),
             hasDraft = introDraft.text.isNotEmpty(), onConsumed = actualViewModel.chatListMotion::consumeIntro,
@@ -981,7 +988,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     }
 
     // Show popup message dialog when needed
-    popupMessage?.let { message ->
+    if (!isThemePreview) popupMessage?.let { message ->
         AlertDialog(
                 onDismissRequest = { actualViewModel.clearPopupMessage() },
                 title = { Text(stringResource(R.string.dialog_title_prompt)) },
@@ -994,6 +1001,7 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
 
     // Check for overlay permission on resume
     LaunchedEffect(Unit) {
+        if (isThemePreview) return@LaunchedEffect
         canDrawOverlays.value = Settings.canDrawOverlays(context)
 
         // If floating mode is on but no permission, turn it off
@@ -1055,6 +1063,7 @@ private fun ChatInputBottomBar(
     onRequestAutoScrollToBottom: () -> Unit,
 ) {
     val context = LocalContext.current
+    val isThemePreview = LocalIsThemePagePreview.current
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
     val waifuPreferences = remember(context) { WaifuPreferences.getInstance(context) }
@@ -1213,6 +1222,7 @@ private fun ChatInputBottomBar(
         isWaifuMergeSendEnabled,
         waifuMergeSendDelayMs
     ) {
+        if (isThemePreview) return@LaunchedEffect
         if (!isWaifuModeEnabled || !isWaifuMergeSendEnabled) {
             waifuMergeBuffer.clear()
             return@LaunchedEffect
@@ -1330,6 +1340,8 @@ private fun ChatInputBottomBar(
         }
 
     LaunchedEffect(isQueueBlocked, pendingQueueMessages.size, currentChatId) {
+        // 预览共享会话数据，但不能消费队列信号或发送任何待发消息。
+        if (isThemePreview) return@LaunchedEffect
         val queueChatId = currentChatId ?: return@LaunchedEffect
         if (actualViewModel.consumePendingQueueAutoDequeueSignal(queueChatId, isQueueBlocked)) {
             delay(250)

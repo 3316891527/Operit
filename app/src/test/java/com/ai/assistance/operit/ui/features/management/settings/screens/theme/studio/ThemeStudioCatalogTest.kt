@@ -68,7 +68,7 @@ class ThemeStudioCatalogTest {
             assertEquals("background", it.rootTarget.id)
             assertTrue(StudioProperty.Layers in it.properties)
         }
-        assertEquals(pages, ThemeStudioPagePreviewKinds.keys)
+        assertEquals(pages, ThemeStudioPagePreviewTargets.keys)
     }
 
 }

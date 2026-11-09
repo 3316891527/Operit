@@ -9403,4 +9403,24 @@
     <string name="studio_ripple_override">Customize touch ripple</string>
     <string name="studio_ripple_enable">Show touch ripple</string>
     <string name="studio_ripple_color">Ripple color</string>
+    <string name="studio_group_component_appearance">Component appearance</string>
+    <string name="studio_group_message_appearance">Message appearance</string>
+    <string name="studio_group_message_text">Message text</string>
+    <string name="studio_group_text">Typography</string>
+    <string name="studio_group_layout">Layout and position</string>
+    <string name="studio_group_advanced">Advanced effects</string>
+    <string name="studio_group_appearance_hint">Background color, opacity, shape and border</string>
+    <string name="studio_group_text_hint">Text color, font, weight, size and outline</string>
+    <string name="studio_group_layout_hint">Size, content padding and position</string>
+    <string name="studio_group_icon_hint">Icon asset, size and tint</string>
+    <string name="studio_group_layers_hint">Edit each layer, its visibility and position</string>
+    <string name="studio_group_layer_effects_hint">Layer gradient or image blur</string>
+    <string name="studio_group_state_text_hint">Text or icon color in this interaction state</string>
+    <string name="studio_group_interaction_hint">State transitions and touch ripple</string>
+    <string name="studio_live_page_read_only">Actual page preview · read only</string>
+    <string name="studio_live_page_choose">Choose preview item</string>
+    <string name="studio_live_page_choose_hint">This page needs an existing item. Choose a package, entry or workflow to show the same page used by the app.</string>
+    <string name="studio_live_page_choose_for">Choose an item for %1$s</string>
+    <string name="studio_live_page_picker_hint">Find the existing item in the app page below. Opening the target page returns it to the studio.</string>
+    <string name="studio_live_page_no_plugins">No installed plugin screens are available. Import a plugin with a screen to select it here.</string>
 </resources>
