@@ -4,7 +4,7 @@
 
 ## Candidate contract
 
-PR 技术预审只运行在 GitHub 为当前 PR 和最新目标分支生成的 merge candidate 上：
+PR 技术预审覆盖所有目标分支，包括以功能或回滚分支为目标的叠加 PR；只运行在 GitHub 为当前 PR 和最新目标分支生成的 merge candidate 上：
 
 ```text
 base = candidate^1
@@ -30,12 +30,14 @@ python3 -B ci/script/check_markdown_links.py --base "$BASE_SHA" --candidate "$CA
 python3 -B ci/script/check_localizations.py --base "$BASE_SHA" --candidate "$CANDIDATE_SHA"
 ```
 
-本地分支不是 GitHub merge candidate，因此本地结果用于提交前检查；PR 页面上的 `Candidate checks` 才验证与当前 `dev` 合并后的实际树。
+本地分支不是 GitHub merge candidate，因此本地结果用于提交前检查；PR 页面上的 `Candidate checks` 才验证与当前目标分支合并后的实际树。
 
 ## PR check lanes
 
 每个 PR 保留一个 `Candidate checks` 聚合技术状态，并在适用时显示独立的 `Android build`
 和 `Android JVM tests` job。快速检查会先收集全部诊断，失败后不启动耗时阶段。
+
+维护者要求完整验证时，为 PR 添加 `ci:full-android` 标签。工作流会在标签变化时重新检查，规划器的 `--full-android` 使 `Android build` 必须运行 `./gradlew assembleDebug`，并使 `Android JVM tests` 必须运行 `:app:testDebugUnitTest`，即使本项只有 CI 或文档改动。两个 job 使用同一个固定合并候选和 full 依赖；`Candidate checks` 会要求两项实际成功，不能以 skipped 代替。PR workflow 不发布安装包或合并代码。
 
 - 所有改动：空白、冲突标记、JSON/XML 语法和门禁单元测试；变更 YAML 时使用 Psych AST 与 actionlint 1.7.12 检查
 - 所有改动：比较 base/candidate 两棵 Git tree，只阻断 candidate 新增的本地断链；删除被文档引用的非 Markdown 文件也会检查

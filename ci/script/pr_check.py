@@ -129,7 +129,7 @@ def path_matches(path: str, patterns: tuple[str, ...]) -> bool:
     return False
 
 
-def classify_paths(paths: list[str] | tuple[str, ...]) -> ScopePlan:
+def classify_paths(paths: list[str] | tuple[str, ...], *, full_android: bool = False) -> ScopePlan:
     normalized_paths = tuple(sorted(set(paths)))
     localization = any(path_matches(path, LOCALIZATION_PATTERNS) for path in normalized_paths)
     web = any(path_matches(path, WEB_PATTERNS) for path in normalized_paths)
@@ -139,7 +139,8 @@ def classify_paths(paths: list[str] | tuple[str, ...]) -> ScopePlan:
     ci = any(path_matches(path, CI_PATTERNS) for path in normalized_paths)
     android_instrumentation = any(path.startswith("app/src/androidTest/") for path in normalized_paths)
 
-    android_full = any(
+    # Maintainer-requested full validation must also cover CI-only and docs-only PRs.
+    android_full = full_android or any(
         path_matches(path, ANDROID_FULL_PATTERNS)
         or any(path == root or path.startswith(f"{root}/") for root in ANDROID_MODULE_ROOTS)
         for path in normalized_paths
@@ -272,6 +273,7 @@ def parse_args() -> argparse.Namespace:
     plan_parser.add_argument("--candidate", required=True)
     plan_parser.add_argument("--expected-base", required=True)
     plan_parser.add_argument("--expected-head", required=True)
+    plan_parser.add_argument("--full-android", action="store_true", help="Require assembleDebug and Android JVM tests regardless of changed paths")
     plan_parser.add_argument("--github-output", type=Path)
     plan_parser.add_argument("--step-summary", type=Path)
     return parser.parse_args()
@@ -280,7 +282,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     context = candidate_context(args.candidate, args.expected_base, args.expected_head)
-    plan = classify_paths(changed_paths(context.base_sha, context.candidate_sha))
+    plan = classify_paths(changed_paths(context.base_sha, context.candidate_sha), full_android=args.full_android)
 
     if args.github_output:
         write_github_output(args.github_output, context, plan)

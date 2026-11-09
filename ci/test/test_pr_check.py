@@ -128,6 +128,53 @@ class ScopeClassificationTest(unittest.TestCase):
         self.assertTrue(plan.android_instrumentation)
 
 
+class FullAndroidRequirementTest(unittest.TestCase):
+    def test_explicit_request_requires_full_android_for_every_scope(self) -> None:
+        for paths in (
+            [],
+            ["README.md"],
+            ["ci/script/pr_check.py"],
+            ["app/src/main/java/com/example/Current.kt"],
+            ["app/src/main/res/values-ro/strings.xml"],
+        ):
+            with self.subTest(paths=paths):
+                plan = classify_paths(paths, full_android=True)
+                self.assertTrue(plan.android_full)
+                self.assertFalse(plan.android_jvm)
+                self.assertFalse(plan.android_resources)
+                self.assertEqual(plan.output_values()["android_full"], "true")
+
+    def test_cli_outputs_required_full_lane_for_docs_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            git(repository, "init", "-b", "main")
+            git(repository, "config", "user.name", "CI Test")
+            git(repository, "config", "user.email", "ci@example.com")
+            (repository / "README.md").write_text("base\n", encoding="utf-8")
+            git(repository, "add", "README.md")
+            git(repository, "commit", "-m", "base")
+            base_sha = git(repository, "rev-parse", "HEAD")
+            git(repository, "switch", "-c", "feature")
+            (repository / "README.md").write_text("updated docs\n", encoding="utf-8")
+            git(repository, "commit", "-am", "docs")
+            head_sha = git(repository, "rev-parse", "HEAD")
+            git(repository, "switch", "main")
+            git(repository, "merge", "--no-ff", "feature", "-m", "candidate")
+            candidate_sha = git(repository, "rev-parse", "HEAD")
+            output = repository / "outputs.txt"
+            subprocess.run(
+                [sys.executable, str(REPO_ROOT / "ci/script/pr_check.py"), "plan",
+                 "--candidate", candidate_sha, "--expected-base", base_sha,
+                 "--expected-head", head_sha, "--full-android", "--github-output", str(output)],
+                cwd=repository, check=True, capture_output=True, text=True,
+            )
+            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+            self.assertEqual(values["android_full"], "true")
+            self.assertEqual(values["base_sha"], base_sha)
+            self.assertEqual(values["head_sha"], head_sha)
+            self.assertEqual(values["candidate_sha"], candidate_sha)
+
+
 class CandidateContractTest(unittest.TestCase):
     def test_stale_branch_uses_candidate_first_parent_diff(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
