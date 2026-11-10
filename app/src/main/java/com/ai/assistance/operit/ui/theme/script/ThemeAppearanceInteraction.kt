@@ -43,9 +43,12 @@ internal fun ThemeInteractionScope(
     val state = LocalThemeSurfaceStates.current[id] ?: themeStateName(pressed, focused, selected = selected, enabled = enabled, error = false)
     CompositionLocalProvider(
         LocalThemeSurfaceStates provides (LocalThemeSurfaceStates.current + (id to state)),
-        LocalThemeTextStroke provides themeTextStroke(id),
         LocalThemeHandledOpacity provides (LocalThemeHandledOpacity.current + id),
-    ) { content(source) }
+    ) {
+        ThemeSurfaceVisualScope(id) {
+            CompositionLocalProvider(LocalThemeTextStroke provides themeTextStroke(id)) { content(source) }
+        }
+    }
 }
 
 @Composable
@@ -54,14 +57,17 @@ internal fun resolvedThemeSurface(id: String, base: ThemeScriptSurface): ThemeSc
 
 /** 显式选中状态在读取原生容器配色之前建立，正文和装饰使用同一个值。 */
 @Composable
-internal fun ThemeSurfaceStateScope(id: String, selected: Boolean, handlesOpacity: Boolean = false, content: @Composable () -> Unit) {
+@UiComposable
+internal fun ThemeSurfaceStateScope(id: String, selected: Boolean, handlesOpacity: Boolean = false, content: @Composable @UiComposable () -> Unit) {
     val states = LocalThemeSurfaceStates.current
     val active = states[id] ?: themeStateName(pressed = false, focused = false, selected = selected, enabled = true, error = false)
     val handled = LocalThemeHandledOpacity.current
     CompositionLocalProvider(
         LocalThemeSurfaceStates provides (states + (id to active)),
-        LocalThemeTextStroke provides themeTextStroke(id),
         LocalThemeHandledOpacity provides (if (handlesOpacity) handled + id else handled),
-        content = content,
-    )
+    ) {
+        ThemeSurfaceVisualScope(id) {
+            CompositionLocalProvider(LocalThemeTextStroke provides themeTextStroke(id), content = content)
+        }
+    }
 }

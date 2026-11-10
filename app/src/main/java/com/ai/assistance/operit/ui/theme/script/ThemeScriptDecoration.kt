@@ -118,7 +118,7 @@ fun Modifier.themeScriptDecoration(
     var pressed by remember(surfaceId) { mutableStateOf(false) }
     var focused by remember(surfaceId) { mutableStateOf(false) }
     val active = LocalThemeSurfaceStates.current[surfaceId] ?: themeStateName(pressed, focused, selected, enabled, error)
-    val surface = base.forState(active)
+    val surface = LocalThemeAnimatedSurfaces.current[surfaceId] ?: base.forState(active)
     val recordingLayers = surface.layers.mapIndexed { index, layer ->
         key(layer.id, index) {
             val node = remember { if (Build.VERSION.SDK_INT >= 31) ThemeBlurRecording() else null }
@@ -161,6 +161,8 @@ fun Modifier.themeScriptDecoration(
                 }
             }
             if (drawFill) surface.fillColor?.let { drawRect(themeColor(it), alpha = backgroundOpacity.coerceIn(0f, 1f)) }
+            // Native containers use transparent fill when a gradient owns the surface paint.
+            surface.fillGradient?.let { if (size.minDimension > 0f) drawRect(it.brush(size), alpha = backgroundOpacity.coerceIn(0f, 1f)) }
             drawPlacement("background")
             drawContent()
             drawPlacement("foreground")
@@ -187,18 +189,22 @@ internal fun DrawScope.drawThemeLayer(
     val width = layer.strokeWidth.dp.toPx()
     val fill = layer.color?.let(::themeColor)
     val stroke = layer.strokeColor?.let(::themeColor)
+    val gradient = layer.gradient?.brush(extent, topLeft)
     val quality = if (layer.sampling == "nearest") FilterQuality.None else FilterQuality.Low
     when (layer.type) {
         "rect" -> {
             val corner = CornerRadius(layer.radius.dp.toPx())
+            if (gradient != null) drawRoundRect(gradient, topLeft, extent, corner, alpha = opacity)
             if (fill != null) drawRoundRect(fill, topLeft, extent, corner, alpha = opacity)
             if (stroke != null && width > 0f) drawRoundRect(stroke, topLeft, extent, corner, alpha = opacity, style = Stroke(width))
         }
         "ellipse" -> {
+            if (gradient != null) drawOval(gradient, topLeft, extent, alpha = opacity)
             if (fill != null) drawOval(fill, topLeft, extent, alpha = opacity)
             if (stroke != null && width > 0f) drawOval(stroke, topLeft, extent, alpha = opacity, style = Stroke(width))
         }
-        "line" -> drawLine(requireNotNull(stroke ?: fill), topLeft, topLeft + Offset(extent.width, extent.height), strokeWidth = width.coerceAtLeast(1f), alpha = opacity)
+        "line" -> if (gradient != null) drawLine(gradient, topLeft, topLeft + Offset(extent.width, extent.height), strokeWidth = width.coerceAtLeast(1f), alpha = opacity)
+            else drawLine(requireNotNull(stroke ?: fill), topLeft, topLeft + Offset(extent.width, extent.height), strokeWidth = width.coerceAtLeast(1f), alpha = opacity)
         "nineSlice" -> {
             val bitmap = (images.getValue(requireNotNull(layer.asset)) as ThemeScriptImage.Bitmap).image
             val edge = layer.slices

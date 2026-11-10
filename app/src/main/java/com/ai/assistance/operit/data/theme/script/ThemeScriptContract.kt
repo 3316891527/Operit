@@ -12,6 +12,7 @@ object ThemeScriptContract {
     const val MAX_RESULT_BYTES = 131072
     const val MAX_BUNDLE_BYTES = 64 * 1024 * 1024
     const val MAX_ASSET_BYTES = 8 * 1024 * 1024
+    const val MAX_ASSETS = 48
     const val MAX_SVG_BYTES = 512 * 1024
     const val MAX_BITMAP_PIXELS = 41_943_040L
     const val MAX_MANIFEST_BYTES = 65536
@@ -25,7 +26,7 @@ object ThemeScriptContract {
         "background", "userMessage", "assistantMessage", "composer", "userAvatar", "assistantAvatar",
         "appBar", "navigation", "navigationItem", "button", "iconButton", "input",
         "settingsCard", "dialog", "sheet", "menu", "listItem", "status", "toolCard",
-    ) + popupSurfaceIds + actionButtonIds
+    ) + popupSurfaceIds + actionButtonIds + ThemeStyleTargets.pageIds
     val iconIds = setOf(
         "composer.settings", "composer.attachment", "composer.microphone", "composer.send",
         "composer.stop", "composer.fullscreen", "composer.queue", "composer.expand",
@@ -47,8 +48,8 @@ object ThemeScriptContract {
     fun validate(manifest: ThemeScriptManifest) {
         require(manifest.apiVersion == API_VERSION) { "Unsupported theme script API: ${manifest.apiVersion}" }
         require(isAssetPath(manifest.entry) && manifest.entry.endsWith(".js")) { "Theme script entry must be assets/*.js" }
-        require(json.encodeToString(ThemeScriptManifest.serializer(), manifest).toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST_BYTES) { "Theme script manifest is too large" }
-        require(manifest.assets.size <= 48) { "Theme script declares too many assets" }
+        ThemeResourceLimit.AssetCount.check(manifest.assets.size.toLong())
+        ThemeResourceLimit.ManifestBytes.check(json.encodeToString(ThemeScriptManifest.serializer(), manifest).toByteArray(Charsets.UTF_8).size.toLong())
         require(manifest.assets.keys.all { assetName.matches(it) }) { "Invalid theme script asset name" }
         require(manifest.assets.values.all(::isAssetPath)) { "Invalid theme script asset path" }
         require(manifest.entry !in manifest.assets.values) { "Script entry cannot be a drawing asset" }
@@ -70,7 +71,7 @@ object ThemeScriptContract {
     }
 
     fun decodeResult(text: String, manifest: ThemeScriptManifest): ThemeScriptAppearance {
-        require(text.toByteArray(Charsets.UTF_8).size <= MAX_RESULT_BYTES) { "Theme script result exceeds size limit" }
+        ThemeResourceLimit.ResultBytes.check(text.toByteArray(Charsets.UTF_8).size.toLong())
         checkJsonDepth(text)
         val result = json.decodeFromString<ThemeScriptAppearance>(text)
         validate(result, manifest)
@@ -78,7 +79,7 @@ object ThemeScriptContract {
     }
 
     fun decodeManifest(text: String): ThemeScriptManifest {
-        require(text.toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST_BYTES) { "Theme script manifest is too large" }
+        ThemeResourceLimit.ManifestBytes.check(text.toByteArray(Charsets.UTF_8).size.toLong())
         checkJsonDepth(text)
         return json.decodeFromString<ThemeScriptManifest>(text).also(::validate)
     }
@@ -102,6 +103,8 @@ object ThemeScriptContract {
         }
     }
 
+    val interactiveSurfaceIds: Set<String> get() = actionButtonIds + setOf("button", "iconButton", "navigationItem")
+
     fun validate(result: ThemeScriptAppearance, manifest: ThemeScriptManifest) {
         require(manifest.apiVersion == API_VERSION) { "Unsupported theme manifest" }
         require(result.apiVersion == API_VERSION) { "Unsupported theme appearance API" }
@@ -114,7 +117,7 @@ object ThemeScriptContract {
         require(result.surfaces.keys.all { it in surfaceIds }) { "Unknown theme script surface" }
         require(result.icons.keys.all { it in iconIds }) { "Unknown theme icon" }
         result.icons.values.forEach { icon ->
-            require(icon.asset in manifest.assets.keys && manifest.assets.getValue(icon.asset).substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg")) { "Icon references an undeclared asset" }
+            require(icon.asset in manifest.assets.keys && ThemeAssetFormats.isImage(manifest.assets.getValue(icon.asset))) { "Icon references an undeclared asset" }
             require(icon.size.isFinite() && icon.size in 8f..64f) { "Icon size must be 8..64 dp" }
             require(icon.opacity.isFinite() && icon.opacity in 0f..1f) { "Invalid icon opacity" }
             require(icon.tintColor == null || color.matches(icon.tintColor)) { "Invalid icon tint" }
@@ -123,9 +126,21 @@ object ThemeScriptContract {
             require(palette.keys.all { it in colorTokens } && palette.values.all(color::matches)) { "Invalid theme palette" }
         }
         validateText(result.typography, manifest)
+        require(result.textStyles.keys.all { it in ThemeStyleTargets.textIds }) { "Unknown text style target" }
+        result.textStyles.values.forEach { validateText(it, manifest) }
         require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
         result.surfaces.forEach { (id, surface) ->
+            surface.transition?.let {
+                require(id in interactiveSurfaceIds) { "State transitions require an interactive surface" }
+                require(it.durationMillis in 0..1000) { "State transition duration must be 0..1000 ms" }
+            }
+            surface.ripple?.let {
+                require(id in interactiveSurfaceIds) { "Ripple requires an interactive surface" }
+                require(it.color == null || color.matches(it.color)) { "Invalid ripple color" }
+            }
             validateText(surface.textStyle, manifest)
+            surface.fillGradient?.let { validateGradient(it) }
+            require(surface.fillGradient == null || surface.fillColor == null) { "Choose a surface color or gradient" }
             require(surface.opacity.isFinite() && surface.opacity in 0f..1f) { "Invalid surface opacity" }
             require(surface.states.keys.all { it in setOf("pressed", "focused", "selected", "disabled", "error") }) { "Unknown surface state" }
             surface.states.values.forEach { state ->
@@ -152,7 +167,7 @@ object ThemeScriptContract {
             require(listOf(inset.start, inset.top, inset.end, inset.bottom).all { it.isFinite() && it in 0f..48f }) {
                 "Theme script padding is outside 0..48 dp"
             }
-            require(id != "background" || inset == ThemeScriptInsets()) { "Background cannot add content padding" }
+            require((id != "background" && id !in ThemeStyleTargets.pageIds) || inset == ThemeScriptInsets()) { "Background cannot add content padding" }
             surface.layers.forEach { layer ->
                 require(layer.type in setOf("rect", "ellipse", "line", "image", "nineSlice")) { "Unknown theme layer type" }
                 require(layer.placement in setOf("background", "foreground")) { "Unknown layer placement" }
@@ -168,26 +183,42 @@ object ThemeScriptContract {
                 // 平移与尺寸独立；满幅素材越过区域边缘时由绘制容器裁剪。
                 require(listOf(b.x, b.y).all { it.isFinite() && it in -1f..1f }) { "Layer position must be normalized" }
                 require(listOf(b.width, b.height).all { it.isFinite() && it > 0f && it <= 1f }) { "Layer size must be normalized" }
+                layer.gradient?.let { validateGradient(it) }
+                require(layer.gradient == null || layer.color == null) { "Choose a layer color or gradient" }
                 require(layer.color == null || color.matches(layer.color)) { "Invalid layer color" }
                 require(layer.strokeColor == null || color.matches(layer.strokeColor)) { "Invalid stroke color" }
                 require(layer.id == null || assetName.matches(layer.id)) { "Invalid layer identifier" }
                 require(listOf(layer.slices.start, layer.slices.top, layer.slices.end, layer.slices.bottom).all { it.isFinite() && it in 0f..2048f }) { "Invalid nine-slice insets" }
                 if (layer.type in setOf("image", "nineSlice")) {
-                    require(layer.asset in manifest.assets.keys && manifest.assets.getValue(requireNotNull(layer.asset)).substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg")) { "Layer references an undeclared asset" }
-                    require(layer.color == null && layer.strokeColor == null) { "Image layers cannot declare paint colors" }
+                    require(layer.asset in manifest.assets.keys && ThemeAssetFormats.isImage(manifest.assets.getValue(requireNotNull(layer.asset)))) { "Layer references an undeclared asset" }
+                    require(layer.color == null && layer.strokeColor == null && layer.gradient == null) { "Image layers cannot declare paint colors" }
                 } else {
                     require(layer.asset == null) { "Only image layers can declare an asset" }
-                    require(layer.color != null || layer.strokeColor != null) { "Paint layer has no color" }
+                    require(layer.color != null || layer.strokeColor != null || layer.gradient != null) { "Paint layer has no color" }
                 }
             }
         }
     }
+    private fun validateGradient(gradient: ThemeGradient) {
+        require(gradient.type in setOf("linear", "radial")) { "Unknown gradient type" }
+        require(gradient.stops.size in 2..16) { "Gradients require 2..16 color stops" }
+        require(gradient.stops.all { it.offset.isFinite() && it.offset in 0f..1f && color.matches(it.color) }) { "Invalid gradient stop" }
+        require(gradient.stops.zipWithNext().all { (a, b) -> a.offset < b.offset }) { "Gradient stops must increase" }
+        require(gradient.stops.first().offset == 0f && gradient.stops.last().offset == 1f) { "Gradient stops must span 0..1" }
+        require(listOf(gradient.start, gradient.end, gradient.center).all { point ->
+            point.x.isFinite() && point.y.isFinite() && point.x in 0f..1f && point.y in 0f..1f
+        }) { "Gradient coordinates must be normalized" }
+        require(gradient.type != "linear" || gradient.start != gradient.end) { "Linear gradient needs distinct endpoints" }
+        require(gradient.radius.isFinite() && gradient.radius in 0.01f..2f) { "Invalid radial gradient radius" }
+    }
+
     private fun validateText(text: ThemeAppearanceText, manifest: ThemeScriptManifest) {
         text.stroke?.let { stroke ->
             require(color.matches(stroke.color)) { "Invalid text stroke color" }
             require(stroke.width.isFinite() && stroke.width in 0f..8f) { "Text stroke width must be 0..8 dp" }
         }
         require(text.color == null || color.matches(text.color)) { "Invalid text color" }
+        require(text.weight == null || text.weight in 1..1000) { "Invalid font weight" }
         val family = text.family
         if (family != null && family.startsWith("asset:")) {
             val path = requireNotNull(manifest.assets[family.removePrefix("asset:")]) { "Font references an undeclared asset" }

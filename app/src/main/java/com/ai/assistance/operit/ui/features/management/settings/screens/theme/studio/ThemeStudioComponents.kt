@@ -129,6 +129,7 @@ internal fun StudioSlider(
     onChange: (Float) -> Unit,
 ) {
     val targetId = state.target.id
+    val textTarget = state.textTarget
     val mode = state.mode
     val focusManager = LocalFocusManager.current
     fun formatted(number: Float) = formatStudioNumber(number, precision)
@@ -140,7 +141,7 @@ internal fun StudioSlider(
     }
     fun finishInput() {
         // 切换对象后丢弃旧对象的半成品，不能将失焦回调写到新的区域或模式。
-        if (state.target.id != targetId || state.mode != mode) return
+        if (state.target.id != targetId || state.mode != mode || state.textTarget != textTarget) return
         val next = studioNumberInputValue(input, range, commitOnFinish, finished = true)
         if (enabled && next != null && next != value) {
             state.beginGesture()

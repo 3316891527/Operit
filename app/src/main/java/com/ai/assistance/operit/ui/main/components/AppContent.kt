@@ -63,6 +63,9 @@ import com.ai.assistance.operit.ui.main.navigation.RouteEntry
 import com.ai.assistance.operit.ui.main.navigation.LocalRouteInstanceId
 import com.ai.assistance.operit.ui.main.navigation.ScreenRouteViewModelStoreOwnerManager
 import com.ai.assistance.operit.ui.main.navigation.retainedRouteKeysOnContentAttach
+import com.ai.assistance.operit.ui.main.screens.themePageId
+import com.ai.assistance.operit.ui.theme.script.ThemePageBackground
+import com.ai.assistance.operit.data.theme.script.hasBackgroundPaint
 import com.ai.assistance.operit.ui.main.screens.Screen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
@@ -172,7 +175,9 @@ fun AppContent(
         actions: @Composable RowScope.() -> Unit = {},
         titleContent: TopBarTitleContent? = null,
         /** 当前导航栈中仍存活的路由 screenKey（路由级 ViewModelStore 清理依据）。 */
-        aliveScreenKeys: Set<String>
+        aliveScreenKeys: Set<String>,
+        isThemePreview: Boolean = false,
+        screenKeyPrefix: String = "",
 ) {
     val workspaceVisible = if (currentScreen is Screen.AiChat) {
         val workspacePage by LocalMainChatViewModel.current.workspaceHubPage.collectAsState()
@@ -180,7 +185,7 @@ fun AppContent(
     } else false
     // Get background image state
     val context = LocalContext.current
-    val hostActivity = remember(context) { context.findActivity() }
+    val hostActivity = remember(context, isThemePreview) { if (isThemePreview) null else context.findActivity() }
     val manifestSoftInputMode = remember(hostActivity) { hostActivity?.manifestSoftInputMode() }
     val density = LocalDensity.current
     val pageTransitionDurationMillis = if (enableNavigationAnimation) 280 else 0
@@ -189,7 +194,7 @@ fun AppContent(
         with(density) { if (useTabletLayout) 28.dp.toPx() else 20.dp.toPx() }
     val drawerNavigationOffsetPx =
         with(density) { if (useTabletLayout) 40.dp.toPx() else 30.dp.toPx() }
-    ImeWakeListeningEffect(context = context, density = density)
+    if (!isThemePreview) ImeWakeListeningEffect(context = context, density = density)
     val themeSnapshot = LocalThemePreferenceSnapshot.current
     val useBackgroundImage = themeSnapshot.useBackgroundImage
     val backgroundImageUri = themeSnapshot.backgroundImageUri
@@ -197,7 +202,8 @@ fun AppContent(
     val backgroundDecoration = themeSurface("background")
     // 工作室背景与媒体背景共用底层画布，内容底色不能盖住已声明的填色或图层。
     val hasBackgroundDecoration = backgroundDecoration != null &&
-        (backgroundDecoration.fillColor != null || backgroundDecoration.layers.isNotEmpty())
+        backgroundDecoration.hasBackgroundPaint() ||
+        themeSurface(currentScreen.themePageId)?.hasBackgroundPaint() == true
 
     // 标准页面顶栏连同状态栏统一使用主题底色，避免聊天壁纸透出。
     val appBarContainerColor = MaterialTheme.colorScheme.background.copy(alpha = 1f)
@@ -211,9 +217,13 @@ fun AppContent(
     // 保留 owner/VM）；路由出栈/替换/清栈时清理对应 store（P1：离页查询不保留）。
     val routeViewModelStoreManager: ScreenRouteViewModelStoreOwnerManager = viewModel()
     val currentScreenKey =
-        remember(currentRouteEntry.instanceId, currentScreen) {
-            currentScreen.screenKey(currentRouteEntry.instanceId)
+        remember(currentRouteEntry.instanceId, currentScreen, screenKeyPrefix) {
+            screenKeyPrefix + currentScreen.screenKey(currentRouteEntry.instanceId)
         }
+    // 插件执行器按 screenKey 共享；预览必须与主页面使用不同的命名空间。
+    val retainedScreenKeys = remember(aliveScreenKeys, screenKeyPrefix) {
+        aliveScreenKeys.mapTo(mutableSetOf()) { screenKeyPrefix + it }
+    }
     var currentScreenSoftInputMode by remember(currentScreenKey) { mutableStateOf<Int?>(null) }
     var currentScreenUsesImePadding by remember(currentScreenKey) { mutableStateOf(false) }
 
@@ -227,7 +237,7 @@ fun AppContent(
     // Phone/Tablet 切换会销毁本组合，新组合 attach 时重新执行并用新传入 alive。
     LaunchedEffect(Unit) {
         routeViewModelStoreManager.retainOnly(
-            retainedRouteKeysOnContentAttach(currentScreenKey, aliveScreenKeys)
+            retainedRouteKeysOnContentAttach(currentScreenKey, retainedScreenKeys)
         )
     }
     val effectiveSoftInputMode =
@@ -269,6 +279,7 @@ fun AppContent(
                                 titleContent.content()
                             } else {
                                 Text(
+                                    themeTarget = "navigation.title",
                                     text = when {
                                         currentScreen.getTitle().isNotBlank() -> currentScreen.getTitle()
                                         selectedItem?.titleResId != null && selectedItem.titleResId != 0 ->
@@ -395,47 +406,50 @@ fun AppContent(
                             val screenSnapshot = currentScreen
                             screenKeepAliveCache[currentScreenKey] = screenSnapshot.keepAlive
                             screenCache[currentScreenKey] = {
-                                when (screenSnapshot) {
-                                    is Screen.ToolPkgComposeDsl ->
-                                        ToolPkgComposeDslToolScreen(
-                                            navController = navController,
-                                            routeInstanceId = currentScreenKey,
-                                            containerPackageName = screenSnapshot.containerPackageName,
-                                            uiModuleId = screenSnapshot.uiModuleId,
-                                            fallbackTitle = screenSnapshot.title
-                                        )
-                                    is Screen.ToolPkgPluginConfig ->
-                                        ToolPkgComposeDslToolScreen(
-                                            navController = navController,
-                                            routeInstanceId = currentScreenKey,
-                                            containerPackageName = screenSnapshot.containerPackageName,
-                                            uiModuleId = screenSnapshot.uiModuleId,
-                                            fallbackTitle = screenSnapshot.title
-                                        )
-                                    else -> {
-                                        val content: @Composable () -> Unit = {
-                                            screenSnapshot.Content(
+                                ThemePageBackground(screenSnapshot.themePageId) {
+                                    when (screenSnapshot) {
+                                        is Screen.ToolPkgComposeDsl ->
+                                            ToolPkgComposeDslToolScreen(
                                                 navController = navController,
-                                                navigateTo = onScreenChange,
-                                                onGoBack = onGoBack,
-                                                hasBackgroundImage = hasBackgroundImage,
-                                                onLoading = onLoading,
-                                                onError = onError,
-                                                onGestureConsumed = if (screenSnapshot is Screen.AiChat) onGestureConsumed else { _ -> }
+                                                routeInstanceId = currentScreenKey,
+                                                containerPackageName = screenSnapshot.containerPackageName,
+                                                uiModuleId = screenSnapshot.uiModuleId,
+                                                fallbackTitle = screenSnapshot.title
                                             )
-                                        }
-                                        if (screenSnapshot.usesRouteViewModelStore) {
-                                            // 路由级 ViewModelStore（P1）：配置变化保留实例，
-                                            // 路由出栈/替换/清栈时 store.clear() 触发 onCleared
-                                            val routeOwner =
-                                                routeViewModelStoreManager.ownerFor(currentScreenKey)
-                                            CompositionLocalProvider(
-                                                LocalViewModelStoreOwner provides routeOwner
-                                            ) {
+                                        is Screen.ToolPkgPluginConfig ->
+                                            ToolPkgComposeDslToolScreen(
+                                                navController = navController,
+                                                routeInstanceId = currentScreenKey,
+                                                containerPackageName = screenSnapshot.containerPackageName,
+                                                uiModuleId = screenSnapshot.uiModuleId,
+                                                fallbackTitle = screenSnapshot.title
+                                            )
+                                        else -> {
+                                            val content: @Composable () -> Unit = {
+                                                screenSnapshot.Content(
+                                                    navController = navController,
+                                                    navigateTo = onScreenChange,
+                                                    onGoBack = onGoBack,
+                                                    hasBackgroundImage = hasBackgroundImage || themeSurface("background")?.hasBackgroundPaint() == true ||
+                                                        themeSurface(screenSnapshot.themePageId)?.hasBackgroundPaint() == true,
+                                                    onLoading = onLoading,
+                                                    onError = onError,
+                                                    onGestureConsumed = if (screenSnapshot is Screen.AiChat) onGestureConsumed else { _ -> }
+                                                )
+                                            }
+                                            if (screenSnapshot.usesRouteViewModelStore) {
+                                                // 路由级 ViewModelStore（P1）：配置变化保留实例，
+                                                // 路由出栈/替换/清栈时 store.clear() 触发 onCleared
+                                                val routeOwner =
+                                                    routeViewModelStoreManager.ownerFor(currentScreenKey)
+                                                CompositionLocalProvider(
+                                                    LocalViewModelStoreOwner provides routeOwner
+                                                ) {
+                                                    content()
+                                                }
+                                            } else {
                                                 content()
                                             }
-                                        } else {
-                                            content()
                                         }
                                     }
                                 }
@@ -472,7 +486,7 @@ fun AppContent(
                         // 计算当前仍应存活的路由键：导航栈 + 仍渲染的 keepAlive 缓存 +
                         // 当前键（在转场完成时执行，避免清理仍在渲染的过渡页）
                         fun aliveRouteKeys(): Set<String> =
-                            aliveScreenKeys +
+                            retainedScreenKeys +
                                 screenKeepAliveCache.filterValues { it }.keys +
                                 currentScreenKey
 
@@ -706,7 +720,7 @@ fun AppContent(
                                     Box(modifier = Modifier.fillMaxSize()) {
                                         screenStateHolder.SaveableStateProvider(screenKey) {
                                             CompositionLocalProvider(
-                                                LocalIsCurrentScreen provides isCurrentScreen,
+                                                LocalIsCurrentScreen provides (isCurrentScreen && !(isThemePreview && currentScreen is Screen.AiChat)),
                                                 LocalRouteInstanceId provides screenKey,
                                                 LocalSetScreenSoftInputMode provides { mode ->
                                                     if (isCurrentScreen && currentScreenSoftInputMode != mode) {
