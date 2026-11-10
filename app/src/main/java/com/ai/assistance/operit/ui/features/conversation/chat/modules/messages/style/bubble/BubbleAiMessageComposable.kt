@@ -137,6 +137,7 @@ fun BubbleAiMessageComposable(
     val showModelProvider = themeSnapshot.showModelProvider
     val showModelName = themeSnapshot.showModelName
     val showRoleName = themeSnapshot.showRoleName
+    val collapseCompletedProcess by displayPreferencesManager.collapseCompletedProcess.collectAsState(initial = true)
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
 
     // 根据角色名获取头像
@@ -429,6 +430,8 @@ fun BubbleAiMessageComposable(
                             } else {
                                 StreamMarkdownRenderer(
                                     sections = rememberDisplayMessageSections(message),
+                                    collapseCompletedProcess = collapseCompletedProcess,
+                                    responseDurationMs = (message.waitDurationMs + message.outputDurationMs).coerceAtLeast(0L),
                                     textColor = themedTextColor,
                                     backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,
@@ -651,6 +654,8 @@ fun BubbleAiMessageComposable(
                                 // 共享相同的state，避免重新计算nodes等状态
                                 StreamMarkdownRenderer(
                                     sections = rememberDisplayMessageSections(message),
+                                    collapseCompletedProcess = collapseCompletedProcess,
+                                    responseDurationMs = (message.waitDurationMs + message.outputDurationMs).coerceAtLeast(0L),
                                     textColor = themedTextColor,
                                     backgroundColor = effectiveBackgroundColor,
                                     onLinkClick = rememberedOnLinkClick,

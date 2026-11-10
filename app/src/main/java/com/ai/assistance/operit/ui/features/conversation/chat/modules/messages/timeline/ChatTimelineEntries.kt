@@ -1,5 +1,13 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.timeline
 
+import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
+import com.ai.assistance.operit.ui.common.markdown.ResponseActivityHeader
+import com.ai.assistance.operit.ui.common.markdown.responseProcessKey
+import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
+import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
+import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.collectAsState
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.rememberMessageToolExecutions
 import com.ai.assistance.operit.ui.common.markdown.messageSectionsForRendering
@@ -98,6 +106,9 @@ internal fun rememberChatTimelineEntries(
     showStatusTags: Boolean,
     toolCollapseMode: ToolCollapseMode,
 ): List<ChatTimelineEntry> {
+    val context = LocalContext.current
+    val preferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
+    val collapseCompletedProcess by preferences.collapseCompletedProcess.collectAsState(initial = true)
     val occurrences = mutableMapOf<Long, Int>()
     val entriesByMessage = buildList<List<ChatTimelineEntry>> {
         messages.forEachIndexed { index, message ->
@@ -127,6 +138,12 @@ internal fun rememberChatTimelineEntries(
                         StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
+                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess, stream != null)
+                    val processEnd = if (boundary >= 0 && nodes.take(boundary + 1).any {
+                        isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags)
+                    }) boundary else -1
+                    val processId = responseProcessKey(message.timestamp, message.selectedVariantIndex)
+                    val processExpanded = ResponseProcessExpansionState.isExpanded(chatId, processId)
                     // 隐藏协议不触发拆块；原始节点仍用于分组键和 XML 子流索引。
                     val visibleNodes = remember(nodes, showThinkingProcess, showStatusTags) {
                         nodes.filter { isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags) }
@@ -134,8 +151,9 @@ internal fun rememberChatTimelineEntries(
                     val nodeKeys = remember(nodes) { markdownNodeIdentityKeys(nodes) }
                     val cardStore = remember(nodeKeys, cardValues) { MarkdownCardStateStore(nodeKeys, cardValues) }
                     var wasSplit by remember { mutableStateOf(false) }
-                    val split = wasSplit || shouldSplitChatMessage(visibleNodes)
-                    SideEffect { wasSplit = split }
+                    val contentNeedsSplit = wasSplit || shouldSplitChatMessage(visibleNodes)
+                    val split = contentNeedsSplit || processEnd >= 0
+                    SideEffect { wasSplit = contentNeedsSplit }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
                     val groups = remember(nodes, grouper) { grouper.group(nodes, messageKey) }
                     // 展开选择和 XML 子流均作为缓存输入，收起、追加及流结束时仍立即重建行。
@@ -157,10 +175,32 @@ internal fun rememberChatTimelineEntries(
                             emptyList()
                         }
                     }
-                    val fragments = remember(state, nodes, visibleNodes, grouper, mode, rows, cardStore) {
-                        // 首尾只属于实际可见的块，纯隐藏消息不生成空气泡外壳。
+                    val fragments = remember(
+                        state, nodes, visibleNodes, grouper, mode, rows, cardStore,
+                        processEnd, processId, processExpanded, message.waitDurationMs, message.outputDurationMs,
+                    ) {
+                        // Preserve original node indices, card ownership and small lazy rows.
+                        val shownRows = rows.filter { row ->
+                            val end = when (row) {
+                                is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
+                                is ThinkToolsRow.Content -> row.index
+                            }
+                            responseProcessItemVisible(end, processEnd, processExpanded)
+                        }
                         when {
                             visibleNodes.isEmpty() -> emptyList()
+                            processEnd >= 0 -> listOf(
+                                ChatMarkdownFragment(
+                                    state, nodes, grouper, mode, null, cardStore,
+                                    CompletedResponseProcessHeader(
+                                        message.waitDurationMs + message.outputDurationMs,
+                                        processExpanded,
+                                        { ResponseProcessExpansionState.toggle(chatId, processId) },
+                                    ),
+                                )
+                            ) + shownRows.map { row ->
+                                ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore)
+                            }
                             rows.isEmpty() -> listOf(ChatMarkdownFragment(state, nodes, grouper, mode, null, cardStore))
                             else -> rows.map { row -> ChatMarkdownFragment(state, nodes, grouper, mode, row, cardStore) }
                         }
@@ -196,6 +236,12 @@ internal fun rememberChatTimelineEntries(
 internal fun shouldSplitChatMessage(nodes: List<MarkdownNodeStable>): Boolean =
     nodes.size >= 24 || nodes.sumOf { it.content.length.toLong() } >= 32_000L
 
+private data class CompletedResponseProcessHeader(
+    val durationMs: Long,
+    val expanded: Boolean,
+    val onToggle: () -> Unit,
+)
+
 private class ChatMarkdownFragment(
     val state: StreamMarkdownRendererState,
     val nodes: List<MarkdownNodeStable>,
@@ -203,6 +249,7 @@ private class ChatMarkdownFragment(
     val mode: MarkdownRenderMode,
     val row: ThinkToolsRow?,
     val cardStore: MarkdownCardStateStore,
+    val processHeader: CompletedResponseProcessHeader? = null,
 ) : MarkdownRenderFragment {
     @Composable
     override fun Render(
@@ -218,7 +265,14 @@ private class ChatMarkdownFragment(
         CompositionLocalProvider(LocalMarkdownRenderMode provides mode, LocalMarkdownCardStateStore provides cardStore) {
             grouper.RenderScope(nodes) {
             Box(modifier = modifier) {
-                when (val item = row) {
+                if (processHeader != null) {
+                    ResponseActivityHeader(
+                        durationMs = processHeader.durationMs,
+                        expanded = processHeader.expanded,
+                        textColor = textColor,
+                        onClick = processHeader.onToggle,
+                    )
+                } else when (val item = row) {
                     null -> UnifiedMarkdownCanvas(
                         nodes = nodes,
                         rendererId = state.rendererId,

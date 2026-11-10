@@ -9403,4 +9403,12 @@
     <string name="studio_resource_invalid_path">资源名称或路径无效：%1$s。路径须以 assets/ 开头且不超过 160 个字符；名称以字母、数字、下划线或连字符开头，可含空格和单个点，每段最多 96 个字符；不允许连续点、末尾空格或末尾点。</string>
     <string name="token_stats_clear_invalid_configurations">清除无效配置</string>
     <string name="token_stats_clear_invalid_configurations_failed">清除无效配置失败，用量数据未改动</string>
+    <string name="collapse_completed_process_title">折叠回复过程</string>
+    <string name="collapse_completed_process_description">回复结束后收起前面的思考、工具调用和过程说明，只显示最后的答复；可点击展开。</string>
+    <string name="collapse_process_title">回复过程</string>
+    <string name="collapse_process_show">展开回复过程</string>
+    <string name="collapse_process_hide">收起回复过程</string>
+    <string name="collapse_process_duration_seconds">用时 %1$d秒</string>
+    <string name="collapse_process_duration_minutes">用时 %1$d分钟 %2$d秒</string>
+    <string name="collapse_process_duration_hours">用时 %1$d时%2$d分%3$d秒</string>
 </resources>

@@ -77,6 +77,7 @@ class DisplayPreferencesManager private constructor(private val context: Context
         private val KEY_VIRTUAL_DISPLAY_BITRATE_KBPS = intPreferencesKey("virtual_display_bitrate_kbps")
 
         // 工具折叠设置（多个只读工具 / 多个任意工具 / 全部工具）
+        private val KEY_COLLAPSE_COMPLETED_PROCESS = booleanPreferencesKey("collapse_completed_process")
         private val KEY_TOOL_COLLAPSE_MODE = stringPreferencesKey("tool_collapse_mode")
 
         /** 恢复本页显示选项，保留用户资料及不属于本页的键。 */
@@ -99,6 +100,7 @@ class DisplayPreferencesManager private constructor(private val context: Context
             preferences.remove(KEY_VISIT_WEB_WAIT_SECONDS)
             preferences.remove(KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS)
             preferences.remove(KEY_VIRTUAL_DISPLAY_BITRATE_KBPS)
+            preferences.remove(KEY_COLLAPSE_COMPLETED_PROCESS)
             preferences.remove(KEY_TOOL_COLLAPSE_MODE)
         }
     }
@@ -232,6 +234,9 @@ class DisplayPreferencesManager private constructor(private val context: Context
             preferences[KEY_VIRTUAL_DISPLAY_BITRATE_KBPS] ?: 3000
         }
 
+    val collapseCompletedProcess: Flow<Boolean> =
+        context.displayPreferencesDataStore.data.map { it[KEY_COLLAPSE_COMPLETED_PROCESS] ?: true }
+
     val toolCollapseMode: Flow<ToolCollapseMode> =
         context.displayPreferencesDataStore.data.map { preferences ->
             ToolCollapseMode.fromValue(preferences[KEY_TOOL_COLLAPSE_MODE])
@@ -260,7 +265,8 @@ class DisplayPreferencesManager private constructor(private val context: Context
         visitWebWaitSeconds: Int? = null,
         toolPkgHookTimeoutSeconds: Int? = null,
         virtualDisplayBitrateKbps: Int? = null,
-        toolCollapseMode: ToolCollapseMode? = null
+        toolCollapseMode: ToolCollapseMode? = null,
+        collapseCompletedProcess: Boolean? = null
     ) {
         editResourcePreferences { preferences ->
             showFpsCounter?.let { preferences[KEY_SHOW_FPS_COUNTER] = it }
@@ -300,6 +306,7 @@ class DisplayPreferencesManager private constructor(private val context: Context
                 preferences[KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS] = it.coerceIn(1, 60)
             }
             virtualDisplayBitrateKbps?.let { preferences[KEY_VIRTUAL_DISPLAY_BITRATE_KBPS] = it }
+            collapseCompletedProcess?.let { preferences[KEY_COLLAPSE_COMPLETED_PROCESS] = it }
             toolCollapseMode?.let { preferences[KEY_TOOL_COLLAPSE_MODE] = it.value }
         }
     }
