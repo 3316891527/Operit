@@ -9401,4 +9401,6 @@
     <string name="studio_live_page_no_plugins">没有已安装的插件界面可供预览。导入带界面的插件后可在这里选择。</string>
     <string name="studio_resource_unsupported_format">不支持的资源格式：%1$s。支持 PNG、JPG/JPEG、WebP、SVG、TTF 和 OTF。</string>
     <string name="studio_resource_invalid_path">资源名称或路径无效：%1$s。路径须以 assets/ 开头且不超过 160 个字符；名称以字母、数字、下划线或连字符开头，可含空格和单个点，每段最多 96 个字符；不允许连续点、末尾空格或末尾点。</string>
+    <string name="token_stats_clear_invalid_configurations">清除无效配置</string>
+    <string name="token_stats_clear_invalid_configurations_failed">清除无效配置失败，用量数据未改动</string>
 </resources>

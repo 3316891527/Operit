@@ -9425,4 +9425,6 @@
     <string name="studio_live_page_no_plugins">No installed plugin screens are available. Import a plugin with a screen to select it here.</string>
     <string name="studio_resource_unsupported_format">Unsupported resource format: %1$s. Supported: PNG, JPG/JPEG, WebP, SVG, TTF and OTF.</string>
     <string name="studio_resource_invalid_path">Invalid resource name or path: %1$s. Paths must start with assets/ and use at most 160 characters. Each segment must begin with a letter, number, underscore or hyphen, may contain spaces and single dots, and use at most 96 characters. Consecutive dots, trailing spaces and trailing dots are not allowed.</string>
+    <string name="token_stats_clear_invalid_configurations">Clear invalid</string>
+    <string name="token_stats_clear_invalid_configurations_failed">Could not clear invalid configurations. Usage data is unchanged.</string>
 </resources>

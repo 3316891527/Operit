@@ -121,6 +121,9 @@ class TokenUsageRepository private constructor(context: Context) {
         }
     }
 
+    /** Read all scopes: clearing a detail list must not depend on the current date/model filter. */
+    suspend fun usedConfigurationIds(): List<String> = withDao { it.getUsedConfigurationIds() }
+
     suspend fun clearUsageRecords() {
         withDao { dao -> dao.clearUsageRecords() }
     }
