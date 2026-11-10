@@ -118,8 +118,8 @@ class ProtocolMetaDisplayFilterTest {
         }
     }
 
-    @Test fun unfinishedCodeCannotPublishProtocolDuringOrAfterTheStream() {
-        for (prefix in listOf("`代码", "```xml\n", "~~~xml\n")) {
+    @Test fun unfinishedFencedCodeCannotPublishProtocolDuringOrAfterTheStream() {
+        for (prefix in listOf("```xml\n", "~~~xml\n")) {
             val filter = ProtocolMetaDisplayFilter()
             assertEquals(prefix, filter.append(prefix + tag() + "\n尾"))
             assertEquals("\n尾", filter.finish())

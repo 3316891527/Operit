@@ -105,9 +105,13 @@ object MessageSectionCodec {
                     ).find(content, bodyStart + 1)
                     scan = closingFence?.range?.last?.plus(1) ?: return null
                 } else {
+                    // 行内代码不跨行。跨全文寻找结束反引号会把后续工具和协议吞成普通正文。
+                    val spanStart = boundary.range.last + 1
+                    val lineEnd = content.indexOfAny(charArrayOf('\r', '\n'), spanStart)
+                        .let { if (it < 0) content.length else it }
                     val end = Regex("(?<!`)" + Regex.escape(delimiter) + "(?!`)")
-                        .find(content, boundary.range.last + 1)
-                    scan = end?.range?.last?.plus(1) ?: (boundary.range.last + 1)
+                        .toPattern().matcher(content).region(spanStart, lineEnd)
+                    scan = if (end.find()) end.end() else spanStart
                 }
                 continue
             }
