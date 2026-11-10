@@ -130,3 +130,5 @@
 
 - [模型服务缓存与持久化配置一致性](model-service-cache-refresh/index.md)
 - [BLE 写入属性、MTU 分片与会话串行化](ble-write-properties-and-mtu/index.md)
+
+- [世界书管理界面 IPC 生命周期](worldbook-ui-ipc-registration/index.md)
