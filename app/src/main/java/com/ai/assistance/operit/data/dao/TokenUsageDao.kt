@@ -171,6 +171,9 @@ abstract class TokenUsageDao {
     abstract suspend fun deleteStatsModelsByConfigId(configId: String): Int
 
 
+    @Query("SELECT DISTINCT configId FROM token_usage_records WHERE configId != ''")
+    abstract suspend fun getUsedConfigurationIds(): List<String>
+
     @Query("DELETE FROM token_usage_records")
     abstract suspend fun clearUsageRecords()
 

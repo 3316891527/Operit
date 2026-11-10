@@ -305,6 +305,7 @@ object WaifuMessageProcessor {
         removePunctuation: Boolean = false,
         charDelayMs: Int,
     ): Stream<WaifuSegmentUpdate> = streamWaifuUpdates(
+        thinkingSnapshot = WaifuThinkingPresentation::snapshot,
         sourceStream = sourceStream,
         splitSnapshot = { content, final ->
             val session = NativeMarkdownSplitter.createBlockSession()

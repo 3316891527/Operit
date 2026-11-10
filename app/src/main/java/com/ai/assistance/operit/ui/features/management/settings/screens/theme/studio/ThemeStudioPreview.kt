@@ -66,7 +66,7 @@ internal fun StudioPreview(state: ThemeStudioState, viewport: IntSize, modifier:
                         LocalContentColor provides themeScriptContentColor("background", MaterialTheme.colorScheme.onBackground),
                     ) {
                         Box(Modifier.fillMaxSize()) {
-                            Box(Modifier.matchParentSize().layerBackdrop(backdrop).then(if (water == null) Modifier else Modifier.liquefiable(water)).background(MaterialTheme.colorScheme.background)) {
+                            if (state.scene != StudioScene.Pages) Box(Modifier.matchParentSize().layerBackdrop(backdrop).then(if (water == null) Modifier else Modifier.liquefiable(water)).background(MaterialTheme.colorScheme.background)) {
                                 ThemePreviewBackground(values)
                                 Box(Modifier.fillMaxSize().themeScriptDecoration("background", values.requiredFloat("background_image_opacity")))
                             }

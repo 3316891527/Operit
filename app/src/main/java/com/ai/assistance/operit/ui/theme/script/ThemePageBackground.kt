@@ -6,12 +6,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.ai.assistance.operit.data.theme.script.ThemeScriptSurface
+import com.ai.assistance.operit.data.theme.script.hasBackgroundPaint
+import com.ai.assistance.operit.data.theme.script.CHAT_PAGE_BACKGROUND_ID
+import com.ai.assistance.operit.data.theme.script.pageBackgroundSource
 
 private val LocalThemePagePaint = compositionLocalOf { false }
-
-internal fun ThemeScriptSurface.hasBackgroundPaint(): Boolean =
-    fillColor != null || fillGradient != null || layers.isNotEmpty()
 
 /** Only page content canvases become transparent; cards and native controls retain their surfaces. */
 @Composable
@@ -19,14 +18,15 @@ fun themePageContainerColor(original: Color): Color = if (LocalThemePagePaint.cu
 
 @Composable
 internal fun ThemePageBackground(pageId: String, content: @Composable () -> Unit) {
-    val painted = themeSurface(pageId)?.hasBackgroundPaint() == true
+    val backgroundId = pageBackgroundSource(pageId, themeSurface(pageId), themeSurface(CHAT_PAGE_BACKGROUND_ID))
+    val painted = backgroundId != null
     val preferences = com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot.current
     val globalPaint = themeSurface("background")?.hasBackgroundPaint() == true ||
         (preferences.useBackgroundImage && preferences.backgroundImageUri != null)
     CompositionLocalProvider(LocalThemePagePaint provides (painted || globalPaint)) {
         Box(Modifier.fillMaxSize()) {
             if (painted) Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background)
-                .themeScriptDecoration(pageId))
+                .themeScriptDecoration(requireNotNull(backgroundId)))
             content()
         }
     }

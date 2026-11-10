@@ -13,6 +13,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
+import com.ai.assistance.operit.core.chat.TurnInputInbox
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import com.ai.assistance.operit.core.chat.logMessageTiming
 import com.ai.assistance.operit.core.chat.messageTimingNow
 import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
@@ -25,6 +28,7 @@ import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
 import com.ai.assistance.operit.util.stream.TextStreamEventType
 import com.ai.assistance.operit.util.stream.TextStreamRevisionTracker
 import com.ai.assistance.operit.core.speech.text.TtsSegmenter
+import com.ai.assistance.operit.util.WaifuThinkingPresentation
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import com.ai.assistance.operit.util.WaifuSegmentMessageStore
 import com.ai.assistance.operit.util.stream.applyRevisionEvents
@@ -51,8 +55,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import com.ai.assistance.operit.core.tools.runtime.ToolProgressBus
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -65,6 +67,22 @@ import com.ai.assistance.operit.data.config.model.ApiProviderType
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
+
+/** Cancellation bypasses provider EOF finalization, so close only Operit's own reasoning envelope. */
+internal fun finalizeInterruptedStreamingContent(content: String): String {
+    val markup = Regex(
+        "```[\\s\\S]*?(?:```|$)|~~~[\\s\\S]*?(?:~~~|$)|`[^`\\n]*(?:`|$)|</?think>",
+        RegexOption.IGNORE_CASE,
+    )
+    var open = false
+    markup.findAll(content).forEach { match ->
+        when (match.value.lowercase()) {
+            "<think>" -> open = true
+            "</think>" -> open = false
+        }
+    }
+    return if (open) "$content</think>" else content
+}
 
 /** 委托类，负责处理消息处理相关功能 */
 class MessageProcessingDelegate(
@@ -211,14 +229,23 @@ class MessageProcessingDelegate(
         MutableStateFlow<Map<String, Int>>(emptyMap())
     val currentTurnToolInvocationCountByChatId: StateFlow<Map<String, Int>> =
         _currentTurnToolInvocationCountByChatId.asStateFlow()
+    private class TurnSteeringState(val turnId: Long) {
+        val inputInbox = TurnInputInbox()
+        @Volatile var prepareSteeringInput: (suspend (String, List<AttachmentInfo>, ChatMessage?) -> String)? = null
+        @Volatile var canSteer = false
+        val transcriptMutex = Mutex()
+        val steeredTranscript = SteeredTranscript()
+    }
 
     private data class ActiveStreamingTurn(
         val message: ChatMessage,
+        val steering: TurnSteeringState,
         val segmentedMessages: MutableList<ChatMessage>? = null,
     )
 
     // 当前活跃的AI响应流
     private data class ChatRuntime(
+        @Volatile var steering: TurnSteeringState? = null,
         var sendJob: Job? = null,
         var responseStream: SharedStream<String>? = null,
         // 取消收尾必须持有运行态对象；Room 不保存 contentStream，重载后无法识别当前流消息。
@@ -237,6 +264,41 @@ class MessageProcessingDelegate(
     )
 
     private val chatRuntimes = ConcurrentHashMap<String, ChatRuntime>()
+
+    fun steeringTurnId(chatId: String): String? =
+        chatRuntimes[chatId]?.steering?.takeIf { it.canSteer && it.inputInbox.isOpen() }?.inputInbox?.turnId
+
+    suspend fun prepareSteeringInput(
+        chatId: String, expectedTurnId: String, text: String, attachments: List<AttachmentInfo>,
+        replyToMessage: ChatMessage? = null,
+    ): String? {
+        val runtime = chatRuntimes[chatId] ?: return null
+        val state = runtime.steering ?: return null
+        if (!state.canSteer || state.inputInbox.turnId != expectedTurnId) return null
+        if (attachments.isEmpty() && replyToMessage == null) return text
+        val prepared = state.prepareSteeringInput?.invoke(text, attachments, replyToMessage)
+        return prepared.takeIf { runtime.steering === state && state.canSteer }
+    }
+
+    fun pendingTurnInputKind(chatId: String): TurnInputInbox.PendingInputKind? =
+        chatRuntimes[chatId]?.steering?.inputInbox?.pendingInputKind()
+
+    fun trySteerMessage(chatId: String, expectedTurnId: String, input: TurnInputInbox.Input): Boolean {
+        val runtime = chatRuntimes[chatId] ?: return false
+        val state = runtime.steering ?: return false
+        val inbox = state.inputInbox
+        return inbox.turnId == expectedTurnId && state.canSteer && runtime.activeTurnId == state.turnId && runtime.isLoading.value &&
+            inbox.offer(input)
+    }
+
+    internal fun turnInputInbox(chatId: String): TurnInputInbox? =
+        chatRuntimes[chatId]?.steering?.takeIf { it.canSteer }?.inputInbox
+
+    private suspend fun persistAssistantMessage(chatId: String, message: ChatMessage, steering: TurnSteeringState) {
+        steering.transcriptMutex.withLock {
+            steering.steeredTranscript.project(message).forEach { addMessageToChat(chatId, it) }
+        }
+    }
     private val lastScrollEmitMsByChatKey = ConcurrentHashMap<String, AtomicLong>()
     private val suppressIdleCompletedStateByChatId = ConcurrentHashMap<String, Boolean>()
     private val pendingAsyncSummaryUiByChatId = ConcurrentHashMap<String, EnhancedInputProcessingState.Summarizing>()
@@ -467,8 +529,9 @@ class MessageProcessingDelegate(
         activeTurn: ActiveStreamingTurn,
         snapshot: TurnCancellationSnapshot? = null,
     ) {
+        val steering = activeTurn.steering
         val streamingMessage = activeTurn.message
-        val finalContent = resolveFinalContent(streamingMessage)
+        val finalContent = finalizeInterruptedStreamingContent(resolveFinalContent(streamingMessage))
         syncSections(streamingMessage, finalContent)
         val completedAt = System.currentTimeMillis()
         val finalMessage =
@@ -502,7 +565,7 @@ class MessageProcessingDelegate(
             }
             val segmentedMessages = activeTurn.segmentedMessages
             if (segmentedMessages == null) {
-                addMessageToChat(chatId, finalMessage)
+                persistAssistantMessage(chatId, finalMessage, steering)
             } else {
                 segmentedMessages.forEach { segmentMessage ->
                     addMessageToChat(
@@ -535,6 +598,9 @@ class MessageProcessingDelegate(
             }
 
             chatRuntime.cancellationInProgress = true
+            val steering = chatRuntime.steering
+            steering?.canSteer = false
+            steering?.inputInbox?.seal()
             val currentTurnOptions = chatRuntime.currentTurnOptions
             val activeTurn =
                 if (keepPartialResponse) chatRuntime.activeStreamingTurn else null
@@ -566,6 +632,7 @@ class MessageProcessingDelegate(
                     withContext(Dispatchers.IO) { saveCurrentChat(chatId) }
                 }
             } finally {
+                steering?.steeredTranscript?.release()
                 chatRuntime.cancellationInProgress = false
                 if (chatRuntime.activeTurnId == turnId) {
                     chatRuntime.sendJob = null
@@ -643,6 +710,10 @@ class MessageProcessingDelegate(
     fun updateUserMessage(value: TextFieldValue) {
         setUserMessageDraft(value)
     }
+
+    fun getUserMessageDraft(chatId: String?): TextFieldValue =
+        if (chatId == activeDraftChatId) _userMessage.value
+        else chatId?.let { chatDraftRepository.loadDraft(it) } ?: TextFieldValue("")
 
     private fun setUserMessageDraft(value: TextFieldValue) {
         _userMessage.value = value
@@ -757,6 +828,9 @@ class MessageProcessingDelegate(
         chatRuntime.activeStreamingTurn = null
         chatRuntime.isLoading.value = true
         chatRuntime.currentTurnOptions = turnOptions
+        val steering = TurnSteeringState(turnId)
+        chatRuntime.steering = steering
+        val toolBoundaryMessageReady = kotlinx.coroutines.CompletableDeferred<ChatMessage?>()
         updateGlobalLoadingState()
         setChatInputProcessingState(
             chatId,
@@ -766,7 +840,7 @@ class MessageProcessingDelegate(
         )
 
         val sendJob =
-            coroutineScope.launch(Dispatchers.IO) {
+            coroutineScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
                 val sendOwnerJob = coroutineContext[Job]
                 val toolHandler = AIToolHandler.getInstance(context)
                 var workspaceToolHookSession: WorkspaceBackupManager.WorkspaceToolHookSession? = null
@@ -789,6 +863,13 @@ class MessageProcessingDelegate(
                         }
                     },
                     onFinally = {
+                        toolBoundaryMessageReady.complete(null)
+                        steering.canSteer = false
+                        steering.prepareSteeringInput = null
+                        steering.inputInbox.close().forEach { input ->
+                            if (steering.inputInbox.sealedForSummary) (input.returnedForSummary ?: input.returned)()
+                            else input.returned()
+                        }
                         workspaceToolHookSession?.let { session ->
                             val cleanupWorkspaceHookStartTime = messageTimingNow()
                             runCatching { toolHandler.removeToolHook(session) }
@@ -836,6 +917,19 @@ class MessageProcessingDelegate(
                         startTimeMs = loadModelConfigStartTime,
                         details = "chatId=$chatId, configId=$configId"
                     )
+
+                    steering.prepareSteeringInput = { text, inputAttachments, reply ->
+                        AIMessageManager.buildUserMessageContent(
+                            context = context, messageText = text, attachments = inputAttachments,
+                            workspacePath = workspacePath, workspaceEnv = workspaceEnv,
+                            replyToMessage = reply,
+                            enableDirectImageProcessing = enableDirectImageProcessing,
+                            enableDirectFileProcessing = enableDirectFileProcessing,
+                            enableDirectAudioProcessing = enableDirectAudioProcessing,
+                            enableDirectVideoProcessing = enableDirectVideoProcessing,
+                            chatId = chatId, roleCardId = roleCardId,
+                        )
+                    }
 
                     // 1. 使用 AIMessageManager 构建最终消息
                     val buildUserMessageStartTime = messageTimingNow()
@@ -989,6 +1083,14 @@ class MessageProcessingDelegate(
                                 finalInputStateAfterSend = EnhancedInputProcessingState.Idle
                                 shouldNotifyTurnComplete = false
                             }
+                            toolBoundaryMessageReady.complete(null)
+                            steering.canSteer = false
+                            steering.prepareSteeringInput = null
+                            val unconsumedInputs = steering.inputInbox.close()
+                            unconsumedInputs.forEach {
+                                if (steering.inputInbox.sealedForSummary) (it.returnedForSummary ?: it.returned)()
+                                else it.returned()
+                            }
                             val finalizeMessageStartTime = messageTimingNow()
                             val interruptedTurn =
                                 if (shouldFinalizeInterruptedMessage) chatRuntime.activeStreamingTurn else null
@@ -1006,6 +1108,7 @@ class MessageProcessingDelegate(
                                         chatId = chatId,
                                         activeChatId = activeChatId,
                                         aiMessageProvider = { aiMessage },
+                                        steering = steering,
                                         isWaifuModeEnabled = isWaifuModeEnabled,
                                         skipFinalAutoRead = didStreamAutoRead && !isWaifuModeEnabled,
                                         syncWaifuMessageMetrics = { sourceMessage ->
@@ -1061,6 +1164,7 @@ class MessageProcessingDelegate(
                                 startTimeMs = sendUserMessageStartTime,
                                 details = "chatId=$activeChatId, addedUserMessage=$userMessageAdded, enableSummary=$enableSummary, persistTurn=${turnOptions.persistTurn}"
                             )
+                            if (!chatRuntime.cancellationInProgress) steering.steeredTranscript.release()
                             if (chatRuntime.sendJob === sendOwnerJob) {
                                 chatRuntime.sendJob = null
                             }
@@ -1239,6 +1343,7 @@ class MessageProcessingDelegate(
 
                         val toolTimingState = ToolTimingState()
                         val prepareResponseStreamStartTime = messageTimingNow()
+                        val aiMessageTimestamp = ChatMessageTimestampAllocator.next()
                         val responseStream = AIMessageManager.sendMessage(
                             enhancedAiService = service,
                             chatId = activeChatId,
@@ -1278,6 +1383,40 @@ class MessageProcessingDelegate(
                             onToolInvocation = {
                                 incrementCurrentTurnToolInvocationCount(chatId)
                             },
+                            onToolExecutionBoundary = boundary@ { boundarySnapshot ->
+                                val snapshotMessage = toolBoundaryMessageReady.await() ?: return@boundary
+                                val targetChatId = chatId ?: return@boundary
+                                steering.transcriptMutex.withLock {
+                                    steering.steeredTranscript.project(
+                                        snapshotMessage.copy(content = boundarySnapshot.displayContent),
+                                    ).forEach { addMessageToChat(targetChatId, it) }
+                                }
+                            },
+                            turnInputInbox = steering.inputInbox,
+                            onTurnInput = { texts, boundary ->
+                                val snapshotMessage = requireNotNull(toolBoundaryMessageReady.await())
+                                steering.transcriptMutex.withLock {
+                                    steering.steeredTranscript.project(snapshotMessage.copy(
+                                        content = boundary.displayContent, contentStream = null,
+                                        displayMode = ChatMessageDisplayMode.ASSISTANT_INTERMEDIATE,
+                                    )).forEach { addMessageToChat(chatId, it) }
+                                    texts.forEach { input ->
+                                        val inputMessage = ChatMessage(
+                                            sender = "user", content = input.text,
+                                            roleName = context.getString(R.string.message_role_user),
+                                        )
+                                        addMessageToChat(chatId, inputMessage)
+                                        steering.inputInbox.acknowledge(input)
+                                        input.saved(inputMessage.timestamp)
+                                    }
+                                    val nextAssistantTimestamp = ChatMessageTimestampAllocator.next()
+                                    steering.steeredTranscript.add(
+                                        boundary.displayContent, nextAssistantTimestamp,
+                                        snapshotMessage.timestamp,
+                                    )
+                                    nextAssistantTimestamp.toString()
+                                }
+                            },
                             onToolTiming = { toolTimingState.update(it) },
                             notifyReplyOverride = turnOptions.notifyReply,
                             chatModelConfigIdOverride = chatModelConfigIdOverride,
@@ -1297,7 +1436,7 @@ class MessageProcessingDelegate(
                         aiMessage = ChatMessage(
                             sender = "ai",
                             contentStream = sharedCharStream,
-                            timestamp = ChatMessageTimestampAllocator.next(),
+                            timestamp = aiMessageTimestamp,
                             roleName = currentRoleName,
                             provider = provider,
                             modelName = modelName,
@@ -1308,6 +1447,7 @@ class MessageProcessingDelegate(
                             chatRuntime.activeStreamingTurn =
                                 ActiveStreamingTurn(
                                     message = aiMessage,
+                                    steering = steering,
                                     segmentedMessages =
                                         if (isWaifuModeEnabled) waifuEmittedMessages else null,
                                 )
@@ -1322,7 +1462,10 @@ class MessageProcessingDelegate(
                             "创建带流的AI消息, stream is null: ${aiMessage.contentStream == null}, timestamp: ${aiMessage.timestamp}"
                         )
 
+                        steering.canSteer = effectivePersistTurn && !isWaifuModeEnabled && !isGroupOrchestrationTurn
+                        toolBoundaryMessageReady.complete(aiMessage.takeIf { effectivePersistTurn && chatId != null && !isWaifuModeEnabled })
                         var lastWaifuPreviewPublishedAt = 0L
+                        var lastWaifuThinkingPublishedAt = 0L
                         val waifuMessageStore = WaifuSegmentMessageStore(
                             messages = waifuEmittedMessages,
                             createMessage = { segment ->
@@ -1345,6 +1488,17 @@ class MessageProcessingDelegate(
                                 ) {
                                     addMessageToChat(chatId, message)
                                     lastWaifuPreviewPublishedAt = now
+                                }
+                                tryEmitScrollToBottomThrottled(chatId)
+                            },
+                            publishThinking = { message ->
+                                val now = messageTimingNow()
+                                if (effectivePersistTurn && chatId != null &&
+                                    (lastWaifuThinkingPublishedAt == 0L || now - lastWaifuThinkingPublishedAt >= 100L ||
+                                        !WaifuThinkingPresentation.isInProgress(message.content))
+                                ) {
+                                    addMessageToChat(chatId, message)
+                                    lastWaifuThinkingPublishedAt = now
                                 }
                                 tryEmitScrollToBottomThrottled(chatId)
                             },
@@ -1393,7 +1547,7 @@ class MessageProcessingDelegate(
                         if (!isWaifuModeEnabled) {
                             withContext(Dispatchers.Main) {
                                 if (effectivePersistTurn && chatId != null) {
-                                    addMessageToChat(chatId, aiMessage)
+                                    persistAssistantMessage(chatId, aiMessage, steering)
                                 }
                             }
                         }
@@ -1464,9 +1618,18 @@ class MessageProcessingDelegate(
                                         return true
                                     }
 
-                                    suspend fun persistStreamingSnapshot(contentSnapshot: String) {
+                                    suspend fun persistStreamingSnapshotLocked(contentSnapshot: String) {
                                         val targetChatId = chatId ?: return
-                                        addMessageToChat(targetChatId, aiMessage.copy(content = contentSnapshot))
+                                        val current = contentSnapshot
+                                        aiMessage.content = current
+                                        steering.steeredTranscript.project(aiMessage.copy(content = current))
+                                            .forEach { addMessageToChat(targetChatId, it) }
+                                    }
+
+                                    suspend fun persistStreamingSnapshot(contentSnapshot: String) {
+                                        steering.transcriptMutex.withLock {
+                                            persistStreamingSnapshotLocked(contentSnapshot)
+                                        }
                                     }
 
                                     val autoReadJob =
@@ -1689,6 +1852,16 @@ class MessageProcessingDelegate(
                 }
             }
         chatRuntime.sendJob = sendJob
+        sendJob.invokeOnCompletion { failure ->
+            if (failure != null) {
+                toolBoundaryMessageReady.complete(null)
+                steering.canSteer = false
+                steering.prepareSteeringInput = null
+                steering.inputInbox.close().forEach { it.returned() }
+                cleanupRuntimeAfterSend(chatId, chatRuntime, turnId)
+            }
+        }
+        sendJob.start()
         return sendJob
     }
 
@@ -1973,6 +2146,7 @@ class MessageProcessingDelegate(
         chatId: String?,
         activeChatId: String?,
         aiMessageProvider: () -> ChatMessage,
+        steering: TurnSteeringState,
         isWaifuModeEnabled: Boolean,
         skipFinalAutoRead: Boolean,
         syncWaifuMessageMetrics: suspend (ChatMessage) -> Unit,
@@ -1999,7 +2173,7 @@ class MessageProcessingDelegate(
                         )
                     withContext(Dispatchers.Main) {
                         if (turnOptions.persistTurn && chatId != null) {
-                            addMessageToChat(chatId, finalMessage)
+                            persistAssistantMessage(chatId, finalMessage, steering)
                         }
                         AppLogger.d(
                             TAG,
@@ -2030,7 +2204,7 @@ class MessageProcessingDelegate(
                     )
                 withContext(Dispatchers.Main) {
                     if (turnOptions.persistTurn && chatId != null) {
-                        addMessageToChat(chatId, finalMessage)
+                        persistAssistantMessage(chatId, finalMessage, steering)
                     }
                 }
             } catch (ex: Exception) {
@@ -2067,6 +2241,7 @@ class MessageProcessingDelegate(
             runtime.isLoading.value = true
             updateGlobalLoadingState()
         }
+
         setChatInputProcessingState(
             chatId,
             EnhancedInputProcessingState.Connecting(

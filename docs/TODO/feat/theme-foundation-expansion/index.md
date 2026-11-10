@@ -1,6 +1,6 @@
 ---
 fork: https://github.com/3316891527/Operit
-branch: feat/theme-foundation-expansion
+branch: feat/reopen-pr-176-theme-foundation
 status: implemented_pending_ci
 ---
 # 渐变、页面背景与分目标文字排版
@@ -21,3 +21,11 @@ status: implemented_pending_ci
 - 更新 SDK 类型、示例、协议和验收说明；为新增协议边界补充回归用例
 
 实现及核验状态见[交付与体验清单](04-verification.md)。
+
+后续反馈与下一批交互实现：
+
+4. [工作室入口与背景跟随](05-studio-feedback.md)
+5. [原生状态过渡与点击涟漪](06-native-interactions.md)
+
+6. [属性分组与真实页面预览](07-property-groups-and-live-pages.md)
+7. [JPG/JPEG 媒体导入与精简限制提示](08-media-import-and-limits.md)

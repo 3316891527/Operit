@@ -8,6 +8,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.collects.PricingCurrency
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
 import com.ai.assistance.operit.data.stats.TokenStatsPreferencesStore
+import com.ai.assistance.operit.data.stats.invalidTokenStatsConfigurationIds
 import com.ai.assistance.operit.data.stats.TokenActivityAggregator
 import com.ai.assistance.operit.data.stats.TokenActivityViewMode
 import com.ai.assistance.operit.data.stats.TokenActivityRangeData
@@ -61,6 +62,8 @@ data class TokenStatsUiState(
     val availableDisplayModels: List<TokenStatsDisplayModelBreakdown> = emptyList(),
     val knownModelNames: Map<String, String> = emptyMap(),
     val configurationNames: Map<String, String> = emptyMap(),
+    val hiddenConfigurationIds: Set<String> = emptySet(),
+    val clearingInvalidConfigurations: Boolean = false,
     val priceSettings: List<TokenStatsPriceSetting> = emptyList(),
     val activity: TokenActivityUiState = TokenActivityUiState(),
 )
@@ -167,6 +170,7 @@ class TokenUsageStatisticsViewModel(
                 val rateInfo = settings.loadRateWithEstimate()
                 val currency = settings.loadTargetCurrency()
                 val tokenDisplayUnit = settings.loadTokenDisplayUnit()
+                val hiddenConfigurationIds = settings.loadHiddenConfigurationIds()
                 val entryViewMode = if (loadViewMode) settings.loadActivityViewMode() else null
                 val range = settings.loadTimeRange() ?: defaultDateRange(nowMs(), zone)
 
@@ -231,21 +235,9 @@ class TokenUsageStatisticsViewModel(
                         }.getOrNull()
                     }
                     val rangeData = rangeDeferred.await()
-                    val configurationIds =
-                        rangeData
-                            ?.displayModels
-                            .orEmpty()
-                            .flatMap { it.identities }
-                            .mapNotNull { it.configId }
-                            .distinct()
                     val configurationNamesDeferred = async(Dispatchers.IO) {
-                        buildMap {
-                            configurationIds.forEach { configId ->
-                                modelConfigManager.getModelConfig(configId)?.let { config ->
-                                    put(configId, config.name)
-                                }
-                            }
-                        }
+                        // getModelConfig fabricates a name for a missing ID; summaries are the real list.
+                        modelConfigManager.getAllConfigSummaries().associate { it.id to it.name }
                     }
                     QueryLoadResult(
                         lifetime = lifetimeDeferred.await(),
@@ -276,6 +268,7 @@ class TokenUsageStatisticsViewModel(
                         availableDisplayModels = result.available?.displayModels.orEmpty(),
                         knownModelNames = knownModelNames.toMap(),
                         configurationNames = result.configurationNames,
+                        hiddenConfigurationIds = hiddenConfigurationIds,
                         priceSettings = result.prices,
                         activity = it.activity.copy(
                             loading = false,
@@ -405,6 +398,35 @@ class TokenUsageStatisticsViewModel(
                     stringResolver(R.string.token_stats_pricing_save_failed),
                     isError = true,
                 )
+            }
+        }
+    }
+
+    fun clearInvalidConfigurations() {
+        if (_state.value.loading || _state.value.clearingInvalidConfigurations) return
+        _state.update { it.copy(clearingInvalidConfigurations = true) }
+        viewModelScope.launch(dispatcher) {
+            try {
+                val usedConfigIds = usageRepository.usedConfigurationIds()
+                val configurations = modelConfigManager.getAllConfigSummaries()
+                val configurationNames = configurations.associate { it.id to it.name }
+                val invalidIds = invalidTokenStatsConfigurationIds(usedConfigIds, configurationNames.keys)
+                val hiddenIds = settings.hideConfigurationIds(invalidIds)
+                _state.update {
+                    it.copy(configurationNames = configurationNames, hiddenConfigurationIds = hiddenIds)
+                }
+                // Cancel any earlier load before it can publish the old visibility settings.
+                load()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.e(tag, "Failed to hide deleted configurations in statistics", e)
+                _actionMessage.value = TokenStatsActionMessage(
+                    stringResolver(R.string.token_stats_clear_invalid_configurations_failed),
+                    isError = true,
+                )
+            } finally {
+                _state.update { it.copy(clearingInvalidConfigurations = false) }
             }
         }
     }

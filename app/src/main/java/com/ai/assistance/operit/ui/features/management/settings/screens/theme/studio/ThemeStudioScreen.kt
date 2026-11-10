@@ -182,7 +182,7 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
                         }
                         Box(Modifier.weight(1f).fillMaxWidth()) {
                             when (state.workspace) {
-                                StudioWorkspace.Design -> StudioDesign(state, viewport, onPickTarget = { finishEditing(); picker = true }, onFullPreview = { finishEditing(); expandedPreview = true })
+                                StudioWorkspace.Design -> StudioDesign(state, viewport, previewCovered = expandedPreview || state.pagePreview.selectingPage != null, onPickTarget = { finishEditing(); picker = true }, onFullPreview = { finishEditing(); expandedPreview = true })
                                 StudioWorkspace.Source -> StudioSource(state, onImport = { importSource.launch(arrayOf("*/*")) })
                                 StudioWorkspace.Resources -> StudioResources(state, onImport = { importAsset.launch(arrayOf("*/*")) })
                             }
@@ -207,7 +207,8 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
             }
             if (picker) StudioTargetPicker(state) { picker = false }
             if (info) StudioProjectInfo(state) { info = false }
-            if (expandedPreview) StudioFullSheet(stringResource(R.string.studio_preview), { expandedPreview = false }) { StudioPreview(state, viewport, Modifier.fillMaxWidth().weight(1f), fullScreen = true) }
+            if (expandedPreview && state.pagePreview.selectingPage == null) StudioFullSheet(stringResource(R.string.studio_preview), { expandedPreview = false }) { StudioPreview(state, viewport, Modifier.fillMaxWidth().weight(1f), fullScreen = true) }
+            StudioPagePreviewObjectPicker(state)
             if (leaving) AlertDialog(
                 onDismissRequest = { leaving = false },
                 title = { Text(stringResource(R.string.studio_unsaved_title)) },
@@ -226,24 +227,28 @@ private fun ThemeStudioScreen(session: ThemeEditorSession, projectKey: String, t
 }
 
 @Composable
-private fun StudioDesign(state: ThemeStudioState, viewport: IntSize, onPickTarget: () -> Unit, onFullPreview: () -> Unit) {
+private fun StudioDesign(state: ThemeStudioState, viewport: IntSize, previewCovered: Boolean, onPickTarget: () -> Unit, onFullPreview: () -> Unit) {
     val focusManager = LocalFocusManager.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val previewHeight = (maxHeight * .44f).coerceIn(260.dp, 340.dp)
             .coerceAtMost((maxHeight - 160.dp).coerceAtLeast(0.dp))
         Column(Modifier.fillMaxSize()) {
             StudioPreviewToolbar(state, onFullPreview)
-            if (!state.previewCollapsed) StudioPreview(state, viewport, Modifier.fillMaxWidth().height(previewHeight))
+            StudioPagePreviewActions(state)
+            if (!state.previewCollapsed) {
+                if (previewCovered) Spacer(Modifier.fillMaxWidth().height(previewHeight))
+                else StudioPreview(state, viewport, Modifier.fillMaxWidth().height(previewHeight))
+            }
             Row(Modifier.fillMaxWidth().clickable(onClick = onPickTarget).background(StudioPanel).padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StudioTargetThumbnail(state, state.target)
-                Column(Modifier.weight(1f)) { Text(state.target.label(), style = MaterialTheme.typography.titleSmall); Text(stringResource(R.string.studio_select_component), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                StudioTargetThumbnail(state, state.target.rootTarget)
+                Column(Modifier.weight(1f)) { Text(state.target.rootTarget.label(), style = MaterialTheme.typography.titleSmall); Text(stringResource(R.string.studio_select_component), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Icon(Icons.Default.ChevronRight, null)
             }
             val properties = state.target.properties
             if (properties.size > 1) TabRow(selectedTabIndex = properties.indexOf(state.property), containerColor = StudioBackground) {
                 properties.forEach { property -> Tab(selected = state.property == property, onClick = { focusManager.clearFocus(force = true); state.property = property; if (property != StudioProperty.States) state.previewState = "always" }, text = { Text(stringResource(property.label)) }) }
             }
-            Box(Modifier.fillMaxWidth().weight(1f)) { key(state.target.id, state.property, state.mode) { StudioProperties(state) } }
+            Box(Modifier.fillMaxWidth().weight(1f)) { key(state.target.id, state.property, state.mode, state.textTarget) { StudioProperties(state) } }
         }
     }
 }
@@ -252,8 +257,8 @@ private fun StudioDesign(state: ThemeStudioState, viewport: IntSize, onPickTarge
 private fun StudioTargetPicker(state: ThemeStudioState, onClose: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var selectedGroup by remember { mutableStateOf<StudioGroup?>(null) }
-    val labels = ThemeStudioTargets.associateWith { it.label() }
-    val matches = ThemeStudioTargets.filter { query.isBlank() || labels.getValue(it).contains(query, true) || it.id.contains(query, true) }
+    val labels = ThemeStudioRootTargets.associateWith { it.label() }
+    val matches = ThemeStudioRootTargets.filter { query.isBlank() || labels.getValue(it).contains(query, true) || it.id.contains(query, true) }
     StudioFullSheet(stringResource(R.string.studio_select_component), onClose) {
         OutlinedTextField(query, { query = it }, leadingIcon = { Icon(Icons.Default.Search, null) }, placeholder = { Text(stringResource(R.string.studio_search_components)) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(12.dp))
         Row(Modifier.fillMaxWidth().weight(1f)) {
@@ -269,7 +274,7 @@ private fun StudioTargetPicker(state: ThemeStudioState, onClose: () -> Unit) {
                 if (targets.isNotEmpty()) {
                     item(key = "group:$group") { Text(stringResource(group.label), Modifier.fillMaxWidth().padding(14.dp), style = MaterialTheme.typography.labelLarge, color = StudioAccent) }
                     items(targets, key = { "${it.kind}:${it.id}" }) { target ->
-                        Row(Modifier.fillMaxWidth().background(if (state.target == target) StudioPanel else StudioBackground).clickable { state.select(target); onClose() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(Modifier.fillMaxWidth().background(if (state.target.rootTarget == target) StudioPanel else StudioBackground).clickable { state.select(target); onClose() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             StudioTargetThumbnail(state, target); Text(labels.getValue(target), Modifier.weight(1f)); Icon(Icons.Default.ChevronRight, null)
                         }
                         HorizontalDivider(color = StudioLine)

@@ -12,6 +12,7 @@ object ThemeScriptContract {
     const val MAX_RESULT_BYTES = 131072
     const val MAX_BUNDLE_BYTES = 64 * 1024 * 1024
     const val MAX_ASSET_BYTES = 8 * 1024 * 1024
+    const val MAX_ASSETS = 48
     const val MAX_SVG_BYTES = 512 * 1024
     const val MAX_BITMAP_PIXELS = 41_943_040L
     const val MAX_MANIFEST_BYTES = 65536
@@ -47,8 +48,8 @@ object ThemeScriptContract {
     fun validate(manifest: ThemeScriptManifest) {
         require(manifest.apiVersion == API_VERSION) { "Unsupported theme script API: ${manifest.apiVersion}" }
         require(isAssetPath(manifest.entry) && manifest.entry.endsWith(".js")) { "Theme script entry must be assets/*.js" }
-        require(json.encodeToString(ThemeScriptManifest.serializer(), manifest).toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST_BYTES) { "Theme script manifest is too large" }
-        require(manifest.assets.size <= 48) { "Theme script declares too many assets" }
+        ThemeResourceLimit.AssetCount.check(manifest.assets.size.toLong())
+        ThemeResourceLimit.ManifestBytes.check(json.encodeToString(ThemeScriptManifest.serializer(), manifest).toByteArray(Charsets.UTF_8).size.toLong())
         require(manifest.assets.keys.all { assetName.matches(it) }) { "Invalid theme script asset name" }
         require(manifest.assets.values.all(::isAssetPath)) { "Invalid theme script asset path" }
         require(manifest.entry !in manifest.assets.values) { "Script entry cannot be a drawing asset" }
@@ -70,7 +71,7 @@ object ThemeScriptContract {
     }
 
     fun decodeResult(text: String, manifest: ThemeScriptManifest): ThemeScriptAppearance {
-        require(text.toByteArray(Charsets.UTF_8).size <= MAX_RESULT_BYTES) { "Theme script result exceeds size limit" }
+        ThemeResourceLimit.ResultBytes.check(text.toByteArray(Charsets.UTF_8).size.toLong())
         checkJsonDepth(text)
         val result = json.decodeFromString<ThemeScriptAppearance>(text)
         validate(result, manifest)
@@ -78,7 +79,7 @@ object ThemeScriptContract {
     }
 
     fun decodeManifest(text: String): ThemeScriptManifest {
-        require(text.toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST_BYTES) { "Theme script manifest is too large" }
+        ThemeResourceLimit.ManifestBytes.check(text.toByteArray(Charsets.UTF_8).size.toLong())
         checkJsonDepth(text)
         return json.decodeFromString<ThemeScriptManifest>(text).also(::validate)
     }
@@ -102,6 +103,8 @@ object ThemeScriptContract {
         }
     }
 
+    val interactiveSurfaceIds: Set<String> get() = actionButtonIds + setOf("button", "iconButton", "navigationItem")
+
     fun validate(result: ThemeScriptAppearance, manifest: ThemeScriptManifest) {
         require(manifest.apiVersion == API_VERSION) { "Unsupported theme manifest" }
         require(result.apiVersion == API_VERSION) { "Unsupported theme appearance API" }
@@ -114,7 +117,7 @@ object ThemeScriptContract {
         require(result.surfaces.keys.all { it in surfaceIds }) { "Unknown theme script surface" }
         require(result.icons.keys.all { it in iconIds }) { "Unknown theme icon" }
         result.icons.values.forEach { icon ->
-            require(icon.asset in manifest.assets.keys && manifest.assets.getValue(icon.asset).substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg")) { "Icon references an undeclared asset" }
+            require(icon.asset in manifest.assets.keys && ThemeAssetFormats.isImage(manifest.assets.getValue(icon.asset))) { "Icon references an undeclared asset" }
             require(icon.size.isFinite() && icon.size in 8f..64f) { "Icon size must be 8..64 dp" }
             require(icon.opacity.isFinite() && icon.opacity in 0f..1f) { "Invalid icon opacity" }
             require(icon.tintColor == null || color.matches(icon.tintColor)) { "Invalid icon tint" }
@@ -127,6 +130,14 @@ object ThemeScriptContract {
         result.textStyles.values.forEach { validateText(it, manifest) }
         require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
         result.surfaces.forEach { (id, surface) ->
+            surface.transition?.let {
+                require(id in interactiveSurfaceIds) { "State transitions require an interactive surface" }
+                require(it.durationMillis in 0..1000) { "State transition duration must be 0..1000 ms" }
+            }
+            surface.ripple?.let {
+                require(id in interactiveSurfaceIds) { "Ripple requires an interactive surface" }
+                require(it.color == null || color.matches(it.color)) { "Invalid ripple color" }
+            }
             validateText(surface.textStyle, manifest)
             surface.fillGradient?.let { validateGradient(it) }
             require(surface.fillGradient == null || surface.fillColor == null) { "Choose a surface color or gradient" }
@@ -179,7 +190,7 @@ object ThemeScriptContract {
                 require(layer.id == null || assetName.matches(layer.id)) { "Invalid layer identifier" }
                 require(listOf(layer.slices.start, layer.slices.top, layer.slices.end, layer.slices.bottom).all { it.isFinite() && it in 0f..2048f }) { "Invalid nine-slice insets" }
                 if (layer.type in setOf("image", "nineSlice")) {
-                    require(layer.asset in manifest.assets.keys && manifest.assets.getValue(requireNotNull(layer.asset)).substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg")) { "Layer references an undeclared asset" }
+                    require(layer.asset in manifest.assets.keys && ThemeAssetFormats.isImage(manifest.assets.getValue(requireNotNull(layer.asset)))) { "Layer references an undeclared asset" }
                     require(layer.color == null && layer.strokeColor == null && layer.gradient == null) { "Image layers cannot declare paint colors" }
                 } else {
                     require(layer.asset == null) { "Only image layers can declare an asset" }
