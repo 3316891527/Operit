@@ -2746,6 +2746,9 @@ open class OpenAIProvider(
                         createResponsesReasoningMetadataTag(item)?.let { metadataTag ->
                             emitter.emitMetadataTag(metadataTag)
                         }
+                        if (!hasOpenToolCalls(state)) {
+                            kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.checkpoint()
+                        }
                     }
                     return
                 }
@@ -2986,6 +2989,9 @@ open class OpenAIProvider(
         state.thinkingToken = null
         state.isInReasoningMode = false
         state.hasEmittedThinkStart = false
+        if (!useResponsesApi && !hasOpenToolCalls(state)) {
+            kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.checkpoint()
+        }
     }
 
     private fun responsesReasoningTextKey(event: JSONObject): String? {
@@ -3389,6 +3395,8 @@ open class OpenAIProvider(
                 val call = client.newCall(tracedRequest)
                 attemptCall = call
                 activeCall = call
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]
+                    ?.bindAbort { call.cancel() }
                 watchdog.start(call)
 
                 AppLogger.d("AIService", "[req=$requestTraceId] 【发送消息】正在建立连接到服务器...")
@@ -3584,6 +3592,7 @@ open class OpenAIProvider(
                 return@withContext
             } catch (e: Exception) {
                 lastException = e
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.throwIfInterrupted()
                 retryCount = handleRetryableError(
                     context = context,
                     exception = RequestFailure.capture(

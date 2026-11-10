@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.management.settings.screens.theme.s
 
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
+import kotlin.math.roundToInt
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,8 +73,8 @@ internal fun StudioProperties(state: ThemeStudioState) {
         colorRequest = StudioColorRequest(layerTitle, initial, layerSeed, allowInherit = field != "lineColor") { value ->
             state.updateLayer(index) { layer ->
                 when (field) {
-                    "lineColor" -> layer.copy(color = requireNotNull(value), strokeColor = null)
-                    "color" -> layer.copy(color = value)
+                    "lineColor" -> layer.copy(color = requireNotNull(value), gradient = null, strokeColor = null)
+                    "color" -> layer.copy(color = value, gradient = if (value != null) null else layer.gradient)
                     "strokeColor" -> layer.copy(strokeColor = value, strokeWidth = if (value != null && layer.strokeWidth == 0f) 1f else layer.strokeWidth)
                     else -> error("Unknown layer color: $field")
                 }
@@ -81,24 +82,31 @@ internal fun StudioProperties(state: ThemeStudioState) {
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 2.dp)) {
+        if (state.target.isBackground) StudioBackgroundTargetPicker(state)
         if (state.property == StudioProperty.States) {
             StudioSection(stringResource(R.string.studio_preview_state)) {
                 StudioChoices(state.previewState, (listOf("always") + state.target.states).map { it to studioStateLabel(it) }) { state.previewState = it }
                 StudioHint(stringResource(R.string.studio_state_inherit_hint))
             }
-            StudioSection(stringResource(R.string.studio_state_colors)) {
-                StudioColorHead()
-                StudioColorRow(state, stringResource(R.string.studio_fill_color), "fillColor", ::color)
-                if (state.target.supports(StudioSurfaceControl.ContentColor)) StudioColorRow(state, stringResource(R.string.studio_content_color), "contentColor", ::color)
-                if (state.previewState != "always") {
-                    val active = state.surface().states[state.previewState] ?: ThemeAppearanceState()
-                    StudioSlider(state, stringResource(R.string.studio_opacity), active.opacity, 0f..1f) { value -> state.updateSurface { it.copy(states = it.states + (state.previewState to (it.states[state.previewState] ?: ThemeAppearanceState()).copy(opacity = value))) } }
-                    TextButton(onClick = { state.updateSurface { it.copy(states = it.states - state.previewState) } }) { Text(stringResource(R.string.studio_clear_state)) }
+            StudioPropertyGroup(state, "stateAppearance", stringResource(R.string.studio_group_component_appearance), stringResource(R.string.studio_group_appearance_hint)) {
+                StudioSection(stringResource(R.string.studio_state_colors)) {
+                    StudioColorHead()
+                    StudioColorRow(state, stringResource(R.string.studio_fill_color), "fillColor", ::color)
+                    if (state.previewState != "always") {
+                        val active = state.surface().states[state.previewState] ?: ThemeAppearanceState()
+                        StudioSlider(state, stringResource(R.string.studio_opacity), active.opacity, 0f..1f) { value -> state.updateSurface { it.copy(states = it.states + (state.previewState to (it.states[state.previewState] ?: ThemeAppearanceState()).copy(opacity = value))) } }
+                        TextButton(onClick = { state.updateSurface { it.copy(states = it.states - state.previewState) } }) { Text(stringResource(R.string.studio_clear_state)) }
+                    }
+                }
+                if (state.target.supports(StudioSurfaceControl.Stroke)) StudioSection(stringResource(R.string.studio_border)) { StudioStrokeProperties(state, ::color) }
+            }
+            if (state.target.supports(StudioSurfaceControl.ContentColor)) StudioPropertyGroup(state, "stateText", stringResource(R.string.studio_group_text), stringResource(R.string.studio_group_state_text_hint)) {
+                StudioSection(stringResource(R.string.studio_text_color)) {
+                    StudioColorHead()
+                    StudioColorRow(state, stringResource(R.string.studio_content_color), "contentColor", ::color)
                 }
             }
-            if (state.target.supports(StudioSurfaceControl.Stroke)) {
-                StudioSection(stringResource(R.string.studio_border)) { StudioStrokeProperties(state, ::color) }
-            }
+            StudioPropertyGroup(state, "stateAdvanced", stringResource(R.string.studio_group_advanced), stringResource(R.string.studio_group_interaction_hint), initiallyExpanded = false) { StudioInteractionProperties(state) }
         } else if (state.target.kind == StudioKind.Palette) {
             StudioSection(stringResource(R.string.studio_palette)) {
                 if (state.appearance.typography.color != null) StudioHint(stringResource(R.string.studio_text_color_priority_hint))
@@ -107,68 +115,80 @@ internal fun StudioProperties(state: ThemeStudioState) {
                 ThemeScriptContract.colorTokens.filter { token -> token.contains(paletteQuery, true) || context.getString(ThemeStudioPaletteLabels.getValue(token)).contains(paletteQuery, true) }.forEach { token -> StudioColorRow(state, stringResource(ThemeStudioPaletteLabels.getValue(token)), token, ::color) }
             }
         } else if (state.target.kind == StudioKind.Typography) {
-            StudioTextProperties(state, ::color) { fontPicker = true }
+            StudioTextTargetPicker(state)
+            StudioPropertyGroup(state, "text", stringResource(R.string.studio_group_text), stringResource(R.string.studio_group_text_hint)) {
+                StudioTextProperties(state, ::color) { fontPicker = true }
+            }
         } else if (state.target.kind == StudioKind.Icon) {
-            StudioActionIconProperties(state, ::color) { bindIcon = true }
+            StudioPropertyGroup(state, "icon", stringResource(R.string.studio_button_icons), stringResource(R.string.studio_group_icon_hint)) { StudioActionIconProperties(state, ::color) { bindIcon = true } }
         } else if (state.property == StudioProperty.Layers) {
             val surface = state.surface()
             StudioSection(stringResource(R.string.studio_fill_color)) { StudioColorHead(); StudioColorRow(state, stringResource(R.string.studio_fill_color), "fillColor", ::color) }
-            surface.layers.forEachIndexed { index, layer ->
-                key(layer.id, index) {
-                    StudioSection((index + 1).toString() + " · " + (layer.asset?.let { state.bundle.manifest.assets.getValue(it).substringAfterLast('/') } ?: stringResource(studioLayerLabel(layer.type)))) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick = { state.moveLayer(index, -1) }, enabled = index > 0) { Text(stringResource(R.string.studio_layer_down)) }
-                            TextButton(onClick = { state.moveLayer(index, 1) }, enabled = index < surface.layers.lastIndex) { Text(stringResource(R.string.studio_layer_up)) }
-                            TextButton(onClick = { state.deleteLayer(index) }) { Text(stringResource(R.string.studio_delete)) }
-                        }
-                        StudioChoices(layer.placement, listOf("background" to stringResource(R.string.studio_background_layer), "foreground" to stringResource(R.string.studio_foreground_layer))) { value -> state.updateLayer(index) { it.copy(placement = value) } }
-                        StudioSlider(state, stringResource(R.string.studio_opacity), layer.opacity, 0f..1f) { value -> state.updateLayer(index) { it.copy(opacity = value) } }
-                        if (layer.type in setOf("image", "nineSlice")) {
-                            StudioAssetThumbnail(state.images.getValue(requireNotNull(layer.asset)), Modifier.fillMaxWidth().height(86.dp))
-                            TextButton(onClick = { replaceLayer = index }) { Text(stringResource(R.string.studio_replace_image)) }
-                            if (layer.type == "image") {
-                                StudioChoices(layer.fit, listOf("crop" to stringResource(R.string.studio_fit_crop), "fit" to stringResource(R.string.studio_fit_contain), "fill" to stringResource(R.string.studio_fit_fill), "tile" to stringResource(R.string.studio_fit_tile))) { value -> state.updateLayer(index) { it.copy(fit = value) } }
-                                StudioChoices(layer.alignment, listOf("center" to stringResource(R.string.studio_align_center), "top" to stringResource(R.string.studio_top), "bottom" to stringResource(R.string.studio_bottom), "start" to stringResource(R.string.studio_start), "end" to stringResource(R.string.studio_end))) { value -> state.updateLayer(index) { it.copy(alignment = value) } }
+            StudioPropertyGroup(state, "layers", stringResource(R.string.studio_layers), stringResource(R.string.studio_group_layers_hint)) {
+                surface.layers.forEachIndexed { index, layer ->
+                    key(layer.id, index) {
+                        StudioSection((index + 1).toString() + " · " + (layer.asset?.let { state.bundle.manifest.assets.getValue(it).substringAfterLast('/') } ?: stringResource(studioLayerLabel(layer.type)))) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { state.moveLayer(index, -1) }, enabled = index > 0) { Text(stringResource(R.string.studio_layer_down)) }
+                                TextButton(onClick = { state.moveLayer(index, 1) }, enabled = index < surface.layers.lastIndex) { Text(stringResource(R.string.studio_layer_up)) }
+                                TextButton(onClick = { state.deleteLayer(index) }) { Text(stringResource(R.string.studio_delete)) }
                             }
-                            StudioChoices(layer.sampling, listOf("smooth" to stringResource(R.string.studio_sampling_smooth), "nearest" to stringResource(R.string.studio_sampling_nearest))) { value -> state.updateLayer(index) { it.copy(sampling = value) } }
-                            if (Build.VERSION.SDK_INT >= 31) StudioSlider(state, stringResource(R.string.studio_blur), layer.blur, 0f..ThemeScriptContract.MAX_BLUR_DP, "dp") { value -> state.updateLayer(index) { it.copy(blur = value) } }
-                            if (state.images[layer.asset] is ThemeScriptImage.Bitmap) {
-                                StudioChoices(layer.type, listOf("image" to stringResource(R.string.studio_image_layer), "nineSlice" to stringResource(R.string.studio_nine_slice))) { value -> state.updateLayer(index) { it.copy(type = value) } }
-                                if (layer.type == "nineSlice") TextButton(onClick = { nineIndex = index }) { Text(stringResource(R.string.studio_nine_slice)) }
-                            }
-                        } else {
-                            if (layer.type == "line") {
-                                val lineColor = layer.strokeColor ?: layer.color
-                                StudioSingleColor(stringResource(R.string.studio_line_color), lineColor) { layerColor(index, "lineColor", lineColor) }
-                                StudioSlider(state, stringResource(R.string.studio_stroke_width), layer.strokeWidth.coerceAtLeast(minLineWidth), minLineWidth..16f, "dp", precision = 2) { value -> state.updateLayer(index) { it.copy(strokeWidth = value) } }
+                            StudioChoices(layer.placement, listOf("background" to stringResource(R.string.studio_background_layer), "foreground" to stringResource(R.string.studio_foreground_layer))) { value -> state.updateLayer(index) { it.copy(placement = value) } }
+                            StudioSlider(state, stringResource(R.string.studio_opacity), layer.opacity, 0f..1f) { value -> state.updateLayer(index) { it.copy(opacity = value) } }
+                            if (layer.type in setOf("image", "nineSlice")) {
+                                StudioAssetThumbnail(state.images.getValue(requireNotNull(layer.asset)), Modifier.fillMaxWidth().height(86.dp))
+                                TextButton(onClick = { replaceLayer = index }) { Text(stringResource(R.string.studio_replace_image)) }
+                                if (layer.type == "image") {
+                                    StudioChoices(layer.fit, listOf("crop" to stringResource(R.string.studio_fit_crop), "fit" to stringResource(R.string.studio_fit_contain), "fill" to stringResource(R.string.studio_fit_fill), "tile" to stringResource(R.string.studio_fit_tile))) { value -> state.updateLayer(index) { it.copy(fit = value) } }
+                                    StudioChoices(layer.alignment, listOf("center" to stringResource(R.string.studio_align_center), "top" to stringResource(R.string.studio_top), "bottom" to stringResource(R.string.studio_bottom), "start" to stringResource(R.string.studio_start), "end" to stringResource(R.string.studio_end))) { value -> state.updateLayer(index) { it.copy(alignment = value) } }
+                                }
+                                StudioChoices(layer.sampling, listOf("smooth" to stringResource(R.string.studio_sampling_smooth), "nearest" to stringResource(R.string.studio_sampling_nearest))) { value -> state.updateLayer(index) { it.copy(sampling = value) } }
+                                if (state.images[layer.asset] is ThemeScriptImage.Bitmap) {
+                                    StudioChoices(layer.type, listOf("image" to stringResource(R.string.studio_image_layer), "nineSlice" to stringResource(R.string.studio_nine_slice))) { value -> state.updateLayer(index) { it.copy(type = value) } }
+                                    if (layer.type == "nineSlice") TextButton(onClick = { nineIndex = index }) { Text(stringResource(R.string.studio_nine_slice)) }
+                                }
                             } else {
-                                StudioSingleColor(stringResource(R.string.studio_fill_color), layer.color) { layerColor(index, "color", layer.color) }
-                                StudioSingleColor(stringResource(R.string.studio_stroke_color), layer.strokeColor) { layerColor(index, "strokeColor", layer.strokeColor) }
-                                StudioSlider(state, stringResource(R.string.studio_stroke_width), layer.strokeWidth, 0f..16f, "dp", precision = 2) { value -> state.updateLayer(index) { it.copy(strokeWidth = value) } }
+                                if (layer.type == "line") {
+                                    val lineColor = layer.strokeColor ?: layer.color
+                                    StudioSingleColor(stringResource(R.string.studio_line_color), lineColor) { layerColor(index, "lineColor", lineColor) }
+                                    StudioSlider(state, stringResource(R.string.studio_stroke_width), layer.strokeWidth.coerceAtLeast(minLineWidth), minLineWidth..16f, "dp", precision = 2) { value -> state.updateLayer(index) { it.copy(strokeWidth = value) } }
+                                } else {
+                                    StudioSingleColor(stringResource(R.string.studio_fill_color), layer.color) { layerColor(index, "color", layer.color) }
+                                    StudioSingleColor(stringResource(R.string.studio_stroke_color), layer.strokeColor) { layerColor(index, "strokeColor", layer.strokeColor) }
+                                    StudioSlider(state, stringResource(R.string.studio_stroke_width), layer.strokeWidth, 0f..16f, "dp", precision = 2) { value -> state.updateLayer(index) { it.copy(strokeWidth = value) } }
+                                }
+                                if (layer.type == "rect") StudioSlider(state, stringResource(R.string.studio_corner_radius), layer.radius, 0f..128f, "dp") { value -> state.updateLayer(index) { it.copy(radius = value) } }
                             }
-                            if (layer.type == "rect") StudioSlider(state, stringResource(R.string.studio_corner_radius), layer.radius, 0f..128f, "dp") { value -> state.updateLayer(index) { it.copy(radius = value) } }
+                            if (state.target.states.isNotEmpty()) StudioChoices(layer.state, (listOf("always") + state.target.states).map { it to studioStateLabel(it) }) { value -> state.updateLayer(index) { it.copy(state = value) } }
+                            StudioSlider(state, stringResource(R.string.studio_layer_x), layer.bounds.x * 100, -100f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(x = value / 100)) } }
+                            StudioSlider(state, stringResource(R.string.studio_layer_y), layer.bounds.y * 100, -100f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(y = value / 100)) } }
+                            StudioSlider(state, stringResource(R.string.studio_layer_width), layer.bounds.width * 100, 1f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(width = value / 100)) } }
+                            StudioSlider(state, stringResource(R.string.studio_layer_height), layer.bounds.height * 100, 1f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(height = value / 100)) } }
+                            if (layer.type !in setOf("image", "nineSlice") || Build.VERSION.SDK_INT >= 31) StudioPropertyGroup(state, "layerAdvanced:$index", stringResource(R.string.studio_group_advanced), stringResource(R.string.studio_group_layer_effects_hint), initiallyExpanded = false) {
+                                if (layer.type in setOf("image", "nineSlice")) {
+                                    StudioSlider(state, stringResource(R.string.studio_blur), layer.blur, 0f..ThemeScriptContract.MAX_BLUR_DP, "dp") { value -> state.updateLayer(index) { it.copy(blur = value) } }
+                                } else StudioGradientProperties(state, layer.gradient) { value ->
+                                    state.updateLayer(index) { it.copy(gradient = value, color = if (value == null) it.gradient?.stops?.first()?.color ?: it.color else null) }
+                                }
+                            }
                         }
-                        if (state.target.states.isNotEmpty()) StudioChoices(layer.state, (listOf("always") + state.target.states).map { it to studioStateLabel(it) }) { value -> state.updateLayer(index) { it.copy(state = value) } }
-                        StudioSlider(state, stringResource(R.string.studio_layer_x), layer.bounds.x * 100, -100f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(x = value / 100)) } }
-                        StudioSlider(state, stringResource(R.string.studio_layer_y), layer.bounds.y * 100, -100f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(y = value / 100)) } }
-                        StudioSlider(state, stringResource(R.string.studio_layer_width), layer.bounds.width * 100, 1f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(width = value / 100)) } }
-                        StudioSlider(state, stringResource(R.string.studio_layer_height), layer.bounds.height * 100, 1f..100f, "%") { value -> state.updateLayer(index) { it.copy(bounds = it.bounds.copy(height = value / 100)) } }
                     }
                 }
-            }
-            Box {
-                TextButton(onClick = { addLayerMenu = true }) { Icon(Icons.Default.Add, null); Text(stringResource(R.string.studio_add_layer)) }
-                WorkbenchDropdownMenu(expanded = addLayerMenu, onDismissRequest = { addLayerMenu = false }) {
-                    listOf("image" to R.string.studio_image_layer, "nineSlice" to R.string.studio_nine_slice, "rect" to R.string.studio_rect_layer, "ellipse" to R.string.studio_ellipse_layer, "line" to R.string.studio_line_layer).forEach { (type, label) ->
-                        ActionSheetItem(label = stringResource(label), icon = if (type in setOf("image", "nineSlice")) Icons.Default.Image else Icons.Default.Palette, onClick = {
-                            addLayerMenu = false
-                            if (type in setOf("image", "nineSlice")) layerType = type
-                            else state.updateSurface { it.copy(layers = it.layers + ThemeScriptLayer(type, color = "#80D1B5FF", strokeWidth = if (type == "line") 2f else 0f)) }
-                        })
+                Box {
+                    TextButton(onClick = { addLayerMenu = true }) { Icon(Icons.Default.Add, null); Text(stringResource(R.string.studio_add_layer)) }
+                    WorkbenchDropdownMenu(expanded = addLayerMenu, onDismissRequest = { addLayerMenu = false }) {
+                        listOf("image" to R.string.studio_image_layer, "nineSlice" to R.string.studio_nine_slice, "rect" to R.string.studio_rect_layer, "ellipse" to R.string.studio_ellipse_layer, "line" to R.string.studio_line_layer).forEach { (type, label) ->
+                            ActionSheetItem(label = stringResource(label), icon = if (type in setOf("image", "nineSlice")) Icons.Default.Image else Icons.Default.Palette, onClick = {
+                                addLayerMenu = false
+                                if (type in setOf("image", "nineSlice")) layerType = type
+                                else state.updateSurface { it.copy(layers = it.layers + ThemeScriptLayer(type, color = "#80D1B5FF", strokeWidth = if (type == "line") 2f else 0f)) }
+                            })
+                        }
                     }
                 }
+                StudioHint(stringResource(R.string.studio_layer_opacity_hint))
             }
-            StudioHint(stringResource(R.string.studio_layer_opacity_hint))
+            StudioAdvancedGradient(state)
         } else {
             if (state.target.id in ThemeScriptContract.actionButtonIds) {
                 StudioSection(stringResource(R.string.studio_button_icons)) {
@@ -177,8 +197,11 @@ internal fun StudioProperties(state: ThemeStudioState) {
                 }
             }
             StudioSurfaceProperties(state, onColor = ::color, onFont = { fontPicker = true })
-            if (state.target.id in ThemeScriptContract.actionButtonIds) StudioActionIconProperties(state, ::color) { bindIcon = true }
-            if (state.target.id == "iconButton") StudioButtonIcons(state)
+            if (state.target.id in ThemeScriptContract.actionButtonIds || state.target.id == "iconButton") StudioPropertyGroup(state, "icons", stringResource(R.string.studio_button_icons), stringResource(R.string.studio_group_icon_hint)) {
+                if (state.target.id in ThemeScriptContract.actionButtonIds) StudioActionIconProperties(state, ::color) { bindIcon = true }
+                else StudioButtonIcons(state)
+            }
+            StudioAdvancedGradient(state)
         }
     }
     colorRequest?.let { request -> StudioColorPicker(state, request.title, request.initial, request.seed, onChange = request.apply, onClose = { colorRequest = null }, allowInherit = request.allowInherit) }
@@ -205,7 +228,7 @@ private fun StudioSingleColor(label: String, value: String?, onClick: () -> Unit
 
 @Composable
 private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
-    val text = if (state.target.kind == StudioKind.Typography) state.appearance.typography else state.surface().textStyle
+    val text = state.text()
     StudioSection(stringResource(R.string.studio_font)) {
         if (state.target.kind == StudioKind.Typography) {
             StudioColorHead()
@@ -214,6 +237,12 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
         }
         StudioChoices(text.family, listOf(null to stringResource(R.string.studio_inherit), "default" to stringResource(R.string.studio_system_font), "sans-serif" to stringResource(R.string.studio_font_sans), "serif" to stringResource(R.string.studio_font_serif), "monospace" to stringResource(R.string.studio_font_mono), "cursive" to stringResource(R.string.studio_font_cursive))) { value -> state.updateText { it.copy(family = value) } }
         TextButton(onClick = onFont) { Text(text.family?.takeIf { it.startsWith("asset:") }?.removePrefix("asset:")?.let { state.bundle.manifest.assets.getValue(it).substringAfterLast('/') } ?: stringResource(R.string.studio_choose_font)) }
+        StudioSlider(state, stringResource(R.string.studio_text_weight), (text.weight ?: 400).toFloat(), 1f..1000f, commitOnFinish = true) { weight ->
+            state.updateText { it.copy(weight = weight.roundToInt()) }
+        }
+        TextButton(onClick = { state.updateText { it.copy(weight = null) } }, enabled = text.weight != null) {
+            Text(stringResource(R.string.studio_inherit))
+        }
         StudioSlider(state, stringResource(R.string.studio_font_scale), text.scale, .5f..2f) { value -> state.updateText { it.copy(scale = value) } }
         StudioSlider(state, stringResource(R.string.studio_line_height), text.lineHeight, .8f..2f) { value -> state.updateText { it.copy(lineHeight = value) } }
         StudioSlider(state, stringResource(R.string.studio_letter_spacing), text.letterSpacing, -2f..8f, "sp") { value -> state.updateText { it.copy(letterSpacing = value) } }
@@ -223,73 +252,92 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 
 @Composable
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
+    val target = state.target
+    val message = target.id in setOf("userMessage", "assistantMessage")
+    StudioPropertyGroup(state, "appearance", stringResource(if (message) R.string.studio_group_message_appearance else R.string.studio_group_component_appearance), stringResource(R.string.studio_group_appearance_hint)) {
+        StudioSurfaceAppearance(state, onColor)
+    }
+    val layout = setOf(StudioSurfaceControl.Padding, StudioSurfaceControl.MinHeight, StudioSurfaceControl.AvatarSize, StudioSurfaceControl.MessageWidth, StudioSurfaceControl.PopupOffset)
+    if (layout.any(target::supports)) StudioPropertyGroup(state, "layout", stringResource(if (message) R.string.studio_message_layout else R.string.studio_group_layout), stringResource(R.string.studio_group_layout_hint)) {
+        StudioSurfaceLayout(state)
+    }
+    if (target.supports(StudioSurfaceControl.Typography) || target.supports(StudioSurfaceControl.ContentColor)) StudioPropertyGroup(state, "text", stringResource(if (message) R.string.studio_group_message_text else R.string.studio_group_text), stringResource(R.string.studio_group_text_hint)) {
+        StudioSection(stringResource(R.string.studio_text_color)) {
+            StudioColorHead()
+            StudioColorRow(state, stringResource(surfaceColorLabel(target, "contentColor")), "contentColor", onColor)
+        }
+        if (target.supports(StudioSurfaceControl.Typography)) StudioTextProperties(state, onColor, onFont)
+    }
+}
+
+@Composable
+private fun StudioSurfaceAppearance(state: ThemeStudioState, onColor: (String, String, String?) -> Unit) {
     val s = state.surface()
     val target = state.target
     StudioSection(stringResource(R.string.studio_colors)) {
         StudioColorHead()
         StudioColorRow(state, stringResource(surfaceColorLabel(target, "fillColor")), "fillColor", onColor)
-        if (target.supports(StudioSurfaceControl.ContentColor)) StudioColorRow(state, stringResource(surfaceColorLabel(target, "contentColor")), "contentColor", onColor)
         if (target.id in setOf("userMessage", "assistantMessage")) StudioHint(stringResource(R.string.studio_message_color_hint))
         if (target.id in setOf("userAvatar", "assistantAvatar")) StudioHint(stringResource(R.string.studio_avatar_fill_hint))
         StudioSlider(state, stringResource(R.string.studio_opacity), s.opacity, 0f..1f) { value -> state.updateSurface { it.copy(opacity = value) } }
     }
-    if (target.supports(StudioSurfaceControl.Shape)) {
-        StudioSection(stringResource(R.string.studio_shape_border)) {
-            val shape = when { s.shape == null -> "inherit"; s.shape.type == "rounded" && s.shape.radius == 0f -> "rect"; else -> s.shape.type }
-            StudioChoices(shape, listOf("inherit" to stringResource(R.string.studio_inherit), "rounded" to stringResource(R.string.studio_rounded), "rect" to stringResource(R.string.studio_square), "cut" to stringResource(R.string.studio_cut), "circle" to stringResource(R.string.studio_circle))) { value ->
-                state.updateSurface { it.copy(shape = when (value) { "inherit" -> null; "rect" -> ThemeAppearanceShape("rounded", 0f); else -> ThemeAppearanceShape(value, it.shape?.radius?.takeIf { radius -> radius > 0f } ?: 16f) }) }
-            }
-            val configuredShape = s.shape
-            if (configuredShape != null && configuredShape.type in setOf("rounded", "cut")) {
-                StudioSlider(state, stringResource(R.string.studio_corner_radius), configuredShape.radius, 0f..128f, "dp") { value -> state.updateSurface { it.copy(shape = configuredShape.copy(radius = value)) } }
-            }
-            if (target.supports(StudioSurfaceControl.Stroke)) {
-                StudioStrokeProperties(state, onColor)
-            }
-            if (target.supports(StudioSurfaceControl.MinHeight)) {
-                StudioSlider(state, stringResource(R.string.studio_min_height), s.minHeight, 0f..256f, "dp") { value -> state.updateSurface { it.copy(minHeight = value) } }
-                StudioHint(stringResource(R.string.studio_min_height_hint))
-            }
-            if (target.supports(StudioSurfaceControl.Elevation)) StudioSlider(state, stringResource(R.string.studio_elevation), s.elevation ?: 0f, 0f..24f, "dp") { value -> state.updateSurface { it.copy(elevation = value) } }
+    if (target.supports(StudioSurfaceControl.Shape)) StudioSection(stringResource(R.string.studio_shape_border)) {
+        val shape = when { s.shape == null -> "inherit"; s.shape.type == "rounded" && s.shape.radius == 0f -> "rect"; else -> s.shape.type }
+        StudioChoices(shape, listOf("inherit" to stringResource(R.string.studio_inherit), "rounded" to stringResource(R.string.studio_rounded), "rect" to stringResource(R.string.studio_square), "cut" to stringResource(R.string.studio_cut), "circle" to stringResource(R.string.studio_circle))) { value ->
+            state.updateSurface { it.copy(shape = when (value) { "inherit" -> null; "rect" -> ThemeAppearanceShape("rounded", 0f); else -> ThemeAppearanceShape(value, it.shape?.radius?.takeIf { radius -> radius > 0f } ?: 16f) }) }
         }
+        val configuredShape = s.shape
+        if (configuredShape != null && configuredShape.type in setOf("rounded", "cut")) StudioSlider(state, stringResource(R.string.studio_corner_radius), configuredShape.radius, 0f..128f, "dp") { value -> state.updateSurface { it.copy(shape = configuredShape.copy(radius = value)) } }
+        if (target.supports(StudioSurfaceControl.Stroke)) StudioStrokeProperties(state, onColor)
+        if (target.supports(StudioSurfaceControl.Elevation)) StudioSlider(state, stringResource(R.string.studio_elevation), s.elevation ?: 0f, 0f..24f, "dp") { value -> state.updateSurface { it.copy(elevation = value) } }
+    }
+    if (target.id == "background") StudioHint(stringResource(R.string.studio_background_image_hint))
+}
+
+@Composable
+private fun StudioSurfaceLayout(state: ThemeStudioState) {
+    val s = state.surface()
+    val target = state.target
+    if (target.supports(StudioSurfaceControl.MinHeight)) StudioSection(stringResource(R.string.studio_min_height)) {
+        StudioSlider(state, stringResource(R.string.studio_min_height), s.minHeight, 0f..256f, "dp") { value -> state.updateSurface { it.copy(minHeight = value) } }
+        StudioHint(stringResource(R.string.studio_min_height_hint))
     }
     if (target.supports(StudioSurfaceControl.AvatarSize)) StudioSection(stringResource(R.string.studio_avatar_size)) {
         StudioSlider(state, stringResource(R.string.studio_avatar_size), s.size ?: 27f, 16f..96f, "dp") { value -> state.updateSurface { it.copy(size = value) } }
     }
-    if (target.supports(StudioSurfaceControl.Padding)) {
-        StudioSection(stringResource(R.string.studio_padding)) {
-            StudioHint(stringResource(R.string.studio_padding_hint))
-            var linked by remember(target.id) { mutableStateOf(true) }
-            StudioChoices(linked, listOf(true to stringResource(R.string.studio_link_padding), false to stringResource(R.string.studio_separate_padding))) { linked = it }
-            listOf("top" to R.string.studio_top, "end" to R.string.studio_end, "bottom" to R.string.studio_bottom, "start" to R.string.studio_start).forEach { (side, label) ->
-                val current = when (side) { "top" -> s.padding.top; "end" -> s.padding.end; "bottom" -> s.padding.bottom; else -> s.padding.start }
-                StudioSlider(state, stringResource(label), current, 0f..48f, "dp") { value -> state.updateSurface {
-                    val padding = if (linked) ThemeScriptInsets(value, value, value, value) else when (side) { "top" -> it.padding.copy(top = value); "end" -> it.padding.copy(end = value); "bottom" -> it.padding.copy(bottom = value); else -> it.padding.copy(start = value) }
-                    it.copy(padding = padding)
-                } }
-            }
+    if (target.supports(StudioSurfaceControl.Padding)) StudioSection(stringResource(R.string.studio_padding)) {
+        StudioHint(stringResource(R.string.studio_padding_hint))
+        var linked by remember(target.id) { mutableStateOf(true) }
+        StudioChoices(linked, listOf(true to stringResource(R.string.studio_link_padding), false to stringResource(R.string.studio_separate_padding))) { linked = it }
+        listOf("top" to R.string.studio_top, "end" to R.string.studio_end, "bottom" to R.string.studio_bottom, "start" to R.string.studio_start).forEach { (side, label) ->
+            val current = when (side) { "top" -> s.padding.top; "end" -> s.padding.end; "bottom" -> s.padding.bottom; else -> s.padding.start }
+            StudioSlider(state, stringResource(label), current, 0f..48f, "dp") { value -> state.updateSurface {
+                val padding = if (linked) ThemeScriptInsets(value, value, value, value) else when (side) { "top" -> it.padding.copy(top = value); "end" -> it.padding.copy(end = value); "bottom" -> it.padding.copy(bottom = value); else -> it.padding.copy(start = value) }
+                it.copy(padding = padding)
+            } }
         }
     }
-    if (target.supports(StudioSurfaceControl.PopupOffset)) {
-        StudioSection(stringResource(R.string.studio_popup_position)) {
-            val editedOffset = s.popupOffset.exclusiveVertical()
-            listOf("up" to R.string.studio_popup_up, "down" to R.string.studio_popup_down, "left" to R.string.studio_popup_left).forEach { (direction, label) ->
-                val current = when (direction) { "up" -> editedOffset.up; "down" -> editedOffset.down; else -> editedOffset.left }
-                val enabled = when (direction) { "up" -> editedOffset.down == 0f; "down" -> editedOffset.up == 0f; else -> true }
-                StudioSlider(state, stringResource(label), current, 0f..ThemeScriptContract.MAX_POPUP_OFFSET_DP, "dp", enabled = enabled) { value -> state.updateSurface {
-                    val before = it.popupOffset.exclusiveVertical()
-                    val offset = when (direction) { "up" -> before.copy(up = value, down = 0f); "down" -> before.copy(down = value, up = 0f); else -> before.copy(left = value) }
-                    it.copy(popupOffset = offset)
-                } }
-            }
-            StudioHint(stringResource(R.string.studio_popup_position_hint))
+    if (target.supports(StudioSurfaceControl.PopupOffset)) StudioSection(stringResource(R.string.studio_popup_position)) {
+        val editedOffset = s.popupOffset.exclusiveVertical()
+        listOf("up" to R.string.studio_popup_up, "down" to R.string.studio_popup_down, "left" to R.string.studio_popup_left).forEach { (direction, label) ->
+            val current = when (direction) { "up" -> editedOffset.up; "down" -> editedOffset.down; else -> editedOffset.left }
+            val enabled = when (direction) { "up" -> editedOffset.down == 0f; "down" -> editedOffset.up == 0f; else -> true }
+            StudioSlider(state, stringResource(label), current, 0f..ThemeScriptContract.MAX_POPUP_OFFSET_DP, "dp", enabled = enabled) { value -> state.updateSurface {
+                val before = it.popupOffset.exclusiveVertical()
+                val offset = when (direction) { "up" -> before.copy(up = value, down = 0f); "down" -> before.copy(down = value, up = 0f); else -> before.copy(left = value) }
+                it.copy(popupOffset = offset)
+            } }
         }
+        StudioHint(stringResource(R.string.studio_popup_position_hint))
     }
     if (target.supports(StudioSurfaceControl.MessageWidth)) StudioSection(stringResource(R.string.studio_message_layout)) {
         StudioSlider(state, stringResource(R.string.studio_message_width), s.messageWidth * 100f, 30f..100f, "%") { value -> state.updateSurface { it.copy(messageWidth = value / 100f) } }
     }
-    if (target.supports(StudioSurfaceControl.Typography)) StudioTextProperties(state, onColor, onFont)
-    if (target.id == "background") StudioHint(stringResource(R.string.studio_background_image_hint))
+}
+
+@Composable
+private fun StudioAdvancedGradient(state: ThemeStudioState) {
+    StudioPropertyGroup(state, "advanced", stringResource(R.string.studio_group_advanced), stringResource(R.string.studio_gradient), initiallyExpanded = false) { StudioSurfaceGradient(state) }
 }
 
 /** 标题对应实际绘制对象，消息背景和正文不再共用含糊的颜色名称。 */

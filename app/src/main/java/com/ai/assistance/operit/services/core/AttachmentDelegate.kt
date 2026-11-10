@@ -20,6 +20,8 @@ import com.ai.assistance.operit.core.chat.attachment.AttachmentInfo
 import com.ai.assistance.operit.core.tools.protocol.ToolParameter
 import com.ai.assistance.operit.data.skill.SkillRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
@@ -28,6 +30,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Manages attachment operations for the chat feature Handles adding, removing, and referencing
@@ -44,6 +48,19 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
     private val _attachments = MutableStateFlow<List<AttachmentInfo>>(emptyList())
     val attachments: StateFlow<List<AttachmentInfo>> = _attachments
     private val attachmentListLock = Any()
+    private val drafts = ChatDraftStore<List<AttachmentInfo>>(emptyList())
+
+    fun setActiveDraftChat(chatId: String?) {
+        synchronized(attachmentListLock) {
+            _attachments.value = drafts.switchTo(chatId, _attachments.value)
+        }
+    }
+
+    fun removeDraft(chatId: String) {
+        synchronized(attachmentListLock) {
+            if (drafts.remove(chatId)) _attachments.value = emptyList()
+        }
+    }
     private val imageAttachmentMutex = Mutex()
     private val imageAttachmentIndex = ImageAttachmentIndex()
 
@@ -76,34 +93,66 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
         }
     }
 
-    private fun appendAttachment(attachment: AttachmentInfo): AttachmentInfo {
+    private class DraftOwner(val target: ChatDraftStore.Target) :
+        AbstractCoroutineContextElement(Key) {
+        companion object Key : CoroutineContext.Key<DraftOwner>
+    }
+
+    internal suspend fun <T> withAttachmentDraft(block: suspend () -> T): T {
+        val owner = currentCoroutineContext()[DraftOwner]
+            ?: synchronized(attachmentListLock) { DraftOwner(drafts.captureTarget()) }
+        return withContext(Dispatchers.IO + owner) { block() }
+    }
+
+    internal suspend fun removeMentionFromCapturedDraft(token: String, workspace: Boolean) {
+        val target = requireNotNull(currentCoroutineContext()[DraftOwner]).target
+        val path = if (workspace) workspaceMentionAttachmentPath(normalizeWorkspaceRelativePath(token))
+            else packageAttachmentPath(token.trim())
         synchronized(attachmentListLock) {
-            val currentList = _attachments.value
-            val usedFileNames = currentList.mapTo(mutableSetOf()) { it.fileName }
-            val uniqueFileName = uniqueAttachmentFileName(attachment.fileName, usedFileNames)
-            val attachmentToAdd =
-                    if (uniqueFileName == attachment.fileName) {
-                        attachment
-                    } else {
-                        attachment.copy(fileName = uniqueFileName)
-                    }
-            _attachments.value = currentList + attachmentToAdd
-            return attachmentToAdd
+            _attachments.value = drafts.update(target, _attachments.value) { attachments ->
+                attachments.filterNot { it.filePath == path }
+            }
         }
     }
 
-    private fun replaceAttachmentByPath(attachment: AttachmentInfo) {
+    internal suspend fun capturedDraftChatId(): String? =
+        requireNotNull(currentCoroutineContext()[DraftOwner]).target.chatId
+
+    private suspend fun appendAttachment(attachment: AttachmentInfo): AttachmentInfo {
+        val target = requireNotNull(currentCoroutineContext()[DraftOwner]).target
         synchronized(attachmentListLock) {
-            val currentList = _attachments.value.filterNot { it.filePath == attachment.filePath }
-            val usedFileNames = currentList.mapTo(mutableSetOf()) { it.fileName }
-            val uniqueFileName = uniqueAttachmentFileName(attachment.fileName, usedFileNames)
-            val attachmentToAdd =
-                    if (uniqueFileName == attachment.fileName) {
-                        attachment
-                    } else {
-                        attachment.copy(fileName = uniqueFileName)
-                    }
-            _attachments.value = currentList + attachmentToAdd
+            var addedAttachment = attachment
+            _attachments.value = drafts.update(target, _attachments.value) { currentList ->
+                val usedFileNames = currentList.mapTo(mutableSetOf()) { it.fileName }
+                val uniqueFileName = uniqueAttachmentFileName(attachment.fileName, usedFileNames)
+                val attachmentToAdd =
+                        if (uniqueFileName == attachment.fileName) {
+                            attachment
+                        } else {
+                            attachment.copy(fileName = uniqueFileName)
+                        }
+                addedAttachment = attachmentToAdd
+                currentList + attachmentToAdd
+            }
+            return addedAttachment
+        }
+    }
+
+    private suspend fun replaceAttachmentByPath(attachment: AttachmentInfo) {
+        val target = requireNotNull(currentCoroutineContext()[DraftOwner]).target
+        synchronized(attachmentListLock) {
+            _attachments.value = drafts.update(target, _attachments.value) { original ->
+                val currentList = original.filterNot { it.filePath == attachment.filePath }
+                val usedFileNames = currentList.mapTo(mutableSetOf()) { it.fileName }
+                val uniqueFileName = uniqueAttachmentFileName(attachment.fileName, usedFileNames)
+                val attachmentToAdd =
+                        if (uniqueFileName == attachment.fileName) {
+                            attachment
+                        } else {
+                            attachment.copy(fileName = uniqueFileName)
+                        }
+                currentList + attachmentToAdd
+            }
         }
     }
 
@@ -152,7 +201,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     /** Handles a photo taken by the camera */
     suspend fun handleTakenPhoto(uri: Uri) =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     val fileName = "camera_${System.currentTimeMillis()}.jpg"
                     val tempFile = createTempFileFromUri(uri, fileName)
@@ -176,34 +225,35 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         OKToast.error(context, context.getString(R.string.attachment_photo_process_failed)).show()
                     }
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_photo_add_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error adding photo attachment", e)
                 }
             }
 
     suspend fun attachPackage(packageName: String) =
-            withContext(Dispatchers.IO) { attachPackageInternal(packageName) }
+            withAttachmentDraft { attachPackageInternal(packageName) }
 
     /** Handles a file or image attachment selected by the user 确保在IO线程执行所有文件操作 */
     suspend fun handleAttachment(filePath: String) =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     when {
                         filePath == "screen_capture" -> {
                             captureScreenContent()
-                            return@withContext
+                            return@withAttachmentDraft
                         }
                         filePath == "notifications_capture" -> {
                             captureNotifications()
-                            return@withContext
+                            return@withAttachmentDraft
                         }
                         filePath == "location_capture" -> {
                             captureLocation()
-                            return@withContext
+                            return@withAttachmentDraft
                         }
                         filePath.startsWith(PACKAGE_ATTACHMENT_PREFIX) -> {
                             attachPackageInternal(filePath.removePrefix(PACKAGE_ATTACHMENT_PREFIX).trim())
-                            return@withContext
+                            return@withAttachmentDraft
                         }
                     }
 
@@ -222,13 +272,13 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         val localPath = if (filePath.startsWith("file://")) Uri.parse(filePath).path else filePath
                         if (localPath.isNullOrBlank()) {
                             OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
-                            return@withContext
+                            return@withAttachmentDraft
                         }
 
                         val file = java.io.File(localPath)
                         if (!file.exists()) {
                             OKToast.warning(context, context.getString(R.string.attachment_file_not_exist)).show()
-                            return@withContext
+                            return@withAttachmentDraft
                         }
 
                         sourceUri = Uri.fromFile(file)
@@ -241,7 +291,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     val resolvedMimeType = mimeType
                     if (resolvedUri == null || resolvedFileName.isNullOrBlank() || resolvedMimeType.isNullOrBlank()) {
                         OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
-                        return@withContext
+                        return@withAttachmentDraft
                     }
 
                     AppLogger.d(TAG, "Copying attachment source to a local temporary file: $resolvedUri")
@@ -249,7 +299,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     if (tempFile == null || !tempFile.exists()) {
                         AppLogger.e(TAG, "Failed to create temp file from source: $resolvedUri")
                         OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, resolvedFileName)).show()
-                        return@withContext
+                        return@withAttachmentDraft
                     }
 
                     val attachmentInfo =
@@ -263,8 +313,11 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         if (resolvedMimeType.startsWith("image/")) {
                             // 不同来源的 URI 会复制出不同路径，按内容判重并串行提交，防止快速多选重复加入。
                             imageAttachmentMutex.withLock {
-                                val currentImages = _attachments.value
-                                    .filter { it.mimeType.startsWith("image/") }
+                                val target = requireNotNull(currentCoroutineContext()[DraftOwner]).target
+                                // A chat switch must not change the collection used for image deduplication.
+                                val currentImages = synchronized(attachmentListLock) {
+                                    drafts.snapshot(target, _attachments.value)
+                                }.filter { it.mimeType.startsWith("image/") }
                                     .map { File(it.filePath) }
                                 if (imageAttachmentIndex.isDuplicate(tempFile, currentImages)) null
                                 else appendAttachment(attachmentInfo)
@@ -275,18 +328,19 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                     if (addedAttachment == null) {
                         tempFile.delete()
                         OKToast.warning(context, context.getString(R.string.attachment_image_duplicate, resolvedFileName)).show()
-                        return@withContext
+                        return@withAttachmentDraft
                     }
                     // 成功提示只确认添加结果，避免文件名撑大提示卡片。
                     OKToast.success(context, R.string.attachment_added).show()
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_add_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error adding attachment", e)
                 }
             }
 
     suspend fun attachPastedText(text: String): Boolean =
-        withContext(Dispatchers.IO) {
+        withAttachmentDraft {
             try {
                 val externalDir = OperitPaths.cleanOnExitDir()
                 if (!externalDir.exists()) {
@@ -312,6 +366,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                 OKToast.success(context, R.string.attachment_added).show()
                 true
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 AppLogger.e(TAG, "Error creating pasted text attachment", e)
                 OKToast.error(context, context.getString(R.string.attachment_add_failed, e.message ?: "")).show()
                 false
@@ -320,7 +375,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     /** 从URI创建临时文件 */
     private suspend fun createTempFileFromUri(uri: Uri, fileName: String): java.io.File? =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     val fileExtension = fileName.substringAfterLast('.', "jpg")
 
@@ -343,7 +398,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         val inputStream = context.contentResolver.openInputStream(uri)
                         if (inputStream == null) {
                             tempFile.delete()
-                            return@withContext null
+                            return@withAttachmentDraft null
                         }
 
                         inputStream.use { input ->
@@ -352,18 +407,20 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                         if (tempFile.exists() && tempFile.length() > 0) {
                             AppLogger.d(TAG, "Successfully created temp image file: ${tempFile.absolutePath}")
-                            return@withContext tempFile
+                            return@withAttachmentDraft tempFile
                         }
 
                         tempFile.delete()
-                        return@withContext null
+                        return@withAttachmentDraft null
                     } catch (e: Exception) {
+                        if (e is CancellationException) throw e
                         tempFile.delete()
                         throw e
                     }
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     AppLogger.e(TAG, "Failed to create temp file", e)
-                    return@withContext null
+                    return@withAttachmentDraft null
                 }
             }
 
@@ -420,17 +477,17 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
         workspacePath: String,
         relativePath: String,
         workspaceEnv: String? = null,
-    ) = withContext(Dispatchers.IO) {
+    ) = withAttachmentDraft {
         val normalizedRelativePath = normalizeWorkspaceRelativePath(relativePath)
         if (workspacePath.isBlank() || normalizedRelativePath.isBlank()) {
-            return@withContext
+            return@withAttachmentDraft
         }
 
         val fullPath = buildWorkspaceChildPath(workspacePath, normalizedRelativePath)
         val existsData = readWorkspaceEntryMetadata(fullPath, workspaceEnv)
         if (existsData == null || !existsData.exists) {
             OKToast.warning(context, context.getString(R.string.attachment_file_not_exist)).show()
-            return@withContext
+            return@withAttachmentDraft
         }
 
         val content =
@@ -636,20 +693,20 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
      * 发送时走与直接发图相同的多模态/识图链路，不再本地 OCR 成文本。
      */
     suspend fun captureScreenContent() =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     val screenshotTool = AITool(name = "capture_screenshot", parameters = emptyList())
                     val screenshotResult = toolHandler.executeTool(screenshotTool)
                     if (!screenshotResult.success) {
                         OKToast.error(context, context.getString(R.string.attachment_screen_content_failed, screenshotResult.error ?: context.getString(R.string.attachment_screenshot_failed))).show()
-                        return@withContext
+                        return@withAttachmentDraft
                     }
 
                     val screenshotPath = screenshotResult.result.toString().trim()
                     val screenshotFile = File(screenshotPath)
                     if (screenshotPath.isBlank() || !screenshotFile.exists() || screenshotFile.length() <= 0L) {
                         OKToast.error(context, context.getString(R.string.attachment_screen_content_failed, context.getString(R.string.attachment_screenshot_failed))).show()
-                        return@withContext
+                        return@withAttachmentDraft
                     }
 
                     val extension = screenshotFile.extension.ifBlank { "png" }
@@ -667,6 +724,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                     OKToast.success(context, R.string.attachment_added).show()
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_screen_content_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing screen content", e)
                 }
@@ -674,7 +732,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     /** 获取设备当前通知并作为附件添加到消息 使用get_notifications AITool获取通知数据 确保在IO线程中执行 */
     suspend fun captureNotifications(limit: Int = 10) =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     // 创建工具参数
                     val toolParams =
@@ -712,6 +770,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         OKToast.error(context, context.getString(R.string.attachment_notifications_failed, result.error ?: context.getString(R.string.attachment_unknown_error))).show()
                     }
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_notifications_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing notifications", e)
                 }
@@ -719,7 +778,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     /** 获取设备当前位置并作为附件添加到消息 使用get_device_location AITool获取位置数据 确保在IO线程中执行 */
     suspend fun captureLocation(highAccuracy: Boolean = true) =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     // 创建工具参数
                     val toolParams =
@@ -757,6 +816,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
                         OKToast.error(context, context.getString(R.string.attachment_location_failed, result.error ?: context.getString(R.string.attachment_unknown_error))).show()
                     }
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_location_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing location", e)
                 }
@@ -764,7 +824,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
     /** 获取当前时间并作为附件添加到消息 */
     suspend fun captureCurrentTime() =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     val captureId = "time_${System.currentTimeMillis()}"
                     val timeText =
@@ -784,6 +844,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                     OKToast.success(context, R.string.attachment_added).show()
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_time_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing current time", e)
                 }
@@ -794,11 +855,11 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
      * @param folderPaths 选中的记忆文件夹路径列表
      */
     suspend fun captureMemoryFolders(folderPaths: List<String>) =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 try {
                     if (folderPaths.isEmpty()) {
                         OKToast.info(context, context.getString(R.string.attachment_no_memory_folder)).show()
-                        return@withContext
+                        return@withAttachmentDraft
                     }
 
                     // 生成唯一ID
@@ -821,6 +882,7 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                     OKToast.success(context, R.string.attachment_added).show()
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     OKToast.error(context, context.getString(R.string.attachment_memory_folder_failed, e.message ?: "")).show()
                     AppLogger.e(TAG, "Error capturing memory folders", e)
                 }
@@ -849,7 +911,7 @@ $foldersText
 
     /** Get file name from content URI */
     private suspend fun getFileNameFromUri(uri: Uri): String =
-            withContext(Dispatchers.IO) {
+            withAttachmentDraft {
                 val contentResolver = context.contentResolver
                 var fileName = context.getString(R.string.attachment_unknown_file)
 
@@ -864,10 +926,11 @@ $foldersText
                         }
                     }
                 } catch (e: Exception) {
+                if (e is CancellationException) throw e
                     AppLogger.e(TAG, "Error getting file name from URI", e)
                 }
 
-                return@withContext fileName
+                return@withAttachmentDraft fileName
             }
 
     /** Get MIME type from file path */

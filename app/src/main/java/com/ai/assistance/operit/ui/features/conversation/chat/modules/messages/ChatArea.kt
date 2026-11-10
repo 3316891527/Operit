@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages
 
+import com.ai.assistance.operit.ui.common.markdown.responseProcessKey
+import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.themeScriptShape
 import com.ai.assistance.operit.ui.theme.script.themeScriptFill
@@ -110,6 +112,7 @@ import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.reference.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
+import com.ai.assistance.operit.data.preferences.WaifuPreferences
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.MessageGenerationDetails
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.formatMessageCompletionTime
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.hasDisplayableMessageTimestamp
@@ -288,6 +291,8 @@ fun ChatArea(
     val showMessageTimingStats = themeSnapshot.showMessageTimingStats
     val showMessageTokenSpeed = themeSnapshot.showMessageTokenSpeed
     val showMessageTimestamp = themeSnapshot.showMessageTimestamp
+    val waifuPreferences = remember(context) { WaifuPreferences.getInstance(context) }
+    val waifuEnabled by waifuPreferences.enableWaifuModeFlow.collectAsState(initial = false)
     var pendingJumpToMessageTimestamp by remember(currentChatId) { mutableStateOf<Long?>(null) }
     val lastMessage = chatHistory.lastOrNull()
     val displayPreferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
@@ -313,17 +318,25 @@ fun ChatArea(
         }
     }
 
+    val expandedResponseProcesses = ResponseProcessExpansionState.expandedIds(currentChatId)
     val lastMessageContentLength = lastMessage?.content?.length
     LaunchedEffect(
         pendingJumpToMessageTimestamp,
         chatHistory.firstOrNull()?.timestamp,
         chatHistory.lastOrNull()?.timestamp,
         timelineEntries.size,
+        expandedResponseProcesses,
     ) {
         val targetTimestamp = pendingJumpToMessageTimestamp ?: return@LaunchedEffect
         val messageIndex = chatHistory.indexOfFirst { it.timestamp == targetTimestamp }
         val blockIndex = timelineEntries.indexOfFirst { it.messageIndex == messageIndex }
         if (messageIndex < 0 || blockIndex < 0) return@LaunchedEffect
+        val targetMessage = chatHistory[messageIndex]
+        val processId = responseProcessKey(targetMessage.timestamp, targetMessage.selectedVariantIndex)
+        if (targetMessage.sender == "ai" && !ResponseProcessExpansionState.isExpanded(currentChatId, processId)) {
+            ResponseProcessExpansionState.expand(currentChatId, processId)
+            return@LaunchedEffect // Rebuild the lazy rows before calculating the scroll position.
+        }
         val isLatest = messageIndex == chatHistory.lastIndex && !hasNewerDisplayHistory
         onAutoScrollToBottomChange?.invoke(isLatest)
         if (isLatest) {
@@ -415,6 +428,7 @@ fun ChatArea(
             items(timelineEntries, key = { it.key }, contentType = { if (it.slice?.split == true) "message-block" else "message" }) { entry ->
                 val actualIndex = entry.messageIndex
                 val message = chatHistory[actualIndex]
+                val showGenerationMetadata = showWaifuGenerationMetadata(chatHistory, actualIndex, waifuEnabled)
                 val shouldHide = shouldHideLastAiMessage && actualIndex == messagesCount - 1 && message.sender == "ai"
 
                 MessageItem(
@@ -446,10 +460,10 @@ fun ChatArea(
                     onTranslateMessage = onTranslateMessage,
                     onMentionRoleFromAvatar = onMentionRoleFromAvatar,
                     chatStyle = if (message.sender == "user") userChatStyle else aiChatStyle,
-                    showMessageTokenStats = showMessageTokenStats,
-                    showMessageTimingStats = showMessageTimingStats,
-                    showMessageTokenSpeed = showMessageTokenSpeed,
-                    showMessageTimestamp = showMessageTimestamp,
+                    showMessageTokenStats = showMessageTokenStats && showGenerationMetadata,
+                    showMessageTimingStats = showMessageTimingStats && showGenerationMetadata,
+                    showMessageTokenSpeed = showMessageTokenSpeed && showGenerationMetadata,
+                    showMessageTimestamp = showMessageTimestamp && showGenerationMetadata,
                     cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
                     cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
                     bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,

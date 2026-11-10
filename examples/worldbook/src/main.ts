@@ -11,6 +11,11 @@ declare function getCallerCardId(): string | undefined;
 
 const WORLDBOOK_ROUTE = "toolpkg:com.operit.worldbook:ui:worldbook_manager";
 
+// Metadata discovery and live IPC use different engines. Bind handlers when the
+// main module loads, before the host dispatches its first UI request. This only
+// declares handlers; storage access stays in the serialized main-runtime service.
+registerWorldBookStorageService();
+
 interface WorldBookEntry {
   id: string;
   name: string;
@@ -397,8 +402,6 @@ export async function finalizeHook(
 }
 
 export function registerToolPkg() {
-  registerWorldBookStorageService();
-
   ToolPkg.registerUiRoute({
     id: "worldbook_manager",
     route: WORLDBOOK_ROUTE,

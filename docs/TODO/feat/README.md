@@ -92,6 +92,9 @@
 - [补丁 18：云端 TTS 分句并行预取](patch18-cloud-tts-prefetch/index.md)
 - [补丁 18：自动朗读入口与语音通话朗读](patch18-voice-call-autoread/index.md)
 - [补丁 18：请求错误提示时长](patch18-request-error-duration/index.md)
+- [生成中消息排队与引导](chat-queue-steering/index.md)
 - [补丁 18：工具调用耗时与完成标题](patch18-tool-execution-timing/index.md)
 - [补丁 18：终端显示与键盘输入](patch18-terminal-input/index.md)
 - [补丁 18：统一集成与完整回归](patch18-integration/index.md)
+
+- [折叠已完成的回复过程](collapse-completed-response-process/index.md)

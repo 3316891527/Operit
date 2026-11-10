@@ -12,6 +12,7 @@ internal data class StudioLocation(
     val previewState: String,
     val inputStyle: String,
     val previewCollapsed: Boolean,
+    val textTarget: String = "global",
 )
 
 internal class ThemeStudioLocationStore(context: Context, projectId: String) {
@@ -27,6 +28,7 @@ internal class ThemeStudioLocationStore(context: Context, projectId: String) {
         previewState = requireNotNull(preferences.getString(prefix + "state", initial.previewState)),
         inputStyle = requireNotNull(preferences.getString(prefix + "input_style", initial.inputStyle)),
         previewCollapsed = preferences.getBoolean(prefix + "preview_collapsed", initial.previewCollapsed),
+        textTarget = requireNotNull(preferences.getString(prefix + "text_target", initial.textTarget)),
     )
 
     fun write(location: StudioLocation) {
@@ -40,6 +42,7 @@ internal class ThemeStudioLocationStore(context: Context, projectId: String) {
             .putString(prefix + "state", location.previewState)
             .putString(prefix + "input_style", location.inputStyle)
             .putBoolean(prefix + "preview_collapsed", location.previewCollapsed)
+            .putString(prefix + "text_target", location.textTarget)
             .apply()
     }
 }

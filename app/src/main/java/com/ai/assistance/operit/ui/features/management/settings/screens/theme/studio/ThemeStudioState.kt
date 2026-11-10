@@ -1,11 +1,16 @@
 package com.ai.assistance.operit.ui.features.management.settings.screens.theme.studio
 
+import com.ai.assistance.operit.data.theme.script.followChatBackgrounds
 import com.ai.assistance.operit.data.theme.script.actionButtonSurface
 import com.ai.assistance.operit.data.theme.script.clearActionButtonSurface
 
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.data.theme.script.ThemeAssetFormats
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimit
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimitException
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,7 +72,9 @@ internal class ThemeStudioState(
     var mode by mutableStateOf("light")
     var target by mutableStateOf(ThemeStudioTargets.first { it.id == "assistantMessage" })
     var property by mutableStateOf(StudioProperty.Appearance)
+    var textTarget by mutableStateOf("global")
     var previewState by mutableStateOf("always")
+    val pagePreview = StudioPagePreviewState()
     var previewCollapsed by mutableStateOf(false)
     var currentFolder by mutableStateOf("assets")
     var resourceFilter by mutableStateOf("all")
@@ -93,8 +100,8 @@ internal class ThemeStudioState(
     val hasChanges get() = sourceDirty || project != baseline
     val bundle get() = requireNotNull(project) { "Theme studio has not loaded" }
     val appearance get() = bundle.manifest.appearance.forMode(mode)
-    val imageAssets get() = bundle.manifest.assets.filterValues { it.substringAfterLast('.').lowercase() !in setOf("ttf", "otf") }
-    val fontAssets get() = bundle.manifest.assets.filterValues { it.substringAfterLast('.').lowercase() in setOf("ttf", "otf") }
+    val imageAssets get() = bundle.manifest.assets.filterValues { !ThemeAssetFormats.isFont(it) }
+    val fontAssets get() = bundle.manifest.assets.filterValues { ThemeAssetFormats.isFont(it) }
     val folders: List<String> get() {
         val result = mutableSetOf("assets")
         fun addParents(path: String) {
@@ -132,7 +139,7 @@ internal class ThemeStudioState(
         }
     }
 
-    fun location() = StudioLocation(mode, target.id, workspace, scene, property, previewState, previewInputStyle, previewCollapsed)
+    fun location() = StudioLocation(mode, target.id, workspace, scene, property, previewState, previewInputStyle, previewCollapsed, textTarget)
 
     fun rememberLocation(location: StudioLocation = location()) = locationStore.write(location)
 
@@ -142,6 +149,8 @@ internal class ThemeStudioState(
         require(location.property in selected.properties) { "Invalid studio property" }
         require(location.previewState == "always" || location.previewState in selected.states) { "Invalid studio preview state" }
         require(location.inputStyle in setOf("classic", "agent")) { "Invalid studio input style" }
+        require(location.textTarget == "global" || location.textTarget in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.textIds) { "Invalid text style target" }
+        textTarget = location.textTarget
         mode = location.mode
         target = selected
         workspace = location.workspace
@@ -161,11 +170,11 @@ internal class ThemeStudioState(
     }
     fun selectScene(next: StudioScene) {
         scene = next
-        if (target.scene != next) select(ThemeStudioTargets.first { it.id == when (next) { StudioScene.Chat -> "assistantMessage"; StudioScene.Components -> "settingsCard"; StudioScene.Navigation -> "navigation" } })
+        if (target.scene != next) select(ThemeStudioTargets.first { it.id == when (next) { StudioScene.Chat -> "assistantMessage"; StudioScene.Components -> "settingsCard"; StudioScene.Navigation -> "navigation"; StudioScene.Pages -> "page.packages" } })
     }
     fun report(failure: Exception) {
         AppLogger.e("ThemeStudio", "主题工作室操作失败", failure)
-        error = failure.message.orEmpty().take(4096)
+        error = themeResourceErrorMessage(failure).take(4096)
     }
     fun clearError() { error = null }
     private suspend fun task(action: suspend () -> Unit): Boolean {
@@ -183,7 +192,8 @@ internal class ThemeStudioState(
             val next = change(bundle)
             ThemeScriptContract.validate(next.manifest)
             require(next.assets.keys == next.manifest.assets.values.toSet()) { "Resource paths do not match the manifest" }
-            require(next.source.isNotBlank() && next.source.toByteArray().size <= ThemeScriptContract.MAX_SOURCE_BYTES) { "Theme script is empty or too large" }
+            require(next.source.isNotBlank()) { "Theme script is empty" }
+            ThemeResourceLimit.SourceBytes.check(next.source.toByteArray(Charsets.UTF_8).size.toLong(), resource = next.manifest.entry)
             val nextImages = decoded.filterKeys { it in next.manifest.assets.keys }
             ThemeScriptAssets.validateAppearance(next.manifest.appearance, nextImages)
             if (next != project) {
@@ -226,6 +236,11 @@ internal class ThemeStudioState(
         val appearance = bundle.manifest.appearance.forMode(forMode)
         return (if (id in ThemeScriptContract.actionButtonIds) appearance.actionButtonSurface(id) else appearance.surfaces[id]) ?: ThemeScriptSurface()
     }
+    fun resetPageBackground() = updateAppearance { base ->
+        val variant = base.modes[mode] ?: ThemeAppearanceMode()
+        base.copy(modes = base.modes + (mode to variant.copy(surfaces = variant.surfaces + (target.id to ThemeScriptSurface()))))
+    }
+    fun followChatBackgrounds() = updateAppearance { it.followChatBackgrounds() }
     fun resetButtonStyle() = updateAppearance { it.clearActionButtonSurface(target.id, mode) }
     fun updateSurface(id: String = target.id, forMode: String = mode, change: (ThemeScriptSurface) -> ThemeScriptSurface) = updateAppearance { base ->
         val variant = base.modes[forMode] ?: ThemeAppearanceMode()
@@ -234,10 +249,18 @@ internal class ThemeStudioState(
         val updated = change(before ?: ThemeScriptSurface())
         base.copy(modes = base.modes + (forMode to variant.copy(surfaces = variant.surfaces + (id to updated))))
     }
+    fun text(forMode: String = mode): ThemeAppearanceText {
+        val appearance = bundle.manifest.appearance.forMode(forMode)
+        return if (target.kind != StudioKind.Typography) surface(forMode = forMode).textStyle
+            else if (textTarget == "global") appearance.typography
+            else appearance.textStyles[textTarget] ?: ThemeAppearanceText()
+    }
     fun updateText(forMode: String = mode, change: (ThemeAppearanceText) -> ThemeAppearanceText) {
         if (target.kind == StudioKind.Typography) updateAppearance { base ->
             val variant = base.modes[forMode] ?: ThemeAppearanceMode()
-            base.copy(modes = base.modes + (forMode to variant.copy(typography = change(base.forMode(forMode).typography))))
+            val updated = if (textTarget == "global") variant.copy(typography = change(text(forMode)))
+                else variant.copy(textStyles = variant.textStyles + (textTarget to change(text(forMode))))
+            base.copy(modes = base.modes + (forMode to updated))
         } else updateSurface(forMode = forMode) { it.copy(textStyle = change(it.textStyle)) }
     }
     fun icon(id: String = target.id, forMode: String = mode) = bundle.manifest.appearance.forMode(forMode).icons[id]
@@ -260,7 +283,7 @@ internal class ThemeStudioState(
         if (field == "tintColor") return icon(forMode = forMode)?.tintColor
         if (target.kind == StudioKind.Palette) return (if (forMode == "light") bundle.manifest.appearance.palette.light else bundle.manifest.appearance.palette.dark)[field]
         if (target.kind == StudioKind.Icon) return icon(forMode = forMode)?.tintColor
-        if (target.kind == StudioKind.Typography) return bundle.manifest.appearance.forMode(forMode).typography.color
+        if (target.kind == StudioKind.Typography) return text(forMode).color
         if (field == "textColor") return surface(forMode = forMode).textStyle.color
         val value = surface(forMode = forMode).forState(if (property == StudioProperty.States) previewState else "always")
         return when (field) { "fillColor" -> value.fillColor; "contentColor" -> value.contentColor ?: value.textStyle.color; "strokeColor" -> value.strokeColor; else -> error("Unknown color field") }
@@ -275,7 +298,7 @@ internal class ThemeStudioState(
             StudioKind.Palette -> setPalette(field, value, forMode)
             StudioKind.Icon -> icon(forMode = forMode)?.let { setIcon(it.copy(tintColor = value, useContentTint = if (value == null) it.useContentTint else false), forMode = forMode) }
             StudioKind.Surface -> updateSurface(forMode = forMode) { surface ->
-                surface.withStudioColor(
+                surface.copy(fillGradient = if (field == "fillColor" && value != null) null else surface.fillGradient).withStudioColor(
                     field = field,
                     value = value,
                     state = if (property == StudioProperty.States) previewState else "always",
@@ -323,7 +346,7 @@ internal class ThemeStudioState(
     fun assetUsed(id: String): Boolean {
         val base = bundle.manifest.appearance
         val appearances = listOf(base.copy(modes = emptyMap())) + base.modes.keys.map(base::forMode)
-        return appearances.any { appearance -> appearance.icons.values.any { it.asset == id } || appearance.typography.family == "asset:$id" || appearance.surfaces.values.any { it.textStyle.family == "asset:$id" || it.layers.any { layer -> layer.asset == id } } }
+        return appearances.any { appearance -> appearance.icons.values.any { it.asset == id } || appearance.typography.family == "asset:$id" || appearance.textStyles.values.any { it.family == "asset:$id" } || appearance.surfaces.values.any { it.textStyle.family == "asset:$id" || it.layers.any { layer -> layer.asset == id } } }
     }
     fun deleteAsset(id: String) = edit { current ->
         require(!assetUsed(id)) { "Remove the resource bindings before deleting this file" }
@@ -336,24 +359,45 @@ internal class ThemeStudioState(
             val original = bundle
             val folder = currentFolder
             val added = withContext(Dispatchers.IO) {
+                val selected = uris.distinct()
+                val currentBytes = original.source.toByteArray(Charsets.UTF_8).size.toLong() + original.assets.values.sumOf { it.size.toLong() }
+                ThemeResourceLimit.AssetCount.check(selected.size.toLong(), used = original.manifest.assets.size.toLong())
                 var next = original
-                for (uri in uris.distinct()) {
+                var pendingBytes = 0L
+                for (uri in selected) {
                     currentCoroutineContext().ensureActive()
-                    val name = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                        require(cursor.moveToFirst()) { "Resource name is missing" }; cursor.getString(0)
-                    } ?: error("Cannot read resource name")
+                    val (name, knownSize) = requireNotNull(context.contentResolver.query(uri,
+                        arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)) {
+                        "Cannot read resource information"
+                    }.use { cursor ->
+                        require(cursor.moveToFirst()) { "Resource information is missing" }
+                        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        require(nameIndex >= 0 && !cursor.isNull(nameIndex)) { "Resource name is missing" }
+                        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                        requireNotNull(cursor.getString(nameIndex)) { "Resource name is missing" } to if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) cursor.getLong(sizeIndex).takeIf { it >= 0L } else null
+                    }
                     try {
                         val path = "$folder/$name"
-                        require(ThemeAssetPaths.isFile(path) && name.substringAfterLast('.').lowercase() in setOf("png", "jpg", "jpeg", "webp", "svg", "ttf", "otf")) { "Expected PNG, JPEG, WebP, SVG, TTF or OTF" }
-                        require(path !in next.assets && path != next.manifest.entry) { "A resource with this name already exists" }
-                        val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use {
-                            ThemeScriptBundleStore.readLimited(it, ThemeScriptContract.MAX_ASSET_BYTES)
+                        require(ThemeAssetFormats.extension(name) in ThemeAssetFormats.resources) {
+                            context.getString(R.string.studio_resource_unsupported_format, name)
                         }
+                        require(ThemeAssetPaths.isFile(path)) { context.getString(R.string.studio_resource_invalid_path, path) }
+                        require(path !in next.assets && path != next.manifest.entry) { "A resource with this name already exists" }
+                        val budget = if (ThemeAssetFormats.extension(name) == "svg") ThemeResourceLimit.SvgBytes else ThemeResourceLimit.AssetBytes
+                        val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use {
+                            ThemeScriptBundleStore.readLimited(it, budget.maximum.toInt(), budget, knownSize = knownSize, resource = name)
+                        }
+                        pendingBytes += bytes.size
+                        ThemeResourceLimit.BundleBytes.check(pendingBytes, used = currentBytes, resource = name)
                         val id = "asset_" + UUID.randomUUID().toString().replace("-", "")
                         next = next.copy(manifest = next.manifest.copy(assets = next.manifest.assets + (id to path)),
                             assets = next.assets + (path to bytes)).also(ThemeScriptBundleStore::validate)
-                    } catch (cancelled: CancellationException) { throw cancelled }
-                    catch (failure: Exception) { throw IllegalArgumentException("$name: ${failure.message}", failure) }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (failure: Exception) {
+                        if (failure is ThemeResourceLimitException) throw failure
+                        throw IllegalArgumentException(name + ": " + failure.message, failure)
+                    }
                 }
                 next
             }
@@ -425,7 +469,7 @@ internal class ThemeStudioState(
     }
     suspend fun importSource(uri: Uri) = task {
         val text = withContext(Dispatchers.IO) {
-            val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use { ThemeScriptBundleStore.readLimited(it, ThemeScriptContract.MAX_SOURCE_BYTES) }
+            val bytes = requireNotNull(context.contentResolver.openInputStream(uri)).use { ThemeScriptBundleStore.readLimited(it, ThemeScriptContract.MAX_SOURCE_BYTES, ThemeResourceLimit.SourceBytes) }
             Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString()
         }
         if (selectFile(bundle.manifest.entry)) setSource(text)

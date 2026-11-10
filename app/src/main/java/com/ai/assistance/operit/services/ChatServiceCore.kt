@@ -147,6 +147,8 @@ class ChatServiceCore(
         coroutineScope.launch {
             chatHistoryDelegate.currentChatId.collect { chatId ->
                 tokenStatisticsDelegate.setActiveChatId(chatId)
+                attachmentDelegate.setActiveDraftChat(chatId)
+                uiBridge.setActiveDraftChat(chatId)
                 if (::messageProcessingDelegate.isInitialized) {
                     messageProcessingDelegate.setActiveDraftChat(chatId)
                 }
@@ -557,6 +559,7 @@ class ChatServiceCore(
 
     fun setUiBridge(uiBridge: ChatServiceUiBridge) {
         this.uiBridge = uiBridge
+        uiBridge.setActiveDraftChat(chatHistoryDelegate.currentChatId.value)
         if (::messageCoordinationDelegate.isInitialized) {
             messageCoordinationDelegate.setUiBridge(uiBridge)
         }
