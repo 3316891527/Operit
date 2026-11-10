@@ -22,6 +22,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 internal fun messageCopyEdgeScrollFactor(pointerY: Float, viewportHeight: Float, edgeSize: Float): Float {
@@ -58,33 +59,35 @@ internal fun MessageCopyTextField(
         val edgeSize = 48.dp.toPx()
         val maxSpeed = 900.dp.toPx()
         val viewportHeight = size.height.toFloat()
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-            val initialSelection = editor.selection
-            var pointerY = down.position.y
-            var selectionChanged = false
-            val autoScrollJob = launch {
-                var previousFrame = 0L
-                while (isActive) {
-                    val frame = withFrameNanos { it }
-                    if (previousFrame != 0L && selectionChanged) {
-                        val elapsed = ((frame - previousFrame).coerceAtMost(50_000_000L)) / 1_000_000_000f
-                        val factor = messageCopyEdgeScrollFactor(pointerY, viewportHeight, edgeSize)
-                        if (factor != 0f) scroll.scrollBy(factor * maxSpeed * elapsed)
+        coroutineScope {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                val initialSelection = editor.selection
+                var pointerY = down.position.y
+                var selectionChanged = false
+                val autoScrollJob = launch {
+                    var previousFrame = 0L
+                    while (isActive) {
+                        val frame = withFrameNanos { it }
+                        if (previousFrame != 0L && selectionChanged) {
+                            val elapsed = ((frame - previousFrame).coerceAtMost(50_000_000L)) / 1_000_000_000f
+                            val factor = messageCopyEdgeScrollFactor(pointerY, viewportHeight, edgeSize)
+                            if (factor != 0f) scroll.scrollBy(factor * maxSpeed * elapsed)
+                        }
+                        previousFrame = frame
                     }
-                    previousFrame = frame
                 }
-            }
-            try {
-                while (true) {
-                    val event = awaitPointerEvent(PointerEventPass.Final)
-                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                    if (!change.pressed) break
-                    pointerY = change.position.y
-                    selectionChanged = editor.selection != initialSelection
+                try {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Final)
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!change.pressed) break
+                        pointerY = change.position.y
+                        selectionChanged = editor.selection != initialSelection
+                    }
+                } finally {
+                    autoScrollJob.cancel()
                 }
-            } finally {
-                autoScrollJob.cancel()
             }
         }
     }

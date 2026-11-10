@@ -480,6 +480,7 @@ fun BottomControlBar(
                             contentAlignment = Alignment.Center
                         ) {
                             if (isPressed && !isCancelRegion) {
+                                val waveformColor = MaterialTheme.colorScheme.primary
                                 Canvas(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -499,7 +500,7 @@ fun BottomControlBar(
                                             val barHeight = (value.coerceIn(0f, 1f)) * maxHeight
                                             val top = centerY - barHeight / 2f
                                             drawRect(
-                                                color = MaterialTheme.colorScheme.primary,
+                                                color = waveformColor,
                                                 topLeft = Offset(xRight - barWidth, top),
                                                 size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
                                             )
