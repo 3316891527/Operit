@@ -117,10 +117,11 @@
       "number": 190,
       "title": "feat: 生成中消息排队与当前轮引导（适配上游 #1481）",
       "branch": "feat/chat-queue-steering",
-      "head": "fb7bf270aac04039f26ccb8ee52abcce6bdac1c6",
+      "head": "ba1d2075e562744c58b7fc947013a64751bd8ec5",
       "base_branch": "dev",
       "base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
-      "url": "https://github.com/3316891527/Operit/pull/190"
+      "url": "https://github.com/3316891527/Operit/pull/190",
+      "previous_head": "fb7bf270aac04039f26ccb8ee52abcce6bdac1c6"
     }
   ],
   "merges": [
@@ -226,6 +227,15 @@
       "before": "dc49eabcf58c7b6e158cda8cfd913909f474d08a",
       "commit": "6bf67262ff368ce2668622358759d8f8f124e554",
       "conflicts": []
+    }
+  ],
+  "follow_up_merges": [
+    {
+      "number": 190,
+      "source": "ba1d2075e562744c58b7fc947013a64751bd8ec5",
+      "before": "72ecce9a609c5210b72f3aa725832c498cdfd33c",
+      "commit": "ef634a87c758889638c239905e9843a62f395a25",
+      "scope": "Guidance action foreground color and clarification of API request vs active task."
     }
   ]
 }
