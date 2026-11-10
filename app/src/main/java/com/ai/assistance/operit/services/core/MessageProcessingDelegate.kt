@@ -712,7 +712,7 @@ class MessageProcessingDelegate(
 
     fun getUserMessageDraft(chatId: String?): TextFieldValue =
         if (chatId == activeDraftChatId) _userMessage.value
-        else chatId?.let { userMessageDraftsByChatId[it] } ?: TextFieldValue("")
+        else chatId?.let { chatDraftRepository.loadDraft(it) } ?: TextFieldValue("")
 
     private fun setUserMessageDraft(value: TextFieldValue) {
         _userMessage.value = value

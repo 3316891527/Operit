@@ -38,6 +38,10 @@
 
 所有变更 Kotlin 使用 Kotlin 自身 PSI 检查语法。最终提交运行既有仓库整洁、本地化和文档链接校验，结果在 PR 中记录。独立 JVM 验证不覆盖完整应用类型检查、提供商网络、Room、Compose 或设备交互；本地缺少完整 Android SDK/Gradle 缓存，完整应用编译和设备验收未执行。交付时各启动一次现有 Build 和 Android Tests，受理情况与入口见 PR。
 
+## 编译接口修正
+
+用户提供的 `799cf450` 构建截图在 `:app:compileDebugKotlin` 阶段报告 7 条诊断，尚未进入 JVM 测试执行。新增代码引用了本仓库不存在的 `showToast` 和 `userMessageDraftsByChatId`。后台聊天的文字草稿现在通过现有 `ChatDraftRepository.loadDraft()` 读取，保留当前聊天的内存草稿；5 处操作提示使用现有 `OKToast.info(...).show()`。草稿分支恢复为 `TextFieldValue` 类型，不新增重复草稿映射或提示接口。此前 63 项定向 JVM 回归未覆盖这三处完整 Android 文件的类型检查；本次修正已核对真实方法声明、清除错误引用，并通过 3 个变更 Kotlin 文件的 PSI 语法检查。完整 Android 编译仍未执行；Compose 依赖获取因网络连接重置未完成，不将语法检查视为类型编译通过。仓库检查结果见 PR 更新。
+
 ## 设备验收步骤
 
 1. 在 Agent 与经典输入框生成回复时连续排队消息，分别带附件和引用，确认归属和顺序发送。

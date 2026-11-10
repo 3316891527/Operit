@@ -2233,7 +2233,7 @@ class MessageCoordinationDelegate(
         if (_isSummarizing.value || _isSendTriggeredSummarizing.value) {
             AppLogger.d(TAG, "已在总结中，忽略本次请求")
             if (autoContinue) reportBusyAutomaticSummary(chatIdOverride ?: chatHistoryDelegate.currentChatId.value)
-            else uiStateDelegate.showToast(context.getString(R.string.chat_summarizing_please_wait))
+            else OKToast.info(context, context.getString(R.string.chat_summarizing_please_wait)).show()
             return false
         }
         val currentChatId = chatIdOverride ?: chatHistoryDelegate.currentChatId.value ?: return false

@@ -1325,7 +1325,7 @@ private fun ChatInputBottomBar(
                     ) {
                         restorePendingQueueItem(queueChatId, item)
                         queueItemResolved = true
-                        actualViewModel.showToast(context.getString(R.string.chat_queue_send_deferred))
+                        OKToast.info(context, context.getString(R.string.chat_queue_send_deferred)).show()
                         return@launch
                     }
                     queueItemResolved = true
@@ -1354,7 +1354,7 @@ private fun ChatInputBottomBar(
         val chatId = currentChatId ?: return
         val expectedTurnId = actualViewModel.steeringTurnId(chatId)
         if (expectedTurnId == null) {
-            actualViewModel.showToast(context.getString(R.string.chat_steer_unavailable))
+            OKToast.info(context, context.getString(R.string.chat_steer_unavailable)).show()
             return
         }
         val item = removePendingQueueMessageById(id) ?: return
@@ -1383,7 +1383,7 @@ private fun ChatInputBottomBar(
                 val finalItem = item.copy(text = decision.text ?: item.text)
                 resolved = actualViewModel.trySteerQueuedMessage(chatId, expectedTurnId, finalItem)
                 if (!resolved) {
-                    actualViewModel.showToast(context.getString(R.string.chat_steer_unavailable))
+                    OKToast.info(context, context.getString(R.string.chat_steer_unavailable)).show()
                 } else {
                     ChatInputHookRegistry.dispatchNotification(
                         buildChatInputHookContext(
@@ -1414,7 +1414,7 @@ private fun ChatInputBottomBar(
 
     fun editQueuedMessage(id: Long) {
         if (userMessage.text.isNotEmpty() || attachments.isNotEmpty() || replyToMessage != null) {
-            actualViewModel.showToast(context.getString(R.string.chat_queue_edit_draft_in_use))
+            OKToast.info(context, context.getString(R.string.chat_queue_edit_draft_in_use)).show()
             return
         }
         val item = removePendingQueueMessageById(id) ?: return
