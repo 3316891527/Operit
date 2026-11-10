@@ -2987,6 +2987,12 @@
     <string name="long_pasted_text_threshold_unit">characters</string>
     <string name="chat_pending_queue_title">Pending Queue (%1$d)</string>
     <string name="chat_queue_add_message">Queue Message</string>
+    <string name="chat_steer_turn">Steer turn</string>
+    <string name="chat_steer_pending">Waiting for this turn</string>
+    <string name="chat_steer_unavailable">This turn cannot accept input now. The message remains queued.</string>
+    <string name="chat_queue_send_deferred">Cannot send yet. Your message is still in the queue.</string>
+    <string name="chat_queue_edit_draft_in_use">Send or clear your current draft before editing a queued message.</string>
+    <string name="chat_auto_summary_busy">This turn paused because its context is full. Another conversation is being summarized. Send again after it finishes to continue.</string>
     <string name="chat_queue_added">Added to queue</string>
     <string name="chat_continue_generation">Continue generation</string>
     <string name="chat_use_default_config_continue">Continue with default configuration</string>

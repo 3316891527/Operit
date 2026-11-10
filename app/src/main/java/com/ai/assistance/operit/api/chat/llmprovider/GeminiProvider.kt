@@ -1265,6 +1265,8 @@ open class GeminiProvider(
                 val call = client.newCall(RequestFailureTrace.attach(request))
                 attemptCall = call
                 activeCall = call
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]
+                    ?.bindAbort { call.cancel() }
                 watchdog.start(call)
 
                 emitConnectionStatus(context.getString(R.string.gemini_connecting))
@@ -1350,6 +1352,7 @@ open class GeminiProvider(
                 return@withContext
             } catch (e: Exception) {
                 lastException = e
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.throwIfInterrupted()
                 retryCount = handleRetryableError(
                     context = context,
                     exception = RequestFailure.capture(
@@ -2114,6 +2117,16 @@ open class GeminiProvider(
             if (parts == null || parts.length() == 0) {
                 logDebug("未找到parts数组或为空")
                 return GeminiContentExtractionResult("", usage, completionConfirmed)
+            }
+
+            // Yield only before a new non-thought part. Previous chunks (including metadata)
+            // have been emitted; no function-call arguments from this chunk have been consumed.
+            val firstPart = parts.optJSONObject(0)
+            if (responseState.isInThinkingMode && firstPart != null &&
+                !firstPart.optBoolean("thought", false) &&
+                (firstPart.optString("text", "").isNotEmpty() || firstPart.has("functionCall") ||
+                    firstPart.has("inlineData") || firstPart.has("inline_data"))) {
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.checkpoint()
             }
 
             // 遍历parts，提取text内容和functionCall

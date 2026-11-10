@@ -1457,6 +1457,8 @@ open class ClaudeProvider(
             }
 
             activeCall = call
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]
+                    ?.bindAbort { call.cancel() }
             try {
                 AppLogger.d("AIService", "正在建立连接...")
                 withContext(Dispatchers.IO) {
@@ -1856,6 +1858,7 @@ open class ClaudeProvider(
                                         receivedContent.append(thinkingEndTag)
                                         isInThinkingBlock = false
                                         thinkingToken = null
+                                        kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.checkpoint()
                                     }
                                 }
                                 "message_delta" -> {
@@ -2044,6 +2047,7 @@ open class ClaudeProvider(
                 return@withContext
             } catch (e: Exception) {
                 lastException = e
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.throwIfInterrupted()
 
                 retryCount = handleRetryableError(
                         context = context,
