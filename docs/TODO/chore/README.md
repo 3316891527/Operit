@@ -1,5 +1,7 @@
 # 维护、重构与发行整理
 
+- [13 项 PR 集成测试](integrate-13-prs/index.md)
+
 维护工具、内部结构整理、依赖更新和发行收尾计划。
 
 [返回 TODO 总览](../README.md)
@@ -50,3 +52,4 @@
 
 - [持久化模型与业务领域归属整理](model-domain-layout/index.md)
 - [1.12.2+23 正式发行](release-1.12.2-plus-23/index.md)
+- [1.12.2+24 发行准备](release-1.12.2-plus-24/index.md)

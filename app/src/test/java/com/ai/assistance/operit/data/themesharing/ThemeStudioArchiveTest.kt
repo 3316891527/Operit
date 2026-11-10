@@ -65,4 +65,28 @@ class ThemeStudioArchiveTest {
             } catch (_: IllegalArgumentException) { }
         }
     }
+    @Test
+    fun pageGradientsAndTargetTypographySurviveACompleteThemeArchive() {
+        val gradient = com.ai.assistance.operit.data.theme.script.ThemeGradient(stops = listOf(
+            com.ai.assistance.operit.data.theme.script.ThemeGradientStop(0f, "#112233"),
+            com.ai.assistance.operit.data.theme.script.ThemeGradientStop(1f, "#445566")))
+        val appearance = com.ai.assistance.operit.data.theme.script.ThemeScriptAppearance(1,
+            modes = mapOf("dark" to com.ai.assistance.operit.data.theme.script.ThemeAppearanceMode(
+                surfaces = mapOf("page.packages" to com.ai.assistance.operit.data.theme.script.ThemeScriptSurface(
+                    layers = listOf(com.ai.assistance.operit.data.theme.script.ThemeScriptLayer("rect", gradient = gradient)))),
+                textStyles = mapOf("chat.modelName" to com.ai.assistance.operit.data.theme.script.ThemeAppearanceText(
+                    family = "asset:bodyFont", weight = 600,
+                    stroke = com.ai.assistance.operit.data.theme.script.ThemeTextStroke(width = .05f))))))
+        val project = bundle().copy(manifest = manifest.copy(appearance = appearance))
+        val (exported, files) = ThemeScriptBundleStore.exportFiles(project, folder.newFolder("foundation-export"))
+        val document = ThemeTransferSchema.create("基础主题", "作者", ThemePreferenceValues.defaultVisual(), ChatLayoutSettings(), true, exported)
+        val archive = folder.newFile("foundation.oktheme")
+        archive.outputStream().use { ThemeArchive.write(it, document, files) }
+        ThemeArchive.read(archive, File(folder.root, "foundation-import")).use { prepared ->
+            val restored = ThemeScriptBundleStore.fromFiles(requireNotNull(prepared.document.script), prepared.assets)
+            assertEquals(appearance, restored.manifest.appearance)
+            assertArrayEquals(fontHeader, restored.assets.getValue("assets/字体/body.ttf"))
+        }
+    }
+
 }

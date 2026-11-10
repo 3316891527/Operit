@@ -915,11 +915,14 @@ open class ClaudeProvider(
 
                         if (resultsList.isNotEmpty() && openToolUses.isNotEmpty()) {
                             val contentArray = JSONArray()
+                            val useOrder = openToolUses.mapIndexed { i, c -> c.id to i }.toMap()
                             val matchedCalls =
                                 StructuredToolCallBridge.consumeMatchingToolCalls(
                                     openToolUses,
                                     resultsList.map { it.first }
-                                )
+                                ).sortedBy { matchedCall ->
+                                    useOrder[matchedCall.call.id] ?: Int.MAX_VALUE
+                                }
                             matchedCalls.forEach { matchedCall ->
                                 val resultContent = resultsList[matchedCall.resultIndex].second
                                 contentArray.put(
@@ -1454,6 +1457,8 @@ open class ClaudeProvider(
             }
 
             activeCall = call
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]
+                    ?.bindAbort { call.cancel() }
             try {
                 AppLogger.d("AIService", "正在建立连接...")
                 withContext(Dispatchers.IO) {
@@ -1853,6 +1858,7 @@ open class ClaudeProvider(
                                         receivedContent.append(thinkingEndTag)
                                         isInThinkingBlock = false
                                         thinkingToken = null
+                                        kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.checkpoint()
                                     }
                                 }
                                 "message_delta" -> {
@@ -2041,6 +2047,7 @@ open class ClaudeProvider(
                 return@withContext
             } catch (e: Exception) {
                 lastException = e
+                kotlin.coroutines.coroutineContext[com.ai.assistance.operit.core.chat.SamplingInterrupt]?.throwIfInterrupted()
 
                 retryCount = handleRetryableError(
                         context = context,

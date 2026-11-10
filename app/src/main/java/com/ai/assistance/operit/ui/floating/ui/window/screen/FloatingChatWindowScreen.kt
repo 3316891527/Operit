@@ -1,5 +1,9 @@
 package com.ai.assistance.operit.ui.floating.ui.window.screen
 
+import com.ai.assistance.operit.ui.common.markdown.responseProcessKey
+import com.ai.assistance.operit.ui.common.markdown.LocalResponseProcessId
+import com.ai.assistance.operit.ui.common.markdown.LocalResponseProcessChatId
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import android.annotation.SuppressLint
@@ -835,6 +839,7 @@ private fun ChatMessagesView(
                         val actualIndex = messagesCount - 1 - displayIndex
 
                         FloatingMessageItem(
+                            chatId = currentChatId,
                             index = actualIndex,
                             message = item,
                             userMessageColor = userMessageColor,
@@ -894,6 +899,7 @@ private data object FloatingLoadingItem
 
 @Composable
 private fun FloatingMessageItem(
+    chatId: String?,
     index: Int,
     message: ChatMessage,
     userMessageColor: Color,
@@ -907,23 +913,28 @@ private fun FloatingMessageItem(
     heightMemory: ChatMessageHeightMemory,
     onSelectMessageToEdit: ((Int, ChatMessage, String) -> Unit)?,
 ) {
-    CursorStyleChatMessage(
-        message = message,
-        userMessageColor = userMessageColor,
-        aiMessageColor = aiMessageColor,
-        userTextColor = userTextColor,
-        aiTextColor = aiTextColor,
-        systemMessageColor = systemMessageColor,
-        systemTextColor = systemTextColor,
-        thinkingBackgroundColor = thinkingBackgroundColor,
-        thinkingTextColor = thinkingTextColor,
-        heightMemory = heightMemory,
-        index = index,
-        enableDialogs = false,
-        onEditSummary = { summaryMessage ->
-            onSelectMessageToEdit?.invoke(index, summaryMessage, "summary")
-        },
-    )
+    CompositionLocalProvider(
+        LocalResponseProcessChatId provides chatId,
+        LocalResponseProcessId provides responseProcessKey(message.timestamp, message.selectedVariantIndex),
+    ) {
+        CursorStyleChatMessage(
+            message = message,
+            userMessageColor = userMessageColor,
+            aiMessageColor = aiMessageColor,
+            userTextColor = userTextColor,
+            aiTextColor = aiTextColor,
+            systemMessageColor = systemMessageColor,
+            systemTextColor = systemTextColor,
+            thinkingBackgroundColor = thinkingBackgroundColor,
+            thinkingTextColor = thinkingTextColor,
+            heightMemory = heightMemory,
+            index = index,
+            enableDialogs = false,
+            onEditSummary = { summaryMessage ->
+                onSelectMessageToEdit?.invoke(index, summaryMessage, "summary")
+            },
+        )
+    }
 }
 
 /** 输入对话框视图 */

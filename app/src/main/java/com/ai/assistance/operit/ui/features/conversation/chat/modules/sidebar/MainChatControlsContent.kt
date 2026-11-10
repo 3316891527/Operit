@@ -59,6 +59,7 @@ internal fun MainChatControlsContent(
         }
         Text(
             text = title,
+            themeTarget = "chat.title",
             modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
             style = themeScriptTextStyle("appBar", MaterialTheme.typography.titleSmall),
             fontWeight = FontWeight.Medium,

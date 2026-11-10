@@ -13,7 +13,7 @@ import com.ai.assistance.operit.ui.features.management.settings.screens.theme.sc
 import com.ai.assistance.operit.ui.features.management.settings.screens.theme.script.themeAppearanceIconLabel
 
 internal enum class StudioWorkspace(val label: Int) { Design(R.string.studio_design), Source(R.string.studio_source), Resources(R.string.studio_resources) }
-internal enum class StudioScene(val label: Int) { Chat(R.string.studio_scene_chat), Components(R.string.studio_scene_components), Navigation(R.string.studio_scene_navigation) }
+internal enum class StudioScene(val label: Int) { Chat(R.string.studio_scene_chat), Components(R.string.studio_scene_components), Navigation(R.string.studio_scene_navigation), Pages(R.string.studio_scene_pages) }
 internal enum class StudioProperty(val label: Int) { Appearance(R.string.studio_appearance), Layers(R.string.studio_layers), States(R.string.studio_states) }
 internal enum class StudioKind { Surface, Icon, Typography, Palette }
 internal enum class StudioGroup(val label: Int) { Global(R.string.studio_group_global), Messages(R.string.studio_group_messages), Input(R.string.studio_group_input), Navigation(R.string.studio_group_navigation), Buttons(R.string.studio_group_buttons), Settings(R.string.studio_group_settings), Panels(R.string.studio_group_panels), Icons(R.string.studio_group_icons) }
@@ -31,7 +31,7 @@ internal data class StudioTarget(
         if (kind == StudioKind.Surface) add(StudioProperty.Layers)
         if (states.isNotEmpty()) add(StudioProperty.States)
     }
-    val glyph: ImageVector get() = when (id) {
+    val glyph: ImageVector get() = if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) Icons.Default.Image else when (id) {
         "typography" -> Icons.Default.TextFields
         "palette" -> Icons.Default.Palette
         "background" -> Icons.Default.Image
@@ -77,7 +77,7 @@ internal val ThemeStudioTargets: List<StudioTarget> = buildList {
     add(StudioTarget("typography", StudioKind.Typography, StudioGroup.Global, StudioScene.Chat))
     add(StudioTarget("palette", StudioKind.Palette, StudioGroup.Global, StudioScene.Chat))
     ThemeScriptContract.surfaceIds.forEach { id ->
-        val group = if (id in ThemeScriptContract.actionButtonIds) StudioGroup.Buttons else when (id) {
+        val group = if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) StudioGroup.Global else if (id in ThemeScriptContract.actionButtonIds) StudioGroup.Buttons else when (id) {
             "background" -> StudioGroup.Global
             "userMessage", "assistantMessage", "userAvatar", "assistantAvatar", "status", "toolCard" -> StudioGroup.Messages
             "composer", "input" -> StudioGroup.Input
@@ -86,7 +86,7 @@ internal val ThemeStudioTargets: List<StudioTarget> = buildList {
             "settingsCard", "listItem" -> StudioGroup.Settings
             else -> StudioGroup.Panels
         }
-        val scene = when (group) {
+        val scene = if (id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds) StudioScene.Pages else when (group) {
             StudioGroup.Navigation -> StudioScene.Navigation
             StudioGroup.Settings, StudioGroup.Panels -> StudioScene.Components
             StudioGroup.Messages -> if (id == "toolCard") StudioScene.Components else StudioScene.Chat
@@ -162,3 +162,10 @@ internal val ThemeStudioPaletteLabels = mapOf(
     "surfaceContainerHigh" to R.string.studio_token_surface_container_high,
     "surfaceContainerHighest" to R.string.studio_token_surface_container_highest,
 )
+
+/** 页面目标保留在完整目录中供编辑和预览使用，顶层部件只展示统一背景入口。 */
+internal val ThemeStudioRootTargets = ThemeStudioTargets.filterNot { it.id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds }
+internal val StudioTarget.isBackground: Boolean
+    get() = id == "background" || id in com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds
+internal val StudioTarget.rootTarget: StudioTarget
+    get() = if (isBackground) ThemeStudioTargets.first { it.id == "background" } else this

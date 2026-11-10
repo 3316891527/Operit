@@ -923,6 +923,8 @@ fun StreamMarkdownRenderer(
     enableDialogs: Boolean = true,
     fillMaxWidth: Boolean = true,
     renderContent: Boolean = true,
+    collapseCompletedProcess: Boolean = false,
+    responseDurationMs: Long = 0L,
 ) {
     // 必须先复用时间线的块节点，避免滚动时重新拼接整条消息及构造缓存键。
     if (renderContent) {
@@ -949,6 +951,8 @@ fun StreamMarkdownRenderer(
         fillMaxWidth = fillMaxWidth,
         renderContent = renderContent,
         messageSections = sections,
+        collapseCompletedProcess = collapseCompletedProcess,
+        responseDurationMs = responseDurationMs,
     )
 }
 
@@ -968,6 +972,8 @@ fun StreamMarkdownRenderer(
         fillMaxWidth: Boolean = true,
         renderContent: Boolean = true,
         messageSections: List<MessageSection>? = null,
+        collapseCompletedProcess: Boolean = false,
+        responseDurationMs: Long = 0L,
 ) {
     if (renderContent) {
         val fragment = LocalMarkdownRenderFragment.current
@@ -1063,6 +1069,8 @@ fun StreamMarkdownRenderer(
         CompositionLocalProvider(LocalMarkdownRenderMode provides MarkdownRenderMode.STATIC, LocalMarkdownCardStateStore provides null) {
             key(rendererId) {
                 UnifiedMarkdownCanvas(
+                    collapseCompletedProcess = collapseCompletedProcess,
+                    responseDurationMs = responseDurationMs,
                     nodes = renderNodes,
                     rendererId = rendererId,
                     nodeAnimationStates = nodeAnimationStates,
@@ -1157,6 +1165,8 @@ internal fun UnifiedMarkdownCanvas(
     enableDialogs: Boolean,
     modifier: Modifier = Modifier,
     fillMaxWidth: Boolean = true,
+    collapseCompletedProcess: Boolean = false,
+    responseDurationMs: Long = 0L,
 ) {
     val lastRenderableIndex = run {
         val idx = nodes.indexOfLast { it.content.isNotEmpty() || it.children.isNotEmpty() }
@@ -1180,9 +1190,28 @@ internal fun UnifiedMarkdownCanvas(
         remember(groupingKey, rendererId, nodeGrouper) {
             nodeGrouper.group(nodes, rendererId)
         }
+    val processId = LocalResponseProcessId.current
+    val processChatId = LocalResponseProcessChatId.current
+    val processEnd = completedProcessEnd(nodes, collapseCompletedProcess && processId != null)
+    val processExpanded = processId != null && ResponseProcessExpansionState.isExpanded(processChatId, processId)
+    val displayedItems = groupedItems.filter { item ->
+        val end = when (item) {
+            is MarkdownGroupedItem.Single -> item.index
+            is MarkdownGroupedItem.Group -> item.endIndexInclusive
+        }
+        responseProcessItemVisible(end, processEnd, processExpanded)
+    }
     nodeGrouper.RenderScope(nodes) {
     Column(modifier = modifier) {
-        groupedItems.forEach { item ->
+        if (processEnd >= 0 && processId != null) {
+            ResponseActivityHeader(
+                durationMs = responseDurationMs,
+                expanded = processExpanded,
+                textColor = textColor,
+                onClick = { ResponseProcessExpansionState.toggle(processChatId, processId) },
+            )
+        }
+        displayedItems.forEach { item ->
             when (item) {
                 is MarkdownGroupedItem.Single -> {
                     val index = item.index

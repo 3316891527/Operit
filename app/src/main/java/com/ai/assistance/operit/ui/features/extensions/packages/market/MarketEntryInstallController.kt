@@ -60,7 +60,8 @@ class MarketEntryInstallController(
             when (entry.type.lowercase()) {
                 "skill" -> installSkillEntry(entry, onProgress)
                 "mcp" -> installMcpEntry(entry, onProgress)
-                "script", "package" -> installArtifactEntry(entry, onProgress, heldUpdateNames + localNames)
+                "script", "package" -> installArtifactEntry(entry, onProgress, heldUpdateNames + localNames,
+                    showSuccessToast = heldUpdateNames.isEmpty())
                 else -> throw IllegalArgumentException("Unsupported market entry type: ${entry.type}")
             }
         } finally {
@@ -210,6 +211,7 @@ class MarketEntryInstallController(
         entry: MarketV2Entry,
         onProgress: MarketInstallProgressReporter,
         heldUpdateNames: Set<String>,
+        showSuccessToast: Boolean,
     ) {
         onProgress(MarketInstallStage.FETCHING_METADATA, null)
         val project = marketStatsApiService.artifactProjectFromEntry(entry)
@@ -237,7 +239,10 @@ class MarketEntryInstallController(
         } finally {
             if (!alreadyHeld) withContext(NonCancellable + Dispatchers.IO) { packageManager.completePackageUpdate(updateNames) }
         }
-        OKToast.success(context, context.getString(R.string.external_package_imported), OKToast.LENGTH_SHORT).show()
+        // Installed-page updates report success after their outer runtime reload, without an earlier import toast.
+        if (showSuccessToast) {
+            OKToast.success(context, context.getString(R.string.external_package_imported), OKToast.LENGTH_SHORT).show()
+        }
     }
 
     private suspend fun deleteInstalledMarkerRoot(entry: MarketV2Entry) {

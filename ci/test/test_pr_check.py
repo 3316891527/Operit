@@ -128,6 +128,53 @@ class ScopeClassificationTest(unittest.TestCase):
         self.assertTrue(plan.android_instrumentation)
 
 
+class FullAndroidRequirementTest(unittest.TestCase):
+    def test_explicit_request_requires_full_android_for_every_scope(self) -> None:
+        for paths in (
+            [],
+            ["README.md"],
+            ["ci/script/pr_check.py"],
+            ["app/src/main/java/com/example/Current.kt"],
+            ["app/src/main/res/values-ro/strings.xml"],
+        ):
+            with self.subTest(paths=paths):
+                plan = classify_paths(paths, full_android=True)
+                self.assertTrue(plan.android_full)
+                self.assertFalse(plan.android_jvm)
+                self.assertFalse(plan.android_resources)
+                self.assertEqual(plan.output_values()["android_full"], "true")
+
+    def test_cli_outputs_required_full_lane_for_docs_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            git(repository, "init", "-b", "main")
+            git(repository, "config", "user.name", "CI Test")
+            git(repository, "config", "user.email", "ci@example.com")
+            (repository / "README.md").write_text("base\n", encoding="utf-8")
+            git(repository, "add", "README.md")
+            git(repository, "commit", "-m", "base")
+            base_sha = git(repository, "rev-parse", "HEAD")
+            git(repository, "switch", "-c", "feature")
+            (repository / "README.md").write_text("updated docs\n", encoding="utf-8")
+            git(repository, "commit", "-am", "docs")
+            head_sha = git(repository, "rev-parse", "HEAD")
+            git(repository, "switch", "main")
+            git(repository, "merge", "--no-ff", "feature", "-m", "candidate")
+            candidate_sha = git(repository, "rev-parse", "HEAD")
+            output = repository / "outputs.txt"
+            subprocess.run(
+                [sys.executable, str(REPO_ROOT / "ci/script/pr_check.py"), "plan",
+                 "--candidate", candidate_sha, "--expected-base", base_sha,
+                 "--expected-head", head_sha, "--full-android", "--github-output", str(output)],
+                cwd=repository, check=True, capture_output=True, text=True,
+            )
+            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+            self.assertEqual(values["android_full"], "true")
+            self.assertEqual(values["base_sha"], base_sha)
+            self.assertEqual(values["head_sha"], head_sha)
+            self.assertEqual(values["candidate_sha"], candidate_sha)
+
+
 class CandidateContractTest(unittest.TestCase):
     def test_stale_branch_uses_candidate_first_parent_diff(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -172,6 +219,62 @@ class CandidateContractTest(unittest.TestCase):
                 os.chdir(previous_directory)
 
             self.assertEqual(paths, ["app/src/main/res/values-ro/strings.xml"])
+
+    def test_historical_event_base_keeps_the_candidate_diff_frozen(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            git(repository, "init", "-b", "main")
+            git(repository, "config", "user.name", "CI Test")
+            git(repository, "config", "user.email", "ci@example.com")
+            (repository / "README.md").write_text("base\n", encoding="utf-8")
+            git(repository, "add", "README.md")
+            git(repository, "commit", "-m", "event base")
+            event_base_sha = git(repository, "rev-parse", "HEAD")
+
+            git(repository, "switch", "-c", "feature")
+            translation = repository / "app/src/main/res/values-ro/strings.xml"
+            translation.parent.mkdir(parents=True)
+            translation.write_text("<resources/>\n", encoding="utf-8")
+            git(repository, "add", ".")
+            git(repository, "commit", "-m", "translation")
+            head_sha = git(repository, "rev-parse", "HEAD")
+
+            git(repository, "switch", "main")
+            native = repository / "app/src/main/cpp/base.cpp"
+            native.parent.mkdir(parents=True)
+            native.write_text("// target branch update\n", encoding="utf-8")
+            git(repository, "add", ".")
+            git(repository, "commit", "-m", "advance target before candidate")
+            base_sha = git(repository, "rev-parse", "HEAD")
+            git(repository, "switch", "-c", "candidate")
+            git(repository, "merge", "--no-ff", "feature", "-m", "candidate")
+            candidate_sha = git(repository, "rev-parse", "HEAD")
+
+            git(repository, "switch", "main")
+            (repository / "app/build.gradle.kts").write_text("// later update\n", encoding="utf-8")
+            git(repository, "add", ".")
+            git(repository, "commit", "-m", "advance target after candidate")
+            later_base_sha = git(repository, "rev-parse", "HEAD")
+
+            previous_directory = Path.cwd()
+            try:
+                os.chdir(repository)
+                context = candidate_context(candidate_sha, event_base_sha, head_sha)
+                paths = changed_paths(context.base_sha, context.candidate_sha)
+                with self.assertRaisesRegex(ValueError, "first parent"):
+                    candidate_context(candidate_sha, later_base_sha, head_sha)
+            finally:
+                os.chdir(previous_directory)
+
+            self.assertEqual(context.base_sha, base_sha)
+            self.assertEqual(context.event_base_sha, event_base_sha)
+            self.assertEqual(context.head_sha, head_sha)
+            self.assertEqual(context.candidate_sha, candidate_sha)
+            self.assertEqual(paths, ["app/src/main/res/values-ro/strings.xml"])
+            plan = classify_paths(paths)
+            self.assertTrue(plan.android_resources)
+            self.assertFalse(plan.android_full)
+            self.assertFalse(plan.android_jvm)
 
     def test_non_merge_candidate_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

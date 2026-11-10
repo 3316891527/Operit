@@ -234,6 +234,7 @@ private fun SettingsSection(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                                 text = title,
+                                themeTarget = "settings.title",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = sectionTitleColor
@@ -289,6 +290,7 @@ private fun CompactSettingsItem(
                 Column(modifier = Modifier.weight(1f)) {
                         Text(
                                 text = title,
+                                themeTarget = "settings.title",
                                 style = themeScriptTextStyle("listItem", MaterialTheme.typography.bodyMedium),
                                 fontWeight = FontWeight.Medium,
                                 color = themeScriptContentColor("listItem", MaterialTheme.colorScheme.onSurface),
@@ -297,6 +299,7 @@ private fun CompactSettingsItem(
                         , textStroke = themeTextStroke("listItem"))
                         Text(
                                 text = subtitle,
+                                themeTarget = "settings.description",
                                 style = themeScriptTextStyle("listItem", MaterialTheme.typography.bodySmall),
                                 color = themeScriptContentColor("listItem", MaterialTheme.colorScheme.onSurfaceVariant),
                                 maxLines = 1,

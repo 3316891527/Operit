@@ -10,9 +10,7 @@ import com.ai.assistance.operit.util.stream.SharedStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.StreamCollector
 import com.ai.assistance.operit.util.stream.TextStreamEvent
-import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import com.ai.assistance.operit.util.stream.collectWithRevisionRelay
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
@@ -124,26 +122,12 @@ class RateLimitedAIService(
                         onUsageFinalized?.invoke(attempt)
                     },
                 )
-                val carrier = response as? TextStreamEventCarrier
-                if (carrier == null) {
-                    response.collect { chunk ->
-                        throwIfCancelled()
-                        emit(chunk)
-                    }
-                } else {
-                    coroutineScope {
-                        val eventJob = launch {
-                            carrier.eventChannel.collect { event -> eventChannel.emit(event) }
-                        }
-                        try {
-                            response.collect { chunk ->
-                                throwIfCancelled()
-                                emit(chunk)
-                            }
-                        } finally {
-                            eventJob.cancel()
-                        }
-                    }
+                response.collectWithRevisionRelay(
+                    eventChannel = eventChannel,
+                    roundStartLength = 0,
+                ) { chunk ->
+                    throwIfCancelled()
+                    emit(chunk)
                 }
                 throwIfCancelled()
             } finally {

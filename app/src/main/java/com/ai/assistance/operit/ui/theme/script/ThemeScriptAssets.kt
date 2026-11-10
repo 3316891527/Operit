@@ -7,6 +7,8 @@ import android.os.Build
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontFamily
+import com.ai.assistance.operit.data.theme.script.ThemeAssetFormats
+import com.ai.assistance.operit.data.theme.script.ThemeResourceLimit
 import com.ai.assistance.operit.data.theme.script.ThemeScriptAppearance
 import com.ai.assistance.operit.data.theme.script.ThemeScriptContract
 import com.ai.assistance.operit.data.theme.script.forMode
@@ -37,7 +39,7 @@ internal object ThemeScriptAssets {
         var bitmapPixels = 0L
         val decoded = bundle.assets.mapValues { (path, bytes) ->
             val former = cached[path]
-            val image = if (former != null && former.first.contentEquals(bytes)) former.second else when (path.substringAfterLast('.').lowercase()) {
+            val image = if (former != null && former.first.contentEquals(bytes)) former.second else when (ThemeAssetFormats.extension(path)) {
                 "ttf", "otf" -> {
                     val directory = requireNotNull(fontDirectory) { "Theme font cache directory is required" }
                     require(directory.isDirectory || directory.mkdirs()) { "Cannot create theme font cache" }
@@ -50,14 +52,17 @@ internal object ThemeScriptAssets {
                 else -> {
                     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-                    require(options.outWidth > 0 && options.outHeight > 0 && options.outWidth.toLong() * options.outHeight <= ThemeScriptContract.MAX_BITMAP_PIXELS) { "Theme bitmap exceeds the decoded pixel budget" }
+                    require(options.outWidth > 0 && options.outHeight > 0) { "Invalid theme bitmap: $path" }
+                    // Check the cumulative budget before allocating the next decoded bitmap.
+                    ThemeResourceLimit.BitmapPixels.check(options.outWidth.toLong() * options.outHeight, used = bitmapPixels, resource = path)
                     val bitmap = requireNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size)) { "Cannot decode theme bitmap" }
                     ThemeScriptImage.Bitmap(bitmap.asImageBitmap())
                 }
             }
             if (image is ThemeScriptImage.Bitmap) {
-                bitmapPixels += image.image.width.toLong() * image.image.height
-                require(bitmapPixels <= ThemeScriptContract.MAX_BITMAP_PIXELS) { "Theme drawing assets exceed the decoded pixel budget" }
+                val incoming = image.image.width.toLong() * image.image.height
+                ThemeResourceLimit.BitmapPixels.check(incoming, used = bitmapPixels, resource = path)
+                bitmapPixels += incoming
             }
             image
         }
@@ -67,7 +72,7 @@ internal object ThemeScriptAssets {
     fun validateAppearance(appearance: ThemeScriptAppearance, images: Map<String, ThemeScriptImage>) {
         val modes = listOf(appearance.copy(modes = emptyMap())) + appearance.modes.keys.map(appearance::forMode)
         modes.forEach { current ->
-            val texts = listOf(current.typography) + current.surfaces.values.map { it.textStyle }
+            val texts = listOf(current.typography) + current.textStyles.values + current.surfaces.values.map { it.textStyle }
             texts.mapNotNull { it.family }.filter { it.startsWith("asset:") }.forEach { family ->
                 require(images[family.removePrefix("asset:")] is ThemeScriptImage.Font) { "Theme text requires a font resource" }
             }
