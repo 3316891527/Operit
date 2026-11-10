@@ -131,6 +131,8 @@ fun PendingMessageQueuePanel(
                                             if (item.isSteering) R.string.chat_steer_pending else R.string.chat_steer_turn
                                         ),
                                         style = MaterialTheme.typography.labelSmall,
+                                        // Match adjacent actions when the queue card uses a custom or translucent fill.
+                                        color = actionIconTint,
                                         modifier = Modifier.clickable(enabled = !item.isSteering) {
                                             onSteerMessage(item.id)
                                         }.padding(6.dp),
