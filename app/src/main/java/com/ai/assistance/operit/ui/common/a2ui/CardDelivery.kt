@@ -70,6 +70,9 @@ internal object CardDelivery {
         val index = SHORT_NAME.matchEntire(ref)?.groupValues?.get(1)?.toIntOrNull() ?: return null
         return cards.keys.elementAtOrNull(index - 1)
     }
+    // Return the registered surface-bound document without publishing live state.
+    @Synchronized fun document(run: String, reference: String): String? =
+        canonical(run, reference)?.let { runs[run]?.get(it)?.document }
     @Synchronized fun resolve(run: String, reference: String): String? {
         val id = canonical(run, reference) ?: return null
         val document = runs[run]?.get(id)?.document ?: return null

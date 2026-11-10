@@ -1440,6 +1440,7 @@
     <string name="markdown_source">Markdown Codul sursă</string>
     <string name="xml_source">XML Codul sursă</string>
     <string name="copy_plain_text">Copiere text simplu</string>
+    <string name="copy_all">Copiază tot</string>
     <string name="copy_markdown_source">Copiere Markdown Codul sursă</string>
     <string name="copy_xml_source">Copiere XML Codul sursă</string>
     <string name="chat_hidden_user_message_placeholder">Mesaj automat către utilizator (conținutul a fost ascuns)</string>

@@ -10,6 +10,7 @@ import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.ui.common.a2ui.CardAuthoringCatalog
+import com.ai.assistance.operit.ui.common.a2ui.CardDelivery
 import com.ai.assistance.operit.ui.common.a2ui.CardIcons
 import com.ai.assistance.operit.util.android.LocaleUtils
 import java.io.File
@@ -42,6 +43,7 @@ internal object A2uiTools {
         filesDirectory: File,
         runtimeContext: ToolExecutionManager.ToolRuntimeContext?,
         allowWait: Boolean = false,
+        requireStreamingOutput: Boolean = false,
     ): ToolResult {
         val report = try {
             val definition = requireNotNull(definitions[tool.name]) { "Unknown A2UI operation." }
@@ -62,9 +64,11 @@ internal object A2uiTools {
                     val timeout = integer("wait_timeout_seconds", 0)
                     require(timeout in 0..600) { "Wait timeout must be between 0 and 600 seconds." }
                     require(timeout == 0 || allowWait) { "Waiting cards require streaming tool execution." }
+                    require(!requireStreamingOutput || runtimeContext?.publishA2ui != null) { "A2UI card output requires an active streaming chat." }
                     A2uiToolRuntime.prepare(filesDirectory, runtimeContext, required("source"), live, timeout)
                 }
                 "a2ui_revise" -> {
+                    require(!requireStreamingOutput || runtimeContext?.publishA2ui != null) { "A2UI card output requires an active streaming chat." }
                     val remove = values["remove"]?.let { json ->
                         require(json.length <= 16_384)
                         Json.parseToJsonElement(json).jsonArray.map {
@@ -104,12 +108,29 @@ internal object A2uiTools {
         filesDirectory: File,
         runtimeContext: ToolExecutionManager.ToolRuntimeContext?,
     ): ToolResult {
-        val prepared = execute(tool, filesDirectory, runtimeContext, allowWait = true)
-        if (!prepared.success || tool.name != "a2ui_prepare") return prepared
+        val prepared = execute(
+            tool, filesDirectory, runtimeContext, allowWait = true, requireStreamingOutput = true,
+        )
+        if (!prepared.success || tool.name !in setOf("a2ui_prepare", "a2ui_revise")) return prepared
         val report = Json.parseToJsonElement((prepared.result as StringResultData).value).jsonObject
-        if ((report["wait_timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 0) == 0) return prepared
-        val completed = A2uiToolRuntime.awaitSubmission(runtimeContext, report.getValue("reference").jsonPrimitive.content)
-        return result(tool.name, JsonObject(report + completed))
+        val reference = report.getValue("reference").jsonPrimitive.content
+        if (tool.name == "a2ui_prepare" && (report["wait_timeout_seconds"]?.jsonPrimitive?.intOrNull ?: 0) > 0) {
+            val completed = A2uiToolRuntime.awaitSubmission(runtimeContext, reference)
+            return result(tool.name, JsonObject(report + completed))
+        }
+        val run = runtimeContext?.a2uiRunId
+            ?: return result(tool.name, A2uiToolRuntime.failure("inactive_turn", "Generate or update cards inside an active chat turn."))
+        val document = CardDelivery.resolve(run, reference)
+            ?: return result(tool.name, A2uiToolRuntime.failure("card_publish_failed", "The compiled card could not be prepared for display."))
+        return try {
+            // Emit the renderer fence before returning the tool result to the model.
+            requireNotNull(runtimeContext?.publishA2ui).invoke(document)
+            result(tool.name, JsonObject(report + ("compiled_json" to JsonPrimitive(document))))
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            result(tool.name, A2uiToolRuntime.failure("card_publish_failed", error.message?.take(240) ?: "The compiled card could not be displayed."))
+        }
     }
 
     private fun result(toolName: String, report: JsonObject): ToolResult {

@@ -193,8 +193,8 @@ fun BottomControlBar(
         ) {
             val pillColor = when {
                 isCancelRegion && isHoldToSpeakMode -> MaterialTheme.colorScheme.error
-                isHoldToSpeakMode && isPressed -> Color(0xFFE0E0E0) // 按下时使用实心浅灰色
-                else -> Color.White
+                isHoldToSpeakMode && isPressed -> MaterialTheme.colorScheme.surfaceVariant
+                else -> MaterialTheme.colorScheme.surfaceContainerHigh
             }
 
             val canSend = userMessage.isNotBlank() || attachScreenContent || attachNotifications || attachLocation || hasOcrSelection
@@ -328,14 +328,14 @@ fun BottomControlBar(
                                 if (!isHoldToSpeakMode) {
                                     Text(
                                         text = stringResource(R.string.floating_input_or_hold_voice),
-                                        color = Color.Gray,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
                                     )
                                 }
                             },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 focusedBorderColor = Color.Transparent,
                                 unfocusedBorderColor = Color.Transparent,
                                 cursorColor = MaterialTheme.colorScheme.primary
@@ -345,7 +345,7 @@ fun BottomControlBar(
                                     Icon(
                                         imageVector = Icons.Default.Phone,
                                         contentDescription = stringResource(R.string.floating_voice_call),
-                                        tint = if (isWaveActive) MaterialTheme.colorScheme.primary else Color.Gray,
+                                            tint = if (isWaveActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -499,7 +499,7 @@ fun BottomControlBar(
                                             val barHeight = (value.coerceIn(0f, 1f)) * maxHeight
                                             val top = centerY - barHeight / 2f
                                             drawRect(
-                                                color = Color.Black,
+                                                color = MaterialTheme.colorScheme.primary,
                                                 topLeft = Offset(xRight - barWidth, top),
                                                 size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
                                             )
@@ -509,7 +509,7 @@ fun BottomControlBar(
                             } else {
                                 Text(
                                     text = if (isCancelRegion) stringResource(R.string.floating_release_to_cancel) else stringResource(R.string.floating_release_to_finish),
-                                    color = if (isCancelRegion) Color.White else Color.Black,
+                                    color = if (isCancelRegion) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurface,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }

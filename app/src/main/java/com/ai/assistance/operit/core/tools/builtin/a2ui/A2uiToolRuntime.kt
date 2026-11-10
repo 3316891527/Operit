@@ -50,14 +50,16 @@ internal object A2uiToolRuntime {
                 waitChat = if (waitTimeoutSeconds > 0) chat else null,
                 waitTimeoutMillis = waitTimeoutSeconds * 1000L,
             )
+            val compiled = requireNotNull(CardDelivery.document(run, reference))
             buildJsonObject {
                 put("valid", true)
                 put("reference", reference)
+                put("compiled_json", compiled)
                 if (live) put("version", 0)
                 if (waitTimeoutSeconds > 0) put("wait_timeout_seconds", waitTimeoutSeconds)
                 report["repaired"]?.let { put("repaired", it) }
                 report["repair"]?.let { put("repair", it) }
-                put("message", "Card compiled and queued. Operit will render it automatically when this turn completes. To choose its position, optionally output this exact reference fence; never output a historical summary or rewrite the JSON:\n```a2ui-ref\n$reference\n```")
+                put("message", "Card compiled. The compiled_json field contains the complete A2UI document. In streaming execution Operit displays it during this tool call; do not output a reference fence or rewrite the document.")
             }
         } catch (error: IllegalArgumentException) {
             failure("invalid_card", error.message?.take(240) ?: "Invalid card data.")
@@ -78,6 +80,7 @@ internal object A2uiToolRuntime {
             buildJsonObject {
                 put("valid", true)
                 put("reference", reference)
+                put("compiled_json", document)
                 put("status", when (outcome.status) {
                     CardSubmissionStore.Status.Submitted -> "submitted"
                     CardSubmissionStore.Status.TimedOut -> "timed_out"
@@ -111,12 +114,14 @@ internal object A2uiToolRuntime {
                 ?: return failure("unknown_reference", "Reference is not from this active turn.")
             val prepared = CardExpress.prepareRevision(source, changes, remove)
             val updated = CardDelivery.register(run, prepared.document, prepared.source, supersedesReference = reference)
+            val compiled = requireNotNull(CardDelivery.document(run, updated))
             buildJsonObject {
                 put("valid", true)
                 put("reference", updated)
                 put("baseReference", reference)
+                put("compiled_json", compiled)
                 prepared.repair?.let { put("repaired", true); put("repair", it) }
-                put("message", "Revision compiled and queued. Previously displayed cards are preserved; unplaced older revisions are replaced. Operit will render the new card automatically when this turn completes. Optional position reference:\n```a2ui-ref\n$updated\n```")
+                put("message", "Revision compiled. The compiled_json field contains the complete A2UI document. In streaming execution Operit displays it during this tool call. Previously displayed cards are preserved; the unplaced base revision is superseded.")
             }
         } catch (error: CardExpress.Failure) {
             buildJsonObject {

@@ -60,6 +60,7 @@ class A2uiAwaitToolsTest {
             assertEquals(answer, report["data"])
             assertEquals("card-1", report.getValue("reference").jsonPrimitive.content)
             assertTrue(published.isNotEmpty())
+            assertEquals(published, report.getValue("compiled_json").jsonPrimitive.content)
             assertEquals("", CardDelivery.unplaced(context.a2uiRunId!!, "```a2ui\n$published\n```"))
         }
     }
@@ -157,14 +158,38 @@ class A2uiAwaitToolsTest {
         }
     }
 
-    @Test fun defaultDeliveryDoesNotPublishOrWaitDuringTheToolCall() = runBlocking {
+    @Test fun defaultDeliveryPublishesCompiledJsonBeforeTheToolReturns() = runBlocking {
         withRun { context ->
-            var publications = 0
-            val runtime = context.copy(publishA2ui = { publications++ })
+            val publications = mutableListOf<String>()
+            val runtime = context.copy(publishA2ui = { document -> publications.add(document); Unit })
             val result = A2uiTools.executeStreaming(tool("0"), temporary.root, runtime)
             assertTrue(result.success)
-            assertEquals(0, publications)
-            assertFalse(payload(result).containsKey("status"))
+            val report = payload(result)
+            assertEquals(1, publications.size)
+            assertEquals(publications.single(), report.getValue("compiled_json").jsonPrimitive.content)
+            assertTrue(A2uiProtocol.parse(publications.single(), true).complete)
+            assertEquals("", CardDelivery.unplaced(context.a2uiRunId!!, "```a2ui\n${publications.single()}\n```"))
+            assertFalse(report.containsKey("status"))
+        }
+    }
+
+    @Test fun revisionsPublishTheirCompiledJsonBeforeReturning() = runBlocking {
+        withRun { context ->
+            val initial = A2uiTools.execute(tool("0"), temporary.root, context)
+            val baseReference = payload(initial).getValue("reference").jsonPrimitive.content
+            val published = mutableListOf<String>()
+            val runtime = context.copy(publishA2ui = { document -> published.add(document); Unit })
+            val revision = AITool(
+                "a2ui_revise",
+                listOf(ToolParameter("reference", baseReference), ToolParameter("changes", "root=Text(text=\"Revised\")")),
+            )
+            val result = A2uiTools.executeStreaming(revision, temporary.root, runtime)
+            assertTrue(result.success)
+            val report = payload(result)
+            assertEquals(1, published.size)
+            assertEquals(published.single(), report.getValue("compiled_json").jsonPrimitive.content)
+            assertTrue(published.single().contains("Revised"))
+            assertEquals("", CardDelivery.unplaced(context.a2uiRunId!!, "```a2ui\n${published.single()}\n```"))
         }
     }
 }

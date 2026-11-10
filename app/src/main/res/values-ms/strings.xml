@@ -1106,6 +1106,7 @@
     <string name="markdown_source">Sumber Markdown</string>
     <string name="xml_source">Sumber XML</string>
     <string name="copy_plain_text">Salin teks biasa</string>
+    <string name="copy_all">Salin semua</string>
     <string name="copy_markdown_source">Salin sumber Markdown</string>
     <string name="copy_xml_source">Salin sumber XML</string>
     <string name="info">Maklumat</string>

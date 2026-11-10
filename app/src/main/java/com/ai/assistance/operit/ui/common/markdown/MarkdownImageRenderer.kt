@@ -200,7 +200,7 @@ fun MarkdownImageRenderer(
                     error = {
                         Text(
                                 text = stringResource(R.string.image_load_failed),
-                                color = Color.Red.copy(alpha = 0.7f), // 更淡的文字颜色
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.bodySmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -329,7 +329,7 @@ private fun FullScreenImageDialog(imageUrl: String, imageAlt: String, onDismiss:
                             ) {
                                 Text(
                                         stringResource(R.string.common_load_failed),
-                                        color = Color.Red,
+                                        color = MaterialTheme.colorScheme.error,
                                         style = MaterialTheme.typography.titleMedium
                                 )
                             }

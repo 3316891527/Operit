@@ -1621,6 +1621,7 @@
     <string name="markdown_source">Markdown 源码</string>
     <string name="xml_source">XML 源码</string>
     <string name="copy_plain_text">复制纯文本</string>
+    <string name="copy_all">全部复制</string>
     <string name="copy_markdown_source">复制 Markdown 源码</string>
     <string name="copy_xml_source">复制 XML 源码</string>
     <string name="chat_hidden_user_message_placeholder">自动触发用户消息（内容已隐藏）</string>

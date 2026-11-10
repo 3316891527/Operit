@@ -232,14 +232,14 @@ fun UpdateCard(
                     if (updateInfo.isLatest) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF4CAF50),
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
                             modifier = Modifier.padding(0.dp)
                         ) {
                             Text(
                                 text = stringResource(R.string.update_latest),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 fontWeight = FontWeight.Bold
                             )
                         }

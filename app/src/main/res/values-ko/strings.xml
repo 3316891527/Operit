@@ -1269,6 +1269,7 @@
     <string name="markdown_source">Markdown 원문</string>
     <string name="xml_source">XML 원문</string>
     <string name="copy_plain_text">일반 텍스트 복사</string>
+    <string name="copy_all">모두 복사</string>
     <string name="copy_markdown_source">Markdown 원문 복사</string>
     <string name="copy_xml_source">XML 원문 복사</string>
     <string name="chat_hidden_user_message_placeholder">자동으로 트리거된 사용자 메시지(콘텐츠 숨김)</string>

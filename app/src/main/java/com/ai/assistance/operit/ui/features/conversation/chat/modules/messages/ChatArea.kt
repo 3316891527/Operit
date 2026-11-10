@@ -418,7 +418,7 @@ fun ChatArea(
                                 }
                                 .padding(vertical = 16.dp),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -504,7 +504,7 @@ fun ChatArea(
                                 }
                                 .padding(vertical = 16.dp),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1316,11 +1316,7 @@ private fun MessageCopyPreviewBottomSheet(
         MessageCopyMode.MARKDOWN_SOURCE -> content.markdownSource
         MessageCopyMode.XML_SOURCE -> content.xmlSource
     }
-    val copyButtonText = when (copyMode) {
-        MessageCopyMode.PLAIN_TEXT -> stringResource(R.string.copy_plain_text)
-        MessageCopyMode.MARKDOWN_SOURCE -> stringResource(R.string.copy_markdown_source)
-        MessageCopyMode.XML_SOURCE -> stringResource(R.string.copy_xml_source)
-    }
+    val copyButtonText = stringResource(R.string.copy_all)
 
     // 原生面板持有填色和轮廓，避免外层裁剪截断位移后的正文与操作按钮。
     ModalBottomSheet(

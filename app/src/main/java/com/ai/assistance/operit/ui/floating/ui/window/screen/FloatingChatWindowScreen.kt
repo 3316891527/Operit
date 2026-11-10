@@ -803,7 +803,7 @@ private fun ChatMessagesView(
                                 }
                                 .padding(vertical = 16.dp),
                             style = loadMoreTextStyle,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -825,7 +825,7 @@ private fun ChatMessagesView(
                                 }
                                 .padding(vertical = 16.dp),
                             style = loadMoreTextStyle,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
                         Spacer(modifier = Modifier.height(4.dp))

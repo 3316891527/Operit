@@ -1195,6 +1195,7 @@
     <string name="markdown_source">Código-fonte Markdown</string>
     <string name="xml_source">Código-fonte XML</string>
     <string name="copy_plain_text">Copiar texto simples</string>
+    <string name="copy_all">Copiar tudo</string>
     <string name="copy_markdown_source">Copiar código-fonte Markdown</string>
     <string name="copy_xml_source">Copiar código-fonte XML</string>
     <string name="info">Informação</string>

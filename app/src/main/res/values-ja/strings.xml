@@ -4471,6 +4471,7 @@
     <string name="markdown_source">Markdown ソース</string>
     <string name="xml_source">XML ソース</string>
     <string name="copy_plain_text">プレーンテキストをコピー</string>
+    <string name="copy_all">すべてコピー</string>
     <string name="copy_markdown_source">Markdown ソースをコピー</string>
     <string name="copy_xml_source">XML ソースをコピー</string>
     <string name="chat_hidden_user_message_placeholder">自動送信されたユーザーメッセージ（内容は非表示）</string>
