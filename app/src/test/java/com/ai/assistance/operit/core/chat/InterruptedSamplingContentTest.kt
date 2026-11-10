@@ -1,12 +1,28 @@
 package com.ai.assistance.operit.core.chat
 
 import com.ai.assistance.operit.services.core.finalizeInterruptedStreamingContent
-import com.ai.assistance.operit.util.stream.StreamLogger
+import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 class InterruptedSamplingContentTest {
+    private var previousSystemLogEnabled = true
+
+    @Before
+    fun disableAndroidSystemLogForJvmTests() {
+        // Stream parsing logs through AppLogger; the JVM Android stub throws before assertions run.
+        previousSystemLogEnabled = AppLogger.enableSystemLog
+        AppLogger.enableSystemLog = false
+    }
+
+    @After
+    fun restoreAndroidSystemLog() {
+        AppLogger.enableSystemLog = previousSystemLogEnabled
+    }
+
     @Test fun protectsTildeFencesAndLongerClosingFences() = runBlocking {
         val example = "~~~~xml\n<tool name=\"example\"/>\n~~~~~\n"
         assertEquals(example, retainBeforeUnexecutedTool(example + "<tool name=\"real\">"))
@@ -26,21 +42,16 @@ class InterruptedSamplingContentTest {
 
     @Test
     fun interruptedToolArgumentsAreNeverRepairedIntoHistory() = runBlocking {
-        StreamLogger.setEnabled(false)
-        try {
-            for (tool in listOf(
-                "<tool name=\"write_file\"><param name=\"path\">unfinished",
-                "<tool_abcd name=\"write_file\"><param name=\"path\">x</param></tool_abcd>",
-            )) {
-                assertEquals("Answer\n", retainBeforeUnexecutedTool("Answer\n$tool"))
-            }
-            val examples = "```xml\n<tool name=\"example\"/>\n```\n`<tool name=\"inline\"/>`\n"
-            assertEquals(examples, retainBeforeUnexecutedTool(examples))
-            val reasoning = "<think>Example <tool name=\"example\"/></think>\n"
-            assertEquals(reasoning, retainBeforeUnexecutedTool(reasoning))
-        } finally {
-            StreamLogger.setEnabled(true)
+        for (tool in listOf(
+            "<tool name=\"write_file\"><param name=\"path\">unfinished",
+            "<tool_abcd name=\"write_file\"><param name=\"path\">x</param></tool_abcd>",
+        )) {
+            assertEquals("Answer\n", retainBeforeUnexecutedTool("Answer\n$tool"))
         }
+        val examples = "```xml\n<tool name=\"example\"/>\n```\n`<tool name=\"inline\"/>`\n"
+        assertEquals(examples, retainBeforeUnexecutedTool(examples))
+        val reasoning = "<think>Example <tool name=\"example\"/></think>\n"
+        assertEquals(reasoning, retainBeforeUnexecutedTool(reasoning))
     }
 
     @Test

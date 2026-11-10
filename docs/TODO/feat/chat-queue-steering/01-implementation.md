@@ -42,6 +42,14 @@
 
 用户提供的 `799cf450` 构建截图在 `:app:compileDebugKotlin` 阶段报告 7 条诊断，尚未进入 JVM 测试执行。新增代码引用了本仓库不存在的 `showToast` 和 `userMessageDraftsByChatId`。后台聊天的文字草稿现在通过现有 `ChatDraftRepository.loadDraft()` 读取，保留当前聊天的内存草稿；5 处操作提示使用现有 `OKToast.info(...).show()`。草稿分支恢复为 `TextFieldValue` 类型，不新增重复草稿映射或提示接口。此前 63 项定向 JVM 回归未覆盖这三处完整 Android 文件的类型检查；本次修正已核对真实方法声明、清除错误引用，并通过 3 个变更 Kotlin 文件的 PSI 语法检查。完整 Android 编译仍未执行；Compose 依赖获取因网络连接重置未完成，不将语法检查视为类型编译通过。仓库检查结果见 PR 更新。
 
+## JVM 日志隔离修正
+
+`1edc0351` 的 PR Check 已进入 JVM 测试执行：3304 项中 3 项失败、15 项跳过，失败都来自 `InterruptedSamplingContentTest` 调用 Android 日志桩。Fast checks 通过，Candidate checks 的失败是同一组 JVM 测试结果的汇总，没有额外的源码检查错误。
+
+该测试类现在与相邻流解析测试使用相同的隔离方式：每项测试前保存 `AppLogger.enableSystemLog` 并关闭系统日志，结束后恢复原值。原先单项测试直接修改 StreamLogger 的开关已移除，5 项测试及全部断言保留，应用日志实现不变。
+
+本地使用真实 AppLogger、DailyLogWritePolicy、异常格式化器、流框架和 Android SDK 的抛异常日志桩，先复现原测试的 3 项失败，再验证修复后的 5 项测试及相邻 3 项解析测试，共 8 项通过。测试宿主只为未使用的 Application、ContextCompat 和文件入口提供编译依赖，使用测试资源常量，SmartString 省略 Compose 标记，思考收尾函数从生产源码逐字提取；不替换 AppLogger。完整 3304 项应用测试与 APK 构建仍由远端工作流验证，启动受理不代表通过。
+
 ## 设备验收步骤
 
 1. 在 Agent 与经典输入框生成回复时连续排队消息，分别带附件和引用，确认归属和顺序发送。
