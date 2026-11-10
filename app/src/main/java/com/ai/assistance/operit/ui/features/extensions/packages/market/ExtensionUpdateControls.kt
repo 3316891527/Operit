@@ -106,17 +106,34 @@ fun ExtensionUpdateAction(packageName: String, checked: Boolean, enabled: Boolea
     val update = updates[packageName]
     val busy = packageName in updating
     Column(horizontalAlignment = Alignment.End) {
-        if (update != null) {
-            FilledTonalButton(enabled = enabled && !busy && !checking, onClick = {
-                scope.launch {
-                    try { ExtensionUpdates.install(context, manager, packageName, update) }
-                    catch (cancelled: CancellationException) { throw cancelled }
+        // Keep the shared busy state visible through installation and runtime reload on both entry points.
+        if (update != null || busy) {
+            FilledTonalButton(enabled = enabled && update != null && !busy && !checking, onClick = {
+                if (update != null) scope.launch {
+                    try {
+                        ExtensionUpdates.install(context, manager, packageName, update)
+                        OKToast.success(context, R.string.extension_update_success).show()
+                    }
+                    catch (cancelled: CancellationException) {
+                        OKToast.info(context, R.string.extension_update_cancelled).show()
+                        throw cancelled
+                    }
                     catch (error: Exception) {
                         AppLogger.e("ExtensionUpdates", "Update failed: $packageName", error)
-                        OKToast.error(context, extensionErrorDetails(error), OKToast.LENGTH_LONG).show()
+                        OKToast.error(context,
+                            context.getString(R.string.extension_update_failed, extensionErrorDetails(error)),
+                            OKToast.LENGTH_LONG).show()
                     }
                 }
-            }) { Text(stringResource(if (busy) R.string.extension_updating else R.string.extension_update_now)) }
+            }) {
+                if (busy) {
+                    CircularProgressIndicator(Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
+                    Spacer(Modifier.width(6.dp))
+                }
+                Text(stringResource(if (busy) R.string.extension_updating else R.string.extension_update_now),
+                    color = if (busy) MaterialTheme.colorScheme.onSurfaceVariant else LocalContentColor.current)
+            }
         } else {
             ExtensionSwitch(checked = checked, enabled = enabled && !busy, onCheckedChange = {
                 if (!PackageUpdateState.contains(packageName)) onToggle(it)
