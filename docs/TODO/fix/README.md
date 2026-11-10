@@ -133,3 +133,4 @@
 
 - [世界书管理界面 IPC 生命周期](worldbook-ui-ipc-registration/index.md)
 - [清理统计列表中的已删除配置](hide-deleted-configuration-usage/index.md)
+- [Activity 重建保留页面与返回栈](retain-navigation-on-recreation/index.md)
