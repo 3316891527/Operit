@@ -1,0 +1,231 @@
+{
+  "branch": "test/integrate-13-prs-20261110",
+  "dev_base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
+  "shared_rollback_base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+  "shared_rollback_pr": 177,
+  "scope": "Thirteen latest source heads at integration time. Rollback PR #177 is the common baseline, not an additional feature under test.",
+  "sources": [
+    {
+      "number": 178,
+      "title": "fix(skill): 恢复 #170 技能 ZIP 缓存修复供重新审阅",
+      "branch": "fix/reopen-pr-170-skill-zip-cache",
+      "head": "56c2300725a41f799ec5b8edb1de64b3d0105db5",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/178"
+    },
+    {
+      "number": 179,
+      "title": "fix(ffmpeg): 恢复 #171 原生会话串行化供重新审阅",
+      "branch": "fix/reopen-pr-171-ffmpeg-sessions",
+      "head": "4d7b99e82649aa5ae434096784103313a9765360",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/179"
+    },
+    {
+      "number": 180,
+      "title": "fix(claude): 恢复 #172 工具结果排序修复供重新审阅",
+      "branch": "fix/reopen-pr-172-claude-tool-order",
+      "head": "c0375d6de81c7e3b811effa89fbfcaf5fcb03f7f",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/180"
+    },
+    {
+      "number": 181,
+      "title": "fix(http): 恢复 #173 请求整体超时修复供重新审阅",
+      "branch": "fix/reopen-pr-173-http-timeout",
+      "head": "a1db67cb030c9282208bd3310a5fcdcd627c99da",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/181"
+    },
+    {
+      "number": 182,
+      "title": "ci: 恢复 #174 PR 候选基准修复供重新审阅",
+      "branch": "ci/reopen-pr-174-candidate-base",
+      "head": "eb8f4885a3f3b986eebb193dad3fe97556bf9c9d",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/182"
+    },
+    {
+      "number": 183,
+      "title": "fix(chat): 恢复 #175 模型名称后缀移除供重新审阅",
+      "branch": "fix/reopen-pr-175-model-name-suffix",
+      "head": "c0a0e3991a340dae040b25b8dc5803493270ccc4",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/183"
+    },
+    {
+      "number": 184,
+      "title": "feat(theme): 完善原生外观、真实预览与媒体导入",
+      "branch": "feat/reopen-pr-176-theme-foundation",
+      "head": "52445499d0956d59d9ac895738d70fae7693cf96",
+      "base_branch": "fix/revert-pr-170-176",
+      "base": "70a5323ecfbcbb3eaa3f780ec89625f7d8d27579",
+      "url": "https://github.com/3316891527/Operit/pull/184"
+    },
+    {
+      "number": 185,
+      "title": "fix(worldbook): 修复管理界面冷启动时 IPC 通道未注册",
+      "branch": "fix/worldbook-ui-ipc-registration",
+      "head": "c389c49e472f39aaabe9c854eec2c26913ff6fa6",
+      "base_branch": "dev",
+      "base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
+      "url": "https://github.com/3316891527/Operit/pull/185"
+    },
+    {
+      "number": 186,
+      "title": "fix(waifu): 保留思考过程并仅在回复末条显示统计",
+      "branch": "fix/waifu-thinking-final-stats",
+      "head": "6b5709d226d71bc9fee2d1c6053ffa5f6ef2b1af",
+      "base_branch": "feat/reopen-pr-176-theme-foundation",
+      "base": "1f72a906a8eea9acfe11ffefa0948e579ee53a18",
+      "url": "https://github.com/3316891527/Operit/pull/186"
+    },
+    {
+      "number": 187,
+      "title": "fix(stats): 清理已删除配置的详情条目并保留用量",
+      "branch": "fix/hide-deleted-configuration-usage",
+      "head": "d136c363309d4a30ed76aac0afb9c2599131a36f",
+      "base_branch": "dev",
+      "base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
+      "url": "https://github.com/3316891527/Operit/pull/187"
+    },
+    {
+      "number": 188,
+      "title": "fix: 保留 Activity 重建后的页面与返回栈（同步上游 #1480）",
+      "branch": "fix/retain-navigation-on-recreation",
+      "head": "c61678fdc384d80bf76df54a631550831a654e4e",
+      "base_branch": "dev",
+      "base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
+      "url": "https://github.com/3316891527/Operit/pull/188"
+    },
+    {
+      "number": 189,
+      "title": "feat: 折叠已完成回复的思考与工具过程（适配上游 #1483）",
+      "branch": "feat/collapse-completed-response-process",
+      "head": "af2e4deaf9c6117200dbb1fd25ccd690e926bf33",
+      "base_branch": "dev",
+      "base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
+      "url": "https://github.com/3316891527/Operit/pull/189"
+    },
+    {
+      "number": 190,
+      "title": "feat: 生成中消息排队与当前轮引导（适配上游 #1481）",
+      "branch": "feat/chat-queue-steering",
+      "head": "fb7bf270aac04039f26ccb8ee52abcce6bdac1c6",
+      "base_branch": "dev",
+      "base": "c944cdd8bd1b81dd92a53b00f3680f966fe10bc8",
+      "url": "https://github.com/3316891527/Operit/pull/190"
+    }
+  ],
+  "merges": [
+    {
+      "number": 178,
+      "source": "56c2300725a41f799ec5b8edb1de64b3d0105db5",
+      "before": "4444d0478b1918da8cc0aab9c0f3e3f369fc73c6",
+      "commit": "e5620dab989313251e46b31b2eaababe9f6c0e5f",
+      "conflicts": []
+    },
+    {
+      "number": 179,
+      "source": "4d7b99e82649aa5ae434096784103313a9765360",
+      "before": "e5620dab989313251e46b31b2eaababe9f6c0e5f",
+      "commit": "7725229d8088b9489bea39f4fb3f91979485e8ed",
+      "conflicts": []
+    },
+    {
+      "number": 180,
+      "source": "c0375d6de81c7e3b811effa89fbfcaf5fcb03f7f",
+      "before": "7725229d8088b9489bea39f4fb3f91979485e8ed",
+      "commit": "2709b6557be5ff980b8a2c1c4708c555d4854404",
+      "conflicts": []
+    },
+    {
+      "number": 181,
+      "source": "a1db67cb030c9282208bd3310a5fcdcd627c99da",
+      "before": "2709b6557be5ff980b8a2c1c4708c555d4854404",
+      "commit": "ef163abf4671d5956c44afccc81114bfd33adba0",
+      "conflicts": []
+    },
+    {
+      "number": 182,
+      "source": "eb8f4885a3f3b986eebb193dad3fe97556bf9c9d",
+      "before": "ef163abf4671d5956c44afccc81114bfd33adba0",
+      "commit": "7aeaf8d04f4dcea25a36effb00b108a721a708e8",
+      "conflicts": []
+    },
+    {
+      "number": 183,
+      "source": "c0a0e3991a340dae040b25b8dc5803493270ccc4",
+      "before": "7aeaf8d04f4dcea25a36effb00b108a721a708e8",
+      "commit": "e3740d46b233653894ec5047e58df48b45feb51f",
+      "conflicts": []
+    },
+    {
+      "number": 184,
+      "source": "52445499d0956d59d9ac895738d70fae7693cf96",
+      "before": "e3740d46b233653894ec5047e58df48b45feb51f",
+      "commit": "65bdb7857aa6c47284c9673e879f0dc920a19d4e",
+      "conflicts": []
+    },
+    {
+      "number": 185,
+      "source": "c389c49e472f39aaabe9c854eec2c26913ff6fa6",
+      "before": "65bdb7857aa6c47284c9673e879f0dc920a19d4e",
+      "commit": "5b26415a8eec82b0add9904fb200ee25c923547f",
+      "conflicts": []
+    },
+    {
+      "number": 186,
+      "source": "6b5709d226d71bc9fee2d1c6053ffa5f6ef2b1af",
+      "before": "5b26415a8eec82b0add9904fb200ee25c923547f",
+      "commit": "6189da9201fd4712208b44e304919cf049f89d12",
+      "conflicts": []
+    },
+    {
+      "number": 187,
+      "source": "d136c363309d4a30ed76aac0afb9c2599131a36f",
+      "before": "6189da9201fd4712208b44e304919cf049f89d12",
+      "commit": "a9a88f7cf00c6596ba0155b86c29ecac2a8b915c",
+      "conflicts": [
+        "app/src/main/res/values-en/strings.xml",
+        "app/src/main/res/values/strings.xml",
+        "docs/TODO/fix/README.md"
+      ],
+      "resolution": "Preserved both independent additions after checking disjoint resource keys and documentation entries."
+    },
+    {
+      "number": 188,
+      "source": "c61678fdc384d80bf76df54a631550831a654e4e",
+      "before": "a9a88f7cf00c6596ba0155b86c29ecac2a8b915c",
+      "commit": "17b6618cf0c1b548cf492b05cf61dc1a3a4ca0bf",
+      "conflicts": [
+        "docs/TODO/fix/README.md"
+      ],
+      "resolution": "Preserved both independent additions after checking disjoint resource keys and documentation entries."
+    },
+    {
+      "number": 189,
+      "source": "af2e4deaf9c6117200dbb1fd25ccd690e926bf33",
+      "before": "17b6618cf0c1b548cf492b05cf61dc1a3a4ca0bf",
+      "commit": "dc49eabcf58c7b6e158cda8cfd913909f474d08a",
+      "conflicts": [
+        "app/src/main/res/values-en/strings.xml",
+        "app/src/main/res/values/strings.xml"
+      ],
+      "resolution": "Preserved both independent additions after checking disjoint resource keys and documentation entries."
+    },
+    {
+      "number": 190,
+      "source": "fb7bf270aac04039f26ccb8ee52abcce6bdac1c6",
+      "before": "dc49eabcf58c7b6e158cda8cfd913909f474d08a",
+      "commit": "6bf67262ff368ce2668622358759d8f8f124e554",
+      "conflicts": []
+    }
+  ]
+}
