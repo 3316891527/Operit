@@ -1750,8 +1750,6 @@
     <string name="change_language">言語を変更する</string>
     <string name="agreement_title">ユーザー同意書</string>
     <string name="agreement_document_title">Operit Kong ユーザー同意書およびプライバシー ポリシー</string>
-    <string name="market_agreement_title">プラグイン マーケット使用契約および行動規範</string>
-    <string name="market_agreement_version">市場プロトコルのバージョン: %1$s</string>
     <string name="copy">コピー</string>
     <string name="paste">ペースト</string>
     <string name="wizard_collapse">閉じる</string>
@@ -4303,7 +4301,6 @@
     <string name="package_tab_skills">Skill</string>
     <string name="show_to_ai_short">AI</string>
     <string name="pkg_toolpkg_api_version">ToolPkg API：%1$s</string>
-    <string name="market_agreement_content">1. マーケットの位置づけ。Operit プラグインマーケットは、スクリプト、ツールパッケージ、Skill、MCP などの拡張機能を共有・発見・索引化し、マーケット内で閲覧、ダウンロード、インストールするための場です。マーケットは、プラグインの作者、買い手、売り手、仲介者、料金の受領者、保証人、権利の登録機関ではありません。掲載や推奨は、Operit が開発、所有、代理、推奨保証していることを意味しません。\n\n2. 公開時の許諾。公開者はプラグインを提出することで、マーケットの運営に必要な範囲に限り、項目の保存、キャッシュ、複製、処理、表示、索引化、および利用者へのダウンロードとインストールの提供について、非独占的かつ譲渡不能の利用許諾を Operit に与えます。公開は、利用者がマーケットからダウンロード、インストールし、本来の用途の範囲で通常利用することも認めますが、改変や再配布を当然に許可するものではありません。著作権、所有権、その他の権利は移転せず、マーケット外で自由に再許諾する権利がマーケットに与えられるものでもありません。公開者は、これらを許諾する権限を持つ必要があります。\n\n3. GitHub でのオープンソース公開の推奨。公開者が管理する公開 GitHub リポジトリで、ソースコード、README、ライセンス、バージョンまたは Release、変更履歴を直接公開し、そのリポジトリを配布元としてマーケットに登録することを推奨します。リポジトリの公開だけでオープンソースの利用許諾が与えられるわけではありません。利用、改変、再配布の可否は、作者が明示したオープンソースライセンスまたはその他の書面による許諾に従います。\n\n4. 利用者による利用と再配布。再配布権は、原則として作者またはその他の権利者が保持します。ダウンロード、インストール、通常利用の許可は、各利用者に再アップロード、転送、パッケージの改変、販売、再公開の権利を与えるものではありません。法令に別段の定めがある場合を除き、作者のライセンスまたは許諾に従ってのみ改変・再配布できます。再配布が許可されていないプラグインを独自に再配布してはいけません。オープンソースのプラグインの権利範囲は、そのライセンスに従います。\n\n5. 第三者によるリスクと安全上の責任。プラグインには独立したコード、設定、実行権限があり、コードの実行、ローカルサービスの起動、ファイルへのアクセス、環境変数の読み取り、ネットワークへの接続を行う場合があります。利用者自身が内容を確認し、有効化、インストール、利用のリスクを負う必要があります。公開者は、プラグイン、リポジトリ、サンプル、設定に API Key、Cookie、Token、秘密鍵、アカウントのパスワード、利用者のデータを含めてはいけません。作者、ライセンス、権限、通信動作、環境変数、外部サービス、既知のリスクを正確に説明してください。Operit は第三者の拡張機能の安全性、正確性、可用性、適法性、互換性を保証しません。\n\n6. コメントとコミュニティでの行動。コメントは機能、使用感、不具合、安全上の問題に関する内容にしてください。QQ、Telegram、Discord などのグループ番号、連絡先、広告、外部への誘導、取引情報、無関係なリンクなど、コミュニティの秩序を乱す内容は禁止します。API Key、Cookie、Token、秘密鍵、アカウントのパスワード、その他の個人データを公開してはいけません。\n\n7. 取引と外部への誘導の禁止。マーケット内でのプラグインの売買、転売、代理インストールは禁止します。集金、寄付、会員制度、個別チャット、第三者のリンクなどを通じて、無料プラグインへの支払いを誘導してはいけません。マーケットは決済、履行、返金、取引紛争の処理を提供しません。無料プラグインについて誰かに料金を支払う必要はありません。第三者による請求、許諾、約束は、Operit の公式な承認を意味しません。\n\n8. マーケットのサービス範囲。共有、ダウンロード、インストールの提供に必要な項目やプラグインファイルを保存、キャッシュ、転送する場合がありますが、永続的なホスティング、バックアップ、秘密保持、コピー防止は保証しません。公開は、本規約に従って利用者にダウンロードとインストールを提供することを作者が許可したことを意味し、一般の人に再配布権が自動的に与えられることを意味しません。プラグインへのアクセス、ダウンロード、継続的な利用は、作者のリポジトリ、GitHub、その他の第三者サービスの状況にも左右されます。\n\n9. 規則の適用と規約の更新。違反したコメント、項目、アカウントは、制限、非表示、削除の対象になる場合があります。機能、法令、安全上の要件により規約が大きく変わる場合は、規約のバージョンを更新します。更新内容はマーケットの入口から確認できます。</string>
     <string name="sherpa_k2_ncnn_init_failed">リアルタイム音声認識エンジンを初期化できませんでした</string>
     <string name="sherpa_k2_ncnn_init_success">リアルタイム音声認識エンジンを初期化しました</string>
     <string name="files_selected">%1$d 個のファイルを選択しました</string>
@@ -5223,10 +5220,7 @@
     <string name="market_category_system_data">システムとデータ</string>
     <string name="market_category_business_productivity">仕事と効率化</string>
     <string name="market_category_life_entertainment">暮らしと娯楽</string>
-    <string name="market_section_manage">管理</string>
-    <string name="market_section_publish">公開</string>
     <string name="market_notifications_title">通知一覧</string>
-    <string name="market_agreement_entry">マーケットの規約</string>
     <string name="market_notifications_empty_title">通知はありません</string>
     <string name="market_notifications_empty_description">マーケットからの通知がここに表示されます</string>
     <string name="market_manage_removed">「%1$s」の掲載取り下げを申請しました</string>
@@ -5245,8 +5239,6 @@
     <string name="market_manage_resubmit_confirm_action">申請を確定</string>
     <string name="market_manage_skill">Skill を管理</string>
     <string name="market_manage_mcp">MCP を管理</string>
-    <string name="market_manage_owned_section">自分が所有</string>
-    <string name="market_manage_contributed_section">提出に参加</string>
     <string name="market_manage_relation_owner">所有者</string>
     <string name="market_manage_relation_contributor">共同作業者</string>
     <string name="market_publish_artifact">パッケージを公開</string>

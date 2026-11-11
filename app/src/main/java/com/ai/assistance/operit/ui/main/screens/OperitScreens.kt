@@ -272,7 +272,15 @@ sealed class Screen(
                 onNavigateToBuiltInDetail = { navigateTo(BuiltInMarketDetail(it)) },
                 onNavigateToArtifactPublish = { navigateTo(ArtifactPublish) },
                 onNavigateToRepoPublish = { type -> navigateTo(RepoPublish(type)) },
-                onNavigateToMarketManage = { navigateTo(MarketManage) },
+                onNavigateToGitHubAccount = { navigateTo(GitHubAccount) },
+                onNavigateToEditArtifact = { issue -> navigateTo(ArtifactEdit(issue)) },
+                onNavigateToEditRepo = { type, issue -> navigateTo(RepoEdit(type, issue)) },
+                onNavigateToPublishArtifactVersion = { issue, canEditEntry ->
+                    navigateTo(ArtifactContinuePublish(issue.toArtifactPublishClusterContext(canEditEntry)))
+                },
+                onNavigateToPublishRepoVersion = { type, issue, canEditEntry ->
+                    navigateTo(RepoPublishVersion(type, issue, canEditEntry))
+                },
                 onNavigateToDetail = { issue ->
                     navigateTo(MarketEntryDetail(issue))
                 },

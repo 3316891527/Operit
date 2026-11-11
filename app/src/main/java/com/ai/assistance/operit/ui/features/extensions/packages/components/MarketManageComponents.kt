@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -27,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -58,25 +56,17 @@ fun MarketManageScaffold(
     isEmpty: Boolean,
     onLogin: () -> Unit,
     onPublish: () -> Unit,
-    publishContentDescription: String,
     loginDescription: String,
     loadingMessage: String,
     emptyIcon: ImageVector,
     emptyTitle: String,
     emptyDescription: String,
     emptyActionLabel: String? = null,
+    embedded: Boolean = false,
     topContent: @Composable ColumnScope.() -> Unit = {},
     content: @Composable BoxScope.() -> Unit
 ) {
-    CustomScaffold(
-        floatingActionButton = {
-            if (isLoggedIn) {
-                FloatingActionButton(onClick = onPublish) {
-                    Icon(Icons.Default.Add, contentDescription = publishContentDescription)
-                }
-            }
-        }
-    ) { paddingValues ->
+    val body: @Composable (PaddingValues) -> Unit = { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -123,6 +113,14 @@ fun MarketManageScaffold(
                     }
                 }
             }
+        }
+    }
+
+    if (embedded) {
+        body(PaddingValues(0.dp))
+    } else {
+        CustomScaffold { paddingValues ->
+            body(paddingValues)
         }
     }
 }

@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -37,12 +36,9 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Cancel
@@ -58,7 +54,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -70,9 +65,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -86,14 +79,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import com.ai.assistance.operit.data.api.MarketV2ManifestCategory
 import com.ai.assistance.operit.data.api.MarketV2Notification
-import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
-import com.ai.assistance.operit.data.preferences.GitHubUser
-import com.ai.assistance.operit.ui.features.extensions.github.GitHubLoginDialog
 import com.ai.assistance.operit.ui.features.extensions.packages.market.BindMarketSearchToTopBar
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketBrowseSection
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketStatsType
@@ -102,9 +91,6 @@ import com.ai.assistance.operit.ui.features.extensions.packages.market.UnifiedMa
 import com.ai.assistance.operit.ui.features.extensions.packages.market.toUnifiedMarketBrowseEntry
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.UnifiedMarketBrowseScope
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.UnifiedMarketBrowseViewModel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 
 enum class MarketHomeTab(@StringRes val labelRes: Int) {
     ALL(R.string.market_tab_all),
@@ -167,25 +153,22 @@ fun marketCategoryLabel(context: Context, categoryId: String): String {
     return marketCategoryNameResOrNull(categoryId)?.let { context.getString(it) } ?: categoryId
 }
 
-private data class MarketMineAuthState(
-    val isLoading: Boolean = true,
-    val isLoggedIn: Boolean = false,
-    val currentUser: GitHubUser? = null
-)
-
 @Composable
 fun UnifiedMarketScreen(
     initialTab: MarketHomeTab = MarketHomeTab.ALL,
     onNavigateToArtifactPublish: () -> Unit = {},
     onNavigateToRepoPublish: (MarketStatsType) -> Unit = {},
-    onNavigateToMarketManage: () -> Unit = {},
+    onNavigateToGitHubAccount: () -> Unit = {},
+    onNavigateToEditArtifact: (MarketV2Entry) -> Unit = {},
+    onNavigateToEditRepo: (MarketStatsType, MarketV2Entry) -> Unit = { _, _ -> },
+    onNavigateToPublishArtifactVersion: (MarketV2Entry, Boolean) -> Unit = { _, _ -> },
+    onNavigateToPublishRepoVersion: (MarketStatsType, MarketV2Entry, Boolean) -> Unit = { _, _, _ -> },
     onNavigateToDetail: (MarketV2Entry) -> Unit = {},
     onNavigateToCategory: (String) -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToBuiltInDetail: ((String) -> Unit)? = null,
 ) {
     var selectedTab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
-    var showMarketAgreementDialog by remember { mutableStateOf(false) }
 
     val openEntry: (MarketV2Entry) -> Unit = onNavigateToDetail
 
@@ -211,12 +194,17 @@ fun UnifiedMarketScreen(
                     onOpenCategory = onNavigateToCategory
                 )
 
-                MarketHomeTab.MINE -> MarketMinePane(
-                    onManage = onNavigateToMarketManage,
-                    onPublishArtifact = onNavigateToArtifactPublish,
-                    onPublishRepo = onNavigateToRepoPublish,
-                    onOpenNotifications = onNavigateToNotifications,
-                    onOpenAgreement = { showMarketAgreementDialog = true }
+                MarketHomeTab.MINE -> UnifiedMarketManageScreen(
+                    onNavigateToGitHubAccount = onNavigateToGitHubAccount,
+                    onNavigateToEditArtifact = onNavigateToEditArtifact,
+                    onNavigateToEditRepo = onNavigateToEditRepo,
+                    onNavigateToPublishArtifactVersion = onNavigateToPublishArtifactVersion,
+                    onNavigateToPublishRepoVersion = onNavigateToPublishRepoVersion,
+                    onNavigateToPublishArtifact = onNavigateToArtifactPublish,
+                    onNavigateToPublishRepo = onNavigateToRepoPublish,
+                    onNavigateToDetail = onNavigateToDetail,
+                    onNavigateToNotifications = onNavigateToNotifications,
+                    embedded = true,
                 )
             }
         }
@@ -244,10 +232,6 @@ fun UnifiedMarketScreen(
                 )
             }
         }
-    }
-
-    if (showMarketAgreementDialog) {
-        MarketAgreementDialog(onDismissRequest = { showMarketAgreementDialog = false })
     }
 
 }
@@ -712,177 +696,6 @@ private fun relativeTime(isoDate: String): String {
     }
 }
 
-
-@Composable
-private fun MarketMinePane(
-    onManage: () -> Unit,
-    onPublishArtifact: () -> Unit,
-    onPublishRepo: (MarketStatsType) -> Unit,
-    onOpenNotifications: () -> Unit,
-    onOpenAgreement: () -> Unit
-) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val githubAuth = remember { GitHubAuthPreferences.getInstance(context) }
-    val authState by produceState(initialValue = MarketMineAuthState(), githubAuth) {
-        value = MarketMineAuthState(isLoading = true)
-
-        val initialLoggedIn = githubAuth.isLoggedIn()
-        val initialUser = githubAuth.getCurrentUserInfo()
-        value =
-            MarketMineAuthState(
-                isLoading = false,
-                isLoggedIn = initialLoggedIn,
-                currentUser = if (initialLoggedIn) initialUser else null
-            )
-
-        githubAuth.isLoggedInFlow
-            .combine(githubAuth.userInfoFlow) { isLoggedIn, currentUser ->
-                MarketMineAuthState(
-                    isLoading = false,
-                    isLoggedIn = isLoggedIn,
-                    currentUser = if (isLoggedIn) currentUser else null
-                )
-            }
-            .collect { value = it }
-    }
-    var showLoginDialog by remember { mutableStateOf(false) }
-    var showPublishDialog by remember { mutableStateOf(false) }
-
-    BindMarketSearchToTopBar(
-        enabled = false,
-        searchQuery = "",
-        onSearchQueryChanged = { _ -> },
-        searchPlaceholderRes = UnifiedMarketBrowseConfig.searchPlaceholderRes
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        if (authState.isLoading) {
-            MarketAccountLoadingCard()
-        } else {
-            MarketAccountCard(
-                isLoggedIn = authState.isLoggedIn,
-                currentUser = authState.currentUser,
-                onLogin = { showLoginDialog = true },
-                onLogout = {
-                    coroutineScope.launch { githubAuth.logout() }
-                }
-            )
-
-            MarketMineActionCard(
-                title = stringResource(R.string.market_section_manage),
-                onClick = {
-                    if (authState.isLoggedIn) onManage() else showLoginDialog = true
-                },
-                icon = Icons.Default.Settings
-            )
-            MarketMineActionCard(
-                title = stringResource(R.string.market_section_publish),
-                onClick = {
-                    if (authState.isLoggedIn) showPublishDialog = true else showLoginDialog = true
-                },
-                icon = Icons.Default.Add
-            )
-            MarketMineActionCard(
-                title = stringResource(R.string.market_notifications_title),
-                onClick = {
-                    if (authState.isLoggedIn) onOpenNotifications() else showLoginDialog = true
-                },
-                icon = Icons.Default.Notifications
-            )
-            MarketMineActionCard(
-                title = stringResource(R.string.market_agreement_entry),
-                onClick = onOpenAgreement,
-                icon = Icons.Default.Description
-            )
-        }
-    }
-
-    if (showPublishDialog) {
-        MarketActionChooserDialog(
-            title = stringResource(R.string.market_section_publish),
-            onDismiss = { showPublishDialog = false },
-            actions = listOf(
-                MarketDialogAction(stringResource(R.string.market_publish_artifact), onPublishArtifact),
-                MarketDialogAction(stringResource(R.string.market_publish_skill)) {
-                    onPublishRepo(MarketStatsType.SKILL)
-                },
-                MarketDialogAction(stringResource(R.string.market_publish_mcp)) {
-                    onPublishRepo(MarketStatsType.MCP)
-                }
-            )
-        )
-    }
-
-    if (showLoginDialog) {
-        GitHubLoginDialog(
-            onDismissRequest = { showLoginDialog = false },
-            onLoginSuccess = { showLoginDialog = false }
-        )
-    }
-}
-
-private data class MarketDialogAction(
-    val title: String,
-    val onClick: () -> Unit
-)
-
-@Composable
-private fun MarketActionChooserDialog(
-    title: String,
-    onDismiss: () -> Unit,
-    actions: List<MarketDialogAction>
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                actions.forEach { action ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onDismiss()
-                                action.onClick()
-                            },
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = action.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.cancel))
-            }
-        }
-    )
-}
-
 @Composable
 private fun MarketAccountLoadingCard() {
     Card(
@@ -906,165 +719,6 @@ private fun MarketAccountLoadingCard() {
                 text = stringResource(R.string.app_content_loading),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun MarketAccountCard(
-    isLoggedIn: Boolean,
-    currentUser: GitHubUser?,
-    onLogin: () -> Unit,
-    onLogout: () -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
-        ),
-        shape = RoundedCornerShape(20.dp)
-    ) {
-        if (isLoggedIn && currentUser != null) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                currentUser.avatarUrl.takeIf { it.isNotBlank() }?.let { avatarUrl ->
-                    Image(
-                        painter = rememberAsyncImagePainter(avatarUrl),
-                        contentDescription = stringResource(R.string.user_avatar),
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(52.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = currentUser.name?.takeIf { it.isNotBlank() } ?: currentUser.login,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "@${currentUser.login}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                OutlinedButton(onClick = onLogout) {
-                    Icon(
-                        imageVector = Icons.Default.Logout,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(44.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.please_login_github_first),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = stringResource(R.string.market_login_required_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Button(onClick = onLogin) {
-                    Icon(
-                        imageVector = Icons.Default.Login,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(R.string.login_github))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MarketMineActionCard(
-    title: String,
-    onClick: () -> Unit,
-    icon: ImageVector
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 1.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
