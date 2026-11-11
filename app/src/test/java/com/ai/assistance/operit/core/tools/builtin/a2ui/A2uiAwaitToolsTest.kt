@@ -158,10 +158,10 @@ class A2uiAwaitToolsTest {
         }
     }
 
-    @Test fun defaultDeliveryPublishesCompiledJsonBeforeTheToolReturns() = runBlocking {
+    @Test fun defaultDeliveryReturnsCompiledJsonForPostResultPublication() = runBlocking {
         withRun { context ->
             val publications = mutableListOf<String>()
-            val runtime = context.copy(publishA2ui = { document -> publications.add(document); Unit })
+            val runtime = context.copy(publishA2uiAfterToolResult = { document -> publications.add(document); Unit })
             val result = A2uiTools.executeStreaming(tool("0"), temporary.root, runtime)
             assertTrue(result.success)
             val report = payload(result)
@@ -173,12 +173,12 @@ class A2uiAwaitToolsTest {
         }
     }
 
-    @Test fun revisionsPublishTheirCompiledJsonBeforeReturning() = runBlocking {
+    @Test fun revisionsReturnCompiledJsonForPostResultPublication() = runBlocking {
         withRun { context ->
             val initial = A2uiTools.execute(tool("0"), temporary.root, context)
             val baseReference = payload(initial).getValue("reference").jsonPrimitive.content
             val published = mutableListOf<String>()
-            val runtime = context.copy(publishA2ui = { document -> published.add(document); Unit })
+            val runtime = context.copy(publishA2uiAfterToolResult = { document -> published.add(document); Unit })
             val revision = AITool(
                 "a2ui_revise",
                 listOf(ToolParameter("reference", baseReference), ToolParameter("changes", "root=Text(text=\"Revised\")")),

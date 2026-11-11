@@ -15,21 +15,25 @@ data class ToolExecutionBatch(val results: List<ToolResult>, val message: String
  */
 internal class OrderedToolResults(
     count: Int,
-    private val publish: suspend (String) -> Unit
+    private val publish: suspend (String) -> Unit,
+    private val publishAfterResult: suspend (String) -> Unit = publish
 ) {
     private val mutex = Mutex()
     private val results = arrayOfNulls<ToolResult>(count)
     private val markup = arrayOfNulls<String>(count)
+    private val afterResult = arrayOfNulls<List<String>>(count)
     private var next = 0
 
-    suspend fun complete(index: Int, result: ToolResult) {
+    suspend fun complete(index: Int, result: ToolResult, afterResult: List<String> = emptyList()) {
         mutex.withLock {
             check(results[index] == null) { "Tool result already completed at index $index" }
             results[index] = result
+            this.afterResult[index] = afterResult
             // Generate the random XML tag and bound the payload once, for both consumers.
             markup[index] = ConversationMarkupManager.formatToolResultForMessage(result)
             while (next < results.size && results[next] != null) {
                 publish(checkNotNull(markup[next]))
+                this.afterResult[next].orEmpty().forEach { publishAfterResult(it) }
                 next++
             }
         }

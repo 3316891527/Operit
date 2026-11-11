@@ -59,7 +59,7 @@ internal object A2uiToolRuntime {
                 if (waitTimeoutSeconds > 0) put("wait_timeout_seconds", waitTimeoutSeconds)
                 report["repaired"]?.let { put("repaired", it) }
                 report["repair"]?.let { put("repair", it) }
-                put("message", "Card compiled. The compiled_json field contains the complete A2UI document. In streaming execution Operit displays it during this tool call; do not output a reference fence or rewrite the document.")
+                put("message", "Card compiled. The compiled_json field contains the complete A2UI document. In streaming execution Operit displays it after this tool result; waiting forms are displayed before the tool waits for submission. Do not output a reference fence or rewrite the document.")
             }
         } catch (error: IllegalArgumentException) {
             failure("invalid_card", error.message?.take(240) ?: "Invalid card data.")
@@ -121,7 +121,7 @@ internal object A2uiToolRuntime {
                 put("baseReference", reference)
                 put("compiled_json", compiled)
                 prepared.repair?.let { put("repaired", true); put("repair", it) }
-                put("message", "Revision compiled. The compiled_json field contains the complete A2UI document. In streaming execution Operit displays it during this tool call. Previously displayed cards are preserved; the unplaced base revision is superseded.")
+                put("message", "Revision compiled. The compiled_json field contains the complete A2UI document. In streaming execution Operit displays it after this tool result. Previously displayed cards are preserved; the unplaced base revision is superseded.")
             }
         } catch (error: CardExpress.Failure) {
             buildJsonObject {

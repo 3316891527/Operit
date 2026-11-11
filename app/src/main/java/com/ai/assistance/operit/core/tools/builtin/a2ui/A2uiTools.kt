@@ -64,11 +64,16 @@ internal object A2uiTools {
                     val timeout = integer("wait_timeout_seconds", 0)
                     require(timeout in 0..600) { "Wait timeout must be between 0 and 600 seconds." }
                     require(timeout == 0 || allowWait) { "Waiting cards require streaming tool execution." }
-                    require(!requireStreamingOutput || runtimeContext?.publishA2ui != null) { "A2UI card output requires an active streaming chat." }
+                    val hasPublisher = if (timeout > 0) {
+                        runtimeContext?.publishA2ui != null
+                    } else {
+                        runtimeContext?.publishA2uiAfterToolResult != null
+                    }
+                    require(!requireStreamingOutput || hasPublisher) { "A2UI card output requires an active streaming chat." }
                     A2uiToolRuntime.prepare(filesDirectory, runtimeContext, required("source"), live, timeout)
                 }
                 "a2ui_revise" -> {
-                    require(!requireStreamingOutput || runtimeContext?.publishA2ui != null) { "A2UI card output requires an active streaming chat." }
+                    require(!requireStreamingOutput || runtimeContext?.publishA2uiAfterToolResult != null) { "A2UI card output requires an active streaming chat." }
                     val remove = values["remove"]?.let { json ->
                         require(json.length <= 16_384)
                         Json.parseToJsonElement(json).jsonArray.map {
@@ -123,8 +128,8 @@ internal object A2uiTools {
         val document = CardDelivery.resolve(run, reference)
             ?: return result(tool.name, A2uiToolRuntime.failure("card_publish_failed", "The compiled card could not be prepared for display."))
         return try {
-            // Emit the renderer fence before returning the tool result to the model.
-            requireNotNull(runtimeContext?.publishA2ui).invoke(document)
+            // The tool manager emits this document immediately after publishing this result.
+            requireNotNull(runtimeContext?.publishA2uiAfterToolResult).invoke(document)
             result(tool.name, JsonObject(report + ("compiled_json" to JsonPrimitive(document))))
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled

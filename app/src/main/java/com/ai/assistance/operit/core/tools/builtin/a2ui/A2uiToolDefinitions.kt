@@ -13,7 +13,7 @@ internal object A2uiToolDefinitions {
             tools = listOf(
                 ToolPrompt(
                     name = "a2ui_prepare",
-                    description = text("Compile Express, return the complete A2UI document in compiled_json, and display the native card during this streaming tool call.", "编译 Express，在 compiled_json 中返回完整 A2UI 文档，并在本次流式工具调用期间展示原生卡片。"),
+                    description = text("Compile Express, return the complete A2UI document in compiled_json, then display the native card immediately after the tool result in streaming chat. Forms with a positive wait timeout are displayed before waiting for submission.", "编译 Express，在 compiled_json 中返回完整 A2UI 文档，并在流式会话中工具结果之后立即展示原生卡片。设置正等待超时的表单会先展示，再等待提交。"),
                     parametersStructured = listOf(
                         ToolParameterSchema("source", "string", text("Express source, up to 65536 characters; query a2ui_catalog for signatures. Progress.number uses a 0 to 1 ratio.", "Express 源码，最多 65536 字符；组件参数见 a2ui_catalog。Progress.number 使用 0～1 的比例。")),
                         ToolParameterSchema("wait_timeout_seconds", "integer", text("Form wait timeout, 0 to 600 seconds; 0 disables waiting. See a2ui_catalog.", "本轮表单等待秒数，0～600；0 表示不等待，详见 a2ui_catalog。"), required = false, default = "0"),
@@ -22,7 +22,7 @@ internal object A2uiToolDefinitions {
                 ),
                 ToolPrompt(
                     name = "a2ui_revise",
-                    description = text("Compile a new revision, return its complete A2UI document in compiled_json, and display it during this streaming tool call. Previously displayed cards are preserved; the unplaced base revision is superseded.", "编译新修订，在 compiled_json 中返回完整 A2UI 文档，并在本次流式工具调用期间展示。已展示的旧卡片保留；尚未展示的基准版本由新修订取代。"),
+                    description = text("Compile a new revision, return its complete A2UI document in compiled_json, then display it immediately after the tool result in streaming chat. Previously displayed cards are preserved; the unplaced base revision is superseded.", "编译新修订，在 compiled_json 中返回完整 A2UI 文档，并在流式会话中工具结果之后立即展示。已展示的旧卡片保留；尚未展示的基准版本由新修订取代。"),
                     parametersStructured = listOf(
                         ToolParameterSchema("reference", "string", text("Reference returned by a2ui_prepare or a2ui_revise in this turn.", "本轮 a2ui_prepare 或 a2ui_revise 返回的引用。")),
                         ToolParameterSchema("changes", "string", text("Changed Express declarations, up to 65536 characters.", "变更的 Express 声明，最多 65536 字符。")),
