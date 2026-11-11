@@ -420,7 +420,7 @@ sealed class Screen(
             authorLogin.ifBlank { authorId.removePrefix("gh_") }
     }
 
-    data object MarketManage : Screen(navItem = NavItem.Packages, titleRes = R.string.market_section_manage) {
+    data object MarketManage : Screen(navItem = NavItem.Packages, titleRes = R.string.market_creator_center) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -449,7 +449,8 @@ sealed class Screen(
                 onNavigateToPublishRepo = { type -> navigateTo(RepoPublish(type)) },
                 onNavigateToDetail = { issue ->
                     navigateTo(MarketEntryDetail(issue, fromManage = true))
-                }
+                },
+                onNavigateToNotifications = { navigateTo(MarketNotifications) },
             )
         }
     }

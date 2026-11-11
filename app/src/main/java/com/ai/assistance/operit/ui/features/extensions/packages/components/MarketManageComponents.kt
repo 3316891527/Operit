@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +29,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -135,6 +135,7 @@ fun MarketManageItemCard(
     modifier: Modifier = Modifier,
     showActions: Boolean = true,
     onClick: (() -> Unit)? = null,
+    leadingContent: @Composable RowScope.() -> Unit = {},
     headerContent: @Composable RowScope.() -> Unit = {},
     supportingContent: @Composable ColumnScope.() -> Unit = {},
     actions: @Composable RowScope.() -> Unit
@@ -167,6 +168,10 @@ fun MarketManageItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = leadingContent,
+                )
                 Text(
                     text = title,
                     modifier = Modifier.weight(1f),
@@ -413,9 +418,9 @@ fun RowScope.MarketManageSecondaryActionButton(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    IconButton(
+    TextButton(
         onClick = onClick,
-        modifier = Modifier.size(36.dp)
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
     ) {
         Icon(
             imageVector = icon,
@@ -423,6 +428,8 @@ fun RowScope.MarketManageSecondaryActionButton(
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -432,15 +439,22 @@ fun RowScope.MarketManageDangerActionButton(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    IconButton(
+    TextButton(
         onClick = onClick,
-        modifier = Modifier.size(36.dp)
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.error,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -451,9 +465,9 @@ fun RowScope.MarketManagePrimaryActionButton(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    IconButton(
+    TextButton(
         onClick = onClick,
-        modifier = Modifier.size(36.dp)
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
     ) {
         Icon(
             imageVector = icon,
@@ -461,6 +475,8 @@ fun RowScope.MarketManagePrimaryActionButton(
             modifier = Modifier.size(18.dp),
             tint = MaterialTheme.colorScheme.primary
         )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

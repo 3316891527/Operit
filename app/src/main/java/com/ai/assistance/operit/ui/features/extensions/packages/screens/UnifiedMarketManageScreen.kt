@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.extensions.packages.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,19 +16,31 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Api
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,17 +49,24 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import com.ai.assistance.operit.data.api.MarketV2PublisherEntrySummary
+import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
+import com.ai.assistance.operit.data.preferences.GitHubUser
 import com.ai.assistance.operit.ui.features.extensions.github.GitHubLoginDialog
 import com.ai.assistance.operit.ui.features.extensions.packages.components.MarketManageDangerActionButton
 import com.ai.assistance.operit.ui.features.extensions.packages.components.MarketManageDeleteDialog
@@ -62,14 +82,26 @@ import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketSta
 import com.ai.assistance.operit.ui.features.extensions.packages.market.PublishArtifactType
 import com.ai.assistance.operit.ui.features.extensions.packages.market.labelResId
 import com.ai.assistance.operit.ui.features.extensions.packages.market.resolveMarketReviewSnapshot
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.UnifiedMarketBrowseScope
+import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.UnifiedMarketBrowseViewModel
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.UnifiedMarketManageKind
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.UnifiedMarketManageViewModel
+import kotlinx.coroutines.launch
 
-private enum class ManageTypeTab(val kind: UnifiedMarketManageKind, val labelRes: Int) {
-    SCRIPT(UnifiedMarketManageKind.SCRIPT, R.string.market_category_type_script),
-    PACKAGE(UnifiedMarketManageKind.PACKAGE, R.string.market_category_type_package),
-    SKILL(UnifiedMarketManageKind.SKILL, R.string.market_category_type_skill),
-    MCP(UnifiedMarketManageKind.MCP, R.string.market_category_type_mcp)
+private enum class ManageTypeTab(val labelRes: Int) {
+    ALL(R.string.market_tab_all),
+    PLUGIN(R.string.market_category_type_package),
+    SCRIPT(R.string.market_category_type_script);
+
+    fun matches(type: String): Boolean = when (this) {
+        ALL -> true
+        PLUGIN -> type in setOf(
+            MarketStatsType.PACKAGE.wireValue,
+            MarketStatsType.SKILL.wireValue,
+            MarketStatsType.MCP.wireValue,
+        )
+        SCRIPT -> type == MarketStatsType.SCRIPT.wireValue
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,35 +114,49 @@ fun UnifiedMarketManageScreen(
     onNavigateToPublishRepoVersion: (MarketStatsType, MarketV2Entry, Boolean) -> Unit,
     onNavigateToPublishArtifact: () -> Unit,
     onNavigateToPublishRepo: (MarketStatsType) -> Unit,
-    onNavigateToDetail: (MarketV2Entry) -> Unit
+    onNavigateToDetail: (MarketV2Entry) -> Unit,
+    onNavigateToNotifications: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    var selectedTab by rememberSaveable { mutableStateOf(ManageTypeTab.SCRIPT) }
+    val githubAuth = remember { GitHubAuthPreferences.getInstance(context) }
+    val coroutineScope = rememberCoroutineScope()
+    var selectedTab by rememberSaveable { mutableStateOf(ManageTypeTab.ALL) }
     val viewModel: UnifiedMarketManageViewModel =
         viewModel(
-            key = "market-manage-${selectedTab.name}",
+            key = "market-manage-all",
             factory =
                 UnifiedMarketManageViewModel.Factory(
                     context.applicationContext,
-                    selectedTab.kind
+                    UnifiedMarketManageKind.ALL
                 )
+        )
+    val notificationViewModel: UnifiedMarketBrowseViewModel =
+        viewModel(
+            key = "market-creator-notifications",
+            factory = UnifiedMarketBrowseViewModel.Factory(
+                context.applicationContext,
+                UnifiedMarketBrowseScope.All
+            )
         )
 
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val currentUser by githubAuth.userInfoFlow.collectAsState(initial = null)
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val entries by viewModel.entries.collectAsState()
     val hasLoaded by viewModel.hasLoaded.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val notifications by notificationViewModel.notifications.collectAsState()
 
     var showDeleteDialog by remember { mutableStateOf<MarketV2PublisherEntrySummary?>(null) }
     var showReviewDialog by remember { mutableStateOf<MarketV2PublisherEntrySummary?>(null) }
     var showGitHubLogin by remember { mutableStateOf(false) }
     var showPublishDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isLoggedIn, selectedTab) {
+    LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
             viewModel.loadEntries()
+            notificationViewModel.loadNotifications()
         } else {
             viewModel.reset()
         }
@@ -118,9 +164,10 @@ fun UnifiedMarketManageScreen(
 
     val showManageLoading = isLoggedIn && !hasLoaded && entries.isEmpty()
     val showRequestLoading = isLoggedIn && hasLoaded && isLoading
-    val showEmptyState = hasLoaded && errorMessage == null && entries.isEmpty()
-    val ownedEntries = remember(entries) { entries.filter { it.isOwnerRelation() } }
-    val contributedEntries = remember(entries) { entries.filter { it.isContributorRelation() } }
+    val filteredEntries = remember(entries, selectedTab) {
+        entries.filter { selectedTab.matches(it.type.lowercase()) }
+    }
+    val showEmptyState = hasLoaded && errorMessage == null && filteredEntries.isEmpty()
 
     MarketManageScaffold(
         isLoggedIn = isLoggedIn,
@@ -137,28 +184,36 @@ fun UnifiedMarketManageScreen(
         emptyDescription = stringResource(R.string.click_button_publish_first_artifact),
         emptyActionLabel = stringResource(R.string.publish_to_market),
         topContent = {
-            TextButton(
-                onClick = onNavigateToGitHubAccount,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.github_account)) }
-            ScrollableTabRow(
-                selectedTabIndex = selectedTab.ordinal,
-                edgePadding = 0.dp
-            ) {
-                ManageTypeTab.entries.forEach { tab ->
-                    Tab(
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        text = {
-                            com.ai.assistance.operit.ui.theme.script.text.ThemeText(
-                                text = stringResource(tab.labelRes),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    )
-                }
-            }
+            CreatorAccountHeader(
+                isLoggedIn = isLoggedIn,
+                currentUser = currentUser,
+                publishedCount = entries.count { it.isOpen() && it.listingState != "pending_listing" },
+                reviewingCount = entries.count { it.resolveMarketReviewSnapshot().state == MarketReviewState.PENDING },
+                changesCount = entries.count { it.resolveMarketReviewSnapshot().state == MarketReviewState.CHANGES_REQUESTED },
+                notificationCount = notifications.size,
+                onLogin = { showGitHubLogin = true },
+                onOpenAccount = onNavigateToGitHubAccount,
+                onLogout = { coroutineScope.launch { githubAuth.logout() } },
+                onOpenNotifications = onNavigateToNotifications,
+            )
+            CreatorPublishSection(
+                onPublishArtifact = { showPublishDialog = true },
+                onPublishSkill = { onNavigateToPublishRepo(MarketStatsType.SKILL) },
+                onPublishMcp = { onNavigateToPublishRepo(MarketStatsType.MCP) },
+            )
+            CreatorFilterRow(
+                selected = selectedTab,
+                counts = ManageTypeTab.entries.associateWith { tab ->
+                    entries.count { tab.matches(it.type.lowercase()) }
+                },
+                onSelected = { selectedTab = it },
+            )
+            Text(
+                text = stringResource(R.string.market_manage_owned_section),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
         }
     ) {
         PullToRefreshBox(
@@ -172,68 +227,30 @@ fun UnifiedMarketManageScreen(
                     contentPadding = PaddingValues(bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (ownedEntries.isNotEmpty()) {
-                        item(key = "owned-title") {
-                            ManageSectionTitle(text = stringResource(R.string.market_manage_owned_section))
-                        }
-                        items(ownedEntries, key = { "owned-${it.id}" }) { entry ->
-                            ManagedEntryCard(
-                                entry = entry,
-                                canManageEntry = true,
-                                viewModel = viewModel,
-                                onNavigateToDetail = onNavigateToDetail,
-                                onNavigateToEditArtifact = onNavigateToEditArtifact,
-                                onNavigateToEditRepo = onNavigateToEditRepo,
-                                onNavigateToPublishArtifactVersion = onNavigateToPublishArtifactVersion,
-                                onNavigateToPublishRepoVersion = onNavigateToPublishRepoVersion,
-                                onRequestRevision = { target ->
-                                    viewModel.openEntryForRevision(target) { fullEntry ->
-                                        when (val type = fullEntry.marketStatsType()) {
-                                            MarketStatsType.SCRIPT,
-                                            MarketStatsType.PACKAGE -> onNavigateToPublishArtifactVersion(fullEntry, target.relation == "owner")
-                                            MarketStatsType.SKILL,
-                                            MarketStatsType.MCP -> onNavigateToPublishRepoVersion(type, fullEntry, target.relation == "owner")
-                                            null -> Unit
-                                        }
+                    items(filteredEntries, key = { "entry-${it.id}" }) { entry ->
+                        ManagedEntryCard(
+                            entry = entry,
+                            canManageEntry = entry.isOwnerRelation(),
+                            viewModel = viewModel,
+                            onNavigateToDetail = onNavigateToDetail,
+                            onNavigateToEditArtifact = onNavigateToEditArtifact,
+                            onNavigateToEditRepo = onNavigateToEditRepo,
+                            onNavigateToPublishArtifactVersion = onNavigateToPublishArtifactVersion,
+                            onNavigateToPublishRepoVersion = onNavigateToPublishRepoVersion,
+                            onRequestRevision = { target ->
+                                viewModel.openEntryForRevision(target) { fullEntry ->
+                                    when (val type = fullEntry.marketStatsType()) {
+                                        MarketStatsType.SCRIPT,
+                                        MarketStatsType.PACKAGE -> onNavigateToPublishArtifactVersion(fullEntry, target.relation == "owner")
+                                        MarketStatsType.SKILL,
+                                        MarketStatsType.MCP -> onNavigateToPublishRepoVersion(type, fullEntry, target.relation == "owner")
+                                        null -> Unit
                                     }
-                                },
-                                onShowReview = { showReviewDialog = it },
-                                onDelete = { showDeleteDialog = it }
-                            )
-                        }
-                    }
-                    if (contributedEntries.isNotEmpty()) {
-                        item(key = "contributed-title") {
-                            if (ownedEntries.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                            ManageSectionTitle(text = stringResource(R.string.market_manage_contributed_section))
-                        }
-                        items(contributedEntries, key = { "contributed-${it.id}" }) { entry ->
-                            ManagedEntryCard(
-                                entry = entry,
-                                canManageEntry = false,
-                                viewModel = viewModel,
-                                onNavigateToDetail = onNavigateToDetail,
-                                onNavigateToEditArtifact = onNavigateToEditArtifact,
-                                onNavigateToEditRepo = onNavigateToEditRepo,
-                                onNavigateToPublishArtifactVersion = onNavigateToPublishArtifactVersion,
-                                onNavigateToPublishRepoVersion = onNavigateToPublishRepoVersion,
-                                onRequestRevision = { target ->
-                                    viewModel.openEntryForRevision(target) { fullEntry ->
-                                        when (val type = fullEntry.marketStatsType()) {
-                                            MarketStatsType.SCRIPT,
-                                            MarketStatsType.PACKAGE -> onNavigateToPublishArtifactVersion(fullEntry, target.relation == "owner")
-                                            MarketStatsType.SKILL,
-                                            MarketStatsType.MCP -> onNavigateToPublishRepoVersion(type, fullEntry, target.relation == "owner")
-                                            null -> Unit
-                                        }
-                                    }
-                                },
-                                onShowReview = { showReviewDialog = it },
-                                onDelete = { showDeleteDialog = it }
-                            )
-                        }
+                                }
+                            },
+                            onShowReview = { showReviewDialog = it },
+                            onDelete = { showDeleteDialog = it }
+                        )
                     }
                 }
             }
@@ -282,6 +299,300 @@ fun UnifiedMarketManageScreen(
         )
     }
 
+}
+
+@Composable
+private fun CreatorAccountHeader(
+    isLoggedIn: Boolean,
+    currentUser: GitHubUser?,
+    publishedCount: Int,
+    reviewingCount: Int,
+    changesCount: Int,
+    notificationCount: Int,
+    onLogin: () -> Unit,
+    onOpenAccount: () -> Unit,
+    onLogout: () -> Unit,
+    onOpenNotifications: () -> Unit,
+) {
+    androidx.compose.material3.Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = MaterialTheme.shapes.large,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (isLoggedIn && currentUser != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (currentUser.avatarUrl.isNotBlank()) {
+                        Image(
+                            painter = rememberAsyncImagePainter(currentUser.avatarUrl),
+                            contentDescription = stringResource(R.string.user_avatar),
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                            contentScale = ContentScale.Crop,
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(52.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = currentUser.name?.takeIf { it.isNotBlank() } ?: currentUser.login,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "@${currentUser.login}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = onOpenAccount) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = stringResource(R.string.github_account),
+                        )
+                    }
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.Default.Logout,
+                            contentDescription = stringResource(R.string.logout),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.github_account_not_logged_in),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            text = stringResource(R.string.github_account_not_logged_in_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    OutlinedButton(onClick = onLogin) {
+                        Text(stringResource(R.string.login_github))
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CreatorStatCell(
+                    value = publishedCount,
+                    label = stringResource(R.string.published),
+                    modifier = Modifier.weight(1f),
+                )
+                CreatorStatCell(
+                    value = reviewingCount,
+                    label = stringResource(R.string.market_review_pending),
+                    modifier = Modifier.weight(1f),
+                )
+                CreatorStatCell(
+                    value = changesCount,
+                    label = stringResource(R.string.market_review_changes_requested),
+                    modifier = Modifier.weight(1f),
+                    emphasis = changesCount > 0,
+                )
+                CreatorStatCell(
+                    value = notificationCount,
+                    label = stringResource(R.string.market_notifications_title),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(onClick = onOpenNotifications),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreatorStatCell(
+    value: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    emphasis: Boolean = false,
+) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = if (emphasis) {
+            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        border = if (emphasis) {
+            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.45f))
+        } else {
+            null
+        },
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp, horizontal = 4.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = if (emphasis) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreatorPublishSection(
+    onPublishArtifact: () -> Unit,
+    onPublishSkill: () -> Unit,
+    onPublishMcp: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.publish_to_market),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        CreatorPublishAction(
+            title = stringResource(R.string.market_publish_artifact),
+            subtitle = stringResource(R.string.publish_target_package_market),
+            icon = Icons.Default.Extension,
+            onClick = onPublishArtifact,
+        )
+        CreatorPublishAction(
+            title = stringResource(R.string.market_publish_skill),
+            subtitle = stringResource(R.string.market_category_type_skill),
+            icon = Icons.Default.AutoAwesome,
+            onClick = onPublishSkill,
+        )
+        CreatorPublishAction(
+            title = stringResource(R.string.market_publish_mcp),
+            subtitle = stringResource(R.string.market_category_type_mcp),
+            icon = Icons.Default.Api,
+            onClick = onPublishMcp,
+        )
+    }
+}
+
+@Composable
+private fun CreatorPublishAction(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Surface(
+                modifier = Modifier.size(38.dp),
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ) {
+                Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(
+                imageVector = androidx.compose.material.icons.filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreatorFilterRow(
+    selected: ManageTypeTab,
+    counts: Map<ManageTypeTab, Int>,
+    onSelected: (ManageTypeTab) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ManageTypeTab.entries.forEach { tab ->
+            val isSelected = tab == selected
+            Surface(
+                modifier = Modifier.clickable { onSelected(tab) },
+                shape = MaterialTheme.shapes.medium,
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant,
+                ),
+            ) {
+                Text(
+                    text = "${stringResource(tab.labelRes)} ${counts[tab] ?: 0}",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -397,6 +708,9 @@ private fun ManagedEntryCard(
                 onShowReview(entry)
             }
         },
+        leadingContent = {
+            CreatorEntryIcon(title = entry.title, type = entry.type)
+        },
         headerContent = {
             MarketEntryTypeBadge(entry.type)
             MarketManageRelationBadge(entry.relation)
@@ -480,6 +794,34 @@ private fun ManagedEntryCard(
             }
         }
     )
+}
+
+@Composable
+private fun RowScope.CreatorEntryIcon(title: String, type: String) {
+    val isArtifact = PublishArtifactType.fromWireValue(type) != null
+    Surface(
+        modifier = Modifier.size(44.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = if (isArtifact) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.secondaryContainer
+        },
+        contentColor = if (isArtifact) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = title.trim().firstOrNull()?.toString().orEmpty().ifBlank { "?" },
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+    Spacer(modifier = Modifier.width(10.dp))
 }
 
 @Composable

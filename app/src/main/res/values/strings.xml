@@ -4257,6 +4257,7 @@
     <string name="market_category_life_entertainment">生活与娱乐</string>
     <string name="market_category_other">其他</string>
     <string name="market_section_manage">管理</string>
+    <string name="market_creator_center">创作者中心</string>
     <string name="market_section_publish">发布</string>
     <string name="market_notifications_title">消息列表</string>
     <string name="market_agreement_entry">市场协议</string>
@@ -4487,7 +4488,7 @@
     <string name="screen_title_artifact_market">脚本与工具包市场</string>
     <string name="screen_title_market">市场</string>
     <string name="screen_title_artifact_manage">管理脚本与工具包</string>
-    <string name="screen_title_artifact_publish">发布脚本或工具包</string>
+    <string name="screen_title_artifact_publish">发布 Artifact</string>
     <string name="artifact_publish_info_description">条目会先上传到您自己的 OperitForge 发布仓库，再根据类型自动登记到脚本市场或工具包市场。请确认内容、版本和兼容范围准确无误。</string>
     <string name="change">更改</string>
     <string name="comma_separator">，</string>

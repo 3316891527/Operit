@@ -1,7 +1,6 @@
 package com.ai.assistance.operit.ui.features.extensions.packages.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.AlertDialog
@@ -22,11 +20,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
@@ -51,6 +46,7 @@ import com.ai.assistance.operit.data.api.MarketStatsApiService
 import com.ai.assistance.operit.data.api.MarketV2Entry
 import com.ai.assistance.operit.data.api.MarketV2ManifestCategory
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketStatsType
+import com.ai.assistance.operit.ui.features.extensions.packages.components.MarketCategoryDropdown
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.market.viewmodel.RepoMarketPublishViewModel
 import kotlinx.coroutines.launch
 
@@ -438,47 +434,14 @@ private fun RepoCategoryDropdown(
     enabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedLabel =
-        selectedCategory
-            .takeIf { it.isNotBlank() }
-            ?.let { selected -> marketCategoryLabel(selected) }
-            .orEmpty()
-
-    Box(modifier = modifier) {
-        OutlinedTextField(
-            value = selectedLabel,
-            onValueChange = {},
-            label = { Text(stringResource(R.string.market_detail_category_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = enabled,
-            readOnly = true,
-            placeholder = { Text(stringResource(R.string.select_category)) },
-            trailingIcon = {
-                IconButton(
-                    onClick = { if (enabled) expanded = true },
-                    enabled = enabled
-                ) {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                }
-            },
-            isError = enabled && selectedCategory.isBlank()
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            categories.forEach { category ->
-                DropdownMenuItem(
-                    text = { Text(marketCategoryLabel(category.id)) },
-                    onClick = {
-                        onCategorySelected(category.id)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
+    MarketCategoryDropdown(
+        selectedCategory = selectedCategory,
+        categories = categories,
+        onCategorySelected = onCategorySelected,
+        categoryLabel = { categoryId -> marketCategoryLabel(categoryId) },
+        enabled = enabled,
+        modifier = modifier,
+    )
 }
 
 @Composable

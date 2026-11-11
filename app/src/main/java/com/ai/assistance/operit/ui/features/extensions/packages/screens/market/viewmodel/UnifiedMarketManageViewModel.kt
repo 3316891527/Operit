@@ -23,6 +23,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 enum class UnifiedMarketManageKind(val types: Set<String>) {
+    ALL(
+        setOf(
+            MarketStatsType.SCRIPT.wireValue,
+            MarketStatsType.PACKAGE.wireValue,
+            MarketStatsType.SKILL.wireValue,
+            MarketStatsType.MCP.wireValue,
+        )
+    ),
     SCRIPT(setOf(MarketStatsType.SCRIPT.wireValue)),
     PACKAGE(setOf(MarketStatsType.PACKAGE.wireValue)),
     ARTIFACT(setOf(MarketStatsType.SCRIPT.wireValue, MarketStatsType.PACKAGE.wireValue)),
