@@ -8572,4 +8572,6 @@
     <string name="builtin_market_version">Versión del recurso %1$s</string>
     <string name="extension_updates_no_sources">No hay complementos ni scripts con un origen de actualizaciones. Los elementos importados manualmente sin un origen del mercado no se pueden comprobar.</string>
     <string name="data_storage_extension_plugin_data_desc">Contiene libros de mundo y ajustes. Gestiona estos datos en el complemento correspondiente.</string>
+    <string name="market_creator_needs_changes">Por corregir</string>
+    <string name="market_creator_publish_locked">Inicia sesión para publicar</string>
 </resources>

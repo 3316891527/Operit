@@ -7478,7 +7478,6 @@
     <string name="market_category_other">Other</string>
     <string name="market_creator_center">Creator Center</string>
     <string name="market_creator_my_publications">My publications</string>
-    <string name="market_creator_filter_extensions">Extensions</string>
     <string name="market_creator_publish_artifact_hint">Choose script or tool package type</string>
     <string name="market_creator_filter_empty">No publications in this category</string>
     <string name="market_notifications_title">Messages</string>
@@ -9441,4 +9440,6 @@
     <string name="extension_update_success">Update successful</string>
     <string name="extension_update_failed">Update failed: %1$s</string>
     <string name="extension_update_cancelled">Update cancelled</string>
+    <string name="market_creator_needs_changes">Needs changes</string>
+    <string name="market_creator_publish_locked">Sign in to publish</string>
 </resources>

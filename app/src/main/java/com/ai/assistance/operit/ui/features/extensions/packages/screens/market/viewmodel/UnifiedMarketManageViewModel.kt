@@ -14,6 +14,9 @@ import com.ai.assistance.operit.data.preferences.GitHubAuthPreferences
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketStatsType
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,7 +49,7 @@ class UnifiedMarketManageViewModel(
     private val githubAuth = GitHubAuthPreferences.getInstance(context)
 
     private val _isLoading = MutableStateFlow(false)
-   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
@@ -59,6 +62,7 @@ class UnifiedMarketManageViewModel(
 
     private val _hasLoaded = MutableStateFlow(false)
     val hasLoaded: StateFlow<Boolean> = _hasLoaded.asStateFlow()
+    private var entriesLoadJob: Job? = null
 
     val isLoggedIn: StateFlow<Boolean> =
         githubAuth.isLoggedInFlow.stateIn(
@@ -68,60 +72,50 @@ class UnifiedMarketManageViewModel(
         )
 
     fun loadEntries(refresh: Boolean = false) {
-       viewModelScope.launch {
-           if (_isLoading.value) return@launch
-            if (refresh && _isRefreshing.value) return@launch
-           if (!refresh && _hasLoaded.value) return@launch
-            if (!githubAuth.isLoggedIn()) {
-                _errorMessage.value = context.getString(R.string.skillmarket_github_login_required)
-                return@launch
-            }
-
-            if (refresh) {
-                _isRefreshing.value = true
-            } else {
-                _isLoading.value = true
-            }
+        if (entriesLoadJob?.isActive == true || _isLoading.value || _isRefreshing.value) return
+        if (!refresh && _hasLoaded.value) return
+        entriesLoadJob = viewModelScope.launch {
+            if (!githubAuth.isLoggedIn()) return@launch
+            if (refresh) _isRefreshing.value = true else _isLoading.value = true
             _errorMessage.value = null
-
-           try {
-                val userInfo = githubAuth.getCurrentUserInfo()
-                if (userInfo == null) {
+            try {
+                if (githubAuth.getCurrentUserInfo() == null) {
                     _errorMessage.value = context.getString(R.string.skillmarket_unable_get_user_info)
                     return@launch
                 }
-
-                val loaded =
-                    withContext(Dispatchers.IO) {
-                        kind.types
-                            .flatMap { type ->
-                                marketStatsApiService.getUserPublishedEntries(type).getOrThrow()
-                            }
-                            .filter { entry -> entry.type.lowercase() in kind.types }
-                            .distinctBy { it.id }
-                            .sortedByDescending { it.updatedAt }
-                    }
+                val loaded = withContext(Dispatchers.IO) {
+                    kind.types
+                        .flatMap { type -> marketStatsApiService.getUserPublishedEntries(type).getOrThrow() }
+                        .filter { entry -> entry.type.lowercase() in kind.types }
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.updatedAt }
+                }
                 _entries.value = loaded
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _errorMessage.value = e.message ?: context.getString(R.string.market_error_load_failed)
                 AppLogger.e(TAG, "Failed to load managed market entries", e)
             } finally {
-                _hasLoaded.value = true
-            if (refresh) {
-                _isRefreshing.value = false
-            } else {
-                _isLoading.value = false
-            }
+                // Logout cancels this request; only the active account may update loading flags.
+                if (isActive) {
+                    _hasLoaded.value = true
+                    _isRefreshing.value = false
+                    _isLoading.value = false
+                }
             }
         }
     }
 
     fun reset() {
-       _entries.value = emptyList()
-       _hasLoaded.value = false
-       _errorMessage.value = null
+        entriesLoadJob?.cancel()
+        entriesLoadJob = null
+        _entries.value = emptyList()
+        _hasLoaded.value = false
+        _errorMessage.value = null
         _isRefreshing.value = false
-   }
+        _isLoading.value = false
+    }
 
     fun clearError() {
         _errorMessage.value = null

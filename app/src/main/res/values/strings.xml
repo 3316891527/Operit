@@ -4254,7 +4254,6 @@
     <string name="market_category_other">其他</string>
     <string name="market_creator_center">创作者中心</string>
     <string name="market_creator_my_publications">我的发布</string>
-    <string name="market_creator_filter_extensions">扩展</string>
     <string name="market_creator_publish_artifact_hint">选择脚本或工具包类型</string>
     <string name="market_creator_filter_empty">当前分类暂无发布内容</string>
     <string name="market_notifications_title">消息列表</string>
@@ -9417,4 +9416,6 @@
     <string name="extension_update_success">更新成功</string>
     <string name="extension_update_failed">更新失败：%1$s</string>
     <string name="extension_update_cancelled">更新已取消</string>
+    <string name="market_creator_needs_changes">需修改</string>
+    <string name="market_creator_publish_locked">登录后可发布</string>
 </resources>

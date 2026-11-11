@@ -9097,4 +9097,6 @@
     <string name="builtin_market_version">Versiunea resursei %1$s</string>
     <string name="extension_updates_no_sources">Nu există extensii sau scripturi cu o sursă de actualizări. Elementele importate manual fără o sursă din magazin nu pot fi verificate.</string>
     <string name="data_storage_extension_plugin_data_desc">Conține cărți de lume și setări. Gestionează aceste date în pluginul corespunzător.</string>
+    <string name="market_creator_needs_changes">De modificat</string>
+    <string name="market_creator_publish_locked">Autentifică-te pentru a publica</string>
 </resources>

@@ -8504,4 +8504,6 @@
     <string name="builtin_market_version">Versi sumber daya %1$s</string>
     <string name="extension_updates_no_sources">Tidak ada plugin atau skrip dengan sumber pembaruan. Item yang diimpor manual tanpa sumber pasar tidak dapat diperiksa.</string>
     <string name="data_storage_extension_plugin_data_desc">Berisi buku dunia dan pengaturan plugin. Kelola data ini di plugin terkait.</string>
+    <string name="market_creator_needs_changes">Perlu revisi</string>
+    <string name="market_creator_publish_locked">Masuk untuk menerbitkan</string>
 </resources>

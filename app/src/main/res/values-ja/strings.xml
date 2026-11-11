@@ -8341,4 +8341,6 @@
     <string name="builtin_market_version">リソースバージョン %1$s</string>
     <string name="extension_updates_no_sources">更新元を確認できるプラグインやスクリプトがありません。マーケットの情報がない手動インポート項目は確認できません。</string>
     <string name="data_storage_extension_plugin_data_desc">ワールドブックや設定が含まれます。対応するプラグインで管理してください。</string>
+    <string name="market_creator_needs_changes">要修正</string>
+    <string name="market_creator_publish_locked">ログインして公開</string>
 </resources>

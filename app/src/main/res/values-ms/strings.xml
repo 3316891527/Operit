@@ -8503,4 +8503,6 @@
     <string name="builtin_market_version">Versi sumber %1$s</string>
     <string name="extension_updates_no_sources">Tiada pemalam atau skrip dengan sumber kemas kini untuk disemak. Item yang diimport secara manual tanpa sumber pasaran tidak boleh disemak.</string>
     <string name="data_storage_extension_plugin_data_desc">Mengandungi buku dunia dan tetapan pemalam. Urus data ini dalam pemalam berkaitan.</string>
+    <string name="market_creator_needs_changes">Perlu dibaiki</string>
+    <string name="market_creator_publish_locked">Log masuk untuk menerbitkan</string>
 </resources>

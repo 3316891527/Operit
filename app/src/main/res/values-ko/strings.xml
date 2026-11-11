@@ -8351,4 +8351,6 @@
     <string name="builtin_market_version">리소스 버전 %1$s</string>
     <string name="extension_updates_no_sources">업데이트 출처를 확인할 플러그인이나 스크립트가 없습니다. 마켓 출처 없이 직접 가져온 항목은 확인할 수 없습니다.</string>
     <string name="data_storage_extension_plugin_data_desc">월드북과 플러그인 설정이 포함됩니다. 해당 플러그인에서 관리하세요.</string>
+    <string name="market_creator_needs_changes">수정 필요</string>
+    <string name="market_creator_publish_locked">로그인 후 게시할 수 있습니다</string>
 </resources>

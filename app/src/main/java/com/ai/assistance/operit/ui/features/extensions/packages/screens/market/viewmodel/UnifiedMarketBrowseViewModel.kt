@@ -19,6 +19,9 @@ import com.ai.assistance.operit.ui.features.extensions.packages.market.resolveMa
 import com.ai.assistance.operit.ui.features.extensions.packages.market.toRankMetric
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -106,6 +109,7 @@ class UnifiedMarketBrowseViewModel(
 
     private val _notifications = MutableStateFlow<List<MarketV2Notification>>(emptyList())
     val notifications: StateFlow<List<MarketV2Notification>> = _notifications.asStateFlow()
+    private var notificationsJob: Job? = null
 
     private val _listScrollIndex = MutableStateFlow(0)
     val listScrollIndex: StateFlow<Int> = _listScrollIndex.asStateFlow()
@@ -245,20 +249,32 @@ class UnifiedMarketBrowseViewModel(
     }
 
     fun loadNotifications() {
-        viewModelScope.launch {
+        notificationsJob?.cancel()
+        notificationsJob = viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
             try {
                 marketApiService.getNotifications(limit = 50, offset = 0).fold(
-                    onSuccess = { _notifications.value = it },
+                    onSuccess = { if (isActive) _notifications.value = it },
                     onFailure = { error ->
+                        if (error is CancellationException) throw error
+                        if (!isActive) return@fold
                         _errorMessage.value = error.message ?: "Failed to load market notifications"
                         AppLogger.e(TAG, "Failed to load market notifications", error)
                     }
                 )
             } finally {
-                _isLoading.value = false
+                if (isActive) _isLoading.value = false
             }
         }
+    }
+
+    fun clearNotifications() {
+        notificationsJob?.cancel()
+        notificationsJob = null
+        _notifications.value = emptyList()
+        _errorMessage.value = null
+        _isLoading.value = false
     }
 
     fun installEntry(entry: MarketV2Entry) {

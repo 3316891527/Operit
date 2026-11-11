@@ -8344,4 +8344,6 @@
     <string name="builtin_market_version">Versão do recurso %1$s</string>
     <string name="extension_updates_no_sources">Nenhum plugin ou script tem uma origem de atualização para verificar. Itens importados manualmente sem uma origem do mercado não podem ser verificados.</string>
     <string name="data_storage_extension_plugin_data_desc">Contém livros de mundo e configurações. Gerencie estes dados no plugin correspondente.</string>
+    <string name="market_creator_needs_changes">Requer ajustes</string>
+    <string name="market_creator_publish_locked">Entre para publicar</string>
 </resources>

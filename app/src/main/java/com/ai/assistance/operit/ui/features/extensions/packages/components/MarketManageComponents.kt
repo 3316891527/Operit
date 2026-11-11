@@ -1,10 +1,19 @@
 package com.ai.assistance.operit.ui.features.extensions.packages.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,9 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,88 +55,41 @@ import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketRev
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketReviewState
 import com.ai.assistance.operit.ui.features.extensions.packages.market.labelResId
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketManageScaffold(
-    isLoggedIn: Boolean,
-    isLoading: Boolean,
-    errorMessage: String?,
-    isEmpty: Boolean,
-    onLogin: () -> Unit,
-    onPublish: () -> Unit,
-    loginDescription: String,
-    loadingMessage: String,
-    emptyIcon: ImageVector,
-    emptyTitle: String,
-    emptyDescription: String,
-    emptyActionLabel: String? = null,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     embedded: Boolean = false,
-    topContent: @Composable ColumnScope.() -> Unit = {},
-    content: @Composable BoxScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     val body: @Composable (PaddingValues) -> Unit = { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
         ) {
-            topContent()
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = true)
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-            ) {
-                if (!isLoggedIn) {
-                    MarketManageLoginRequiredCard(
-                        description = loginDescription,
-                        onLogin = onLogin
-                    )
-                }
-
-                errorMessage?.let { message ->
-                    MarketManageErrorCard(message = message)
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = true),
-                    contentAlignment = Alignment.Center
-                ) {
-                    when {
-                        isLoading -> MarketManageLoadingState(message = loadingMessage)
-                        isLoggedIn && isEmpty -> {
-                            MarketManageEmptyState(
-                                icon = emptyIcon,
-                                title = emptyTitle,
-                                description = emptyDescription,
-                                actionLabel = emptyActionLabel,
-                                onAction = onPublish
-                            )
-                        }
-
-                        isLoggedIn -> content()
-                    }
-                }
-            }
+            // Account, publish actions and records share one scroller, including on small screens.
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = content,
+            )
         }
     }
-
     if (embedded) {
         body(PaddingValues(0.dp))
     } else {
-        CustomScaffold { paddingValues ->
-            body(paddingValues)
-        }
+        CustomScaffold { body(it) }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MarketManageItemCard(
     title: String,
     description: String,
-    isOpen: Boolean,
     modifier: Modifier = Modifier,
     showActions: Boolean = true,
     onClick: (() -> Unit)? = null,
@@ -148,43 +108,34 @@ fun MarketManageItemCard(
     Card(
         modifier = clickableModifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor =
-                if (isOpen) {
-                    MaterialTheme.colorScheme.surface
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = leadingContent,
-                )
-                Text(
-                    text = title,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = headerContent
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, content = leadingContent)
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        headerContent()
+                    }
+                }
             }
 
             if (description.isNotBlank()) {
@@ -207,12 +158,13 @@ fun MarketManageItemCard(
 
             if (showActions) {
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = actions
-                )
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    actions()
+                }
             }
         }
     }
@@ -246,109 +198,56 @@ fun MarketManageReviewFlow(
     reviewState: MarketReviewState,
     isOpen: Boolean,
     listingState: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
+    val submittedColor = MaterialTheme.colorScheme.primary
     val reviewColor = marketReviewFlowColor(reviewState)
+    val trackColor = MaterialTheme.colorScheme.outlineVariant
     val isPendingListing = listingState == "pending_listing"
     val publicationActive = reviewState == MarketReviewState.APPROVED && isOpen && !isPendingListing
-    val publicationLabel =
-        when (reviewState) {
-            MarketReviewState.APPROVED ->
-                if (isPendingListing || !isOpen) {
-                    stringResource(R.string.market_review_step_scheduled)
-                } else {
-                    stringResource(R.string.published)
-                }
-            MarketReviewState.PENDING,
-            MarketReviewState.CHANGES_REQUESTED,
-            MarketReviewState.REJECTED,
-            MarketReviewState.WITHDRAWN -> stringResource(R.string.market_review_step_unlisted)
-        }
-    val publicationColor =
-        if (publicationActive) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.outline
-        }
-    val secondConnectorColor =
-        if (publicationActive) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.outlineVariant
-        }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        MarketReviewFlowStep(
-            label = stringResource(R.string.market_review_step_submitted),
-            color = MaterialTheme.colorScheme.primary,
-            active = true,
-            modifier = Modifier.weight(1f)
-        )
-        MarketReviewFlowConnector(color = reviewColor)
-        MarketReviewFlowStep(
-            label = stringResource(reviewState.labelResId()),
-            color = reviewColor,
-            active = true,
-            modifier = Modifier.weight(1f)
-        )
-        MarketReviewFlowConnector(color = secondConnectorColor)
-        MarketReviewFlowStep(
-            label = publicationLabel,
-            color = publicationColor,
-            active = publicationActive,
-            modifier = Modifier.weight(1f)
-        )
+    val publicationColor = if (publicationActive) submittedColor else MaterialTheme.colorScheme.outline
+    val publicationLabel = when {
+        publicationActive -> stringResource(R.string.published)
+        reviewState == MarketReviewState.APPROVED -> stringResource(R.string.market_review_step_scheduled)
+        else -> stringResource(R.string.market_review_step_unlisted)
     }
-}
+    val firstConnector = if (reviewState == MarketReviewState.APPROVED) submittedColor else trackColor
+    val secondConnector = if (publicationActive) submittedColor else trackColor
 
-@Composable
-private fun MarketReviewFlowStep(
-    label: String,
-    color: Color,
-    active: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val contentColor =
-        if (active) {
-            color
-        } else {
-            MaterialTheme.colorScheme.outline
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(18.dp)) {
+            val points = listOf(1f / 6f, 0.5f, 5f / 6f).map { Offset(size.width * it, size.height / 2f) }
+            val radius = 5.dp.toPx()
+            // Lines stretch between node centres; drawing them first keeps the nodes clearly visible.
+            val nodeInset = Offset(radius, 0f)
+            drawLine(firstConnector, points[0] + nodeInset, points[1] - nodeInset, strokeWidth = 2.dp.toPx())
+            drawLine(secondConnector, points[1] + nodeInset, points[2] - nodeInset, strokeWidth = 2.dp.toPx())
+            drawCircle(submittedColor, radius, points[0])
+            drawCircle(reviewColor, radius, points[1])
+            if (publicationActive) {
+                drawCircle(publicationColor, radius, points[2])
+            } else {
+                drawCircle(publicationColor, radius, points[2], style = Stroke(width = 2.dp.toPx()))
+            }
         }
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            modifier = Modifier.size(7.dp),
-            shape = RoundedCornerShape(999.dp),
-            color = contentColor
-        ) {}
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = label,
-            color = contentColor,
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
+        Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            listOf(
+                stringResource(R.string.market_review_step_submitted) to submittedColor,
+                stringResource(reviewState.labelResId()) to reviewColor,
+                publicationLabel to publicationColor,
+            ).forEach { (label, color) ->
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
-}
-
-@Composable
-private fun MarketReviewFlowConnector(color: Color) {
-    Surface(
-        modifier = Modifier
-            .width(10.dp)
-            .height(1.dp),
-        shape = RoundedCornerShape(999.dp),
-        color = color.copy(alpha = 0.75f)
-    ) {}
 }
 
 @Composable
@@ -458,14 +357,32 @@ fun RowScope.MarketManageDangerActionButton(
 }
 
 @Composable
+fun RowScope.MarketManageVersionActionButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+    }
+}
+
+@Composable
 fun RowScope.MarketManagePrimaryActionButton(
     label: String,
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    TextButton(
+    FilledTonalButton(
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+        shape = RoundedCornerShape(50),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
     ) {
         Icon(
             imageVector = icon,
@@ -505,48 +422,7 @@ fun MarketManageDeleteDialog(
 }
 
 @Composable
-private fun MarketManageLoginRequiredCard(
-    description: String,
-    onLogin: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.please_login_github_first),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onLogin) {
-                Text(stringResource(R.string.login_github))
-            }
-        }
-    }
-}
-
-@Composable
-private fun MarketManageErrorCard(message: String) {
+fun MarketManageErrorCard(message: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -573,8 +449,11 @@ private fun MarketManageErrorCard(message: String) {
 }
 
 @Composable
-private fun MarketManageLoadingState(message: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun MarketManageLoadingState(message: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         CircularProgressIndicator()
         Spacer(modifier = Modifier.height(8.dp))
         Text(message)
@@ -582,49 +461,16 @@ private fun MarketManageLoadingState(message: String) {
 }
 
 @Composable
-private fun MarketManageEmptyState(
-    icon: ImageVector,
-    title: String,
-    description: String,
-    actionLabel: String?,
-    onAction: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+fun MarketManageEmptyState(title: String) {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            actionLabel?.let { label ->
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedButton(onClick = onAction) {
-                    Text(label)
-                }
-            }
-        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
-
-
