@@ -529,13 +529,23 @@ object ToolExecutionManager {
         suspend fun publishMarkup(markup: String) {
             outputMutex.withLock { collector.emit(ensureOwnLine(markup)) }
         }
+        suspend fun publishA2uiCard(document: String) {
+            val cardPublisher = onA2uiCard
+            if (cardPublisher != null) {
+                outputMutex.withLock { cardPublisher(document) }
+            } else {
+                publishMarkup("```a2ui\n$document\n```")
+            }
+        }
         val timing = ToolExecutionTiming(invocations.size, onToolTiming, toolCallOffset)
         try {
         timing.queued()
         coroutineScope {
-        val orderedResults = OrderedToolResults(invocations.size, ::publishMarkup) { document ->
-            publishMarkup("```a2ui\n$document\n```")
-        }
+        val orderedResults = OrderedToolResults(
+            invocations.size,
+            publishAfterResult = ::publishA2uiCard,
+            publish = ::publishMarkup,
+        )
         suspend fun completeResult(index: Int, result: ToolResult, a2uiDocuments: List<String> = emptyList()) {
             timing.completed(index)
             orderedResults.complete(index, result, a2uiDocuments)
@@ -559,7 +569,7 @@ object ToolExecutionManager {
         }
         val publishA2ui: (suspend (String) -> Unit)? = if (onA2uiCard == null) null else { document ->
             // Waiting forms must be emitted before their tool suspends for a user submission.
-            outputMutex.withLock { onA2uiCard(document) }
+            publishA2uiCard(document)
         }
         val toolRuntimeContext =
             ToolRuntimeContext(

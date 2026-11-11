@@ -15,8 +15,8 @@ data class ToolExecutionBatch(val results: List<ToolResult>, val message: String
  */
 internal class OrderedToolResults(
     count: Int,
-    private val publish: suspend (String) -> Unit,
-    private val publishAfterResult: suspend (String) -> Unit = publish
+    private val publishAfterResult: (suspend (String) -> Unit)? = null,
+    private val publish: suspend (String) -> Unit
 ) {
     private val mutex = Mutex()
     private val results = arrayOfNulls<ToolResult>(count)
@@ -33,7 +33,7 @@ internal class OrderedToolResults(
             markup[index] = ConversationMarkupManager.formatToolResultForMessage(result)
             while (next < results.size && results[next] != null) {
                 publish(checkNotNull(markup[next]))
-                this.afterResult[next].orEmpty().forEach { publishAfterResult(it) }
+                this.afterResult[next].orEmpty().forEach { (publishAfterResult ?: publish)(it) }
                 next++
             }
         }
