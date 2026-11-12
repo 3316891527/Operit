@@ -2,8 +2,6 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.attachmen
 
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images.editor.ImageEditorDialog
 
-import androidx.compose.material3.Button
-
 import androidx.compose.material.icons.filled.Edit
 
 import java.io.File
@@ -36,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import androidx.compose.material3.MaterialTheme
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
@@ -62,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
@@ -145,18 +145,26 @@ fun AttachmentImagePreviewDialog(
                 )
             }
             if (onEditImage != null) {
-                Button(
+                Surface(
                     onClick = {
                         val current = images[currentPage]
                         editTarget = onEditImage(current)
                         editing = current
                     },
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Black.copy(alpha = 0.58f),
+                    contentColor = Color.White,
                     modifier = Modifier.align(Alignment.BottomStart)
                         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
                         .padding(16.dp),
                 ) {
-                    Icon(Icons.Default.Edit, null)
-                    Text(stringResource(R.string.edit), modifier = Modifier.padding(start = 8.dp))
+                    Row(
+                        Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(R.string.edit), modifier = Modifier.padding(start = 6.dp))
+                    }
                 }
             }
             Row(

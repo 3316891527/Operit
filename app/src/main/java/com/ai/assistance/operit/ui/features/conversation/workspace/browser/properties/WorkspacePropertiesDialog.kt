@@ -8,7 +8,6 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertD
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.text.NumberFormat
 import java.time.Instant
@@ -188,7 +188,7 @@ private fun PropertyRow(label: String, value: String, copy: (() -> Unit)? = null
 private fun copyProperty(context: Context, value: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText("", value))
-    Toast.makeText(context, R.string.workspace_properties_copied, Toast.LENGTH_SHORT).show()
+    OKToast.success(context, R.string.workspace_properties_copied, OKToast.LENGTH_SHORT).show()
 }
 
 private val propertyTimeFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT)

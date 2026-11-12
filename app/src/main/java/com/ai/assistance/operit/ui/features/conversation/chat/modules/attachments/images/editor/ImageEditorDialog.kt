@@ -16,14 +16,16 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Close
@@ -31,15 +33,15 @@ import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,9 +58,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -179,27 +184,38 @@ internal fun ImageEditorDialog(
                 color = Color.LightGray, style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
-            Box(Modifier.fillMaxWidth().padding(8.dp).heightIn(min = 146.dp)) {
+            val primaryTools = listOf(
+                ImageEditTool.MOVE,
+                ImageEditTool.PEN,
+                ImageEditTool.MOSAIC,
+                ImageEditTool.TEXT,
+                ImageEditTool.CROP,
+                ImageEditTool.ERASER,
+            )
+            val drawingTools = listOf(
+                ImageEditTool.PEN,
+                ImageEditTool.RECTANGLE,
+                ImageEditTool.OVAL,
+                ImageEditTool.ARROW,
+            )
+            Box(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)
+                    .heightIn(min = if (tool.isDrawingTool()) 146.dp else 100.dp),
+            ) {
                 Column(Modifier.fillMaxWidth().padding(end = 88.dp)) {
-                    EditorColors(color, !saving) { color = it }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.image_editor_width), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                        Slider(value = strokeWidth, onValueChange = { strokeWidth = it }, valueRange = 0.003f..0.04f, enabled = !saving, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
+                    if (tool.isDrawingTool()) {
+                        EditorToolRow(drawingTools, tool, !saving) { tool = it }
                     }
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ImageEditTool.entries.forEach { entry ->
-                            Column(
-                                Modifier.width(56.dp).clip(RoundedCornerShape(10.dp))
-                                    .background(if (tool == entry) Color(0xFF343434) else Color.Transparent)
-                                    .clickable(enabled = !saving) { tool = entry }
-                                    .padding(vertical = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                EditorToolIcon(entry)
-                                Text(stringResource(editorToolLabel(entry)), color = Color.White, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                            }
+                    if (tool.isDrawingTool()) {
+                        EditorColors(color, !saving) { color = it }
+                    }
+                    if (tool.isDrawingTool() || tool == ImageEditTool.MOSAIC || tool == ImageEditTool.ERASER) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.image_editor_width), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                            Slider(value = strokeWidth, onValueChange = { strokeWidth = it }, valueRange = 0.003f..0.04f, enabled = !saving, modifier = Modifier.weight(1f).padding(horizontal = 8.dp))
                         }
                     }
+                    EditorToolRow(primaryTools, if (tool.isDrawingTool()) ImageEditTool.PEN else tool, !saving) { tool = it }
                 }
                 Column(Modifier.align(Alignment.BottomEnd), horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { history = history.undo() }, enabled = !saving && history.previous.isNotEmpty()) {
@@ -225,33 +241,138 @@ internal fun ImageEditorDialog(
             )
         }
         textTarget?.let { target ->
-            AlertDialog(
-                onDismissRequest = { textTarget = null },
-                title = { Text(stringResource(R.string.image_editor_text)) },
-                text = {
-                    Column {
-                        OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text(stringResource(R.string.image_editor_text_hint)) })
-                        Slider(value = textSize, onValueChange = { textSize = it }, valueRange = 0.02f..0.14f)
-                        EditorColors(textColor, true) { textColor = it }
-                    }
+            ImageEditorTextDialog(
+                canDelete = target.index != null,
+                text = text,
+                onTextChange = { text = it },
+                textSize = textSize,
+                onTextSizeChange = { textSize = it },
+                textColor = textColor,
+                onTextColorChange = { textColor = it },
+                onDismiss = { textTarget = null },
+                onDelete = {
+                    history = history.commit(history.current.copy(marks = history.current.marks.filterIndexed { index, _ -> index != target.index }))
+                    textTarget = null
                 },
-                confirmButton = {
-                    Column(horizontalAlignment = Alignment.End) {
-                        TextButton(enabled = text.isNotBlank(), onClick = {
-                            val label = ImageEditMark.Text(text.trim(), target.position, textColor, textSize)
-                            val marks = if (target.index == null) history.current.marks + label
-                                else history.current.marks.mapIndexed { index, mark -> if (index == target.index) label else mark }
-                            history = history.commit(history.current.copy(marks = marks))
-                            textTarget = null
-                        }) { Text(stringResource(R.string.image_editor_done)) }
-                        if (target.index != null) TextButton(onClick = {
-                            history = history.commit(history.current.copy(marks = history.current.marks.filterIndexed { index, _ -> index != target.index }))
-                            textTarget = null
-                        }) { Text(stringResource(R.string.delete)) }
-                        TextButton(onClick = { textTarget = null }) { Text(stringResource(R.string.common_cancel)) }
-                    }
+                onConfirm = {
+                    val label = ImageEditMark.Text(text.trim(), target.position, textColor, textSize)
+                    val marks = if (target.index == null) history.current.marks + label
+                        else history.current.marks.mapIndexed { index, mark -> if (index == target.index) label else mark }
+                    history = history.commit(history.current.copy(marks = marks))
+                    textTarget = null
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun ImageEditorTextDialog(
+    canDelete: Boolean,
+    text: String,
+    onTextChange: (String) -> Unit,
+    textSize: Float,
+    onTextSizeChange: (Float) -> Unit,
+    textColor: Int,
+    onTextColorChange: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp).padding(horizontal = 24.dp).imePadding(),
+            shape = RoundedCornerShape(20.dp),
+            color = colors.surfaceContainerHigh,
+            contentColor = colors.onSurface,
+            tonalElevation = 8.dp,
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.image_editor_text),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, stringResource(R.string.close), tint = colors.onSurface)
+                    }
+                }
+                BasicTextField(
+                    value = text,
+                    onValueChange = onTextChange,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 68.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.surface)
+                        .border(1.dp, colors.outline, RoundedCornerShape(12.dp))
+                        .padding(14.dp),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
+                    cursorBrush = SolidColor(colors.primary),
+                    maxLines = 4,
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (text.isBlank()) {
+                                Text(stringResource(R.string.image_editor_text_hint), color = colors.onSurfaceVariant)
+                            }
+                            innerTextField()
+                        }
+                    },
+                )
+                Slider(value = textSize, onValueChange = onTextSizeChange, valueRange = 0.02f..0.14f)
+                EditorColors(textColor, true, onTextColorChange)
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (canDelete) {
+                        TextButton(
+                            onClick = onDelete,
+                            colors = ButtonDefaults.textButtonColors(contentColor = colors.error),
+                        ) { Text(stringResource(R.string.delete)) }
+                    }
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(contentColor = colors.onSurfaceVariant),
+                    ) { Text(stringResource(R.string.common_cancel)) }
+                    Button(
+                        onClick = onConfirm,
+                        enabled = text.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
+                    ) { Text(stringResource(R.string.image_editor_done)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditorToolRow(
+    tools: List<ImageEditTool>,
+    selected: ImageEditTool,
+    enabled: Boolean,
+    onToolSelected: (ImageEditTool) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        tools.forEach { entry ->
+            val description = stringResource(editorToolLabel(entry))
+            Box(
+                Modifier.size(44.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (selected == entry) Color(0xFF343434) else Color.Transparent)
+                    .clickable(enabled = enabled) { onToolSelected(entry) }
+                    .semantics { contentDescription = description },
+                contentAlignment = Alignment.Center,
+            ) {
+                EditorToolIcon(entry)
+            }
         }
     }
 }
@@ -284,10 +405,12 @@ private fun editorToolLabel(tool: ImageEditTool): Int = when (tool) {
     ImageEditTool.ERASER -> R.string.image_editor_eraser
 }
 
+private fun ImageEditTool.isDrawingTool(): Boolean = this == ImageEditTool.PEN ||
+    this == ImageEditTool.RECTANGLE || this == ImageEditTool.OVAL || this == ImageEditTool.ARROW
+
 @Composable
 private fun EditorToolIcon(tool: ImageEditTool) {
     val icon = when (tool) {
-        ImageEditTool.MOVE -> Icons.Default.ZoomIn
         ImageEditTool.PEN -> Icons.Default.Brush
         ImageEditTool.TEXT -> Icons.Default.TextFields
         ImageEditTool.CROP -> Icons.Default.Crop
@@ -299,6 +422,20 @@ private fun EditorToolIcon(tool: ImageEditTool) {
         val start = Offset(size.width * 0.16f, size.height * 0.16f)
         val end = Offset(size.width * 0.84f, size.height * 0.84f)
         when (tool) {
+            ImageEditTool.MOVE -> {
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val arm = size.width * 0.32f
+                drawLine(Color.White, Offset(center.x - arm, center.y), Offset(center.x + arm, center.y), lineWidth)
+                drawLine(Color.White, Offset(center.x, center.y - arm), Offset(center.x, center.y + arm), lineWidth)
+                drawLine(Color.White, Offset(center.x - arm, center.y), Offset(center.x - arm + lineWidth * 2f, center.y - lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x - arm, center.y), Offset(center.x - arm + lineWidth * 2f, center.y + lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x + arm, center.y), Offset(center.x + arm - lineWidth * 2f, center.y - lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x + arm, center.y), Offset(center.x + arm - lineWidth * 2f, center.y + lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x, center.y - arm), Offset(center.x - lineWidth * 2f, center.y - arm + lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x, center.y - arm), Offset(center.x + lineWidth * 2f, center.y - arm + lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x, center.y + arm), Offset(center.x - lineWidth * 2f, center.y + arm - lineWidth * 2f), lineWidth)
+                drawLine(Color.White, Offset(center.x, center.y + arm), Offset(center.x + lineWidth * 2f, center.y + arm - lineWidth * 2f), lineWidth)
+            }
             ImageEditTool.RECTANGLE -> drawRect(Color.White, start, Size(end.x - start.x, end.y - start.y), style = Stroke(lineWidth))
             ImageEditTool.OVAL -> drawOval(Color.White, start, Size(end.x - start.x, end.y - start.y), style = Stroke(lineWidth))
             ImageEditTool.ARROW -> {

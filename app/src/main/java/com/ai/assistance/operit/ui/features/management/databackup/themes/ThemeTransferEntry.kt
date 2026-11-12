@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -44,6 +43,7 @@ import com.ai.assistance.operit.ui.features.management.databackup.themes.compone
 import com.ai.assistance.operit.ui.features.management.databackup.themes.components.ThemeTransferIdentity
 import com.ai.assistance.operit.ui.features.management.databackup.themes.components.ThemeTransferMethodSelector
 import com.ai.assistance.operit.ui.features.management.databackup.themes.components.ThemeTransferTextField
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 /** 单项入口复用其他备份行；抽屉只管理展示，继续调用现有主题导入导出状态。 */
 @Composable
@@ -83,7 +83,7 @@ internal fun ThemeTransferEntry() {
     }
     LaunchedEffect(state.notification) {
         if (state.notification) {
-            Toast.makeText(context, R.string.theme_transfer_success, Toast.LENGTH_SHORT).show()
+            OKToast.success(context, R.string.theme_transfer_success, OKToast.LENGTH_SHORT).show()
             vm.consumeNotification()
         }
     }
@@ -297,12 +297,11 @@ internal fun ThemeTransferEntry() {
                                                 state.generated,
                                             )
                                         )
-                                        Toast.makeText(
-                                                context,
-                                                R.string.theme_transfer_copied,
-                                                Toast.LENGTH_SHORT,
-                                            )
-                                            .show()
+                                        OKToast.success(
+                                            context,
+                                            R.string.theme_transfer_copied,
+                                            OKToast.LENGTH_SHORT,
+                                        ).show()
                                     }
                                     ThemeTransferPanel.IMPORT -> vm.preview()
                                     ThemeTransferPanel.PREVIEW -> vm.apply()
