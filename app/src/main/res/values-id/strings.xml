@@ -1554,7 +1554,6 @@
     <string name="select_all_messages">Pilih Semua</string>
     <string name="clear_selection">Batal</string>
     <string name="delete_selected">Hapus yang Dipilih</string>
-    <string name="share_selected">Bagikan</string>
     <string name="selected_count">%d dipilih</string>
     <string name="generating_image">Sedang membuat gambar...</string>
     <string name="share_failed">Gagal membagikan</string>
@@ -6359,8 +6358,6 @@
     <string name="chat_delete_single_variant">Hapus pesan tunggal</string>
     <string name="chat_delete_single_variant_unavailable">Pesan saat ini tidak memiliki kandidat tunggal yang dapat dihapus</string>
     <string name="chat_delete_single_variant_failed">Gagal menghapus pesan tunggal: %1$s</string>
-    <string name="share_preview_title">Pratinjau berbagi</string>
-    <string name="share_preview_image_content_description">Pratinjau gambar berbagi</string>
     <string name="share_preview_generating">Membuat pratinjau...</string>
     <string name="share_preview_expand_thinking">Perluas pemikiran</string>
     <string name="share_preview_expand_tools_groups">Perluas alat dan grup pemikiran</string>
@@ -8511,4 +8508,29 @@
     <string name="builtin_market_version">Versi sumber daya %1$s</string>
     <string name="extension_updates_no_sources">Tidak ada plugin atau skrip dengan sumber pembaruan. Item yang diimpor manual tanpa sumber pasar tidak dapat diperiksa.</string>
     <string name="data_storage_extension_plugin_data_desc">Berisi buku dunia dan pengaturan plugin. Kelola data ini di plugin terkait.</string>
+    <string name="image_editor_title">Editor gambar</string>
+    <string name="image_editor_load_failed">Gambar tidak dapat dimuat</string>
+    <string name="image_editor_too_large">Gambar terlalu besar untuk diedit di perangkat ini</string>
+    <string name="image_editor_save_failed">Gambar yang diedit tidak dapat disimpan</string>
+    <string name="image_editor_attachment_changed">Lampiran asli telah dihapus atau chat berubah. Edit tidak diterapkan.</string>
+    <string name="image_editor_redo">Ulangi</string>
+    <string name="image_editor_crop_hint">Seret untuk memilih area potong</string>
+    <string name="image_editor_gesture_hint">Gunakan dua jari untuk memperbesar atau menggeser; gunakan satu jari dengan alat yang dipilih</string>
+    <string name="image_editor_width">Lebar garis</string>
+    <string name="image_editor_undo">Urungkan</string>
+    <string name="image_editor_done">Selesai</string>
+    <string name="image_editor_unsaved_title">Simpan edit?</string>
+    <string name="image_editor_unsaved_message">Gambar ini memiliki edit yang belum disimpan. Simpan sebelum keluar?</string>
+    <string name="image_editor_discard">Jangan simpan</string>
+    <string name="image_editor_continue">Lanjutkan mengedit</string>
+    <string name="image_editor_text">Teks</string>
+    <string name="image_editor_text_hint">Masukkan teks</string>
+    <string name="image_editor_move">Pindahkan</string>
+    <string name="image_editor_pen">Pena</string>
+    <string name="image_editor_rectangle">Persegi panjang</string>
+    <string name="image_editor_oval">Oval</string>
+    <string name="image_editor_arrow">Panah</string>
+    <string name="image_editor_mosaic">Mosaik</string>
+    <string name="image_editor_crop">Pangkas</string>
+    <string name="image_editor_eraser">Penghapus</string>
 </resources>

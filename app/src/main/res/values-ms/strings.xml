@@ -1033,7 +1033,6 @@
     <string name="select_all_messages">Pilih semua</string>
     <string name="clear_selection">Batal</string>
     <string name="delete_selected">Padam yang dipilih</string>
-    <string name="share_selected">Kongsi</string>
     <string name="selected_count">%d dipilih</string>
     <string name="generating_image">Menjana imej...</string>
     <string name="share_failed">Kongsi gagal</string>
@@ -6357,8 +6356,6 @@
     <string name="chat_delete_single_variant">Padam Mesej Tunggal</string>
     <string name="chat_delete_single_variant_unavailable">Mesej semasa tiada calon tunggal yang boleh dipadam</string>
     <string name="chat_delete_single_variant_failed">Gagal memadam mesej tunggal: %1$s</string>
-    <string name="share_preview_title">Pratonton perkongsian</string>
-    <string name="share_preview_image_content_description">Pratonton imej perkongsian</string>
     <string name="share_preview_generating">Menjana pratonton...</string>
     <string name="share_preview_expand_thinking">Kembangkan pemikiran</string>
     <string name="share_preview_expand_tools_groups">Kembangkan alat dan kumpulan pemikiran</string>
@@ -8510,4 +8507,29 @@
     <string name="builtin_market_version">Versi sumber %1$s</string>
     <string name="extension_updates_no_sources">Tiada pemalam atau skrip dengan sumber kemas kini untuk disemak. Item yang diimport secara manual tanpa sumber pasaran tidak boleh disemak.</string>
     <string name="data_storage_extension_plugin_data_desc">Mengandungi buku dunia dan tetapan pemalam. Urus data ini dalam pemalam berkaitan.</string>
+    <string name="image_editor_title">Editor imej</string>
+    <string name="image_editor_load_failed">Imej tidak dapat dimuatkan</string>
+    <string name="image_editor_too_large">Imej ini terlalu besar untuk diedit pada peranti ini</string>
+    <string name="image_editor_save_failed">Imej yang diedit tidak dapat disimpan</string>
+    <string name="image_editor_attachment_changed">Lampiran asal telah dibuang atau sembang berubah. Edit tidak digunakan.</string>
+    <string name="image_editor_redo">Buat semula</string>
+    <string name="image_editor_crop_hint">Seret untuk memilih kawasan pangkas</string>
+    <string name="image_editor_gesture_hint">Gunakan dua jari untuk zum atau gerak; gunakan satu jari dengan alat yang dipilih</string>
+    <string name="image_editor_width">Lebar garis</string>
+    <string name="image_editor_undo">Buat asal</string>
+    <string name="image_editor_done">Selesai</string>
+    <string name="image_editor_unsaved_title">Simpan suntingan?</string>
+    <string name="image_editor_unsaved_message">Imej ini mempunyai suntingan yang belum disimpan. Simpan sebelum keluar?</string>
+    <string name="image_editor_discard">Jangan simpan</string>
+    <string name="image_editor_continue">Teruskan menyunting</string>
+    <string name="image_editor_text">Teks</string>
+    <string name="image_editor_text_hint">Masukkan teks</string>
+    <string name="image_editor_move">Gerak</string>
+    <string name="image_editor_pen">Pen</string>
+    <string name="image_editor_rectangle">Segi empat tepat</string>
+    <string name="image_editor_oval">Bujur</string>
+    <string name="image_editor_arrow">Anak panah</string>
+    <string name="image_editor_mosaic">Mozek</string>
+    <string name="image_editor_crop">Pangkas</string>
+    <string name="image_editor_eraser">Pemadam</string>
 </resources>

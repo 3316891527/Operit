@@ -1682,13 +1682,10 @@
     <string name="clear_selection">取消</string>
     <string name="multi_select_actions">操作</string>
     <string name="delete_selected">删除选中</string>
-    <string name="share_selected">分享</string>
     <string name="add_selected_to_memory">纳入总结记忆</string>
     <string name="selected_count">已选择 %d 条</string>
     <string name="generating_image">正在生成图片...</string>
     <string name="share_failed">分享失败</string>
-    <string name="share_preview_title">分享预览</string>
-    <string name="share_preview_image_content_description">分享图片预览</string>
     <string name="share_preview_generating">正在生成预览...</string>
     <string name="share_preview_expand_thinking">展开思考</string>
     <string name="share_preview_expand_tools_groups">展开工具和思考组</string>
@@ -9420,4 +9417,30 @@
     <string name="extension_update_success">更新成功</string>
     <string name="extension_update_failed">更新失败：%1$s</string>
     <string name="extension_update_cancelled">更新已取消</string>
+    <string name="image_editor_title">图片编辑</string>
+    <string name="image_editor_load_failed">无法读取图片</string>
+    <string name="image_editor_too_large">图片过大，无法在当前设备上编辑</string>
+    <string name="image_editor_save_failed">保存编辑后的图片失败</string>
+    <string name="image_editor_attachment_changed">原图片附件已被移除或会话已切换，编辑结果未应用</string>
+    <string name="image_editor_redo">重做</string>
+    <string name="image_editor_crop_hint">拖动选择裁剪区域</string>
+    <string name="image_editor_gesture_hint">双指缩放和移动画布，单指进行当前工具操作</string>
+    <string name="image_editor_width">线条粗细</string>
+    <string name="image_editor_undo">撤销</string>
+    <string name="image_editor_done">完成</string>
+    <string name="image_editor_unsaved_title">保存编辑？</string>
+    <string name="image_editor_unsaved_message">图片有未保存的编辑，要保存后退出吗？</string>
+    <string name="image_editor_discard">不保存</string>
+    <string name="image_editor_continue">继续编辑</string>
+    <string name="image_editor_text">文字</string>
+    <string name="image_editor_text_hint">输入文字</string>
+    <string name="image_editor_move">移动</string>
+    <string name="image_editor_pen">画笔</string>
+    <string name="image_editor_rectangle">矩形</string>
+    <string name="image_editor_oval">圆形</string>
+    <string name="image_editor_arrow">箭头</string>
+    <string name="image_editor_mosaic">马赛克</string>
+    <string name="image_editor_crop">裁剪</string>
+    <string name="image_editor_eraser">橡皮擦</string>
+
 </resources>

@@ -1,5 +1,13 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images
 
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images.editor.ImageEditorDialog
+
+import androidx.compose.material3.Button
+
+import androidx.compose.material.icons.filled.Edit
+
+import java.io.File
+
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -89,6 +97,7 @@ fun AttachmentImagePreviewDialog(
     images: List<AttachmentPreviewImage>,
     initialImageUri: Uri,
     onDismiss: () -> Unit,
+    onEditImage: ((AttachmentPreviewImage) -> ((File) -> Boolean))? = null,
 ) {
     require(images.isNotEmpty())
     val initialPage = remember(images, initialImageUri) {
@@ -105,6 +114,8 @@ fun AttachmentImagePreviewDialog(
         if (pagerState.currentPage > images.lastIndex) pagerState.scrollToPage(images.lastIndex)
     }
     val currentPage = pagerState.currentPage.coerceIn(0, images.lastIndex)
+    var editing by remember { mutableStateOf<AttachmentPreviewImage?>(null) }
+    var editTarget by remember { mutableStateOf<((File) -> Boolean)?>(null) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -132,6 +143,21 @@ fun AttachmentImagePreviewDialog(
                         if (page == pagerState.currentPage) multiTouchActive = active
                     },
                 )
+            }
+            if (onEditImage != null) {
+                Button(
+                    onClick = {
+                        val current = images[currentPage]
+                        editTarget = onEditImage(current)
+                        editing = current
+                    },
+                    modifier = Modifier.align(Alignment.BottomStart)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                        .padding(16.dp),
+                ) {
+                    Icon(Icons.Default.Edit, null)
+                    Text(stringResource(R.string.edit), modifier = Modifier.padding(start = 8.dp))
+                }
             }
             Row(
                 modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
@@ -167,6 +193,13 @@ fun AttachmentImagePreviewDialog(
                     Icon(Icons.Default.Close, stringResource(R.string.close), tint = Color.White)
                 }
             }
+        }
+        editing?.let { image ->
+            ImageEditorDialog(
+                imageUri = image.uri,
+                onApply = checkNotNull(editTarget),
+                onDismiss = { editing = null; editTarget = null },
+            )
         }
     }
 }

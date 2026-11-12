@@ -999,6 +999,7 @@ private fun AttachmentsList(floatContext: FloatContext) {
             AttachmentChip(
                 attachmentInfo = attachment,
                 attachments = floatContext.attachments,
+                        onEditImage = floatContext.chatService?.let { it::createImageAttachmentEditTarget },
                 onRemove = { floatContext.onRemoveAttachment?.invoke(attachment.filePath) },
                 onInsert = { }
             )

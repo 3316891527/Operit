@@ -1856,8 +1856,6 @@
     <string name="selected_count">%d アイテムが選択されました</string>
     <string name="generating_image">画像を生成中...</string>
     <string name="share_failed">共有に失敗しました</string>
-    <string name="share_preview_title">プレビューを共有する</string>
-    <string name="share_preview_image_content_description">画像プレビューを共有する</string>
     <string name="share_preview_generating">プレビューを生成中...</string>
     <string name="share_preview_expand_thinking">考える</string>
     <string name="share_preview_expand_tools_groups">ツールと思考グループを拡張する</string>
@@ -3821,7 +3819,6 @@
     <string name="agent_menu_permission_disabled">無効化</string>
     <string name="workspace_change_deleted">削除</string>
     <string name="workspace_attachment_change_deleted">削除</string>
-    <string name="share_selected">共有</string>
     <string name="loading">読み込み中...</string>
     <string name="export">Exports</string>
     <string name="package_name">パッケージ名</string>
@@ -8348,4 +8345,29 @@
     <string name="builtin_market_version">リソースバージョン %1$s</string>
     <string name="extension_updates_no_sources">更新元を確認できるプラグインやスクリプトがありません。マーケットの情報がない手動インポート項目は確認できません。</string>
     <string name="data_storage_extension_plugin_data_desc">ワールドブックや設定が含まれます。対応するプラグインで管理してください。</string>
+    <string name="image_editor_title">画像編集</string>
+    <string name="image_editor_load_failed">画像を読み込めませんでした</string>
+    <string name="image_editor_too_large">この画像は大きすぎて、この端末では編集できません</string>
+    <string name="image_editor_save_failed">編集した画像を保存できませんでした</string>
+    <string name="image_editor_attachment_changed">元の添付ファイルが削除されたか、チャットが切り替わりました。編集は適用されませんでした。</string>
+    <string name="image_editor_redo">やり直す</string>
+    <string name="image_editor_crop_hint">ドラッグして切り抜く範囲を選択</string>
+    <string name="image_editor_gesture_hint">2本指でズームまたは移動、1本指で選択中のツールを操作</string>
+    <string name="image_editor_width">線の太さ</string>
+    <string name="image_editor_undo">元に戻す</string>
+    <string name="image_editor_done">完了</string>
+    <string name="image_editor_unsaved_title">編集を保存しますか？</string>
+    <string name="image_editor_unsaved_message">保存されていない編集があります。終了前に保存しますか？</string>
+    <string name="image_editor_discard">保存しない</string>
+    <string name="image_editor_continue">編集を続ける</string>
+    <string name="image_editor_text">テキスト</string>
+    <string name="image_editor_text_hint">テキストを入力</string>
+    <string name="image_editor_move">移動</string>
+    <string name="image_editor_pen">ペン</string>
+    <string name="image_editor_rectangle">長方形</string>
+    <string name="image_editor_oval">楕円</string>
+    <string name="image_editor_arrow">矢印</string>
+    <string name="image_editor_mosaic">モザイク</string>
+    <string name="image_editor_crop">切り抜き</string>
+    <string name="image_editor_eraser">消しゴム</string>
 </resources>
