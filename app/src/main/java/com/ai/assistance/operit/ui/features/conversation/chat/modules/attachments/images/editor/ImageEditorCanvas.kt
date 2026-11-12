@@ -185,7 +185,7 @@ internal fun ImageEditorCanvas(
                 canvas.clipRect(crop.left * image.width, crop.top * image.height, crop.right * image.width, crop.bottom * image.height)
                 renderer.draw(canvas, movedDocument ?: document, pending)
                 cropSelection?.let { selection ->
-                    val shade = Paint().apply { color = 0x99000000.toInt() }
+                    val shade = Paint().apply { this.color = 0x99000000.toInt() }
                     val l = selection.left * image.width
                     val t = selection.top * image.height
                     val r = selection.right * image.width
@@ -194,7 +194,7 @@ internal fun ImageEditorCanvas(
                     canvas.drawRect(crop.left * image.width, b, crop.right * image.width, crop.bottom * image.height, shade)
                     canvas.drawRect(crop.left * image.width, t, l, b, shade)
                     canvas.drawRect(r, t, crop.right * image.width, b, shade)
-                    val border = Paint().apply { color = android.graphics.Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f / placement.scale }
+                    val border = Paint().apply { this.color = android.graphics.Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f / placement.scale }
                     canvas.drawRect(l, t, r, b, border)
                     for (i in 1..2) {
                         canvas.drawLine(l + (r - l) * i / 3f, t, l + (r - l) * i / 3f, b, border)
