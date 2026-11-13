@@ -5,14 +5,14 @@
 ## 固定快照与统计口径
 
 - 起点：[上游 v1.12.2](https://github.com/AAswordman/Operit/releases/tag/v1.12.2)，源码 `dbf71916fae9750cfdc9f9a774f5a0fee56633fb`
-- 终点：[个人发行 v1.12.2+19](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B19)，源码 `890e532070f14eee8b21084bbedbe5c9ab6cb7e1`
+- 终点：[个人发行 v1.12.2+24](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B24)，源码 `275ed3e43c04d0e05caf67660276ffa5edaff504`
 - 正文按终点的最终行为合并叙述；同一能力的试验、修复、重构与再次发布不重复累计
 - 提交集合为 `git rev-list dbf71916fae9750cfdc9f9a774f5a0fee56633fb..890e532070f14eee8b21084bbedbe5c9ab6cb7e1`，共 488 条；其中 130 条合并提交、358 条非合并提交，第一父链 138 条
 - 原默认重命名检测得到 4028 个变更文件、396262 行新增和 137617 行删除，合计 533879 行增删。该口径触发重命名数量限制，且含目录移动、文档和依赖；它不是逐提交增删量之和，也不能解释为 4028 个新文件或 53 万行净新增业务代码
 
 起点是上游发布同步提交，并非终点祖先；双方共同祖先 `0f11d96231d3ea50818e79342e90be4391d3ea7a` 与起点的文件树完全相同。对照使用固定快照与可达集合，不按作者日期切割，因此较早编写、后来才整合的功能也会保留。
 
-资料包括 52 项早期固定来源、112 条维护者提交给上游的 PR、个人仓库 104 条 PR、18 个公开补丁版说明，以及直接提交。PR 的当前开闭状态不能替代合入证据；没有使用当前 HEAD 作为来源，也不表示相关功能被删除。
+资料包括 52 项早期固定来源、112 条维护者提交给上游的 PR、个人仓库 104 条 PR、23 个公开补丁版说明，以及直接提交。PR 的当前开闭状态不能替代合入证据；没有使用当前 HEAD 作为来源，也不表示相关功能被删除。
 
 ## 版本阶段与 PR 关系
 
@@ -37,6 +37,18 @@
 | [#105](https://github.com/3316891527/Operit/pull/105) | open，目标 `dev`，文档维护 | 本 PR 自身重构 1.13.0 的阶段叙事、来源和开放工作跟踪 |
 
 开放 PR 不计入 `1.12.2+19` 的固定源码集合；当它们实际合入新的终点后，再在补丁时间线和提交附录中追加对应快照。
+
+## 正式版本 +20 至 +24
+
+`+20` 至 `+24` 不是新的 PR 编号记录，而是已经公开的正式发行版本。五个相邻源码范围合计 232 条提交；每一版的 Release 正文、升级基线、源码终点和提交明细与 `patches.md`、`commits.md` 交叉对应。
+
+| 版本 | versionCode | 源码终点 | 相邻提交 | 发布说明 |
+| --- | ---: | --- | ---: | --- |
+| [1.12.2+20](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B20) | 76 | [`84e6d8940dd9`](https://github.com/3316891527/Operit/commit/84e6d8940dd983b69422fa43403e7dfd0009d549) | 13 | 从 `+19` 升级 |
+| [1.12.2+21](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B21) | 77 | [`c01ac4fd936d`](https://github.com/3316891527/Operit/commit/c01ac4fd936d7ce2e4f77913688b4c654fc5915f) | 35 | 从 `+20` 升级 |
+| [1.12.2+22](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B22) | 78 | [`aa0237a016c5`](https://github.com/3316891527/Operit/commit/aa0237a016c55d399b5feb1edff8c0c491e3b250) | 49 | 从 `+21` 升级 |
+| [1.12.2+23](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B23) | 79 | [`02349712262d`](https://github.com/3316891527/Operit/commit/02349712262da53a878f40a77702cc381b582580) | 50 | 从 `+22` 升级 |
+| [1.12.2+24](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B24) | 80 | [`275ed3e43c04`](https://github.com/3316891527/Operit/commit/275ed3e43c04d0e05caf67660276ffa5edaff504) | 85 | 从 `+23` 升级 |
 
 ## 功能归并索引
 

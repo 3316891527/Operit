@@ -585,3 +585,260 @@
 - 488 [890e532070f1](https://github.com/3316891527/Operit/commit/890e532070f14eee8b21084bbedbe5c9ab6cb7e1) · 2026-11-01 · 合并／集成 · chore(release): 同步 1.12.2+19 到 main (#104) · 直接提交
 
 </details>
+
+<details><summary>v1.12.2+20 源码截止 · 13 条提交</summary>
+
+- 489 [75703e5bdcd9](https://github.com/3316891527/Operit/commit/75703e5bdcd91322ff236b44db38d32e3f6ee057) · 2026-11-01 · 版本 +20 · fix(theme): 扩大工作室图片与工程资源预算
+- 490 [e9cf4f826183](https://github.com/3316891527/Operit/commit/e9cf4f826183772099afc27650d6c8b0101d4e2d) · 2026-11-01 · 版本 +20 · fix(mcp): 已配置服务静默加载并移除加载浮层
+- 491 [5e2a1547d3ed](https://github.com/3316891527/Operit/commit/5e2a1547d3ed21119438fa4e6a1593ff58720f80) · 2026-11-01 · 版本 +20 · fix(chat): 修复复制消息面板底色错位与内容裁切
+- 492 [536d9e67fea6](https://github.com/3316891527/Operit/commit/536d9e67fea6a582b5a127a5070f6663fce8d3d9) · 2026-11-02 · 版本 +20 · feat(theme): 支持聊天弹起菜单独立形状与位置偏移
+- 493 [4224c46c3717](https://github.com/3316891527/Operit/commit/4224c46c3717e6e73394cf490d46dc0629f8ca8d) · 2026-11-02 · 版本 +20 · fix(theme): 互斥菜单上下偏移并补全聊天预览参照
+- 494 [d87daaea5d1a](https://github.com/3316891527/Operit/commit/d87daaea5d1af5360fff6ebfc78e9ce0d4901604) · 2026-11-02 · 版本 +20 · fix(theme): 放大小预览并支持滚动定位
+- 495 [6df9213d3382](https://github.com/3316891527/Operit/commit/6df9213d338238a30ea6073b4a3eb884b72b3b84) · 2026-11-02 · 版本 +20 · fix(theme): 扩大工作室图片与工程资源预算 (#106)
+- 496 [2ba2b7a738b1](https://github.com/3316891527/Operit/commit/2ba2b7a738b11945ca93d63300a74fb22c426399) · 2026-11-02 · 版本 +20 · fix(mcp): 已配置服务静默加载并移除加载浮层 (#107)
+- 497 [f838fc666758](https://github.com/3316891527/Operit/commit/f838fc66675829d50c9070421f5ca554c5739469) · 2026-11-02 · 版本 +20 · fix(chat): 修复复制消息面板底色错位与内容裁切 (#108)
+- 498 [e0230a247732](https://github.com/3316891527/Operit/commit/e0230a247732b5fe9b5607eafeffeb2ddd11d804) · 2026-11-02 · 版本 +20 · feat(theme): 支持聊天菜单外观、偏移与完整场景预览 (#109)
+- 499 [1338163c8e47](https://github.com/3316891527/Operit/commit/1338163c8e470a1e5bcea9775f88aea2b1cd781e) · 2026-11-02 · 版本 +20 · chore(release): 接入现有 main 历史准备 +20
+- 500 [33b8e6be24fa](https://github.com/3316891527/Operit/commit/33b8e6be24fa7ca93aeff0e3f00faa0876a944e7) · 2026-11-02 · 版本 +20 · chore(release): 准备 1.12.2+20 发行与增量更新
+- 501 [84e6d8940dd9](https://github.com/3316891527/Operit/commit/84e6d8940dd983b69422fa43403e7dfd0009d549) · 2026-11-02 · 版本 +20 · chore(release): 同步 1.12.2+20 到 main (#111)
+
+</details>
+
+<details><summary>v1.12.2+21 源码截止 · 35 条提交</summary>
+
+- 502 [ed184e54d113](https://github.com/3316891527/Operit/commit/ed184e54d1132c263ec30ede54aa94f38ab0b0f7) · 2026-11-02 · 版本 +21 · chore(release): 准备 1.12.2+20 发行 (#110)
+- 503 [580b0daf0410](https://github.com/3316891527/Operit/commit/580b0daf0410d7530a94551e30c8a351e166fb46) · 2026-11-02 · 版本 +21 · refactor(model): 按业务领域拆分模型并保留持久化身份
+- 504 [559633f959da](https://github.com/3316891527/Operit/commit/559633f959da872e82e22eaa6235c9cf4604c700) · 2026-11-02 · 版本 +21 · refactor(model): 合入模型领域拆分 (#112)
+- 505 [12ec78c96a96](https://github.com/3316891527/Operit/commit/12ec78c96a967d950d2c8f55572ea58d7055e783) · 2026-11-02 · 版本 +21 · fix(chat): 过滤历史摘要中的模型协议负载
+- 506 [6ff74671b0e7](https://github.com/3316891527/Operit/commit/6ff74671b0e7206529ad45d21a84936c886dadaf) · 2026-11-02 · 版本 +21 · feat(terminal): 接入托管任务并保留现有执行接口
+- 507 [1caebe21d378](https://github.com/3316891527/Operit/commit/1caebe21d37809a43bb72d129e2f42510b14fdc0) · 2026-11-02 · 版本 +21 · fix(ci): 按固定资源快照校验开发构建
+- 508 [0fc56cbb0f7c](https://github.com/3316891527/Operit/commit/0fc56cbb0f7c46c026d58721c6b6bbfc8a1e05b5) · 2026-11-03 · 版本 +21 · fix(terminal): 保留取消后恢复的会话并报告真实存活状态
+- 509 [dbece7c52da2](https://github.com/3316891527/Operit/commit/dbece7c52da216644ac1bdd423fd7735be799a7b) · 2026-11-03 · 版本 +21 · Merge pull request #114 from 3316891527/feat/terminal-managed-tasks
+- 510 [e312abd42f32](https://github.com/3316891527/Operit/commit/e312abd42f323dd2aba203181be9d0cfac7de95e) · 2026-11-03 · 版本 +21 · Merge pull request #113 from 3316891527/fix/summary-protocol-meta
+- 511 [5c9ad041ae10](https://github.com/3316891527/Operit/commit/5c9ad041ae10c318d5001a84c6b709d5ca33143c) · 2026-11-03 · 版本 +21 · fix(notification): 点击通知打开来源会话
+- 512 [9f991f480c52](https://github.com/3316891527/Operit/commit/9f991f480c5227c8224ea6d00ea2ec7cb82c9d5c) · 2026-11-03 · 版本 +21 · fix(gemini): 过滤空 Part 并拒绝空请求
+- 513 [cd078fc0a4e6](https://github.com/3316891527/Operit/commit/cd078fc0a4e65a4161f0c1842b7b17f94ab74363) · 2026-11-03 · 版本 +21 · Merge pull request #115 from 3316891527/fix/notification-open-chat
+- 514 [ce31b43f0397](https://github.com/3316891527/Operit/commit/ce31b43f0397dc14805a8f7c4edfdbadebc07acb) · 2026-11-03 · 版本 +21 · Merge pull request #116 from 3316891527/fix/gemini-empty-contents
+- 515 [5b6933a0fa38](https://github.com/3316891527/Operit/commit/5b6933a0fa38ba376134b35524af1a811b450f6c) · 2026-11-03 · 版本 +21 · fix(test): 修正 Gemini 回归用例的工具类导入
+- 516 [dc77a603e082](https://github.com/3316891527/Operit/commit/dc77a603e082d4627058096cce4d9a09da489bdc) · 2026-11-03 · 版本 +21 · Merge pull request #117 from 3316891527/fix/gemini-test-imports
+- 517 [e5e51de0da24](https://github.com/3316891527/Operit/commit/e5e51de0da24975c7deafe5a5f2941d95f42e2c6) · 2026-11-03 · 版本 +21 · fix(ui): 补齐 MCP 启动反馈并仅用斜杠触发菜单
+- 518 [e77503eb17d9](https://github.com/3316891527/Operit/commit/e77503eb17d90d9a2fe680dd2069c2654e60947d) · 2026-11-03 · 版本 +21 · Merge pull request #118 from 3316891527/fix/mcp-start-feedback-slash-menu
+- 519 [6795ca9dd54e](https://github.com/3316891527/Operit/commit/6795ca9dd54e4e3f5b350417f1e5e224368e6e16) · 2026-11-03 · 版本 +21 · fix(a2ui): 隔离 HTML 标签页承载器的复用与销毁
+- 520 [93f36a639ee9](https://github.com/3316891527/Operit/commit/93f36a639ee90920e510e3754ad10ac43261343b) · 2026-11-03 · 版本 +21 · feat(a2ui): 支持当前轮次等待表单提交并返回结构化数据
+- 521 [ac86467c446d](https://github.com/3316891527/Operit/commit/ac86467c446da4971f7594fe0b5fb9cec55fb472) · 2026-11-03 · 版本 +21 · fix(a2ui): 统一快照原子读写并补齐 live 等待联用校验
+- 522 [a71bf9bee0e7](https://github.com/3316891527/Operit/commit/a71bf9bee0e7b42087943691f9be166ffc52d9be) · 2026-11-03 · 版本 +21 · fix(theme): 记住工作室预览模式与编辑位置
+- 523 [c7182072c69e](https://github.com/3316891527/Operit/commit/c7182072c69ee7dfc5044439a3f78659628dd9c4) · 2026-11-03 · 版本 +21 · fix(chat): 修复分块气泡重复切角与九宫格首尾
+- 524 [0e7deeac2069](https://github.com/3316891527/Operit/commit/0e7deeac2069a6db1366eb3c16738c325fb9d067) · 2026-11-03 · 版本 +21 · Merge pull request #119 from 3316891527/fix/a2ui-tab-composition
+- 525 [75337b8af9f0](https://github.com/3316891527/Operit/commit/75337b8af9f01810d59f9d0a97b01d38194d9c12) · 2026-11-03 · 版本 +21 · Merge pull request #120 from 3316891527/feat/a2ui-await-submission
+- 526 [07344a366c4e](https://github.com/3316891527/Operit/commit/07344a366c4e5dfc37a89fe4a3dcda9fd6055ff3) · 2026-11-03 · 版本 +21 · Merge pull request #121 from 3316891527/fix/theme-studio-memory
+- 527 [539fb8376673](https://github.com/3316891527/Operit/commit/539fb8376673e5f06cfbe0f656c2e8ef78f1f004) · 2026-11-03 · 版本 +21 · Merge pull request #122 from 3316891527/fix/message-bubble-surface
+- 528 [8907ae28d665](https://github.com/3316891527/Operit/commit/8907ae28d6658370bcc30837abdadcb40ffe6347) · 2026-11-03 · 版本 +21 · Merge remote-tracking branch 'origin/main' into ci/release-1.12.2-plus21
+- 529 [4dd1f23368a1](https://github.com/3316891527/Operit/commit/4dd1f23368a11dd71bf2bd68425d6d9c1e75476c) · 2026-11-03 · 版本 +21 · chore(release): 准备 1.12.2+21 发行
+- 530 [416155f08f60](https://github.com/3316891527/Operit/commit/416155f08f601fe8310b90bff45e71d23164ea9e) · 2026-11-03 · 版本 +21 · Merge pull request #123 from 3316891527/ci/release-1.12.2-plus21
+- 531 [6369cba47089](https://github.com/3316891527/Operit/commit/6369cba4708945ab5d999984605bb13d63b8fdff) · 2026-11-03 · 版本 +21 · Merge pull request #124 from 3316891527/dev
+- 532 [2d21ab4baf95](https://github.com/3316891527/Operit/commit/2d21ab4baf955a17dbf5a30e5a4a4e3432c04304) · 2026-11-03 · 版本 +21 · fix(a2ui): 移除外部示例引导脚本并更新使用说明
+- 533 [5dc391ce9df9](https://github.com/3316891527/Operit/commit/5dc391ce9df9057ab5a3e6605e4a596625ff2038) · 2026-11-03 · 版本 +21 · fix(ci): 签名发行前准备并发布当前源码离线资源
+- 534 [68b56a55ea66](https://github.com/3316891527/Operit/commit/68b56a55ea664231f093d81975c907ffd5208ae8) · 2026-11-03 · 版本 +21 · Merge pull request #125 from 3316891527/fix/remove-a2ui-guide
+- 535 [38d7a1aa806e](https://github.com/3316891527/Operit/commit/38d7a1aa806e21eb2f8939fa56158603e2e53c1c) · 2026-11-03 · 版本 +21 · Merge pull request #126 from 3316891527/fix/release-offline-resource-preparation
+- 536 [c01ac4fd936d](https://github.com/3316891527/Operit/commit/c01ac4fd936d7ce2e4f77913688b4c654fc5915f) · 2026-11-03 · 版本 +21 · Merge pull request #127 from 3316891527/dev
+
+</details>
+
+<details><summary>v1.12.2+22 源码截止 · 49 条提交</summary>
+
+- 537 [f9cda4296182](https://github.com/3316891527/Operit/commit/f9cda4296182df809bd6df29a17374ba73914e98) · 2026-11-03 · 版本 +22 · fix(permissions): 权限页工具说明跟随应用语言
+- 538 [59b146a1cc4e](https://github.com/3316891527/Operit/commit/59b146a1cc4eb852394878686690bc44fc536abc) · 2026-11-03 · 版本 +22 · fix(permissions): 权限列表实时反映已安装启用的工具
+- 539 [0285ae32a01b](https://github.com/3316891527/Operit/commit/0285ae32a01b3adb2a7785d61f9d2a764627af5e) · 2026-11-04 · 版本 +22 · feat(http): 终端管理服务并支持浏览器自动登录
+- 540 [ff54ab5e6b92](https://github.com/3316891527/Operit/commit/ff54ab5e6b92f1ba7e896334f919ba85817b2dbd) · 2026-11-04 · 版本 +22 · refactor(terminal): 拆分公共命令构建与资源校验
+- 541 [b7e7922db621](https://github.com/3316891527/Operit/commit/b7e7922db621152e9a9aebc77c1511f8ef420dba) · 2026-11-04 · 版本 +22 · fix(chat): 避免发送触发总结时阻塞主线程
+- 542 [018f6867653d](https://github.com/3316891527/Operit/commit/018f6867653db65d2226d09df0409ba0f7ad80dd) · 2026-11-04 · 版本 +22 · fix(memory): 同步上游文档块编辑器高度限制
+- 543 [a4c7cef7e883](https://github.com/3316891527/Operit/commit/a4c7cef7e8836f0aa3b5258cf5140fbb40837b90) · 2026-11-04 · 版本 +22 · fix(chat): 同步 NUL 消息读取修复并适配结构化存储
+- 544 [3f3ec85ccaea](https://github.com/3316891527/Operit/commit/3f3ec85ccaea5a7281d9de1d31db42732131bb36) · 2026-11-04 · 版本 +22 · fix(chat): 同步流式重试修订与 Waifu 撤回
+- 545 [9de59d2444de](https://github.com/3316891527/Operit/commit/9de59d2444dea4848abf049731e57a4bfce0a770) · 2026-11-04 · 版本 +22 · fix(mcp): 同步 stdio 工作目录与启动失败诊断
+- 546 [74fd5c394190](https://github.com/3316891527/Operit/commit/74fd5c394190d1b2ca4f9a3a05db25383a930968) · 2026-11-04 · 版本 +22 · fix(browser): 同步点击目标与导航结果校验
+- 547 [501bc9767f88](https://github.com/3316891527/Operit/commit/501bc9767f88ff3d5ffe49a9afc594a5a490bab7) · 2026-11-04 · 版本 +22 · test(chat): 对齐协程异常传播与内部 XML 标签断言
+- 548 [30fb82c13912](https://github.com/3316891527/Operit/commit/30fb82c13912c9d962b63699747c1eb952c432af) · 2026-11-04 · 版本 +22 · test(chat): 修正文档标签断言的字符串引号
+- 549 [8c3635fc2e5c](https://github.com/3316891527/Operit/commit/8c3635fc2e5cc85fdf4670a38b51861d76af22fb) · 2026-11-04 · 版本 +22 · fix(theme): 补齐自定义主题多语言并统一消息名称
+- 550 [2e6050d27caa](https://github.com/3316891527/Operit/commit/2e6050d27caa382371dc3a11e82105741718fab4) · 2026-11-04 · 版本 +22 · fix(theme): 修正主题属性入口与描边可见效果
+- 551 [54c5554a0f90](https://github.com/3316891527/Operit/commit/54c5554a0f90eb18c4da6c70d3996992d1050e19) · 2026-11-04 · 版本 +22 · feat(theme): 拆分 11 个动作按钮的独立图标入口
+- 552 [4334e021a616](https://github.com/3316891527/Operit/commit/4334e021a6169546511f8a306605814e58656e50) · 2026-11-04 · 版本 +22 · feat(theme): 为自定义主题字体增加独立文字描边
+- 553 [c5f50a04a8fe](https://github.com/3316891527/Operit/commit/c5f50a04a8fe076a068a633940d657dc90fca09e) · 2026-11-04 · 版本 +22 · merge: 对齐主题属性与文字颜色入口修复
+- 554 [203176c07feb](https://github.com/3316891527/Operit/commit/203176c07feba2be81d901a0cf85cdd925a03604) · 2026-11-04 · 版本 +22 · fix(theme): 明确文字描边组件的 Compose UI 目标
+- 555 [d23e1b8a5e65](https://github.com/3316891527/Operit/commit/d23e1b8a5e653333df70ac5b07dfc944c0488ddb) · 2026-11-04 · 版本 +22 · fix(summary): 空摘要重新生成一次并阻止无效结果入库
+- 556 [3d92ee2bcc0c](https://github.com/3316891527/Operit/commit/3d92ee2bcc0cdaf596d5e2901d55f44dff3f3e29) · 2026-11-04 · 版本 +22 · fix(code-runner): 隔离脚本运行并限制清理等待
+- 557 [15566eff98a6](https://github.com/3316891527/Operit/commit/15566eff98a6160f5b86adc88abcfc6523b213df) · 2026-11-04 · 版本 +22 · 合入 PR #128：fix(permissions): 权限页工具说明跟随应用语言，用于联合测试
+- 558 [81b096f3e3b4](https://github.com/3316891527/Operit/commit/81b096f3e3b408650d37722559717cff156e188c) · 2026-11-04 · 版本 +22 · 合入 PR #129：fix(permissions): 权限列表实时反映已安装启用的工具，用于联合测试
+- 559 [752caac55736](https://github.com/3316891527/Operit/commit/752caac55736fe6855baf8e440fab313b335d9bf) · 2026-11-04 · 版本 +22 · 合入 PR #130：feat(http): 终端管理服务并支持浏览器自动登录，用于联合测试
+- 560 [49f27d6c8916](https://github.com/3316891527/Operit/commit/49f27d6c89162cf6ec16373363626dc464873111) · 2026-11-04 · 版本 +22 · 合入 PR #131：fix(chat): 避免发送触发总结时阻塞主线程，用于联合测试
+- 561 [bd6027c21b98](https://github.com/3316891527/Operit/commit/bd6027c21b98403b2176ea140509a341f611f3d5) · 2026-11-04 · 版本 +22 · 合入 PR #132：fix(memory): 同步上游文档块编辑器高度限制，用于联合测试
+- 562 [e39d9ec28d38](https://github.com/3316891527/Operit/commit/e39d9ec28d38c7fa318d57ce6c9134e345220cd7) · 2026-11-04 · 版本 +22 · 合入 PR #133：fix(chat): 同步 NUL 消息读取修复并适配结构化存储，用于联合测试
+- 563 [5b09d1d56732](https://github.com/3316891527/Operit/commit/5b09d1d567321f2c5ac201f11236d22d36290345) · 2026-11-04 · 版本 +22 · 合入 PR #134：fix(mcp): 同步 stdio 工作目录与启动失败诊断，用于联合测试
+- 564 [b3dad2db75ce](https://github.com/3316891527/Operit/commit/b3dad2db75cead7189bfe4331e956bfa98448619) · 2026-11-04 · 版本 +22 · 合入 PR #135：fix(browser): 同步点击目标与导航结果校验，用于联合测试
+- 565 [50f932495818](https://github.com/3316891527/Operit/commit/50f932495818a192b05fb132588cd8ef95cb6315) · 2026-11-04 · 版本 +22 · 合入 PR #136：fix(chat): 同步流式重试修订与 Waifu 撤回，用于联合测试
+- 566 [bda249a8899c](https://github.com/3316891527/Operit/commit/bda249a8899c9d7ad4258a10326cc8bca1502bf7) · 2026-11-04 · 版本 +22 · 合入 PR #137：fix(theme): 补齐自定义主题多语言并统一消息名称，用于联合测试
+- 567 [59140c1027a6](https://github.com/3316891527/Operit/commit/59140c1027a69484d8a96da6bd27b53a42d3af28) · 2026-11-04 · 版本 +22 · 合入 PR #138：fix(theme): 修正主题属性入口与描边可见效果，用于联合测试
+- 568 [220698fde528](https://github.com/3316891527/Operit/commit/220698fde528082ec5f72754d66f23a80bb46ada) · 2026-11-04 · 版本 +22 · 合入 PR #139：feat(theme): 拆分 11 个动作按钮的独立图标入口，用于联合测试
+- 569 [edf24dd1cf53](https://github.com/3316891527/Operit/commit/edf24dd1cf538ee8dd8c3665e7792ab22603db9c) · 2026-11-04 · 版本 +22 · 合入 PR #140：feat(theme): 为自定义主题字体增加独立文字描边，用于联合测试
+- 570 [6cfef36bbce3](https://github.com/3316891527/Operit/commit/6cfef36bbce3969b14b7cbdbf2dfe479ca438464) · 2026-11-04 · 版本 +22 · 合入 PR #141：fix(summary): 空摘要重新生成一次并阻止无效结果入库，用于联合测试
+- 571 [2de57bff2e14](https://github.com/3316891527/Operit/commit/2de57bff2e1433850f74521e1b2eb7dc55e385be) · 2026-11-04 · 版本 +22 · 合入 PR #142：fix(code-runner): 隔离脚本运行并限制清理等待，用于联合测试
+- 572 [5dd74a86d561](https://github.com/3316891527/Operit/commit/5dd74a86d561357264d53eec09e27465e1cc9465) · 2026-11-04 · 版本 +22 · fix(theme): 显示描边小数值并提供细线编辑预设
+- 573 [a8c95ceb4253](https://github.com/3316891527/Operit/commit/a8c95ceb425325bd483664bdc2a405c3f87a695c) · 2026-11-04 · 版本 +22 · feat(theme): 为动作按钮接入独立外观图层和交互状态
+- 574 [1fa7e510f853](https://github.com/3316891527/Operit/commit/1fa7e510f8537ba2186e2a80ae11d5e5efbf73d9) · 2026-11-04 · 版本 +22 · merge: 同步text主题外观修正到联合测试分支
+- 575 [6f32afc9b132](https://github.com/3316891527/Operit/commit/6f32afc9b13294c636e0a9690845b3eba0d62e05) · 2026-11-04 · 版本 +22 · merge: 同步独立按钮外观并保留文字描边与主题属性修复
+- 576 [f1acdd02ec9b](https://github.com/3316891527/Operit/commit/f1acdd02ec9b9ab6b88239791890975e76e42701) · 2026-11-04 · 版本 +22 · fix(theme): 移除文字描边宽度下方说明
+- 577 [5c4923ec2f7d](https://github.com/3316891527/Operit/commit/5c4923ec2f7d44785abf3d902e04da208704964a) · 2026-11-04 · 版本 +22 · fix(theme): 保留动作图标独立尺寸
+- 578 [adc0995d1739](https://github.com/3316891527/Operit/commit/adc0995d17397854696dc4a1e273c4469212faed) · 2026-11-04 · 版本 +22 · merge: 同步文字描边说明精简到联合测试分支
+- 579 [02f3ab34a18b](https://github.com/3316891527/Operit/commit/02f3ab34a18ba04c02a0d9a8b80d33d63890016e) · 2026-11-04 · 版本 +22 · merge: 同步动作按钮图标尺寸修复到联合测试分支
+- 580 [0415730e2884](https://github.com/3316891527/Operit/commit/0415730e28849bc94452a59ada7331464e961ce9) · 2026-11-04 · 版本 +22 · chore(release): 准备 1.12.2+22 并在发布后清理已合入分支
+- 581 [a0e4ee5722ba](https://github.com/3316891527/Operit/commit/a0e4ee5722bae69108ca8ce033f286fa4d6baa20) · 2026-11-04 · 版本 +22 · Merge pull request #143: 联合测试与 1.12.2+22 发行准备
+- 582 [a456610e9ad8](https://github.com/3316891527/Operit/commit/a456610e9ad80ccbf3e20604e68161f4b19c88fd) · 2026-11-04 · 版本 +22 · Merge pull request #144: 发布同步 1.12.2+22
+- 583 [472d1680611a](https://github.com/3316891527/Operit/commit/472d1680611a40d1f73639a34a909ab70f87c83c) · 2026-11-04 · 版本 +22 · fix(theme): 修复文字描边输入与正文覆盖一致性
+- 584 [e9bb154a6313](https://github.com/3316891527/Operit/commit/e9bb154a631300ec6fd7d9a073b50d58792aca38) · 2026-11-04 · 版本 +22 · Merge pull request #145: 文字描边输入与显示一致性修复
+- 585 [aa0237a016c5](https://github.com/3316891527/Operit/commit/aa0237a016c55d399b5feb1edff8c0c491e3b250) · 2026-11-04 · 版本 +22 · Merge pull request #146: 描边修复同步与 1.12.2+22 重发
+
+</details>
+
+<details><summary>v1.12.2+23 源码截止 · 50 条提交</summary>
+
+- 586 [d2758d21d7aa](https://github.com/3316891527/Operit/commit/d2758d21d7aaaba395544d72da996c2d66cfaafb) · 2026-11-05 · 版本 +23 · fix(ai): 按持久化配置刷新模型服务缓存
+- 587 [a368f2773767](https://github.com/3316891527/Operit/commit/a368f2773767a767b67cfe47e8b3de49df8cf365) · 2026-11-05 · 版本 +23 · fix(bluetooth): 同步 BLE 写属性与完整负载传输
+- 588 [e22e8706ac57](https://github.com/3316891527/Operit/commit/e22e8706ac57c0af3b2a44b373fe392b513d5f4e) · 2026-11-05 · 版本 +23 · ci: 同步 Shell 与容器定义的 LF 属性
+- 589 [abf9aa8f9128](https://github.com/3316891527/Operit/commit/abf9aa8f91282d0ad7fabfb97d43976f874cbc7f) · 2026-11-05 · 版本 +23 · fix(settings): 保留提示词选区与编辑视口
+- 590 [e677a2a63241](https://github.com/3316891527/Operit/commit/e677a2a632414aead5de89062daf386618043533) · 2026-11-05 · 版本 +23 · fix(update): 统一下载来源排序与文件校验
+- 591 [ca126f99c4db](https://github.com/3316891527/Operit/commit/ca126f99c4dbaada730e34c4ca4996e339b3be82) · 2026-11-05 · 版本 +23 · test(ai): 补齐缓存回归的 applicationContext
+- 592 [6cce30bb46db](https://github.com/3316891527/Operit/commit/6cce30bb46dbe97ba4780b4e2937bdc2935d5202) · 2026-11-05 · 版本 +23 · feat(ui): add guarded local execution to PhoneAgent
+- 593 [67de0cb5450a](https://github.com/3316891527/Operit/commit/67de0cb5450addea0d7c1a43ccd83f357dc05b64) · 2026-11-05 · 版本 +23 · fix(resources): prevent extension reimports and show descriptions
+- 594 [0e66c813da4f](https://github.com/3316891527/Operit/commit/0e66c813da4f2585ecf27c79612e5fc90fc3328a) · 2026-11-06 · 版本 +23 · fix(ui): prevent PhoneAgent Android parsing crashes and stalled plans
+- 595 [cba45d358fa9](https://github.com/3316891527/Operit/commit/cba45d358fa9b998d9b9949725853a3cfa2437ee) · 2026-11-06 · 版本 +23 · feat(ui): show PhoneAgent tap locations and persistent execution phases
+- 596 [9c5be2719ade](https://github.com/3316891527/Operit/commit/9c5be2719adeb78144191883d196384fb6b21111) · 2026-11-06 · 版本 +23 · fix(ui): keep PhoneAgent input service alive during planning
+- 597 [d6cf7b94bfa4](https://github.com/3316891527/Operit/commit/d6cf7b94bfa45f7fd10bf3db171776da2407f1d8) · 2026-11-06 · 版本 +23 · perf(phone-agent): compact node handoff and confirm launch completion
+- 598 [a7cd8ed5520c](https://github.com/3316891527/Operit/commit/a7cd8ed5520c76ad637378ba95a921a1d55fe8f5) · 2026-11-06 · 版本 +23 · fix(phone-agent): invalidate node dispatch after user takeover
+- 599 [061bedbbb37c](https://github.com/3316891527/Operit/commit/061bedbbb37c53949e3276fe6cf37d4ea5260aa3) · 2026-11-06 · 版本 +23 · fix(phone-agent): preserve launch state and acknowledge tap delivery
+- 600 [ad642967091b](https://github.com/3316891527/Operit/commit/ad642967091b01ed1a2d4041955541a227306992) · 2026-11-06 · 版本 +23 · fix(theme): include custom appearance fields in theme transfers
+- 601 [421f5b208f26](https://github.com/3316891527/Operit/commit/421f5b208f2623c4e437533719885233709630d7) · 2026-11-06 · 版本 +23 · fix: sync verified TTS cleanup and A2A protocol fixes
+- 602 [8643aa96b734](https://github.com/3316891527/Operit/commit/8643aa96b734dd43fddfc5dc8a43900cc311e224) · 2026-11-06 · 版本 +23 · fix(speech): project local message sections before TTS cleaning
+- 603 [b56bea3a6418](https://github.com/3316891527/Operit/commit/b56bea3a6418e02574d302167787f89d4dd8a378) · 2026-11-06 · 版本 +23 · fix: correct grep line numbers and guard SSE writer close
+- 604 [88cf4f27d555](https://github.com/3316891527/Operit/commit/88cf4f27d5551326c96ac3dd517039aba3316b54) · 2026-11-06 · 版本 +23 · fix(a2ui): support computed table cells and structured events
+- 605 [baff7720bde8](https://github.com/3316891527/Operit/commit/baff7720bde8f34621c3a7573590796b91ae2179) · 2026-11-06 · 版本 +23 · feat(extensions): 隔离脚本列表并路由化扩展详情
+- 606 [f53afd73118a](https://github.com/3316891527/Operit/commit/f53afd73118a3926fb5f755272caeeacddbd6d81) · 2026-11-06 · 版本 +23 · fix(ui): preserve launcher task semantics when opening apps
+- 607 [988f9c6df7c2](https://github.com/3316891527/Operit/commit/988f9c6df7c2f36521750785cbb718520fb6dd49) · 2026-11-06 · 版本 +23 · build(shower): package app launch changes from current server sources
+- 608 [6b4f94d9d187](https://github.com/3316891527/Operit/commit/6b4f94d9d18769e20f1a6ac7f468e8ff40bc215a) · 2026-11-07 · 版本 +23 · feat(extensions): rebuild complete extension detail pages
+- 609 [a4c4b4fe0c44](https://github.com/3316891527/Operit/commit/a4c4b4fe0c448a50c4010a7a15e594ce1263eba8) · 2026-11-07 · 版本 +23 · fix(extensions): import DpRect height in detail regression test
+- 610 [f8434861ca0f](https://github.com/3316891527/Operit/commit/f8434861ca0f6a9eccb506aee7a98d0f04272988) · 2026-11-07 · 版本 +23 · fix(extensions): enforce disabled state in details and script execution
+- 611 [a7547e203725](https://github.com/3316891527/Operit/commit/a7547e2037255153556b99e229a70e474248f414) · 2026-11-07 · 版本 +23 · fix(extensions): use a single disabled-package error name
+- 612 [070b71a213a3](https://github.com/3316891527/Operit/commit/070b71a213a331dd13e90da4c3a7dffec6a1a0ee) · 2026-11-07 · 版本 +23 · fix(extensions): use the requested disabled-package message
+- 613 [bae1ed5b0617](https://github.com/3316891527/Operit/commit/bae1ed5b0617335bb7bb2781695fc1a8ce82fa75) · 2026-11-07 · 版本 +23 · fix(market): sync ToolPkg API compatibility from upstream #1474
+- 614 [a576507ed3cd](https://github.com/3316891527/Operit/commit/a576507ed3cde27e51b887e5423fa4125421f21e) · 2026-11-07 · 版本 +23 · fix(terminal): integrate protocol replies for interactive prompts
+- 615 [a4e4f9b3bcdf](https://github.com/3316891527/Operit/commit/a4e4f9b3bcdf2f86a95b146cf137f34f0c14f01a) · 2026-11-07 · 版本 +23 · fix(vision): preserve DeepSeek Responses images and expose native image reads
+- 616 [5062f6dec54c](https://github.com/3316891527/Operit/commit/5062f6dec54c5ad5c99281f61a8cb5a709ca4614) · 2026-11-07 · 版本 +23 · feat(settings): simplify API endpoint hints and refresh model defaults
+- 617 [6ce3cbba78b2](https://github.com/3316891527/Operit/commit/6ce3cbba78b21c96392e0ed9c731d498d634df8f) · 2026-11-07 · 版本 +23 · feat(draw): sync GPT Image 2.6 GIF parameters from upstream #1476
+- 618 [0a4507bb026c](https://github.com/3316891527/Operit/commit/0a4507bb026ced48e96c2f8ab32f7a961f98649a) · 2026-11-07 · 版本 +23 · fix(gemini): keep configured service for model discovery
+- 619 [35e26aac5cd8](https://github.com/3316891527/Operit/commit/35e26aac5cd86f127f1cc0736b38588b26785342) · 2026-11-07 · 版本 +23 · perf(phone-agent): align actions and measure observation costs
+- 620 [b69aa717fc43](https://github.com/3316891527/Operit/commit/b69aa717fc4340bc862a7344184474f2d0cfc518) · 2026-11-07 · 版本 +23 · feat(extensions): unify updates and move built-ins to market
+- 621 [2f775380e0e1](https://github.com/3316891527/Operit/commit/2f775380e0e16ed43cb1e795b057d8265525ab5b) · 2026-11-08 · 版本 +23 · fix(ui): refine extension updates and batch theme resource imports
+- 622 [aa03c52e3f72](https://github.com/3316891527/Operit/commit/aa03c52e3f7280acf4494228fd307fd8cdb2ac1b) · 2026-11-08 · 版本 +23 · fix(extensions): restore built-in resource management and update feedback
+- 623 [730fe33a39b5](https://github.com/3316891527/Operit/commit/730fe33a39b5a0cdc51c1a87e93dc15c5f406b5a) · 2026-11-08 · 版本 +23 · fix(ui): integrate task-preserving launch and real-time swipe dispatch
+- 624 [bd9ddba7a67a](https://github.com/3316891527/Operit/commit/bd9ddba7a67a7512bef0a89ecd81401c6933acb7) · 2026-11-08 · 版本 +23 · fix(extensions): clarify ZIP import and finish deletion navigation
+- 625 [080fead02ab7](https://github.com/3316891527/Operit/commit/080fead02ab709cf7a78ba77c68b02b100ab5fc5) · 2026-11-08 · 版本 +23 · refactor(ui): simplify phone assistant progress and gesture feedback
+- 626 [4f298ee870c1](https://github.com/3316891527/Operit/commit/4f298ee870c130137bbc7056f2fdeb817645704e) · 2026-11-08 · 版本 +23 · fix(worldbook): protect stored data and serialize package operations
+- 627 [3902eb01fd0a](https://github.com/3316891527/Operit/commit/3902eb01fd0ad79f04aab6d8f97f340166f9e85e) · 2026-11-08 · 版本 +23 · fix(worldbook): synchronize distribution and validate fault fixtures
+- 628 [662d23bc30e6](https://github.com/3316891527/Operit/commit/662d23bc30e6a80e7e10dad2df501c32571409f9) · 2026-11-08 · 版本 +23 · docs(worldbook): record passing storage regression and validation limits
+- 629 [779ad3235811](https://github.com/3316891527/Operit/commit/779ad3235811d44b71a56a8a5e1c30d14c76c023) · 2026-11-08 · 版本 +23 · fix(chat): parse streamed display incrementally and restore rollback state off main
+- 630 [f9e1ffbd73f5](https://github.com/3316891527/Operit/commit/f9e1ffbd73f50b24d0c14857138a6afef3a52211) · 2026-11-08 · 版本 +23 · test(chat): restore tool payload filter checkpoints in rollback regression
+- 631 [c5c62fd7cbc1](https://github.com/3316891527/Operit/commit/c5c62fd7cbc13e0fe34661b1480720690fbf91b8) · 2026-11-08 · 版本 +23 · test: integrate open PRs #147-#161 excluding #105
+- 632 [76a63af71341](https://github.com/3316891527/Operit/commit/76a63af7134121260912247839ff348180704e7d) · 2026-11-08 · 版本 +23 · chore(release): preserve main history before 1.12.2+23
+- 633 [f13ace037da1](https://github.com/3316891527/Operit/commit/f13ace037da138a4be882eace78d5946d4fc8d95) · 2026-11-08 · 版本 +23 · release: prepare 1.12.2+23 and retire verified temporary PR checks
+- 634 [60ca5cfbbab0](https://github.com/3316891527/Operit/commit/60ca5cfbbab074b3b3a15c52464de180f591b797) · 2026-11-08 · 版本 +23 · Merge release preparation into dev
+- 635 [02349712262d](https://github.com/3316891527/Operit/commit/02349712262da53a878f40a77702cc381b582580) · 2026-11-08 · 版本 +23 · Sync dev to main for 1.12.2+23
+
+</details>
+
+<details><summary>v1.12.2+24 源码截止 · 85 条提交</summary>
+
+- 636 [c0205be59ca4](https://github.com/3316891527/Operit/commit/c0205be59ca42b23b273395df7dbc989b4f971cf) · 2026-09-08 · 版本 +24 · fix(skills): key GitHub zip cache by commit SHA and invalidate on delete
+- 637 [4356d0b84d13](https://github.com/3316891527/Operit/commit/4356d0b84d1377f59a9115c42d36f45521f3d44e) · 2026-09-08 · 版本 +24 · fix(ffmpeg): serialize native FFmpegKit sessions
+- 638 [71b292ca05b6](https://github.com/3316891527/Operit/commit/71b292ca05b6cc8d3b381be3f9d57dac60e8efec) · 2026-09-08 · 版本 +24 · fix(ffmpeg): use MediaInformationSession and valid scale escape
+- 639 [02ea76a7ecd8](https://github.com/3316891527/Operit/commit/02ea76a7ecd837c8cc93de7522979891769b379d) · 2026-09-10 · 版本 +24 · fix(provider): sort Claude tool results by tool use order to preserve prompt cache
+- 640 [95332c70b1d3](https://github.com/3316891527/Operit/commit/95332c70b1d3d85d3581852bf7332e8cda3b59eb) · 2026-09-10 · 版本 +24 · test(provider): fix @Test annotation in ClaudeProviderHistoryTest
+- 641 [f21f0ae25107](https://github.com/3316891527/Operit/commit/f21f0ae25107c6752a192e6195f387f2ec4c4dfa) · 2026-09-17 · 版本 +24 · fix(http): honor timeout on built-in http_request
+- 642 [c9597e411a1e](https://github.com/3316891527/Operit/commit/c9597e411a1efee74ef3af71e6ebf9b4ca79ba3e) · 2026-09-25 · 版本 +24 · fix(http): enforce overall request timeout semantics
+- 643 [8e2379f034cd](https://github.com/3316891527/Operit/commit/8e2379f034cd9624b72de97928fd601548cf31b2) · 2026-11-08 · 版本 +24 · fix(chat): bound inline code context to prevent protocol leaks and stalled output
+- 644 [f674c32f0275](https://github.com/3316891527/Operit/commit/f674c32f02751f9fe31c3c8921f5612d3a180da1) · 2026-11-08 · 版本 +24 · ci(terminal): 自动同步应用采用的终端核心版本
+- 645 [b734ee72dfde](https://github.com/3316891527/Operit/commit/b734ee72dfde713f48edbd0e9e8ef1d5d33d966f) · 2026-11-08 · 版本 +24 · ci(terminal): 自动同步应用采用的终端核心版本
+- 646 [8bc97a723b95](https://github.com/3316891527/Operit/commit/8bc97a723b95246682d07421cdb72a2c98235a4d) · 2026-11-08 · 版本 +24 · Merge pull request #167: 自动同步应用采用的终端核心版本
+- 647 [62e4a63e5d16](https://github.com/3316891527/Operit/commit/62e4a63e5d16fb618657f93bdbb0ac4c873bcc65) · 2026-11-08 · 版本 +24 · Merge pull request #168: 同步 main 的终端核心自动化工作流
+- 648 [9916834d1a46](https://github.com/3316891527/Operit/commit/9916834d1a46a5a621c0f204a28d3ffb19c000c1) · 2026-11-08 · 版本 +24 · docs(terminal): 记录自动同步部署和实际运行结果
+- 649 [50069cbac65f](https://github.com/3316891527/Operit/commit/50069cbac65f4e4360c6b271854abe527124b84f) · 2026-11-08 · 版本 +24 · Merge pull request #169: 回填终端自动同步部署结果
+- 650 [dfa164dc2038](https://github.com/3316891527/Operit/commit/dfa164dc2038aefd3775314ddb966726e1be659b) · 2026-11-08 · 版本 +24 · Merge current dev into fix/skill-repo-zip-cache-stale
+- 651 [1869563a4f10](https://github.com/3316891527/Operit/commit/1869563a4f10d097040964fdc1130c49c4e02659) · 2026-11-08 · 版本 +24 · Merge current dev into fix/ffmpeg-serialize-native-sessions
+- 652 [cc9968966812](https://github.com/3316891527/Operit/commit/cc9968966812e7256ec0ac2e85bff2716318760e) · 2026-11-08 · 版本 +24 · Merge current dev into fix/claude-prompt-cache-tool-result-order
+- 653 [03d14ecfe863](https://github.com/3316891527/Operit/commit/03d14ecfe8630836fc82eabfffa39b3478633c9c) · 2026-11-08 · 版本 +24 · Merge current dev into fix/issue-1202-http-request-timeout
+- 654 [e054b23f3d0a](https://github.com/3316891527/Operit/commit/e054b23f3d0a0359f52f8050b8fa7eb3aaee1457) · 2026-11-08 · 版本 +24 · fix(http): preserve timeout forwarding in package source
+- 655 [29f6728034d6](https://github.com/3316891527/Operit/commit/29f6728034d64e3b1242418e562223749db882ae) · 2026-11-08 · 版本 +24 · Merge pull request #170: 修复 skill 仓库压缩包缓存失效
+- 656 [da5c92d37fb4](https://github.com/3316891527/Operit/commit/da5c92d37fb43ac9434c0cc15cf78f002d10b680) · 2026-11-08 · 版本 +24 · fix(claude): keep serializer private and isolate history test logging
+- 657 [7f8363341ff3](https://github.com/3316891527/Operit/commit/7f8363341ff36792d2b0e938e094f3ec32f75efd) · 2026-11-08 · 版本 +24 · Merge pull request #171: 串行化 FFmpegKit 原生会话
+- 658 [2f5570f6a9db](https://github.com/3316891527/Operit/commit/2f5570f6a9dbf502a1a22b518a8609f44c3c3d3b) · 2026-11-08 · 版本 +24 · Merge pull request #173: 修复 issue1202 HTTP 整体超时
+- 659 [a5c9cdeeb041](https://github.com/3316891527/Operit/commit/a5c9cdeeb04100dfec5389bdbf691787794cd5e1) · 2026-11-08 · 版本 +24 · Merge latest dev before validating Claude cache repair
+- 660 [1d44a096bde2](https://github.com/3316891527/Operit/commit/1d44a096bde2eba5dd258b5ea758d72975cb7716) · 2026-11-08 · 版本 +24 · ci: validate PR merge candidate against its base history
+- 661 [51e8efaa331d](https://github.com/3316891527/Operit/commit/51e8efaa331d783dc44daf9fe7ffee2bc52a93e6) · 2026-11-08 · 版本 +24 · Merge pull request #174: 修复 PR Check 候选基准校验
+- 662 [8b56a0ca9a2a](https://github.com/3316891527/Operit/commit/8b56a0ca9a2ae56eb5a4811a3729b5849f9c56d0) · 2026-11-08 · 版本 +24 · Merge validated PR Check repair before Claude integration
+- 663 [798841d88a15](https://github.com/3316891527/Operit/commit/798841d88a15b6de60e5b91a7c4ab0d3c860a5a9) · 2026-11-08 · 版本 +24 · Merge pull request #172: 稳定 Claude 工具结果顺序与提示词缓存
+- 664 [174f4db2f423](https://github.com/3316891527/Operit/commit/174f4db2f423d64b69fe8d359f4ba14438b38ce4) · 2026-11-08 · 版本 +24 · fix(chat): stop appending thinking levels to message model names
+- 665 [cc8ef86caf4b](https://github.com/3316891527/Operit/commit/cc8ef86caf4b5d75dbd8d64c39c0631de91faec0) · 2026-11-08 · 版本 +24 · Merge PR #175: 移除消息模型名附加的思考档位后缀
+- 666 [a26c052d0b6a](https://github.com/3316891527/Operit/commit/a26c052d0b6a6df9b64a028b7fb1fe296e74c0ad) · 2026-11-09 · 版本 +24 · feat(theme): add gradients, page backgrounds and text targets
+- 667 [74002c36359f](https://github.com/3316891527/Operit/commit/74002c36359f9506995ec0bea65478c5819a16ba) · 2026-11-09 · 版本 +24 · fix(theme): wire page preview focus and scene selection
+- 668 [c944cdd8bd1b](https://github.com/3316891527/Operit/commit/c944cdd8bd1b81dd92a53b00f3680f966fe10bc8) · 2026-11-09 · 版本 +24 · Merge PR #176: 扩展主题渐变、页面背景与独立文字排版
+- 669 [d25ac2932511](https://github.com/3316891527/Operit/commit/d25ac2932511a080bc48e97b03b457a453b51056) · 2026-11-09 · 版本 +24 · revert: undo PRs #170 through #176 pending maintainer review
+- 670 [70a5323ecfbc](https://github.com/3316891527/Operit/commit/70a5323ecfbcbb3eaa3f780ec89625f7d8d27579) · 2026-11-09 · 版本 +24 · ci: require complete Android validation for restored PRs
+- 671 [56c2300725a4](https://github.com/3316891527/Operit/commit/56c2300725a41f799ec5b8edb1de64b3d0105db5) · 2026-11-09 · 版本 +24 · fix(skill): restore ZIP cache fix for review
+- 672 [4d7b99e82649](https://github.com/3316891527/Operit/commit/4d7b99e82649aa5ae434096784103313a9765360) · 2026-11-09 · 版本 +24 · fix(ffmpeg): restore native session serialization for review
+- 673 [c0375d6de81c](https://github.com/3316891527/Operit/commit/c0375d6de81c7e3b811effa89fbfcaf5fcb03f7f) · 2026-11-09 · 版本 +24 · fix(claude): restore tool result ordering for review
+- 674 [a1db67cb030c](https://github.com/3316891527/Operit/commit/a1db67cb030c9282208bd3310a5fcdcd627c99da) · 2026-11-09 · 版本 +24 · fix(http): restore overall request timeout for review
+- 675 [eb8f4885a3f3](https://github.com/3316891527/Operit/commit/eb8f4885a3f3b986eebb193dad3fe97556bf9c9d) · 2026-11-09 · 版本 +24 · ci: restore candidate base validation fix for review
+- 676 [c0a0e3991a34](https://github.com/3316891527/Operit/commit/c0a0e3991a340dae040b25b8dc5803493270ccc4) · 2026-11-09 · 版本 +24 · fix(chat): restore model name suffix removal for review
+- 677 [97e8e027564b](https://github.com/3316891527/Operit/commit/97e8e027564b56a046463620a095756d8d4195ff) · 2026-11-09 · 版本 +24 · feat(theme): restore foundation extensions for review
+- 678 [c389c49e472f](https://github.com/3316891527/Operit/commit/c389c49e472f39aaabe9c854eec2c26913ff6fa6) · 2026-11-09 · 版本 +24 · fix(worldbook): register storage IPC when the main runtime loads
+- 679 [0c2856e309c7](https://github.com/3316891527/Operit/commit/0c2856e309c7496c815d05e0b1d4fe3d5816755a) · 2026-11-09 · 版本 +24 · feat(theme): 收拢背景编辑并加入原生交互效果
+- 680 [025a80d1fc2e](https://github.com/3316891527/Operit/commit/025a80d1fc2e59c5b9b4cf2dd39c2e2ca18ec633) · 2026-11-09 · 版本 +24 · fix(theme): 补齐页面预览引用的 Material 图标
+- 681 [e82e26c2dacd](https://github.com/3316891527/Operit/commit/e82e26c2dacd0ce5e352f2b640d1839e6dd2889c) · 2026-11-09 · 版本 +24 · fix(theme): 修正背景绘制判断函数的导入
+- 682 [1f72a906a8ee](https://github.com/3316891527/Operit/commit/1f72a906a8eea9acfe11ffefa0948e579ee53a18) · 2026-11-09 · 版本 +24 · feat(theme): 整理属性分组并复用真实页面预览
+- 683 [6b5709d226d7](https://github.com/3316891527/Operit/commit/6b5709d226d71bc9fee2d1c6053ffa5f6ef2b1af) · 2026-11-09 · 版本 +24 · fix(waifu): 保留思考展示并仅在末条显示请求统计
+- 684 [a57c971e60b2](https://github.com/3316891527/Operit/commit/a57c971e60b2582123152a1131b3ed8229065c72) · 2026-11-09 · 版本 +24 · fix(theme): 完善 JPG 媒体导入与定量资源限制提示
+- 685 [1861c708536e](https://github.com/3316891527/Operit/commit/1861c708536eff67776e83657ed36eb667432d37) · 2026-11-09 · 版本 +24 · fix(theme): 精简超限红条并补充本地化错误提示
+- 686 [52445499d095](https://github.com/3316891527/Operit/commit/52445499d0956d59d9ac895738d70fae7693cf96) · 2026-11-09 · 版本 +24 · fix(theme): 移除重复的资源错误 Toast
+- 687 [d136c363309d](https://github.com/3316891527/Operit/commit/d136c363309d4a30ed76aac0afb9c2599131a36f) · 2026-11-09 · 版本 +24 · fix(stats): hide deleted configurations without removing usage
+- 688 [c61678fdc384](https://github.com/3316891527/Operit/commit/c61678fdc384d80bf76df54a631550831a654e4e) · 2026-11-09 · 版本 +24 · fix: retain navigation across activity recreation
+- 689 [af2e4deaf9c6](https://github.com/3316891527/Operit/commit/af2e4deaf9c6117200dbb1fd25ccd690e926bf33) · 2026-11-09 · 版本 +24 · feat: collapse completed response activity
+- 690 [799cf450548a](https://github.com/3316891527/Operit/commit/799cf450548ae2fc5ed1cb2555ccbfc84962f632) · 2026-11-09 · 版本 +24 · feat: queue messages and steer the active response
+- 691 [1edc03516a45](https://github.com/3316891527/Operit/commit/1edc03516a45008984a6eb4e2020f1d3f8878f06) · 2026-11-10 · 版本 +24 · fix: use existing toast and chat draft APIs
+- 692 [fb7bf270aac0](https://github.com/3316891527/Operit/commit/fb7bf270aac04039f26ccb8ee52abcce6bdac1c6) · 2026-11-10 · 版本 +24 · test: isolate Android system logging in sampling tests
+- 693 [4444d0478b19](https://github.com/3316891527/Operit/commit/4444d0478b1918da8cc0aab9c0f3e3f369fc73c6) · 2026-11-10 · 版本 +24 · docs: plan integration of thirteen pending PRs
+- 694 [e5620dab9893](https://github.com/3316891527/Operit/commit/e5620dab989313251e46b31b2eaababe9f6c0e5f) · 2026-11-10 · 版本 +24 · merge: integrate PR #178 for device testing
+- 695 [7725229d8088](https://github.com/3316891527/Operit/commit/7725229d8088b9489bea39f4fb3f91979485e8ed) · 2026-11-10 · 版本 +24 · merge: integrate PR #179 for device testing
+- 696 [2709b6557be5](https://github.com/3316891527/Operit/commit/2709b6557be5ff980b8a2c1c4708c555d4854404) · 2026-11-10 · 版本 +24 · merge: integrate PR #180 for device testing
+- 697 [ef163abf4671](https://github.com/3316891527/Operit/commit/ef163abf4671d5956c44afccc81114bfd33adba0) · 2026-11-10 · 版本 +24 · merge: integrate PR #181 for device testing
+- 698 [7aeaf8d04f4d](https://github.com/3316891527/Operit/commit/7aeaf8d04f4dcea25a36effb00b108a721a708e8) · 2026-11-10 · 版本 +24 · merge: integrate PR #182 for device testing
+- 699 [e3740d46b233](https://github.com/3316891527/Operit/commit/e3740d46b233653894ec5047e58df48b45feb51f) · 2026-11-10 · 版本 +24 · merge: integrate PR #183 for device testing
+- 700 [65bdb7857aa6](https://github.com/3316891527/Operit/commit/65bdb7857aa6c47284c9673e879f0dc920a19d4e) · 2026-11-10 · 版本 +24 · merge: integrate PR #184 for device testing
+- 701 [5b26415a8eec](https://github.com/3316891527/Operit/commit/5b26415a8eec82b0add9904fb200ee25c923547f) · 2026-11-10 · 版本 +24 · merge: integrate PR #185 for device testing
+- 702 [6189da9201fd](https://github.com/3316891527/Operit/commit/6189da9201fd4712208b44e304919cf049f89d12) · 2026-11-10 · 版本 +24 · merge: integrate PR #186 for device testing
+- 703 [a9a88f7cf00c](https://github.com/3316891527/Operit/commit/a9a88f7cf00c6596ba0155b86c29ecac2a8b915c) · 2026-11-10 · 版本 +24 · merge: integrate PR #187 for device testing
+- 704 [17b6618cf0c1](https://github.com/3316891527/Operit/commit/17b6618cf0c1b548cf492b05cf61dc1a3a4ca0bf) · 2026-11-10 · 版本 +24 · merge: integrate PR #188 for device testing
+- 705 [dc49eabcf58c](https://github.com/3316891527/Operit/commit/dc49eabcf58c7b6e158cda8cfd913909f474d08a) · 2026-11-10 · 版本 +24 · merge: integrate PR #189 for device testing
+- 706 [6bf67262ff36](https://github.com/3316891527/Operit/commit/6bf67262ff368ce2668622358759d8f8f124e554) · 2026-11-10 · 版本 +24 · merge: integrate PR #190 for device testing
+- 707 [72ecce9a609c](https://github.com/3316891527/Operit/commit/72ecce9a609c5210b72f3aa725832c498cdfd33c) · 2026-11-10 · 版本 +24 · docs: record integrated sources and device acceptance checklist
+- 708 [ba1d2075e562](https://github.com/3316891527/Operit/commit/ba1d2075e562744c58b7fc947013a64751bd8ec5) · 2026-11-10 · 版本 +24 · fix: apply theme tint to active-turn guidance text
+- 709 [ef634a87c758](https://github.com/3316891527/Operit/commit/ef634a87c758889638c239905e9843a62f395a25) · 2026-11-10 · 版本 +24 · merge: update PR #190 guidance theme colors
+- 710 [2dbc0154813d](https://github.com/3316891527/Operit/commit/2dbc0154813d947e2932a1c325d9dc3ecedcac04) · 2026-11-10 · 版本 +24 · docs: update integrated guidance theme fix source
+- 711 [954b067f7ce2](https://github.com/3316891527/Operit/commit/954b067f7ce2a8847995550765dc98ff45f0b7b5) · 2026-11-10 · 版本 +24 · merge: integrate PRs #178–#190 into dev
+- 712 [c3d0588e2a91](https://github.com/3316891527/Operit/commit/c3d0588e2a9161623922e6d9af59778612ea1d10) · 2026-11-10 · 版本 +24 · fix(extensions): show update progress and completion feedback
+- 713 [8f275aa0620d](https://github.com/3316891527/Operit/commit/8f275aa0620d2015df4177746209385bb39b8c6f) · 2026-11-10 · 版本 +24 · chore(release): prepare 1.12.2+24 version and notes
+- 714 [6f16f0c6c5b9](https://github.com/3316891527/Operit/commit/6f16f0c6c5b9b0379301d90c377e20d5df1b09f8) · 2026-11-10 · 版本 +24 · merge: preserve main history before 1.12.2+24
+- 715 [1f1a38813439](https://github.com/3316891527/Operit/commit/1f1a38813439abaf09efab519f30bdf70fd3f226) · 2026-11-10 · 版本 +24 · merge: plugin update feedback and 1.12.2+24 preparation
+- 716 [c9b55f2d04a5](https://github.com/3316891527/Operit/commit/c9b55f2d04a51fe4b90122ccf371d54c497541d4) · 2026-11-10 · 版本 +24 · merge: sync dev to main for 1.12.2+24
+- 717 [2add39541086](https://github.com/3316891527/Operit/commit/2add3954108604eec4d3e488ee1a23192844beed) · 2026-11-10 · 版本 +24 · merge: update PR #166 with current dev and preserve documentation entries
+- 718 [aafc4d6acc30](https://github.com/3316891527/Operit/commit/aafc4d6acc3035dfe48c8680d45ef4e2f9ee355a) · 2026-11-10 · 版本 +24 · docs(release): include PR #166 in the 1.12.2+24 restart
+- 719 [9532d2664f92](https://github.com/3316891527/Operit/commit/9532d2664f921d1f138813a22c69f26c3de457b9) · 2026-11-10 · 版本 +24 · merge: include PR #166 protocol streaming fix in dev
+- 720 [275ed3e43c04](https://github.com/3316891527/Operit/commit/275ed3e43c04d0e05caf67660276ffa5edaff504) · 2026-11-10 · 版本 +24 · merge: sync PR #166 to main for the 1.12.2+24 restart
+
+</details>
