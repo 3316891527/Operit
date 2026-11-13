@@ -28,7 +28,6 @@ import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
 import com.ai.assistance.operit.util.stream.TextStreamEventType
 import com.ai.assistance.operit.util.stream.TextStreamRevisionTracker
 import com.ai.assistance.operit.core.speech.text.TtsSegmenter
-import com.ai.assistance.operit.util.WaifuThinkingPresentation
 import com.ai.assistance.operit.util.WaifuMessageProcessor
 import com.ai.assistance.operit.util.WaifuSegmentMessageStore
 import com.ai.assistance.operit.util.stream.applyRevisionEvents
@@ -1465,7 +1464,6 @@ class MessageProcessingDelegate(
                         steering.canSteer = effectivePersistTurn && !isWaifuModeEnabled && !isGroupOrchestrationTurn
                         toolBoundaryMessageReady.complete(aiMessage.takeIf { effectivePersistTurn && chatId != null && !isWaifuModeEnabled })
                         var lastWaifuPreviewPublishedAt = 0L
-                        var lastWaifuThinkingPublishedAt = 0L
                         val waifuMessageStore = WaifuSegmentMessageStore(
                             messages = waifuEmittedMessages,
                             createMessage = { segment ->
@@ -1488,17 +1486,6 @@ class MessageProcessingDelegate(
                                 ) {
                                     addMessageToChat(chatId, message)
                                     lastWaifuPreviewPublishedAt = now
-                                }
-                                tryEmitScrollToBottomThrottled(chatId)
-                            },
-                            publishThinking = { message ->
-                                val now = messageTimingNow()
-                                if (effectivePersistTurn && chatId != null &&
-                                    (lastWaifuThinkingPublishedAt == 0L || now - lastWaifuThinkingPublishedAt >= 100L ||
-                                        !WaifuThinkingPresentation.isInProgress(message.content))
-                                ) {
-                                    addMessageToChat(chatId, message)
-                                    lastWaifuThinkingPublishedAt = now
                                 }
                                 tryEmitScrollToBottomThrottled(chatId)
                             },

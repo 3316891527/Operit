@@ -293,6 +293,15 @@ fun ChatArea(
     val showMessageTimestamp = themeSnapshot.showMessageTimestamp
     val waifuPreferences = remember(context) { WaifuPreferences.getInstance(context) }
     val waifuEnabled by waifuPreferences.enableWaifuModeFlow.collectAsState(initial = false)
+    // Apply the same visibility to timeline preparation and both message styles so
+    // previously stored thinking sections also stay hidden without rewriting history.
+    val messageThemeSnapshot = remember(themeSnapshot, waifuEnabled) {
+        if (waifuEnabled) {
+            themeSnapshot.copy(values = themeSnapshot.values.withBoolean("show_thinking_process", false))
+        } else {
+            themeSnapshot
+        }
+    }
     var pendingJumpToMessageTimestamp by remember(currentChatId) { mutableStateOf<Long?>(null) }
     val lastMessage = chatHistory.lastOrNull()
     val displayPreferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
@@ -300,7 +309,7 @@ fun ChatArea(
     val timelineEntries = rememberChatTimelineEntries(
         messages = chatHistory,
         chatId = currentChatId,
-        showThinkingProcess = themeSnapshot.showThinkingProcess,
+        showThinkingProcess = messageThemeSnapshot.showThinkingProcess,
         showStatusTags = themeSnapshot.showStatusTags,
         toolCollapseMode = toolCollapseMode,
     )
@@ -431,61 +440,63 @@ fun ChatArea(
                 val showGenerationMetadata = showWaifuGenerationMetadata(chatHistory, actualIndex, waifuEnabled)
                 val shouldHide = shouldHideLastAiMessage && actualIndex == messagesCount - 1 && message.sender == "ai"
 
-                MessageItem(
-                    index = actualIndex,
-                    currentChatId = currentChatId,
-                    message = message,
-                    enableDialogs = enableDialogs,
-                    userMessageColor = userMessageColor,
-                    aiMessageColor = aiMessageColor,
-                    userTextColor = userTextColor,
-                    aiTextColor = aiTextColor,
-                    systemMessageColor = systemMessageColor,
-                    systemTextColor = systemTextColor,
-                    thinkingBackgroundColor = thinkingBackgroundColor,
-                    thinkingTextColor = thinkingTextColor,
-                    onSelectMessageToEdit = onSelectMessageToEdit,
-                    onCopyMessage = onCopyMessage,
-                    onDeleteMessage = onDeleteMessage,
-                    onDeleteCurrentMessageVariant = onDeleteCurrentMessageVariant,
-                    onDeleteMessagesFrom = onDeleteMessagesFrom,
-                    onRollbackToMessage = onRollbackToMessage,
-                    onRegenerateMessage = onRegenerateMessage,
-                    onSwitchMessageVariant = onSwitchMessageVariant,
-                    onSpeakMessage = onSpeakMessage,
-                    onReplyToMessage = onReplyToMessage,
-                    onToggleFavoriteMessage = onToggleFavoriteMessage,
-                    onCreateBranch = onCreateBranch,
-                    onInsertSummary = onInsertSummary,
-                    onTranslateMessage = onTranslateMessage,
-                    onMentionRoleFromAvatar = onMentionRoleFromAvatar,
-                    chatStyle = if (message.sender == "user") userChatStyle else aiChatStyle,
-                    showMessageTokenStats = showMessageTokenStats && showGenerationMetadata,
-                    showMessageTimingStats = showMessageTimingStats && showGenerationMetadata,
-                    showMessageTokenSpeed = showMessageTokenSpeed && showGenerationMetadata,
-                    showMessageTimestamp = showMessageTimestamp && showGenerationMetadata,
-                    cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
-                    cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
-                    bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
-                    bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
-                    bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
-                    bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
-                    isHidden = shouldHide,
-                    isMultiSelectMode = isMultiSelectMode,
-                    isSelected = selectedMessageIndices.contains(actualIndex),
-                    onToggleSelection = { onToggleMessageSelection?.invoke(actualIndex) },
-                    onToggleMultiSelectMode = onToggleMultiSelectMode,
-                    messageIndex = actualIndex,
-                    messageSlice = entry.slice,
-                    bubbleUserImageStyle = bubbleUserImageStyle,
-                    bubbleAiImageStyle = bubbleAiImageStyle,
-                    bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
-                    bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
-                    bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
-                    bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
-                    bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
-                    bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
-                )
+                CompositionLocalProvider(LocalThemePreferenceSnapshot provides messageThemeSnapshot) {
+                    MessageItem(
+                        index = actualIndex,
+                        currentChatId = currentChatId,
+                        message = message,
+                        enableDialogs = enableDialogs,
+                        userMessageColor = userMessageColor,
+                        aiMessageColor = aiMessageColor,
+                        userTextColor = userTextColor,
+                        aiTextColor = aiTextColor,
+                        systemMessageColor = systemMessageColor,
+                        systemTextColor = systemTextColor,
+                        thinkingBackgroundColor = thinkingBackgroundColor,
+                        thinkingTextColor = thinkingTextColor,
+                        onSelectMessageToEdit = onSelectMessageToEdit,
+                        onCopyMessage = onCopyMessage,
+                        onDeleteMessage = onDeleteMessage,
+                        onDeleteCurrentMessageVariant = onDeleteCurrentMessageVariant,
+                        onDeleteMessagesFrom = onDeleteMessagesFrom,
+                        onRollbackToMessage = onRollbackToMessage,
+                        onRegenerateMessage = onRegenerateMessage,
+                        onSwitchMessageVariant = onSwitchMessageVariant,
+                        onSpeakMessage = onSpeakMessage,
+                        onReplyToMessage = onReplyToMessage,
+                        onToggleFavoriteMessage = onToggleFavoriteMessage,
+                        onCreateBranch = onCreateBranch,
+                        onInsertSummary = onInsertSummary,
+                        onTranslateMessage = onTranslateMessage,
+                        onMentionRoleFromAvatar = onMentionRoleFromAvatar,
+                        chatStyle = if (message.sender == "user") userChatStyle else aiChatStyle,
+                        showMessageTokenStats = showMessageTokenStats && showGenerationMetadata,
+                        showMessageTimingStats = showMessageTimingStats && showGenerationMetadata,
+                        showMessageTokenSpeed = showMessageTokenSpeed && showGenerationMetadata,
+                        showMessageTimestamp = showMessageTimestamp && showGenerationMetadata,
+                        cursorUserBubbleLiquidGlass = cursorUserBubbleLiquidGlass,
+                        cursorUserBubbleWaterGlass = cursorUserBubbleWaterGlass,
+                        bubbleUserBubbleLiquidGlass = bubbleUserBubbleLiquidGlass,
+                        bubbleUserBubbleWaterGlass = bubbleUserBubbleWaterGlass,
+                        bubbleAiBubbleLiquidGlass = bubbleAiBubbleLiquidGlass,
+                        bubbleAiBubbleWaterGlass = bubbleAiBubbleWaterGlass,
+                        isHidden = shouldHide,
+                        isMultiSelectMode = isMultiSelectMode,
+                        isSelected = selectedMessageIndices.contains(actualIndex),
+                        onToggleSelection = { onToggleMessageSelection?.invoke(actualIndex) },
+                        onToggleMultiSelectMode = onToggleMultiSelectMode,
+                        messageIndex = actualIndex,
+                        messageSlice = entry.slice,
+                        bubbleUserImageStyle = bubbleUserImageStyle,
+                        bubbleAiImageStyle = bubbleAiImageStyle,
+                        bubbleUserRoundedCornersEnabled = bubbleUserRoundedCornersEnabled,
+                        bubbleAiRoundedCornersEnabled = bubbleAiRoundedCornersEnabled,
+                        bubbleUserContentPaddingLeft = bubbleUserContentPaddingLeft,
+                        bubbleUserContentPaddingRight = bubbleUserContentPaddingRight,
+                        bubbleAiContentPaddingLeft = bubbleAiContentPaddingLeft,
+                        bubbleAiContentPaddingRight = bubbleAiContentPaddingRight,
+                    )
+                }
                 if (entry.slice?.last != false) Spacer(modifier = Modifier.height(8.dp))
 
             }

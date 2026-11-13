@@ -23,10 +23,9 @@ internal sealed interface WaifuSegmentUpdate {
     data class Append(val content: String) : WaifuSegmentUpdate
     data class Retain(val count: Int) : WaifuSegmentUpdate
     data class Preview(val content: String) : WaifuSegmentUpdate
-    data class Thinking(val content: String?) : WaifuSegmentUpdate
 }
 
-private data class WaifuPendingSnapshot(val segments: List<String>, val preview: String?, val thinking: String?)
+private data class WaifuPendingSnapshot(val segments: List<String>, val preview: String?)
 
 /** 逐句展示以最新修订快照为准，撤回失效气泡并清理待发送的旧句子。 */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -36,7 +35,6 @@ internal fun streamWaifuUpdates(
     typingDelayMs: (segmentLength: Int, first: Boolean) -> Long,
     nowMillis: () -> Long = { System.nanoTime() / 1_000_000L },
     firstSegmentPreview: ((String) -> String?)? = null,
-    thinkingSnapshot: ((String, Boolean) -> String?)? = null,
 ): Stream<WaifuSegmentUpdate> = stream {
     coroutineScope {
         val snapshots = Channel<WaifuPendingSnapshot>(Channel.CONFLATED)
@@ -44,11 +42,11 @@ internal fun streamWaifuUpdates(
         val trackerMutex = Mutex()
         val carrier = sourceStream as? TextStreamEventCarrier
         var sourceCompleted = false
-        fun currentSnapshot(final: Boolean, finishing: Boolean = false): WaifuPendingSnapshot {
+        fun currentSnapshot(final: Boolean): WaifuPendingSnapshot {
             val content = tracker.currentContent().toString()
             val segments = splitSnapshot(content, final).toList()
             val preview = if (!final && segments.isEmpty()) firstSegmentPreview?.invoke(content) else null
-            return WaifuPendingSnapshot(segments, preview?.takeIf { it.isNotBlank() }, thinkingSnapshot?.invoke(content, final || finishing))
+            return WaifuPendingSnapshot(segments, preview?.takeIf { it.isNotBlank() })
         }
         val producer = launch {
             var failure: Exception? = null
@@ -108,7 +106,6 @@ internal fun streamWaifuUpdates(
         var pending: String? = null
         var dueAt = 0L
         var previewContent: String? = null
-        var thinkingContent: String? = null
 
         fun scheduleNext() {
             val next = target.getOrNull(displayed.size)
@@ -120,10 +117,6 @@ internal fun streamWaifuUpdates(
         }
 
         suspend fun accept(snapshot: WaifuPendingSnapshot, allowPreview: Boolean = true) {
-            if (snapshot.thinking != thinkingContent) {
-                emit(WaifuSegmentUpdate.Thinking(snapshot.thinking))
-                thinkingContent = snapshot.thinking
-            }
             val segments = snapshot.segments
             var common = 0
             while (common < displayed.size && common < segments.size &&
@@ -227,7 +220,7 @@ internal fun streamWaifuUpdates(
                 if (!completed) {
                     val finalSnapshot = trackerMutex.withLock {
                         tracker.applyEventHistory(carrier?.eventChannel?.replayCache.orEmpty())
-                        currentSnapshot(sourceCompleted, finishing = true)
+                        currentSnapshot(sourceCompleted)
                     }
                     accept(finalSnapshot, allowPreview = false)
                 }
@@ -243,43 +236,18 @@ internal class WaifuSegmentMessageStore<T>(
     private val removeMessages: suspend (List<T>) -> Unit,
     private val reviseMessage: ((T, String) -> T)? = null,
     private val publishPreview: suspend (T) -> Unit = {},
-    private val publishThinking: suspend (T) -> Unit = publishPreview,
 ) {
     private var interruptNextSpeech = false
     private var hasPreview = false
-    private var thinkingIndex: Int? = null
-    private val bodyCount: Int get() = messages.size - if (thinkingIndex == null) 0 else 1
-    private val lastBodyIndex: Int get() =
-        if (thinkingIndex == messages.lastIndex) messages.lastIndex - 1 else messages.lastIndex
 
     suspend fun apply(update: WaifuSegmentUpdate) {
         when (update) {
-            is WaifuSegmentUpdate.Thinking -> {
-                val index = thinkingIndex
-                if (update.content == null) {
-                    if (index != null) {
-                        removeMessages(listOf(messages[index]))
-                        messages.removeAt(index)
-                        thinkingIndex = null
-                    }
-                } else {
-                    val message = if (index == null) {
-                        createMessage(update.content).also {
-                            messages.add(it)
-                            thinkingIndex = messages.lastIndex
-                        }
-                    } else {
-                        checkNotNull(reviseMessage)(messages[index], update.content).also { messages[index] = it }
-                    }
-                    // 思考只更新展示，不进入正文的打字队列或自动朗读回调。
-                    publishThinking(message)
-                }
-            }
             is WaifuSegmentUpdate.Append -> {
-                val interruptSpeech = bodyCount == 0 || hasPreview || interruptNextSpeech
+                val interruptSpeech = messages.isEmpty() || hasPreview || interruptNextSpeech
                 val message = if (hasPreview) {
-                    val index = lastBodyIndex
-                    checkNotNull(reviseMessage)(messages[index], update.content).also { messages[index] = it }
+                    checkNotNull(reviseMessage)(messages.last(), update.content).also {
+                        messages[messages.lastIndex] = it
+                    }
                 } else {
                     createMessage(update.content).also { messages += it }
                 }
@@ -289,23 +257,21 @@ internal class WaifuSegmentMessageStore<T>(
             }
             is WaifuSegmentUpdate.Preview -> {
                 val message = if (hasPreview) {
-                    val index = lastBodyIndex
-                    checkNotNull(reviseMessage)(messages[index], update.content).also { messages[index] = it }
+                    checkNotNull(reviseMessage)(messages.last(), update.content).also {
+                        messages[messages.lastIndex] = it
+                    }
                 } else {
-                    check(bodyCount == 0)
+                    check(messages.isEmpty())
                     createMessage(update.content).also { messages += it }
                 }
                 hasPreview = true
                 publishPreview(message)
             }
             is WaifuSegmentUpdate.Retain -> {
-                require(update.count in 0..bodyCount)
-                val removedIndices = messages.indices.filter { it != thinkingIndex }.drop(update.count)
-                if (removedIndices.isNotEmpty()) {
-                    removeMessages(removedIndices.map(messages::get))
-                    val newThinkingIndex = thinkingIndex?.let { index -> index - removedIndices.count { it < index } }
-                    removedIndices.asReversed().forEach { messages.removeAt(it) }
-                    thinkingIndex = newThinkingIndex
+                require(update.count in 0..messages.size)
+                if (update.count < messages.size) {
+                    removeMessages(messages.drop(update.count))
+                    messages.subList(update.count, messages.size).clear()
                     interruptNextSpeech = true
                     hasPreview = false
                 }
