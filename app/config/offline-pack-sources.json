@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "releaseTag": "resources-v2-d16730007f8d94095264",
-  "sourceRevision": "901471c562ced9aea321526a49fb01e13f5955df",
+  "releaseTag": "resources-v3-29daae18fe54a4598b4c",
+  "sourceRevision": "f969706fa9905cc98b55f3736ccac3f1a2d50648",
   "sources": [
     "automatic_ui_base.js",
     "automatic_ui_subagent.js",
@@ -171,11 +171,11 @@
     ],
     [
       "examples/automatic_ui_subagent.js",
-      "7054254e97d85c1e2f40399dccd34b24ee3850e583bda753f048e0c8002e45c0"
+      "0c3d8dcbe53cb644aaed5ae20948a26e222e4e25659dd9f66d2c9e2ea2a734e2"
     ],
     [
       "examples/automatic_ui_subagent.ts",
-      "8c1f68cf88a7a5a3c5595c863fa94678407c29ef5efe061868c76719f3028d00"
+      "f04a48b885e9d32e929ac33fd6deddc214d5b3dce0ba4d445397cf4cc09feb3c"
     ],
     [
       "examples/browser.js",
@@ -187,11 +187,11 @@
     ],
     [
       "examples/code_runner.js",
-      "a54bad2dd072548711c08a554ae9b3f7d5a705444ea59293bb051c5cafbef020"
+      "48a06d52fafcf9083e3c8545f9e36063a04feacfa495c4c98ca6d9402003a8fc"
     ],
     [
       "examples/code_runner.ts",
-      "fcc5646706db8d2e330c218933489125d6cbba3c7f37502b6fd1dadc61bbc4c5"
+      "ef563397b8b6806d54f5f4265c1be52fa65a67baf3ce5337be0e3c0e56dbb6a4"
     ],
     [
       "examples/context_limiter_c/dist/constants.js",
@@ -379,11 +379,11 @@
     ],
     [
       "examples/extended_http_tools.js",
-      "1b7456d8c378b68b35277c2f90cf96769538d6ed5cf1d9e35d124d3182d34bc0"
+      "a255fa4e39583c04fd197b73fb7276e4fd05878056a3aeb0a6db8bdfa4dec09d"
     ],
     [
       "examples/extended_http_tools.ts",
-      "3379347f76b003e156c2d99cf19cff71118ab17638c5f7ed438b0064481aa1ab"
+      "3f44533c426de8a0c3ac4db28ebb527e125d3cc2298b91fb5c77cfe4766a5303"
     ],
     [
       "examples/extended_memory_tools.js",
@@ -535,19 +535,19 @@
     ],
     [
       "examples/openai_draw.js",
-      "565a556f8c72dccf10b42a3bf016599d9030b426d6915b9cc377105c4173cceb"
+      "3b7f1a78764792202ffdccd0d9c4e8cdf9a99cbec7f3a6d3a4d2a6c33e270f60"
     ],
     [
       "examples/openai_draw.ts",
-      "c84e82cec54fb6056a0e1610f337d6b7ab7c1a2dedbcfedfd2693b1e8ab69ef5"
+      "28d684c49efcbc970ba31e34dae11f50b649fc039a408612c85f65cabd7494e6"
     ],
     [
       "examples/operit_editor.js",
-      "b8843ebbcb2c64533732ceb2683f6069d49f30e1ae4a5605b638a17db838cc60"
+      "42d8063eb0bce857ba9407e9f214be097a5b1ab85a265f814598df1dedff9367"
     ],
     [
       "examples/operit_editor.ts",
-      "b5fad31cc012b6d036cd1bd6ce17d25f4f010175f49a918ddf1403a8b2a5aadc"
+      "b4f0fb24126edc4f127820da2d028bd7f32e871f007672528175dde6823ff8af"
     ],
     [
       "examples/plan_mode/dist/main.js",
@@ -899,11 +899,11 @@
     ],
     [
       "examples/super_admin.js",
-      "783b4c374bffe5455fff0c5785192ebdae781ef68f5f1542a77a655f13458b7c"
+      "469e9fab0bcdd74d771a266d2e7b339a7aac481e43861ef660c4d69f818f6057"
     ],
     [
       "examples/super_admin.ts",
-      "aff25d55a719817f8e8de96f7e850c8ed15ec8af0521e6a2d84b6584c56302cc"
+      "8b8148dc14701a2796937c1440bd4eb4f6f498f5b7a23ae5884d105425da8dd4"
     ],
     [
       "examples/system_tools.js",
@@ -967,7 +967,7 @@
     ],
     [
       "examples/types/index.d.ts",
-      "7c29cb71ae4206d8644451879ab3e556565b3f586016c4bb95ab60cc331ac345"
+      "2ed465f024c605d268521d51b3297d53e71bf1a9a0519bc61de93ea84c021944"
     ],
     [
       "examples/types/java-bridge.d.ts",
@@ -1003,7 +1003,7 @@
     ],
     [
       "examples/types/results.d.ts",
-      "1b6fc82136d10caeff8030ffdeaf7f8cdf1b9a815479dc23fa5bc38d7e2375c3"
+      "cc865caa0cf88bd45d92cdc30fb767a51c4b86efd9b91b898b8c2520bcfc7fd0"
     ],
     [
       "examples/types/software_settings.d.ts",
@@ -1011,7 +1011,7 @@
     ],
     [
       "examples/types/system.d.ts",
-      "0ad916574d4084c2ab18df0a1eafa2fde882d2a3b3eb54ad04fbd45998b22a36"
+      "c8fe1d518378a7db3dd313d606c9b0e3ebfab108e8ef574f6ea3fc255a8cbf93"
     ],
     [
       "examples/types/tasker.d.ts",
@@ -1019,7 +1019,7 @@
     ],
     [
       "examples/types/tool-types.d.ts",
-      "c988a2e4c26a4b6a3ad85142038d54d96ccf15c17f5611f7e498757e58c2a858"
+      "483127dcf3267bbd10ae89b26a3fdc429dd7b98d1a2e873db35c36cb8abdf77c"
     ],
     [
       "examples/types/toolpkg.d.ts",
@@ -1287,31 +1287,39 @@
     ],
     [
       "examples/worldbook/dist/main.js",
-      "ddda9f9c045dda4eafef8bccff3962b9ee50be8d1c589303658787243ed3b690"
+      "18d5aa8436078fd5a53c0d23961b447b8cc96ee0c2ed34e8ee2d3c9e75aa1254"
     ],
     [
       "examples/worldbook/dist/packages/worldbook_tools.js",
       "74e703e31f0ca2034c7ba45da1c04833ba25c1c63d98b11aa686d712649cc1aa"
     ],
     [
+      "examples/worldbook/dist/shared/worldbook_client.js",
+      "bba443be83c3588e05a1059bd75526897c0434c0b0a20ca9add135b082151ec5"
+    ],
+    [
+      "examples/worldbook/dist/shared/worldbook_rpc.js",
+      "0f863162529da11448c9b585fd6b33c27c7954245b8ca4d78ade4dab4a901fa3"
+    ],
+    [
       "examples/worldbook/dist/shared/worldbook_service.js",
-      "5eaae1383962361d4e76ebb1eab342bc3208b3537eeed1435faaeda730a1b395"
+      "fc958a58750945a7c09ebbd373f49d63b0022f3f66c1ce8dabbf84137737639f"
     ],
     [
       "examples/worldbook/dist/shared/worldbook_storage.js",
-      "2e844c5b67bb1c940f1fcb5400e07bd02ef7501c06c175c6b0a2dd13d0ef6f46"
+      "9ba93f450af75d8551ba376ce4c07d485f895e0077d19b5b1aaa531e296a6d53"
     ],
     [
       "examples/worldbook/dist/shared/worldbook_variables.js",
-      "7419f493549ab6dfb8a48e14927771b82d098e79b8eb9d716fa6be77f2035a2b"
+      "677362ee439aa7cdd57c6db7b33ef7f8d1c3cf8558b78d856b1effe08daee14c"
     ],
     [
       "examples/worldbook/dist/ui/worldbook_manager/index.ui.js",
-      "3f7d3e34e015705b63bc38d574f41e9551c9250bd57efd024d40934309b12043"
+      "da220245054ba4a53be34f8f862cc5bc27fad88aca5c71a9851387d57f9c59f8"
     ],
     [
       "examples/worldbook/manifest.json",
-      "b77a1d5664e9cc872030e8e09fe2da0f1bdc1fcca29952d03310387b54e06ad2"
+      "98de52e104809fc3cce6746c98f0fcfed8235b43b9987e4c4c8c1df308fb8f36"
     ],
     [
       "examples/worldbook/src/i18n/en-US.ts",
@@ -1331,31 +1339,39 @@
     ],
     [
       "examples/worldbook/src/main.ts",
-      "6db664622a1673d74309650b2a10467fd664ce6df12405f3b981290b991e4ee9"
+      "0c8d6dc4463d2797545a3f4c2f3944ab62b3571c10e9dab57d4634b60c31e920"
     ],
     [
       "examples/worldbook/src/packages/worldbook_tools.ts",
       "c7dcea31b61a02a59a51ce555787a6662bb18cf358adae8f29a174a8b8fc4cd3"
     ],
     [
+      "examples/worldbook/src/shared/worldbook_client.ts",
+      "6301eaf1d55ae9234862eba094cb1d50c2704d379c80daa595813b01b2e5c7de"
+    ],
+    [
+      "examples/worldbook/src/shared/worldbook_rpc.ts",
+      "da79b14cea08a6fb6bbcd703d92089a222646e0c1280ead084dafd0d2a98c038"
+    ],
+    [
       "examples/worldbook/src/shared/worldbook_service.ts",
-      "13ab74544c9b0a3bb298e81ce9b17eabf4683199f5e980765928d4d4d1ec0d6f"
+      "8ba8988be4971fa05017bc8bde580538806a8469081d0581febe9376bdbeddb6"
     ],
     [
       "examples/worldbook/src/shared/worldbook_storage.ts",
-      "b6d145980ac6763ea3a62c0e2af06a42f503bb0c60a16fdf14fdddb6ecbee113"
+      "35f94c2bab314d428988105c19b9967f77c5be55d0a913ead81bbffae842599c"
     ],
     [
       "examples/worldbook/src/shared/worldbook_variables.ts",
-      "04e3319a63c0804e20229df9fe5a6be169b2d909867fa95380144f087b5cac87"
+      "6d5b76c78f16cc7b39160b9bc1e4af233b356ccdfdcc6c54d28f50dc0bd7365e"
     ],
     [
       "examples/worldbook/src/ui/worldbook_manager/index.ui.ts",
-      "a25c8a42203dd44edac240588696464dba262c6d87595fe97d403f6ff8dc68f4"
+      "57ee396e7950c1bdbf6edbe40a04d6c9ce8bcc649d46f61b8b12b0458aebf3de"
     ],
     [
       "examples/worldbook/tests-dist/support/mock_runtime.js",
-      "3560bd1633e7d173559e61ea95abb2118a6956c14f7a72376157ff21994df3cb"
+      "e37b231fae9aaac08e6d413a2043d691a54aa966171ee4bcf39c1d79bd222df9"
     ],
     [
       "examples/worldbook/tests-dist/toolpkg_hook_runner.test.js",
@@ -1370,12 +1386,20 @@
       "5a25e22b96506b0d75e749cb596e426ca524ad097a8c6f514d07f6a396267e10"
     ],
     [
+      "examples/worldbook/tests/storage_integrity.test.cjs",
+      "5684e964a94268a80c20f2b131acd328478107019adb72dceb5da8b967f8c2e6"
+    ],
+    [
       "examples/worldbook/tests/support/mock_runtime.ts",
-      "ae283acf810aef0148b3acaa4489801dd15584b2ae8fbe253e007f2e2b08c219"
+      "a5caeafc7484586891fcd43ab665577a13a7e6c26223f9a83fd6baa6f7fcb6f2"
     ],
     [
       "examples/worldbook/tests/toolpkg_hook_runner.test.ts",
       "e4bfc736697d941330dc914888d51d682165f7bad75abee12725ebd75cc5b34a"
+    ],
+    [
+      "examples/worldbook/tests/ui_ipc_lifecycle.test.cjs",
+      "37765c24ac236ba006ef4a5e29175fc015722e36033f98b4bd27223d67438499"
     ],
     [
       "examples/worldbook/tests/worldbook.integration.test.ts",
@@ -1387,7 +1411,7 @@
     ],
     [
       "examples/worldbook/tsconfig.tests.json",
-      "6e588cfca478d7175ccb9df8b60fb6e9184f7802aac82bc97d170ba470366a67"
+      "c176f1af91cc1e3cadd5e0412d38790872731f7ac1b0c9b321c7ce003b033f9b"
     ],
     [
       "examples/zhipu_draw.js",

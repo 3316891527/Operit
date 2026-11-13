@@ -642,7 +642,7 @@ fun ExportCompleteDialog(
                         Text(
                                 errorMessage,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Red,
+                                color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Start,
                                 modifier = Modifier.fillMaxWidth()
                         )

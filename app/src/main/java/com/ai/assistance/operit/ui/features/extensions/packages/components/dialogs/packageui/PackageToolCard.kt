@@ -57,6 +57,7 @@ internal fun PackageToolCard(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Button(
                     enabled = enabled,

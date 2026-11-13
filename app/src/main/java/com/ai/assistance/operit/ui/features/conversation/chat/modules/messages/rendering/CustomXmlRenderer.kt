@@ -65,7 +65,6 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.context.ChatUtils
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
-import com.ai.assistance.operit.util.WaifuThinkingPresentation
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import java.io.StringReader
@@ -729,8 +728,7 @@ class CustomXmlRenderer(
         var expandThinkingProcess by rememberLocal(key = "expand_thinking_process_default", defaultValue = false)
         // 仅在"流仍然存在"且标签未闭合时，才判定为进行中。
         // 这样用户取消后（最终消息 contentStream = null）会自动按完成态折叠。
-        val isThinkingInProgress =
-            (xmlStream != null || WaifuThinkingPresentation.isInProgress(content)) && !isXmlFullyClosed(content)
+        val isThinkingInProgress = (xmlStream != null) && !isXmlFullyClosed(content)
         val thinkingTitleBaseColor = textColor.copy(alpha = 0.7f)
         val thinkingTitleShimmerShiftPx =
             if (isThinkingInProgress) {

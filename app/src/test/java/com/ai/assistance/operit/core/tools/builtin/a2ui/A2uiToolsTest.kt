@@ -45,10 +45,11 @@ class A2uiToolsTest {
     @Test fun nativeGenerationDoesNotRequireGuideOrJsEngine() = withRun { context ->
         val result = call("a2ui_prepare", context, "source" to source)
         assertTrue(result.success)
-        val reference = payload(result).getValue("reference").jsonPrimitive.content
-        val document = CardDelivery.resolve(context.a2uiRunId!!, reference)
-        assertNotNull(document)
-        assertTrue(A2uiProtocol.parse(document!!, true).complete)
+        val report = payload(result)
+        val reference = report.getValue("reference").jsonPrimitive.content
+        val document = report.getValue("compiled_json").jsonPrimitive.content
+        assertEquals(document, CardDelivery.resolve(context.a2uiRunId!!, reference))
+        assertTrue(A2uiProtocol.parse(document, true).complete)
     }
 
     @Test fun generationRequiresTrustedRuntimeContext() {

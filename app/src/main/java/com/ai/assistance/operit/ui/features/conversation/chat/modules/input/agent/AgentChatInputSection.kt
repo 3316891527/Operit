@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.input.agent
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
@@ -268,6 +270,7 @@ fun AgentChatInputSection(
         attachments = attachments,
         onRemoveAttachment = onRemoveAttachment,
         onInsertAttachment = onInsertAttachment,
+        onEditImage = actualViewModel::createImageAttachmentEditTarget,
         onAttachScreenContent = onAttachScreenContent,
         onAttachNotifications = onAttachNotifications,
         onAttachLocation = onAttachLocation,
@@ -345,6 +348,7 @@ internal fun AgentChatInputContent(
     attachments: List<AttachmentInfo> = emptyList(),
     onRemoveAttachment: (String) -> Unit = {},
     onInsertAttachment: (AttachmentInfo) -> Unit = {},
+    onEditImage: ((AttachmentInfo) -> ImageAttachmentEditTarget)? = null,
     onAttachScreenContent: () -> Unit = {},
     onAttachNotifications: () -> Unit = {},
     onAttachLocation: () -> Unit = {},
@@ -915,6 +919,7 @@ internal fun AgentChatInputContent(
                         AttachmentChip(
                             attachmentInfo = attachment,
                             attachments = attachments,
+                            onEditImage = onEditImage,
                             onRemove = { onRemoveAttachment(attachment.filePath) },
                             onInsert = { onInsertAttachment(attachment) },
                         )

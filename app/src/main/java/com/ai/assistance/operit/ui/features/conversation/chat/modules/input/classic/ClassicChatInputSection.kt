@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
@@ -163,6 +165,7 @@ fun ClassicChatInputSection(
         attachments = attachments,
         onRemoveAttachment = onRemoveAttachment,
         onInsertAttachment = onInsertAttachment,
+        onEditImage = actualViewModel::createImageAttachmentEditTarget,
         onAttachScreenContent = onAttachScreenContent,
         onAttachNotifications = onAttachNotifications,
         onAttachLocation = onAttachLocation,
@@ -212,6 +215,7 @@ internal fun ClassicChatInputContent(
     attachments: List<AttachmentInfo> = emptyList(),
     onRemoveAttachment: (String) -> Unit = {},
     onInsertAttachment: (AttachmentInfo) -> Unit = {},
+    onEditImage: ((AttachmentInfo) -> ImageAttachmentEditTarget)? = null,
     onAttachScreenContent: () -> Unit = {},
     onAttachNotifications: () -> Unit = {},
     onAttachLocation: () -> Unit = {},
@@ -570,6 +574,7 @@ internal fun ClassicChatInputContent(
                         AttachmentChip(
                             attachmentInfo = attachment,
                             attachments = attachments,
+                            onEditImage = onEditImage,
                             onRemove = {
                                 onRemoveAttachment(
                                     attachment.filePath

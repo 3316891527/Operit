@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import com.ai.assistance.operit.ui.components.CustomScaffold
+import com.ai.assistance.operit.ui.components.ActionSheetItem
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -50,6 +51,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.api.chat.AIService
 import com.ai.assistance.operit.api.chat.keypool.ApiKeyPoolAvailabilityTester
+import com.ai.assistance.operit.data.collects.ModelThinkingConfigDefaults
 import com.ai.assistance.operit.api.chat.model.ModelConfigConnectionTester
 import com.ai.assistance.operit.api.chat.model.ModelConnectionTestOutcome
 import com.ai.assistance.operit.api.chat.model.ModelConnectionTestType
@@ -798,52 +800,6 @@ fun ModelConfigScreen(
     }
 }
 
-private data class ThinkingRuleEditor(
-    val id: String = "",
-    val enabled: Boolean = true,
-    val providerIds: String = "",
-    val matchField: String = "modelContains",
-    val matchValues: String = "",
-    val control: String = "levels",
-    val parameterLabel: String = "",
-    val enabledActions: List<ThinkingActionEditor> = emptyList(),
-    val disabledActions: List<ThinkingActionEditor> = emptyList(),
-    val options: List<ThinkingOptionEditor> = listOf(
-        ThinkingOptionEditor(id = "low", label = "low", value = "low"),
-        ThinkingOptionEditor(id = "high", label = "high", value = "high"),
-        ThinkingOptionEditor(id = "max", label = "max", value = "max")
-    )
-)
-
-private data class ThinkingActionEditor(
-    val path: String = "",
-    val value: String = ""
-)
-
-private data class ThinkingOptionEditor(
-    val id: String = "",
-    val label: String = "",
-    val path: String = "",
-    val value: String = "",
-    val editorKey: String = UUID.randomUUID().toString()
-)
-
-private val thinkingControlChoices =
-    listOf("levels" to "多档滑块", "toggle_only" to "仅开关")
-
-private val thinkingMatchFieldChoices =
-    listOf(
-        "modelContains" to "模型包含",
-        "modelPrefix" to "模型前缀",
-        "modelSuffix" to "模型后缀",
-        "modelRegex" to "模型正则",
-        "firstSegment" to "斜杠前段",
-        "lastSegmentPrefix" to "后段前缀",
-        "lastSegmentContains" to "后段包含",
-        "lastSegmentRegex" to "后段正则",
-        "endpointSuffix" to "端点后缀"
-    )
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ThinkingConfigurationsSection(
@@ -874,7 +830,12 @@ private fun ThinkingConfigurationsSection(
 
 
     val latestRules by rememberUpdatedState(rules)
+    var showPresets by remember(config.id, config.apiProviderTypeId) { mutableStateOf(false) }
+    val presets = remember(config.apiProviderTypeId) {
+        parseThinkingRuleEditors(ModelThinkingConfigDefaults.forProvider(config.apiProviderTypeId))
+    }
     suspend fun persistConfiguration(value: String) {
+        parsedRules.exceptionOrNull()?.let { throw IllegalArgumentException(it.message ?: invalidConfigText, it) }
         val validationMessage = try {
             ThinkingQualityMappingRegistry.validateConfigurations(value)
             null
@@ -894,17 +855,19 @@ private fun ThinkingConfigurationsSection(
         }
     }
 
-    RegisterModelConfigSaveAction(
-        coordinator = saveCoordinator,
-        key = "thinking-config:${config.id}",
-        action = { _ -> persistConfiguration(serializeThinkingRuleEditors(latestRules)) }
-    )
-    DebouncedModelConfigAutoSaveEffect(
-        effectKey = config.id,
-        valueProvider = { serializeThinkingRuleEditors(rules) },
-        persist = { value -> persistConfiguration(value) },
-        onError = { e -> showNotification(e.message ?: saveFailedText, OKToast.Kind.Error) }
-    )
+    if (parsedRules.isSuccess) {
+        RegisterModelConfigSaveAction(
+            coordinator = saveCoordinator,
+            key = "thinking-config:${config.id}",
+            action = { _ -> persistConfiguration(serializeThinkingRuleEditors(latestRules, latestConfig.thinkingConfigurations)) }
+        )
+        DebouncedModelConfigAutoSaveEffect(
+            effectKey = config.id,
+            valueProvider = { serializeThinkingRuleEditors(rules, latestConfig.thinkingConfigurations) },
+            persist = { value -> persistConfiguration(value) },
+            onError = { e -> showNotification(e.message ?: saveFailedText, OKToast.Kind.Error) }
+        )
+    }
 
     ModelWorkspaceSection(
         title = stringResource(R.string.thinking_config_title),
@@ -916,7 +879,36 @@ private fun ThinkingConfigurationsSection(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
-    SettingsInfoBanner(text = stringResource(R.string.thinking_config_rule_order_hint))
+    SettingsInfoBanner(text = stringResource(R.string.thinking_config_manual_order))
+    val previewJson = runCatching { serializeThinkingRuleEditors(rules, config.thinkingConfigurations) }
+    config.modelName.split(',').map(String::trim).filter(String::isNotEmpty).distinct().forEach { model ->
+        val match = runCatching {
+            ThinkingQualityMappingRegistry.resolveMatch(
+                config.apiProviderTypeId, model, config.apiEndpoint, previewJson.getOrThrow()
+            )
+        }
+        Text(
+            stringResource(R.string.thinking_config_preview_model, model),
+            style = MaterialTheme.typography.labelMedium
+        )
+        val found = match.getOrNull()
+        val previewText = when {
+            match.isFailure -> stringResource(R.string.thinking_config_preview_invalid, match.exceptionOrNull()?.message.orEmpty())
+            found == null -> stringResource(R.string.thinking_config_preview_none)
+            else -> stringResource(
+                R.string.thinking_config_preview_match,
+                found.index + 1,
+                thinkingRulePreviewTitle(rules[found.index]),
+                found.mapping.options.joinToString(" / ") { it.displayLabel }.ifBlank {
+                    thinkingControlChoices.firstOrNull { it.first == rules[found.index].control }?.second.orEmpty()
+                }
+            )
+        }
+        Text(previewText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (found?.mapping?.reasoningRequired == true) {
+            Text(stringResource(R.string.function_thinking_required), style = MaterialTheme.typography.bodySmall)
+        }
+    }
     configurationError?.let { message ->
         Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
     }
@@ -934,6 +926,8 @@ private fun ThinkingConfigurationsSection(
                 index = index,
                 totalCount = rules.size,
                 rule = rule,
+                onCopy = { rules = rules + rule.duplicate() },
+                onMoveTop = { rules = rules.toMutableList().also { it.add(0, it.removeAt(index)) } },
                 onClick = {
                     editingRuleIndex = index
                     editingRule = rule
@@ -957,11 +951,14 @@ private fun ThinkingConfigurationsSection(
             )
         }
     }
+    TextButton(onClick = { showPresets = true }, enabled = presets.isNotEmpty()) {
+        Text(stringResource(R.string.thinking_config_add_preset))
+    }
     TextButton(
         onClick = {
             editingRuleIndex = null
             editingRule = ThinkingRuleEditor(
-                id = "custom-thinking-${rules.size + 1}",
+                id = "custom-thinking-${UUID.randomUUID()}",
                 parameterLabel = "reasoning_effort"
             )
         },
@@ -971,6 +968,38 @@ private fun ThinkingConfigurationsSection(
         Spacer(modifier = Modifier.width(4.dp))
         Text("添加思考配置")
     }
+    }
+
+    if (showPresets) {
+        AlertDialog(
+            onDismissRequest = { showPresets = false },
+            title = { Text(stringResource(R.string.thinking_config_preset_title)) },
+            text = {
+                Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                    Text(stringResource(R.string.thinking_config_preset_hint), style = MaterialTheme.typography.bodySmall)
+                    presets.forEach { preset ->
+                        TextButton(onClick = {
+                            rules = rules + preset.duplicate()
+                            showPresets = false
+                        }) {
+                            Column(Modifier.fillMaxWidth()) {
+                                Text(thinkingRulePreviewTitle(preset))
+                                Text(preset.parameterLabel.ifBlank { preset.control }, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    rules = rules + presets.map { it.duplicate() }
+                    showPresets = false
+                }) { Text(stringResource(R.string.thinking_config_add_all_presets)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPresets = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
     }
 
     val currentEditingIndex = editingRuleIndex
@@ -1004,15 +1033,21 @@ private fun ThinkingConfigurationsSection(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (currentEditingIndex == null) {
-                            rules = rules + currentEditingRule
-                        } else if (currentEditingIndex in rules.indices) {
-                            rules = rules.toMutableList().also {
-                                it[currentEditingIndex] = currentEditingRule
+                        try {
+                            ThinkingQualityMappingRegistry.validateConfigurations(
+                                serializeThinkingRuleEditors(listOf(currentEditingRule))
+                            )
+                            if (currentEditingIndex == null) {
+                                rules = rules + currentEditingRule
+                            } else if (currentEditingIndex in rules.indices) {
+                                rules = rules.toMutableList().also { it[currentEditingIndex] = currentEditingRule }
                             }
+                            configurationError = null
+                            editingRuleIndex = null
+                            editingRule = null
+                        } catch (error: Exception) {
+                            configurationError = error.message ?: invalidConfigText
                         }
-                        editingRuleIndex = null
-                        editingRule = null
                     }
                 ) {
                     Text(stringResource(R.string.save))
@@ -1062,9 +1097,16 @@ private fun ThinkingRulePreviewCard(
     onClick: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onCopy: () -> Unit,
+    onMoveTop: () -> Unit,
 ) {
     val controlText = thinkingControlChoices.firstOrNull { it.first == rule.control }?.second ?: rule.control
-    val detail = if (rule.control == "levels") "${rule.options.size} 档" else "开关"
+    var menuExpanded by remember { mutableStateOf(false) }
+    val detail = when (rule.control) {
+        "levels" -> "${rule.options.size} 档"
+        "unsupported" -> stringResource(R.string.thinking_config_unsupported)
+        else -> "开关"
+    }
     val parameterText = rule.parameterLabel.trim().ifEmpty { "未设置请求路径" }
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -1107,6 +1149,24 @@ private fun ThinkingRulePreviewCard(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
+            }
+            Box {
+                IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.thinking_config_rule_actions), modifier = Modifier.size(20.dp))
+                }
+                ModelWorkspaceMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    ActionSheetItem(
+                        label = stringResource(R.string.thinking_config_copy_rule),
+                        icon = Icons.Default.ContentCopy,
+                        onClick = { menuExpanded = false; onCopy() }
+                    )
+                    ActionSheetItem(
+                        label = stringResource(R.string.thinking_config_move_top),
+                        icon = Icons.Default.KeyboardArrowUp,
+                        enabled = index > 0,
+                        onClick = { menuExpanded = false; onMoveTop() }
+                    )
+                }
             }
             IconButton(
                 onClick = onMoveUp,
@@ -1161,7 +1221,11 @@ private fun ThinkingRuleEditForm(rule: ThinkingRuleEditor, onRuleChange: (Thinki
     }
     SettingsTextField(title = "匹配模型", subtitle = "多个值用逗号分隔", value = rule.matchValues, onValueChange = { onRuleChange(rule.copy(matchValues = it)) }, placeholder = "glm-, deepseek, gemini-2.5")
     SettingsTextField(title = "默认请求路径", value = rule.parameterLabel, onValueChange = { onRuleChange(rule.copy(parameterLabel = it)) }, placeholder = "reasoning_effort 或 thinking.type")
-    // 自定义规则编辑器不再暴露始终开启选项。
+    Text(stringResource(R.string.thinking_config_advanced_preserved), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val originalRule = remember(rule.originalJson) { rule.originalJson?.let(::JSONObject) }
+    if (originalRule?.let { it.optBoolean("required", it.optBoolean("reasoningRequired", false)) } == true) {
+        Text(stringResource(R.string.function_thinking_required), style = MaterialTheme.typography.bodySmall)
+    }
     ThinkingCollapsibleEditor(title = "开启 / 关闭时写入", subtitle = "按请求路径写入固定值", initiallyExpanded = false) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ThinkingCompactActionsEditor(title = "开启时写入", actions = rule.enabledActions, onActionsChange = { onRuleChange(rule.copy(enabledActions = it)) })
@@ -1813,213 +1877,6 @@ private fun ThinkingCompactOptionsEditor(
         }
     }
 }
-
-private fun parseThinkingRuleEditors(raw: String): List<ThinkingRuleEditor> {
-    val array = thinkingRulesArray(raw)
-    return buildList {
-        for (index in 0 until array.length()) {
-            val item = array.optJSONObject(index) ?: continue
-            add(item.toThinkingRuleEditor(index))
-        }
-    }
-}
-
-private fun serializeThinkingRuleEditors(rules: List<ThinkingRuleEditor>): String {
-    val array = JSONArray()
-    rules.forEachIndexed { index, rule ->
-        val ruleObject = JSONObject()
-        ruleObject.put("id", rule.id.trim().ifEmpty { "custom-thinking-${index + 1}" })
-        if (!rule.enabled) {
-            ruleObject.put("enabled", false)
-        }
-        thinkingStringArray(splitThinkingCsv(rule.providerIds)).takeIf { it.length() > 0 }?.let {
-            ruleObject.put("providers", it)
-        }
-        splitThinkingCsv(rule.matchValues).takeIf { it.isNotEmpty() }?.let { values ->
-            ruleObject.put("match", JSONObject().put(rule.matchField, thinkingStringArray(values)))
-        }
-        ruleObject.put("control", rule.control)
-        rule.parameterLabel.trim().takeIf { it.isNotEmpty() }?.let {
-            ruleObject.put("parameterLabel", it)
-        }
-        thinkingActionsArray(rule.enabledActions).takeIf { it.length() > 0 }?.let {
-            ruleObject.put("enable", it)
-        }
-        thinkingActionsArray(rule.disabledActions).takeIf { it.length() > 0 }?.let {
-            ruleObject.put("disable", it)
-        }
-        if (rule.control == "levels") {
-            val optionsArray = JSONArray()
-            rule.options.forEachIndexed { optionIndex, option ->
-                val valueText = option.value.trim()
-                val path = option.path.trim().ifEmpty { rule.parameterLabel.trim() }
-                if (option.id.isBlank() && option.label.isBlank() && path.isBlank() && valueText.isBlank()) {
-                    return@forEachIndexed
-                }
-                val optionObject = JSONObject()
-                optionObject.put(
-                    "id",
-                    option.id.trim().ifEmpty {
-                        valueText.ifEmpty { "option-${optionIndex + 1}" }
-                    }
-                )
-                option.label.trim().takeIf { it.isNotEmpty() }?.let { optionObject.put("label", it) }
-                path.takeIf { it.isNotEmpty() }?.let { optionObject.put("path", it) }
-                optionObject.put("value", parseThinkingEditorValue(valueText))
-                optionsArray.put(optionObject)
-            }
-            ruleObject.put("options", optionsArray)
-        }
-        array.put(ruleObject)
-    }
-    return array.toString()
-}
-
-private fun thinkingRulesArray(raw: String): JSONArray {
-    val text = raw.trim().ifEmpty { "[]" }
-    return when {
-        text.startsWith("[") -> JSONArray(text)
-        text.startsWith("{") -> {
-            val objectValue = JSONObject(text)
-            objectValue.optJSONArray("rules") ?: JSONArray().put(objectValue)
-        }
-        else -> JSONArray(text)
-    }
-}
-
-private fun JSONObject.toThinkingRuleEditor(index: Int): ThinkingRuleEditor {
-    val matchPair = firstThinkingMatchPair()
-    return ThinkingRuleEditor(
-        id = optString("id", "custom-thinking-${index + 1}"),
-        enabled = optBoolean("enabled", true),
-        providerIds = (stringArrayValues("providers") + stringArrayValues("providerTypeIds"))
-            .distinct()
-            .joinToString(", "),
-        matchField = matchPair.first,
-        matchValues = matchPair.second.joinToString(", "),
-        control = when (optString("control", "levels")) {
-            "toggle", "toggle_only" -> "toggle_only"
-            else -> "levels"
-        },
-        parameterLabel = optString("parameterLabel", optString("label", "")),
-        enabledActions = actionEditors("enable", "enabledActions", "on"),
-        disabledActions = actionEditors("disable", "disabledActions", "off"),
-        options = optionEditors()
-    )
-}
-
-private fun JSONObject.firstThinkingMatchPair(): Pair<String, List<String>> {
-    val match = optJSONObject("match") ?: JSONObject()
-    thinkingMatchFieldChoices.forEach { (field, _) ->
-        val values = match.stringArrayValues(field) + stringArrayValues(field)
-        if (values.isNotEmpty()) return field to values
-    }
-    return "modelContains" to emptyList()
-}
-
-private fun JSONObject.actionEditors(vararg keys: String): List<ThinkingActionEditor> =
-    keys.flatMap { key -> actionEditorsFromValue(opt(key)) }
-
-private fun actionEditorsFromValue(value: Any?): List<ThinkingActionEditor> {
-    return when (value) {
-        is JSONArray -> buildList {
-            for (index in 0 until value.length()) {
-                val item = value.optJSONObject(index) ?: continue
-                item.toActionEditor()?.let(::add)
-            }
-        }
-        is JSONObject -> listOfNotNull(value.toActionEditor())
-        else -> emptyList()
-    }
-}
-
-private fun JSONObject.toActionEditor(): ThinkingActionEditor? {
-    val path = optString("path", "").trim()
-    if (path.isEmpty()) return null
-    return ThinkingActionEditor(path = path, value = thinkingEditorValueText(opt("value")))
-}
-
-private fun JSONObject.optionEditors(): List<ThinkingOptionEditor> {
-    val array = optJSONArray("options") ?: return emptyList()
-    return buildList {
-        for (index in 0 until array.length()) {
-            val option = array.optJSONObject(index) ?: continue
-            add(
-                ThinkingOptionEditor(
-                    id = option.optString("id", ""),
-                    label = option.optString("label", option.optString("id", "")),
-                    path = option.optString("path", ""),
-                    value = thinkingEditorValueText(option.opt("value"))
-                )
-            )
-        }
-    }
-}
-
-private fun JSONObject.stringArrayValues(key: String): List<String> {
-    val value = opt(key)
-    return when (value) {
-        is JSONArray -> buildList {
-            for (index in 0 until value.length()) {
-                value.optString(index, "").trim().takeIf(String::isNotEmpty)?.let(::add)
-            }
-        }
-        is String -> splitThinkingCsv(value)
-        else -> emptyList()
-    }
-}
-
-private fun thinkingStringArray(values: List<String>): JSONArray =
-    JSONArray().apply {
-        values.forEach { put(it) }
-    }
-
-private fun thinkingActionsArray(actions: List<ThinkingActionEditor>): JSONArray {
-    val array = JSONArray()
-    actions.forEach { action ->
-        val path = action.path.trim()
-        if (path.isNotEmpty()) {
-            array.put(
-                JSONObject()
-                    .put("path", path)
-                    .put("value", parseThinkingEditorValue(action.value))
-            )
-        }
-    }
-    return array
-}
-
-private fun splitThinkingCsv(value: String): List<String> =
-    value.split(',')
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-
-private fun parseThinkingEditorValue(value: String): Any {
-    val text = value.trim()
-    if (text.equals("true", ignoreCase = true)) return true
-    if (text.equals("false", ignoreCase = true)) return false
-    if (text.equals("null", ignoreCase = true)) return JSONObject.NULL
-    text.toIntOrNull()?.let { return it }
-    text.toLongOrNull()?.let { return it }
-    if (text.contains('.')) {
-        text.toDoubleOrNull()?.let { return it }
-    }
-    if (text.startsWith("{") && text.endsWith("}")) {
-        runCatching { JSONObject(text) }.onSuccess { return it }
-    }
-    if (text.startsWith("[") && text.endsWith("]")) {
-        runCatching { JSONArray(text) }.onSuccess { return it }
-    }
-    return text
-}
-
-private fun thinkingEditorValueText(value: Any?): String =
-    when (value) {
-        null -> ""
-        JSONObject.NULL -> "null"
-        is JSONObject, is JSONArray -> value.toString()
-        else -> value.toString()
-    }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

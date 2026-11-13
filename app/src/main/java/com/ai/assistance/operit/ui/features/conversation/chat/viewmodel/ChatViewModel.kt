@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.viewmodel
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
@@ -123,6 +125,7 @@ import com.ai.assistance.operit.services.ChatServiceCore
 import com.ai.assistance.operit.services.ChatServiceUiBridge
 import com.ai.assistance.operit.services.EmptyChatServiceUiBridge
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing.MessageImageGenerator
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing.MessageImageTheme
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.CharacterSelectorTarget
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.PendingQueueMessageItem
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatHistoryDisplayMode
@@ -1184,10 +1187,11 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatHistoryDelegate.setMessageFavorite(timestamp, isFavorite)
     }
 
-    /** 分享消息为图片 */
+    /** 按当前聊天主题生成所选消息的图片。 */
     fun shareMessages(
         context: Context,
         messageIndices: Set<Int>,
+        theme: MessageImageTheme,
         userMessageColor: Color,
         aiMessageColor: Color,
         userTextColor: Color,
@@ -1211,8 +1215,8 @@ class ChatViewModel(context: Context) : ViewModel() {
         forceShowThinkingProcess: Boolean = false,
         onSuccess: (Uri) -> Unit,
         onError: (String) -> Unit
-    ) {
-        viewModelScope.launch {
+    ): Job {
+        return viewModelScope.launch {
             try {
                 AppLogger.d(TAG, "开始生成分享图片，消息索引: $messageIndices")
                 
@@ -1235,6 +1239,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                     .generateMessageImage(
                         context = context,
                         messages = selectedMessages,
+                        theme = theme,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
                         userTextColor = userTextColor,
@@ -1271,6 +1276,8 @@ class ChatViewModel(context: Context) : ViewModel() {
                 
                 onSuccess(uri)
                 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "生成分享图片失败", e)
                 onError(context.getString(R.string.chat_generate_share_image_failed, e.message ?: ""))
@@ -2068,6 +2075,9 @@ class ChatViewModel(context: Context) : ViewModel() {
     }
 
     /** Removes an attachment by its file path */
+    fun createImageAttachmentEditTarget(original: AttachmentInfo): ImageAttachmentEditTarget =
+        attachmentDelegate.createImageAttachmentEditTarget(original)
+
     fun removeAttachment(filePath: String) {
         attachmentDelegate.removeAttachment(filePath)
     }

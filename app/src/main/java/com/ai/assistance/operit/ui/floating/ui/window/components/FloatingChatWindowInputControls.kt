@@ -122,6 +122,7 @@ private fun BottomInputBar(
                     AttachmentChip(
                         attachmentInfo = attachmentInfo,
                         attachments = floatContext.attachments,
+                        onEditImage = floatContext.chatService?.let { it::createImageAttachmentEditTarget },
                         onInsert = {},
                         onRemove = { floatContext.onRemoveAttachment?.invoke(attachmentInfo.filePath) }
                     )

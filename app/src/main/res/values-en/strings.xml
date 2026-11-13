@@ -597,6 +597,7 @@
     <string name="markdown_source">Markdown source</string>
     <string name="xml_source">XML source</string>
     <string name="copy_plain_text">Copy plain text</string>
+    <string name="copy_all">Copy all</string>
     <string name="copy_markdown_source">Copy Markdown source</string>
     <string name="copy_xml_source">Copy XML source</string>
     <string name="chat_hidden_user_message_placeholder">Auto-triggered user message (content hidden)</string>
@@ -649,13 +650,10 @@
     <string name="clear_selection">Cancel</string>
     <string name="multi_select_actions">Actions</string>
     <string name="delete_selected">Delete Selected</string>
-    <string name="share_selected">Share</string>
     <string name="add_selected_to_memory">Add to summary memory</string>
     <string name="selected_count">%d selected</string>
     <string name="generating_image">Generating image...</string>
     <string name="share_failed">Share failed</string>
-    <string name="share_preview_title">Share Preview</string>
-    <string name="share_preview_image_content_description">Shared image preview</string>
     <string name="share_preview_generating">Generating preview...</string>
     <string name="share_preview_expand_thinking">Expand thinking</string>
     <string name="share_preview_expand_tools_groups">Expand tools and thinking groups</string>
@@ -1056,10 +1054,6 @@
 
     <!-- User Agreement Screen -->
     <string name="agreement_title">User Agreement</string>
-    <string name="market_agreement_title">Plugin Market Agreement and Community Rules</string>
-    <string name="market_agreement_version">Market agreement version: %1$s</string>
-    <string name="market_agreement_content">1. Market role. The Operit plugin market is only for sharing, discovering, and indexing scripts, packages, Skills, MCP servers, and other extensions, and for providing in-market browsing, downloading, and installation entry points. The market is not the plugin author, buyer, seller, broker, payment provider, guarantor, or rights registry. Listing, displaying, ranking, or recommending a plugin does not mean that Operit developed, owns, represents, or endorses it.\n\n2. Publication license. By submitting a plugin to the market, the publisher grants Operit a non-exclusive, non-transferable license limited to what is necessary to operate the market: to store, cache, reproduce, process, display, and index the market entry, and to provide the plugin to market users for downloading and installation. Publication also means that the publisher allows market users to download, install, and use the plugin for its intended purpose, but does not by itself permit modification or redistribution. This license does not transfer copyright, ownership, or other rights in the plugin, and does not give the market a general right to sublicense the plugin outside the market. The publisher must have the right to grant this license.\n\n3. GitHub open-source recommendation. We recommend that publishers publish source code directly in a public GitHub repository they control, together with a README, license, versions or Releases, and changelogs, and register that source with the market. A publicly visible GitHub repository does not automatically grant an open-source license. Permission to use, modify, or redistribute must come from the author\'s stated open-source license or another written authorization.\n\n4. User use and redistribution. The right to redistribute a plugin remains with its author or other rights holder unless the applicable license or another authorization permits it. The preceding permission to download, install, and use does not grant every user the right to upload, forward, repackage, sell, or republish the plugin. Unless the law provides otherwise, users may modify and redistribute a plugin only under the license or authorization stated by the author. A plugin without permission to redistribute may not be redistributed by users. The rights for an open-source plugin are determined by its open-source license.\n\n5. Third-party risks and security responsibility. Plugins have independent code, configuration, and runtime permissions. They may execute code, start local services, access files, read environment variables, or connect to the network. Users must review and bear the risks of enabling, installing, and using plugins. Publishers must not commit API keys, cookies, tokens, private keys, passwords, or user data to plugins, repositories, examples, or configuration, and must accurately disclose the author, license, permissions, network behavior, environment variables, external services, and known risks. Operit does not guarantee the security, accuracy, availability, legality, or compatibility of third-party extensions.\n\n6. Comments and community conduct. Comments must relate to plugin features, usage, defects, or security issues. Do not post QQ, Telegram, Discord, or other group numbers, contact details, advertisements, traffic diversion, transaction information, unrelated links, or other disruptive content. Do not disclose API keys, cookies, tokens, private keys, passwords, or personal data.\n\n7. No trading or diversion. Do not buy, sell, resell, or provide paid installation of plugins in the market. Do not use payments, tips, memberships, private messages, or third-party links to charge others for free plugins. The market does not provide payment, fulfillment, refunds, or transaction dispute services. Free plugins require no payment to anyone; charges, licenses, or promises from third-party channels are not endorsed by Operit.\n\n8. Market service boundary. To provide sharing, downloading, and installation, the market may store, cache, or transmit market entries and plugin files, but it does not promise permanent hosting, backup, confidentiality, or anti-copying. Publishing to the market means that the author authorizes the market to provide downloading and installation to market users under this agreement; it does not automatically give the public a right to redistribute the plugin. Availability and continued access may depend on the author\'s repository, GitHub, and other third-party services.\n\n9. Enforcement and updates. Comments, entries, or accounts that violate these rules may be restricted, hidden, or removed. When this market agreement changes materially due to product, legal, or security requirements, its version will be increased. Users can review updated content from the market entry.</string>
-
     <!-- File Manager -->
     <string name="files_selected">%1$d files selected</string>
     <string name="file_count">%1$d items</string>
@@ -7479,10 +7473,11 @@
     <string name="market_category_business_productivity">Business &amp; Productivity</string>
     <string name="market_category_life_entertainment">Life &amp; Entertainment</string>
     <string name="market_category_other">Other</string>
-    <string name="market_section_manage">Manage</string>
-    <string name="market_section_publish">Publish</string>
+    <string name="market_creator_center">Creator Center</string>
+    <string name="market_creator_my_publications">My publications</string>
+    <string name="market_creator_publish_artifact_hint">Choose script or tool package type</string>
+    <string name="market_creator_filter_empty">No publications in this category</string>
     <string name="market_notifications_title">Messages</string>
-    <string name="market_agreement_entry">Market Agreement</string>
     <string name="market_notifications_empty_title">No messages yet</string>
     <string name="market_notifications_empty_description">Market messages will appear here.</string>
     <string name="market_manage_removed">Submitted removal request for "%1$s"</string>
@@ -7492,11 +7487,9 @@
     <string name="market_manage_artifact">Manage Packages</string>
     <string name="market_manage_skill">Manage Skills</string>
     <string name="market_manage_mcp">Manage MCP</string>
-    <string name="market_manage_owned_section">Owned by me</string>
-    <string name="market_manage_contributed_section">Submitted for others</string>
     <string name="market_manage_relation_owner">Owner</string>
     <string name="market_manage_relation_contributor">Contributor</string>
-    <string name="market_publish_artifact">Publish Package</string>
+    <string name="market_publish_artifact">Publish Script or Tool Package</string>
     <string name="market_publish_skill">Publish Skill</string>
     <string name="market_publish_mcp">Publish MCP</string>
     <string name="market_publish_new_version">Publish New Version</string>
@@ -9444,4 +9437,47 @@
     <string name="extension_update_success">Update successful</string>
     <string name="extension_update_failed">Update failed: %1$s</string>
     <string name="extension_update_cancelled">Update cancelled</string>
+    <string name="market_creator_needs_changes">Needs changes</string>
+    <string name="market_creator_publish_locked">Sign in to publish</string>
+    <string name="image_editor_title">Image editor</string>
+    <string name="image_editor_load_failed">Could not load image</string>
+    <string name="image_editor_too_large">This image is too large to edit on this device</string>
+    <string name="image_editor_save_failed">Could not save the edited image</string>
+    <string name="image_editor_attachment_changed">The original attachment was removed or the chat changed. The edit was not applied.</string>
+    <string name="image_editor_redo">Redo</string>
+    <string name="image_editor_crop_hint">Drag to select the crop area</string>
+    <string name="image_editor_gesture_hint">Use two fingers to zoom or pan; use one finger with the selected tool</string>
+    <string name="image_editor_width">Line width</string>
+    <string name="image_editor_undo">Undo</string>
+    <string name="image_editor_done">Done</string>
+    <string name="image_editor_unsaved_title">Save edits?</string>
+    <string name="image_editor_unsaved_message">This image has unsaved edits. Save before leaving?</string>
+    <string name="image_editor_discard">Don\'t save</string>
+    <string name="image_editor_text">Text</string>
+    <string name="image_editor_restore">Reset</string>
+    <string name="image_editor_rotate">Rotate</string>
+    <string name="image_editor_text_size">Text size</string>
+    <string name="image_editor_text_hint">Enter text</string>
+    <string name="image_editor_move">Move</string>
+    <string name="image_editor_pen">Pen</string>
+    <string name="image_editor_rectangle">Rectangle</string>
+    <string name="image_editor_oval">Oval</string>
+    <string name="image_editor_arrow">Arrow</string>
+    <string name="image_editor_mosaic">Mosaic</string>
+    <string name="image_editor_crop">Crop</string>
+    <string name="image_editor_eraser">Eraser</string>
+    <string name="thinking_config_add_preset">Add from presets</string>
+    <string name="thinking_config_preset_title">Thinking presets for this provider</string>
+    <string name="thinking_config_preset_hint">Add a complete template copy without replacing existing rules. Presets are appended; move them manually to change priority.</string>
+    <string name="thinking_config_add_all_presets">Add all presets</string>
+    <string name="thinking_config_copy_rule">Duplicate rule</string>
+    <string name="thinking_config_move_top">Move to top</string>
+    <string name="thinking_config_rule_actions">Rule actions</string>
+    <string name="thinking_config_manual_order">The first matching rule from top to bottom is used. New rules, presets and duplicates are appended. Use the ordering controls to change priority.</string>
+    <string name="thinking_config_preview_model">Model: %1$s</string>
+    <string name="thinking_config_preview_match">Rule %1$d matches: %2$s · %3$s</string>
+    <string name="thinking_config_preview_none">No matching rule: no thinking controls are added; the model uses its defaults.</string>
+    <string name="thinking_config_preview_invalid">Configuration is not valid yet: %1$s</string>
+    <string name="thinking_config_unsupported">No thinking controls</string>
+    <string name="thinking_config_advanced_preserved">Compound match conditions and advanced fields are preserved. Only the displayed match condition is edited here.</string>
 </resources>

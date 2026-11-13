@@ -37,4 +37,14 @@ class WaifuGenerationMetadataTest {
         val messages = listOf(reply(sentAt = 0), reply(sentAt = 0))
         assertTrue(messages.indices.all { showWaifuGenerationMetadata(messages, it, true) })
     }
+    @Test fun aHiddenTrailingThinkingRecordDoesNotTakeTheReplyFooter() {
+        val messages = listOf(reply(), reply().copy(content = "<think>旧思考</think>"))
+        assertTrue(showWaifuGenerationMetadata(messages, 0, true))
+    }
+    @Test fun hiddenThinkingBetweenSentencesKeepsOnlyTheFinalReplyFooter() {
+        val messages = listOf(reply(), reply().copy(content = "<thinking>旧思考</thinking>"), reply())
+        assertFalse(showWaifuGenerationMetadata(messages, 0, true))
+        assertTrue(showWaifuGenerationMetadata(messages, 2, true))
+        assertTrue(showWaifuGenerationMetadata(messages, 0, false))
+    }
 }

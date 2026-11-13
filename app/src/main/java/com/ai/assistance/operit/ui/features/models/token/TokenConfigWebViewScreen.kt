@@ -208,12 +208,12 @@ fun TokenConfigWebViewScreen(onNavigateBack: () -> Unit) {
             bottomBar = {
                 Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 2.dp
                 ) {
                     Column {
                         HorizontalDivider(
-                                color = Color.LightGray.copy(alpha = 0.3f),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                                 thickness = 0.5.dp
                         )
 
@@ -222,7 +222,7 @@ fun TokenConfigWebViewScreen(onNavigateBack: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                                                 .height(60.dp)
-                                                .background(Color.White),
+                                                .background(MaterialTheme.colorScheme.surface),
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
                             navDestinations.forEachIndexed { index, destination ->
@@ -244,7 +244,7 @@ fun TokenConfigWebViewScreen(onNavigateBack: () -> Unit) {
                                             modifier = Modifier.size(24.dp),
                                     tint = if (isSelected) 
                                                             MaterialTheme.colorScheme.primary
-                                                    else Color.Gray
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
 
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -257,7 +257,7 @@ fun TokenConfigWebViewScreen(onNavigateBack: () -> Unit) {
                                                     else FontWeight.Normal,
                                     color = if (isSelected)
                                                             MaterialTheme.colorScheme.primary
-                                                    else Color.Gray
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }

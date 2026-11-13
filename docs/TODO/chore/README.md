@@ -53,3 +53,4 @@
 - [持久化模型与业务领域归属整理](model-domain-layout/index.md)
 - [1.12.2+23 正式发行](release-1.12.2-plus-23/index.md)
 - [1.12.2+24 发行准备](release-1.12.2-plus-24/index.md)
+- [1.12.2+25 发行准备](release-1.12.2-plus25/index.md)

@@ -213,7 +213,7 @@ jobs:
           steps.plan.outputs.toolpkg == 'true' ||
           steps.plan.outputs.ci == 'true'
         timeout-minutes: 5
-        run: node --test ci/test/code_runner.test.cjs
+        run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs
 
       - name: Install JavaScript dependencies
         if: >-

@@ -14,7 +14,7 @@ python3 ci/distribution/resources/verify_hub_catalog.py --current-source
 
 准备新资源时，先提交扩展及公共类型源码，在原有 prepare_hub.py 参数之外添加 `--source-snapshot app/config/offline-pack-sources.json`。该参数单独写入源码摘要，不往资源归档目录添加额外文件；同时把输出的 offline-packs.json 和 builtin-extensions.json 按既有流程更新到 app/config。快照只记录已提交输入，源码尚未提交时准备步骤会明确报错。
 
-源码中的开发固定快照来自现有资源目录对应提交 `901471c562ced9aea321526a49fb01e13f5955df`。普通开发构建继续使用该目录；签名发行按下面的同轮准备流程生成打包输入。
+源码中的开发固定快照为 `resources-v3-29daae18fe54a4598b4c`，输入提交为 `f969706fa9905cc98b55f3736ccac3f1a2d50648`。绘图扩展包含空 GIF 帧参数修复；其他归档复用最新公开资源。普通开发构建使用该目录；签名发行按下面的同轮准备流程生成打包输入。
 
 ## 签名发行时准备当前源码资源
 

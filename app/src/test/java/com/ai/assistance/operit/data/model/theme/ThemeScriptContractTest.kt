@@ -40,8 +40,14 @@ class ThemeScriptContractTest {
             rejects { ThemeScriptContract.validate(manifest.copy(entry = it)) }
         }
         rejects { ThemeScriptContract.validate(manifest.copy(apiVersion = 2)) }
-        rejects { ThemeScriptContract.validate(manifest.copy(assets = (1..49).associate { "a$it" to "assets/$it.png" })) }
+        rejects { ThemeScriptContract.validate(manifest.copy(assets = (1..97).associate { "a$it" to "assets/$it.png" })) }
         rejects { ThemeScriptContract.validate(manifest.copy(assets = mapOf("main" to manifest.entry))) }
+    }
+
+    @Test
+    fun acceptsTheMaximumNinetySixMediaAssets() {
+        val assets = (1..96).associate { "asset$it" to "assets/$it.png" }
+        ThemeScriptContract.validate(manifest.copy(assets = assets))
     }
 
     @Test

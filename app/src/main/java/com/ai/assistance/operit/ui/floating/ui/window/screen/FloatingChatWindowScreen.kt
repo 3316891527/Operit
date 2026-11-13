@@ -803,7 +803,7 @@ private fun ChatMessagesView(
                                 }
                                 .padding(vertical = 16.dp),
                             style = loadMoreTextStyle,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -825,7 +825,7 @@ private fun ChatMessagesView(
                                 }
                                 .padding(vertical = 16.dp),
                             style = loadMoreTextStyle,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -999,6 +999,7 @@ private fun AttachmentsList(floatContext: FloatContext) {
             AttachmentChip(
                 attachmentInfo = attachment,
                 attachments = floatContext.attachments,
+                        onEditImage = floatContext.chatService?.let { it::createImageAttachmentEditTarget },
                 onRemove = { floatContext.onRemoveAttachment?.invoke(attachment.filePath) },
                 onInsert = { }
             )

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,13 +43,13 @@ fun FloatingResultDisplay(floatContext: FloatContext) {
     ) {
         Box(
             modifier = Modifier
-                .background(Color.White, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(12.dp))
                 .clickable { floatContext.onModeChange(FloatingMode.BALL) }
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
             Text(
                 text = displayText,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp
             )
         }

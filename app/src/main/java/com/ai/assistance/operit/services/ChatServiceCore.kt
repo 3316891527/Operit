@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.services
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import android.content.Context
 import com.ai.assistance.operit.util.logging.AppLogger
 import androidx.compose.ui.text.input.TextFieldValue
@@ -423,6 +425,9 @@ class ChatServiceCore(
     }
 
     /** 移除附件 */
+    fun createImageAttachmentEditTarget(original: AttachmentInfo): ImageAttachmentEditTarget =
+        attachmentDelegate.createImageAttachmentEditTarget(original)
+
     fun removeAttachment(filePath: String) {
         attachmentDelegate.removeAttachment(filePath)
     }

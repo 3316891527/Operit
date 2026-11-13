@@ -272,7 +272,15 @@ sealed class Screen(
                 onNavigateToBuiltInDetail = { navigateTo(BuiltInMarketDetail(it)) },
                 onNavigateToArtifactPublish = { navigateTo(ArtifactPublish) },
                 onNavigateToRepoPublish = { type -> navigateTo(RepoPublish(type)) },
-                onNavigateToMarketManage = { navigateTo(MarketManage) },
+                onNavigateToGitHubAccount = { navigateTo(GitHubAccount) },
+                onNavigateToEditArtifact = { issue -> navigateTo(ArtifactEdit(issue)) },
+                onNavigateToEditRepo = { type, issue -> navigateTo(RepoEdit(type, issue)) },
+                onNavigateToPublishArtifactVersion = { issue, canEditEntry ->
+                    navigateTo(ArtifactContinuePublish(issue.toArtifactPublishClusterContext(canEditEntry)))
+                },
+                onNavigateToPublishRepoVersion = { type, issue, canEditEntry ->
+                    navigateTo(RepoPublishVersion(type, issue, canEditEntry))
+                },
                 onNavigateToDetail = { issue ->
                     navigateTo(MarketEntryDetail(issue))
                 },
@@ -420,7 +428,7 @@ sealed class Screen(
             authorLogin.ifBlank { authorId.removePrefix("gh_") }
     }
 
-    data object MarketManage : Screen(navItem = NavItem.Packages, titleRes = R.string.market_section_manage) {
+    data object MarketManage : Screen(navItem = NavItem.Packages, titleRes = R.string.market_creator_center) {
         @Composable
         override fun Content(
                 navController: NavController,
@@ -449,7 +457,8 @@ sealed class Screen(
                 onNavigateToPublishRepo = { type -> navigateTo(RepoPublish(type)) },
                 onNavigateToDetail = { issue ->
                     navigateTo(MarketEntryDetail(issue, fromManage = true))
-                }
+                },
+                onNavigateToNotifications = { navigateTo(MarketNotifications) },
             )
         }
     }

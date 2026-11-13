@@ -60,7 +60,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.window.PopupProperties
@@ -88,6 +88,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.a
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.buildSelectedMessagesPlainText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing.ShareImagePreviewDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing.saveShareImageToGallery
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing.rememberMessageImageTheme
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -164,6 +165,7 @@ fun ChatScreenContent(
         }.toSet()
     }
     var isGeneratingImage by remember { mutableStateOf(false) }
+    var imageGenerationId by remember { mutableIntStateOf(0) }
     var showSharePreviewDialog by remember { mutableStateOf(false) }
     var showDeleteSelectedConfirmDialog by remember { mutableStateOf(false) }
     var sharePreviewUri by remember { mutableStateOf<Uri?>(null) }
@@ -174,6 +176,7 @@ fun ChatScreenContent(
 
     // Export state
     val context = LocalContext.current
+    val messageImageTheme = rememberMessageImageTheme()
     val clipboardManager = LocalClipboardManager.current
     val selectedMessagesCopyScope = rememberCoroutineScope()
     var showExportPlatformDialog by remember { mutableStateOf(false) }
@@ -580,15 +583,15 @@ fun ChatScreenContent(
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            stringResource(R.string.share_selected),
+                                            stringResource(R.string.save_image),
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontSize = 13.sp
                                         )
                                     },
                                     leadingIcon = {
                                         Icon(
-                                            Icons.Default.Share,
-                                            contentDescription = stringResource(R.string.share_selected),
+                                            Icons.Default.Save,
+                                            contentDescription = stringResource(R.string.save_image),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -792,13 +795,16 @@ fun ChatScreenContent(
                 sharePreviewThinkingExpanded,
                 sharePreviewExpandThinkToolsGroups,
                 sharePreviewIncludeBackground,
-                sharePreviewBorderWidth
+                sharePreviewBorderWidth,
+                messageImageTheme,
             ) {
-                if (showSharePreviewDialog && selectedMessageIndices.isNotEmpty() && !isGeneratingImage) {
+                if (showSharePreviewDialog && selectedMessageIndices.isNotEmpty()) {
                     isGeneratingImage = true
-                    actualViewModel.shareMessages(
+                    val generationId = ++imageGenerationId
+                    val generation = actualViewModel.shareMessages(
                         context = context,
                         messageIndices = selectedMessageIndices,
+                        theme = messageImageTheme,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
                         userTextColor = userTextColor,
@@ -830,6 +836,14 @@ fun ChatScreenContent(
                             OKToast.error(context, error, OKToast.LENGTH_SHORT).show()
                         }
                     )
+                    try {
+                        generation.join()
+                    } finally {
+                        generation.cancel()
+                        if (imageGenerationId == generationId) {
+                            isGeneratingImage = false
+                        }
+                    }
                 }
             }
             ShareImagePreviewDialog(
@@ -855,7 +869,7 @@ fun ChatScreenContent(
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_selected)))
+                            context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
                             showSharePreviewDialog = false
                             isMultiSelectMode = false
                             selectedMessageIndices = emptySet()
