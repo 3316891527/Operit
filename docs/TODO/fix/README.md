@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [OpenAI 绘图资源更新一致性](openai-draw-resource-updates/index.md)
+
 - [提示词编辑状态与更新下载来源适配](prompt-editing-and-update-sources/index.md)
 - [Code Runner 运行隔离与命令收尾](code-runner-execution-isolation/index.md)
 
