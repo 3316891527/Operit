@@ -82,30 +82,44 @@ internal suspend fun loadImageEditBitmap(context: Context, uri: Uri, preview: Bo
 
 /** Pixelation samples the image, but its exported strokes contain only the processed pixels. */
 internal class ImageEditRenderer(private val source: Bitmap) : AutoCloseable {
-    private val width = source.width.toFloat()
-    private val height = source.height.toFloat()
-    private val shortSide = min(width, height)
+    private val sourceWidth = source.width.toFloat()
+    private val sourceHeight = source.height.toFloat()
+    private val shortSide = min(sourceWidth, sourceHeight)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val pixelated = Bitmap.createScaledBitmap(source, max(1, source.width / 24), max(1, source.height / 24), false)
-    private val mosaic = BitmapShader(pixelated, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
-        setLocalMatrix(Matrix().apply { setScale(width / pixelated.width, height / pixelated.height) })
-    }
+    private val mosaic = BitmapShader(pixelated, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
 
     fun draw(canvas: Canvas, document: ImageEditDocument, pending: ImageEditMark? = null) {
+        val dimensions = document.imageSize(source.width, source.height)
+        val width = dimensions.width.toFloat()
+        val height = dimensions.height.toFloat()
+        val sourceTransform = Matrix().apply {
+            setRotate(document.quarterTurns * 90f)
+            when (document.quarterTurns) {
+                1 -> postTranslate(sourceHeight, 0f)
+                2 -> postTranslate(sourceWidth, sourceHeight)
+                3 -> postTranslate(0f, sourceWidth)
+            }
+        }
+        // Pixelation uses the same orientation as the source, including after crop rotations.
+        mosaic.setLocalMatrix(Matrix().apply {
+            setScale(sourceWidth / pixelated.width, sourceHeight / pixelated.height)
+            postConcat(sourceTransform)
+        })
         paint.reset()
         paint.isAntiAlias = true
         paint.isFilterBitmap = true
-        canvas.drawBitmap(source, 0f, 0f, paint)
+        canvas.drawBitmap(source, sourceTransform, paint)
         val layer = canvas.saveLayer(0f, 0f, width, height, null)
         try {
-            document.marks.forEach { drawMark(canvas, it) }
-            if (pending != null) drawMark(canvas, pending)
+            document.marks.forEach { drawMark(canvas, it, width, height) }
+            if (pending != null) drawMark(canvas, pending, width, height)
         } finally {
             canvas.restoreToCount(layer)
         }
     }
 
-    private fun drawMark(canvas: Canvas, mark: ImageEditMark) {
+    private fun drawMark(canvas: Canvas, mark: ImageEditMark, width: Float, height: Float) {
         paint.reset()
         paint.isAntiAlias = true
         paint.strokeCap = Paint.Cap.ROUND
@@ -161,20 +175,26 @@ internal class ImageEditRenderer(private val source: Bitmap) : AutoCloseable {
                 paint.textAlign = Paint.Align.CENTER
                 val lines = mark.text.lines()
                 val lineHeight = paint.fontSpacing
-                val firstBaseline = mark.position.y * height - (lines.size - 1) * lineHeight / 2f - (paint.ascent() + paint.descent()) / 2f
-                lines.forEachIndexed { index, line ->
-                    canvas.drawText(line, mark.position.x * width, firstBaseline + index * lineHeight, paint)
-                }
+                val firstBaseline = -(lines.size - 1) * lineHeight / 2f - (paint.ascent() + paint.descent()) / 2f
+                val checkpoint = canvas.save()
+                try {
+                    canvas.translate(mark.position.x * width, mark.position.y * height)
+                    canvas.rotate(mark.quarterTurns * 90f)
+                    lines.forEachIndexed { index, line ->
+                        canvas.drawText(line, 0f, firstBaseline + index * lineHeight, paint)
+                    }
+                } finally { canvas.restoreToCount(checkpoint) }
             }
         }
     }
 
     fun export(document: ImageEditDocument): Bitmap {
         val crop = document.crop
-        val left = floor(crop.left * width).toInt().coerceIn(0, source.width - 1)
-        val top = floor(crop.top * height).toInt().coerceIn(0, source.height - 1)
-        val right = ceil(crop.right * width).toInt().coerceIn(left + 1, source.width)
-        val bottom = ceil(crop.bottom * height).toInt().coerceIn(top + 1, source.height)
+        val dimensions = document.imageSize(source.width, source.height)
+        val left = floor(crop.left * dimensions.width).toInt().coerceIn(0, dimensions.width - 1)
+        val top = floor(crop.top * dimensions.height).toInt().coerceIn(0, dimensions.height - 1)
+        val right = ceil(crop.right * dimensions.width).toInt().coerceIn(left + 1, dimensions.width)
+        val bottom = ceil(crop.bottom * dimensions.height).toInt().coerceIn(top + 1, dimensions.height)
         val output = Bitmap.createBitmap(right - left, bottom - top, Bitmap.Config.ARGB_8888)
         try {
             val canvas = Canvas(output)

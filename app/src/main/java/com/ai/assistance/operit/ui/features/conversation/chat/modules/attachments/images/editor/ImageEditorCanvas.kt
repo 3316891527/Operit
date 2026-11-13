@@ -32,20 +32,20 @@ import kotlin.math.max
 import kotlin.math.min
 
 private data class EditorPlacement(val scale: Float, val origin: Offset) {
-    fun point(position: Offset, image: Bitmap, crop: ImageEditCrop): ImageEditPoint = ImageEditPoint(
+    fun point(position: Offset, image: ImageEditSize, crop: ImageEditCrop): ImageEditPoint = ImageEditPoint(
         ((position.x - origin.x) / scale / image.width).coerceIn(crop.left, crop.right),
         ((position.y - origin.y) / scale / image.height).coerceIn(crop.top, crop.bottom),
     )
 }
 
-private fun editorPlacement(viewport: Size, image: Bitmap, crop: ImageEditCrop, transform: ImagePreviewTransform): EditorPlacement {
+private fun editorPlacement(viewport: Size, image: ImageEditSize, crop: ImageEditCrop, transform: ImagePreviewTransform): EditorPlacement {
     val fit = min(viewport.width / (image.width * crop.width), viewport.height / (image.height * crop.height))
     val scale = fit * transform.scale
     val center = Offset(viewport.width / 2f, viewport.height / 2f) + transform.offset
     return EditorPlacement(scale, center - Offset((crop.left + crop.right) * image.width / 2f, (crop.top + crop.bottom) * image.height / 2f) * scale)
 }
 
-private fun textAt(document: ImageEditDocument, point: ImageEditPoint, image: Bitmap): Int? {
+private fun textAt(document: ImageEditDocument, point: ImageEditPoint, image: ImageEditSize): Int? {
     val shortSide = min(image.width, image.height).toFloat()
     return document.marks.indices.reversed().firstOrNull { index ->
         val text = document.marks[index] as? ImageEditMark.Text ?: return@firstOrNull false
@@ -53,8 +53,11 @@ private fun textAt(document: ImageEditDocument, point: ImageEditPoint, image: Bi
             textSize = text.size * shortSide
             typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
         }
-        val halfWidth = max(text.text.lines().maxOf { paint.measureText(it) } / 2f, shortSide * 0.025f) / image.width
-        val halfHeight = max(text.text.lines().size * paint.fontSpacing / 2f, shortSide * 0.025f) / image.height
+        val textWidth = max(text.text.lines().maxOf { paint.measureText(it) }, shortSide * 0.05f)
+        val textHeight = max(text.text.lines().size * paint.fontSpacing, shortSide * 0.05f)
+        val sideways = text.quarterTurns % 2 != 0
+        val halfWidth = (if (sideways) textHeight else textWidth) / 2f / image.width
+        val halfHeight = (if (sideways) textWidth else textHeight) / 2f / image.height
         abs(point.x - text.position.x) <= halfWidth && abs(point.y - text.position.y) <= halfHeight
     }
 }
@@ -71,6 +74,7 @@ internal fun ImageEditorCanvas(
     onText: (Int?, ImageEditPoint) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val imageSize = document.imageSize(image.width, image.height)
     val renderer = remember(image) { ImageEditRenderer(image) }
     DisposableEffect(renderer) { onDispose { renderer.close() } }
     var viewport by remember { mutableStateOf(Size.Zero) }
@@ -81,30 +85,30 @@ internal fun ImageEditorCanvas(
     val latestDocument by rememberUpdatedState(document)
     val commit by rememberUpdatedState(onCommit)
     val editText by rememberUpdatedState(onText)
-    LaunchedEffect(document.crop) { transform = ImagePreviewTransform() }
+    LaunchedEffect(document.crop, document.quarterTurns) { transform = ImagePreviewTransform() }
 
     Canvas(
         modifier.clipToBounds()
             .onSizeChanged { viewport = Size(it.width.toFloat(), it.height.toFloat()) }
-            .pointerInput(image, viewport, tool, color, width, enabled, document.crop) {
+            .pointerInput(image, viewport, tool, color, width, enabled, document.crop, document.quarterTurns) {
                 if (!enabled || viewport.width <= 0f || viewport.height <= 0f) return@pointerInput
                 awaitEachGesture {
                     val first = awaitFirstDown(requireUnconsumed = false)
                     val original = latestDocument
                     val crop = original.crop
-                    val placement = editorPlacement(viewport, image, crop, transform)
-                    val start = placement.point(first.position, image, crop)
+                    val placement = editorPlacement(viewport, imageSize, crop, transform)
+                    val start = placement.point(first.position, imageSize, crop)
                     val imageRect = RectF(
-                        placement.origin.x + crop.left * image.width * placement.scale,
-                        placement.origin.y + crop.top * image.height * placement.scale,
-                        placement.origin.x + crop.right * image.width * placement.scale,
-                        placement.origin.y + crop.bottom * image.height * placement.scale,
+                        placement.origin.x + crop.left * imageSize.width * placement.scale,
+                        placement.origin.y + crop.top * imageSize.height * placement.scale,
+                        placement.origin.x + crop.right * imageSize.width * placement.scale,
+                        placement.origin.y + crop.bottom * imageSize.height * placement.scale,
                     )
                     val startsOnImage = imageRect.contains(first.position.x, first.position.y)
                     var transformed = false
                     var moved = false
                     var points = listOf(start)
-                    val textIndex = if (startsOnImage && tool in listOf(ImageEditTool.TEXT, ImageEditTool.MOVE)) textAt(original, start, image) else null
+                    val textIndex = if (startsOnImage && tool in listOf(ImageEditTool.TEXT, ImageEditTool.MOVE)) textAt(original, start, imageSize) else null
                     val strokeTool = tool in listOf(ImageEditTool.PEN, ImageEditTool.MOSAIC, ImageEditTool.ERASER)
                     if (startsOnImage && strokeTool) pending = ImageEditMark.Stroke(tool, points, color, width)
                     try {
@@ -121,14 +125,14 @@ internal fun ImageEditorCanvas(
                                     transform = transformImagePreview(
                                         transform, transform.scale * event.calculateZoom(), focus,
                                         event.calculatePan(), viewport,
-                                        Size(image.width * crop.width, image.height * crop.height),
+                                        Size(imageSize.width * crop.width, imageSize.height * crop.height),
                                     )
                                 }
                             } else if (startsOnImage) {
                                 val position = event.changes.firstOrNull { it.id == first.id }?.position
                                 if (position != null) {
                                     if ((position - first.position).getDistance() > viewConfiguration.touchSlop) moved = true
-                                    val point = placement.point(position, image, crop)
+                                    val point = placement.point(position, imageSize, crop)
                                     when {
                                         textIndex != null && moved -> {
                                             val text = original.marks[textIndex] as ImageEditMark.Text
@@ -159,7 +163,7 @@ internal fun ImageEditorCanvas(
                             when {
                                 movement != null -> commit(movement)
                                 tool == ImageEditTool.TEXT && !moved -> editText(textIndex, start)
-                                selectedCrop != null && selectedCrop.width * image.width >= 4f && selectedCrop.height * image.height >= 4f ->
+                                selectedCrop != null && selectedCrop.width * imageSize.width >= 4f && selectedCrop.height * imageSize.height >= 4f ->
                                     commit(original.copy(crop = selectedCrop))
                                 mark is ImageEditMark.Stroke -> commit(original.copy(marks = original.marks + mark))
                                 mark is ImageEditMark.Shape && moved -> commit(original.copy(marks = original.marks + mark))
@@ -175,25 +179,25 @@ internal fun ImageEditorCanvas(
     ) {
         if (viewport.width <= 0f || viewport.height <= 0f) return@Canvas
         val crop = document.crop
-        val placement = editorPlacement(viewport, image, crop, transform)
+        val placement = editorPlacement(viewport, imageSize, crop, transform)
         drawIntoCanvas { composeCanvas ->
             val canvas = composeCanvas.nativeCanvas
             val checkpoint = canvas.save()
             try {
                 canvas.translate(placement.origin.x, placement.origin.y)
                 canvas.scale(placement.scale, placement.scale)
-                canvas.clipRect(crop.left * image.width, crop.top * image.height, crop.right * image.width, crop.bottom * image.height)
+                canvas.clipRect(crop.left * imageSize.width, crop.top * imageSize.height, crop.right * imageSize.width, crop.bottom * imageSize.height)
                 renderer.draw(canvas, movedDocument ?: document, pending)
                 cropSelection?.let { selection ->
                     val shade = Paint().apply { this.color = 0x99000000.toInt() }
-                    val l = selection.left * image.width
-                    val t = selection.top * image.height
-                    val r = selection.right * image.width
-                    val b = selection.bottom * image.height
-                    canvas.drawRect(crop.left * image.width, crop.top * image.height, crop.right * image.width, t, shade)
-                    canvas.drawRect(crop.left * image.width, b, crop.right * image.width, crop.bottom * image.height, shade)
-                    canvas.drawRect(crop.left * image.width, t, l, b, shade)
-                    canvas.drawRect(r, t, crop.right * image.width, b, shade)
+                    val l = selection.left * imageSize.width
+                    val t = selection.top * imageSize.height
+                    val r = selection.right * imageSize.width
+                    val b = selection.bottom * imageSize.height
+                    canvas.drawRect(crop.left * imageSize.width, crop.top * imageSize.height, crop.right * imageSize.width, t, shade)
+                    canvas.drawRect(crop.left * imageSize.width, b, crop.right * imageSize.width, crop.bottom * imageSize.height, shade)
+                    canvas.drawRect(crop.left * imageSize.width, t, l, b, shade)
+                    canvas.drawRect(r, t, crop.right * imageSize.width, b, shade)
                     val border = Paint().apply { this.color = android.graphics.Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f / placement.scale }
                     canvas.drawRect(l, t, r, b, border)
                     for (i in 1..2) {

@@ -9455,8 +9455,10 @@
     <string name="image_editor_unsaved_title">Save edits?</string>
     <string name="image_editor_unsaved_message">This image has unsaved edits. Save before leaving?</string>
     <string name="image_editor_discard">Don\'t save</string>
-    <string name="image_editor_continue">Continue editing</string>
     <string name="image_editor_text">Text</string>
+    <string name="image_editor_restore">Reset</string>
+    <string name="image_editor_rotate">Rotate</string>
+    <string name="image_editor_text_size">Text size</string>
     <string name="image_editor_text_hint">Enter text</string>
     <string name="image_editor_move">Move</string>
     <string name="image_editor_pen">Pen</string>

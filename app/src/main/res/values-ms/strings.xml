@@ -8521,8 +8521,10 @@
     <string name="image_editor_unsaved_title">Simpan suntingan?</string>
     <string name="image_editor_unsaved_message">Imej ini mempunyai suntingan yang belum disimpan. Simpan sebelum keluar?</string>
     <string name="image_editor_discard">Jangan simpan</string>
-    <string name="image_editor_continue">Teruskan menyunting</string>
     <string name="image_editor_text">Teks</string>
+    <string name="image_editor_restore">Tetapkan semula</string>
+    <string name="image_editor_rotate">Putar</string>
+    <string name="image_editor_text_size">Saiz teks</string>
     <string name="image_editor_text_hint">Masukkan teks</string>
     <string name="image_editor_move">Gerak</string>
     <string name="image_editor_pen">Pen</string>

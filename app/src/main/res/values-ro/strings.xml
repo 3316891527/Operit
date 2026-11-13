@@ -9115,8 +9115,10 @@
     <string name="image_editor_unsaved_title">Salvezi modificările?</string>
     <string name="image_editor_unsaved_message">Imaginea are modificări nesalvate. Le salvezi înainte de ieșire?</string>
     <string name="image_editor_discard">Nu salva</string>
-    <string name="image_editor_continue">Continuă editarea</string>
     <string name="image_editor_text">Text</string>
+    <string name="image_editor_restore">Restabilește</string>
+    <string name="image_editor_rotate">Rotește</string>
+    <string name="image_editor_text_size">Dimensiunea textului</string>
     <string name="image_editor_text_hint">Introdu textul</string>
     <string name="image_editor_move">Mută</string>
     <string name="image_editor_pen">Creion</string>

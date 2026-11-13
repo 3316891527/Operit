@@ -8362,8 +8362,10 @@
     <string name="image_editor_unsaved_title">Salvar edições?</string>
     <string name="image_editor_unsaved_message">Esta imagem tem edições não salvas. Salvar antes de sair?</string>
     <string name="image_editor_discard">Não salvar</string>
-    <string name="image_editor_continue">Continuar editando</string>
     <string name="image_editor_text">Texto</string>
+    <string name="image_editor_restore">Restaurar</string>
+    <string name="image_editor_rotate">Girar</string>
+    <string name="image_editor_text_size">Tamanho do texto</string>
     <string name="image_editor_text_hint">Digite o texto</string>
     <string name="image_editor_move">Mover</string>
     <string name="image_editor_pen">Caneta</string>

@@ -8590,8 +8590,10 @@
     <string name="image_editor_unsaved_title">¿Guardar cambios?</string>
     <string name="image_editor_unsaved_message">Esta imagen tiene cambios sin guardar. ¿Quieres guardarlos antes de salir?</string>
     <string name="image_editor_discard">No guardar</string>
-    <string name="image_editor_continue">Seguir editando</string>
     <string name="image_editor_text">Texto</string>
+    <string name="image_editor_restore">Restablecer</string>
+    <string name="image_editor_rotate">Girar</string>
+    <string name="image_editor_text_size">Tamaño del texto</string>
     <string name="image_editor_text_hint">Escribe el texto</string>
     <string name="image_editor_move">Mover</string>
     <string name="image_editor_pen">Lápiz</string>

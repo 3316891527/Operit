@@ -8522,8 +8522,10 @@
     <string name="image_editor_unsaved_title">Simpan edit?</string>
     <string name="image_editor_unsaved_message">Gambar ini memiliki edit yang belum disimpan. Simpan sebelum keluar?</string>
     <string name="image_editor_discard">Jangan simpan</string>
-    <string name="image_editor_continue">Lanjutkan mengedit</string>
     <string name="image_editor_text">Teks</string>
+    <string name="image_editor_restore">Pulihkan</string>
+    <string name="image_editor_rotate">Putar</string>
+    <string name="image_editor_text_size">Ukuran teks</string>
     <string name="image_editor_text_hint">Masukkan teks</string>
     <string name="image_editor_move">Pindahkan</string>
     <string name="image_editor_pen">Pena</string>
