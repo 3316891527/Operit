@@ -138,6 +138,17 @@
 - [公开发行说明](https://github.com/3316891527/Operit-Kong-patch/releases/tag/v1.12.2%2B19)；发布时刻 `2026-11-01T05:11:11Z`
 - [源码快照](https://github.com/3316891527/Operit/commit/890e532070f14eee8b21084bbedbe5c9ab6cb7e1)；versionCode `75`
 
+## `+19` 之后的开放工作
+
+`1.12.2+19` 是当前固定归档终点。以下 PR 在本次维护时仍未合入，因此只作为后续工作记录，不改变上面的版本时间线：
+
+- [PR #195](https://github.com/3316891527/Operit/pull/195)：主题文字颜色、消息复制选择与 A2UI 流式投递，目标 `dev`，open。
+- [PR #196](https://github.com/3316891527/Operit/pull/196)：发送前图片编辑及 Provider Logo/名称整理，目标 `dev`，open draft。
+- [PR #197](https://github.com/3316891527/Operit/pull/197)：删除无运行时引用的 DragonBones `.keep` 占位文件，目标 `dev`，open。
+- [PR #105](https://github.com/3316891527/Operit/pull/105)：持续维护本更新日志和来源归档，目标 `dev`，open。
+
+这些开放 PR 的工作流结果、设备验收和最终纳入版本，沿各自 PR 的实际提交与检查记录继续维护；派发受理不等于构建或测试通过。
+
 ## 追溯说明
 
 +2 的旧说明称“51 条接入分支”，固定集成清单则为 52 项：其中 #1338 的来源已在整合基点，另 51 项产生顺序合并。这是两个统计口径，并非缺少一项功能。
