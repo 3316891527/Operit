@@ -17,7 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.filled.Visibility
@@ -71,6 +73,7 @@ import com.ai.assistance.operit.ui.features.extensions.packages.market.PublishPr
 import com.ai.assistance.operit.ui.features.extensions.packages.market.effectiveToolPkgApiVersion
 import com.ai.assistance.operit.ui.features.extensions.packages.market.isOperit2VersionAllowed
 import com.ai.assistance.operit.ui.features.extensions.packages.market.sameArtifactRuntimePackageId
+import com.ai.assistance.operit.ui.features.extensions.packages.components.MarketCategoryDropdown
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.artifact.viewmodel.ArtifactMarketViewModel
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.artifact.viewmodel.ArtifactPublishDraft
 import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
@@ -273,7 +276,6 @@ fun ArtifactPublishScreen(
     var selectorExpanded by remember { mutableStateOf(false) }
     var releaseSelectorExpanded by remember { mutableStateOf(false) }
     var releaseAssetSelectorExpanded by remember { mutableStateOf(false) }
-    var categoryExpanded by remember { mutableStateOf(false) }
     var categories by remember { mutableStateOf<List<MarketV2ManifestCategory>>(emptyList()) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showOperit2WarningDialog by remember { mutableStateOf(false) }
@@ -714,7 +716,12 @@ fun ArtifactPublishScreen(
                             useGitHubReleaseAsset = false
                         },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                        icon = {},
+                        icon = {
+                            androidx.compose.material3.Icon(
+                                imageVector = if (!useGitHubReleaseAsset) Icons.Default.Check else Icons.Default.UploadFile,
+                                contentDescription = null,
+                            )
+                        },
                         label = {
                             Text(
                                 text = stringResource(R.string.artifact_publish_asset_source_upload),
@@ -739,7 +746,12 @@ fun ArtifactPublishScreen(
                             useGitHubReleaseAsset = true
                         },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                        icon = {},
+                        icon = {
+                            androidx.compose.material3.Icon(
+                                imageVector = if (useGitHubReleaseAsset) Icons.Default.Check else Icons.Default.Link,
+                                contentDescription = null,
+                            )
+                        },
                         label = {
                             Text(
                                 text = stringResource(R.string.artifact_publish_asset_source_github_release),
@@ -955,49 +967,17 @@ fun ArtifactPublishScreen(
             minLines = 4,
             maxLines = 10
         )
-        ExposedDropdownMenuBox(
-            expanded = categoryExpanded,
-            onExpandedChange = {
-                if (categories.isNotEmpty() && !isContinuationCategoryLocked) {
-                    categoryExpanded = !categoryExpanded
-                }
-            }
-        ) {
-            val selectedCategoryLabel =
-                categoryId
-                    .takeIf { it.isNotBlank() }
-                    ?.let { selected -> marketCategoryLabel(selected) }
-                    .orEmpty()
-            OutlinedTextField(
-                value = selectedCategoryLabel,
-                onValueChange = {},
-                label = { Text(stringResource(R.string.market_detail_category_label)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                readOnly = true,
-                enabled = categories.isNotEmpty() && !isContinuationCategoryLocked,
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
-                },
-                isError = categoryId.isBlank()
-            )
-            ExposedDropdownMenu(
-                expanded = categoryExpanded,
-                onDismissRequest = { categoryExpanded = false }
-            ) {
-                categories.forEach { category ->
-                    DropdownMenuItem(
-                        text = { Text(marketCategoryLabel(category.id)) },
-                        onClick = {
-                            viewModel.clearPendingMarketRegistrationRetry()
-                            categoryId = category.id
-                            categoryExpanded = false
-                        }
-                    )
-                }
-            }
-        }
+        MarketCategoryDropdown(
+            selectedCategory = categoryId,
+            categories = categories,
+            onCategorySelected = { selectedCategory ->
+                viewModel.clearPendingMarketRegistrationRetry()
+                categoryId = selectedCategory
+            },
+            categoryLabel = { category -> marketCategoryLabel(category) },
+            enabled = categories.isNotEmpty() && !isContinuationCategoryLocked,
+            modifier = Modifier.fillMaxWidth(),
+        )
         if (!isContinuationMode) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -1189,6 +1169,14 @@ fun ArtifactPublishScreen(
                     modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            if (!isPublishing) {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Default.UploadFile,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }

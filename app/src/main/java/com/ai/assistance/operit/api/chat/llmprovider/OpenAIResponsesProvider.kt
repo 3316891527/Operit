@@ -73,7 +73,7 @@ open class OpenAIResponsesProvider(
             preserveThinkInHistory
         )
 
-        applyResponsesReasoningEffort(context, jsonObject, enableThinking)
+        applyResponsesReasoningEffort(context, jsonObject, enableThinking, thinkingOptionId)
 
         logRequestBody("OpenAIResponsesProvider", jsonObject, "Final Responses request body: ")
 
@@ -101,7 +101,8 @@ open class OpenAIResponsesProvider(
     private fun applyResponsesReasoningEffort(
         context: Context,
         requestJson: JSONObject,
-        enableThinking: Boolean
+        enableThinking: Boolean,
+        thinkingOptionId: String?
     ) {
         ThinkingConfigurationApplier.apply(
             context = context,

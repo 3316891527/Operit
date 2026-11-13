@@ -103,11 +103,10 @@ class MultiServiceManager(
                 apiEndpoint = config.apiEndpoint,
                 thinkingConfigurations = config.thinkingConfigurations
             )
-        return FunctionThinkingRequest(
-            enableThinking = configMapping.enableThinking || mapping.reasoningRequired,
-            thinkingOptionId =
-                mapping.resolveOptionId(configMapping.thinkingOptionId, config.thinkingOptionId)
+        val request = mapping.resolveRequest(
+            configMapping.enableThinking, configMapping.thinkingOptionId, config.thinkingOptionId
         )
+        return FunctionThinkingRequest(request.enableThinking, request.thinkingOptionId)
     }
 
     /** 获取指定功能类型的AIService */

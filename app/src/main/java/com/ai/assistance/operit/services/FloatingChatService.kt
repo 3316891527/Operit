@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.services
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -591,6 +593,9 @@ class FloatingChatService : Service(), FloatingWindowCallback {
             }
         }
     }
+
+    fun createImageAttachmentEditTarget(original: AttachmentInfo): ImageAttachmentEditTarget =
+        chatCore.createImageAttachmentEditTarget(original)
 
     fun removeAttachment(filePath: String) {
         AppLogger.d(TAG, "移除附件: $filePath")

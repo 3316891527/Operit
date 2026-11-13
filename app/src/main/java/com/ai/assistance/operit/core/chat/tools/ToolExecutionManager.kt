@@ -60,6 +60,12 @@ object ToolExecutionManager {
         val callerChatId: String? = null,
         val a2uiRunId: String? = null,
         val publishA2ui: (suspend (String) -> Unit)? = null,
+        val publishA2uiAfterToolResult: (suspend (String) -> Unit)? = null,
+    )
+
+    private data class ToolExecutionOutput(
+        val result: ToolResult,
+        val a2uiDocuments: List<String>,
     )
 
     private data class ResolvedToolTarget(
@@ -523,14 +529,26 @@ object ToolExecutionManager {
         suspend fun publishMarkup(markup: String) {
             outputMutex.withLock { collector.emit(ensureOwnLine(markup)) }
         }
+        suspend fun publishA2uiCard(document: String) {
+            val cardPublisher = onA2uiCard
+            if (cardPublisher != null) {
+                outputMutex.withLock { cardPublisher(document) }
+            } else {
+                publishMarkup("```a2ui\n$document\n```")
+            }
+        }
         val timing = ToolExecutionTiming(invocations.size, onToolTiming, toolCallOffset)
         try {
         timing.queued()
         coroutineScope {
-        val orderedResults = OrderedToolResults(invocations.size, ::publishMarkup)
-        suspend fun completeResult(index: Int, result: ToolResult) {
+        val orderedResults = OrderedToolResults(
+            invocations.size,
+            publishAfterResult = ::publishA2uiCard,
+            publish = ::publishMarkup,
+        )
+        suspend fun completeResult(index: Int, result: ToolResult, a2uiDocuments: List<String> = emptyList()) {
             timing.completed(index)
-            orderedResults.complete(index, result)
+            orderedResults.complete(index, result, a2uiDocuments)
         }
         // 默认工具注册现在可能在启动阶段被延后；这里确保在真正执行工具前已完成注册
         // registerDefaultTools() 是幂等且线程安全的，可安全重复调用
@@ -550,8 +568,8 @@ object ToolExecutionManager {
             }.getOrNull()
         }
         val publishA2ui: (suspend (String) -> Unit)? = if (onA2uiCard == null) null else { document ->
-            // 卡片和工具结果共用输出锁，避免并行工具交错破坏消息栅栏。
-            outputMutex.withLock { onA2uiCard(document) }
+            // Waiting forms must be emitted before their tool suspends for a user submission.
+            publishA2uiCard(document)
         }
         val toolRuntimeContext =
             ToolRuntimeContext(
@@ -658,28 +676,28 @@ object ToolExecutionManager {
         val parallelJobs = parallelInvocations.map { (index, invocation) ->
             async {
                 timing.start(index)
-                val result =
+                val output =
                     executeTool(
                         invocation = invocation,
                         toolHandler = toolHandler,
                         packageManager = packageManager,
                         runtimeContext = toolRuntimeContext
                     )
-                completeResult(index, result)
+                completeResult(index, output.result, output.a2uiDocuments)
             }
         }
 
         // 顺序执行串行工具
         for ((index, invocation) in serialInvocations) {
             timing.start(index)
-            val result =
+            val output =
                 executeTool(
                     invocation = invocation,
                     toolHandler = toolHandler,
                     packageManager = packageManager,
                     runtimeContext = toolRuntimeContext
                 )
-            completeResult(index, result)
+            completeResult(index, output.result, output.a2uiDocuments)
         }
 
         // 等待所有并行任务完成
@@ -707,11 +725,14 @@ object ToolExecutionManager {
         toolHandler: AIToolHandler,
         packageManager: PackageManager,
         runtimeContext: ToolRuntimeContext
-    ): ToolResult {
+    ): ToolExecutionOutput {
         val toolName = invocation.tool.name
         val displayToolName = resolveDisplayToolName(invocation.tool)
-
-        return withContext(toolRuntimeContextThreadLocal.asContextElement(runtimeContext)) {
+        val a2uiDocuments = mutableListOf<String>()
+        val invocationRuntimeContext = runtimeContext.copy(
+            publishA2uiAfterToolResult = { document -> a2uiDocuments.add(document) },
+        )
+        val result = withContext(toolRuntimeContextThreadLocal.asContextElement(invocationRuntimeContext)) {
             try {
                 val executor = toolHandler.getToolExecutorOrActivate(toolName)
                 if (executor == null) {
@@ -741,6 +762,7 @@ object ToolExecutionManager {
                 toolHandler.notifyToolExecutionFinished(invocation.tool)
             }
         }
+        return ToolExecutionOutput(result, a2uiDocuments.toList())
     }
 
     /** Keep the existing aggregation semantics, but publish this result to both history paths. */

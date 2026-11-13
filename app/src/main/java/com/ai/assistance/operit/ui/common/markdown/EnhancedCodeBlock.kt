@@ -291,12 +291,12 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
                     modifier = Modifier
                         .align(Alignment.End)
                         .padding(4.dp),
-                    color = Color(0xFF0366D6),
+                    color = MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.common_copied),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )

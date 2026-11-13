@@ -11,3 +11,9 @@ data class AttachmentInfo(
         val fileSize: Long,
         val content: String = "" // Field to store inline content
 )
+
+
+/** A replacement destination captured from the draft that started an image edit. */
+fun interface ImageAttachmentEditTarget {
+    fun replace(attachment: AttachmentInfo): Boolean
+}

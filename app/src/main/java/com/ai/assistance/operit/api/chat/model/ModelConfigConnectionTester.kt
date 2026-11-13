@@ -58,6 +58,20 @@ data class ModelConnectionTestReport(
         get() = items.isNotEmpty() && items.all { it.outcome == ModelConnectionTestOutcome.PASSED }
 }
 
+internal fun resolveConnectionTestThinking(
+    config: ModelConfigData,
+    modelName: String
+): ResolvedThinkingRequest {
+    val mapping = ThinkingQualityMappingRegistry.resolve(
+        providerTypeId = config.apiProviderTypeId,
+        modelName = modelName,
+        apiEndpoint = config.apiEndpoint,
+        thinkingConfigurations = config.thinkingConfigurations
+    )
+    // Only connection probes opt in automatically when configured controls exist.
+    return mapping.resolveRequest(enableThinking = mapping.control != ThinkingQualityControl.UNSUPPORTED)
+}
+
 object ModelConfigConnectionTester {
     /**
      * One complete tool-call round trip for the Tool Call probe: the user asks, the assistant calls
@@ -104,13 +118,16 @@ object ModelConfigConnectionTester {
 
         try {
             val parameters = modelConfigManager.getModelParametersForConfig(configForTest.id)
+            val testThinking = resolveConnectionTestThinking(configForTest, testedModelName)
 
             suspend fun collectResponse(history: List<PromptTurn>): String {
                 val buffer = StringBuilder()
                 service.sendMessage(
-                    context,
-                    history,
-                    parameters,
+                    context = context,
+                    chatHistory = history,
+                    modelParameters = parameters,
+                    enableThinking = testThinking.enableThinking,
+                    thinkingOptionId = testThinking.thinkingOptionId,
                     stream = false,
                     enableRetry = false,
                     recordTokenUsage = false,
@@ -163,9 +180,11 @@ object ModelConfigConnectionTester {
 
                     suspend fun runToolCallTest(toolName: String) {
                         service.sendMessage(
-                            context,
-                            buildToolCallProbeHistory(toolName),
-                            parameters,
+                            context = context,
+                            chatHistory = buildToolCallProbeHistory(toolName),
+                            modelParameters = parameters,
+                            enableThinking = testThinking.enableThinking,
+                            thinkingOptionId = testThinking.thinkingOptionId,
                             stream = false,
                             availableTools = availableTools,
                             enableRetry = false,
