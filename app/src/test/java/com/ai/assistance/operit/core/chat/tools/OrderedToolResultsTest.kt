@@ -46,6 +46,23 @@ class OrderedToolResultsTest {
     }
 
     @Test
+    fun `A2UI cards follow their tool results in original invocation order`() = runBlocking {
+        val events = mutableListOf<String>()
+        val ordered = OrderedToolResults(2,
+            publish = { events += "result:${content(it)}" },
+            publishAfterResult = { events += "card:$it" },
+        )
+        ordered.complete(1, result("second"), listOf("card-2"))
+        assertTrue(events.isEmpty())
+        ordered.complete(0, result("first"), listOf("card-1"))
+        ordered.finish()
+        assertEquals(
+            listOf("result:first", "card:card-1", "result:second", "card:card-2"),
+            events,
+        )
+    }
+
+    @Test
     fun `denials keep original positions and identical calls retain separate slots`() = runBlocking {
         val emitted = mutableListOf<String>()
         val ordered = OrderedToolResults(3) { emitted.add(it) }

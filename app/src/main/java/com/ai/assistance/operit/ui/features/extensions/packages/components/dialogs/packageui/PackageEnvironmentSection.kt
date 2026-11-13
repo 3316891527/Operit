@@ -37,6 +37,7 @@ internal fun PackageEnvironmentSection(variables: List<EnvVar>) {
             text = stringResource(R.string.pkg_declared_environment_variables),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         variables.forEach { variable ->
             Surface(
@@ -63,6 +64,7 @@ internal fun PackageEnvironmentSection(variables: List<EnvVar>) {
                             text = variable.name,
                             style = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Monospace),
                             fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         val description = variable.description.resolve(context)
                         if (description.isNotBlank()) {

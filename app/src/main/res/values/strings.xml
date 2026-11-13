@@ -1059,10 +1059,6 @@
     <string name="agreement_title">用户协议</string>
     <string name="agreement_document_title">Operit Kong 用户协议与隐私政策</string>
 
-    <string name="market_agreement_title">插件市场使用协议与行为规范</string>
-    <string name="market_agreement_version">市场协议版本：%1$s</string>
-    <string name="market_agreement_content">1. 市场定位。Operit 插件市场仅用于分享、发现和索引脚本、工具包、技能、模型上下文协议及其他扩展，并提供市场内的浏览、下载和安装入口。市场不是插件作者、买方、卖方、经纪方、收费方、担保方或权利登记机构；市场展示、收录、排序或推荐某个插件，不表示该插件由 Operit 开发、拥有、代理或背书。\n\n2. 发布授权。发布者提交插件到市场，即授予 Operit 一项非独占、非转让、仅为运营市场所必要的许可，用于保存、缓存、复制、处理、展示、索引市场条目，并向市场用户提供该插件的下载和安装。发布行为同时表示发布者允许市场用户通过市场下载、安装并在插件设计用途范围内正常使用，但不当然允许修改或再分发。该许可不转移插件的著作权、所有权或其他权利，市场不得据此取得插件在市场之外的自由再许可权。发布者应确保自己有权作出上述授权。\n\n3. GitHub 开源建议。我们推荐发布者在自己控制的公开 GitHub 仓库直接发布源代码、README、许可证、版本或 Release 和变更记录，并从该仓库向市场登记来源。GitHub 仓库公开可见不等于自动授予开源许可；是否允许使用、修改和再分发，以作者明确声明的开源许可证或其他书面授权为准。\n\n4. 用户使用和再分发。插件的再分发权原则上由作者或其他权利人保留。前述下载、安装和正常使用权限，不等于向每一名用户授予再次上传、转发、改包、出售或重新发布插件的权利。除法律另有规定外，用户只能按照作者声明的许可证或授权修改和再分发；未声明允许再分发的插件，不得自行再分发。开源插件的权利范围以其开源许可证为准。\n\n5. 第三方风险和安全责任。插件具有独立的代码、配置和运行权限，可能执行代码、启动本地服务、访问文件、读取环境变量或连接网络。用户应自行审查并承担启用、安装和使用插件的风险。发布者不得在插件、仓库、示例或配置中提交 API Key、Cookie、Token、私钥、账号密码或用户数据，并应如实说明作者、许可证、权限、联网行为、环境变量、外部服务和已知风险。Operit 不对第三方扩展的安全性、准确性、可用性、合法性或兼容性作保证。\n\n6. 评论和社区行为。评论内容应与插件功能、使用体验、缺陷或安全问题相关。不得发布 QQ、Telegram、Discord 等群号、联系方式、广告、导流信息、交易信息、无关链接或其他可能扰乱社区秩序的内容；不得公开 API Key、Cookie、Token、私钥、账号密码或其他个人数据。\n\n7. 禁止交易和导流。不得在市场内买卖、倒卖、代装插件，不得通过收款、打赏、会员、私聊或第三方链接诱导他人为免费插件付费。市场不提供支付、履约、退款或交易纠纷处理服务。免费插件无需向任何人付费；第三方渠道的收费、授权或承诺不代表 Operit 官方认可。\n\n8. 市场服务边界。为提供分享、下载和安装服务，市场可能保存、缓存或传输市场条目和插件文件，但不承诺永久托管、备份、保密或防复制。发布到市场意味着作者授权市场按本协议向市场用户提供下载和安装，不意味着公众自动获得再分发权。插件是否可访问、下载和继续可用，还取决于作者仓库、GitHub 及其他第三方服务。\n\n9. 规范执行与协议更新。违反本规范的评论、条目或账号可能被限制、隐藏或移除。市场协议因功能、法律或安全要求发生实质变化时，将提高协议版本；用户可在市场入口主动查看更新内容。</string>
-
     <!-- Sherpa -->
     <string name="sherpa_k2_ncnn_init_failed">实时语音识别引擎初始化失败</string>
     <string name="sherpa_k2_ncnn_init_success">实时语音识别引擎初始化成功</string>
@@ -1621,6 +1617,7 @@
     <string name="markdown_source">Markdown 源码</string>
     <string name="xml_source">XML 源码</string>
     <string name="copy_plain_text">复制纯文本</string>
+    <string name="copy_all">全部复制</string>
     <string name="copy_markdown_source">复制 Markdown 源码</string>
     <string name="copy_xml_source">复制 XML 源码</string>
     <string name="chat_hidden_user_message_placeholder">自动触发用户消息（内容已隐藏）</string>
@@ -4255,10 +4252,11 @@
     <string name="market_category_business_productivity">办公与效率</string>
     <string name="market_category_life_entertainment">生活与娱乐</string>
     <string name="market_category_other">其他</string>
-    <string name="market_section_manage">管理</string>
-    <string name="market_section_publish">发布</string>
+    <string name="market_creator_center">创作者中心</string>
+    <string name="market_creator_my_publications">我的发布</string>
+    <string name="market_creator_publish_artifact_hint">选择脚本或工具包类型</string>
+    <string name="market_creator_filter_empty">当前分类暂无发布内容</string>
     <string name="market_notifications_title">消息列表</string>
-    <string name="market_agreement_entry">市场协议</string>
     <string name="market_notifications_empty_title">暂无消息</string>
     <string name="market_notifications_empty_description">市场消息会显示在这里</string>
     <string name="market_manage_removed">已提交移除「%1$s」的请求</string>
@@ -4283,11 +4281,9 @@
     <string name="market_manage_artifact">管理包</string>
     <string name="market_manage_skill">管理技能</string>
     <string name="market_manage_mcp">管理模型上下文协议</string>
-    <string name="market_manage_owned_section">我拥有的</string>
-    <string name="market_manage_contributed_section">我参与提交的</string>
     <string name="market_manage_relation_owner">拥有者</string>
     <string name="market_manage_relation_contributor">协作者</string>
-    <string name="market_publish_artifact">发布包</string>
+    <string name="market_publish_artifact">发布脚本或工具包</string>
     <string name="market_publish_skill">发布技能</string>
     <string name="market_publish_mcp">发布模型上下文协议</string>
     <string name="market_publish_new_version">发布新版本</string>
@@ -4486,7 +4482,7 @@
     <string name="screen_title_artifact_market">脚本与工具包市场</string>
     <string name="screen_title_market">市场</string>
     <string name="screen_title_artifact_manage">管理脚本与工具包</string>
-    <string name="screen_title_artifact_publish">发布脚本或工具包</string>
+    <string name="screen_title_artifact_publish">发布 Artifact</string>
     <string name="artifact_publish_info_description">条目会先上传到您自己的 OperitForge 发布仓库，再根据类型自动登记到脚本市场或工具包市场。请确认内容、版本和兼容范围准确无误。</string>
     <string name="change">更改</string>
     <string name="comma_separator">，</string>
@@ -9420,4 +9416,6 @@
     <string name="extension_update_success">更新成功</string>
     <string name="extension_update_failed">更新失败：%1$s</string>
     <string name="extension_update_cancelled">更新已取消</string>
+    <string name="market_creator_needs_changes">需修改</string>
+    <string name="market_creator_publish_locked">登录后可发布</string>
 </resources>

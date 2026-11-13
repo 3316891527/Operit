@@ -282,7 +282,8 @@ private fun MCPPackageToolCard(
                     Text(
                         text = tool.name,
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = tool.description.resolve(context).ifBlank {
@@ -400,7 +401,7 @@ private fun MCPToolExecutionDialog(
                         Text(
                             text = tool.name,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "ID: $serverId:${tool.name}",
