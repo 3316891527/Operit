@@ -41,8 +41,10 @@ class WaifuReplyOnlyStreamTest {
     private fun TestScope.replyUpdates(source: Stream<String>) = streamWaifuUpdates(
         sourceStream = source,
         splitSnapshot = { content, final ->
-            if (final) WaifuMessageProcessor.splitMessageBySentences(content)
-            else WaifuMessageProcessor.splitStableMessageSegments(content)
+            // 验证真实思考过滤与流式队列；测试文本仅用句号分句，避免依赖 Android JNI 库。
+            WaifuMessageProcessor.buildRenderableContentForWaifu(content)
+                .split(Regex("(?<=。)"))
+                .filter { it.isNotBlank() && (final || it.endsWith("。")) }
         },
         typingDelayMs = { _, first -> if (first) 0L else 500L },
         nowMillis = { testScheduler.currentTime },
