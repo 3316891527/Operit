@@ -2,6 +2,7 @@ package com.ai.assistance.operit.data.preferences
 
 import android.content.Context
 import com.ai.assistance.operit.api.chat.keypool.ApiKeyCooldownRecovery
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.R
@@ -13,6 +14,7 @@ import com.ai.assistance.operit.data.collects.ModelThinkingConfigDefaults
 import com.ai.assistance.operit.data.config.model.CustomParameterData
 import com.ai.assistance.operit.data.model.FunctionType
 import com.ai.assistance.operit.data.config.model.ModelConfigData
+import com.ai.assistance.operit.data.config.model.getModelList
 import com.ai.assistance.operit.data.stats.TokenUsageRepository
 import com.ai.assistance.operit.data.config.model.ModelConfigDefaults
 import com.ai.assistance.operit.data.config.model.ModelConfigExport
@@ -459,13 +461,49 @@ class ModelConfigManager(
                 providerTypeId: String,
                 modelName: String,
                 apiEndpoint: String = ""
-        ): String =
-                // Keep a model's choice while editing it; built-in defaults apply only on provider changes.
-                if (current.apiProviderTypeId == providerTypeId) {
-                    current.thinkingOptionId
-                } else {
-                    firstThinkingOptionIdForModel(providerTypeId, modelName, apiEndpoint)
-                }
+        ): String {
+            val rules = nextThinkingRulesForProvider(current, providerTypeId, apiEndpoint)
+            return resolveThinkingOptionIdForModels(
+                current.copy(
+                    apiProviderTypeId = providerTypeId,
+                    modelName = modelName,
+                    apiEndpoint = apiEndpoint,
+                    thinkingConfigurations = rules,
+                ),
+                if (current.apiProviderTypeId == providerTypeId) current.thinkingOptionId else "",
+            )
+        }
+
+        private fun thinkingMappingsForModels(config: ModelConfigData) =
+            getModelList(config.modelName).map { model ->
+                ThinkingQualityMappingRegistry.resolve(
+                    config.apiProviderTypeId, model, config.apiEndpoint, config.thinkingConfigurations
+                )
+            }
+
+        internal fun resolveThinkingOptionIdForModels(
+            config: ModelConfigData,
+            preferredOptionId: String = config.thinkingOptionId,
+        ): String {
+            // A config stores one preference for all its models. Checking only model zero
+            // would erase a valid selection for another model when rules or ordering change.
+            val mappings = thinkingMappingsForModels(config)
+            if (mappings.any { it.control == ThinkingQualityControl.LEVELS && it.optionFor(preferredOptionId) != null }) {
+                return preferredOptionId
+            }
+            return mappings.firstOrNull { it.control == ThinkingQualityControl.LEVELS }
+                ?.resolveOptionId("").orEmpty()
+        }
+
+        internal fun validateThinkingOptionId(config: ModelConfigData, thinkingOptionId: String): String {
+            val optionId = thinkingOptionId.trim()
+            require(optionId.isEmpty() || thinkingMappingsForModels(config).any {
+                it.control == ThinkingQualityControl.LEVELS && it.optionFor(optionId) != null
+            }) {
+                "Thinking option is not supported by the configured models: $optionId"
+            }
+            return resolveThinkingOptionIdForModels(config, optionId)
+        }
     }
 
     // Json解析器，支持宽松模式
@@ -677,7 +715,13 @@ class ModelConfigManager(
                         }
                     }
 
-            val newConfig = normalizeConfig(transform(current))
+            val transformed = normalizeConfig(transform(current))
+            val thinkingChanged = current.apiProviderTypeId != transformed.apiProviderTypeId ||
+                current.apiEndpoint != transformed.apiEndpoint || current.modelName != transformed.modelName ||
+                current.thinkingConfigurations != transformed.thinkingConfigurations
+            val newConfig = if (thinkingChanged) {
+                transformed.copy(thinkingOptionId = resolveThinkingOptionIdForModels(transformed))
+            } else transformed
             preferences[configKey] = json.encodeToString(newConfig)
             previous = current
             updated = newConfig
@@ -1061,14 +1105,15 @@ class ModelConfigManager(
     }
 
     suspend fun updateThinkingConfigurations(configId: String, thinkingConfigurations: String): ModelConfigData {
+        ThinkingQualityMappingRegistry.validateConfigurations(thinkingConfigurations)
         return updateConfigInternal(configId) {
             it.copy(thinkingConfigurations = thinkingConfigurations)
         }
     }
 
     suspend fun updateThinkingOptionId(configId: String, thinkingOptionId: String): ModelConfigData {
-        return updateConfigInternal(configId) {
-            it.copy(thinkingOptionId = thinkingOptionId.trim())
+        return updateConfigInternal(configId) { config ->
+            config.copy(thinkingOptionId = validateThinkingOptionId(config, thinkingOptionId))
         }
     }
 

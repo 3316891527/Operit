@@ -30,6 +30,17 @@ internal data class ThinkingQualityJsonAction(
     val overwrite: Boolean = false,
 )
 
+internal data class ResolvedThinkingRequest(
+    val enableThinking: Boolean,
+    val thinkingOptionId: String,
+)
+
+internal data class ThinkingRuleMatch(
+    val index: Int,
+    val id: String,
+    val mapping: ThinkingQualityMapping,
+)
+
 internal data class ThinkingQualityMapping(
     val control: ThinkingQualityControl,
     val parameterLabel: String,
@@ -51,12 +62,25 @@ internal data class ThinkingQualityMapping(
     fun numberValueFor(id: String): Int? = (optionFor(id)?.wireValue as? ThinkingQualityWireValue.Number)?.value
 
     fun resolveOptionId(preferred: String, fallback: String = ""): String {
-        if (control != ThinkingQualityControl.LEVELS) {
-            return preferred.ifBlank { fallback }
-        }
+        if (control != ThinkingQualityControl.LEVELS) return ""
+        require(options.isNotEmpty()) { "Thinking level configuration has no options" }
         if (preferred.isNotBlank() && optionFor(preferred) != null) return preferred
         if (fallback.isNotBlank() && optionFor(fallback) != null) return fallback
-        return options.firstOrNull()?.id.orEmpty()
+        return options.first().id
+    }
+
+    // Tests, functional calls and providers share the same selection contract. An empty
+    // preference deliberately selects the first configured level; values are never sorted.
+    fun resolveRequest(
+        enableThinking: Boolean,
+        preferredOptionId: String = "",
+        configuredOptionId: String = "",
+    ): ResolvedThinkingRequest {
+        val enabled = control != ThinkingQualityControl.UNSUPPORTED && (enableThinking || reasoningRequired)
+        return ResolvedThinkingRequest(
+            enableThinking = enabled,
+            thinkingOptionId = if (enabled) resolveOptionId(preferredOptionId, configuredOptionId) else "",
+        )
     }
 }
 
@@ -79,10 +103,24 @@ internal object ThinkingQualityMappingRegistry {
     ): ThinkingQualityMapping {
         // The JSON array order is the user-visible priority order: the first enabled rule
         // matching provider, model, and endpoint wins, and later rules are not evaluated.
-        return parseRules(thinkingConfigurations)
-            .firstOrNull { it.matches(providerTypeId, modelName, apiEndpoint) }
-            ?.toMapping()
-            ?: ThinkingQualityMapping.unsupported()
+        return resolveMatch(providerTypeId, modelName, apiEndpoint, thinkingConfigurations)
+            ?.mapping ?: ThinkingQualityMapping.unsupported()
+    }
+
+    fun resolveMatch(
+        providerTypeId: String,
+        modelName: String,
+        apiEndpoint: String,
+        thinkingConfigurations: String,
+    ): ThinkingRuleMatch? {
+        val rules = rulesArray(thinkingConfigurations)
+        for (index in 0 until rules.length()) {
+            val rule = ThinkingConfigurationRule.fromJson(rules.getJSONObject(index))
+            if (rule.enabled && rule.matches(providerTypeId, modelName, apiEndpoint)) {
+                return ThinkingRuleMatch(index, rule.id, rule.toMapping())
+            }
+        }
+        return null
     }
 
     suspend fun resolveForModel(
@@ -95,7 +133,66 @@ internal object ThinkingQualityMappingRegistry {
     }
 
     fun validateConfigurations(thinkingConfigurations: String) {
-        parseRules(thinkingConfigurations)
+        val rules = rulesArray(thinkingConfigurations)
+        for (index in 0 until rules.length()) {
+            val json = rules.getJSONObject(index)
+            val rule = ThinkingConfigurationRule.fromJson(json)
+            if (!rule.enabled) continue
+            val name = rule.id.ifBlank { (index + 1).toString() }
+            require(json.optString("control", "unsupported").trim().lowercase(Locale.US) in setOf("levels", "toggle", "toggle_only", "unsupported")) {
+                "Thinking rule $name: unsupported control"
+            }
+            for (key in listOf("modelRegex", "lastSegmentRegex")) {
+                ((json.optJSONObject("match") ?: JSONObject()).stringList(key) + json.stringList(key))
+                    .forEach { Regex(it, RegexOption.IGNORE_CASE) }
+            }
+            if (rule.control == ThinkingQualityControl.UNSUPPORTED) continue
+            listOf("enable", "enabledActions", "on", "disable", "disabledActions", "off").forEach { key ->
+                validateActions(json.opt(key), name)
+            }
+            json.optJSONArray("options")?.let { options ->
+                for (optionIndex in 0 until options.length()) {
+                    validateActions(options.getJSONObject(optionIndex).opt("actions"), name)
+                }
+            }
+            val actions = rule.enabledActions + rule.disabledActions + rule.options.flatMap { it.actions }
+            actions.forEach { action ->
+                require(action.path.split('.').all { it.isNotBlank() }) {
+                    "Thinking rule $name: invalid parameter path ${action.path}"
+                }
+            }
+            if (rule.control == ThinkingQualityControl.LEVELS) {
+                val options = json.optJSONArray("options")
+                require(options != null && options.length() > 0 && options.length() == rule.options.size) {
+                    "Thinking rule $name: levels require non-empty options with valid IDs"
+                }
+                require(rule.options.map { it.id }.distinct().size == rule.options.size) {
+                    "Thinking rule $name: duplicate option ID"
+                }
+                for (optionIndex in 0 until options.length()) {
+                    val option = options.getJSONObject(optionIndex)
+                    val path = option.optString("path", rule.parameterLabel).trim()
+                    require(!option.has("value") || option.isNull("value") || path.isNotEmpty() || rule.options[optionIndex].actions.isNotEmpty()) {
+                        "Thinking rule $name: an option value needs a parameter path or actions"
+                    }
+                }
+            }
+        }
+    }
+
+    private fun validateActions(value: Any?, rule: String) {
+        if (value == null || value == JSONObject.NULL) return
+        val actions = when (value) {
+            is JSONObject -> listOf(value)
+            is JSONArray -> List(value.length()) { value.getJSONObject(it) }
+            else -> throw IllegalArgumentException("Thinking rule $rule: actions must be objects")
+        }
+        actions.forEach { action ->
+            val path = action.optString("path", "").trim()
+            require(path.isNotEmpty() && path.split('.').all { it.isNotBlank() } && action.has("value")) {
+                "Thinking rule $rule: each action needs a valid path and a value"
+            }
+        }
     }
 
     fun formatConfigurations(thinkingConfigurations: String): String {
@@ -104,17 +201,6 @@ internal object ThinkingQualityMappingRegistry {
             text.startsWith("[") -> JSONArray(text).toString(2)
             text.startsWith("{") -> JSONObject(text).toString(2)
             else -> JSONArray(text).toString(2)
-        }
-    }
-
-    private fun parseRules(thinkingConfigurations: String): List<ThinkingConfigurationRule> {
-        val array = rulesArray(thinkingConfigurations)
-        return buildList {
-            for (index in 0 until array.length()) {
-                val ruleObject = array.optJSONObject(index) ?: continue
-                val rule = ThinkingConfigurationRule.fromJson(ruleObject)
-                if (rule.enabled) add(rule)
-            }
         }
     }
 
@@ -311,13 +397,12 @@ internal object ThinkingConfigurationApplier {
         )
         if (mapping.control == ThinkingQualityControl.UNSUPPORTED) return mapping
 
-        val thinkingEnabled = enableThinking || mapping.reasoningRequired
-        val modeActions = if (thinkingEnabled) mapping.enabledActions else mapping.disabledActions
+        val thinking = mapping.resolveRequest(enableThinking, optionId)
+        val modeActions = if (thinking.enableThinking) mapping.enabledActions else mapping.disabledActions
         modeActions.forEach { applyAction(requestJson, it) }
 
-        if (thinkingEnabled && mapping.control == ThinkingQualityControl.LEVELS) {
-            val selected = mapping.optionFor(optionId)
-                ?: throw IllegalArgumentException("$providerTypeId option is not supported: $optionId")
+        if (thinking.enableThinking && mapping.control == ThinkingQualityControl.LEVELS) {
+            val selected = requireNotNull(mapping.optionFor(thinking.thinkingOptionId))
             selected.actions.forEach { applyAction(requestJson, it) }
         }
         return mapping
