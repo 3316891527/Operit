@@ -1,6 +1,6 @@
 import worldbookManagerScreen from "./ui/worldbook_manager/index.ui.js";
 import { registerWorldBookStorageService } from "./shared/worldbook_rpc.js";
-import { readWorldBookEntries } from "./shared/worldbook_storage.js";
+import { readWorldBookEntries, readWorldBookGroups } from "./shared/worldbook_storage.js";
 import {
   renderWorldBookContent,
   syncWorldBookVariableContext,
@@ -173,6 +173,63 @@ function matchesCharacterCard(entry: WorldBookEntry, callerCardId: string): bool
   return !!callerCardId && callerCardId === targetCardId;
 }
 
+// A group may bind multiple character card IDs. When an entry belongs to such a
+// group, the group's card list acts as an additional scope: the entry is active
+// if the caller's card is in ANY of the groups that contain it. If the entry has
+// its own character_card_id it still takes precedence via matchesCharacterCard.
+function buildGroupCardIndex(
+  entries: WorldBookEntry[],
+  groups: Array<{ entry_ids: string[]; character_card_ids: string[] }>
+): Map<string, string[]> {
+  // entryId -> Set of cardIds inherited from groups
+  const index = new Map<string, Set<string>>();
+  for (const group of groups) {
+    const cardIds = (group.character_card_ids || []).map((id) => String(id || "").trim()).filter(Boolean);
+    if (cardIds.length === 0) {
+      continue; // No card binding on this group – does not restrict entries
+    }
+    for (const entryId of group.entry_ids || []) {
+      const normalized = String(entryId || "").trim();
+      if (!normalized) {
+        continue;
+      }
+      let set = index.get(normalized);
+      if (!set) {
+        set = new Set();
+        index.set(normalized, set);
+      }
+      for (const cardId of cardIds) {
+        set.add(cardId);
+      }
+    }
+  }
+  const result = new Map<string, string[]>();
+  for (const [entryId, set] of index) {
+    result.set(entryId, [...set]);
+  }
+  return result;
+}
+
+function matchesCharacterCardWithGroups(
+  entry: WorldBookEntry,
+  callerCardId: string,
+  groupCardIndex: Map<string, string[]>
+): boolean {
+  // Entry-level binding takes priority.
+  const targetCardId = (entry.character_card_id || "").trim();
+  if (targetCardId) {
+    return !!callerCardId && callerCardId === targetCardId;
+  }
+  // If this entry belongs to one or more groups that have card bindings, the
+  // entry is scoped to only those cards.
+  const groupCards = groupCardIndex.get(entry.id);
+  if (groupCards && groupCards.length > 0) {
+    return !!callerCardId && groupCards.includes(callerCardId);
+  }
+  // No binding at all: global.
+  return true;
+}
+
 async function resolveCurrentCharacterCardId(
   event: ToolPkg.SystemPromptComposeHookEvent | ToolPkg.PromptFinalizeHookEvent
 ): Promise<string> {
@@ -212,14 +269,23 @@ async function resolveCurrentCharacterCardId(
   }
 }
 
-async function readEnabledEntries(): Promise<WorldBookEntry[]> {
+interface EnabledEntriesResult {
+  entries: WorldBookEntry[];
+  groupCardIndex: Map<string, string[]>;
+}
+
+async function readEnabledEntries(): Promise<EnabledEntriesResult> {
   try {
-    const parsed = await readWorldBookEntries<WorldBookEntry>();
+    const [parsed, groups] = await Promise.all([
+      readWorldBookEntries<WorldBookEntry>(),
+      readWorldBookGroups<{ entry_ids: string[]; character_card_ids: string[] }>()
+    ]);
     const enabledEntries = parsed.filter((entry) => entry && entry.enabled !== false) as WorldBookEntry[];
     enabledEntries.sort((left, right) => (right.priority || 50) - (left.priority || 50));
-    return enabledEntries;
+    const groupCardIndex = buildGroupCardIndex(enabledEntries, groups);
+    return { entries: enabledEntries, groupCardIndex };
   } catch (_error) {
-    return [];
+    return { entries: [], groupCardIndex: new Map() };
   }
 }
 
@@ -261,7 +327,7 @@ export async function systemPromptHook(
     return null;
   }
 
-  const enabledEntries = await readEnabledEntries();
+  const { entries: enabledEntries, groupCardIndex } = await readEnabledEntries();
   const callerCardId = await resolveCurrentCharacterCardId(event);
   const variableContext = await resolveVariableContext(event, callerCardId);
   const hitEntries = enabledEntries.filter(
@@ -269,7 +335,7 @@ export async function systemPromptHook(
       entry.always_active &&
       entry.inject_target === "system" &&
       normalizeInjectPosition(entry) !== "at_depth" &&
-      matchesCharacterCard(entry, callerCardId)
+      matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex)
   );
   if (hitEntries.length === 0) {
     return null;
@@ -289,7 +355,7 @@ export async function finalizeHook(
     return null;
   }
 
-  const enabledEntries = await readEnabledEntries();
+  const { entries: enabledEntries, groupCardIndex } = await readEnabledEntries();
   const promptEntries = enabledEntries.filter(
     (entry) => entry.inject_target === "user" || normalizeInjectPosition(entry) === "at_depth"
   );
@@ -304,7 +370,7 @@ export async function finalizeHook(
   const hitChatEntries: WorldBookEntry[] = [];
 
   for (const entry of promptEntries) {
-    if (!matchesCharacterCard(entry, callerCardId)) {
+    if (!matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex)) {
       continue;
     }
     if (entry.always_active) {
@@ -317,7 +383,7 @@ export async function finalizeHook(
   }
 
   for (const entry of keywordEntries) {
-    if (!matchesCharacterCard(entry, callerCardId)) {
+    if (!matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex)) {
       continue;
     }
 
