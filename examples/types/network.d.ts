@@ -321,6 +321,8 @@ export namespace Net {
     function uploadFile(options: {
         url: string;
         method?: 'POST' | 'PUT';
+        /** Overall request timeout in milliseconds, including upload and response reading. */
+        timeout_ms?: number;
         headers?: Record<string, string>;
         form_data?: Record<string, string>;
         ignore_ssl?: boolean;
