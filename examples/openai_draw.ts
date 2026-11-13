@@ -418,7 +418,9 @@ const openaiDraw = (function () {
                     method: "POST",
                     headers,
                     form_data: formData,
-                    files
+                    files,
+                    // 此请求由宿主另建客户端；必须显式传递超时，否则仍使用默认 20 秒读超时。
+                    timeout_ms: HTTP_TIMEOUT_MS
                 });
                 if (response.statusCode < 200 || response.statusCode >= 300) {
                     throw new Error(`OpenAI 图片编辑 API 调用失败: ${response.statusCode} - ${response.content}`);
