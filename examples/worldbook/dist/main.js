@@ -129,6 +129,54 @@ function matchesCharacterCard(entry, callerCardId) {
     }
     return !!callerCardId && callerCardId === targetCardId;
 }
+// A group may bind multiple character card IDs. When an entry belongs to such a
+// group, the group's card list acts as an additional scope: the entry is active
+// if the caller's card is in ANY of the groups that contain it. If the entry has
+// its own character_card_id it still takes precedence via matchesCharacterCard.
+function buildGroupCardIndex(entries, groups) {
+    // entryId -> Set of cardIds inherited from groups
+    const index = new Map();
+    for (const group of groups) {
+        const cardIds = (group.character_card_ids || []).map((id) => String(id || "").trim()).filter(Boolean);
+        if (cardIds.length === 0) {
+            continue; // No card binding on this group – does not restrict entries
+        }
+        for (const entryId of group.entry_ids || []) {
+            const normalized = String(entryId || "").trim();
+            if (!normalized) {
+                continue;
+            }
+            let set = index.get(normalized);
+            if (!set) {
+                set = new Set();
+                index.set(normalized, set);
+            }
+            for (const cardId of cardIds) {
+                set.add(cardId);
+            }
+        }
+    }
+    const result = new Map();
+    for (const [entryId, set] of index) {
+        result.set(entryId, [...set]);
+    }
+    return result;
+}
+function matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex) {
+    // Entry-level binding takes priority.
+    const targetCardId = (entry.character_card_id || "").trim();
+    if (targetCardId) {
+        return !!callerCardId && callerCardId === targetCardId;
+    }
+    // If this entry belongs to one or more groups that have card bindings, the
+    // entry is scoped to only those cards.
+    const groupCards = groupCardIndex.get(entry.id);
+    if (groupCards && groupCards.length > 0) {
+        return !!callerCardId && groupCards.includes(callerCardId);
+    }
+    // No binding at all: global.
+    return true;
+}
 async function resolveCurrentCharacterCardId(event) {
     try {
         const directCardId = typeof getCallerCardId === "function" ? getCallerCardId() : undefined;
@@ -166,13 +214,17 @@ async function resolveCurrentCharacterCardId(event) {
 }
 async function readEnabledEntries() {
     try {
-        const parsed = await (0, worldbook_storage_js_1.readWorldBookEntries)();
+        const [parsed, groups] = await Promise.all([
+            (0, worldbook_storage_js_1.readWorldBookEntries)(),
+            (0, worldbook_storage_js_1.readWorldBookGroups)()
+        ]);
         const enabledEntries = parsed.filter((entry) => entry && entry.enabled !== false);
         enabledEntries.sort((left, right) => (right.priority || 50) - (left.priority || 50));
-        return enabledEntries;
+        const groupCardIndex = buildGroupCardIndex(enabledEntries, groups);
+        return { entries: enabledEntries, groupCardIndex };
     }
     catch (_error) {
-        return [];
+        return { entries: [], groupCardIndex: new Map() };
     }
 }
 function renderEntries(entries, variableContext) {
@@ -202,13 +254,13 @@ async function systemPromptHook(event) {
     if (stage !== "after_compose_system_prompt") {
         return null;
     }
-    const enabledEntries = await readEnabledEntries();
+    const { entries: enabledEntries, groupCardIndex } = await readEnabledEntries();
     const callerCardId = await resolveCurrentCharacterCardId(event);
     const variableContext = await resolveVariableContext(event, callerCardId);
     const hitEntries = enabledEntries.filter((entry) => entry.always_active &&
         entry.inject_target === "system" &&
         normalizeInjectPosition(entry) !== "at_depth" &&
-        matchesCharacterCard(entry, callerCardId));
+        matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex));
     if (hitEntries.length === 0) {
         return null;
     }
@@ -222,7 +274,7 @@ async function finalizeHook(event) {
     if (stage !== "before_finalize_prompt") {
         return null;
     }
-    const enabledEntries = await readEnabledEntries();
+    const { entries: enabledEntries, groupCardIndex } = await readEnabledEntries();
     const promptEntries = enabledEntries.filter((entry) => entry.inject_target === "user" || normalizeInjectPosition(entry) === "at_depth");
     const keywordEntries = enabledEntries.filter((entry) => !entry.always_active);
     const payload = event.eventPayload || {};
@@ -233,7 +285,7 @@ async function finalizeHook(event) {
     const hitUserEntries = [];
     const hitChatEntries = [];
     for (const entry of promptEntries) {
-        if (!matchesCharacterCard(entry, callerCardId)) {
+        if (!matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex)) {
             continue;
         }
         if (entry.always_active) {
@@ -246,7 +298,7 @@ async function finalizeHook(event) {
         }
     }
     for (const entry of keywordEntries) {
-        if (!matchesCharacterCard(entry, callerCardId)) {
+        if (!matchesCharacterCardWithGroups(entry, callerCardId, groupCardIndex)) {
             continue;
         }
         const texts = [];

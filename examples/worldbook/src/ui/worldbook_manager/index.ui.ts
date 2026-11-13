@@ -290,6 +290,31 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
     }
   }
 
+  function toListEntry(entry: WorldBookEntry): WorldBookListEntry {
+    return {
+      id: entry.id,
+      name: entry.name,
+      enabled: entry.enabled !== false,
+      always_active: entry.always_active === true,
+      priority: entry.priority ?? 50,
+      keywords: entry.keywords || [],
+      is_regex: entry.is_regex === true,
+      scan_depth: entry.scan_depth ?? 0,
+      inject_target: entry.inject_target || "system",
+      inject_position: entry.inject_position || "append",
+      insertion_depth: entry.insertion_depth ?? 0,
+      character_card_id: entry.character_card_id || ""
+    };
+  }
+
+  function sortListEntries(nextEntries: WorldBookListEntry[]): WorldBookListEntry[] {
+    return [...nextEntries].sort((left, right) => right.priority - left.priority);
+  }
+
+  function sortGroups(nextGroups: WorldBookGroup[]): WorldBookGroup[] {
+    return [...nextGroups].sort((left, right) => left.name.localeCompare(right.name));
+  }
+
   async function queryCharacterCards(
     showErrorToast: boolean
   ): Promise<{ success: boolean; cards: CharacterCardOption[] }> {
@@ -400,9 +425,9 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
     }
     setTogglingEntryId(id);
     try {
-      await toggleWorldBookEntry(id);
+      const updatedEntry = await toggleWorldBookEntry(id);
+      setEntries(sortListEntries(entries.map((entry) => entry.id === id ? updatedEntry : entry)));
       ctx.showToast(t.toastToggleDone);
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastActionFailedPrefix}${(error as WorldBookError).message}`);
     } finally {
@@ -417,8 +442,8 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
     setDeletingEntryId(id);
     try {
       await deleteWorldBookEntry(id);
+      setEntries(entries.filter((entry) => entry.id !== id));
       ctx.showToast(`${t.toastDeletedPrefix}${name}`);
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastDeleteFailedPrefix}${(error as WorldBookError).message}`);
     } finally {
@@ -543,10 +568,10 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
     setImporting(true);
     try {
       const result = await importWorldBookEntries(payload);
+      setEntries(sortListEntries([...entries, ...result.entries.map(toListEntry)]));
       ctx.showToast(t.toastImportDone(result.imported_count, result.warning_count));
       setView("list");
       resetImportForm();
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastFailedPrefix}${(error as WorldBookError).message}`);
     } finally {
@@ -588,15 +613,18 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
     }
 
     try {
-      if (isEdit) {
-        await updateWorldBookEntry(payload);
-      } else {
-        await createWorldBookEntry(payload);
-      }
+      const savedEntry = isEdit
+        ? await updateWorldBookEntry(payload)
+        : await createWorldBookEntry(payload);
+      const nextEntry = toListEntry(savedEntry);
+      setEntries(sortListEntries(
+        isEdit
+          ? entries.map((entry) => entry.id === nextEntry.id ? nextEntry : entry)
+          : [...entries, nextEntry]
+      ));
       ctx.showToast(isEdit ? t.toastUpdated : t.toastCreated);
       setView("list");
       resetForm();
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastSaveFailedPrefix}${(error as WorldBookError).message}`);
     }
@@ -996,23 +1024,24 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
     }
     try {
       if (editingGroupId) {
-        await updateWorldBookGroup({
+        const savedGroup = await updateWorldBookGroup({
           id: editingGroupId,
           name: groupFormName.trim(),
           entry_ids: groupFormEntryIds,
           character_card_ids: groupFormCardIds
         });
+        setGroups(sortGroups(groups.map((group) => group.id === savedGroup.id ? savedGroup : group)));
         ctx.showToast(t.groupToastUpdated);
       } else {
-        await createWorldBookGroup({
+        const savedGroup = await createWorldBookGroup({
           name: groupFormName.trim(),
           entry_ids: groupFormEntryIds,
           character_card_ids: groupFormCardIds
         });
+        setGroups(sortGroups([...groups, savedGroup]));
         ctx.showToast(t.groupToastCreated);
       }
       setView("list");
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastActionFailedPrefix}${(error as WorldBookError).message}`);
     }
@@ -1020,10 +1049,14 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
 
   async function doDeleteGroup(deleteEntries: boolean) {
     try {
-      await deleteWorldBookGroup(deletingGroupId, deleteEntries);
+      const result = await deleteWorldBookGroup(deletingGroupId, deleteEntries);
+      setGroups(groups.filter((group) => group.id !== deletingGroupId));
+      if (result.removedEntries.length > 0) {
+        const removedIds = new Set(result.removedEntries.map((entry) => entry.id));
+        setEntries(entries.filter((entry) => !removedIds.has(entry.id)));
+      }
       ctx.showToast(t.groupToastDeleted);
       setView("list");
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastActionFailedPrefix}${(error as WorldBookError).message}`);
     }
@@ -1037,10 +1070,14 @@ export default function Screen(ctx: ComposeDslContext): ComposeNode {
 
   async function doCopyToGroup(targetGroupId: string) {
     try {
-      await copyEntryToGroup(copyingEntryId, targetGroupId);
+      const result = await copyEntryToGroup(copyingEntryId, targetGroupId);
+      setEntries(sortListEntries([...entries, toListEntry(result.newEntry)]));
+      setGroups(sortGroups(groups.map((group) => group.id === targetGroupId
+        ? { ...group, entry_ids: [...group.entry_ids, result.newEntry.id] }
+        : group
+      )));
       ctx.showToast(t.copyToastDone);
       setView("list");
-      await loadEntries(true);
     } catch (error) {
       ctx.showToast(`${t.toastActionFailedPrefix}${(error as WorldBookError).message}`);
     }
