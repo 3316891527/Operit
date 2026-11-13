@@ -76,7 +76,9 @@ internal data class ThinkingQualityMapping(
         preferredOptionId: String = "",
         configuredOptionId: String = "",
     ): ResolvedThinkingRequest {
-        val enabled = control != ThinkingQualityControl.UNSUPPORTED && (enableThinking || reasoningRequired)
+        // UNSUPPORTED means there are no JSON controls. Native providers still need the
+        // requested flag for their chat templates; suppressing it breaks functional calls.
+        val enabled = enableThinking || reasoningRequired
         return ResolvedThinkingRequest(
             enableThinking = enabled,
             thinkingOptionId = if (enabled) resolveOptionId(preferredOptionId, configuredOptionId) else "",

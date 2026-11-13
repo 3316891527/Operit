@@ -61,13 +61,16 @@ data class ModelConnectionTestReport(
 internal fun resolveConnectionTestThinking(
     config: ModelConfigData,
     modelName: String
-): ResolvedThinkingRequest =
-    ThinkingQualityMappingRegistry.resolve(
+): ResolvedThinkingRequest {
+    val mapping = ThinkingQualityMappingRegistry.resolve(
         providerTypeId = config.apiProviderTypeId,
         modelName = modelName,
         apiEndpoint = config.apiEndpoint,
         thinkingConfigurations = config.thinkingConfigurations
-    ).resolveRequest(enableThinking = true)
+    )
+    // Only connection probes opt in automatically when configured controls exist.
+    return mapping.resolveRequest(enableThinking = mapping.control != ThinkingQualityControl.UNSUPPORTED)
+}
 
 object ModelConfigConnectionTester {
     /**

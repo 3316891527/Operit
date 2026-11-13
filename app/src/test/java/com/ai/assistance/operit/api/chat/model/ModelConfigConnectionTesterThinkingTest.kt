@@ -66,6 +66,18 @@ class ModelConfigConnectionTesterThinkingTest {
         assertEquals("MINIMAL", request.thinkingOptionId)
     }
 
+    @Test
+    fun probesDoNotAutomaticallyEnableThinkingWithoutJsonControls() {
+        for (rules in listOf("[]", """[{"control":"unsupported"}]""")) {
+            val config = configFor(ApiProviderType.OPENAI_GENERIC, "model-a").copy(
+                thinkingConfigurations = rules, thinkingOptionId = "high"
+            )
+            val request = resolveConnectionTestThinking(config, config.modelName)
+            assertFalse(request.enableThinking)
+            assertEquals("", request.thinkingOptionId)
+        }
+    }
+
     private fun configFor(provider: ApiProviderType, model: String): ModelConfigData =
         ModelConfigData(
             id = "connection-test",

@@ -50,6 +50,25 @@ class ThinkingConfigurationValidationTest {
     }
 
     @Test
+    fun modelsWithoutJsonControlsKeepTheRequestedThinkingMode() {
+        for (rules in listOf("[]", """[{"control":"unsupported"}]""")) {
+            val mapping = ThinkingQualityMappingRegistry.resolve("OPENAI_GENERIC", "model-a", "", rules)
+            for (enabled in listOf(true, false)) {
+                val request = mapping.resolveRequest(enabled, "stale", "high")
+                assertEquals(enabled, request.enableThinking)
+                assertEquals("", request.thinkingOptionId)
+                val json = JSONObject().put("model", "model-a").put("stream", false)
+                ThinkingConfigurationApplier.apply(
+                    json, "OPENAI_GENERIC", "model-a", "", rules, request.enableThinking, request.thinkingOptionId
+                )
+                assertEquals(2, json.length())
+                assertEquals("model-a", json.getString("model"))
+                assertEquals(false, json.getBoolean("stream"))
+            }
+        }
+    }
+
+    @Test
     fun requiredModelUsesTheSameValidOptionResolutionAsConnectionTests() {
         val mapping = ThinkingQualityMappingRegistry.resolve("GOOGLE", "gemini-3-flash", ModelThinkingConfigDefaults.forProvider("GOOGLE"))
         val request = mapping.resolveRequest(false, "outdated")
