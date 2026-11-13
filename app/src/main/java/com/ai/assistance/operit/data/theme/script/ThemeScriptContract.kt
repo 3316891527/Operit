@@ -12,7 +12,7 @@ object ThemeScriptContract {
     const val MAX_RESULT_BYTES = 131072
     const val MAX_BUNDLE_BYTES = 64 * 1024 * 1024
     const val MAX_ASSET_BYTES = 8 * 1024 * 1024
-    const val MAX_ASSETS = 48
+    const val MAX_ASSETS = 96
     const val MAX_SVG_BYTES = 512 * 1024
     const val MAX_BITMAP_PIXELS = 41_943_040L
     const val MAX_MANIFEST_BYTES = 65536

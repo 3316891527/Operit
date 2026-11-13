@@ -41,8 +41,8 @@ class ThemeResourceErrorSummaryTest {
     }
 
     @Test fun resourceCountIncludesTheSelectedFilesWithoutExtraLabels() {
-        val failure = ThemeResourceLimitException(ThemeResourceLimit.AssetCount, 48, used = 47, incoming = 2)
-        assertEquals("Theme script declares too many assets (49/48)", failure.message)
+        val failure = ThemeResourceLimitException(ThemeResourceLimit.AssetCount, 96, used = 95, incoming = 2)
+        assertEquals("Theme script declares too many assets (97/96)", failure.message)
     }
 
     @Test fun archiveWrappingRetainsTheSameCompactBudgetFailure() {

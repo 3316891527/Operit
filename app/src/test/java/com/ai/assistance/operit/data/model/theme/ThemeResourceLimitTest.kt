@@ -36,10 +36,10 @@ class ThemeResourceLimitTest {
     }
 
     @Test fun resourceCountIncludesAllFilesSelectedForTheBatch() {
-        ThemeResourceLimit.AssetCount.check(2, used = 46)
-        val failure = exceeded { ThemeResourceLimit.AssetCount.check(3, used = 46) }
-        assertEquals(48L, failure.maximum)
-        assertEquals(46L, failure.used)
+        ThemeResourceLimit.AssetCount.check(2, used = 94)
+        val failure = exceeded { ThemeResourceLimit.AssetCount.check(3, used = 94) }
+        assertEquals(96L, failure.maximum)
+        assertEquals(94L, failure.used)
         assertEquals(3L, failure.incoming)
     }
 
