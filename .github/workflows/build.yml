@@ -319,6 +319,14 @@ jobs:
       - name: Verify external resource packaging and report APK size
         if: github.event_name == 'push' || inputs.gradle_task != ':app:bundleRelease'
         run: python3 ci/distribution/resources/verify_packaged_resources.py
+      - name: Upload prepared offline-resource bundle
+        if: github.event_name == 'workflow_dispatch' && inputs.gradle_task == ':app:verifyCiPreviewRelease' && inputs.publish_release == false
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: operit-offline-resources-${{ github.run_number }}
+          path: .ci-current-resources/assets/*
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Android reports
         if: always()
