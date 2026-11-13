@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import com.ai.assistance.operit.ui.components.CustomScaffold
+import com.ai.assistance.operit.ui.components.ActionSheetItem
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -1153,13 +1154,15 @@ private fun ThinkingRulePreviewCard(
                 IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.thinking_config_rule_actions), modifier = Modifier.size(20.dp))
                 }
-                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.thinking_config_copy_rule)) },
+                ModelWorkspaceMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    ActionSheetItem(
+                        label = stringResource(R.string.thinking_config_copy_rule),
+                        icon = Icons.Default.ContentCopy,
                         onClick = { menuExpanded = false; onCopy() }
                     )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.thinking_config_move_top)) },
+                    ActionSheetItem(
+                        label = stringResource(R.string.thinking_config_move_top),
+                        icon = Icons.Default.KeyboardArrowUp,
                         enabled = index > 0,
                         onClick = { menuExpanded = false; onMoveTop() }
                     )
