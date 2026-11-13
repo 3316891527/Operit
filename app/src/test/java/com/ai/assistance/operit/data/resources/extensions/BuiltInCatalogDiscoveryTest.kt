@@ -27,34 +27,42 @@ class BuiltInCatalogDiscoveryTest {
         })
     }
 
-    private fun combined(): JsonObject = JsonObject(resources + ("packs" to JsonArray(
-        resources.getValue("packs").jsonArray + builtins.getValue("packs").jsonArray)))
+    private fun combined(releaseTag: String = tag): JsonObject = JsonObject(
+        resources +
+            ("releaseTag" to JsonPrimitive(releaseTag)) +
+            ("packs" to JsonArray(resources.getValue("packs").jsonArray + builtins.getValue("packs").jsonArray)),
+    )
 
     @Test
     fun publishedV2CatalogLoadsAllFortyExtensionsWithoutChangingTheirArchives() {
-        val selected = BuiltInCatalogDiscovery.select(JsonArray(listOf(release(tag, "2026-11-07T00:00:00Z", "offline-packs.json"))))
-        val decoded = BuiltInCatalogDiscovery.decode(combined().toString(), selected)
+        val v2Tag = "resources-v2-${tag.removePrefix("resources-v3-")}"
+        val selected = BuiltInCatalogDiscovery.select(JsonArray(listOf(release(v2Tag, "2026-11-07T00:00:00Z", "offline-packs.json"))))
+        val decoded = BuiltInCatalogDiscovery.decode(combined(v2Tag).toString(), selected)
         val expected = json.decodeFromString<com.ai.assistance.operit.data.resources.packs.ResourcePackCatalog>(builtins.toString())
+            .copy(releaseTag = v2Tag)
         assertEquals(expected, decoded)
         assertEquals(40, decoded.packs.size)
     }
 
     @Test
     fun publicationTimeSelectsLatestReleaseAcrossBothLayoutsAndIgnoresDrafts() {
+        val v2Tag = "resources-v2-${tag.removePrefix("resources-v3-")}"
+        val latestCatalogName = if (tag.startsWith("resources-v3-")) "builtin-extensions.json" else "offline-packs.json"
         val selected = BuiltInCatalogDiscovery.select(JsonArray(listOf(
-            release("resources-v3-old", "2026-11-01T00:00:00Z", "builtin-extensions.json"),
-            release(tag, "2026-11-07T00:00:00Z", "offline-packs.json"),
+            release(v2Tag, "2026-11-01T00:00:00Z", "offline-packs.json"),
+            release(tag, "2026-11-07T00:00:00Z", latestCatalogName),
             release("resources-v3-draft", "2026-11-08T00:00:00Z", "builtin-extensions.json", draft = true),
         )))
         assertEquals(tag, selected.tag)
-        assertEquals("offline-packs.json", selected.assetName)
+        assertEquals(latestCatalogName, selected.assetName)
     }
 
     @Test
     fun newestIncompleteReleaseCannotBeHiddenByAnOlderCompleteRelease() {
+        val v2Tag = "resources-v2-${tag.removePrefix("resources-v3-")}"
         val error = assertThrows(IllegalStateException::class.java) {
             BuiltInCatalogDiscovery.select(JsonArray(listOf(
-                release(tag, "2026-11-01T00:00:00Z", "offline-packs.json"),
+                release(v2Tag, "2026-11-01T00:00:00Z", "offline-packs.json"),
                 release("resources-v3-incomplete", "2026-11-07T00:00:00Z", null),
             )))
         }
