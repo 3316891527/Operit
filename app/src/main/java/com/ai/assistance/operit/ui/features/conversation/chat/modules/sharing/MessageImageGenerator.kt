@@ -3,7 +3,6 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.sharing
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
@@ -20,12 +19,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -37,16 +35,15 @@ import coil.ImageLoader
 import coil.compose.LocalImageLoader
 import coil.request.CachePolicy
 import com.ai.assistance.operit.data.model.ChatMessage
-import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatStyle
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.bubble.BubbleStyleChatMessage
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.cursor.CursorStyleChatMessage
 import com.ai.assistance.operit.ui.theme.AppBackgroundLayer
 import com.ai.assistance.operit.ui.theme.LocalThemePreferenceSnapshot
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -54,7 +51,7 @@ import java.io.FileOutputStream
 /**
  * 消息图片生成器
  * 
- * 将选中的消息渲染为图片，用于分享
+ * 将选中的消息按当前聊天主题渲染为图片
  * 使用 ScrollView + ComposeView 方案支持任意长度的内容
  */
 object MessageImageGenerator {
@@ -82,6 +79,7 @@ object MessageImageGenerator {
     suspend fun generateMessageImage(
         context: Context,
         messages: List<ChatMessage>,
+        theme: MessageImageTheme,
         userMessageColor: Color,
         aiMessageColor: Color,
         userTextColor: Color,
@@ -112,10 +110,7 @@ object MessageImageGenerator {
                 throw IllegalArgumentException("Message list cannot be empty")
             }
             val allowExpandedThinkingFullHeight = initialThinkingExpanded
-            val themeSnapshot =
-                ActivePromptManager.getInstance(context)
-                    .activeThemePreferenceSnapshotFlow
-                    .first()
+            val themeSnapshot = theme.preferences
             
             // 获取 Activity 和根视图，用于临时附加 ComposeView
             val activity = context.findActivity() ?: throw IllegalStateException("Context is not an Activity.")
@@ -123,17 +118,7 @@ object MessageImageGenerator {
             
             // 在主线程上创建、附加和捕获 Composable 内容
             val bitmap = withContext(Dispatchers.Main) {
-                // 检查当前是否为暗色模式
-                val isDarkTheme = (context.resources.configuration.uiMode and 
-                    Configuration.UI_MODE_NIGHT_MASK) == 
-                    Configuration.UI_MODE_NIGHT_YES
-                
-                // 根据暗色模式选择颜色方案
-                val colorScheme = if (isDarkTheme) {
-                    darkColorScheme()
-                } else {
-                    lightColorScheme()
-                }
+                val isDarkTheme = theme.darkTheme
                 
                 // 创建 ComposeView，包含所有消息内容
                 val composeView = ComposeView(context).apply {
@@ -151,7 +136,11 @@ object MessageImageGenerator {
                             LocalImageLoader provides softwareImageLoader,
                             LocalThemePreferenceSnapshot provides themeSnapshot,
                         ) {
-                            MaterialTheme(colorScheme = colorScheme) {
+                            MaterialTheme(
+                                colorScheme = theme.colorScheme,
+                                typography = theme.typography,
+                                shapes = theme.shapes,
+                            ) {
                             // 不再使用 Capturable，直接渲染内容
                             val density = LocalDensity.current
                             val widthDp = with(density) { width.toDp() }
@@ -348,11 +337,10 @@ object MessageImageGenerator {
                 
                 AppLogger.d(TAG, "ScrollView 测量完成，尺寸: ${scrollView.measuredWidth}x${scrollView.measuredHeight}")
                 
-                // 等待 Compose 完成布局（给它一些时间）
-                delay(500)
-                
                 val capturedBitmap: Bitmap
                 try {
+                    // Keep this wait inside cleanup so cancelled previews release their views.
+                    delay(500)
                     // 使用 ScrollView 子视图的完整高度创建 Bitmap
                     // 这是关键：getChildAt(0).height 获取完整的内容高度
                     val contentHeight = scrollView.getChildAt(0).height
@@ -368,10 +356,8 @@ object MessageImageGenerator {
                     // includeBackground=true 时，外围保持透明，仅卡片内部渲染应用背景
                     val backgroundColor = if (includeBackground) {
                         AndroidColor.TRANSPARENT
-                    } else if (isDarkTheme) {
-                        AndroidColor.BLACK
                     } else {
-                        AndroidColor.WHITE
+                        theme.colorScheme.background.toArgb()
                     }
                     canvas.drawColor(backgroundColor)
                     
@@ -389,6 +375,8 @@ object MessageImageGenerator {
                     }
                     
                     AppLogger.d(TAG, "捕获成功，图片尺寸: ${capturedBitmap.width}x${capturedBitmap.height}")
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Throwable) {
                     AppLogger.e(TAG, "捕获失败", e)
                     throw RuntimeException(context.getString(R.string.message_image_capture_failed, e.message ?: ""), e)
@@ -396,33 +384,36 @@ object MessageImageGenerator {
                     AppLogger.d(TAG, "从窗口移除 ScrollView")
                     // 确保无论成功还是失败，都将视图移除
                     rootView.removeView(scrollView)
+                    composeView.disposeComposition()
                 }
                 capturedBitmap
             }
             
             // 在 IO 线程上保存文件
             return withContext(Dispatchers.IO) {
-                val outputDir = File(context.cacheDir, "shared_images")
-                if (!outputDir.exists()) {
-                    outputDir.mkdirs()
+                try {
+                    val outputDir = File(context.cacheDir, "shared_images")
+                    if (!outputDir.exists()) {
+                        outputDir.mkdirs()
+                    }
+
+                    val timestamp = System.currentTimeMillis()
+                    val outputFile = File(outputDir, "messages_$timestamp.png")
+
+                    FileOutputStream(outputFile).use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                        out.flush()
+                    }
+
+                    AppLogger.d(TAG, "图片已保存到: ${outputFile.absolutePath}, 大小: ${outputFile.length()} bytes")
+                    outputFile
+                } finally {
+                    bitmap.recycle()
                 }
-                
-                val timestamp = System.currentTimeMillis()
-                val outputFile = File(outputDir, "messages_$timestamp.png")
-                
-                FileOutputStream(outputFile).use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                    out.flush()
-                }
-                
-                AppLogger.d(TAG, "图片已保存到: ${outputFile.absolutePath}, 大小: ${outputFile.length()} bytes")
-                
-                // 回收 Bitmap
-                bitmap.recycle()
-                
-                outputFile
             }
             
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e(TAG, "生成消息图片失败", e)
             throw e

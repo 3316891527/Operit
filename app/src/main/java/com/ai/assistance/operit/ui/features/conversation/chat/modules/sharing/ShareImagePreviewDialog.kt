@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +43,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -51,8 +54,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images.ImagePreviewTransform
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images.transformImagePreview
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +92,7 @@ fun ShareImagePreviewDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(stringResource(R.string.share_preview_title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.save_image), style = MaterialTheme.typography.titleMedium)
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_cancel))
                     }
@@ -102,30 +107,50 @@ fun ShareImagePreviewDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     if (imageUri != null) {
-                        var scale by remember(imageUri) { mutableStateOf(1f) }
-                        var offsetX by remember(imageUri) { mutableStateOf(0f) }
-                        var offsetY by remember(imageUri) { mutableStateOf(0f) }
-                        Image(
-                            painter = rememberAsyncImagePainter(imageUri),
-                            contentDescription = stringResource(R.string.share_preview_image_content_description),
+                        var viewport by remember(imageUri) { mutableStateOf(Size.Zero) }
+                        var imageSize by remember(imageUri) { mutableStateOf(Size.Zero) }
+                        var transform by remember(imageUri, viewport) {
+                            mutableStateOf(ImagePreviewTransform())
+                        }
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer(
-                                    clip = true,
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    translationX = offsetX,
-                                    translationY = offsetY
-                                )
-                                .pointerInput(imageUri) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        scale = (scale * zoom).coerceIn(0.5f, 5f)
-                                        offsetX += pan.x
-                                        offsetY += pan.y
-                                    }
-                                }
                                 .padding(12.dp)
-                        )
+                                .clipToBounds()
+                                .onSizeChanged {
+                                    viewport = Size(it.width.toFloat(), it.height.toFloat())
+                                }
+                                .pointerInput(imageUri, viewport, imageSize) {
+                                    // Handle gestures in viewport coordinates, outside the scaled layer.
+                                    detectTransformGestures { focus, pan, zoom, _ ->
+                                        if (viewport.width > 0f && viewport.height > 0f &&
+                                            imageSize.width > 0f && imageSize.height > 0f
+                                        ) {
+                                            transform = transformImagePreview(
+                                                current = transform,
+                                                targetScale = transform.scale * zoom,
+                                                focus = focus,
+                                                pan = pan,
+                                                viewport = viewport,
+                                                image = imageSize,
+                                            )
+                                        }
+                                    }
+                                },
+                        ) {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = stringResource(R.string.image_preview),
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize().graphicsLayer {
+                                    scaleX = transform.scale
+                                    scaleY = transform.scale
+                                    translationX = transform.offset.x
+                                    translationY = transform.offset.y
+                                },
+                                onSuccess = { imageSize = it.painter.intrinsicSize },
+                            )
+                        }
                     }
 
                     if (isGenerating) {
@@ -187,15 +212,15 @@ fun ShareImagePreviewDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(onClick = onSave, enabled = imageUri != null && !isGenerating) {
-                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.save))
-                    }
-                    Button(onClick = onShare, enabled = imageUri != null && !isGenerating) {
+                    OutlinedButton(onClick = onShare, enabled = imageUri != null && !isGenerating) {
                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.share_selected))
+                        Text(stringResource(R.string.share))
+                    }
+                    Button(onClick = onSave, enabled = imageUri != null && !isGenerating) {
+                        Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.save_image))
                     }
                 }
             }

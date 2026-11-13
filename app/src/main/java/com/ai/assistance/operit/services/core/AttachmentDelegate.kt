@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.services.core
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import android.content.Context
 import android.net.Uri
@@ -665,6 +667,33 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
             packageContent.startsWith("Cannot connect to MCP server") ||
             packageContent.startsWith("Cannot get MCP server configuration") ||
             packageContent == "Skill '$packageName' is set to not show to AI"
+    }
+
+    /** Capture the draft once. Saving must replace the exact item, never append to another chat. */
+    fun createImageAttachmentEditTarget(original: AttachmentInfo): ImageAttachmentEditTarget {
+        require(original.mimeType.startsWith("image/"))
+        val target = synchronized(attachmentListLock) { drafts.captureTarget() }
+        return ImageAttachmentEditTarget { edited ->
+            require(edited.mimeType == "image/png")
+            synchronized(attachmentListLock) {
+                if (!target.valid) false
+                else {
+                    var replaced = false
+                    _attachments.value = drafts.update(target, _attachments.value) { current ->
+                        val index = current.indexOf(original)
+                        if (index < 0) current
+                        else {
+                            val usedNames = current.filterIndexed { position, _ -> position != index }
+                                .mapTo(mutableSetOf()) { it.fileName }
+                            val replacement = edited.copy(fileName = uniqueAttachmentFileName(edited.fileName, usedNames))
+                            replaced = true
+                            current.mapIndexed { position, item -> if (position == index) replacement else item }
+                        }
+                    }
+                    replaced
+                }
+            }
+        }
     }
 
     /** Removes an attachment by its file path */

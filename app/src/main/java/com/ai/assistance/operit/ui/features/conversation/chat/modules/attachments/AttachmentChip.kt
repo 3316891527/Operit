@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments
 
+import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
+
 import android.net.Uri
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +51,7 @@ fun AttachmentChip(
     attachments: List<AttachmentInfo>,
     onRemove: () -> Unit,
     onInsert: () -> Unit,
+    onEditImage: ((AttachmentInfo) -> ImageAttachmentEditTarget)? = null,
 ) {
     val context = LocalContext.current
     val isImage = attachmentInfo.mimeType.startsWith("image/")
@@ -75,6 +78,22 @@ fun AttachmentChip(
             images = images,
             initialImageUri = checkNotNull(imageModel),
             onDismiss = { previewVisible = false },
+            onEditImage = onEditImage?.let { captureTarget ->
+                { image ->
+                    val original = attachments.first { Uri.fromFile(File(it.filePath)) == image.uri }
+                    val target = captureTarget(original)
+                    val replace: (File) -> Boolean = { output ->
+                        target.replace(original.copy(
+                            filePath = output.absolutePath,
+                            fileName = File(original.fileName).nameWithoutExtension + ".png",
+                            mimeType = "image/png",
+                            fileSize = output.length(),
+                            content = "",
+                        ))
+                    }
+                    replace
+                }
+            },
         )
     }
 

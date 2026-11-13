@@ -1,5 +1,11 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images
 
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.images.editor.ImageEditorDialog
+
+import androidx.compose.material.icons.filled.Edit
+
+import java.io.File
+
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -28,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import androidx.compose.material3.MaterialTheme
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
@@ -54,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
@@ -89,6 +97,7 @@ fun AttachmentImagePreviewDialog(
     images: List<AttachmentPreviewImage>,
     initialImageUri: Uri,
     onDismiss: () -> Unit,
+    onEditImage: ((AttachmentPreviewImage) -> ((File) -> Boolean))? = null,
 ) {
     require(images.isNotEmpty())
     val initialPage = remember(images, initialImageUri) {
@@ -105,6 +114,8 @@ fun AttachmentImagePreviewDialog(
         if (pagerState.currentPage > images.lastIndex) pagerState.scrollToPage(images.lastIndex)
     }
     val currentPage = pagerState.currentPage.coerceIn(0, images.lastIndex)
+    var editing by remember { mutableStateOf<AttachmentPreviewImage?>(null) }
+    var editTarget by remember { mutableStateOf<((File) -> Boolean)?>(null) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -132,6 +143,29 @@ fun AttachmentImagePreviewDialog(
                         if (page == pagerState.currentPage) multiTouchActive = active
                     },
                 )
+            }
+            if (onEditImage != null) {
+                Surface(
+                    onClick = {
+                        val current = images[currentPage]
+                        editTarget = onEditImage(current)
+                        editing = current
+                    },
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Black.copy(alpha = 0.58f),
+                    contentColor = Color.White,
+                    modifier = Modifier.align(Alignment.BottomStart)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                        .padding(16.dp),
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(R.string.edit), modifier = Modifier.padding(start = 6.dp))
+                    }
+                }
             }
             Row(
                 modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
@@ -167,6 +201,13 @@ fun AttachmentImagePreviewDialog(
                     Icon(Icons.Default.Close, stringResource(R.string.close), tint = Color.White)
                 }
             }
+        }
+        editing?.let { image ->
+            ImageEditorDialog(
+                imageUri = image.uri,
+                onApply = checkNotNull(editTarget),
+                onDismiss = { editing = null; editTarget = null },
+            )
         }
     }
 }
