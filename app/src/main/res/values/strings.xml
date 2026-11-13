@@ -9443,4 +9443,18 @@
     <string name="image_editor_crop">裁剪</string>
     <string name="image_editor_eraser">橡皮擦</string>
 
+    <string name="thinking_config_add_preset">从预设添加</string>
+    <string name="thinking_config_preset_title">此提供商的思考预设</string>
+    <string name="thinking_config_preset_hint">添加完整模板副本，保留已有配置。预设追加到末尾，可手动置顶或上移。</string>
+    <string name="thinking_config_add_all_presets">添加全部预设</string>
+    <string name="thinking_config_copy_rule">复制规则</string>
+    <string name="thinking_config_move_top">置顶</string>
+    <string name="thinking_config_rule_actions">规则操作</string>
+    <string name="thinking_config_manual_order">按从上到下的顺序使用第一条匹配规则。新建、预设和复制规则均追加到末尾；可手动置顶或上移。</string>
+    <string name="thinking_config_preview_model">当前模型：%1$s</string>
+    <string name="thinking_config_preview_match">命中第 %1$d 条：%2$s · %3$s</string>
+    <string name="thinking_config_preview_none">未匹配规则：不添加思考控制参数，使用模型默认行为。</string>
+    <string name="thinking_config_preview_invalid">配置尚未有效：%1$s</string>
+    <string name="thinking_config_unsupported">不控制思考</string>
+    <string name="thinking_config_advanced_preserved">复合匹配条件和高级字段会完整保留；这里只修改显示出的匹配条件。</string>
 </resources>

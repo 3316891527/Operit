@@ -9466,4 +9466,18 @@
     <string name="image_editor_mosaic">Mosaic</string>
     <string name="image_editor_crop">Crop</string>
     <string name="image_editor_eraser">Eraser</string>
+    <string name="thinking_config_add_preset">Add from presets</string>
+    <string name="thinking_config_preset_title">Thinking presets for this provider</string>
+    <string name="thinking_config_preset_hint">Add a complete template copy without replacing existing rules. Presets are appended; move them manually to change priority.</string>
+    <string name="thinking_config_add_all_presets">Add all presets</string>
+    <string name="thinking_config_copy_rule">Duplicate rule</string>
+    <string name="thinking_config_move_top">Move to top</string>
+    <string name="thinking_config_rule_actions">Rule actions</string>
+    <string name="thinking_config_manual_order">The first matching rule from top to bottom is used. New rules, presets and duplicates are appended. Use the ordering controls to change priority.</string>
+    <string name="thinking_config_preview_model">Model: %1$s</string>
+    <string name="thinking_config_preview_match">Rule %1$d matches: %2$s · %3$s</string>
+    <string name="thinking_config_preview_none">No matching rule: no thinking controls are added; the model uses its defaults.</string>
+    <string name="thinking_config_preview_invalid">Configuration is not valid yet: %1$s</string>
+    <string name="thinking_config_unsupported">No thinking controls</string>
+    <string name="thinking_config_advanced_preserved">Compound match conditions and advanced fields are preserved. Only the displayed match condition is edited here.</string>
 </resources>
