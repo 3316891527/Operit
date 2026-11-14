@@ -33,7 +33,7 @@ upstream_target: dev
 ## 静态验收记录
 - 606 个原跟踪文件均位于迁移后的路径，旧物理目录中没有剩余跟踪文件。
 - 全仓 Markdown 对比检查复用 `ci/script/check_markdown_links.py` 的解析和重命名规则，改用 `git cat-file --batch` 批量读取：新增本地断链 0，基线已有断链 8；修复了迁移暴露的 6 条相对链接。
-- Python AST 检查 8 个文件、严格 JSON 检查 1 个正文修改文件通过；原样移动的 JSONC 配置保持原样。
+- Python AST 检查 8 个文件通过；移除两个 TypeScript 配置中的 BOM 和一行失效注释以满足仓库严格 JSON 检查，编译选项无语义变更。
 - `app/config/offline-pack-sources.json`、`offline-packs.json` 和 `builtin-extensions.json` 与基线一致。
 - 已补充新旧 Git revision 布局生成相同逻辑快照的回归源码，并将当前资源准备夹具迁到新物理布局。
 - 本地未运行编译、构建、测试或设备验证；回归执行结果以 PR 的 CI 为准。
