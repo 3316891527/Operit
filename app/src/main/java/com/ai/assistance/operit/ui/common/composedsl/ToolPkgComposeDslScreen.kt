@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.common.composedsl
 
+import com.ai.assistance.operit.ui.common.oktoast.ErrorToast
 import android.annotation.SuppressLint
 import android.graphics.Color as AndroidColor
 import android.content.Intent
@@ -1995,23 +1996,7 @@ fun ToolPkgComposeDslDialogHost(
             )
         }
         errorMessage != null -> {
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = onDismiss,
-                title = {
-                    Text(text = request.title)
-                },
-                text = {
-                    Text(
-                        text = errorMessage.orEmpty(),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.floating_close))
-                    }
-                }
-            )
+            ErrorToast(errorMessage = errorMessage.orEmpty(), onShown = onDismiss)
         }
         rootNode != null -> {
             CompositionLocalProvider(

@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.hub
 
+import com.ai.assistance.operit.ui.common.oktoast.ErrorToast
 import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -230,9 +231,6 @@ private fun WorkspaceHubContent(
         )
     }
     sessionError?.let { error ->
-        AlertDialog(onDismissRequest = { sessionError = null },
-            title = { Text(stringResource(R.string.workspace_terminal_failed)) },
-            text = { Text(error) },
-            confirmButton = { TextButton(onClick = { sessionError = null }) { Text(stringResource(android.R.string.ok)) } })
+        ErrorToast(errorMessage = error, onShown = { sessionError = null })
     }
 }

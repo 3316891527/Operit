@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.extensions.packages.market
 
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 市场检查更新按钮 + 结果弹窗（包 / MCP / 技能三类界面共用）。
+ * 市场检查更新按钮；简单结果使用提示卡片，有更新时保留详情跳转确认。
  * @param markerProvider 读取当前安装项市场安装标记的挂起函数；返回 null 视为非市场来源
  * @param onOpenMarketDetail 有更新时点击"前往更新"跳转市场详情页
  */
@@ -38,14 +40,15 @@ fun MarketUpdateCheckButton(
     modifier: Modifier = Modifier
 ) {
     var isChecking by remember { mutableStateOf(false) }
-    var result by remember { mutableStateOf<MarketUpdateCheckResult?>(null) }
+    val context = LocalContext.current
+    var availableUpdate by remember { mutableStateOf<MarketUpdateCheckResult.UpdateAvailable?>(null) }
     val scope = rememberCoroutineScope()
 
     OutlinedButton(
         onClick = {
             if (isChecking) return@OutlinedButton
             isChecking = true
-            result = null
+            availableUpdate = null
             scope.launch {
                 val marker =
                     try {
@@ -53,7 +56,17 @@ fun MarketUpdateCheckButton(
                     } catch (e: Exception) {
                         null
                     }
-                result = checkMarketUpdate(marker)
+                when (val result = checkMarketUpdate(marker)) {
+                    is MarketUpdateCheckResult.UpdateAvailable -> availableUpdate = result
+                    is MarketUpdateCheckResult.UpToDate ->
+                        OKToast.success(context, R.string.pkg_check_update_up_to_date).show()
+                    MarketUpdateCheckResult.NotFromMarket ->
+                        OKToast.info(context, R.string.pkg_check_update_not_market).show()
+                    MarketUpdateCheckResult.EntryMissing ->
+                        OKToast.warning(context, R.string.pkg_check_update_entry_missing).show()
+                    MarketUpdateCheckResult.Failed ->
+                        OKToast.error(context, R.string.pkg_check_update_failed, OKToast.LENGTH_LONG).show()
+                }
                 isChecking = false
             }
         },
@@ -76,46 +89,21 @@ fun MarketUpdateCheckButton(
         Text(stringResource(R.string.pkg_check_update))
     }
 
-    val current = result
-    if (current != null) {
+    availableUpdate?.let { current ->
         AlertDialog(
-            onDismissRequest = { result = null },
+            onDismissRequest = { availableUpdate = null },
             title = { Text(stringResource(R.string.pkg_check_update)) },
-            text = {
-                Text(
-                    text =
-                        when (current) {
-                            is MarketUpdateCheckResult.UpToDate ->
-                                stringResource(R.string.pkg_check_update_up_to_date)
-                            is MarketUpdateCheckResult.UpdateAvailable ->
-                                stringResource(R.string.pkg_check_update_available, current.latestVersion)
-                            MarketUpdateCheckResult.NotFromMarket ->
-                                stringResource(R.string.pkg_check_update_not_market)
-                            MarketUpdateCheckResult.EntryMissing ->
-                                stringResource(R.string.pkg_check_update_entry_missing)
-                            MarketUpdateCheckResult.Failed ->
-                                stringResource(R.string.pkg_check_update_failed)
-                        }
-                )
-            },
+            text = { Text(stringResource(R.string.pkg_check_update_available, current.latestVersion)) },
             confirmButton = {
-                if (current is MarketUpdateCheckResult.UpdateAvailable) {
-                    TextButton(
-                        onClick = {
-                            result = null
-                            onOpenMarketDetail(current.entry)
-                        }
-                    ) {
-                        Text(stringResource(R.string.pkg_check_update_go))
-                    }
-                } else {
-                    TextButton(onClick = { result = null }) {
-                        Text(stringResource(R.string.ok))
-                    }
+                TextButton(onClick = {
+                    availableUpdate = null
+                    onOpenMarketDetail(current.entry)
+                }) {
+                    Text(stringResource(R.string.pkg_check_update_go))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { result = null }) {
+                TextButton(onClick = { availableUpdate = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             }

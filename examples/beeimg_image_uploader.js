@@ -32,6 +32,7 @@
 const beeimgUploader = (function () {
     // API配置
     const API_ENDPOINT = "https://beeimg.com/api/upload/file/json/";
+    const HTTP_TIMEOUT_MS = 600000;
     function isRecord(value) {
         return typeof value === "object" && value !== null;
     }
@@ -105,6 +106,8 @@ const beeimgUploader = (function () {
         const resp = await Tools.Net.uploadFile({
             url: API_ENDPOINT,
             method: "POST",
+            // 与生图参考图上传一致，显式覆盖宿主的短超时。
+            timeout_ms: HTTP_TIMEOUT_MS,
             headers: {
                 // 尽量模拟浏览器 UA，降低被风控概率
                 "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
