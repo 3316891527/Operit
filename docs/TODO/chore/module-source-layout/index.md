@@ -1,6 +1,6 @@
 ---
 title: Support modules and Web Chat layout
-status: in_progress
+status: completed
 personal_repository: https://github.com/3316891527/Operit
 upstream_target: dev
 ---
@@ -31,3 +31,13 @@ upstream_target: dev
 - `settings.gradle.kts` 的 Gradle 模块名未改变，`modules/terminal` gitlink 与 `.gitmodules` 一致
 - Web Chat 构建输出仍同步到 `app/src/main/assets/web-chat`
 - 本地未执行 Gradle/Node 构建或测试，远程 PR 工作流负责行为验证
+
+## 验证记录
+
+- 索引树确认非隐藏根目录为 8 个；支持模块和 Web Chat 已提交并推送
+- terminal gitlink 在迁移前后均为 `62dbf46a0c1af5255eb22f0c48ca215974ab1a10`
+- 三个移动后 CMake 公共脚本引用均能解析到根 `cmake/operit_git_source.cmake`
+- 终端同步按各分支固定提交的 `.gitmodules` 声明解析路径
+- 全仓 Markdown 对比新增断链 0；Python/JSON 语法与差异空白检查通过
+- [Debug Build](https://github.com/3316891527/Operit/actions/runs/43591712450) 在 `fd7337f8` 上已成功：Gradle assembleDebug、终端命令打包、外部资源打包校验和 Android 产物上传均通过；后续提交仅调整文档和本地配置模板
+- 远程 PR Check 已确认 `853cdd29` 的 Fast checks 和 Android JVM tests 通过；最终检查状态见 PR checks

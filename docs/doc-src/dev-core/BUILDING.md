@@ -168,13 +168,12 @@ git submodule update --init --recursive modules/terminal
 ```bash
 git submodule update --init --recursive modules/terminal
 ```
-需要本地发行签名配置时，可复制模板并填写本机值：
+首次创建本地发行签名配置时，可复制[配置模板](local.properties.example)并填写本机值；已有 `local.properties` 时，在原文件中补充签名字段。
+
 ```bash
 cp docs/doc-src/dev-core/local.properties.example local.properties
 ```
 
-git submodule update --init --recursive modules/terminal
-```  
 其中 `ncnn`、`sherpa-ncnn`、WAMR、`llama.cpp`、QuickJS、MNN 和 MNN 使用的 KleidiAI 由 CMake 通过 `FetchContent` 获取。CMake 会先解析远端 ref 的 commit，再下载对应 GitHub archive，因此不会拉取完整 Git 历史；默认跟随各自上游主分支、固定提交或上游工程声明的 tag。如需覆盖某个 ref，可在 CMake 参数中设置 `OPERIT_NCNN_GIT_REF`、`OPERIT_SHERPA_NCNN_GIT_REF`、`OPERIT_WAMR_GIT_REF`、`OPERIT_LLAMA_CPP_GIT_REF`、`OPERIT_QUICKJS_GIT_REF`、`OPERIT_MNN_GIT_REF` 或 `OPERIT_KLEIDIAI_GIT_REF`。
 
 MNN 的 Android CMake 配置会在加入 MNN 子项目前，使用 MNN 自带的 FlatBuffers 源码编译一个宿主机 `flatc`，并从同一份 `schema/default/*.fbs` 重新生成 `schema/current/*.h`。因此构建机除了 Android NDK 和 CMake，还必须提供可用的宿主机 C/C++ 编译器；Linux 构建明确使用 `gcc` 和 `g++`，生成器不会使用 Android ABI 编译，也不会依赖工作区外的预生成头文件。

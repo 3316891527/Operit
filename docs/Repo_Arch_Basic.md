@@ -90,5 +90,18 @@ Operit/
 
 ## 相关说明
 
-- `app`、`:terminal`、`:mnn`、`:llama`、`:showerclient`、`:quickjs`、`:a2ui-compat`、`:material-icons-subset` 是根 `settings.gradle.kts` 声明的 Gradle 模块；源码物理目录集中在 `modules/`，Web Chat 位于 `app/web-chat/`。
+- `app`、`:terminal`、`:mnn`、`:llama`、`:showerclient`、`:quickjs`、`:a2ui-compat`、`:material-icons-subset` 是根 `settings.gradle.kts` 声明的 Gradle 模块；应用源码位于 `app/`，支持模块源码集中在 `modules/`，Web Chat 位于 `app/web-chat/`。
 - 仍作为 Git 子模块维护的第三方目录，以根目录的 `.gitmodules` 为准。
+
+## 根目录文件
+
+根目录保留项目入口和工具按根目录发现的配置：
+
+- `README.md`、`README.zh-CN.md` 与 `LICENSE`：双语项目入口及许可证
+- `.gitattributes`、`.gitignore`、`.gitmodules`：Git 属性、忽略规则和子模块声明
+- `AGENTS.md`：覆盖整个仓库的协作约定
+- `settings.gradle.kts`、`build.gradle.kts`、`gradle.properties`、`gradlew`、`gradlew.bat`：Gradle 根项目与跨平台构建入口
+- `package.json`、`package-lock.json`：仓库根级脚本和 npm 的固定依赖树
+- `pnpm-workspace.yaml`、`pnpm-lock.yaml`：包含 `tools/mcp_bridge` 的 pnpm 工作区声明与固定依赖树
+
+架构说明集中在 `docs/`，本地签名[配置模板](doc-src/dev-core/local.properties.example)随开发指南维护。开发者和 CI 创建的 `local.properties` 仍位于仓库根目录，并由 Git 忽略。
