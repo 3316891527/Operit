@@ -1,15 +1,8 @@
 from dataclasses import dataclass
 from functools import lru_cache
 import hashlib
-from pathlib import Path
 import re
 
-def repository_path(root: Path, path: str) -> Path:
-    if path.startswith('examples/'):
-        path = 'plugins/' + path
-    elif path.startswith('tools/example_packages/'):
-        path = 'plugins/tooling/' + path[len('tools/'):]
-    return root / path
 
 @dataclass(frozen=True)
 class Token:

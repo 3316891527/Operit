@@ -8,7 +8,7 @@ import { installMockRuntime, loadWorldBookModules } from "./support/mock_runtime
 
 const importFixturePath = path.resolve(
   process.cwd(),
-  "examples",
+  "plugins", "examples",
   "worldbook",
   "tests",
   "fixtures",

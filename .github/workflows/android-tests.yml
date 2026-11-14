@@ -34,8 +34,7 @@ on:
       - tools/web_chat_cli/**
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
-      - tools/packages_whitelist.txt
-      - plugins/tooling/example_packages/sync_example_packages.py
+      - plugins/tooling/example_packages/**
       - web-chat/**
 
 concurrency:

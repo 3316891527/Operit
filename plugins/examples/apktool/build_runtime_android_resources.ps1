@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$exampleRoot = Join-Path $repoRoot "examples\apktool"
+$repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+$exampleRoot = $PSScriptRoot
 $tempRoot = Join-Path $repoRoot "temp\apk-reverse-runtime"
 $resourceDir = Join-Path $exampleRoot "resources\apktool"
 $apktoolPatchSourceRoot = Join-Path $exampleRoot "runtime_patch_src"

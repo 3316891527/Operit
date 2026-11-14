@@ -11,7 +11,7 @@ function extractMetadataBanner(entryFilePath) {
 }
 
 function resolveRepoRoot() {
-    return path.resolve(__dirname, '..', '..');
+    return path.resolve(__dirname, '..', '..', '..');
 }
 
 function listTsSourceFiles(dir) {
@@ -54,7 +54,7 @@ async function main() {
     }
 
     const repoRoot = resolveRepoRoot();
-    const examplesDir = path.join(repoRoot, 'examples');
+    const examplesDir = path.join(repoRoot, 'plugins', 'examples');
     const githubDir = path.join(examplesDir, 'github');
 
     const tsconfig = path.join(githubDir, 'tsconfig.json');

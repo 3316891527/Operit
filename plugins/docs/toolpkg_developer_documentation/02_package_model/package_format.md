@@ -292,7 +292,7 @@ Operit 的 ToolPkg API 支持关系如下：
 
 **子包脚本格式**：
 - 子包脚本必须是标准的 JavaScript 文件
-- 必须包含 `METADATA` 注释块（参考 [SCRIPT_DEV_GUIDE.md](../../../SCRIPT_DEV_GUIDE.md)）
+- 必须包含 `METADATA` 注释块（参考 [SCRIPT_DEV_GUIDE.md](../../../../docs/SCRIPT_DEV_GUIDE.md)）
 - 脚本中定义的工具会被注册为 `<subpackage_id>:<tool_name>` 格式
 
 #### 3.2.4 WASM 模块
@@ -881,7 +881,7 @@ my_toolpkg/
 
 **步骤 3：编写子包脚本**
 
-子包脚本必须包含 `METADATA` 块，参考 [SCRIPT_DEV_GUIDE.md](../../../SCRIPT_DEV_GUIDE.md)。
+子包脚本必须包含 `METADATA` 块，参考 [SCRIPT_DEV_GUIDE.md](../../../../docs/SCRIPT_DEV_GUIDE.md)。
 
 **步骤 4：打包成 ZIP**
 
@@ -1609,5 +1609,5 @@ ls -lh app/src/main/assets/packages/windows_control.toolpkg
 
 ## 12. 参考资料
 
-- [脚本开发指南](../../../SCRIPT_DEV_GUIDE.md)：了解如何编写子包脚本
+- [脚本开发指南](../../../../docs/SCRIPT_DEV_GUIDE.md)：了解如何编写子包脚本
 - [ToolPkg API 文档](../03_runtime/registry.md)：了解注册 API

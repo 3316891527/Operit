@@ -4,8 +4,8 @@ import java.util.Properties
 plugins {
     `java-library`
 }
+val repoRoot = projectDir.parentFile.parentFile.parentFile.parentFile
 
-val repoRoot = projectDir.parentFile.parentFile.parentFile
 val localProperties = Properties()
 val localPropertiesFile = repoRoot.resolve("local.properties")
 if (localPropertiesFile.isFile) {

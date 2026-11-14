@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 
-from source_text import body_hash, header, replace_names, repository_path, tokens
+from source_text import body_hash, header, replace_names, tokens
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / 'docs/TODO/chore/package-layout/api-migration.json'
@@ -154,9 +154,9 @@ def main():
     scanned = 0
     paths = set(tree) | {item['newPath'] for item in manifest['sourceChanges']}
     for path in sorted(paths):
-        if not path.startswith(('app/', 'examples/', 'plugins/', 'tools/', 'ci/', '.github/')) or path.startswith('tools/package_layout/'):
+        if not path.startswith(('app/', 'examples/', 'tools/', 'ci/', '.github/')) or path.startswith('tools/package_layout/'):
             continue
-        file = repository_path(ROOT, path)
+        file = ROOT / path
         if not file.is_file():
             continue
         data = file.read_bytes()

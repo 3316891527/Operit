@@ -35,8 +35,7 @@ TOOLPKG_PATTERNS = (
     "package-lock.json",
     "npm-shrinkwrap.json",
     "pnpm-workspace.yaml",
-    "tools/packages_whitelist.txt",
-    "plugins/tooling/example_packages/sync_example_packages.py",
+    "plugins/tooling/example_packages/**",
 )
 ANDROID_FULL_PATTERNS = (
     ".github/workflows/build.yml",

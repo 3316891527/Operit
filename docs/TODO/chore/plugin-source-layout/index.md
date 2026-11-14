@@ -1,6 +1,6 @@
 ---
 title: Plugin source layout
-status: in_progress
+status: complete
 personal_repository: https://github.com/3316891527/Operit
 upstream_target: dev
 ---
@@ -23,9 +23,17 @@ upstream_target: dev
 1. [x] 移动三个插件开发目录，并将同步工具对仓库根目录和示例目录的定位改为新路径
 2. [x] 更新内置资源生成、源码摘要映射、应用资源输入及 CI 路径过滤
 3. [x] 更新活动文档入口、交叉引用和示例路径；保留固定发行快照的历史路径
-4. [ ] 静态检查仓库内旧物理路径引用、相对 Markdown 链接及差异空白
+4. [x] 静态检查仓库内旧物理路径引用、相对 Markdown 链接及差异空白
 ## 验收
 - 插件示例、同步工具和 ToolPkg 开发参考均位于 `plugins/`
-- 离线包文件内容、包 ID、源码指纹逻辑和资源发行快照不因移动而变更
+- 已发布离线包、包 ID 与资源发行快照保持原样；源码摘要沿用稳定的逻辑路径，纯路径移动不改变指纹输入名，后续实际源码或同步工具修改仍会参与指纹计算
 - Gradle、脚本、CI 和活动文档不再依赖旧物理目录
 - 本地构建或测试遵循仓库 `AGENTS.md`，未获明确要求不运行
+
+## 静态验收记录
+- 606 个原跟踪文件均位于迁移后的路径，旧物理目录中没有剩余跟踪文件。
+- 全仓 Markdown 对比检查复用 `ci/script/check_markdown_links.py` 的解析和重命名规则，改用 `git cat-file --batch` 批量读取：新增本地断链 0，基线已有断链 8；修复了迁移暴露的 6 条相对链接。
+- Python AST 检查 8 个文件、严格 JSON 检查 1 个正文修改文件通过；原样移动的 JSONC 配置保持原样。
+- `app/config/offline-pack-sources.json`、`offline-packs.json` 和 `builtin-extensions.json` 与基线一致。
+- 已补充新旧 Git revision 布局生成相同逻辑快照的回归源码，并将当前资源准备夹具迁到新物理布局。
+- 本地未运行编译、构建、测试或设备验证；回归执行结果以 PR 的 CI 为准。

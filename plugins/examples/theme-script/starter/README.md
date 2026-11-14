@@ -42,9 +42,9 @@ JSON 的 `palette.light/dark` 分别覆盖九个颜色 token，其余 token 使�
 
 ## 完整参考
 
-- [制作手册与全部字段](../../../docs/doc-src/feature-protocol/theme_authoring_guide.md)
-- [只读设置参数目录](../../../docs/doc-src/feature-protocol/theme_settings_reference.md)
-- [接口概览](../../../docs/doc-src/feature-protocol/theme_script_api.md)
+- [制作手册与全部字段](../../../../docs/doc-src/feature-protocol/theme_authoring_guide.md)
+- [只读设置参数目录](../../../../docs/doc-src/feature-protocol/theme_settings_reference.md)
+- [接口概览](../../../../docs/doc-src/feature-protocol/theme_script_api.md)
 - [TypeScript 类型声明](../oktheme.d.ts)
 
 完整包的根 JSON 目前最多 8 层，本例把复杂图层放在 JS 中生成，静态模式覆盖仅使用较浅的部件字段。独立脚本输出仍受 16 层、128 KiB、128 图层及执行预算限制。

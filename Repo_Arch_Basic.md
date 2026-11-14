@@ -9,7 +9,10 @@ Operit/
 	app/             主 Android 应用
 	ci/              CI 与本地自动化脚本
 	docs/            项目文档与文档资源
-	plugins/examples/        JavaScript/TypeScript 工具包示例
+	plugins/         插件示例、开发文档和同步工具
+		examples/     JavaScript/TypeScript 工具包示例与共享类型
+		docs/         完整 ToolPkg 开发参考
+		tooling/      示例同步工具和白名单
 	gradle/          Gradle Wrapper 与版本目录
 	llm/             本地大模型 Android 模块
 		llama/        llama.cpp 本地推理 Android 模块
@@ -35,9 +38,9 @@ Operit/
 
 这是项目文档与文档资源目录，包含核心开发指南、脚本和工具包开发说明、架构与协议文档，以及 README 使用的图片等静态资源。
 
-### [`examples`](plugins/examples/)
+### [`plugins`](plugins/)
 
-这是工具包和脚本示例集合，主要使用 JavaScript 和 TypeScript，覆盖聊天、搜索、绘图、浏览器自动化、系统控制、地图等扩展场景。同名的 `.ts` 和 `.js` 文件通常分别用于源码示例和可执行版本。
+插件开发材料集中在这里：`examples/` 收录 JavaScript/TypeScript 工具包、主题脚本及共享类型声明，`docs/` 提供完整 ToolPkg 开发参考，`tooling/` 维护示例同步工具和白名单。同名的 `.ts` 和 `.js` 文件通常分别用于源码示例和可执行版本。
 
 ### [`gradle`](gradle/)
 
