@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "releaseTag": "resources-v3-733a1cce67e0bf8285ba",
-  "sourceRevision": "fac0ebebfe9c08483c41145b5ef66510c6faf41c",
+  "releaseTag": "resources-v3-03c1637ee4baeaefa7b1",
+  "sourceRevision": "9d645198b3cab8748e053edc0d691d47130ce126",
   "sources": [
     "automatic_ui_base.js",
     "automatic_ui_subagent.js",
@@ -519,19 +519,19 @@
     ],
     [
       "examples/minimax_draw.js",
-      "c93d318987c50939f133913c46811556b688292c59b427ca4c9aa62686cdb258"
+      "e8d6ae17498e1573ad7ca704cde483ef6c663b2d62000f48519c1f112a93590d"
     ],
     [
       "examples/minimax_draw.ts",
-      "3d8f591bc1aa5315035a99fb966337bf9a7269edd37579953ee0895bfc51c09e"
+      "58e0713c75814cef0cda9285f57e1d734011c1ed837eebc8fa661a1f034f990a"
     ],
     [
       "examples/nanobanana_draw.js",
-      "464b3d176da3bdac149609ca748d8aafaa75c697d946b15da862dc27b079afc9"
+      "889ef667a1dbc5ce91c04a7d20faee30c3fed8a247e557be39e5bad27807112f"
     ],
     [
       "examples/nanobanana_draw.ts",
-      "9ddae8027ea30c7099cb97c560c756aca00f3f371e4b94e8f6a2d15226ac8be7"
+      "64268cf207db2b6c4aa024790574c64f41bb433b4c8962686be06d7d443bbb9a"
     ],
     [
       "examples/openai_draw.js",

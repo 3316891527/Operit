@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseTag": "resources-v3-733a1cce67e0bf8285ba",
+  "releaseTag": "resources-v3-03c1637ee4baeaefa7b1",
   "packs": [
     {
       "id": "sandbox-automatic-ui-base",
@@ -28,7 +28,7 @@
         "path": "operit-sandbox-automatic-ui-base-f4907438678a50e4713b.zip",
         "bytes": 5412,
         "sha256": "83c840c4f650e2bf923980cc9a5aa5ef47f295e9fcbbd7c8c64e625771956ddd",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-automatic-ui-base-f4907438678a50e4713b.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-automatic-ui-base-f4907438678a50e4713b.zip"
       }
     },
     {
@@ -57,7 +57,7 @@
         "path": "operit-sandbox-automatic-ui-subagent-c0f43a27c2c7a128e3aa.zip",
         "bytes": 11044,
         "sha256": "ded5b2b543c4499386f8974678b818d26072350b0e8bd4496d98cbdd95188f5b",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-automatic-ui-subagent-c0f43a27c2c7a128e3aa.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-automatic-ui-subagent-c0f43a27c2c7a128e3aa.zip"
       }
     },
     {
@@ -86,7 +86,7 @@
         "path": "operit-sandbox-code-runner-c152042fd33cfbcf1b7b.zip",
         "bytes": 8522,
         "sha256": "445e9fc2d7f127eed1b1430cfe8b5eda321a3caa6177345cf9556e2a111752da",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-code-runner-c152042fd33cfbcf1b7b.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-code-runner-c152042fd33cfbcf1b7b.zip"
       }
     },
     {
@@ -115,7 +115,7 @@
         "path": "operit-sandbox-crossref-5ddb93b27a36ec2467a9.zip",
         "bytes": 4312,
         "sha256": "f69340e9583a8eeb99e99d344e1fc4ed6e93851f2db50f7faa884d92b20e1240",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-crossref-5ddb93b27a36ec2467a9.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-crossref-5ddb93b27a36ec2467a9.zip"
       }
     },
     {
@@ -144,7 +144,7 @@
         "path": "operit-sandbox-daily-life-b7b9af011fcd223da985.zip",
         "bytes": 13057,
         "sha256": "1f3718680853c7a35212da7192d3e3e9dcd3afa13f4aa8d2bd6fe6d1232cf297",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-daily-life-b7b9af011fcd223da985.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-daily-life-b7b9af011fcd223da985.zip"
       }
     },
     {
@@ -173,7 +173,7 @@
         "path": "operit-sandbox-duckduckgo-bc274f30438839eb4c7c.zip",
         "bytes": 3500,
         "sha256": "a2e5163dd9a0794633121562e79c9fb0bd62500bf9ef266032672bb057b5614c",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-duckduckgo-bc274f30438839eb4c7c.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-duckduckgo-bc274f30438839eb4c7c.zip"
       }
     },
     {
@@ -202,7 +202,7 @@
         "path": "operit-sandbox-extended-memory-tools-cb73824a7b2bb7bca2a7.zip",
         "bytes": 4103,
         "sha256": "0211f6395062a0b165c9d1e95eaa6b1bc065847b674edff1954e9e8ca3b18ce9",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-extended-memory-tools-cb73824a7b2bb7bca2a7.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-extended-memory-tools-cb73824a7b2bb7bca2a7.zip"
       }
     },
     {
@@ -231,7 +231,7 @@
         "path": "operit-sandbox-extended-http-tools-8c158eda8a8e8aec64ec.zip",
         "bytes": 3070,
         "sha256": "434879050fcf5ea1cb57c260fd5258b97581368b09b057bbce3252d394a53f7d",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-extended-http-tools-8c158eda8a8e8aec64ec.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-extended-http-tools-8c158eda8a8e8aec64ec.zip"
       }
     },
     {
@@ -260,7 +260,7 @@
         "path": "operit-sandbox-extended-file-tools-597b8f6b6cb3ef72c5f1.zip",
         "bytes": 2551,
         "sha256": "4caadd207e9767ce69b79c57e50fb6b431076c756108e490ba1fa9c4c459b017",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-extended-file-tools-597b8f6b6cb3ef72c5f1.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-extended-file-tools-597b8f6b6cb3ef72c5f1.zip"
       }
     },
     {
@@ -289,7 +289,7 @@
         "path": "operit-sandbox-ffmpeg-2a82077604674346e309.zip",
         "bytes": 2289,
         "sha256": "1a3301fc5e04a09ac837791d19cd937b73e6fa9f24942ef05f4c8369ed157870",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-ffmpeg-2a82077604674346e309.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-ffmpeg-2a82077604674346e309.zip"
       }
     },
     {
@@ -318,7 +318,7 @@
         "path": "operit-sandbox-file-converter-6b4eeaea70ffa0fd86b8.zip",
         "bytes": 4280,
         "sha256": "35db10375e3a5e4f89ef3989b5219b3588c2f326418397658c7adc1d802cb01f",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-file-converter-6b4eeaea70ffa0fd86b8.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-file-converter-6b4eeaea70ffa0fd86b8.zip"
       }
     },
     {
@@ -347,7 +347,7 @@
         "path": "operit-sandbox-google-search-85f6f045e96f6e3607b1.zip",
         "bytes": 3317,
         "sha256": "e3d208cbbf08b9853838cbd36c108b049ffa7707c332f6d2c38a7ae5eb711f67",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-google-search-85f6f045e96f6e3607b1.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-google-search-85f6f045e96f6e3607b1.zip"
       }
     },
     {
@@ -376,7 +376,7 @@
         "path": "operit-sandbox-github-f2ebbc62202d28665b3d.zip",
         "bytes": 12207,
         "sha256": "3218384fa7b66f6fab6e4eda9d0d8f874e5370594b70ac9dca2f45b4464ae7c8",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-github-f2ebbc62202d28665b3d.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-github-f2ebbc62202d28665b3d.zip"
       }
     },
     {
@@ -405,18 +405,18 @@
         "path": "operit-sandbox-extended-chat-4b666cd83cf158aeab29.zip",
         "bytes": 6364,
         "sha256": "dec55083df7079c3f60f823e687588c2f287d7cb7b5a14678ef69c12cc16a3bb",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-extended-chat-4b666cd83cf158aeab29.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-extended-chat-4b666cd83cf158aeab29.zip"
       }
     },
     {
       "id": "sandbox-nanobanana-draw",
       "name": "nanobanana_draw",
-      "version": "8f7698bf2da25aaaf0bf",
+      "version": "c519ea8ab1b15f12fada",
       "files": [
         {
           "path": "packages/nanobanana_draw.js",
-          "bytes": 29580,
-          "sha256": "464b3d176da3bdac149609ca748d8aafaa75c697d946b15da862dc27b079afc9",
+          "bytes": 29723,
+          "sha256": "889ef667a1dbc5ce91c04a7d20faee30c3fed8a247e557be39e5bad27807112f",
           "executable": false
         }
       ],
@@ -428,24 +428,24 @@
           "nanobanana_draw"
         ],
         "source": "nanobanana_draw.js",
-        "sourceFingerprint": "a03ff0fd0c66938416ba34cc218b56f04701092cc07430f993b0330460a666c7"
+        "sourceFingerprint": "2e510dcc445d373b8da2601d149c7da28acd555d3c285e3cd7107ad7aee1b8d5"
       },
       "archive": {
-        "path": "operit-sandbox-nanobanana-draw-8f7698bf2da25aaaf0bf.zip",
-        "bytes": 8176,
-        "sha256": "716b872e79b3cd10ae0c626987f9a16b1879262e377c4a7466b063d6605c4dce",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-nanobanana-draw-8f7698bf2da25aaaf0bf.zip"
+        "path": "operit-sandbox-nanobanana-draw-c519ea8ab1b15f12fada.zip",
+        "bytes": 8248,
+        "sha256": "6ea6ab5290e1c017b2c8c10e4ef7cb5bf9dcf2d782e6e02572ec1578f6d7955c",
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-nanobanana-draw-c519ea8ab1b15f12fada.zip"
       }
     },
     {
       "id": "sandbox-minimax-draw",
       "name": "minimax_draw",
-      "version": "78ac60bb1a3a40900332",
+      "version": "f5aa8848679a125cd00c",
       "files": [
         {
           "path": "packages/minimax_draw.js",
-          "bytes": 29372,
-          "sha256": "c93d318987c50939f133913c46811556b688292c59b427ca4c9aa62686cdb258",
+          "bytes": 29515,
+          "sha256": "e8d6ae17498e1573ad7ca704cde483ef6c663b2d62000f48519c1f112a93590d",
           "executable": false
         }
       ],
@@ -457,13 +457,13 @@
           "minimax_draw"
         ],
         "source": "minimax_draw.js",
-        "sourceFingerprint": "3ea00ef4f180aa3e930699d97eabefce2704696b8296edc2640596e7cc5c7962"
+        "sourceFingerprint": "2aa490358be0f7e658ce8763c2537738f729cbb8fcc92effc893325960250bb8"
       },
       "archive": {
-        "path": "operit-sandbox-minimax-draw-78ac60bb1a3a40900332.zip",
-        "bytes": 7764,
-        "sha256": "ef9ae3d671e0cda06759a65edff0d89e2324a8559815a87172cb90b9dc7ecff2",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-minimax-draw-78ac60bb1a3a40900332.zip"
+        "path": "operit-sandbox-minimax-draw-f5aa8848679a125cd00c.zip",
+        "bytes": 7843,
+        "sha256": "4f9bebb0b90db1e3b1ce3d4ef3a5df918a6283ec33a10d18c8b8f57ce375c0c7",
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-minimax-draw-f5aa8848679a125cd00c.zip"
       }
     },
     {
@@ -492,7 +492,7 @@
         "path": "operit-sandbox-qwen-draw-6a73759b1e5cdb9cbc32.zip",
         "bytes": 7328,
         "sha256": "9c32eee546ed36b8784b6a8eff89e854d0805f115b107d99e3e0fb0ded2d4cd7",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-qwen-draw-6a73759b1e5cdb9cbc32.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-qwen-draw-6a73759b1e5cdb9cbc32.zip"
       }
     },
     {
@@ -521,7 +521,7 @@
         "path": "operit-sandbox-siliconflow-draw-7bd25421e8b2dc6fd0dc.zip",
         "bytes": 7959,
         "sha256": "770b286581de00ea48a9e263fe23cdfc8154b0aa7452cc8bc58e79d0519c9074",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-siliconflow-draw-7bd25421e8b2dc6fd0dc.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-siliconflow-draw-7bd25421e8b2dc6fd0dc.zip"
       }
     },
     {
@@ -550,7 +550,7 @@
         "path": "operit-sandbox-super-admin-f563c3a00b1e038f8225.zip",
         "bytes": 6937,
         "sha256": "0cf70c56c2b1e4264135f2394c5ae2f2a90497eae2946bca077dd2df7d3b7b97",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-super-admin-f563c3a00b1e038f8225.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-super-admin-f563c3a00b1e038f8225.zip"
       }
     },
     {
@@ -579,7 +579,7 @@
         "path": "operit-sandbox-system-tools-1423771202a915a22a0f.zip",
         "bytes": 7526,
         "sha256": "e1aef70746393fdd011567b00afb513ac062aee8e495ad41d227e3de641026e5",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-system-tools-1423771202a915a22a0f.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-system-tools-1423771202a915a22a0f.zip"
       }
     },
     {
@@ -608,7 +608,7 @@
         "path": "operit-sandbox-tavily-30e5dfd592b42b879889.zip",
         "bytes": 3407,
         "sha256": "e395b6832a62ca5e38c07d260ea47ffe8c976ab342041f3db59c18fbb0301d37",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-tavily-30e5dfd592b42b879889.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-tavily-30e5dfd592b42b879889.zip"
       }
     },
     {
@@ -637,7 +637,7 @@
         "path": "operit-sandbox-time-1cea0987753d0801b2e2.zip",
         "bytes": 1501,
         "sha256": "77d94735cfc94888620eea05f72e087e1de9057cfc507e266d1801ec05dd5700",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-time-1cea0987753d0801b2e2.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-time-1cea0987753d0801b2e2.zip"
       }
     },
     {
@@ -666,7 +666,7 @@
         "path": "operit-sandbox-various-search-9f44f5e98550ecbb36d9.zip",
         "bytes": 7920,
         "sha256": "b524eba9d022cb1c77cdf7b1883023c7e241360ac79301cf87611c1418f8c8a1",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-various-search-9f44f5e98550ecbb36d9.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-various-search-9f44f5e98550ecbb36d9.zip"
       }
     },
     {
@@ -695,7 +695,7 @@
         "path": "operit-sandbox-workflow-e12c1d2745d363fbc65a.zip",
         "bytes": 7031,
         "sha256": "63fa4fcb97cd1afb189f5dcb85d60cccd91415244206cc3cd165e21f37695653",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-workflow-e12c1d2745d363fbc65a.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-workflow-e12c1d2745d363fbc65a.zip"
       }
     },
     {
@@ -724,7 +724,7 @@
         "path": "operit-sandbox-spacexai-draw-c146f3896a3aa809e0da.zip",
         "bytes": 10092,
         "sha256": "45cd1daf500b0fb54b1439f42c8c3ae463aedcd30900749c246cec0013f74e1b",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-spacexai-draw-c146f3896a3aa809e0da.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-spacexai-draw-c146f3896a3aa809e0da.zip"
       }
     },
     {
@@ -753,7 +753,7 @@
         "path": "operit-sandbox-openai-draw-f3feaf198ce3722bb364.zip",
         "bytes": 8085,
         "sha256": "59b1968aaf1518294260f25e4ed565b4126506f53fc7b3f4dafb4a960e538db7",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-openai-draw-f3feaf198ce3722bb364.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-openai-draw-f3feaf198ce3722bb364.zip"
       }
     },
     {
@@ -782,7 +782,7 @@
         "path": "operit-sandbox-operit-editor-04913f06a00383c5aee2.zip",
         "bytes": 33775,
         "sha256": "af5bedd9c52cecd1f076ea3c93685adcf167fb83a954e1fda5156d3365df4c36",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-operit-editor-04913f06a00383c5aee2.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-operit-editor-04913f06a00383c5aee2.zip"
       }
     },
     {
@@ -811,7 +811,7 @@
         "path": "operit-sandbox-browser-31ad19554f9e90566103.zip",
         "bytes": 4538,
         "sha256": "9d973a141b9a96baf612573966394dfa5f48bbfd961ff1a37733fc1e3811285f",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-browser-31ad19554f9e90566103.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-browser-31ad19554f9e90566103.zip"
       }
     },
     {
@@ -841,7 +841,7 @@
         "path": "operit-plugin-context-limiter-c-8b8e796dd0e8fbec6a59.zip",
         "bytes": 8382,
         "sha256": "da76084fda1368d9e70b69c622979e994844beaf86804e17a46385d833fbe3e0",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-context-limiter-c-8b8e796dd0e8fbec6a59.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-context-limiter-c-8b8e796dd0e8fbec6a59.zip"
       }
     },
     {
@@ -871,7 +871,7 @@
         "path": "operit-plugin-windows-control-ab4f14dc0fe7695bd8a9.zip",
         "bytes": 105079,
         "sha256": "2e49836a1779431920e4a8e319f85c54b715fad19a393cf1ed0a44e84c92272b",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-windows-control-ab4f14dc0fe7695bd8a9.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-windows-control-ab4f14dc0fe7695bd8a9.zip"
       }
     },
     {
@@ -900,7 +900,7 @@
         "path": "operit-sandbox-zhipu-draw-377216ea239d943992a9.zip",
         "bytes": 3615,
         "sha256": "05a399f24590c0d3121cf3494d5589be3aed664e42edc810a4f221fb29a7ee46",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-zhipu-draw-377216ea239d943992a9.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-zhipu-draw-377216ea239d943992a9.zip"
       }
     },
     {
@@ -929,7 +929,7 @@
         "path": "operit-sandbox-zhipu-search-da6b6ba17bb2a36b3ef4.zip",
         "bytes": 2531,
         "sha256": "b4484cc32af553108fad62bd05591a375c483f7f33d61ce6d561cb314b9a6a8a",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-sandbox-zhipu-search-da6b6ba17bb2a36b3ef4.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-sandbox-zhipu-search-da6b6ba17bb2a36b3ef4.zip"
       }
     },
     {
@@ -959,7 +959,7 @@
         "path": "operit-plugin-linux-ssh-fb449a970d0547eeb5da.zip",
         "bytes": 45920,
         "sha256": "23962321af8a1f8cf8258cdee71b75bbcd5e164b7842fa3bb52024af631bda37",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-linux-ssh-fb449a970d0547eeb5da.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-linux-ssh-fb449a970d0547eeb5da.zip"
       }
     },
     {
@@ -988,7 +988,7 @@
         "path": "operit-plugin-deepsearching-c090aa151a3450c4714f.zip",
         "bytes": 47706,
         "sha256": "018347ddd85a8dbbb78a48b9d659f002a44b9904ee67306987999b720758eaa3",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-deepsearching-c090aa151a3450c4714f.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-deepsearching-c090aa151a3450c4714f.zip"
       }
     },
     {
@@ -1017,7 +1017,7 @@
         "path": "operit-plugin-message-insert-e962d1acc376b7659de7.zip",
         "bytes": 36855,
         "sha256": "472ee01740cf8d5dd15e5433b44955c29c3c22830924cd870fec9156d694d422",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-message-insert-e962d1acc376b7659de7.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-message-insert-e962d1acc376b7659de7.zip"
       }
     },
     {
@@ -1071,7 +1071,7 @@
         "path": "operit-apk-reverse-d893f17ff70d29c6d5f8.zip",
         "bytes": 27014598,
         "sha256": "7a2f26bcb7bd2fe9e119f6ce9f8d864f5d725d0b9125d9cc4b327911639f805c",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-apk-reverse-d893f17ff70d29c6d5f8.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-apk-reverse-d893f17ff70d29c6d5f8.zip"
       }
     },
     {
@@ -1101,7 +1101,7 @@
         "path": "operit-plugin-remote-operit-bb38cbfe2fbab98b1596.zip",
         "bytes": 28124,
         "sha256": "3677e027eac1298d58c6ed8e8d35e45b815c56cd5503404985a4b021a029bbd6",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-remote-operit-bb38cbfe2fbab98b1596.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-remote-operit-bb38cbfe2fbab98b1596.zip"
       }
     },
     {
@@ -1131,7 +1131,7 @@
         "path": "operit-plugin-worldbook-eb3e0a3882aab3666368.zip",
         "bytes": 100273,
         "sha256": "51ae50b9876c8031174fb96215a594d89531fac54748b24f1699e09d69b00c46",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-worldbook-eb3e0a3882aab3666368.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-worldbook-eb3e0a3882aab3666368.zip"
       }
     },
     {
@@ -1161,7 +1161,7 @@
         "path": "operit-plugin-qqbot-cfed9380988c808eb7a6.zip",
         "bytes": 103535,
         "sha256": "76c082a7c9b4b20fb39ea6732006b16f38fea76309e095b32b5e79638c7c810e",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-qqbot-cfed9380988c808eb7a6.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-qqbot-cfed9380988c808eb7a6.zip"
       }
     },
     {
@@ -1191,7 +1191,7 @@
         "path": "operit-plugin-plan-mode-c0e1072754b169b29cc7.zip",
         "bytes": 50782,
         "sha256": "95cd6139bc4678108e248b9e302cda9b6cd2caaf5376d976803d4d5ecfc970b3",
-        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-733a1cce67e0bf8285ba/operit-plugin-plan-mode-c0e1072754b169b29cc7.zip"
+        "url": "https://github.com/3316891527/Operit-Kong-resources/releases/download/resources-v3-03c1637ee4baeaefa7b1/operit-plugin-plan-mode-c0e1072754b169b29cc7.zip"
       }
     }
   ]
