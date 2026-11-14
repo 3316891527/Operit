@@ -444,16 +444,16 @@ val syncMainAssets by tasks.registering(Sync::class) {
     inputs.file(rootProject.file("ci/distribution/resources/builtin_source_snapshot.py"))
     inputs.file(file("config/offline-pack-sources.json"))
     inputs.file(rootProject.file("ci/distribution/resources/prepare_extension_metadata.py"))
-    inputs.dir(rootProject.file("examples"))
-    inputs.file(rootProject.file("tools/example_packages/packages_whitelist.txt"))
+    inputs.dir(rootProject.file("plugins/examples"))
+    inputs.file(rootProject.file("plugins/tooling/example_packages/packages_whitelist.txt"))
     inputs.dir(file("src/main/assets/templates"))
-    inputs.dir(rootProject.file("examples/apktool/resources/apktool"))
+    inputs.dir(rootProject.file("plugins/examples/apktool/resources/apktool"))
     into(generatedMainAssetsDir)
     doLast {
         runResourceScript("verify_hub_catalog.py")
         runResourceScript("prepare_extension_metadata.py", listOf(
             "--catalog", file("config/offline-packs.json").path,
-            "--examples", rootProject.file("examples").path,
+            "--examples", rootProject.file("plugins/examples").path,
             "--output", File(generatedMainAssetsDir.get().asFile, "offline-extension-metadata.json").path,
         ))
         // 只修改生成目录，源码模板和完整插件仍保留，供独立资源发行与完整构建使用。

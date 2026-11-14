@@ -49,7 +49,7 @@ related_discussion: https://github.com/AAswordman/Operit/discussions/1328
 ## 本轮进度
 
 - 已按 `examples/types/*.d.ts` 补齐 QuickJS Runtime、Java Bridge、Pako、Compose DSL、Material 3、Material Icons 的新文档入口，并为 Compose/库分类建立索引。
-- 已根据源码更正 `dataUtils`、Pako、`useState`/`useMemo`、QuickJS console/timer 等运行时契约；差异记录在[覆盖索引](../../../doc-src/toolpkg_developer_documentation/09_compatibility/coverage.md)。
+- 已根据源码更正 `dataUtils`、Pako、`useState`/`useMemo`、QuickJS console/timer 等运行时契约；差异记录在[覆盖索引](../../../../plugins/docs/toolpkg_developer_documentation/09_compatibility/coverage.md)。
 - 新文档树的相对 Markdown 文件链接检查已通过；本轮复核覆盖 45 篇 Markdown，断链为 0。NativeInterface 声明与 `JsEngine` 原生绑定均为 33 项，核心页逐项覆盖 33 项。
 - `software_settings.d.ts` 的 26 个公开方法均已列出 TypeScript 签名；环境变量、沙箱/MCP、speech 更新、角色卡字段校验与工具访问解析、连接测试行为已有源码核对。本轮完成模型配置创建/更新/删除、字段归一、函数绑定/索引和连接探针行为审计，并记录 `ModelConfigUpdateOptions` 缺少 6 个运行时支持的 `llama_*` 字段这一声明差异。
 - `workflow.d.ts` 的 10 个 `Runtime` 方法均已列出签名；本轮完成 CRUD、patch、节点/连接解析、启停/错误结果及 `WorkflowExecutor` 的触发选择、依赖调度、边条件、失败分支、Condition/Logic/Extract/Execute 节点行为源码审计。

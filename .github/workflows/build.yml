@@ -57,31 +57,31 @@ on:
       - ci/script/download_android_dependencies.sh
       - ci/script/prepare_android_dependencies.py
       - cmake/**
-      - examples/**
+      - plugins/examples/**
       - gradle/**
       - gradle.properties
       - gradlew
       - gradlew.bat
-      - llm/**
+      - modules/a2ui-compat/**
+      - modules/llm/**
       - package.json
       - package-lock.json
       - npm-shrinkwrap.json
       - pnpm-workspace.yaml
-      - quickjs/**
+      - modules/quickjs/**
       - settings.gradle.kts
-      - material-icons-subset/**
+      - modules/material-icons-subset/**
       - tools/icons/**
-      - showerclient/**
-      - terminal/**
-      - terminal
+      - modules/showerclient/**
+      - modules/terminal/**
+      - modules/terminal
       - tools/native_ripgrep/**
       - tools/native_apply_patch/**
       - tools/web_chat_cli/**
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
-      - tools/packages_whitelist.txt
-      - tools/example_packages/sync_example_packages.py
-      - web-chat/**
+      - plugins/tooling/example_packages/**
+      - app/web-chat/**
 
 concurrency:
   group: android-build-${{ github.event_name }}-${{ github.ref }}-${{ inputs.gradle_task }}
@@ -167,9 +167,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git submodule sync -- terminal
-          git submodule update --init --recursive --depth 1 terminal
-          git submodule status -- terminal
+          git submodule sync -- modules/terminal
+          git submodule update --init --recursive --depth 1 modules/terminal
+          git submodule status -- modules/terminal
 
       - name: Check Material icon references
         run: python3 tools/icons/sync_material_icons.py --check
@@ -270,7 +270,7 @@ jobs:
           set -euo pipefail
           npm install -g pnpm@10.34.5
           npm ci --no-audit --no-fund
-          npm --prefix web-chat ci --no-audit --no-fund
+          npm --prefix app/web-chat ci --no-audit --no-fund
 
       - name: Build WebChat assets
         run: |
@@ -279,7 +279,7 @@ jobs:
       - name: Build bundled ToolPkg packages
         run: |
           npm run build:examples:github
-          python3 tools/example_packages/sync_example_packages.py --no-hot-reload
+          python3 plugins/tooling/example_packages/sync_example_packages.py --no-hot-reload
 
       - name: Configure Android SDK
         shell: bash

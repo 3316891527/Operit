@@ -28,7 +28,7 @@ sudo apt update
 # 安装必要的工具、JDK 21、Node.js、npm 和 Python 3
 sudo apt install -y git wget unzip openjdk-21-jdk nodejs npm python3
 
-# 安装 pnpm（tools/example_packages/sync_example_packages.py 预构建 examples 时会用到）
+# 安装 pnpm（plugins/tooling/example_packages/sync_example_packages.py 预构建 examples 时会用到）
 sudo npm install -g pnpm
 
 # 安装完成后，请验证 Java 版本是否正确
@@ -43,7 +43,7 @@ python3 --version
 ``` 
 **注意：** 项目官方要求 **JDK 21**。为确保最大兼容性，强烈建议优先安装和使用 JDK 21。
 
-**补充说明：** 项目中的 `web-chat` 使用 React + Vite 构建；`tools/example_packages/sync_example_packages.py` 会预构建 `examples/` 下的脚本包并打包 `.toolpkg`。因此除了 Android 环境外，还需要准备好 Node.js、npm、pnpm 和 Python 3。如果后续执行前端构建时提示 Node.js 版本过低，请升级到较新的 Node.js LTS 版本后再继续。
+**补充说明：** 项目中的 `web-chat` 使用 React + Vite 构建；`plugins/tooling/example_packages/sync_example_packages.py` 会预构建 `plugins/examples/` 下的脚本包并打包 `.toolpkg`。因此除了 Android 环境外，还需要准备好 Node.js、npm、pnpm 和 Python 3。如果后续执行前端构建时提示 Node.js 版本过低，请升级到较新的 Node.js LTS 版本后再继续。
 
 ## **2. 第二步：安装 Android 命令行工具**
 
@@ -146,31 +146,34 @@ org.gradle.parallel=true
 
 1. 克隆项目仓库并进入目录:  
 请根据需要选择以下两种克隆方式（项目包含 Git 子模块）：
-
 **推荐：先 Fork 后克隆你的仓库**  
 在 GitHub 打开上游仓库并点击 Fork： [AAswordman/Operit](https://github.com/AAswordman/Operit)  
 克隆你的 Fork，并只初始化公开构建依赖 `terminal`：
 ```bash
 git clone https://github.com/<你的 GitHub 用户名>/Operit.git
 cd Operit
-git submodule update --init --recursive terminal
-```  
+git submodule update --init --recursive modules/terminal
+```
 （可选）添加上游仓库以便同步更新：  
 ```bash
 git remote add upstream https://github.com/AAswordman/Operit.git
-```  
-
+```
 **备选：不 Fork，直接克隆上游仓库（只读）**  
 ```bash
 git clone https://github.com/AAswordman/Operit.git
 cd Operit
-git submodule update --init --recursive terminal
-```  
-
+git submodule update --init --recursive modules/terminal
+```
 如果你已克隆但尚未初始化公开子模块，可在仓库目录中执行：
 ```bash
-git submodule update --init --recursive terminal
-```  
+git submodule update --init --recursive modules/terminal
+```
+首次创建本地发行签名配置时，可复制[配置模板](local.properties.example)并填写本机值；已有 `local.properties` 时，在原文件中补充签名字段。
+
+```bash
+cp docs/doc-src/dev-core/local.properties.example local.properties
+```
+
 其中 `ncnn`、`sherpa-ncnn`、WAMR、`llama.cpp`、QuickJS、MNN 和 MNN 使用的 KleidiAI 由 CMake 通过 `FetchContent` 获取。CMake 会先解析远端 ref 的 commit，再下载对应 GitHub archive，因此不会拉取完整 Git 历史；默认跟随各自上游主分支、固定提交或上游工程声明的 tag。如需覆盖某个 ref，可在 CMake 参数中设置 `OPERIT_NCNN_GIT_REF`、`OPERIT_SHERPA_NCNN_GIT_REF`、`OPERIT_WAMR_GIT_REF`、`OPERIT_LLAMA_CPP_GIT_REF`、`OPERIT_QUICKJS_GIT_REF`、`OPERIT_MNN_GIT_REF` 或 `OPERIT_KLEIDIAI_GIT_REF`。
 
 MNN 的 Android CMake 配置会在加入 MNN 子项目前，使用 MNN 自带的 FlatBuffers 源码编译一个宿主机 `flatc`，并从同一份 `schema/default/*.fbs` 重新生成 `schema/current/*.h`。因此构建机除了 Android NDK 和 CMake，还必须提供可用的宿主机 C/C++ 编译器；Linux 构建明确使用 `gcc` 和 `g++`，生成器不会使用 Android ABI 编译，也不会依赖工作区外的预生成头文件。
@@ -193,24 +196,24 @@ git checkout docs/add-building-guide
 ```bash
 npm install
 ```
-这一步会安装 `tools/example_packages/sync_example_packages.py` 预构建示例脚本包时需要用到的 `typescript`、`esbuild` 等依赖。
+这一步会安装 `plugins/tooling/example_packages/sync_example_packages.py` 预构建示例脚本包时需要用到的 `typescript`、`esbuild` 等依赖。
 
-5. **安装 web-chat 的前端依赖:**
+5. **安装 app/web-chat 的前端依赖:**
 ```bash
-npm --prefix web-chat install
+npm --prefix app/web-chat install
 ```
 
-6. **先构建 web-chat 并同步到 Android assets (关键步骤！):**
+6. **先构建 app/web-chat 并同步到 Android assets (关键步骤！):**
 ```bash
 npm run build:webchat
 ```
-该命令会先执行 `web-chat` 的 React/Vite 构建，再把生成的静态文件同步到 `app/src/main/assets/web-chat`。如果你修改了 `web-chat/src` 下的代码，重新编译 APK 前也需要重新执行一次这一步。
+该命令会先执行 `app/web-chat` 的 React/Vite 构建，再把生成的静态文件同步到 `app/src/main/assets/web-chat`。如果你修改了 `app/web-chat/src` 下的代码，重新编译 APK 前也需要重新执行一次这一步。
 
 7. **打包 ToolPkg 并同步示例包到应用 assets (关键步骤！):**
 ```bash
-python3 ./tools/example_packages/sync_example_packages.py
+python3 ./plugins/tooling/example_packages/sync_example_packages.py
 ```
-该命令会按 `tools/example_packages/packages_whitelist.txt` 预构建 `examples/` 下的脚本包，并将包含 `manifest.json` 或 `manifest.hjson` 的目录打包成 `.toolpkg`，最终输出到 `app/src/main/assets/packages/`。如果你修改了 `examples/` 下的脚本包代码，重新编译 APK 前也需要重新执行一次这一步。
+该命令会按 `plugins/tooling/example_packages/packages_whitelist.txt` 预构建 `plugins/examples/` 下的脚本包，并将包含 `manifest.json` 或 `manifest.hjson` 的目录打包成 `.toolpkg`，最终输出到 `app/src/main/assets/packages/`。如果你修改了 `plugins/examples/` 下的脚本包代码，重新编译 APK 前也需要重新执行一次这一步。
 
 8. **为 Gradle 包装器添加可执行权限:**
 ```bash
@@ -240,8 +243,8 @@ app/build/outputs/apk/clone/app-clone.apk
 | sdkmanager: command not found | 环境变量未正确设置或生效。请检查 **~/.bashrc** 文件内容，并执行 source ~/.bashrc。 |
 | Could not determine Java version... | **JAVA_HOME** 环境变量不正确，或安装了错误的 JDK 版本。请确保已安装 **JDK 21** 并指向正确的路径。 |
 | NDK not found. | 确保已在 **第四步** 中使用 sdkmanager 安装了项目所需的 **ndk;25.1.8937393** 版本。 |
-| pnpm: command not found | 尚未安装 `pnpm`。请先执行 `sudo npm install -g pnpm`，再重新运行 `python3 ./tools/example_packages/sync_example_packages.py`。 |
-| Missing web-chat/dist. Run `npm --prefix web-chat run build` first. | 尚未构建 `web-chat` 或构建失败。请先执行 `npm --prefix web-chat install`，再在项目根目录执行 `npm run build:webchat`。 |
-| ERROR: prebuild step failed | `tools/example_packages/sync_example_packages.py` 在预构建 `examples/` 时失败。请先确认已在项目根目录执行 `npm install`，并检查 `pnpm -v`、`python3 --version` 是否可用。 |
+| pnpm: command not found | 尚未安装 `pnpm`。请先执行 `sudo npm install -g pnpm`，再重新运行 `python3 ./plugins/tooling/example_packages/sync_example_packages.py`。 |
+| Missing app/web-chat/dist. Run `npm --prefix app/web-chat run build` first. | 尚未构建 `app/web-chat` 或构建失败。请先执行 `npm --prefix app/web-chat install`，再在项目根目录执行 `npm run build:webchat`。 |
+| ERROR: prebuild step failed | `plugins/tooling/example_packages/sync_example_packages.py` 在预构建 `plugins/examples/` 时失败。请先确认已在项目根目录执行 `npm install`，并检查 `pnpm -v`、`python3 --version` 是否可用。 |
 | `Failed to build the host FlatBuffers compiler` | MNN schema 生成阶段无法找到或运行宿主机 C/C++ 工具链。Linux 请安装 `gcc` 和 `g++`，其他平台请安装与当前平台匹配的编译器后重新运行 Gradle 构建。 |
 | You have not accepted the license agreements... | 你跳过了或未成功执行接受许可的步骤。请返回 **第四步** 执行 `yes |

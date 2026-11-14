@@ -123,7 +123,7 @@ const SandboxPackageDevInstaller = (function () {
     }
   ].concat(
     TYPE_FILES.map((fileName) => ({
-      url: `${CDN_BASE}/examples/types/${fileName}`,
+      url: `${CDN_BASE}/plugins/examples/types/${fileName}`,
       destination: `${TYPES_DIR}/${fileName}`
     })),
     DOC_FILES.map((relativePath) => ({

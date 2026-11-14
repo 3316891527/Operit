@@ -1215,7 +1215,7 @@ let cache = null;
 
 建议同时参考：
 
-- `examples/types/java-bridge.d.ts`
-- `examples/types/compose-dsl.d.ts`
+- `plugins/examples/types/java-bridge.d.ts`
+- `plugins/examples/types/compose-dsl.d.ts`
 
 这两份定义是理解当前脚本运行时边界最直接的入口。

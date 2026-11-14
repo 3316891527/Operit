@@ -228,10 +228,10 @@ jobs:
           npm install -g pnpm@10.34.5
           if [[ "$TOOLPKG_REQUIRED" == "true" ]]; then
             npm ci --no-audit --no-fund
-            npm --prefix examples/toolpkg_wasm_demo ci --no-audit --no-fund
+            npm --prefix plugins/examples/toolpkg_wasm_demo ci --no-audit --no-fund
           fi
           if [[ "$WEB_REQUIRED" == "true" ]]; then
-            npm --prefix web-chat ci --no-audit --no-fund
+            npm --prefix app/web-chat ci --no-audit --no-fund
           fi
 
       - name: Check WebChat
@@ -239,7 +239,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm --prefix web-chat run typecheck
+          npm --prefix app/web-chat run typecheck
           npm run build:webchat
 
       - name: Check bundled ToolPkg packages
@@ -248,13 +248,13 @@ jobs:
         run: |
           set -euo pipefail
           npm run build:examples:github
-          git diff --exit-code -- examples/github.js
-          npm --prefix examples/toolpkg_wasm_demo run pack:toolpkg
-          test -s examples/toolpkg_wasm_demo/main.js
-          test -s examples/toolpkg_wasm_demo/modules/core.wasm
-          test -s examples/toolpkg_wasm_demo/dist/toolpkg_wasm_demo.toolpkg
-          python3 tools/example_packages/sync_example_packages.py --mode test --no-hot-reload
-          python3 tools/example_packages/sync_example_packages.py --no-hot-reload
+          git diff --exit-code -- plugins/examples/github.js
+          npm --prefix plugins/examples/toolpkg_wasm_demo run pack:toolpkg
+          test -s plugins/examples/toolpkg_wasm_demo/main.js
+          test -s plugins/examples/toolpkg_wasm_demo/modules/core.wasm
+          test -s plugins/examples/toolpkg_wasm_demo/dist/toolpkg_wasm_demo.toolpkg
+          python3 plugins/tooling/example_packages/sync_example_packages.py --mode test --no-hot-reload
+          python3 plugins/tooling/example_packages/sync_example_packages.py --no-hot-reload
 
       - name: Set up Android SDK
         if: steps.plan.outputs.android_resources == 'true'
@@ -290,7 +290,6 @@ jobs:
       needs.fast.outputs.android_full == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 240
-
     steps:
       - name: Checkout merge candidate
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -299,19 +298,17 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
           submodules: false
-
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'
-
       - name: Initialize terminal submodule
         shell: bash
         run: |
           set -euo pipefail
-          git submodule sync -- terminal
-          git submodule update --init --recursive --depth 1 terminal
-          git submodule status -- terminal
+          git submodule sync -- modules/terminal
+          git submodule update --init --recursive --depth 1 modules/terminal
+          git submodule status -- modules/terminal
 
       - name: Set up JDK
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
@@ -409,7 +406,7 @@ jobs:
           set -euo pipefail
           npm install -g pnpm@10.34.5
           npm ci --no-audit --no-fund
-          npm --prefix web-chat ci --no-audit --no-fund
+          npm --prefix app/web-chat ci --no-audit --no-fund
 
       - name: Build WebChat assets
         run: npm run build:webchat
@@ -418,7 +415,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run build:examples:github
-          python3 tools/example_packages/sync_example_packages.py --no-hot-reload
+          python3 plugins/tooling/example_packages/sync_example_packages.py --no-hot-reload
 
       - name: Configure secret-free Android build
         shell: bash
@@ -466,9 +463,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git submodule sync -- terminal
-          git submodule update --init --recursive --depth 1 terminal
-          git submodule status -- terminal
+          git submodule sync -- modules/terminal
+          git submodule update --init --recursive --depth 1 modules/terminal
+          git submodule status -- modules/terminal
 
       - name: Set up JDK
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
