@@ -8,6 +8,7 @@
 
 ## 计划索引
 - [插件开发材料归组](plugin-source-layout/index.md) · `plugin-source-layout`
+- [支持模块与 Web Chat 归组](module-source-layout/index.md) · `module-source-layout`
 
 - [工具、文件操作与聊天目录联合验证](chat-workspace-tools-integration/index.md)
 

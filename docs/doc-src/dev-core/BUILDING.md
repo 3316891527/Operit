@@ -195,16 +195,16 @@ npm install
 ```
 这一步会安装 `plugins/tooling/example_packages/sync_example_packages.py` 预构建示例脚本包时需要用到的 `typescript`、`esbuild` 等依赖。
 
-5. **安装 web-chat 的前端依赖:**
+5. **安装 app/web-chat 的前端依赖:**
 ```bash
-npm --prefix web-chat install
+npm --prefix app/web-chat install
 ```
 
-6. **先构建 web-chat 并同步到 Android assets (关键步骤！):**
+6. **先构建 app/web-chat 并同步到 Android assets (关键步骤！):**
 ```bash
 npm run build:webchat
 ```
-该命令会先执行 `web-chat` 的 React/Vite 构建，再把生成的静态文件同步到 `app/src/main/assets/web-chat`。如果你修改了 `web-chat/src` 下的代码，重新编译 APK 前也需要重新执行一次这一步。
+该命令会先执行 `app/web-chat` 的 React/Vite 构建，再把生成的静态文件同步到 `app/src/main/assets/web-chat`。如果你修改了 `app/web-chat/src` 下的代码，重新编译 APK 前也需要重新执行一次这一步。
 
 7. **打包 ToolPkg 并同步示例包到应用 assets (关键步骤！):**
 ```bash
@@ -241,7 +241,7 @@ app/build/outputs/apk/clone/app-clone.apk
 | Could not determine Java version... | **JAVA_HOME** 环境变量不正确，或安装了错误的 JDK 版本。请确保已安装 **JDK 21** 并指向正确的路径。 |
 | NDK not found. | 确保已在 **第四步** 中使用 sdkmanager 安装了项目所需的 **ndk;25.1.8937393** 版本。 |
 | pnpm: command not found | 尚未安装 `pnpm`。请先执行 `sudo npm install -g pnpm`，再重新运行 `python3 ./plugins/tooling/example_packages/sync_example_packages.py`。 |
-| Missing web-chat/dist. Run `npm --prefix web-chat run build` first. | 尚未构建 `web-chat` 或构建失败。请先执行 `npm --prefix web-chat install`，再在项目根目录执行 `npm run build:webchat`。 |
+| Missing app/web-chat/dist. Run `npm --prefix app/web-chat run build` first. | 尚未构建 `app/web-chat` 或构建失败。请先执行 `npm --prefix app/web-chat install`，再在项目根目录执行 `npm run build:webchat`。 |
 | ERROR: prebuild step failed | `plugins/tooling/example_packages/sync_example_packages.py` 在预构建 `plugins/examples/` 时失败。请先确认已在项目根目录执行 `npm install`，并检查 `pnpm -v`、`python3 --version` 是否可用。 |
 | `Failed to build the host FlatBuffers compiler` | MNN schema 生成阶段无法找到或运行宿主机 C/C++ 工具链。Linux 请安装 `gcc` 和 `g++`，其他平台请安装与当前平台匹配的编译器后重新运行 Gradle 构建。 |
 | You have not accepted the license agreements... | 你跳过了或未成功执行接受许可的步骤。请返回 **第四步** 执行 `yes |

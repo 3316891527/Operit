@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project(quickjsjni)
 
-include("${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/operit_git_source.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/operit_git_source.cmake")
 
 operit_prepare_git_source(
     QUICKJS_DIR

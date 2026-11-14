@@ -62,25 +62,26 @@ on:
       - gradle.properties
       - gradlew
       - gradlew.bat
-      - llm/**
+      - modules/a2ui-compat/**
+      - modules/llm/**
       - package.json
       - package-lock.json
       - npm-shrinkwrap.json
       - pnpm-workspace.yaml
-      - quickjs/**
+      - modules/quickjs/**
       - settings.gradle.kts
-      - material-icons-subset/**
+      - modules/material-icons-subset/**
       - tools/icons/**
-      - showerclient/**
-      - terminal/**
-      - terminal
+      - modules/showerclient/**
+      - modules/terminal/**
+      - modules/terminal
       - tools/native_ripgrep/**
       - tools/native_apply_patch/**
       - tools/web_chat_cli/**
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
       - plugins/tooling/example_packages/**
-      - web-chat/**
+      - app/web-chat/**
 
 concurrency:
   group: android-build-${{ github.event_name }}-${{ github.ref }}-${{ inputs.gradle_task }}
@@ -166,9 +167,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git submodule sync -- terminal
-          git submodule update --init --recursive --depth 1 terminal
-          git submodule status -- terminal
+          git submodule sync -- modules/terminal
+          git submodule update --init --recursive --depth 1 modules/terminal
+          git submodule status -- modules/terminal
 
       - name: Check Material icon references
         run: python3 tools/icons/sync_material_icons.py --check
@@ -269,7 +270,7 @@ jobs:
           set -euo pipefail
           npm install -g pnpm@10.34.5
           npm ci --no-audit --no-fund
-          npm --prefix web-chat ci --no-audit --no-fund
+          npm --prefix app/web-chat ci --no-audit --no-fund
 
       - name: Build WebChat assets
         run: |

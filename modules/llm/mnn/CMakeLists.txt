@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("mnn_jni")
 
-include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/operit_git_source.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../../../cmake/operit_git_source.cmake")
 
 # Pin MNN to the commit behind the latest stable 3.6.1 release. Using the
 # release commit keeps every native configure reproducible across machines.

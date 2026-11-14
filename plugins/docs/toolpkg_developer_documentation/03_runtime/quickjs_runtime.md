@@ -81,5 +81,5 @@ clearTimeout(timerId);
 ## 实现来源
 
 - `plugins/examples/types/quickjs-runtime.d.ts`
-- `quickjs/src/main/java/com/ai/assistance/operit/core/tools/javascript/QuickJsNativeCompatScriptBuilder.kt`
-- `quickjs/src/main/java/com/ai/assistance/operit/core/tools/javascript/QuickJsNativeHostDispatcher.kt`
+- `modules/quickjs/src/main/java/com/ai/assistance/operit/core/tools/javascript/QuickJsNativeCompatScriptBuilder.kt`
+- `modules/quickjs/src/main/java/com/ai/assistance/operit/core/tools/javascript/QuickJsNativeHostDispatcher.kt`

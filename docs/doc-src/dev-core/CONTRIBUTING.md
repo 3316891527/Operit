@@ -5,7 +5,7 @@
 ## 贡献类型
 
 - Android 应用、工具调用、工作流、数据和 UI：主要位于 `app/`
-- WebChat：位于 `web-chat/`，构建结果会同步到 Android assets
+- WebChat：位于 `app/web-chat/`，构建结果会同步到 Android assets
 - 脚本、Skill、Plugin、MCP 和示例包：位于 `plugins/examples/`，格式说明见 [ToolPkg 指南](../../TOOLPKG_FORMAT_GUIDE.md)
 - 文档和协作资料：位于 `docs/`
 - 构建、检查和仓库自动化：位于 `.github/`、`ci/` 和 `tools/`
@@ -38,13 +38,13 @@ Fork 并克隆仓库后，建议保留 `upstream` 远程：
 ```bash
 git clone https://github.com/<your-account>/Operit.git
 cd Operit
-git submodule update --init --recursive terminal
+git submodule update --init --recursive modules/terminal
 git remote add upstream https://github.com/AAswordman/Operit.git
 git fetch upstream
 git switch -c fix/short-description upstream/dev
 ```
 
-不要提交 `local.properties`、本地密钥、手动下载的模型和二进制依赖。修改 WebChat 或示例包时，先按照编译指南准备根目录和 `web-chat` 的依赖。
+不要提交 `local.properties`、本地密钥、手动下载的模型和二进制依赖。修改 WebChat 或示例包时，先按照编译指南准备根目录和 `app/web-chat` 的依赖。
 
 ## 开发原则
 
@@ -68,15 +68,15 @@ python3 -B -m unittest discover -s ci/test -p 'test_*.py'
 python3 -B ci/script/check_repo_hygiene.py --base "$BASE_SHA" --candidate "$CANDIDATE_SHA"
 python3 -B ci/script/check_markdown_links.py --base "$BASE_SHA" --candidate "$CANDIDATE_SHA"
 python3 -B ci/script/check_localizations.py --base "$BASE_SHA" --candidate "$CANDIDATE_SHA"
-npm --prefix web-chat run typecheck
+npm --prefix app/web-chat run typecheck
 ```
 
 根据改动范围选择额外检查：
 
 ```bash
 # WebChat
-npm --prefix web-chat ci
-npm --prefix web-chat run build
+npm --prefix app/web-chat ci
+npm --prefix app/web-chat run build
 
 # 示例包或 ToolPkg
 npm ci

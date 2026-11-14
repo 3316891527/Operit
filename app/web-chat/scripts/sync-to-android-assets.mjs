@@ -5,10 +5,9 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, '..');
 const distDir = resolve(projectRoot, 'dist');
-const assetDir = resolve(projectRoot, '..', 'app', 'src', 'main', 'assets', 'web-chat');
-
+const assetDir = resolve(projectRoot, '..', 'src', 'main', 'assets', 'web-chat');
 if (!existsSync(distDir)) {
-  console.error('Missing web-chat/dist. Run `npm --prefix web-chat run build` first.');
+  console.error('Missing app/web-chat/dist. Run `npm --prefix app/web-chat run build` first.');
   process.exit(1);
 }
 

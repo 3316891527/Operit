@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("llama_jni")
 
-include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/operit_git_source.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../../../cmake/operit_git_source.cmake")
 
 set(LLAMA_BUILD_COMMON ON CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)

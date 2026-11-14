@@ -1,4 +1,4 @@
-## Shower 客户端库（`showerclient` 模块）
+## Shower 客户端库（`modules/showerclient` 模块）
 
 一个最小化的 Shower 客户端库，只保留 **如何接入和使用** 的说明。
 
@@ -51,7 +51,7 @@ class YourApplication : Application() {
 
 ## 3. Shower Server JAR（已内置）
 
-本库在构建时从仓库中的 `tools/shower/app/src/main/java/` 编译服务端，并通过 SDK Build Tools 的 D8 生成 `shower-server.jar`。生成任务为 `:showerclient:generateShowerServerAssets`，由模块的 `preBuild` 自动调用，产物在 `showerclient/build/generated/showerServer/assets/`。不再使用已提交的预编译 JAR，以保证服务端与客户端 Binder 协议来自同一份源码。
+本库在构建时从仓库中的 `tools/shower/app/src/main/java/` 编译服务端，并通过 SDK Build Tools 的 D8 生成 `shower-server.jar`。生成任务为 `:showerclient:generateShowerServerAssets`，由模块的 `preBuild` 自动调用，产物在 `modules/showerclient/build/generated/showerServer/assets/`。不再使用已提交的预编译 JAR，以保证服务端与客户端 Binder 协议来自同一份源码。
 
 主屏 PhoneAgent 在输入准备后持有客户端 Binder 令牌，模型等待、暂停及观察期间服务保持存活；任务退出或取消时释放，宿主进程死亡也会自动注销。原有无客户端 15 秒退出策略保留，无需心跳输入、延长超时或重发动作。
 

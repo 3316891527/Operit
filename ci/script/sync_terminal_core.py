@@ -1,23 +1,21 @@
 """将应用锁定的终端提交快进到独立仓库的默认分支。"""
 from __future__ import annotations
-
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
 from urllib.parse import quote
-
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_REPOSITORY = "3316891527/Operit"
 CORE_REPOSITORY = "3316891527/OperitTerminalCore"
 CORE_URL = f"https://github.com/{CORE_REPOSITORY}.git"
-
-
-def git(*args: str) -> str:
+def git(*args: str, input_text: str | None = None) -> str:
     return subprocess.run(
-        ["git", *args], cwd=ROOT, text=True, capture_output=True, check=True, timeout=30
+        ["git", *args], cwd=ROOT, input=input_text, text=True, capture_output=True,
+        check=True, timeout=30,
     ).stdout.strip()
 
 
@@ -66,7 +64,19 @@ def sync(*, dry_run: bool) -> None:
     adopted: dict[str, str] = {}
     # Actions 会合并等待中的同组运行；每次读取两个分支的最新引用，避免漏掉较新的 dev。
     for source_ref in ("dev", "main"):
-        submodule = api(f"repos/{SOURCE_REPOSITORY}/contents/terminal?ref={source_ref}")
+        source_commit = api(f"repos/{SOURCE_REPOSITORY}/git/ref/heads/{source_ref}")["object"]["sha"]
+        # 两个分支可能处于不同目录布局；从同一提交的声明解析路径，避免读错 gitlink。
+        metadata = api(f"repos/{SOURCE_REPOSITORY}/contents/.gitmodules?ref={source_commit}")
+        if metadata["encoding"] != "base64":
+            raise ValueError(f"{SOURCE_REPOSITORY}/{source_ref} 的 .gitmodules 编码异常")
+        configuration = base64.b64decode(metadata["content"]).decode("utf-8")
+        terminal_path = git(
+            "config", "--file", "-", "--get", "submodule.terminal.path",
+            input_text=configuration,
+        )
+        submodule = api(
+            f"repos/{SOURCE_REPOSITORY}/contents/{quote(terminal_path, safe='/')}?ref={source_commit}"
+        )
         if submodule["type"] != "submodule" or submodule["submodule_git_url"] != CORE_URL:
             raise ValueError(f"{SOURCE_REPOSITORY}/{source_ref} 的 terminal 来源与同步目标不一致")
         adopted[source_ref] = submodule["sha"]
