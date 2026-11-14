@@ -548,10 +548,13 @@ fun FileBrowser(
     }
 
     LaunchedEffect(initialPath, environment, linuxInstalled) {
-        if (environment.equals("linux", ignoreCase = true) && !linuxInstalled) {
+        // The browser leaves composition while an editor tab is active; restore its saved location on return.
+        val pathToLoad = currentPath
+        val environmentToLoad = currentEnvironment
+        if (environmentToLoad.equals("linux", ignoreCase = true) && !linuxInstalled) {
             errorMessage = context.getString(R.string.hub_unprepared)
         } else {
-            loadDirectory(initialPath, environment)
+            loadDirectory(pathToLoad, environmentToLoad)
         }
     }
 
