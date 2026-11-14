@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.preview
 
+import android.content.Context
 import android.net.Uri
+import com.ai.assistance.operit.core.tools.builtin.ToolGetter
 import android.webkit.MimeTypeMap
 import java.io.File
 import java.util.Locale
@@ -8,16 +10,29 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.OpenFileInfo
 
 private const val LOCAL_WORKSPACE_HOST = "127.0.0.1"
 
-internal fun workspaceMimeTypeForPath(path: String): String {
+internal suspend fun workspaceMimeTypeForFile(
+    context: Context,
+    path: String,
+    environment: String?
+): String {
+    // .ts can be TypeScript source or MPEG transport stream; inspect its bytes before routing.
+    val isTypeScriptText = path.substringAfterLast('.', "").equals("ts", ignoreCase = true) &&
+        ToolGetter.getFileSystemTools(context)
+            .isTextFile(path, environment)
+    return workspaceMimeTypeForPath(path, isTypeScriptText)
+}
+
+internal fun workspaceMimeTypeForPath(path: String, isTypeScriptText: Boolean = false): String {
     val extension = path.substringAfterLast('.', "").lowercase(Locale.ROOT)
     if (extension.isBlank()) return "application/octet-stream"
-
     return when (extension) {
         "html", "htm" -> "text/html"
         "css" -> "text/css"
         "js", "mjs", "cjs" -> "application/javascript"
         "json" -> "application/json"
-        "txt", "md", "log", "ts", "tsx" -> "text/plain"
+        "txt", "md", "log", "tsx" -> "text/plain"
+        "ts" -> if (isTypeScriptText) "text/plain" else "video/mp2t"
+
         "xml" -> "application/xml"
         "csv" -> "text/csv"
         "yaml", "yml" -> "application/yaml"
@@ -95,9 +110,11 @@ internal val OpenFileInfo.isReadOnlyPreview: Boolean
 
 internal val OpenFileInfo.resolvedMimeType: String
     get() = mimeType.ifBlank { workspaceMimeTypeForPath(path) }
+internal fun workspaceShouldOpenAsDirectPreview(
+    path: String,
+    mimeType: String = workspaceMimeTypeForPath(path)
+): Boolean {
 
-internal fun workspaceShouldOpenAsDirectPreview(path: String): Boolean {
-    val mimeType = workspaceMimeTypeForPath(path)
     return mimeType.startsWith("image/", ignoreCase = true) ||
         mimeType.startsWith("audio/", ignoreCase = true) ||
         mimeType.startsWith("video/", ignoreCase = true) ||

@@ -70,7 +70,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.lazy.rememberLazyListState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceMimeTypeForPath
+import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceMimeTypeForFile
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceShouldOpenAsDirectPreview
 import com.ai.assistance.operit.ui.features.conversation.workspace.text.WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES
 import com.ai.assistance.operit.ui.features.conversation.workspace.text.readWorkspaceTextWithinLimit
@@ -510,9 +510,10 @@ fun FileBrowser(
         isOperationLoading = true
         coroutineScope.launch {
             try {
-                val mimeType = if (asText) "text/plain" else workspaceMimeTypeForPath(filePath)
                 val result = withContext(Dispatchers.IO) {
-                    if (!asText && workspaceShouldOpenAsDirectPreview(filePath)) {
+                    val mimeType = if (asText) "text/plain" else
+                        workspaceMimeTypeForFile(context, filePath, fileEnvironment)
+                    if (!asText && workspaceShouldOpenAsDirectPreview(filePath, mimeType)) {
                         OpenFileInfo(filePath, "", System.currentTimeMillis(), mimeType = mimeType, environment = fileEnvironment)
                     } else {
                         val parameters = listOf(ToolParameter("path", filePath),

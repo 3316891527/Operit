@@ -1415,6 +1415,33 @@ open class StandardFileSystemTools(protected val context: Context) {
         }
     }
 
+    /** Classify a bounded file sample without reading large workspace files in full. */
+    internal open suspend fun isTextFile(path: String, environment: String?): Boolean =
+        withContext(Dispatchers.IO) {
+            when {
+                isLinuxEnvironment(environment) -> {
+                    PathValidator.validateLinuxPath(path, "read_file_full")?.let {
+                        throw IllegalArgumentException(it.error)
+                    }
+                    val fs = getLinuxFileSystem()
+                    check(fs.isFile(path)) { "File does not exist or is not a regular file: $path" }
+                    val sample = checkNotNull(fs.readFileSample(path, 512)) {
+                        "Failed to sample file: $path"
+                    }
+                    FileUtils.isTextLike(sample)
+                }
+                isSafEnvironment(environment) -> safTools.isTextFile(path, environment)
+                else -> {
+                    PathValidator.validateAndroidPath(path, "read_file_full")?.let {
+                        throw IllegalArgumentException(it.error)
+                    }
+                    val file = File(path)
+                    check(file.isFile) { "File does not exist or is not a regular file: $path" }
+                    file.inputStream().use { FileUtils.isTextLike(it) }
+                }
+            }
+        }
+
     /**
      * Reads the full content of a file as a new tool, handling different file types. This
      * function does not enforce a size limit.

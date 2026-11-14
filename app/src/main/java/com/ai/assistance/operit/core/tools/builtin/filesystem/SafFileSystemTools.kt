@@ -1710,6 +1710,17 @@ class SafFileSystemTools(
         }
     }
 
+    internal suspend fun isTextFile(path: String, environment: String?): Boolean =
+        withContext(Dispatchers.IO) {
+            val uri = checkNotNull(resolveSafPathToDocumentUriOrNull(path, environment)) {
+                "Invalid repository path: $path"
+            }
+            val input = checkNotNull(contentResolver.openInputStream(uri)) {
+                "Failed to open uri: $path"
+            }
+            input.use { FileUtils.isTextLike(it) }
+        }
+
     suspend fun readFileFull(tool: AITool): ToolResult {
         val path = tool.parameters.find { it.name == "path" }?.value ?: ""
         val textOnly = tool.parameters.find { it.name == "text_only" }?.value?.toBoolean() ?: false
