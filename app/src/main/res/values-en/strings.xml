@@ -9431,9 +9431,7 @@
     <string name="collapse_process_title">Response activity</string>
     <string name="collapse_process_show">Show response activity</string>
     <string name="collapse_process_hide">Hide response activity</string>
-    <string name="collapse_process_duration_seconds">Worked for %1$ds</string>
-    <string name="collapse_process_duration_minutes">Worked for %1$dm %2$ds</string>
-    <string name="collapse_process_duration_hours">Worked for %1$dh %2$dm %3$ds</string>
+    <string name="collapse_process_duration">Worked for %1$s</string>
     <string name="extension_update_success">Update successful</string>
     <string name="extension_update_failed">Update failed: %1$s</string>
     <string name="extension_update_cancelled">Update cancelled</string>
