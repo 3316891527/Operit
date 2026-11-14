@@ -12,6 +12,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.res.stringResource
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
 import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
 import com.ai.assistance.operit.ui.common.markdown.MarkdownRenderMode
 import kotlinx.coroutines.delay
@@ -52,10 +53,10 @@ internal fun toolTimingTitle(
         }
     }
     val millis = summary.elapsedMillis(now, streaming)
-    val elapsed = when {
-        millis == null -> ""
-        millis < 1_000L -> stringResource(R.string.tool_timing_elapsed_millis, millis)
-        else -> stringResource(R.string.tool_timing_elapsed, millis / 1_000L)
+    val elapsed = if (millis == null) {
+        ""
+    } else {
+        stringResource(R.string.tool_timing_elapsed, formatElapsedDuration(millis))
     }
     val status = when {
         summary.complete -> R.string.tool_timing_completed
