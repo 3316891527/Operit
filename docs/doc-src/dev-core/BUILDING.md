@@ -146,30 +146,34 @@ org.gradle.parallel=true
 
 1. 克隆项目仓库并进入目录:  
 请根据需要选择以下两种克隆方式（项目包含 Git 子模块）：
-
 **推荐：先 Fork 后克隆你的仓库**  
 在 GitHub 打开上游仓库并点击 Fork： [AAswordman/Operit](https://github.com/AAswordman/Operit)  
 克隆你的 Fork，并只初始化公开构建依赖 `terminal`：
 ```bash
 git clone https://github.com/<你的 GitHub 用户名>/Operit.git
 cd Operit
-git submodule update --init --recursive terminal
-```  
+git submodule update --init --recursive modules/terminal
+```
 （可选）添加上游仓库以便同步更新：  
 ```bash
 git remote add upstream https://github.com/AAswordman/Operit.git
-```  
-
+```
 **备选：不 Fork，直接克隆上游仓库（只读）**  
 ```bash
 git clone https://github.com/AAswordman/Operit.git
 cd Operit
-git submodule update --init --recursive terminal
-```  
-
+git submodule update --init --recursive modules/terminal
+```
 如果你已克隆但尚未初始化公开子模块，可在仓库目录中执行：
 ```bash
-git submodule update --init --recursive terminal
+git submodule update --init --recursive modules/terminal
+```
+需要本地发行签名配置时，可复制模板并填写本机值：
+```bash
+cp docs/doc-src/dev-core/local.properties.example local.properties
+```
+
+git submodule update --init --recursive modules/terminal
 ```  
 其中 `ncnn`、`sherpa-ncnn`、WAMR、`llama.cpp`、QuickJS、MNN 和 MNN 使用的 KleidiAI 由 CMake 通过 `FetchContent` 获取。CMake 会先解析远端 ref 的 commit，再下载对应 GitHub archive，因此不会拉取完整 Git 历史；默认跟随各自上游主分支、固定提交或上游工程声明的 tag。如需覆盖某个 ref，可在 CMake 参数中设置 `OPERIT_NCNN_GIT_REF`、`OPERIT_SHERPA_NCNN_GIT_REF`、`OPERIT_WAMR_GIT_REF`、`OPERIT_LLAMA_CPP_GIT_REF`、`OPERIT_QUICKJS_GIT_REF`、`OPERIT_MNN_GIT_REF` 或 `OPERIT_KLEIDIAI_GIT_REF`。
 

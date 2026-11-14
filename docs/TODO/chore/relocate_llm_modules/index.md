@@ -21,7 +21,7 @@ For_Agent: 将本地大模型模块集中到 llm 目录
 - `llm/mnn/`
 - `settings.gradle.kts`
 - `.github/workflows/android-build.yml`
-- `Repo_Arch_Basic.md`
+- `docs/Repo_Arch_Basic.md`
 - `docs/TODO/ci/native_dependency_fetchcontent/index.md`
 
 ## 状态
