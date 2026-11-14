@@ -17,7 +17,7 @@ internal fun workspaceMimeTypeForPath(path: String): String {
         "css" -> "text/css"
         "js", "mjs", "cjs" -> "application/javascript"
         "json" -> "application/json"
-        "txt", "md", "log" -> "text/plain"
+        "txt", "md", "log", "ts", "tsx" -> "text/plain"
         "xml" -> "application/xml"
         "csv" -> "text/csv"
         "yaml", "yml" -> "application/yaml"
