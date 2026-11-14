@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "releaseTag": "resources-v3-29daae18fe54a4598b4c",
-  "sourceRevision": "f969706fa9905cc98b55f3736ccac3f1a2d50648",
+  "releaseTag": "resources-v3-733a1cce67e0bf8285ba",
+  "sourceRevision": "fac0ebebfe9c08483c41145b5ef66510c6faf41c",
   "sources": [
     "automatic_ui_base.js",
     "automatic_ui_subagent.js",
@@ -535,11 +535,11 @@
     ],
     [
       "examples/openai_draw.js",
-      "3b7f1a78764792202ffdccd0d9c4e8cdf9a99cbec7f3a6d3a4d2a6c33e270f60"
+      "4fb0bbb0e3579617e897cd06bccf0d042989298c281533318f0a4ace21e0fa44"
     ],
     [
       "examples/openai_draw.ts",
-      "28d684c49efcbc970ba31e34dae11f50b649fc039a408612c85f65cabd7494e6"
+      "658593a4d5f5194f7397cbfc45830f942e42a01a147383eb44eeed6d7e3c4532"
     ],
     [
       "examples/operit_editor.js",
@@ -987,7 +987,7 @@
     ],
     [
       "examples/types/network.d.ts",
-      "1d9eac07b984719eb9a868fd412838bbaedcd5b5085b82ec45d81659af009bf3"
+      "2c2ac7faaaf083e754064aed2133749f7d40833eb67b505ba31ae66b648096f5"
     ],
     [
       "examples/types/okhttp.d.ts",
@@ -1287,7 +1287,7 @@
     ],
     [
       "examples/worldbook/dist/main.js",
-      "18d5aa8436078fd5a53c0d23961b447b8cc96ee0c2ed34e8ee2d3c9e75aa1254"
+      "94f59370d6cbbfecffe63b7225ec568a709d19d8879d5beb93e575029e9e5d0e"
     ],
     [
       "examples/worldbook/dist/packages/worldbook_tools.js",
@@ -1315,7 +1315,7 @@
     ],
     [
       "examples/worldbook/dist/ui/worldbook_manager/index.ui.js",
-      "da220245054ba4a53be34f8f862cc5bc27fad88aca5c71a9851387d57f9c59f8"
+      "02be7c32f50e52dd96c45ac008621729708bdc2718d7fd5e95ed05634194e095"
     ],
     [
       "examples/worldbook/manifest.json",
@@ -1339,7 +1339,7 @@
     ],
     [
       "examples/worldbook/src/main.ts",
-      "0c8d6dc4463d2797545a3f4c2f3944ab62b3571c10e9dab57d4634b60c31e920"
+      "abb0502eb3e2df03f12bbe29630d42f4457f9e7f0ea701a34817163cfd7b8a82"
     ],
     [
       "examples/worldbook/src/packages/worldbook_tools.ts",
@@ -1367,7 +1367,7 @@
     ],
     [
       "examples/worldbook/src/ui/worldbook_manager/index.ui.ts",
-      "57ee396e7950c1bdbf6edbe40a04d6c9ce8bcc649d46f61b8b12b0458aebf3de"
+      "ad828487294a43e5e5ee49c03b4d0eaab4836409e355eb6abda6fccc9ae6c9a4"
     ],
     [
       "examples/worldbook/tests-dist/support/mock_runtime.js",
@@ -1404,6 +1404,10 @@
     [
       "examples/worldbook/tests/worldbook.integration.test.ts",
       "ca2ccd3a8cbbb74aed0419a0a341d6b6a2171cf2b35a6c18ce990963e5080a66"
+    ],
+    [
+      "examples/worldbook/tests/worldbook_group_isolation.test.cjs",
+      "b6fb05a7babc5fe40352e7b7df13afbe65561c5fc9fdc39dbc44315f770228b0"
     ],
     [
       "examples/worldbook/tsconfig.json",
