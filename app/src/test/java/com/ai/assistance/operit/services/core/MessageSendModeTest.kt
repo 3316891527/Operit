@@ -31,6 +31,13 @@ class MessageSendModeTest {
     }
 
     @Test
+    fun onlyContinuationsAndGroupTurnsCanSendWithoutUserInput() {
+        continuations.forEach { assertTrue(it.canSendWithoutUserInput(isGroupOrchestrationTurn = false)) }
+        assertFalse(MessageSendMode.USER.canSendWithoutUserInput(isGroupOrchestrationTurn = false))
+        assertTrue(MessageSendMode.USER.canSendWithoutUserInput(isGroupOrchestrationTurn = true))
+    }
+
+    @Test
     fun manualContinuationSkipsInputHooksAndPrebuiltUserContent() = runTest {
         // 手动续写不能把未发送草稿、附件或钩子生成内容作为用户消息交给模型。
         listOf(null, "unsent text and workspace attachment").forEach { prebuilt ->
