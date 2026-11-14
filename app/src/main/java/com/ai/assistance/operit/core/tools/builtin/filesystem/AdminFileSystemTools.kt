@@ -2949,6 +2949,30 @@ open class AdminFileSystemTools(context: Context) : StandardFileSystemTools(cont
     override suspend fun listFiles(tool: AITool): ToolResult =
         route(true, { listFilesWithShell(tool) }, { standardTools.listFiles(tool) })
 
+    internal override suspend fun isTextFile(path: String, environment: String?): Boolean {
+        if (isLinuxEnvironment(environment) || isSafEnvironment(environment) || isOperitInternalPath(path)) {
+            return super.isTextFile(path, environment)
+        }
+        PathValidator.validateAndroidPath(path, "read_file_full")?.let {
+            throw IllegalArgumentException(it.error)
+        }
+        return PermissionOperationRouter.execute(
+            capabilities = PermissionCapabilityResolver.shellSnapshot(context),
+            readOnly = true,
+            privileged = {
+                val quotedPath = "'" + path.replace("'", "'\"'\"'") + "'"
+                // Base64 preserves binary bytes across the shell's text output boundary.
+                val sample = AndroidShellExecutor.executeShellCommand(
+                    "test -r $quotedPath && head -c 512 $quotedPath | base64"
+                )
+                check(sample.success) { "Failed to sample file: ${sample.stderr}" }
+                FileUtils.isTextLike(android.util.Base64.decode(sample.stdout, android.util.Base64.DEFAULT))
+            },
+            standard = { standardTools.isTextFile(path, environment) },
+            isSuccess = { true }
+        )
+    }
+
     override suspend fun readFileFull(tool: AITool): ToolResult =
         route(true, { readFileFullWithShell(tool) }, { standardTools.readFileFull(tool) })
 

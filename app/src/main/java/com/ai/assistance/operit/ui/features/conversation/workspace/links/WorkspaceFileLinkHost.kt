@@ -33,7 +33,7 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.FileBrowser
 import com.ai.assistance.operit.ui.features.conversation.workspace.OpenFileInfo
 import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceManager
 import com.ai.assistance.operit.ui.features.conversation.workspace.browser.FileBrowserOperations
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceMimeTypeForPath
+import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceMimeTypeForFile
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceShouldOpenAsDirectPreview
 import com.ai.assistance.operit.ui.features.conversation.workspace.text.WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES
 import com.ai.assistance.operit.ui.features.conversation.workspace.text.readWorkspaceTextWithinLimit
@@ -102,26 +102,28 @@ internal fun WorkspaceFileLinkDialog(
                 check(info is FileExistsData && info.exists) {
                     context.getString(R.string.cannot_open_file, target.path)
                 }
-                val openedFile = when {
-                    info.isDirectory -> null
-                    workspaceShouldOpenAsDirectPreview(target.path) ->
-                        OpenFileInfo(target.path, "", System.currentTimeMillis(),
-                            mimeType = workspaceMimeTypeForPath(target.path), environment = target.environment)
-                    FileUtils.isTextBasedFileName(File(target.path).name) -> readWorkspaceTextWithinLimit(info.size) {
-                        val read = handler.executeTool(AITool("read_file_full", parameters + ToolParameter("text_only", "true")))
-                        check(read.success) { read.error.orEmpty() }
-                        val result = read.result
-                        check(result is FileContentData) { context.getString(R.string.file_error_open_failed) }
-                        val initialLine = if (target.anchor == null) target.line else {
-                            checkNotNull(findWorkspaceMarkdownAnchorLine(result.content, target.anchor)) {
-                                context.getString(R.string.workspace_markdown_anchor_not_found, target.anchor)
+                val openedFile = if (info.isDirectory) null else {
+                    val mimeType = workspaceMimeTypeForFile(context, target.path, target.environment)
+                    when {
+                        workspaceShouldOpenAsDirectPreview(target.path, mimeType) ->
+                            OpenFileInfo(target.path, "", System.currentTimeMillis(),
+                                mimeType = mimeType, environment = target.environment)
+                        FileUtils.isTextBasedFileName(File(target.path).name) -> readWorkspaceTextWithinLimit(info.size) {
+                            val read = handler.executeTool(AITool("read_file_full", parameters + ToolParameter("text_only", "true")))
+                            check(read.success) { read.error.orEmpty() }
+                            val result = read.result
+                            check(result is FileContentData) { context.getString(R.string.file_error_open_failed) }
+                            val initialLine = if (target.anchor == null) target.line else {
+                                checkNotNull(findWorkspaceMarkdownAnchorLine(result.content, target.anchor)) {
+                                    context.getString(R.string.workspace_markdown_anchor_not_found, target.anchor)
+                                }
                             }
+                            OpenFileInfo(target.path, result.content, System.currentTimeMillis(),
+                                mimeType = mimeType, environment = target.environment,
+                                initialLine = initialLine)
                         }
-                        OpenFileInfo(target.path, result.content, System.currentTimeMillis(),
-                            mimeType = workspaceMimeTypeForPath(target.path), environment = target.environment,
-                            initialLine = initialLine)
+                        else -> null
                     }
-                    else -> null
                 }
                 info to openedFile
             }
