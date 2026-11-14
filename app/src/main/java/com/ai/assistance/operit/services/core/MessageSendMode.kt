@@ -11,6 +11,10 @@ enum class MessageSendMode {
     val usesPreviousTurnConfiguration: Boolean
         get() = this == AUTO_CONTINUE
 
+    /** Continuations and group turns can proceed without composer text or attachments. */
+    fun canSendWithoutUserInput(isGroupOrchestrationTurn: Boolean): Boolean =
+        isContinuation || isGroupOrchestrationTurn
+
     fun shouldReadComposer(isBackgroundSend: Boolean): Boolean =
         !isBackgroundSend && !isContinuation
 
