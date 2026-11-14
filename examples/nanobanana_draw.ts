@@ -288,6 +288,8 @@ const nanobananaDraw = (function () {
         const resp = await Tools.Net.uploadFile({
             url: BEEIMG_UPLOAD_ENDPOINT,
             method: "POST",
+            // 宿主 multipart 请求独立创建客户端，必须显式传入本脚本的超时。
+            timeout_ms: HTTP_TIMEOUT_MS,
             form_data: {
                 apikey: apiKey
             },

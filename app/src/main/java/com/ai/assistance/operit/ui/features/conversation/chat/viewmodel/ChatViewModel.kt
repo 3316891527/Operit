@@ -1961,7 +1961,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     // UI状态相关方法
     fun showErrorMessage(message: String) = uiStateDelegate.showErrorMessage(message)
     fun clearError() = uiStateDelegate.clearError()
-    fun dismissErrorDialog() {
+    fun consumeErrorMessage() {
         uiStateDelegate.clearError()
         val chatId = chatHistoryDelegate.currentChatId.value
         if (chatId != null) {

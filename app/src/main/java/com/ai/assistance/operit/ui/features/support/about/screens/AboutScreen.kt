@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.support.about.screens
 
+import com.ai.assistance.operit.ui.common.oktoast.ErrorToast
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import android.content.Context
 import android.content.Intent
@@ -1131,6 +1132,10 @@ fun UpdateDialog(
     onConfirm: () -> Unit,
     onFullPackage: (() -> Unit)? = null,
 ) {
+    if (updateStatus is UpdateStatus.Error) {
+        ErrorToast(errorMessage = updateStatus.message, onShown = onDismiss)
+        return
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
@@ -1139,7 +1144,6 @@ fun UpdateDialog(
                 is UpdateStatus.PatchAvailable -> Icons.Default.Update
                 is UpdateStatus.Checking -> Icons.Default.Download
                 is UpdateStatus.UpToDate -> Icons.Default.CheckCircle
-                is UpdateStatus.Error -> Icons.Default.Error
                 else -> Icons.Default.Update
             }
             Icon(icon, contentDescription = null)
@@ -1150,7 +1154,6 @@ fun UpdateDialog(
                 is UpdateStatus.PatchAvailable -> stringResource(id = R.string.new_version_found)
                 is UpdateStatus.Checking -> stringResource(id = R.string.checking_updates)
                 is UpdateStatus.UpToDate -> stringResource(id = R.string.check_complete)
-                is UpdateStatus.Error -> stringResource(id = R.string.check_failed)
                 else -> stringResource(id = R.string.update_check)
             }
             Text(text = titleText)
@@ -1184,9 +1187,6 @@ fun UpdateDialog(
                     }
                     is UpdateStatus.UpToDate -> {
                         Text(stringResource(id = R.string.already_latest_version, appVersion))
-                    }
-                    is UpdateStatus.Error -> {
-                        Text(status.message)
                     }
                     else -> {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(16.dp)) {

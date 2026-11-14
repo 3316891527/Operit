@@ -61,7 +61,7 @@ import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import com.ai.assistance.operit.data.preferences.WaifuPreferences
-import com.ai.assistance.operit.ui.components.ErrorDialog
+import com.ai.assistance.operit.ui.common.oktoast.ErrorToast
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.agent.AgentChatInputSection
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic.ClassicChatInputSection
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputEvents
@@ -480,9 +480,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     // 移除原有的 snackbar 错误处理
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 用新的错误弹窗替换原有的错误显示逻辑
+    // 排队后立即消费错误状态，页面重组不再重复弹出或阻塞聊天操作。
     if (!isThemePreview) errorMessage?.let { message ->
-        ErrorDialog(errorMessage = message, onDismiss = { actualViewModel.dismissErrorDialog() })
+        ErrorToast(errorMessage = message, onShown = actualViewModel::consumeErrorMessage)
     }
 
     // Save chat on app exit
