@@ -8,7 +8,7 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from completion_text import transform
-from source_text import header
+from source_text import header, repository_path
 from verify_layout_migration import baseline_blobs
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -118,13 +118,13 @@ def main():
     bridge_checks = {
         'app/src/main/java/com/ai/assistance/operit/core/tools/javascript/JsEngine.kt': 'fun registerToolPkgUiModule(specJson: String)',
         'app/src/main/java/com/ai/assistance/operit/core/tools/javascript/JsToolPkgRegistration.kt': 'registerUiModule: function(definition)',
-        'examples/types/toolpkg.d.ts': 'registerUiModule(definition: UiModuleRegistration)',
-        'examples/types/core.d.ts': 'function registerToolPkgUiModule(specJson: string)',
+        'plugins/examples/types/toolpkg.d.ts': 'registerUiModule(definition: UiModuleRegistration)',
+        'plugins/examples/types/core.d.ts': 'function registerToolPkgUiModule(specJson: string)',
         'tools/toolpkg/toolpkg_hook_runner.js': 'registerUiModule() {}',
     }
     for path, declaration in bridge_checks.items():
         require(declaration in (ROOT / path).read_text(), '桥接或 SDK 声明不一致：' + path)
-    api_files = [item['newPath'] for item in records.values() if item['newPath'].startswith('examples/') and 'ToolPkg.registerUiModule({' in (ROOT / item['newPath']).read_text()]
+    api_files = [item['newPath'] for item in records.values() if item['newPath'].startswith('examples/') and 'ToolPkg.registerUiModule({' in repository_path(ROOT, item['newPath']).read_text()]
     expected_api_files = {item['newPath'] for item in records.values() if item['oldPath'].startswith('examples/') and 'ToolPkg.registerToolboxUiModule({' in originals[item['oldPath']].decode()}
     require(set(api_files) == expected_api_files and bool(api_files), '内置插件源码与已提交脚本未同步')
     for path in api_files:

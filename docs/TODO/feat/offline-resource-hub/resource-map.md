@@ -87,7 +87,7 @@ Operit2 的模型路径为 `runtime/models/local/{模型种类}/{引擎}/{模型
 
 ### APK 逆向工具
 
-[现有 manifest](../../../../examples/apktool/manifest.json) 的插件 ID 为 `com.operit.apk_reverse_toolkit`，版本为 `1.1.0`，声明四个运行时 JAR：
+[现有 manifest](../../../../plugins/examples/apktool/manifest.json) 的插件 ID 为 `com.operit.apk_reverse_toolkit`，版本为 `1.1.0`，声明四个运行时 JAR：
 
 - `resources/apktool/apktool-runtime-android.jar`
 - `resources/apktool/android-framework.jar`

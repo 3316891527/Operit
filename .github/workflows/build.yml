@@ -57,7 +57,7 @@ on:
       - ci/script/download_android_dependencies.sh
       - ci/script/prepare_android_dependencies.py
       - cmake/**
-      - examples/**
+      - plugins/examples/**
       - gradle/**
       - gradle.properties
       - gradlew
@@ -80,7 +80,7 @@ on:
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
       - tools/packages_whitelist.txt
-      - tools/example_packages/sync_example_packages.py
+      - plugins/tooling/example_packages/sync_example_packages.py
       - web-chat/**
 
 concurrency:
@@ -279,7 +279,7 @@ jobs:
       - name: Build bundled ToolPkg packages
         run: |
           npm run build:examples:github
-          python3 tools/example_packages/sync_example_packages.py --no-hot-reload
+          python3 plugins/tooling/example_packages/sync_example_packages.py --no-hot-reload
 
       - name: Configure Android SDK
         shell: bash

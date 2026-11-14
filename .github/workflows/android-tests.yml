@@ -14,7 +14,7 @@ on:
       - ci/script/prepare_android_dependencies.py
       - ci/test/code_runner.test.cjs
       - cmake/**
-      - examples/**
+      - plugins/examples/**
       - gradle/**
       - gradle.properties
       - gradlew
@@ -35,7 +35,7 @@ on:
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
       - tools/packages_whitelist.txt
-      - tools/example_packages/sync_example_packages.py
+      - plugins/tooling/example_packages/sync_example_packages.py
       - web-chat/**
 
 concurrency:

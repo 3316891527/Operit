@@ -10,18 +10,14 @@ import subprocess
 import tempfile
 import zipfile
 from prepare_hub import ROOT, APK_FILES, digest, package
-from builtin_source_snapshot import fingerprint
-
+from builtin_source_snapshot import fingerprint, logical_input_path, physical_input_paths, source_inputs
 
 def whitelist() -> list[str]:
-    return [line.strip() for line in (ROOT / 'tools/example_packages/packages_whitelist.txt').read_text().splitlines()
+    return [line.strip() for line in (ROOT / 'plugins/tooling/example_packages/packages_whitelist.txt').read_text().splitlines()
             if line.strip() and not line.lstrip().startswith('#')]
-
-
 def source_fingerprint(source: str) -> str:
-    entries = subprocess.check_output(['git', 'ls-files', '--stage', '-z', '--', 'examples/' + source,
-        'examples/' + source.removesuffix('.js') + '.ts', 'examples/types', 'examples/tsconfig.json',
-        'tools/example_packages/sync_example_packages.py', 'tools/example_packages/packages_whitelist.txt'], cwd=ROOT).split(b'\0')
+    inputs = sorted({path for name in source_inputs(source) for path in physical_input_paths(name)})
+    entries = subprocess.check_output(['git', 'ls-files', '--stage', '-z', '--', *inputs], cwd=ROOT).split(b'\0')
     objects: dict[str, bytes] = {}
     for entry in entries:
         if not entry:
@@ -30,7 +26,10 @@ def source_fingerprint(source: str) -> str:
         _, object_id, stage = metadata.split()
         if stage != b'0':
             raise ValueError('内置扩展源码存在未解决冲突：' + path.decode())
-        objects[path.decode()] = object_id
+        logical_name = logical_input_path(path.decode())
+        if logical_name in objects:
+            raise ValueError('内置扩展源码同时存在新旧路径：' + logical_name)
+        objects[logical_name] = object_id
     if not objects:
         raise ValueError('内置扩展缺少源码：' + source)
 
@@ -113,7 +112,7 @@ def extension_packs(output: Path, packages: Path) -> list[dict]:
                         for name in APK_FILES:
                             relative = 'resources/apktool/' + name
                             data = archive.read(relative)
-                            fixed = ROOT / 'examples/apktool' / relative
+                            fixed = ROOT / 'plugins/examples/apktool' / relative
                             if data != fixed.read_bytes():
                                 raise ValueError('逆向运行资源与源码不一致：' + name)
                             files.append((relative, fixed))

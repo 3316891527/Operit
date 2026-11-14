@@ -7,6 +7,7 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [插件开发材料归组](plugin-source-layout/index.md) · `plugin-source-layout`
 
 - [工具、文件操作与聊天目录联合验证](chat-workspace-tools-integration/index.md)
 

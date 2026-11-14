@@ -30,13 +30,13 @@ WEB_PATTERNS = (
 TOOLPKG_PATTERNS = (
     ".npmrc",
     "app/src/main/assets/packages/**",
-    "examples/**",
+    "plugins/examples/**",
     "package.json",
     "package-lock.json",
     "npm-shrinkwrap.json",
     "pnpm-workspace.yaml",
     "tools/packages_whitelist.txt",
-    "tools/example_packages/sync_example_packages.py",
+    "plugins/tooling/example_packages/sync_example_packages.py",
 )
 ANDROID_FULL_PATTERNS = (
     ".github/workflows/build.yml",

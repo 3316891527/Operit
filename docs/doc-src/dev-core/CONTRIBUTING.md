@@ -6,7 +6,7 @@
 
 - Android 应用、工具调用、工作流、数据和 UI：主要位于 `app/`
 - WebChat：位于 `web-chat/`，构建结果会同步到 Android assets
-- 脚本、Skill、Plugin、MCP 和示例包：位于 `examples/`，格式说明见 [ToolPkg 指南](../../TOOLPKG_FORMAT_GUIDE.md)
+- 脚本、Skill、Plugin、MCP 和示例包：位于 `plugins/examples/`，格式说明见 [ToolPkg 指南](../../TOOLPKG_FORMAT_GUIDE.md)
 - 文档和协作资料：位于 `docs/`
 - 构建、检查和仓库自动化：位于 `.github/`、`ci/` 和 `tools/`
 
@@ -81,11 +81,11 @@ npm --prefix web-chat run build
 # 示例包或 ToolPkg
 npm ci
 npm run build:examples:github
-git diff --exit-code -- examples/github.js
-npm --prefix examples/toolpkg_wasm_demo ci
-npm --prefix examples/toolpkg_wasm_demo run pack:toolpkg
-python3 ./tools/example_packages/sync_example_packages.py --mode test --no-hot-reload
-python3 ./tools/example_packages/sync_example_packages.py --no-hot-reload
+git diff --exit-code -- plugins/examples/github.js
+npm --prefix plugins/examples/toolpkg_wasm_demo ci
+npm --prefix plugins/examples/toolpkg_wasm_demo run pack:toolpkg
+python3 ./plugins/tooling/example_packages/sync_example_packages.py --mode test --no-hot-reload
+python3 ./plugins/tooling/example_packages/sync_example_packages.py --no-hot-reload
 
 # Android JVM 单测和构建
 ./gradlew :app:testDebugUnitTest
