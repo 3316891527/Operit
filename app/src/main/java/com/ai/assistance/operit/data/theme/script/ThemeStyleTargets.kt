@@ -68,7 +68,6 @@ object ThemeStyleTargets {
         "page.markdownDemo",
         "page.speechToText",
         "page.defaultAssistantGuide",
-        "page.htmlPackager",
     )
     val textRoles = setOf(
         "displayLarge",

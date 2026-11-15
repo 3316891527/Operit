@@ -27,7 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.storage.LinuxStorageUnitKind
 import com.ai.assistance.operit.data.storage.formatStorageSize
-import com.ai.assistance.operit.ui.common.icons.rememberAssetLogoPainter
+import com.ai.assistance.operit.ui.common.icons.rememberImageAssetPainter
 
 @Composable
 fun LinuxEnvironmentStorageScreen() {
@@ -37,7 +37,7 @@ fun LinuxEnvironmentStorageScreen() {
     val state by storageViewModel.state.collectAsState()
     var showConfirm by remember { mutableStateOf(false) }
     val needsHomePhrase = state.selectedUnits.any { it.kind == LinuxStorageUnitKind.HOME }
-    val tuxPainter = rememberAssetLogoPainter("linux/tux.svg", 56.dp)
+    val tuxPainter = rememberImageAssetPainter("linux/tux.svg", 56.dp)
 
     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
         StorageManageScaffold(

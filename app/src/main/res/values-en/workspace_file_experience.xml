@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">Unable to read application information from this APK.</string>
+    <string name="workspace_apk_loading">Reading application information…</string>
+    <string name="workspace_apk_version_code">Version code</string>
+    <string name="workspace_apk_size">APK size</string>
+    <string name="workspace_apk_min_sdk">Minimum SDK</string>
+    <string name="workspace_apk_target_sdk">Target SDK</string>
+    <string name="workspace_apk_installed">Installed version</string>
+    <string name="workspace_apk_not_installed">Not installed</string>
+    <string name="workspace_apk_view">View</string>
+    <string name="workspace_apk_install">Install</string>
+    <string name="workspace_apk_allow_install">Allow this app to install unknown apps, then tap Install again.</string>
+    <string name="workspace_archive_preparing">Preparing…</string>
+    <string name="workspace_archive_reading_index">Reading archive directory…</string>
+    <string name="workspace_archive_extracting">Extracting…</string>
+    <string name="workspace_archive_transferring">Copying to destination…</string>
+    <string name="workspace_archive_publishing">Writing to destination…</string>
+    <string name="workspace_archive_entry_progress">Completed %1$d / %2$d items</string>
+    <string name="workspace_archive_entries_done">Completed %1$d items</string>
+    <string name="workspace_archive_byte_progress">Processed %1$s / %2$s</string>
+    <string name="workspace_archive_current_file">Current file progress</string>
+    <string name="workspace_transfer_scanning_delete">Counting files to delete…</string>
+    <string name="workspace_transfer_discovered_items">Found %1$d items</string>
+    <string name="workspace_transfer_delete_recursive_scope">Includes files and subdirectories inside the selected folders.</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">Cancellation stops further deletions. Deleted content will not be restored.</string>
+</resources>

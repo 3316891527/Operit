@@ -4,6 +4,8 @@ import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -39,35 +41,52 @@ internal fun sortDirectoryEntries(entries: List<DirectoryEntry>, mode: Int, desc
 @Composable
 internal fun FileBrowserContextMenu(name: String, isDirectory: Boolean, canPaste: Boolean,
     onDismiss: () -> Unit, onCopy: (Boolean) -> Unit, onPaste: () -> Unit,
-    onRename: () -> Unit, onProperties: () -> Unit, onOpenWith: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+    onRename: () -> Unit, onProperties: () -> Unit, onOpenWith: () -> Unit, onShare: () -> Unit,
+    onBookmark: () -> Unit, onHide: () -> Unit, hidden: Boolean, onDelete: () -> Unit,
+    onSearch: () -> Unit, extract: Boolean, onArchiveAction: () -> Unit) {
+    WorkspaceFileActionMenu(name, onDismiss, WorkspaceFileActions(
+        search = onSearch, archive = onArchiveAction, copy = { onCopy(false) }, cut = { onCopy(true) },
+        paste = if (canPaste) onPaste else null, rename = onRename, properties = onProperties,
+        openWith = if (isDirectory) null else onOpenWith, bookmark = if (isDirectory) onBookmark else null,
+        hide = onHide, share = if (isDirectory) null else onShare, delete = onDelete, extract = extract, hidden = hidden,
+    ))
+}
+
+/** 单选、多选和归档使用同一完整排列；批量不支持的动作保留为禁用项。 */
+@Composable
+internal fun FileBrowserSelectionMenu(
+    count: Int,
+    canShare: Boolean,
+    onDismiss: () -> Unit,
+    onCopy: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+    onProperties: () -> Unit,
+    onShare: () -> Unit,
+    onSearch: () -> Unit,
+    extract: Boolean,
+    onArchiveAction: () -> Unit,
+) {
+    WorkspaceFileActionMenu(stringResource(R.string.workspace_selection_count, count), onDismiss, WorkspaceFileActions(
+        search = onSearch, archive = onArchiveAction, copy = { onCopy(false) }, cut = { onCopy(true) },
+        properties = onProperties, share = if (canShare) onShare else null, delete = onDelete, extract = extract,
+    ))
+}
+
+@Composable
+internal fun FileBrowserActionPanel(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
-            Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(8.dp))
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(8.dp))
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Row {
-                    Action(Modifier.weight(1f), Icons.Default.ContentCopy, R.string.file_manager_copy) { onCopy(false) }
-                    Action(Modifier.weight(1f), Icons.Default.ContentCut, R.string.file_manager_cut) { onCopy(true) }
-                }
-                Row {
-                    Action(Modifier.weight(1f), Icons.Default.ContentPaste, R.string.file_manager_paste, canPaste, onClick = onPaste)
-                    Action(Modifier.weight(1f), Icons.Default.DriveFileRenameOutline, R.string.file_menu_rename, onClick = onRename)
-                }
-                Row {
-                    Action(Modifier.weight(1f), Icons.Default.Info, R.string.workspace_properties_title, onClick = onProperties)
-                    Action(Modifier.weight(1f), Icons.Default.OpenInNew, R.string.workspace_open_with, !isDirectory, onClick = onOpenWith)
-                }
-                Row {
-                    Action(Modifier.weight(1f), Icons.Default.Share, R.string.file_menu_share, !isDirectory, onClick = onShare)
-                    Action(Modifier.weight(1f), Icons.Default.Delete, R.string.file_manager_delete, destructive = true, onClick = onDelete)
-                }
+                content()
             }
         }
     }
 }
 
 @Composable
-private fun Action(modifier: Modifier, icon: ImageVector, label: Int, enabled: Boolean = true,
+internal fun WorkspaceFileAction(modifier: Modifier, icon: ImageVector, label: Int, enabled: Boolean = true,
     destructive: Boolean = false, onClick: () -> Unit) {
     val color = when {
         !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)

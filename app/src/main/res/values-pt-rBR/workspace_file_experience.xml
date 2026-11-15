@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">Não foi possível ler as informações do aplicativo neste APK.</string>
+    <string name="workspace_apk_loading">Lendo informações do aplicativo…</string>
+    <string name="workspace_apk_version_code">Código da versão</string>
+    <string name="workspace_apk_size">Tamanho do APK</string>
+    <string name="workspace_apk_min_sdk">SDK mínimo</string>
+    <string name="workspace_apk_target_sdk">SDK de destino</string>
+    <string name="workspace_apk_installed">Versão instalada</string>
+    <string name="workspace_apk_not_installed">Não instalado</string>
+    <string name="workspace_apk_view">Visualizar</string>
+    <string name="workspace_apk_install">Instalar</string>
+    <string name="workspace_apk_allow_install">Permita que este aplicativo instale apps desconhecidos e toque em Instalar novamente.</string>
+    <string name="workspace_archive_preparing">Preparando…</string>
+    <string name="workspace_archive_reading_index">Lendo o diretório do arquivo…</string>
+    <string name="workspace_archive_extracting">Extraindo…</string>
+    <string name="workspace_archive_transferring">Copiando para o destino…</string>
+    <string name="workspace_archive_publishing">Gravando no destino…</string>
+    <string name="workspace_archive_entry_progress">%1$d / %2$d itens concluídos</string>
+    <string name="workspace_archive_entries_done">%1$d itens concluídos</string>
+    <string name="workspace_archive_byte_progress">%1$s / %2$s processados</string>
+    <string name="workspace_archive_current_file">Progresso do arquivo atual</string>
+    <string name="workspace_transfer_scanning_delete">Contando arquivos para excluir…</string>
+    <string name="workspace_transfer_discovered_items">%1$d itens encontrados</string>
+    <string name="workspace_transfer_delete_recursive_scope">Inclui arquivos e subpastas dentro das pastas selecionadas.</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">O cancelamento interrompe as próximas exclusões. O conteúdo excluído não será restaurado.</string>
+</resources>

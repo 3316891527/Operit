@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
+import com.ai.assistance.operit.ui.common.icons.rememberImageAssetPainter
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketBrowseCard
 import com.ai.assistance.operit.ui.features.extensions.packages.market.MarketBrowseCardModel
 import com.ai.assistance.operit.ui.features.extensions.packages.market.ToolPkgLogoAsset
@@ -73,16 +73,16 @@ internal fun MarketPublishPreviewDialog(
     val logoKey =
         "market-preview:${previewTitle}:${previewVersion}:${logoAsset?.fileName}:${logoAsset?.bytes?.contentHashCode()}"
     val listLogoPainter =
-        rememberLogoPainter(
-            logoKey = "$logoKey:list",
+        rememberImageAssetPainter(
+            imageKey = "$logoKey:list",
             bytes = logoAsset?.bytes,
             mimeType = logoAsset?.contentType,
             fileName = logoAsset?.fileName,
             size = 48.dp
         )
     val detailLogoPainter =
-        rememberLogoPainter(
-            logoKey = "$logoKey:detail",
+        rememberImageAssetPainter(
+            imageKey = "$logoKey:detail",
             bytes = logoAsset?.bytes,
             mimeType = logoAsset?.contentType,
             fileName = logoAsset?.fileName,

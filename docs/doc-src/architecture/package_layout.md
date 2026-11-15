@@ -84,7 +84,7 @@ ui/
 
 conversation 放聊天、记忆与助手；automation 放终端、工作流、网页会话及仍在使用的原生工具；models 放模型配置、用量和登录；extensions 放包与 GitHub；management 放设置、存储、备份、更新、性能与资源；support 放帮助、协议、引导、演示与诊断。分类只增加包层级，各页面原路由 ID 沿用现有定义。
 
-空工具箱首页及孤立文件管理器已删除。日志归备份，UI 调试归诊断，HTML 打包归聊天导出，STT/TTS 页面归设置；三个仍有路由调用的页面包装函数位于 ui/main/screens。有效插件模块与动态导航协议继续保留。
+空工具箱首页及孤立文件管理器已删除。日志归备份，UI 调试归诊断，HTML 项目打包由 `build html` 终端命令调用 core/htmlbuild，聊天导出继续使用原有导出弹窗，STT/TTS 页面归设置；三个仍有路由调用的页面包装函数位于 ui/main/screens。有效插件模块与动态导航协议继续保留。
 
 ## 工具与 Android 集成
 

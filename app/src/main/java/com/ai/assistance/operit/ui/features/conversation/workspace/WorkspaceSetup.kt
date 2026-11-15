@@ -299,33 +299,6 @@ fun WorkspaceSetup(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = context.getString(R.string.setup_workspace),
-                    // 设置页使用自己的主题前景，避免继承聊天区域的黑色文字。
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = context.getString(R.string.select_folder_from_device),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            TextButton(onClick = {
-                projectTypeDialogError = null
-                showProjectTypeDialog = true
-            }) {
-                Icon(Icons.Default.CreateNewFolder, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(context.getString(R.string.create_default_workspace))
-            }
-        }
-        HorizontalDivider()
         Box(modifier = Modifier.weight(1f)) {
             FileBrowser(
                 initialPath = context.filesDir.absolutePath,

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 源自 MIT Material Icon Theme，来源与许可证见 assets/workspace-file-icons。 -->
+<vector xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M2.975 2.976v18.048h18.05v-.03l-4.478-4.511-4.48-4.515 4.48-4.515 4.443-4.477z" android:fillAlpha="1.0">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="2.846839" android:startY="21.378750800000002" android:endX="21.1225294" android:endY="2.89940168" android:tileMode="clamp">
+                <item android:offset="0" android:color="#7c4dff" />
+                <item android:offset=".5" android:color="#d500f9" />
+                <item android:offset="1" android:color="#ef5350" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

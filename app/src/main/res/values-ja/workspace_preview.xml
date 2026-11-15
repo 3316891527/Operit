@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s：%2$s</string>
+    <string name="workspace_search_option_on">オン</string>
+    <string name="workspace_search_option_off">オフ</string>
+    <string name="workspace_markdown_outline">目次</string>
+    <string name="workspace_markdown_outline_empty">この文書には見出しがありません。</string>
+    <string name="workspace_markdown_outline_expand">節を展開</string>
+    <string name="workspace_markdown_outline_collapse">節を折りたたむ</string>
+</resources>

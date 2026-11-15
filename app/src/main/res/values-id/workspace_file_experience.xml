@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">Informasi aplikasi dari APK ini tidak dapat dibaca.</string>
+    <string name="workspace_apk_loading">Membaca informasi aplikasi…</string>
+    <string name="workspace_apk_version_code">Kode versi</string>
+    <string name="workspace_apk_size">Ukuran APK</string>
+    <string name="workspace_apk_min_sdk">SDK minimum</string>
+    <string name="workspace_apk_target_sdk">SDK target</string>
+    <string name="workspace_apk_installed">Versi terpasang</string>
+    <string name="workspace_apk_not_installed">Belum terpasang</string>
+    <string name="workspace_apk_view">Lihat</string>
+    <string name="workspace_apk_install">Instal</string>
+    <string name="workspace_apk_allow_install">Izinkan aplikasi ini menginstal aplikasi tidak dikenal, lalu ketuk Instal lagi.</string>
+    <string name="workspace_archive_preparing">Menyiapkan…</string>
+    <string name="workspace_archive_reading_index">Membaca direktori arsip…</string>
+    <string name="workspace_archive_extracting">Mengekstrak…</string>
+    <string name="workspace_archive_transferring">Menyalin ke tujuan…</string>
+    <string name="workspace_archive_publishing">Menulis ke tujuan…</string>
+    <string name="workspace_archive_entry_progress">%1$d / %2$d item selesai</string>
+    <string name="workspace_archive_entries_done">%1$d item selesai</string>
+    <string name="workspace_archive_byte_progress">%1$s / %2$s diproses</string>
+    <string name="workspace_archive_current_file">Progres berkas saat ini</string>
+    <string name="workspace_transfer_scanning_delete">Menghitung berkas yang akan dihapus…</string>
+    <string name="workspace_transfer_discovered_items">%1$d item ditemukan</string>
+    <string name="workspace_transfer_delete_recursive_scope">Termasuk berkas dan subdirektori di dalam folder yang dipilih.</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">Pembatalan menghentikan penghapusan berikutnya. Konten yang dihapus tidak akan dipulihkan.</string>
+</resources>

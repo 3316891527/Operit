@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview
 
 import android.net.Uri
+import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +46,7 @@ fun VideoAttachmentPlayer(
     AndroidView(
         factory = { ctx ->
             StyledPlayerView(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 this.player = player
                 useController = true
                 resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT

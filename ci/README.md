@@ -62,6 +62,10 @@ PR workflow 只有 `contents: read` 权限，不读取仓库 secret，也不上�
 
 ## Android dependencies
 
+主工程的 Gradle 仓库由根目录 `settings.gradle.kts` 和 `build.gradle.kts` 统一声明。Maven Central 构件通过阿里云的 `https://maven.aliyun.com/repository/central` 获取，覆盖插件解析、普通依赖及 ObjectBox 构建插件的 classpath；Gradle 插件门户元数据通过 `https://maven.aliyun.com/repository/gradle-plugin` 获取。Google Maven、JitPack 等独立仓库沿用现有声明。
+
+Build、Android Tests 和 PR Check 使用同一套仓库配置，无需在 runner 中额外注入镜像初始化脚本。切换镜像只改变下载地址，依赖坐标、版本及既有构件校验保持原有约束。排查下载错误时，应按日志中的具体坐标核对镜像的 POM、Gradle module 元数据与构件文件，并确认响应没有重定向回受限地址。
+
 MNN 使用官方 `3.6.1` 发布提交 `d407447ed56c4121a11ccbd266dc184ca1ead0c2`，不跟随 `master`；其余原生源码依赖仍由各模块通过 `cmake/operit_git_source.cmake` 下载固定 GitHub archive。
 
 JVM lane 只下载 `libs.zip`，完整 Android lane 下载 `libs.zip` 和 `jniLibs.zip` 两个固定归档；导出模板由应用从个人仓库的固定资源 Release 按需下载，不参与 APK 构建。`download_android_dependencies.sh` 使用固定 Google Drive file ID；`prepare_android_dependencies.py` 限制成员数量、解压大小、压缩比和文件类型，重建固定输出根目录，只验证本次实际解出的文件，并拒绝越界路径、重复成员及符号链接。原生源码依赖由各模块通过 `cmake/operit_git_source.cmake` 下载固定 GitHub archive。`arsc.jar` 已无消费者，`smart-exception` 改由 Maven Central 提供，`android-gif-drawable` 的重复 native 库也不会从归档写入构建目录。应用打包前，Gradle 会检查外部构建的 `liboperit_ripgrep.so`，以及本地 FFmpegKit AAR 中 10 个 arm64 native 库；缺失或零长度文件会使打包失败。共用的 Silero VAD 由 Gradle 按 `app/config/stt-model-assets.properties` 获取到生成 assets 目录并校验 SHA-256；大型 Sherpa-NCNN 模型不打进 APK。外置资源的大小、SHA-256、来源和许可说明固定在 `app/config/offline-resources.properties`，模型、Ubuntu 归档和导出模板的离线使用说明见 `docs/TODO/feat/offline-resources/01-implementation.md`。

@@ -809,7 +809,6 @@
     <string name="show_help">Afișează ajutorul</string>
     <string name="hide_help">Ascunde ajutorul</string>
     <string name="request_permission">SolicitareShizukuDrepturi</string>
-    <string name="screen_title_html_packager">HTML Packager</string>
     <string name="execute_shell">ExecutareshellComandă</string>
     <string name="enter_command">IntroducereADBComandă</string>
     <string name="show_samples">Afișează exemple de comenzi</string>
@@ -1862,9 +1861,6 @@
     <string name="tool_token_config_desc">Deschide API Pagina de obținere și configurare a cheilor, care facilitează integrarea rapidă a modelului</string>
     <string name="tool_process_limit_remover">Eliminarea restricțiilor procesului „Illusion”</string>
     <string name="tool_process_limit_remover_desc">AdministrareAndroid 12+Limita numărului de procese fantomă, care permite un număr mai mare de subprocese în fundal</string>
-
-    <string name="tool_html_packager">HTMLMașină de ambalat</string>
-    <string name="tool_html_packager_desc">VaHTMLFișierul și dependențele sale sunt împachetate într-un singur fișierHTMLFișiere, ușor de partajat și de implementat</string>
 
 
     <!-- AutoGLM One-Click Configuration -->
@@ -5908,12 +5904,6 @@
     <!-- Auto GLM Tool Screen -->
 
     <!-- HTML Packager Screen -->
-    <string name="htmlpackager_step1_title">Pasul 1: Selectați folderul proiectului</string>
-    <string name="htmlpackager_select_folder">Selectați un folder</string>
-    <string name="htmlpackager_selected">Selectat: %1$s</string>
-    <string name="htmlpackager_step2_title">Pasul 2: Specificarea fișierului de intrare</string>
-    <string name="htmlpackager_main_html">PrincipalHTMLDocument</string>
-    <string name="htmlpackager_generate_package">Generarea pachetului de instalare</string>
 
     <!-- Common Expand/Collapse -->
     <string name="common_expand">Extindeți</string>
@@ -8778,11 +8768,8 @@
     <string name="theme_thinking_particle_color">Culoarea particulelor</string>
     <string name="theme_thinking_particle_color_desc">Personalizați culoarea fluxului de particule glisor atunci când gândirea este activată. Valoarea implicită este alb.</string>
     <string name="theme_thinking_particle_color_title">Gândiți-vă la culorile particulelor</string>
-    <string name="workspace_default_open">Deschide implicit</string>
     <string name="workspace_invalid_paste">Nu se pot lipi fișierele în propriul director</string>
     <string name="workspace_markdown_anchor_not_found">Titlul documentului nu a fost găsit: %1$s</string>
-    <string name="workspace_open_as_text">Deschide ca text</string>
-    <string name="workspace_open_external">Deschideți folosind aplicația de sistem</string>
     <string name="workspace_open_with">Metoda deschisă</string>
     <string name="workspace_search_content">Căutați conținut</string>
     <string name="workspace_search_next">meciul urmator</string>
@@ -9123,4 +9110,105 @@
     <string name="image_editor_mosaic">Mozaic</string>
     <string name="image_editor_crop">Decupează</string>
     <string name="image_editor_eraser">Radieră</string>
+
+    <!-- SVG 预览、编辑与转换 -->
+    <string name="workspace_svg_edit">Editează sursa</string>
+    <string name="workspace_svg_to_xml">Convertește în XML</string>
+    <string name="workspace_svg_to_png">Convertește în PNG</string>
+    <string name="workspace_svg_convert">Convertește</string>
+    <string name="workspace_svg_converting">Se convertește…</string>
+    <string name="workspace_svg_width">Lățime (px)</string>
+    <string name="workspace_svg_height">Înălțime (px)</string>
+    <string name="workspace_svg_keep_ratio">Păstrează proporțiile</string>
+    <string name="workspace_svg_size_hint">Lățime și înălțime: 1–4096 px. PNG păstrează transparența.</string>
+    <string name="workspace_svg_error">Conversia SVG a eșuat: %1$s</string>
+    <string name="workspace_svg_unsupported">Această funcție SVG nu poate fi convertită în XML: %1$s</string>
+    <string name="workspace_svg_exported">Salvat: %1$s</string>
+
+    <!-- 工作台文件变更与对话产出 -->
+    <string name="workspace_changes_title">Modificări de fișiere</string>
+    <string name="workspace_changes_description">Examinați operațiile, modificările necomise și diferențele dintre ramuri</string>
+    <string name="workspace_changes_scope">Domeniu: %1$s</string>
+    <string name="workspace_changes_operations">Istoricul operațiilor</string>
+    <string name="workspace_changes_working">Necomise</string>
+    <string name="workspace_changes_branch">Comparare ramuri</string>
+    <string name="workspace_changes_refresh">Reîmprospătare</string>
+    <string name="workspace_changes_tree">Arbore de directoare</string>
+    <string name="workspace_changes_choose_base">Alegeți ramura de comparație</string>
+    <string name="workspace_changes_load_failed">Nu s-au putut încărca modificările</string>
+    <string name="workspace_changes_count">%1$d fișiere</string>
+    <string name="workspace_changes_empty_records">Nu există încă operații înregistrate. Operațiile de fișiere reușite vor apărea aici.</string>
+    <string name="workspace_changes_empty_git">Nu există modificări în acest domeniu.</string>
+    <string name="workspace_changes_choose_file">Selectați un fișier pentru a vedea diferențele</string>
+    <string name="workspace_changes_history_count">%1$s · %2$d operații</string>
+    <string name="workspace_changes_files">Fișiere</string>
+    <string name="workspace_changes_open">Deschideți fișierul</string>
+    <string name="workspace_changes_renamed_from">Calea inițială: %1$s</string>
+    <string name="workspace_changes_too_large">Fișierul depășește 2 MiB. Informațiile operației sunt păstrate fără afișarea conținutului.</string>
+    <string name="workspace_changes_unavailable">O parte din conținut nu a putut fi capturată; diferența completă nu este disponibilă.</string>
+    <string name="workspace_changes_directory">Aceasta este o operație de director. Fișierele capturate sunt afișate separat.</string>
+    <string name="workspace_changes_binary">Conținutul binar sau non-UTF-8 este înregistrat fără diferență de text.</string>
+    <string name="workspace_changes_operation_title">%1$s · %2$s</string>
+    <string name="workspace_changes_unified">Unificat</string>
+    <string name="workspace_changes_split">Alăturat</string>
+    <string name="workspace_changes_wrap">Încadrare linii</string>
+    <string name="workspace_changes_full">Fișier complet</string>
+    <string name="workspace_changes_newline">Linia nouă de la final s-a modificat</string>
+    <string name="workspace_changes_expand">Extindeți %1$d linii nemodificate</string>
+    <string name="workspace_changes_unborn">Depozitul nu are încă comiteri. Fișierele necomise pot fi examinate.</string>
+    <string name="workspace_changes_git_environment">Acest mediu nu poate rula Git. Istoricul operațiilor este disponibil.</string>
+    <string name="workspace_changes_git_runtime">Instalați Ubuntu din Resurse offline, apoi instalați Git în acel mediu.</string>
+    <string name="workspace_outputs_title">Rezultatele conversației</string>
+    <string name="workspace_outputs_description">Examinați operațiile reușite din această conversație, în toate locațiile</string>
+    <string name="workspace_outputs_scope">Operațiile acestei conversații, inclusiv fișierele din afara spațiului de lucru</string>
+    <string name="workspace_changes_last_turn">Ultima rundă</string>
+    <string name="workspace_changes_turn_summary">%1$s · Rezumatul rundei</string>
+    <string name="workspace_changes_open_with">Deschide cu</string>
+    <string name="workspace_changes_open_files">Manager de fișiere</string>
+    <string name="workspace_changes_open_editor">Editor de text</string>
+    <string name="workspace_changes_open_terminal">Terminal</string>
+    <string name="workspace_changes_copy_path">Copiază calea</string>
+    <string name="workspace_changes_terminal_backend">Conexiunea terminalului nu corespunde sursei fișierului. Selectează mediul local sau SSH corespunzător.</string>
+    <string name="workspace_changes_added_only">Fără conținut anterior; se afișează adăugările</string>
+    <string name="workspace_changes_deleted_only">Fără conținut rămas; se afișează ștergerile</string>
+    <string name="workspace_changes_project_tree">Comută la arborele proiectului</string>
+    <!-- 当前行只读代码溯源 -->
+    <string name="workspace_blame_title">Originea codului</string>
+    <string name="workspace_blame_commit_diff">Modificările fișierului în commit</string>
+    <string name="workspace_blame_current_line">%1$s · Linia %2$d</string>
+    <string name="workspace_blame_time">Data autorului</string>
+    <string name="workspace_blame_summary">Mesajul commitului</string>
+    <string name="workspace_blame_hash">Hashul commitului</string>
+    <string name="workspace_blame_source_path">Calea și linia istorice</string>
+    <string name="workspace_blame_repository">Depozit</string>
+    <string name="workspace_blame_boundary">S-a atins limita istoricului disponibil local.</string>
+    <string name="workspace_blame_show_diff">Vezi modificările fișierului</string>
+    <string name="workspace_blame_root_commit">Commit rădăcină · Comparat cu un fișier gol</string>
+    <string name="workspace_blame_comparison">%1$s → %2$s</string>
+    <string name="workspace_blame_failed">Nu se poate citi originea codului</string>
+    <string name="workspace_blame_retry">Reîncearcă</string>
+    <string name="workspace_blame_uncommitted">Necomis</string>
+    <string name="workspace_blame_uncommitted_hint">Această linie nu are conținut corespunzător într-un commit.</string>
+    <string name="workspace_blame_not_repository">Nu se poate localiza depozitul Git pentru acest fișier.</string>
+    <string name="workspace_blame_too_large">Fișierul sau liniile sale sunt prea mari pentru a afișa originea codului.</string>
+    <string name="workspace_blame_no_text">Originea codului acceptă doar fișiere text UTF-8 obișnuite.</string>
+    <string name="workspace_blame_history_unavailable">Istoricul commitului părinte lipsește local, deci modificările fișierului nu pot fi afișate.</string>
+    <string name="workspace_blame_backend_changed">Conexiunea fișierului s-a schimbat. Revino la mediul local sau SSH inițial și redeschide fișierul.</string>
+    <!-- 操作记录清理与当前文件打开诊断 -->
+    <string name="workspace_records_manage">Gestionează înregistrările operațiilor</string>
+    <string name="workspace_records_remove_one">Șterge această înregistrare</string>
+    <string name="workspace_records_remove_all">Șterge toate înregistrările fișierului</string>
+    <string name="workspace_records_remove_message">Elimină cele %1$d înregistrări selectate și instantaneele fără referințe. Fișierul real nu va fi șters sau restaurat.</string>
+    <string name="workspace_records_scope_workspace">Domeniu: înregistrările acestui fișier din toate conversațiile, inclusiv alte ture.</string>
+    <string name="workspace_records_scope_chat">Domeniu: înregistrările acestui fișier doar din conversația curentă, inclusiv alte ture.</string>
+    <string name="workspace_records_remove_other_history">Alte înregistrări ale fișierului se păstrează, deci acesta poate apărea în continuare în listă.</string>
+    <string name="workspace_records_remove_failed">Nu se pot șterge înregistrările: %1$s</string>
+    <string name="workspace_open_missing">Fișierul nu mai există și nu poate fi deschis. Instantaneele istorice rămân disponibile.</string>
+    <string name="workspace_open_permission">Nu ai permisiunea de a citi această locație. Verifică accesul la fișiere sau autorizează din nou directorul.</string>
+    <string name="workspace_open_backend">Conexiunea fișierului s-a schimbat. Revino la mediul local sau SSH inițial.</string>
+    <string name="workspace_open_directory">Calea curentă este un director și nu poate fi deschisă ca fișier text.</string>
+    <string name="workspace_open_too_large">Fișierul text depășește 10 MiB și nu poate fi deschis în editorul integrat.</string>
+    <string name="workspace_open_not_text">Fișierul curent nu este text lizibil și nu poate fi deschis în editorul de text.</string>
+    <string name="workspace_open_failed">Nu se poate deschide fișierul. Verifică detaliile de mai jos despre cale, conexiune sau stocare.</string>
+    <string name="workspace_open_checking">Se verifică și se citește fișierul curent…</string>
 </resources>

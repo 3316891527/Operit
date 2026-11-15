@@ -571,27 +571,19 @@ internal fun StandardBrowserSessionTools.configureWebView(
         }
 }
 
-internal fun StandardBrowserSessionTools.ensureOverlayOnMain(
-    appContext: Context,
-    initialExpanded: Boolean = false
-): WebSessionBrowserHost {
-    StandardBrowserSessionTools.browserHost?.let { return it }
-
+internal fun StandardBrowserSessionTools.workbenchBrowserHost(): WebSessionBrowserHost {
     synchronized(StandardBrowserSessionTools.overlayLock) {
         StandardBrowserSessionTools.browserHost?.let { return it }
-
-        val host =
-            WebSessionBrowserHost(
-                appContext = appContext,
-                store = historyStore,
-                userscriptStore = userscriptManager.uiStore,
-                callbacks = createBrowserHostCallbacks(appContext)
-            )
-        StandardBrowserSessionTools.browserHost = host
-        host.ensureCreated(initialExpanded = initialExpanded)
-        refreshSessionUiOnMain()
-        return host
+        return WebSessionBrowserHost(context.applicationContext, historyStore, userscriptManager.uiStore,
+            createBrowserHostCallbacks(context.applicationContext)).also { StandardBrowserSessionTools.browserHost = it }
     }
+}
+
+internal fun StandardBrowserSessionTools.ensureOverlayOnMain(
+    appContext: Context, initialExpanded: Boolean = false,
+): WebSessionBrowserHost = workbenchBrowserHost().also {
+    it.ensureWindow(initialExpanded)
+    refreshSessionUiOnMain()
 }
 
 internal fun StandardBrowserSessionTools.createBrowserHostCallbacks(
@@ -812,8 +804,12 @@ internal fun StandardBrowserSessionTools.createBrowserHostCallbacks(
     }
 
 internal fun StandardBrowserSessionTools.destroyOverlayOnMain() {
-    StandardBrowserSessionTools.browserHost?.destroy()
-    StandardBrowserSessionTools.browserHost = null
+    if (StandardBrowserSessionTools.browserHost?.isEmbedded() == true) {
+        StandardBrowserSessionTools.browserHost?.attachActiveWebView(null)
+    } else {
+        StandardBrowserSessionTools.browserHost?.destroy()
+        StandardBrowserSessionTools.browserHost = null
+    }
     StandardBrowserSessionTools.activeSessionId = null
 }
 
@@ -981,8 +977,10 @@ internal fun StandardBrowserSessionTools.syncProjectedBrowserStateOnMain() {
         sessionId = resolvedActiveId,
         pageUrl = activeSession?.currentUrl
     )
+    val browserState = buildBrowserState(registry, buildBrowserDownloadSummary())
+    StandardBrowserSessionTools.workbenchState.value = browserState
     StandardBrowserSessionTools.browserHost?.updateHostProjection(
-        browserState = buildBrowserState(registry, buildBrowserDownloadSummary()),
+        browserState = browserState,
         downloadUiState = buildBrowserDownloadUiState(),
         externalOpenPrompt = StandardBrowserSessionTools.pendingExternalOpenRequest?.toUiState()
     )

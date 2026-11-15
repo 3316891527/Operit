@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "mode": "replace",
+  "extensions": [
+    ".operitdemo"
+  ],
+  "fileNames": [
+    "OperitDemo"
+  ],
+  "styles": {
+    "段名": {
+      "light": "#986801",
+      "dark": "#E5C07B",
+      "bold": true
+    },
+    "运算符": {
+      "light": "#0184BC",
+      "dark": "#56B6C2"
+    },
+    "转义": {
+      "light": "#0184BC",
+      "dark": "#56B6C2"
+    },
+    "标记": {
+      "extends": "keyword",
+      "bold": true
+    }
+  },
+  "definitions": {
+    "comments": [
+      {
+        "begin": "//",
+        "end": "$",
+        "style": "comment",
+        "rules": [
+          {
+            "words": [
+              "TODO",
+              "FIXME"
+            ],
+            "style": "标记"
+          }
+        ]
+      },
+      {
+        "begin": "/\\*",
+        "end": "\\*/",
+        "style": "comment",
+        "rules": [
+          {
+            "words": [
+              "TODO",
+              "FIXME"
+            ],
+            "style": "标记"
+          }
+        ]
+      }
+    ],
+    "strings": [
+      {
+        "begin": "\"",
+        "end": "\"|$",
+        "style": "string",
+        "rules": [
+          {
+            "match": "\\\\.",
+            "style": "转义"
+          },
+          {
+            "begin": "\\$\\{",
+            "end": "\\}",
+            "contentStyle": "default",
+            "beginCaptures": {
+              "0": "keyword"
+            },
+            "endCaptures": {
+              "0": "keyword"
+            },
+            "rules": [
+              {
+                "include": "expression"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "expression": [
+      {
+        "include": "comments"
+      },
+      {
+        "include": "strings"
+      },
+      {
+        "match": "\\b\\d+(?:\\.\\d+)?\\b",
+        "style": "number"
+      },
+      {
+        "words": [
+          "let",
+          "true",
+          "false",
+          "null"
+        ],
+        "style": "keyword"
+      },
+      {
+        "literals": [
+          "++",
+          "+",
+          "-",
+          "*",
+          "/",
+          "="
+        ],
+        "style": "运算符"
+      },
+      {
+        "begin": "\\{",
+        "end": "\\}",
+        "rules": [
+          {
+            "include": "expression"
+          }
+        ]
+      }
+    ]
+  },
+  "rules": [
+    {
+      "include": "comments"
+    },
+    {
+      "include": "strings"
+    },
+    {
+      "match": "\\b(section)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": "keyword",
+        "2": "段名"
+      }
+    },
+    {
+      "begin": "^```js\\s*$",
+      "end": "^```\\s*$",
+      "contentStyle": "default",
+      "rules": [
+        {
+          "language": "javascript"
+        }
+      ]
+    },
+    {
+      "include": "expression"
+    }
+  ]
+}

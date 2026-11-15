@@ -1,15 +1,25 @@
 pluginManagement {
     repositories {
         google()
-        gradlePluginPortal()
-        mavenCentral()
+        // 插件及其传递依赖使用镜像，避免插件门户重定向到受限的 Central 地址。
+        maven {
+            name = "AliyunCentral"
+            url = uri("https://maven.aliyun.com/repository/central")
+        }
+        maven {
+            name = "AliyunGradlePlugin"
+            url = uri("https://maven.aliyun.com/repository/gradle-plugin")
+        }
     }
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
-        mavenCentral()
+        maven {
+            name = "AliyunCentral"
+            url = uri("https://maven.aliyun.com/repository/central")
+        }
         maven { url = uri("https://jitpack.io") }
         maven { url = uri("https://dl.bintray.com/rikkaw/Shizuku") }
         maven { url = uri("https://api.xposed.info/") }

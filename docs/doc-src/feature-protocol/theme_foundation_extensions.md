@@ -114,7 +114,6 @@
 - `page.markdownDemo`
 - `page.speechToText`
 - `page.defaultAssistantGuide`
-- `page.htmlPackager`
 
 ## 独立文字样式
 

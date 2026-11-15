@@ -99,3 +99,5 @@
 - [补丁 18：统一集成与完整回归](patch18-integration/index.md)
 
 - [折叠已完成的回复过程](collapse-completed-response-process/index.md)
+
+- [工作区文件管理第一版](workspace-file-management/index.md) · `workspace-file-management`

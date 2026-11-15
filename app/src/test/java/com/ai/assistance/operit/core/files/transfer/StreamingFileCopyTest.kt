@@ -173,4 +173,15 @@ class StreamingFileCopyTest {
         assertEquals(0L, result.copiedBytes)
         assertEquals(1f, result.fraction)
     }
+    @Test fun directoryCopyStartsBeforeFullEnumerationAndDoesNotPublishAnEstimatedTotal() {
+        val source = temporary.newFolder("single-pass")
+        repeat(12) { File(source, "item$it").writeText("内容$it") }
+        val destination = File(temporary.root, "single-pass-copy")
+        val progress = mutableListOf<FileCopyProgress>()
+        StreamingFileCopy.copy(source, destination, onProgress = { progress += it })
+        assertTrue(progress.filter { it.phase != FileCopyPhase.COMPLETED }.all { it.totalBytes == null })
+        assertEquals(12L, progress.last().copiedFiles)
+        assertEquals(1f, progress.last().fraction)
+    }
+
 }

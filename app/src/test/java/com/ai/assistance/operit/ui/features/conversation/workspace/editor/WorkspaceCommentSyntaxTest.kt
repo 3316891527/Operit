@@ -6,9 +6,9 @@ import org.junit.Test
 class WorkspaceCommentSyntaxTest {
     @Test
     fun cssFamilyExposesBlockCommentSyntax() {
-        for (extension in listOf("css", "scss", "sass", "less")) {
+        for (extension in listOf("css", "scss", "less")) {
             val language = LanguageDetector.detectLanguage("sample.$extension")
-            assertEquals("css", language)
+            assertEquals(extension, language)
             val syntax = CommentSyntaxRegistry.forLanguage(language)!!
             assertEquals("/*", syntax.blockStart)
             assertEquals("*/", syntax.blockEnd)

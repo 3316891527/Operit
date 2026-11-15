@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.MoreVert
@@ -27,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
+import com.ai.assistance.operit.ui.features.conversation.workspace.browser.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.terminal.data.TerminalSessionData
@@ -48,6 +47,15 @@ internal fun WorkspaceSessionTabs(
     page: WorkspaceHubPage,
     hasWorkspace: Boolean,
     hasTerminal: Boolean,
+    hasChanges: Boolean,
+    hasOutputs: Boolean,
+    browserTabs: List<com.ai.assistance.operit.core.tools.builtin.web.session.browser.WebSessionBrowserTab>,
+    onBrowser: (String) -> Unit,
+    onCloseBrowser: (String) -> Unit,
+    onChanges: () -> Unit,
+    onOutputs: () -> Unit,
+    onCloseChanges: () -> Unit,
+    onCloseOutputs: () -> Unit,
     sessions: List<TerminalSessionData>,
     currentSessionId: String?,
     creatingSession: Boolean,
@@ -57,9 +65,11 @@ internal fun WorkspaceSessionTabs(
     onCloseTerminal: (String) -> Unit,
     onNewTerminal: () -> Unit,
     onTerminalPage: (EmbeddedTerminalPage) -> Unit,
+    browserMenu: WorkspaceBrowserMenuHost,
+    header: WorkspaceHeaderHost,
 ) {
     Row(
-        Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+        Modifier.padding(horizontal = 6.dp, vertical = 0.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
@@ -69,7 +79,16 @@ internal fun WorkspaceSessionTabs(
         ) {
             SessionTab(stringResource(R.string.workspace_hub_home), page == WorkspaceHubPage.HOME, onHome)
             if (hasWorkspace) {
-                SessionTab(stringResource(R.string.workspace), page == WorkspaceHubPage.WORKSPACE, onWorkspace)
+                SessionTab(stringResource(R.string.workspace), page == WorkspaceHubPage.WORKSPACE && !header.fileSelected, { onWorkspace(); header.showFiles?.invoke() })
+                if (page == WorkspaceHubPage.WORKSPACE) header.tabs?.invoke(this)
+            }
+            if (hasChanges) SessionTab(stringResource(R.string.workspace_changes_title), page == WorkspaceHubPage.CHANGES, onChanges, onCloseChanges)
+            if (hasOutputs) SessionTab(stringResource(R.string.workspace_outputs_title), page == WorkspaceHubPage.OUTPUTS, onOutputs, onCloseOutputs)
+            browserTabs.forEach { tab ->
+                key("browser:" + tab.sessionId) {
+                    SessionTab(tab.title.ifBlank { stringResource(R.string.web_session_new_tab) }, page == WorkspaceHubPage.BROWSER && tab.isActive,
+                        { onBrowser(tab.sessionId) }, { onCloseBrowser(tab.sessionId) })
+                }
             }
             if (hasTerminal) sessions.forEachIndexed { index, session ->
                 key(session.id) {
@@ -85,7 +104,8 @@ internal fun WorkspaceSessionTabs(
                 }
             }
         }
-        if (hasTerminal) {
+        if (page == WorkspaceHubPage.WORKSPACE) header.actions?.invoke(this)
+        if (hasTerminal && page == WorkspaceHubPage.TERMINAL) {
             val newTerminalIconTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                 alpha = if (creatingSession) 0.38f else 1f,
             )
@@ -105,6 +125,7 @@ internal fun WorkspaceSessionTabs(
                 }
             }
         }
+        if (page == WorkspaceHubPage.WORKSPACE) WorkspaceBrowserMenuButton(browserMenu)
         if (page == WorkspaceHubPage.TERMINAL) {
             var menuOpen by remember { mutableStateOf(false) }
             Box {
@@ -162,22 +183,5 @@ internal fun WorkspaceSessionTabs(
 
 @Composable
 private fun SessionTab(title: String, selected: Boolean, onClick: () -> Unit, onClose: (() -> Unit)? = null) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = if (selected) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surface,
-        contentColor = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
-    ) {
-        Row(Modifier.heightIn(min = 44.dp).padding(start = 14.dp, end = if (onClose == null) 14.dp else 2.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Text(title, modifier = Modifier.widthIn(max = 156.dp), style = MaterialTheme.typography.titleSmall,
-                maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (onClose != null) {
-                IconButton(onClick = onClose, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.Close, stringResource(R.string.workspace_terminal_close, title), Modifier.size(18.dp))
-                }
-            }
-        }
-    }
+    WorkspaceNavigationTab(title, selected, onClick, onClose = onClose)
 }

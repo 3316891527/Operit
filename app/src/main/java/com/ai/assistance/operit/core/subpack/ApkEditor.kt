@@ -229,7 +229,8 @@ private constructor(
      * @param webContentDir 网页内容目录
      * @return 签名后的APK文件
      */
-    fun repackAndSignWithWebContent(webContentDir: File): File {
+    fun repackAndSignWithWebContent(webContentDir: File, onProgress: (Float, String) -> Unit = { _, _ -> }): File {
+        onProgress(0f, "正在重打包网页、资源和 Android 清单")
         val unsignedApk = repackWithWebContent(webContentDir)
 
         AppLogger.d(TAG, "未签名APK生成成功: ${unsignedApk.absolutePath}, 文件大小: ${unsignedApk.length()}")
@@ -254,6 +255,7 @@ private constructor(
 
         AppLogger.d(TAG, "开始签名APK，输入: ${unsignedApk.absolutePath}, 输出: ${signedOutputFile.absolutePath}")
 
+        onProgress(0.7f, "正在签名 APK")
         val signResult = apkReverseEngineer.signApk(
                 unsignedApk,
                 keyStoreFile!!,
@@ -288,6 +290,7 @@ private constructor(
         }
 
         AppLogger.d(TAG, "APK签名完成: ${finalOutputFile.absolutePath}, 文件大小: ${finalOutputFile.length()}字节")
+        onProgress(1f, "APK 已完成签名和输出")
         return finalOutputFile
     }
 

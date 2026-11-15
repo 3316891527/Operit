@@ -58,7 +58,8 @@ private fun buildExecutionPreludeSource(): String {
         };
         var reportDetailedError = function() { return __operitInvokeCallRuntime('reportDetailedError', arguments); };
         var ToolPkg = globalThis.ToolPkg;
-        var Tools = globalThis.Tools;
+        var toolCall = __operit_call_runtime.toolCall;
+        var Tools = Object.assign({}, globalThis.Tools, { Files: globalThis.__operitCreateFileTools(toolCall) });
         var Java = globalThis.Java;
         var Android = globalThis.Android;
         var Intent = globalThis.Intent;
@@ -77,7 +78,6 @@ private fun buildExecutionPreludeSource(): String {
         var pako = globalThis.pako;
         var _ = globalThis._;
         var dataUtils = globalThis.dataUtils;
-        var toolCall = globalThis.toolCall;
     """.trimIndent()
 }
 
@@ -608,6 +608,11 @@ internal fun buildExecutionRuntimeBridgeScript(): String {
 
                 function createRuntime() {
                     return {
+                        toolCall: root.toolCall.bind({
+                            __operitCallId: callId,
+                            __operitAsyncToolMethod: 'callToolAsyncForCall',
+                            __operitStreamingToolMethod: 'callToolAsyncStreamingForCall'
+                        }),
                         emit: emitIntermediate,
                         delta: emitIntermediate,
                         log: emitIntermediate,
@@ -668,7 +673,8 @@ internal fun buildExecutionRuntimeBridgeScript(): String {
                             : ''
                     )
                 );
-                var moduleCache = registrationMode
+                // 对话脚本独占模块实例，使异步闭包始终持有本次调用的对话上下文。
+                var moduleCache = (registrationMode || readCallValue('__operit_package_chat_id', ''))
                     ? Object.create(null)
                     : ensureModuleInstanceCache();
 

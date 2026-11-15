@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s: %2$s</string>
+    <string name="workspace_search_option_on">Activat</string>
+    <string name="workspace_search_option_off">Dezactivat</string>
+    <string name="workspace_markdown_outline">Cuprins</string>
+    <string name="workspace_markdown_outline_empty">Acest document nu are titluri.</string>
+    <string name="workspace_markdown_outline_expand">Extinde secțiunea</string>
+    <string name="workspace_markdown_outline_collapse">Restrânge secțiunea</string>
+</resources>

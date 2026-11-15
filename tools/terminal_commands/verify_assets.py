@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 COMMAND_PACKAGERS = (
     ROOT / 'tools/native_apply_patch/package_assets.py',
     ROOT / 'tools/web_chat_cli/package_assets.py',
+    ROOT / 'tools/html_build_cli/package_assets.py',
 )
 
 

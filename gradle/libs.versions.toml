@@ -41,8 +41,13 @@ jlatexmath = "0.2.0"
 renderx = "1.0.0"
 kotlinx-serialization = "1.9.0"
 uuid = "0.8.2"
-gson = "2.10.1"
+gson = "2.13.1"
 hjson = "3.0.0"
+sora = "0.23.6"
+jcodings = "1.0.63"
+joni = "2.2.6"
+snakeyaml-engine = "2.9"
+jdt-annotation = "2.3.100"
 json = "20250517"
 jieba = "1.0.2"
 hnswlib = "0.0.46"
@@ -170,6 +175,12 @@ kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-seria
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 uuid = { group = "com.benasher44", name = "uuid", version.ref = "uuid" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+sora-textmate = { group = "io.github.Rosemoe.sora-editor", name = "language-textmate", version.ref = "sora" }
+sora-editor = { group = "io.github.Rosemoe.sora-editor", name = "editor", version.ref = "sora" }
+jcodings = { group = "org.jruby.jcodings", name = "jcodings", version.ref = "jcodings" }
+joni = { group = "org.jruby.joni", name = "joni", version.ref = "joni" }
+snakeyaml-engine = { group = "org.snakeyaml", name = "snakeyaml-engine", version.ref = "snakeyaml-engine" }
+jdt-annotation = { group = "org.eclipse.jdt", name = "org.eclipse.jdt.annotation", version.ref = "jdt-annotation" }
 hjson = { group = "org.hjson", name = "hjson", version.ref = "hjson" }
 json-jvm = { group = "org.json", name = "json", version.ref = "json" }
 

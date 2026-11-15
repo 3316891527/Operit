@@ -122,6 +122,13 @@ object ToolExecutionManager {
     internal fun currentToolRuntimeContext(): ToolRuntimeContext? =
         toolRuntimeContextThreadLocal.get()
 
+    /** 跨 JS 原生线程显式传递发起对话，离开调用后恢复原线程上下文。 */
+    internal fun <T> withToolRuntimeContext(runtimeContext: ToolRuntimeContext?, block: () -> T): T {
+        val previous = toolRuntimeContextThreadLocal.get()
+        toolRuntimeContextThreadLocal.set(runtimeContext)
+        return try { block() } finally { toolRuntimeContextThreadLocal.set(previous) }
+    }
+
     private fun addPackageContextParamIfMissing(
         params: MutableList<ToolParameter>,
         name: String,

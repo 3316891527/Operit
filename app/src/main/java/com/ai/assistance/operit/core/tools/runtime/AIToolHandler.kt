@@ -197,7 +197,7 @@ class AIToolHandler private constructor(private val context: Context) {
             descriptionGenerator: ((AITool) -> String)? = null,
             executor: ToolExecutor
     ) {
-        availableTools[name] = executor
+        availableTools[name] = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceChangeRecorder.wrap(context, name, executor)
 
         // 注册描述生成器（如果提供）
         if (descriptionGenerator != null) {

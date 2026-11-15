@@ -7,6 +7,11 @@ import android.webkit.MimeTypeMap
 import java.io.File
 import java.util.Locale
 import com.ai.assistance.operit.ui.features.conversation.workspace.OpenFileInfo
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.textmate.TextMateCatalog
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightConfiguration
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightFiles
+import com.ai.assistance.operit.ui.features.conversation.workspace.archive.WorkspaceFileRoute
+import com.ai.assistance.operit.ui.features.conversation.workspace.archive.workspaceFileRoute
 
 private const val LOCAL_WORKSPACE_HOST = "127.0.0.1"
 
@@ -15,14 +20,31 @@ internal suspend fun workspaceMimeTypeForFile(
     path: String,
     environment: String?
 ): String {
-    // .ts can be TypeScript source or MPEG transport stream; inspect its bytes before routing.
-    val isTypeScriptText = path.substringAfterLast('.', "").equals("ts", ignoreCase = true) &&
-        ToolGetter.getFileSystemTools(context)
-            .isTextFile(path, environment)
-    return workspaceMimeTypeForPath(path, isTypeScriptText)
+    val mimeType = workspaceMimeTypeForPath(path)
+    // 内置源码与媒体后缀冲突时沿用内容采样；普通媒体和归档保持原打开方式。
+    if (TextMateCatalog.detectLanguage(path) != "text" && workspaceShouldOpenAsDirectPreview(path, mimeType)) {
+        val isText = ToolGetter.getFileSystemTools(context).isTextFile(path, environment)
+        return workspaceMimeTypeForContent(path, mimeType, isText)
+    }
+    if (workspaceFileRoute(path, mimeType) != WorkspaceFileRoute.SYSTEM) return mimeType
+    // 只为陌生格式读取配置，损坏配置本身仍能通过 JSON 文本入口打开修正。
+    val configuration = EditorHighlightFiles.load(EditorHighlightFiles.directory(context))
+    if (configuration.associatedLanguage(path) == null) return mimeType
+    val isText = ToolGetter.getFileSystemTools(context).isTextFile(path, environment)
+    return workspaceMimeTypeForContent(path, mimeType, isText, configuration)
 }
 
-internal fun workspaceMimeTypeForPath(path: String, isTypeScriptText: Boolean = false): String {
+/** 登记的陌生格式经内容确认后进入编辑器，二进制与已有预览类型保持原路由。 */
+internal fun workspaceMimeTypeForContent(
+    path: String, mimeType: String, isText: Boolean,
+    configuration: EditorHighlightConfiguration = EditorHighlightConfiguration.Empty,
+): String {
+    val sourceConflict = TextMateCatalog.detectLanguage(path) != "text" && workspaceShouldOpenAsDirectPreview(path, mimeType)
+    val customText = configuration.associatedLanguage(path) != null && workspaceFileRoute(path, mimeType) == WorkspaceFileRoute.SYSTEM
+    return if (isText && (sourceConflict || customText)) "text/plain" else mimeType
+}
+
+internal fun workspaceMimeTypeForPath(path: String): String {
     val extension = path.substringAfterLast('.', "").lowercase(Locale.ROOT)
     if (extension.isBlank()) return "application/octet-stream"
     return when (extension) {
@@ -31,7 +53,7 @@ internal fun workspaceMimeTypeForPath(path: String, isTypeScriptText: Boolean = 
         "js", "mjs", "cjs" -> "application/javascript"
         "json" -> "application/json"
         "txt", "md", "log", "tsx" -> "text/plain"
-        "ts" -> if (isTypeScriptText) "text/plain" else "video/mp2t"
+        "ts" -> "video/mp2t"
 
         "xml" -> "application/xml"
         "csv" -> "text/csv"

@@ -4,9 +4,8 @@ package com.ai.assistance.operit.core.tools.javascript
 fun getJsToolsDefinition(): String {
     return """
         // 工具调用的便捷方法
-        var Tools = {
-            // 文件系统操作
-            Files: {
+        // 每次脚本执行创建捕获调用上下文的文件工具，避免并行对话串记。
+        function __operitCreateFileTools(toolCall) { return {
                 list: (path, environment) => {
                     const params = { path };
                     if (environment) params.environment = environment;
@@ -163,7 +162,10 @@ fun getJsToolsDefinition(): String {
                     }
                     return toolCall("download_file", params);
                 },
-            },
+            }; }
+        var Tools = {
+            // 文件系统操作
+            Files: __operitCreateFileTools(toolCall),
             // 网络操作
             Net: {
                 httpGet: (url, ignoreSsl) => {

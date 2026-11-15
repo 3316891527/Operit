@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">Compress</string>
+    <string name="workspace_archive_extract">Extract</string>
+    <string name="workspace_archive_add">Add</string>
+    <string name="workspace_archive_choose_directory">Select this folder</string>
+    <string name="workspace_archive_password">Decryption password</string>
+    <string name="workspace_archive_name">Archive name</string>
+    <string name="workspace_archive_format">Format</string>
+    <string name="workspace_archive_destination">Destination folder</string>
+    <string name="workspace_archive_level">Compression level</string>
+    <string name="workspace_archive_level_fast">Fast</string>
+    <string name="workspace_archive_level_normal">Normal</string>
+    <string name="workspace_archive_level_maximum">Maximum</string>
+    <string name="workspace_archive_working">Working</string>
+    <string name="workspace_archive_processed">Processed %1$s</string>
+    <string name="workspace_archive_read_only">Read-only archive</string>
+    <string name="workspace_archive_retry">Retry</string>
+    <string name="workspace_archive_entries">%1$d entries</string>
+    <string name="workspace_archive_signed">Modifying this file invalidates its existing signature.</string>
+    <string name="workspace_archive_link">Link entries cannot be opened or extracted.</string>
+    <string name="workspace_archive_extract_all">Extract all</string>
+    <string name="workspace_archive_extract_selected">Extract %1$d selected items</string>
+    <string name="workspace_archive_encrypt_password">Encryption password (optional)</string>
+    <string name="workspace_archive_read_password_hint">Used to read an encrypted archive. This does not change its password.</string>
+    <string name="workspace_archive_password_required">A decryption password is required to read this archive.</string>
+    <string name="workspace_archive_source">Archive source</string>
+    <string name="workspace_archive_packed_size">Packed size</string>
+    <string name="workspace_archive_encrypted">Encrypted</string>
+    <string name="workspace_archive_name_hint">The selected format adds the extension automatically.</string>
+    <string name="workspace_archive_stage_target">Check destination</string>
+    <string name="workspace_archive_stage_sources">Read sources</string>
+    <string name="workspace_archive_stage_write">Write archive</string>
+    <string name="workspace_archive_stage_verify">Verify archive</string>
+    <string name="workspace_archive_stage_publish">Publish archive</string>
+    <string name="workspace_archive_create_failed_detail">Cannot create %1$s\nStep: %2$s\nDestination: %3$s\nReason: %4$s</string>
+</resources>

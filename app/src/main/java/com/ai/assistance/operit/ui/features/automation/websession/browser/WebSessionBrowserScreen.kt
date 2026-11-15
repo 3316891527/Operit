@@ -93,7 +93,8 @@ internal fun WebSessionBrowserScreen(
     onConfirmExternalOpen: (String) -> Unit,
     onCancelExternalOpen: (String) -> Unit,
     onHandlePendingDialog: (Boolean, String?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    embedded: Boolean = false,
 ) {
     val browserState = hostState.browserState
     var totalHeightPx by remember { mutableIntStateOf(0) }
@@ -195,7 +196,7 @@ internal fun WebSessionBrowserScreen(
                 },
                 onRefreshOrStop = onRefreshOrStop,
                 onMinimize = onMinimize,
-                modifier = Modifier.statusBarsPadding()
+                modifier = if (embedded) Modifier else Modifier.statusBarsPadding()
             )
 
             hostState.externalOpenPrompt?.let { prompt ->
@@ -328,7 +329,7 @@ internal fun WebSessionBrowserScreen(
                         current.copy(sheetRoute = WebSessionBrowserSheetRoute.MENU)
                     }
                 },
-                modifier = Modifier.navigationBarsPadding()
+                modifier = if (embedded) Modifier else Modifier.navigationBarsPadding()
             )
             }
         }

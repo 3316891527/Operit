@@ -1,7 +1,11 @@
 buildscript {
     val objectboxVersion by extra("5.3.0")
     repositories {
-        mavenCentral()
+        // ObjectBox 构建插件及其依赖与主工程统一使用 Central 镜像，避免下载限流。
+        maven {
+            name = "AliyunCentral"
+            url = uri("https://maven.aliyun.com/repository/central")
+        }
     }
     dependencies {
         classpath("io.objectbox:objectbox-gradle-plugin:$objectboxVersion")

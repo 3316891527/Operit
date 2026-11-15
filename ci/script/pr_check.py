@@ -57,6 +57,7 @@ ANDROID_FULL_PATTERNS = (
     "tools/native_ripgrep/**",
     "tools/native_apply_patch/**",
     "tools/web_chat_cli/**",
+    "tools/html_build_cli/**",
     "tools/terminal_commands/**",
     ".github/actions/terminal-commands/**",
 )

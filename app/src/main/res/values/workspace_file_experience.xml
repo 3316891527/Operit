@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">无法读取此 APK 的应用信息。</string>
+    <string name="workspace_apk_loading">正在读取应用信息…</string>
+    <string name="workspace_apk_version_code">版本号</string>
+    <string name="workspace_apk_size">安装包大小</string>
+    <string name="workspace_apk_min_sdk">最低系统版本</string>
+    <string name="workspace_apk_target_sdk">目标系统版本</string>
+    <string name="workspace_apk_installed">已安装版本</string>
+    <string name="workspace_apk_not_installed">未安装</string>
+    <string name="workspace_apk_view">查看</string>
+    <string name="workspace_apk_install">安装</string>
+    <string name="workspace_apk_allow_install">请允许此应用安装未知应用，然后再次点击安装。</string>
+    <string name="workspace_archive_preparing">正在准备…</string>
+    <string name="workspace_archive_reading_index">正在读取归档目录…</string>
+    <string name="workspace_archive_extracting">正在解压…</string>
+    <string name="workspace_archive_transferring">正在复制到目标…</string>
+    <string name="workspace_archive_publishing">正在写入目标…</string>
+    <string name="workspace_archive_entry_progress">已完成 %1$d / %2$d 项</string>
+    <string name="workspace_archive_entries_done">已完成 %1$d 项</string>
+    <string name="workspace_archive_byte_progress">已处理 %1$s / %2$s</string>
+    <string name="workspace_archive_current_file">当前文件进度</string>
+    <string name="workspace_transfer_scanning_delete">正在统计待删除文件…</string>
+    <string name="workspace_transfer_discovered_items">已发现 %1$d 项</string>
+    <string name="workspace_transfer_delete_recursive_scope">包含所选目录内的文件和子目录。</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">取消会停止后续删除，已删除的内容不会恢复。</string>
+</resources>
