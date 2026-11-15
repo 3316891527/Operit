@@ -862,14 +862,17 @@ fun PersonaCardGenerationScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = context.getString(R.string.persona_card_generation_title), 
+                    text = context.getString(R.string.persona_card_generation_title),
+                    // 透明页面的标题直接使用主题前景色，避免继承外层默认黑色。
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleMedium, 
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = { showClearHistoryConfirm = true }) {
                     Icon(
                         imageVector = Icons.Filled.DeleteSweep,
-                        contentDescription = context.getString(R.string.clear_chat_history)
+                        contentDescription = context.getString(R.string.clear_chat_history),
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
                 Spacer(Modifier.weight(1f))

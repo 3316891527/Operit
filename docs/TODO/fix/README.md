@@ -9,6 +9,7 @@
 ## 计划索引
 
 - [新建对话入场动画请求生命周期修复](new-chat-intro-lifecycle/index.md)
+- [市场与角色卡页面主题文字和菜单统一](market-character-theme/index.md)
 
 - [OpenAI 绘图资源更新一致性](openai-draw-resource-updates/index.md)
 
