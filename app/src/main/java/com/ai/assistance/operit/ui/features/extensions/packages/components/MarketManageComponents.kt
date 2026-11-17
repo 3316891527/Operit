@@ -456,7 +456,7 @@ fun MarketManageLoadingState(message: String) {
     ) {
         CircularProgressIndicator()
         Spacer(modifier = Modifier.height(8.dp))
-        Text(message)
+        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
