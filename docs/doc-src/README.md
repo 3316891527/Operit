@@ -21,7 +21,7 @@
 - 构建 App 不应直接依赖文档的相对位置，应先解析适当的元数据；若没有，应做必要的创建
 - 严禁让发布版或 CDN 直接索引项目目录位置，这会严重限制日后结构改动，且降低稳健性
 
-工作区编辑器的自由样式、匹配规则与文件关联见[自定义语法高亮](dev-core/editor-highlighting.md)。
+工作区编辑器的自由样式、匹配规则与文件关联见[自定义语法高亮](dev-core/editor-highlighting/editor-highlighting.md)。
 
 建议参考[文档撰写指南](before_docing.md)
 角色主题制作从 [JSON 与 JavaScript 制作手册](feature-protocol/theme_authoring_guide.md) 开始；全部只读设置见 [参数目录](feature-protocol/theme_settings_reference.md)，实现概览见 [JavaScript 外观 API](feature-protocol/theme_script_api.md)。

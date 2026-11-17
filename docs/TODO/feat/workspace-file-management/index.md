@@ -136,7 +136,7 @@ branch: feat/workspace-file-management
 
 ## 轻量自定义语法高亮
 
-编辑器与 Diff 共用自由命名的动态样式，开放严格 JSON 的正则、词表、精确文本、捕获组、嵌套区域、命名引用与嵌入语言，保留 Markdown 字体效果。全局和语言配置逐字段合并，保存配置自动重新分析，Diff 在打开或刷新时重载。[配置说明与示例](../../../doc-src/dev-core/editor-highlighting.md)记录当前接口、限额及验证边界；本轮直接实施，没有新增任务清单。
+编辑器与 Diff 共用自由命名的动态样式，开放严格 JSON 的正则、词表、精确文本、捕获组、嵌套区域、命名引用与嵌入语言，保留 Markdown 字体效果。全局和语言配置逐字段合并，保存配置自动重新分析，Diff 在打开或刷新时重载。[配置说明与示例](../../../doc-src/dev-core/editor-highlighting/editor-highlighting.md)记录当前接口、限额及验证边界；本轮直接实施，没有新增任务清单。
 
 
 ## 空白长按与变更审阅设备反馈

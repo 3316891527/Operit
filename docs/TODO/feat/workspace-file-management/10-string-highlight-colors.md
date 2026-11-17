@@ -23,7 +23,7 @@ status: pending_validation
 | 变量与属性 | #E45649 | 红色 hue-5 |
 | 函数 | #4078F2 | 蓝色 hue-2 |
 
-画布编辑器与 Diff 通过共享渲染器使用 codeColor 绘制函数；浅色主题中的 codeColor 与 selectorColor 均为 #4078F2。处理标记、标题、引用和列表色也使用 One Light 色板。后续已接入完整动态样式，保留 Markdown 字体效果，并开放[轻量 JSON 自定义规则](../../../doc-src/dev-core/editor-highlighting.md)。
+画布编辑器与 Diff 通过共享渲染器使用 codeColor 绘制函数；浅色主题中的 codeColor 与 selectorColor 均为 #4078F2。处理标记、标题、引用和列表色也使用 One Light 色板。后续已接入完整动态样式，保留 Markdown 字体效果，并开放[轻量 JSON 自定义规则](../../../doc-src/dev-core/editor-highlighting/editor-highlighting.md)。
 
 ## 实现与验证
 
