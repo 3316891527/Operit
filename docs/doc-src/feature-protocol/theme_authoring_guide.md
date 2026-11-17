@@ -2,7 +2,7 @@
 
 本文依据 `feat/oktheme-script-api` 分支源码编写，是当前实现的制作参考稿。机器协议为 `apiVersion: 1`，完整主题包为 `schema: 1`；这些数字不表示应用发布版本。字段经过源码核对，示例的验证状态见文末。
 
-从零开始请先读“第一次制作”和“文件放在哪里”，再按需要查字段。只读主题设置的完整键名、默认值和范围见 [主题设置参数目录](theme_settings_reference.md)。接口概览见 [原生外观接口](theme_script_api.md)，可复制文件见 [入门工程](../../../examples/theme-script/starter/README.md)，编辑器类型提示见 [TypeScript 声明](../../../examples/theme-script/oktheme.d.ts)。
+从零开始请先读“第一次制作”和“文件放在哪里”，再按需要查字段。只读主题设置的完整键名、默认值和范围见 [主题设置参数目录](theme_settings_reference.md)。接口概览见 [原生外观接口](theme_script_api.md)，可复制文件见 [入门工程](../../../plugins/examples/theme-script/starter/README.md)，编辑器类型提示见 [TypeScript 声明](../../../plugins/examples/theme-script/oktheme.d.ts)。
 
 阅读导航：
 
@@ -68,7 +68,7 @@ module.exports = {
 };
 ```
 
-进阶的 [入门工程](../../../examples/theme-script/starter/README.md) 提供配套的 `theme.json`、`manifest.json` 与 `assets/main.js`，展示模式覆盖、状态、颜色计算、已有设置读取和批量生成装饰。按 README 的顺序复制；该 JS 会读取配套 JSON 中的 `background` 与 `composer`。
+进阶的 [入门工程](../../../plugins/examples/theme-script/starter/README.md) 提供配套的 `theme.json`、`manifest.json` 与 `assets/main.js`，展示模式覆盖、状态、颜色计算、已有设置读取和批量生成装饰。按 README 的顺序复制；该 JS 会读取配套 JSON 中的 `background` 与 `composer`。
 
 <a id="files"></a>
 ## 文件放在哪里
@@ -593,7 +593,7 @@ module.exports = {
 Android 运行的是 JS。TypeScript 的类型、`import/export` 和声明文件供外部制作环境使用，先编译为单文件 CommonJS，再导入生成的 `.js`。已有 TypeScript 环境可编译仓库示例：
 
 ```sh
-tsc --strict --target ES2020 --module commonjs --outDir dist examples/theme-script/minimal.ts
+tsc --strict --target ES2020 --module commonjs --outDir dist plugins/examples/theme-script/minimal.ts
 ```
 
 导入 `dist/minimal.js`，不要导入 `.ts` 或 `.d.ts`。只依赖 `import type` 的示例会消除类型导入；含真正运行时依赖的工程还需在外部打包，不能期待 Android 提供 `require`。

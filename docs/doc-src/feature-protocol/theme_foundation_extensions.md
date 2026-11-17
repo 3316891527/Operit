@@ -167,7 +167,7 @@
 
 `modes.light/dark.textStyles` 按目标覆盖公共声明，单个目标使用完整局部对象，未声明目标保留公共配置。字体素材的引用、删除检查和 `.oktheme` 归档与现有排版共用；新增独立样式无需重新注册字体。
 
-可直接导入的 JS 示例见 [foundation.js](../../../examples/theme-script/foundation.js)，类型定义见 [oktheme.d.ts](../../../examples/theme-script/oktheme.d.ts)。自定义脚本继续显式合并需要保留的 `context.appearance`，可视化不会反向改写任意 JS 逻辑。
+可直接导入的 JS 示例见 [foundation.js](../../../plugins/examples/theme-script/foundation.js)，类型定义见 [oktheme.d.ts](../../../plugins/examples/theme-script/oktheme.d.ts)。自定义脚本继续显式合并需要保留的 `context.appearance`，可视化不会反向改写任意 JS 逻辑。
 
 ## 原生交互效果
 
@@ -175,7 +175,7 @@
 
 过渡在原生端插值透明度、边框宽度，以及明确设置了基础色的填色、正文色和边框色。图层素材、形状、渐变和原生继承色仍按当前状态解析。一个部件共用一份原生动画结果，不逐帧运行 JS；初次加载和主题声明改变时立即使用新配置，动画时长由系统设置控制。
 
-涟漪沿用 Material3 的点击反馈，`enabled: false` 显式关闭；未指定颜色时使用原生默认颜色。没有新增点击层或业务事件。工作室在部件的“状态”页中编辑开关、时长滑条和涟漪颜色，所有设置分别保存浅深模式，并随工程草稿与主题归档往返。完整示例见 `examples/theme-script/interaction.ts`。
+涟漪沿用 Material3 的点击反馈，`enabled: false` 显式关闭；未指定颜色时使用原生默认颜色。没有新增点击层或业务事件。工作室在部件的“状态”页中编辑开关、时长滑条和涟漪颜色，所有设置分别保存浅深模式，并随工程草稿与主题归档往返。完整示例见 `plugins/examples/theme-script/interaction.ts`。
 
 ## 工作室属性与真实预览
 

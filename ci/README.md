@@ -51,7 +51,7 @@ python3 -B ci/script/check_localizations.py --base "$BASE_SHA" --candidate "$CAN
 - WebChat：运行 TypeScript typecheck 与 Vite build
 - ToolPkg：重建并核对 GitHub 示例，按独立锁文件编译 WASM 示例，再构建测试集合和生产白名单集合；JSON manifest 声明的入口与 WASM 文件必须存在且进入归档
 
-根项目、`web-chat` 和独立的 `examples/toolpkg_wasm_demo` 分别提交 `package-lock.json`，CI 使用 `npm ci` 安装确定的依赖树。
+根项目、`app/web-chat` 和独立的 `plugins/examples/toolpkg_wasm_demo` 分别提交 `package-lock.json`，CI 使用 `npm ci` 安装确定的依赖树。
 
 PR workflow 只有 `contents: read` 权限，不读取仓库 secret，也不上传 APK/AAB。`Android Build`
 是只负责编译和打包的可信 main/手工构建 workflow，`Android Tests` 单独负责可信 main/手工 JVM 单测。
@@ -70,9 +70,9 @@ JVM lane 只下载 `libs.zip`，完整 Android lane 下载 `libs.zip` 和 `jniLi
 
 ## Terminal core sync
 
-`terminal/` 是 `3316891527/OperitTerminalCore` 的 Git 子模块。同一提交的受版本控制文件完全一致；主应用记录固定提交，独立仓库的默认分支用于展示已经被应用采用的最新终端版本。
+`modules/terminal/` 是 `3316891527/OperitTerminalCore` 的 Git 子模块。同一提交的受版本控制文件完全一致；主应用记录固定提交，独立仓库的默认分支用于展示已经被应用采用的最新终端版本。
 
-[Sync terminal core](../.github/workflows/sync-terminal-core.yml) 在 `dev`、`main` 更新 `terminal`、`.gitmodules` 或同步实现时自动调用 [同步脚本](script/sync_terminal_core.py)。它不初始化子模块、不编译应用，读取两个分支最新应用提交的 gitlink、选择包含另一版本的较新提交后，通过 GitHub API 快进终端仓库的默认分支。运行摘要记录触发提交、两个分支的终端引用和更新前后版本。同组等待运行可能被后续事件合并，每次读取最新引用可避免漏同步。
+[Sync terminal core](../.github/workflows/sync-terminal-core.yml) 在 `dev`、`main` 更新 `modules/terminal`、`.gitmodules` 或同步实现时自动调用 [同步脚本](script/sync_terminal_core.py)。它不初始化子模块、不编译应用，读取两个分支最新应用提交的 gitlink、选择包含另一版本的较新提交后，通过 GitHub API 快进终端仓库的默认分支。运行摘要记录触发提交、两个分支的终端引用和更新前后版本。同组等待运行可能被后续事件合并，每次读取最新引用可避免漏同步。
 
 沿用源码仓库的 `OPERIT_DISTRIBUTION_TOKEN` secret，该凭据需对 `3316891527/OperitTerminalCore` 具有 Contents 写权限。工作流只处理维护者仓库的 `dev`、`main`，不在 PR 或其他 fork 中使用该凭据。
 

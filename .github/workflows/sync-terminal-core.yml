@@ -4,7 +4,7 @@ on:
   push:
     branches: [dev, main]
     paths:
-      - terminal
+      - modules/terminal
       - .gitmodules
       - ci/script/sync_terminal_core.py
       - .github/workflows/sync-terminal-core.yml

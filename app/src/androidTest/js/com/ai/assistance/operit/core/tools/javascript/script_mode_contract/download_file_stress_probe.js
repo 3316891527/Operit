@@ -137,7 +137,7 @@ const DOWNLOADS = [
   TYPE_FILES.map(function (fileName) {
     return {
       name: fileName,
-      url: CDN_BASE + '/examples/types/' + fileName,
+      url: CDN_BASE + '/plugins/examples/types/' + fileName,
     };
   })
 );

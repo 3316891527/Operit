@@ -74,8 +74,8 @@ If you just want the short answer for "which tool should I use":
 - Use `execute_js.*` when you want to call one exported function from one normal `.js` file
 - Use `execute_js_dir.*` when the entry depends on sibling modules, or when you are running directory-based tests under `app/src/androidTest/js`
 - Use `run_sandbox_script.*` when you want top-level script-mode execution instead of calling an exported function
-- Use `tools/example_packages/sync_example_packages.py` when you changed an `examples/` package or toolpkg and want it synced into the real package-loading path
-- If you are debugging `operit_editor` tools such as `debug_install_toolpkg`, the usual flow is: sync with `tools/example_packages/sync_example_packages.py`, then call the debug tool with `execute_js.bat`
+- Use `plugins/tooling/example_packages/sync_example_packages.py` when you changed an `plugins/examples/` package or toolpkg and want it synced into the real package-loading path
+- If you are debugging `operit_editor` tools such as `debug_install_toolpkg`, the usual flow is: sync with `plugins/tooling/example_packages/sync_example_packages.py`, then call the debug tool with `execute_js.bat`
 
 ## Prerequisites
 
@@ -344,20 +344,20 @@ tools\adb\run_sandbox_script.bat temp\probe.js @params.json
 
 If your code is naturally top-level script logic, this is usually simpler than wrapping everything in `exports.main = ...`.
 
-### 4. What `tools/example_packages/sync_example_packages.py` is for
+### 4. What `plugins/tooling/example_packages/sync_example_packages.py` is for
 
-This is not just a copy script. It is the sync entrypoint for `examples/` package development.
+This is not just a copy script. It is the sync entrypoint for `plugins/examples/` package development.
 
 Its main jobs are:
 
-- prebuild relevant TypeScript under `examples/` into JS
+- prebuild relevant TypeScript under `plugins/examples/` into JS
 - pack manifest-based directories into `.toolpkg`
 - sync normal `.js` or `.toolpkg` outputs into `app/src/main/assets/packages`
 - hot-reload changed packages to a connected device when available
 
 Use it when:
 
-- you changed a real package under `examples/`
+- you changed a real package under `plugins/examples/`
 - you want package-management, sandbox package lists, or built-in loading logic to see the latest output
 - you want to validate the folder -> `.toolpkg` -> debug install path
 
@@ -432,23 +432,23 @@ If what you need to verify is:
 
 then do not force it into an exported-function test. Write it as a script-mode file and run it with `run_sandbox_script.*`.
 
-### 4. Add validation for an `examples/` package or toolpkg
+### 4. Add validation for an `plugins/examples/` package or toolpkg
 
 If you are adding a real package that should be loaded by the package system, the point is not only "can this JS run" but also "can this package be synced, refreshed, installed, and recognized".
 
 Recommended approach:
 
-- add or modify the `.ts`, `.js`, or manifest-based directory under `examples/`
+- add or modify the `.ts`, `.js`, or manifest-based directory under `plugins/examples/`
 - if it is a directory-based package, make sure it has `manifest.json` or `manifest.hjson`
-- run `tools/example_packages/sync_example_packages.py`
+- run `plugins/tooling/example_packages/sync_example_packages.py`
 - then use `execute_js.bat` to call related debug tools, or validate inside the app
 
 In other words:
 
 - the runners test whether JS executes correctly inside the Android runtime
-- `tools/example_packages/sync_example_packages.py` tests whether the `examples/` package enters the real package-loading path correctly
+- `plugins/tooling/example_packages/sync_example_packages.py` tests whether the `plugins/examples/` package enters the real package-loading path correctly
 
-## How To Use It With `tools/example_packages/sync_example_packages.py`
+## How To Use It With `plugins/tooling/example_packages/sync_example_packages.py`
 
 ### Scenario 1: You changed a normal JS script
 
@@ -462,12 +462,12 @@ tools\adb\execute_js.bat path\to\script.js main @params.json
 
 because you are validating script logic, not package loading.
 
-### Scenario 2: You changed a package under `examples/`
+### Scenario 2: You changed a package under `plugins/examples/`
 
 Recommended order:
 
-1. Edit `examples/...`
-2. Run `tools/example_packages/sync_example_packages.py`
+1. Edit `plugins/examples/...`
+2. Run `plugins/tooling/example_packages/sync_example_packages.py`
 3. Confirm the outputs were synced into `app/src/main/assets/packages`
 4. If a device is connected, also validate hot reload
 5. Then verify behavior inside the app or through debug tools
@@ -480,12 +480,12 @@ This fits:
 
 ### Scenario 3: You changed a directory-based toolpkg
 
-This is the case that most needs `tools/example_packages/sync_example_packages.py`.
+This is the case that most needs `plugins/tooling/example_packages/sync_example_packages.py`.
 
 Recommended order:
 
-1. Edit `examples/<toolpkg_dir>`
-2. Run `tools/example_packages/sync_example_packages.py --include <dir_name>`
+1. Edit `plugins/examples/<toolpkg_dir>`
+2. Run `plugins/tooling/example_packages/sync_example_packages.py --include <dir_name>`
 3. Let it pack the directory into `.toolpkg`
 4. Let it sync the generated artifact into assets and the device
 5. Then verify installation through `operit_editor`'s `debug_install_toolpkg` or a related debug entry
@@ -501,7 +501,7 @@ This validates the full chain:
 
 Recommended order:
 
-1. Sync `operit_editor` itself with `tools/example_packages/sync_example_packages.py`
+1. Sync `operit_editor` itself with `plugins/tooling/example_packages/sync_example_packages.py`
 2. Prepare the package or toolpkg you want it to install
 3. Call the debug function through `execute_js.bat`
 4. Inspect the structured result for success, failure, and related warnings
@@ -573,7 +573,7 @@ tools\adb\execute_js_dir.bat app\src\androidTest\js com\ai\assistance\operit\cor
 tools\adb\run_sandbox_script.bat temp\probe.js @params.json
 ```
 
-### 4. Sync one `examples/` package into assets and device
+### 4. Sync one `plugins/examples/` package into assets and device
 
 ```cmd
 d:\Code\prog\assistance\.venv\Scripts\python.exe d:\Code\prog\assistance\tools\example_packages\sync_example_packages.py --include sidebar_bing_action

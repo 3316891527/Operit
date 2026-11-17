@@ -47,7 +47,7 @@ def referenced_icons(terminal_source: Path) -> set[str]:
     tracked = subprocess.run(["git", "ls-files", "-z", "*.kt"], cwd=ROOT,
                              capture_output=True, text=True, check=True).stdout
     paths = [ROOT / relative for relative in tracked.split("\0")
-             if relative and not relative.startswith("material-icons-subset/")]
+             if relative and not relative.startswith("modules/material-icons-subset/")]
     terminal_sources = terminal_source / "src"
     if not terminal_sources.is_dir():
         raise ValueError(f"请先初始化 terminal 子模块，或通过 --terminal-source 指定固定版本源码：{terminal_source}")
@@ -98,7 +98,7 @@ def generate(cache: Path, terminal_source: Path) -> None:
     if missing:
         raise ValueError(f"图标引用未找到：{sorted(missing)}")
     selected = sorted(names & extended.keys())
-    target = ROOT / "material-icons-subset/src/main/java/androidx/compose/material/icons"
+    target = ROOT / "modules/material-icons-subset/src/main/java/androidx/compose/material/icons"
     for old in target.rglob("*.kt"):
         old.unlink()
     for name in selected:
@@ -136,8 +136,8 @@ internal object MaterialFilledIconData {
 
 
 def check_references(terminal_source: Path) -> None:
-    selected = {str(p.relative_to(ROOT / "material-icons-subset/src/main/java/androidx/compose/material/icons"))
-                for p in (ROOT / "material-icons-subset/src/main/java/androidx/compose/material/icons").rglob("*.kt")}
+    selected = {str(p.relative_to(ROOT / "modules/material-icons-subset/src/main/java/androidx/compose/material/icons"))
+                for p in (ROOT / "modules/material-icons-subset/src/main/java/androidx/compose/material/icons").rglob("*.kt")}
     manifest = json.loads((ROOT / "tools/icons/material-icons-manifest.json").read_text())
     core_names = set(manifest["core_icons"])
     missing = referenced_icons(terminal_source) - selected - core_names
@@ -150,8 +150,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--cache", type=Path, default=Path("/tmp/operit-material-icons"))
-    parser.add_argument("--terminal-source", type=Path, default=ROOT / "terminal",
-                        help="固定版本的 terminal 源码目录，默认使用已初始化的子模块")
+    parser.add_argument("--terminal-source", type=Path, default=ROOT / "modules/terminal",
+                        help="固定版本的 terminal 源码目录，默认使用已初始化的 modules/terminal 子模块")
     args = parser.parse_args()
     if args.check:
         check_references(args.terminal_source)

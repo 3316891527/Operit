@@ -37,4 +37,4 @@ BluetoothSessionManagerTest 包含 12 项 JVM 回归源码：
 
 本地只执行静态检查，没有运行 Kotlin 编译、JVM 测试或连接蓝牙设备。现有 JVM 写入用例主要走旧版 Android 的 GATT 接口，真实设备及 Android 13 以上的新接口行为仍需核对，不能将回归源码数量视为通过结果。
 
-实机待核对：仅支持 write_no_response 的外设；默认与协商 MTU 的长负载；同会话并发、取消、断连；读取超时后再次读取。完整预期行为以[工具协议](../../../doc-src/toolpkg_developer_documentation/04_modules/tool-types.md)为准。
+实机待核对：仅支持 write_no_response 的外设；默认与协商 MTU 的长负载；同会话并发、取消、断连；读取超时后再次读取。完整预期行为以[工具协议](../../../../plugins/docs/toolpkg_developer_documentation/04_modules/tool-types.md)为准。

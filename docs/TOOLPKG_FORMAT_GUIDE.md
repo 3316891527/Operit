@@ -854,7 +854,7 @@ resources/
 ```
 
 最小可参考示例：
-- `examples/template_try/`
+- `plugins/examples/template_try/`
 - 里面同时演示了 `workflow_templates`、`workspace_templates`、目录资源和最小 `main.ts`
 
 ## 4. 创建 ToolPkg
@@ -898,29 +898,29 @@ Compress-Archive -Path my_toolpkg\* -DestinationPath my_toolpkg.toolpkg
 
 ### 4.2 使用 Python 脚本自动打包
 
-项目提供了 `tools/example_packages/sync_example_packages.py` 脚本，可以自动将 `examples/` 目录下的包打包成 `.toolpkg` 文件。
+项目提供了 `plugins/tooling/example_packages/sync_example_packages.py` 脚本，可以自动将 `plugins/examples/` 目录下的包打包成 `.toolpkg` 文件。
 
 **使用方法**：
 
 ```bash
 # 打包所有白名单中的包
-python tools/example_packages/sync_example_packages.py
+python plugins/tooling/example_packages/sync_example_packages.py
 
 # 以“非白名单附加”的方式打包特定包
-python tools/example_packages/sync_example_packages.py --include windows_control
+python plugins/tooling/example_packages/sync_example_packages.py --include windows_control
 
 # 例如只额外同步 template_try 这个示例
-python tools/example_packages/sync_example_packages.py --include template_try
+python plugins/tooling/example_packages/sync_example_packages.py --include template_try
 
 # 查看打包结果（不实际写入）
-python tools/example_packages/sync_example_packages.py --dry-run
+python plugins/tooling/example_packages/sync_example_packages.py --dry-run
 
 # 删除不在白名单中的包
-python tools/example_packages/sync_example_packages.py --delete-extra
+python plugins/tooling/example_packages/sync_example_packages.py --delete-extra
 ```
 
 **工作原理**：
-1. 扫描 `examples/` 目录
+1. 扫描 `plugins/examples/` 目录
 2. 查找包含 `manifest.json` 或 `manifest.hjson` 的文件夹
 3. 将整个文件夹打包成 `.toolpkg` ZIP 文件
 4. 输出到 `app/src/main/assets/packages/` 目录
@@ -1433,7 +1433,7 @@ my_toolpkg/
 
 1. **使用 dry-run 模式**：
    ```bash
-   python tools/example_packages/sync_example_packages.py --dry-run
+   python plugins/tooling/example_packages/sync_example_packages.py --dry-run
    ```
 
 2. **查看应用日志**：
@@ -1496,13 +1496,13 @@ my_toolpkg/
 直接传 ToolPkg 目录：
 
 ```bash
-python tools/toolpkg/debug_toolpkg.py examples/windows_control
+python tools/toolpkg/debug_toolpkg.py plugins/examples/windows_control
 ```
 
 也可以传 `manifest.json`：
 
 ```bash
-python tools/toolpkg/debug_toolpkg.py examples/windows_control/manifest.json
+python tools/toolpkg/debug_toolpkg.py plugins/examples/windows_control/manifest.json
 ```
 
 或者传现成 `.toolpkg`：
@@ -1522,8 +1522,8 @@ tools\toolpkg\debug_toolpkg.bat D:\tmp\windows_control.toolpkg --device emulator
 Linux/macOS 下可直接使用：
 
 ```bash
-bash tools/toolpkg/debug_toolpkg.sh examples/windows_control
-bash tools/toolpkg/debug_toolpkg.sh examples/windows_control/manifest.json
+bash tools/toolpkg/debug_toolpkg.sh plugins/examples/windows_control
+bash tools/toolpkg/debug_toolpkg.sh plugins/examples/windows_control/manifest.json
 ```
 
 #### 10.3.2 常用参数
@@ -1557,7 +1557,7 @@ adb logcat -d -s JsEngine:* ToolPkg:* PackageManager:*
 
 ### 11.1 Windows Control Bundle
 
-完整示例位于 `examples/windows_control/`：
+完整示例位于 `plugins/examples/windows_control/`：
 
 ```
 windows_control/
@@ -1585,7 +1585,7 @@ windows_control/
 
 ```bash
 # 打包 windows_control
-python tools/example_packages/sync_example_packages.py --include windows_control
+python plugins/tooling/example_packages/sync_example_packages.py --include windows_control
 
 # 查看打包结果
 ls -lh app/src/main/assets/packages/windows_control.toolpkg
@@ -1594,7 +1594,7 @@ ls -lh app/src/main/assets/packages/windows_control.toolpkg
 ## 12. 参考资料
 
 - [脚本开发指南](./SCRIPT_DEV_GUIDE.md)：了解如何编写子包脚本
-- [ToolPkg API 文档](./doc-src/toolpkg_developer_documentation/04_modules/toolpkg.md)：了解注册 API
+- [ToolPkg API 文档](../plugins/docs/toolpkg_developer_documentation/04_modules/toolpkg.md)：了解注册 API
 
 
-旧工具箱 UI 注册方法、全局调用名和类型声明保留为空操作兼容入口，旧导航面忽略；需要真实界面时使用 registerUiModule / registerUiRoute，省略 runtime 默认 compose_dsl。详细契约见 docs/doc-src/toolpkg_developer_documentation/03_runtime/registry.md。
+旧工具箱 UI 注册方法、全局调用名和类型声明保留为空操作兼容入口，旧导航面忽略；需要真实界面时使用 registerUiModule / registerUiRoute，省略 runtime 默认 compose_dsl。详细契约见 plugins/docs/toolpkg_developer_documentation/03_runtime/registry.md。

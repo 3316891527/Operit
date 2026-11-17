@@ -14,7 +14,7 @@
 2. **工具注册**（把 toolName -> executor 绑定起来）
 3. **工具执行实现**（Kotlin 侧真正做事的逻辑）
 4. **脚本侧封装（JS Tools）**（给 JS/TS 脚本更好用的 API）
-5. **示例与类型定义**（examples/types 与 examples/**）
+5. **示例与类型定义**（plugins/examples/types 与 plugins/examples/**）
 6. **文档**（docs/doc-src/toolpkg_developer_documentation 等）
 7. **打包资源 / 产物**（app/src/main/assets/packages/*.js 等）
 
@@ -86,7 +86,7 @@
 
 ### 2.5 必改：TypeScript 类型定义（对脚本作者的契约）
 
-- **文件**：`examples/types/*.d.ts`（尤其是 `examples/types/files.d.ts`、`examples/types/chat.d.ts`、`examples/types/core.d.ts`、`examples/types/system.d.ts` 等）
+- **文件**：`plugins/examples/types/*.d.ts`（尤其是 `plugins/examples/types/files.d.ts`、`plugins/examples/types/chat.d.ts`、`plugins/examples/types/core.d.ts`、`plugins/examples/types/system.d.ts` 等）
 - **你要做的事**：
   - 更新函数签名与参数类型
   - 如果新增了枚举/联合类型（如 `"replace" | "delete" | "create"`），补充 type 定义
@@ -98,7 +98,7 @@
 
 ### 2.6 必改：示例代码（TS/JS）
 
-- **目录**：`examples/**`
+- **目录**：`plugins/examples/**`
 - **你要做的事**：
   - 更新示例里对 `Tools.*` 的调用参数（通常优先改 `*.ts` 源码）
   - 如果仓库里存在 `*.ts -> *.js` 的编译产物：一般只需要改 TS 并重新构建产物，不建议手动修改 `*.js`
@@ -116,7 +116,7 @@
 
 - **常见位置**：
   - `app/src/main/assets/packages/*.js`
-  - `examples/*.js`（可能是构建产物或分发用 bundle）
+  - `plugins/examples/*.js`（可能是构建产物或分发用 bundle）
 
 你要做的事：
 - 如果这些文件是由构建脚本生成：应该**重新构建**生成它们（优先）
@@ -124,21 +124,21 @@
 
 补充说明（packages 同步约定）：
 
-- `examples/*.ts` 通常作为脚本包的**源代码**
-- `examples/*.js` 作为**编译产物/分发产物**（不建议手改）
+- `plugins/examples/*.ts` 通常作为脚本包的**源代码**
+- `plugins/examples/*.js` 作为**编译产物/分发产物**（不建议手改）
 - `app/src/main/assets/packages/*.js` 作为 App 运行时加载的包文件
-- 仓库提供 `tools/example_packages/sync_example_packages.py`：会按 `tools/example_packages/packages_whitelist.txt` 将 `examples/*.js` 复制到 `app/src/main/assets/packages/*.js`
+- 仓库提供 `plugins/tooling/example_packages/sync_example_packages.py`：会按 `plugins/tooling/example_packages/packages_whitelist.txt` 将 `plugins/examples/*.js` 复制到 `app/src/main/assets/packages/*.js`
 
 同步执行约定（重要）：
 
-- 做包同步时，只需要执行这一条命令：`python tools/example_packages/sync_example_packages.py`
-- 不要额外手动复制 `examples/*.js` 到 `assets/packages/`，避免源/产物不一致
+- 做包同步时，只需要执行这一条命令：`python plugins/tooling/example_packages/sync_example_packages.py`
+- 不要额外手动复制 `plugins/examples/*.js` 到 `assets/packages/`，避免源/产物不一致
 
 因此：
 
-- 修改脚本包功能时，优先改 `examples/<package>.ts`，然后通过构建/编译生成对应的 `examples/<package>.js`
-- 最后再用 `tools/example_packages/sync_example_packages.py` 同步到 `assets/packages/`
-- **不建议直接手动修改** `examples/*.js` 或 `assets/packages/*.js`（避免被后续构建覆盖或造成源/产物不一致）
+- 修改脚本包功能时，优先改 `plugins/examples/<package>.ts`，然后通过构建/编译生成对应的 `plugins/examples/<package>.js`
+- 最后再用 `plugins/tooling/example_packages/sync_example_packages.py` 同步到 `assets/packages/`
+- **不建议直接手动修改** `plugins/examples/*.js` 或 `assets/packages/*.js`（避免被后续构建覆盖或造成源/产物不一致）
 
 为什么必须改：
 - App 实际运行时可能直接加载 assets 里的 JS 包；你只改了 TS 不改 assets，会导致运行仍调用旧参数。
@@ -147,7 +147,7 @@
 ### 2.8 必改：文档
 
 - **常见位置**：
-  - `docs/doc-src/toolpkg_developer_documentation/**/*.md`
+  - `plugins/docs/toolpkg_developer_documentation/**/*.md`
   - `docs/doc-src/**/*.md`
 - **你要做的事**：
   - 更新 API 描述、参数说明、示例
@@ -201,5 +201,5 @@
 - `ToolRegistration.kt`：注册执行器
 - `Standard*Tools.kt`：实现逻辑
 - `JsTools.kt`：暴露给脚本侧（如需要）
-- `examples/types/*.d.ts`：类型定义（如需要，`Tools.System.*` 记得同步 `examples/types/system.d.ts`）
+- `plugins/examples/types/*.d.ts`：类型定义（如需要，`Tools.System.*` 记得同步 `plugins/examples/types/system.d.ts`）
 - `docs/doc-src/`：补文档
