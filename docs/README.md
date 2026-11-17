@@ -2,3 +2,4 @@
 - `assets`: 文档使用的图片等资源文件
 - `doc-src`: 长期维护的文档单一事实源
 - `TODO`: 这是留给开发者协作用的，[好的计划是协作成功的80%](TODO/README.md)
+- [发行更新日志](doc-src/release-notes/README.md)：持续维护的版本说明、来源和历史范围

@@ -7,3 +7,5 @@
 ## 计划索引
 
 - [ToolPkg 开发者文档重建](toolpkg_developer_documentation/index.md) · `toolpkg_developer_documentation`
+
+- [1.13.0 累积更新日志与来源归档](changelog-1.13.0/index.md)
