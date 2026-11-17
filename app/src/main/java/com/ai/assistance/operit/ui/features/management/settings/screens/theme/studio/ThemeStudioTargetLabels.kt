@@ -71,7 +71,6 @@ internal fun studioPageLabel(id: String): String = stringResource(when (id) {
     "page.markdownDemo" -> R.string.studio_page_markdowndemo
     "page.speechToText" -> R.string.studio_page_speechtotext
     "page.defaultAssistantGuide" -> R.string.studio_page_defaultassistantguide
-    "page.htmlPackager" -> R.string.studio_page_htmlpackager
     else -> error("Unknown page background: $id")
 })
 

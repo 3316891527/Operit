@@ -81,7 +81,6 @@ internal val ThemeStudioPagePreviewTargets: Map<String, StudioPagePreviewTarget>
     "page.markdownDemo" to StudioPagePreviewTarget.Page(Screen.MarkdownDemo),
     "page.speechToText" to StudioPagePreviewTarget.Page(Screen.SpeechToText),
     "page.defaultAssistantGuide" to StudioPagePreviewTarget.Page(Screen.DefaultAssistantGuide),
-    "page.htmlPackager" to StudioPagePreviewTarget.Page(Screen.HtmlPackager),
 )
 
 /** 页面对象仅在本次工作室会话中使用，不进入主题工程、脚本上下文或导出文件。 */

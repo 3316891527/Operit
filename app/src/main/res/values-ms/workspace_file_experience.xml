@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">Maklumat aplikasi daripada APK ini tidak dapat dibaca.</string>
+    <string name="workspace_apk_loading">Membaca maklumat aplikasi…</string>
+    <string name="workspace_apk_version_code">Kod versi</string>
+    <string name="workspace_apk_size">Saiz APK</string>
+    <string name="workspace_apk_min_sdk">SDK minimum</string>
+    <string name="workspace_apk_target_sdk">SDK sasaran</string>
+    <string name="workspace_apk_installed">Versi dipasang</string>
+    <string name="workspace_apk_not_installed">Belum dipasang</string>
+    <string name="workspace_apk_view">Lihat</string>
+    <string name="workspace_apk_install">Pasang</string>
+    <string name="workspace_apk_allow_install">Benarkan aplikasi ini memasang aplikasi tidak diketahui, kemudian ketik Pasang sekali lagi.</string>
+    <string name="workspace_archive_preparing">Menyediakan…</string>
+    <string name="workspace_archive_reading_index">Membaca direktori arkib…</string>
+    <string name="workspace_archive_extracting">Mengekstrak…</string>
+    <string name="workspace_archive_transferring">Menyalin ke destinasi…</string>
+    <string name="workspace_archive_publishing">Menulis ke destinasi…</string>
+    <string name="workspace_archive_entry_progress">%1$d / %2$d item selesai</string>
+    <string name="workspace_archive_entries_done">%1$d item selesai</string>
+    <string name="workspace_archive_byte_progress">%1$s / %2$s diproses</string>
+    <string name="workspace_archive_current_file">Kemajuan fail semasa</string>
+    <string name="workspace_transfer_scanning_delete">Mengira fail untuk dipadam…</string>
+    <string name="workspace_transfer_discovered_items">%1$d item ditemui</string>
+    <string name="workspace_transfer_delete_recursive_scope">Termasuk fail dan subdirektori dalam folder yang dipilih.</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">Pembatalan menghentikan pemadaman seterusnya. Kandungan yang dipadam tidak akan dipulihkan.</string>
+</resources>

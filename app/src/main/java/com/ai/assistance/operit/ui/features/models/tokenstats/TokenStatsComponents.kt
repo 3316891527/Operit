@@ -88,7 +88,6 @@ import com.ai.assistance.operit.data.stats.TokenStatsTotals
 import com.ai.assistance.operit.data.stats.TokenStatsTrendBucket
 import com.ai.assistance.operit.data.stats.formatTokenCount
 import com.ai.assistance.operit.data.stats.tokenStatsPriceScopeForConfigId
-import com.ai.assistance.operit.ui.common.icons.providerLogoColorFilter
 import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -1066,7 +1065,6 @@ private fun TokenStatsConfigurationRow(
                         painter = providerLogo,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        colorFilter = providerLogoColorFilter(),
                     )
                 } else {
                     Icon(

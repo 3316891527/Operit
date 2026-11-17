@@ -1,5 +1,16 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.editor
 
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceBrowserPreferences
+import com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceBrowserSettings
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import com.ai.assistance.operit.util.logging.AppLogger
 import android.content.Context
 import android.graphics.Point
 import android.util.AttributeSet
@@ -40,11 +51,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.ai.assistance.operit.ui.components.CustomScaffold
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion.CompletionItem
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion.CompletionPopup
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.theme.EditorTheme
-import com.ai.assistance.operit.ui.features.conversation.workspace.editor.theme.getThemeForLanguage
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.theme.currentEditorTheme
 import kotlin.math.roundToInt
 
 @Composable
@@ -52,27 +62,42 @@ fun CodeEditor(
     code: String,
     language: String,
     fileKey: String,
-    onCodeChange: (String) -> Unit,
+    fileName: String,
+    onCodeChange: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     showLineNumbers: Boolean = true,
-    enableCompletion: Boolean = true,
+    enableCompletion: Boolean = false,
+    session: EditorSession? = null,
     editorRef: ((NativeCodeEditor?) -> Unit)? = null,
     onKeyCommand: ((EditorKeyCommand) -> Boolean)? = null,
+    onFind: ((String?, EditorSearchScope?) -> Unit)? = null,
     searchMatches: List<IntRange> = emptyList(),
     activeSearchMatch: Int = -1,
     searchNavigationRequest: Int = 0,
     initialLine: Int? = null,
-    initialLineRequest: Int = 0
+    initialLineRequest: Int = 0,
+    onDocumentChange: (() -> Unit)? = null,
 ) {
-    val theme = getThemeForLanguage(language)
+    val context = LocalContext.current
+    val preferences = remember(context) { WorkspaceBrowserPreferences(context) }
+    val browserSettings by preferences.settings.collectAsState(initial = WorkspaceBrowserSettings())
+    val settings = browserSettings.editor.copy(wordWrap = browserSettings.wordWrap)
+    val theme = currentEditorTheme(settings.fontSize)
+    val editorSession = session ?: remember(fileKey) { EditorSession(code) }
+    val scope = rememberCoroutineScope()
     // 文件切换或显式链接请求重新定位，同一文件编辑不会重复消费行号。
     var pendingInitialLine by remember(fileKey, initialLine, initialLineRequest) { mutableStateOf(initialLine) }
     var revealedSearchRequest by remember { mutableStateOf(searchNavigationRequest) }
     val latestCode = rememberUpdatedState(code)
     val latestOnCodeChange = rememberUpdatedState(onCodeChange)
+    val latestOnDocumentChange = rememberUpdatedState(onDocumentChange)
+    val lastNotifiedRevision = remember(editorSession) { intArrayOf(editorSession.document.version) }
+    val lastExternalCode = remember(editorSession) { arrayOf(code) }
     val latestEditorRef = rememberUpdatedState(editorRef)
     val latestOnKeyCommand = rememberUpdatedState(onKeyCommand)
+    val latestOnFind = rememberUpdatedState(onFind)
+    var selectionMenu by remember(fileKey) { mutableStateOf<EditorSelectionMenuState?>(null) }
     val density = LocalDensity.current
     val popupVerticalOffsetPx = with(density) { 6.dp.toPx().roundToInt() }
     val imeBottomInsetPx = WindowInsets.ime.getBottom(density)
@@ -95,13 +120,8 @@ fun CodeEditor(
             )
     }
 
-    CustomScaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(theme.background)
-        ) {
+    BackHandler(enabled = selectionMenu != null) { editorRefState.value?.dismissSelectionMenu() }
+    Column(modifier = modifier.fillMaxSize().background(theme.background)) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth().background(theme.background)) {
                 AndroidView(
                     modifier =
@@ -129,15 +149,27 @@ fun CodeEditor(
                         editorRefState.value = view
                         latestEditorRef.value?.invoke(view)
                         view.setKeyCommandListener(latestOnKeyCommand.value)
+                        view.setSelectionMenuListener { selectionMenu = it }
+                        view.bindSession(editorSession)
                         view.setEditorTheme(theme)
+                        view.setEditorSettings(settings)
+                        view.setFontSizeListener { size -> scope.launch {
+                            try { preferences.update { it.copy(editor = it.editor.copy(fontSize = size)) } } catch (cancel: CancellationException) { throw cancel } catch (failure: Exception) { AppLogger.e("WorkspaceEditor", "保存缩放字号失败", failure) }
+                        } }
+                        view.setHighlightFileName(fileName)
                         view.setLanguage(language)
                         view.setReadOnly(readOnly)
-                        view.setShowLineNumbers(showLineNumbers)
+                        view.setShowLineNumbers(showLineNumbers && settings.lineNumbers)
                         view.setCompletionEnabled(enableCompletion)
                         view.setViewportBottomPadding(keyboardAvoidancePaddingPx)
-                        view.setOnTextChangedListener { newText ->
-                            if (newText != latestCode.value) {
-                                latestOnCodeChange.value(newText)
+                        view.setOnTextChangedListener { snapshot ->
+                            if (lastNotifiedRevision[0] != snapshot.version) {
+                                lastNotifiedRevision[0] = snapshot.version
+                                val notify = latestOnDocumentChange.value
+                                if (notify != null) notify() else {
+                                    val newText = snapshot.toString()
+                                    if (newText != latestCode.value) latestOnCodeChange.value(newText)
+                                }
                             }
                         }
                         view.setCompletionCallback(
@@ -165,8 +197,10 @@ fun CodeEditor(
                                 null
                             }
                         )
-                        if (view.getText() != latestCode.value) {
-                            view.setText(latestCode.value, fromUpdate = true)
+                        // 会话模式只订阅文档版本；受控字符串模式只在外部内容确实变化时同步。
+                        if (latestOnDocumentChange.value == null && lastExternalCode[0] != latestCode.value) {
+                            lastExternalCode[0] = latestCode.value
+                            if (view.getText() != latestCode.value) view.setText(latestCode.value, fromUpdate = true)
                         }
                         view.setSearchMatches(searchMatches, activeSearchMatch)
                         if (revealedSearchRequest != searchNavigationRequest) {
@@ -187,6 +221,24 @@ fun CodeEditor(
                     }
                 )
 
+                selectionMenu?.let { selected ->
+                    EditorSelectionToolbar(selected, readOnly) { action ->
+                        val editor = editorRefState.value
+                        if (editor != null) {
+                            val find = action == EditorSelectionAction.FIND || action == EditorSelectionAction.FIND_IN_SELECTION
+                            if (find) {
+                                val text = editor.getText()
+                                if (selected.start in 0..selected.end && selected.end <= text.length) {
+                                    val scope = if (action == EditorSelectionAction.FIND_IN_SELECTION) EditorSearchScope(selected.start, selected.end) else null
+                                    val query = if (scope == null) text.substring(selected.start, selected.end) else null
+                                    editor.performSelectionAction(action)
+                                    latestOnFind.value?.invoke(query, scope)
+                                }
+                            } else editor.performSelectionAction(action)
+                        }
+                    }
+                }
+
                 if (showCompletions && completionItems.isNotEmpty()) {
                     CompletionPopup(
                         completionItems = completionItems,
@@ -203,43 +255,27 @@ fun CodeEditor(
                 }
             }
 
-            Surface(
-                modifier = Modifier.fillMaxWidth().height(40.dp),
-                color = theme.gutterBackground,
-                contentColor = theme.textColor,
-                shadowElevation = 4.dp
+            if (settings.showSymbols) Surface(
+                modifier = Modifier.fillMaxWidth().height(40.dp), color = theme.gutterBackground, contentColor = theme.textColor,
             ) {
-                LazyRow(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    items(
-                        listOf(
-                            "{", "}", "(", ")", "[", "]", "=", ".", ",", ";", ":",
-                            "\"", "'", "+", "-", "*", "/", "_", "<", ">", "&", "|",
-                            "!", "?"
-                        )
-                        ) { symbol ->
-                        SymbolButton(symbol = symbol, theme = theme) {
-                            editorRefState.value?.insertSymbol(symbol)
-                        }
+                LazyRow(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    items(settings.symbols.split(' ').filter(String::isNotEmpty)) { symbol ->
+                        SymbolButton(symbol, theme, enabled = !readOnly) { editorRefState.value?.insertSymbol(symbol) }
                     }
                 }
             }
-        }
     }
 }
 
 @Composable
-private fun SymbolButton(symbol: String, theme: EditorTheme, onClick: () -> Unit) {
+private fun SymbolButton(symbol: String, theme: EditorTheme, enabled: Boolean, onClick: () -> Unit) {
     Box(
         modifier =
             Modifier.size(32.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .border(width = 1.dp, color = theme.gutterBorder, shape = RoundedCornerShape(8.dp))
-                .clickable(onClick = onClick)
+                .clickable(enabled = enabled, onClick = onClick)
                 .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -264,12 +300,21 @@ class NativeCodeEditor @JvmOverloads constructor(
         addView(canvasEditorView)
     }
 
-    fun setOnTextChangedListener(listener: (String) -> Unit) {
+    internal fun setOnTextChangedListener(listener: (EditorTextSnapshot) -> Unit) {
         if (isReleased) {
             return
         }
         canvasEditorView.setOnTextChangedListener(listener)
     }
+
+    fun bindSession(session: EditorSession) { if (!isReleased) canvasEditorView.bindSession(session) }
+    fun setEditorSettings(settings: EditorSettings) { if (!isReleased) canvasEditorView.setEditorSettings(settings) }
+    fun setFontSizeListener(listener: ((Float) -> Unit)?) { if (!isReleased) canvasEditorView.setFontSizeListener(listener) }
+    internal fun setSelectionMenuListener(listener: ((EditorSelectionMenuState?) -> Unit)?) { if (!isReleased) canvasEditorView.setSelectionMenuListener(listener) }
+    internal fun dismissSelectionMenu() { if (!isReleased) canvasEditorView.dismissSelectionMenu() }
+    internal fun performSelectionAction(action: EditorSelectionAction) { if (!isReleased) canvasEditorView.performSelectionAction(action) }
+    fun performEditorAction(action: EditorAction) { if (!isReleased) canvasEditorView.performEditorAction(action) }
+    fun replaceEditorRange(start: Int, end: Int, text: String) { if (!isReleased) canvasEditorView.replaceEditorRange(start, end, text) }
 
     fun setEditorTheme(theme: EditorTheme) {
         if (isReleased) {
@@ -277,6 +322,8 @@ class NativeCodeEditor @JvmOverloads constructor(
         }
         canvasEditorView.setEditorTheme(theme)
     }
+
+    fun setHighlightFileName(fileName: String) { canvasEditorView.setHighlightFileName(fileName) }
 
     fun setLanguage(language: String) {
         if (isReleased) {
@@ -290,7 +337,7 @@ class NativeCodeEditor @JvmOverloads constructor(
             return
         }
         canvasEditorView.setReadOnly(readOnly)
-        isEnabled = !readOnly
+        isEnabled = true
     }
 
     fun setShowLineNumbers(showLineNumbers: Boolean) {
@@ -300,6 +347,9 @@ class NativeCodeEditor @JvmOverloads constructor(
         canvasEditorView.setShowLineNumbers(showLineNumbers)
     }
 
+    fun setWordWrap(enabled: Boolean) {
+        if (!isReleased) canvasEditorView.setWordWrap(enabled)
+    }
     fun setCompletionEnabled(enableCompletion: Boolean) {
         if (isReleased) {
             return

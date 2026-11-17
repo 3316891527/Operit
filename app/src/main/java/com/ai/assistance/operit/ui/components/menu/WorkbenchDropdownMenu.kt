@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.components.menu
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -30,6 +31,8 @@ import androidx.compose.ui.window.PopupProperties
 internal fun WorkbenchDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier.widthIn(min = 240.dp, max = 320.dp),
+    contentPadding: PaddingValues = PaddingValues(8.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (!expanded) return
@@ -47,14 +50,14 @@ internal fun WorkbenchDropdownMenu(
         ),
     ) {
         Surface(
-            modifier = Modifier.widthIn(min = 240.dp, max = 320.dp).heightIn(max = maxHeight),
+            modifier = modifier.heightIn(max = maxHeight),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             contentColor = MaterialTheme.colorScheme.onSurface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             shadowElevation = 8.dp,
         ) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp), content = content)
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(contentPadding), content = content)
         }
     }
 }

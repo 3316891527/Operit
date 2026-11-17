@@ -83,6 +83,10 @@ class JsToolManager private constructor(
         params: Map<String, Any?>
     ): MutableMap<String, Any?> {
         val runtimeParams = params.toMutableMap()
+        // 嵌套包调用继续沿用发起它的对话，避免跨引擎后丢失文件操作归属。
+        com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext()?.callerChatId?.let {
+            runtimeParams["__operit_package_chat_id"] = it
+        }
         packageManager.getActivePackageStateId(packageName)?.let {
             runtimeParams["__operit_package_state"] = it
         }

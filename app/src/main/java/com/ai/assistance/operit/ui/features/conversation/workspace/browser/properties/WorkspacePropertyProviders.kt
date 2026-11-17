@@ -76,6 +76,9 @@ internal class SafWorkspacePropertySource private constructor(
         return readRows(children, parent)
     }
 
+    suspend fun namedChildren(): List<Pair<String, PropertyNode>> = entries(root)
+    fun childSource(node: PropertyNode): SafWorkspacePropertySource = SafWorkspacePropertySource(context, node.id)
+
     override suspend fun stat(id: String): PropertyNode {
         currentCoroutineContext().ensureActive()
         val uri = Uri.parse(id)
@@ -101,6 +104,10 @@ internal class RemoteWorkspacePropertySource(
     override val canModifyTime = false
 
     override suspend fun stat(id: String): PropertyNode {
+        if (id == "/") {
+            checkNotNull(fileSystem.listDirectory(id)) { "Cannot read directory: $id" }
+            return PropertyNode(id, true, false, null, null)
+        }
         val parent = id.trimEnd('/').substringBeforeLast('/', "").ifEmpty { "/" }
         val name = id.trimEnd('/').substringAfterLast('/')
         val entries = checkNotNull(fileSystem.listDirectory(parent)) { "Cannot read directory: $parent" }

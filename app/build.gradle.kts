@@ -21,6 +21,8 @@ plugins {
     id("kotlin-kapt")
 }
 
+apply(from = "workspace-textmate.gradle.kts")
+
 // 此独立发行分支在 GitHub Actions 中生成固定签名的 Kong 共存包。
 val ciPreviewRelease = providers.environmentVariable("GITHUB_ACTIONS").orNull == "true"
 val ciDistributionCertificateSha256 = "5E01FFF4DD01A44BAB8318BE35107AE39C60A1261CFCE33003EA3528727EA799"
@@ -409,6 +411,8 @@ val verifyTerminalCommandAssets by tasks.registering {
         rootProject.file("tools/native_apply_patch/install.sh"),
         rootProject.file("tools/web_chat_cli/package_assets.py"),
         rootProject.file("tools/web_chat_cli/install.sh"),
+        rootProject.file("tools/html_build_cli/package_assets.py"),
+        rootProject.file("tools/html_build_cli/install.sh"),
     )
     doLast {
         val execution = providers.exec {
@@ -522,6 +526,9 @@ android {
             path = file("src/main/cpp/CMakeLists.txt")
         }
     }
+
+    // JVM 回归读取与 APK 相同的语法资源，不复制另一套规则样本。
+    sourceSets.getByName("test").resources.srcDir("src/main/assets/workspace-textmate")
 
     defaultConfig {
         applicationId = "com.ai.assistance.operit"
@@ -871,6 +878,7 @@ dependencies {
     implementation(libs.itextg)
     implementation(libs.pdfbox)
     implementation(libs.zip4j)
+    implementation("me.zhanghai.android.libarchive:library:1.1.6")
     
     // 图片加载库
     implementation(libs.coil)
@@ -896,6 +904,12 @@ dependencies {
     
     // Gson for JSON parsing
     implementation(libs.gson)
+    // TextMate 引擎由兼容脚本引入；配套模块提供其日志与匹配工具，不替换现有编辑器控件。
+    implementation(libs.sora.editor)
+    implementation(libs.jcodings)
+    implementation(libs.joni)
+    implementation(libs.snakeyaml.engine)
+    implementation(libs.jdt.annotation)
 
     // HJSON dependency for human-friendly JSON parsing
     implementation(libs.hjson)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s: %2$s</string>
+    <string name="workspace_search_option_on">On</string>
+    <string name="workspace_search_option_off">Off</string>
+    <string name="workspace_markdown_outline">Outline</string>
+    <string name="workspace_markdown_outline_empty">This document has no headings.</string>
+    <string name="workspace_markdown_outline_expand">Expand section</string>
+    <string name="workspace_markdown_outline_collapse">Collapse section</string>
+</resources>

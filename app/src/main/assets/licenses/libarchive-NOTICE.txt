@@ -1,0 +1,12 @@
+libarchive-android 1.1.6 (https://github.com/zhanghai/libarchive-android/tree/v1.1.6)
+
+Native components and pinned upstream revisions:
+bzip2: 6a8690fc8d26c815e798c588f796eabe9d684cf0
+libarchive: 9525f90ca4bd14c7b335e2f8c84a4607b0af6bdf
+lz4: ebb370ca83af193212df4dcbadcc5d87bc0de2f0
+mbedtls: 2fc8413bfcb51354c8e679141b17b3f1a5942561
+xz: a522a226545730551f7e7c2685fab27cf567746c
+zstd: f8745da6ff1ad1e7bab384bd1f9d742439278e99
+
+License texts for the Android binding, libarchive, bzip2, LZ4, Mbed TLS, liblzma/XZ and Zstandard accompany this notice in the application assets/licenses directory.
+Android platform zlib is linked as a system library.

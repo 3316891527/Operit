@@ -2,260 +2,131 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.hub
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.Html
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.WorkOutline
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.core.tools.builtin.web.session.browser.WebSessionBrowserTab
 import com.ai.assistance.operit.data.model.ChatHistory
-import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
+import com.ai.assistance.operit.terminal.data.TerminalSessionData
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptButton as Button
+import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
+import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 
-/** 对照参考主页展示概览，所有入口都连接现有的工作区和终端能力。 */
+/** 上方管理工作区，中间按实际产出显示，终端和浏览器并列展示真实会话。 */
 @Composable
-fun WorkspaceHubHome(
-    currentChat: ChatHistory?,
-    chatHistories: List<ChatHistory>,
-    terminalSessionCount: Int,
-    onOpenWorkspace: () -> Unit,
-    onCreateWorkspace: () -> Unit,
-    onSelectWorkspace: () -> Unit,
-    onOpenTerminal: () -> Unit,
-    onOpenHtmlPackager: () -> Unit,
+internal fun WorkspaceHubHome(
+    currentChat: ChatHistory?, sessions: List<TerminalSessionData>, browserTabs: List<WebSessionBrowserTab>, outputPath: String?,
+    onOpenWorkspace: () -> Unit, onCreateWorkspace: () -> Unit, onSelectWorkspace: () -> Unit,
+    onOpenChanges: () -> Unit, onOpenOutputs: () -> Unit,
+    onNewTerminal: () -> Unit, onTerminal: (String) -> Unit, onCloseTerminal: (String) -> Unit,
+    onNewBrowser: () -> Unit, onBrowser: (String) -> Unit, onCloseBrowser: (String) -> Unit,
 ) {
-    val context = LocalContext.current
-    val groupManager = remember(context) { CharacterGroupCardManager.getInstance(context) }
-    val groups by groupManager.allCharacterGroupCardsFlow.collectAsState(initial = emptyList())
     val workspace = currentChat?.workspace?.takeIf { it.isNotBlank() }
-    val workspaceChats = remember(chatHistories, workspace, currentChat?.workspaceEnv) {
-        if (workspace == null) {
-            emptyList()
-        } else {
-            chatHistories.filter {
-                it.workspace == workspace && it.workspaceEnv == currentChat?.workspaceEnv
-            }
-        }
-    }
-    val characterCount = remember(workspaceChats, groups) {
-        val cards = workspaceChats.filter { it.characterGroupId == null }
-            .mapNotNull { it.characterCardName }.toMutableSet()
-        val groupIds = workspaceChats.mapNotNull { it.characterGroupId }.toSet()
-        groups.filter { it.id in groupIds }.flatMap { it.members }.forEach {
-            cards.add(it.characterCardId)
-        }
-        cards.size
-    }
-    val shape = RoundedCornerShape(8.dp)
-    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f))
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = shape,
-            border = border,
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    WorkspaceActionIcon(Icons.Default.WorkOutline, large = true)
-                    Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                        Text(
-                            text = stringResource(R.string.workspace_hub_overview),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = workspace ?: stringResource(R.string.workspace_hub_unbound),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+    val colors = MaterialTheme.colorScheme
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(if (workspace == null) R.string.workspace_hub_optional else R.string.workspace),
+                fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(workspace ?: stringResource(R.string.workspace_hub_optional_description),
+                fontSize = 12.sp, color = colors.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (workspace == null) {
+                    Button(onClick = onCreateWorkspace, shape = RoundedCornerShape(22.dp)) {
+                        Icon(Icons.Default.Add, contentDescription = null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.workspace_hub_create), fontSize = 13.sp)
                     }
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(
-                        R.string.workspace_hub_usage,
-                        workspaceChats.size,
-                        characterCount,
-                        if (workspace == null) 0 else 1,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(
-                    modifier = Modifier
-                        .clickable(role = Role.Button, onClick = onOpenTerminal)
-                        .heightIn(min = 44.dp)
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        Icons.Default.Terminal,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = stringResource(R.string.workspace_hub_terminal_sessions, terminalSessionCount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                if (workspace != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(role = Role.Button, onClick = onOpenWorkspace)
-                            .heightIn(min = 44.dp)
-                            .padding(top = 4.dp, bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(
-                            Icons.Default.FolderOpen,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Text(
-                            text = workspace,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                    TextButton(onClick = onSelectWorkspace) {
+                        Icon(Icons.Default.FolderOpen, contentDescription = null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.workspace_hub_select), fontSize = 13.sp)
                     }
+                } else {
+                    Button(onClick = onOpenWorkspace, shape = RoundedCornerShape(22.dp)) { Text(stringResource(R.string.workspace_hub_open), fontSize = 13.sp) }
+                    TextButton(onClick = onOpenChanges) { Text(stringResource(R.string.workspace_changes_title), fontSize = 13.sp) }
                 }
             }
         }
-        if (workspace == null) {
-            WorkspacePrimaryAction(
-                icon = Icons.Default.CreateNewFolder,
-                title = stringResource(R.string.workspace_hub_create),
-                subtitle = stringResource(R.string.create_new_workspace_in_app),
-                onClick = onCreateWorkspace,
-            )
-            WorkspacePrimaryAction(
-                icon = Icons.Default.FolderOpen,
-                title = stringResource(R.string.workspace_hub_select),
-                subtitle = stringResource(R.string.select_folder_from_device),
-                onClick = onSelectWorkspace,
-            )
-        }
-        WorkspacePrimaryAction(
-            icon = Icons.Default.Terminal,
-            title = stringResource(R.string.open_terminal),
-            subtitle = stringResource(R.string.workspace_hub_terminal_description),
-            onClick = onOpenTerminal,
-        )
-        WorkspacePrimaryAction(
-            icon = Icons.Default.FolderOpen,
-            title = stringResource(R.string.workspace_hub_open),
-            subtitle = stringResource(R.string.workspace_hub_open_description),
-            onClick = onOpenWorkspace,
-        )
-        WorkspacePrimaryAction(
-            icon = Icons.Default.Html,
-            title = stringResource(R.string.tool_html_packager),
-            subtitle = stringResource(R.string.workspace_html_export_desc),
-            onClick = onOpenHtmlPackager,
-        )
-    }
-}
-
-@Composable
-private fun WorkspacePrimaryAction(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            WorkspaceActionIcon(icon)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        if (outputPath != null) {
+            Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpenOutputs).padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Default.FolderOpen, contentDescription = null, Modifier.size(18.dp), tint = colors.onSurfaceVariant)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(stringResource(R.string.workspace_outputs_title), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(outputPath, fontSize = 10.sp, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, Modifier.size(18.dp), tint = colors.onSurfaceVariant)
             }
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                WorkbenchGroupHeader(Icons.Default.Terminal, stringResource(R.string.workspace_hub_terminal_work), stringResource(R.string.workspace_terminal_new), onNewTerminal)
+                if (sessions.isEmpty()) WorkbenchEmpty(stringResource(R.string.workspace_hub_no_terminals))
+                sessions.forEachIndexed { index, session ->
+                    WorkbenchSessionRow(if (session.title == "Local") stringResource(R.string.workspace_terminal_session_title, index + 1) else session.title,
+                        session.currentDirectory.removeSuffix(" $").trim(), { onTerminal(session.id) }, { onCloseTerminal(session.id) })
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                WorkbenchGroupHeader(Icons.Default.Language, stringResource(R.string.workspace_hub_browser_work), stringResource(R.string.web_session_new_tab), onNewBrowser)
+                if (browserTabs.isEmpty()) WorkbenchEmpty(stringResource(R.string.workspace_hub_no_browsers))
+                browserTabs.forEach { tab ->
+                    WorkbenchSessionRow(tab.title.ifBlank { stringResource(R.string.web_session_new_tab) }, tab.url,
+                        { onBrowser(tab.sessionId) }, { onCloseBrowser(tab.sessionId) })
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun WorkspaceActionIcon(icon: ImageVector, large: Boolean = false) {
-    Surface(
-        modifier = Modifier.size(if (large) 46.dp else 34.dp),
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.52f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(if (large) 25.dp else 20.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
+private fun WorkbenchGroupHeader(icon: ImageVector, title: String, newLabel: String, onNew: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, Modifier.weight(1f).padding(start = 6.dp), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        IconButton(onClick = onNew, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Add, newLabel, Modifier.size(18.dp)) }
+    }
+}
+
+@Composable
+private fun WorkbenchEmpty(label: String) {
+    Text(label, Modifier.padding(vertical = 12.dp), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+@Composable
+private fun WorkbenchSessionRow(title: String, subtitle: String, onOpen: () -> Unit, onClose: () -> Unit) {
+    Surface(onClick = onOpen, color = Color.Transparent, shape = RoundedCornerShape(6.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 54.dp).padding(start = 10.dp, end = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subtitle, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Close, stringResource(R.string.close) + " " + title, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

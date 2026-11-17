@@ -22,23 +22,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
-import com.ai.assistance.operit.core.tools.FileContentData
 import com.ai.assistance.operit.core.tools.FileExistsData
-import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.data.model.ChatHistory
-import com.ai.assistance.operit.core.tools.protocol.ToolParameter
 import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.conversation.workspace.FileBrowser
 import com.ai.assistance.operit.ui.features.conversation.workspace.OpenFileInfo
+import com.ai.assistance.operit.ui.features.conversation.workspace.hub.LocalWorkspaceHeader
 import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceManager
 import com.ai.assistance.operit.ui.features.conversation.workspace.browser.FileBrowserOperations
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceMimeTypeForFile
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspaceShouldOpenAsDirectPreview
+import com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceLocation
+import com.ai.assistance.operit.ui.features.conversation.workspace.archive.*
 import com.ai.assistance.operit.ui.features.conversation.workspace.text.WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES
-import com.ai.assistance.operit.ui.features.conversation.workspace.text.readWorkspaceTextWithinLimit
 import com.ai.assistance.operit.util.logging.AppLogger
-import com.ai.assistance.operit.util.files.FileUtils
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +45,11 @@ internal val LocalWorkspaceFileLinkOpener = staticCompositionLocalOf<(WorkspaceF
     { error("文件链接需要聊天页面的工作区查看入口") }
 }
 
+/** 挂起到实际文件检查和读取成功，调用方负责在原页面展示失败。 */
+internal val LocalWorkspaceCheckedFileLinkOpener = staticCompositionLocalOf<suspend (WorkspaceFileLink, String) -> Unit> {
+    { _, _ -> error("文件链接需要聊天页面的工作区查看入口") }
+}
+
 @Composable
 internal fun WorkspaceFileLinkHost(
     actualViewModel: ChatViewModel,
@@ -57,19 +57,27 @@ internal fun WorkspaceFileLinkHost(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    var target by remember(currentChat?.id) { mutableStateOf<WorkspaceFileLink?>(null) }
-    CompositionLocalProvider(LocalWorkspaceFileLinkOpener provides { target = it }) {
+    val context = LocalContext.current
+    var target by remember(currentChat?.id) { mutableStateOf<Pair<WorkspaceFileLink, WorkspaceFileLinkContent?>?>(null) }
+    CompositionLocalProvider(
+        LocalWorkspaceFileLinkOpener provides { target = it to null },
+        LocalWorkspaceCheckedFileLinkOpener provides { link, backend ->
+            val opened = readWorkspaceFileLink(context, link, backend)
+            checkWorkspaceFileBackend(context, backend, link.environment)
+            if (opened.route != WorkspaceFileRoute.SYSTEM) target = link to opened
+        },
+    ) {
         Box(modifier = modifier, content = content)
         val link = target
         if (link != null && currentChat != null) {
             key(link) {
-                WorkspaceFileLinkDialog(actualViewModel, currentChat, link, onDismiss = { target = null })
+                WorkspaceFileLinkDialog(actualViewModel, currentChat, link.first, onDismiss = { target = null }, prepared = link.second)
             }
         }
     }
 }
 
-/** 共用工作区编辑与预览；二进制文件显示信息并提供实际文件的分享入口。 */
+/** 文件链接共用归档路由、工作区编辑器和预览器，未知类型交给系统选择应用。 */
 @Composable
 internal fun WorkspaceFileLinkDialog(
     actualViewModel: ChatViewModel,
@@ -77,9 +85,9 @@ internal fun WorkspaceFileLinkDialog(
     target: WorkspaceFileLink,
     onDismiss: () -> Unit,
     onFileOpen: ((OpenFileInfo) -> Unit)? = null,
+    prepared: WorkspaceFileLinkContent? = null,
 ) {
     val context = LocalContext.current
-    val handler = remember(context) { AIToolHandler.getInstance(context) }
     val operations = remember(context) { FileBrowserOperations(context) }
     val scope = rememberCoroutineScope()
     val browserState = rememberSaveableStateHolder()
@@ -87,48 +95,21 @@ internal fun WorkspaceFileLinkDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var file by remember { mutableStateOf<OpenFileInfo?>(null) }
     var directory by remember { mutableStateOf<String?>(null) }
+    var archive by remember { mutableStateOf<WorkspaceLocation?>(null) }
+    var archiveEntry by remember { mutableStateOf<WorkspaceFileLink?>(null) }
     var fileInfo by remember { mutableStateOf<FileExistsData?>(null) }
+    var fileRoute by remember { mutableStateOf<WorkspaceFileRoute?>(null) }
 
     LaunchedEffect(target) {
         try {
-            val (info, openedFile) = withContext(Dispatchers.IO) {
-                val parameters = listOf(
-                    ToolParameter("path", target.path),
-                    ToolParameter("environment", target.environment),
-                )
-                val exists = handler.executeTool(AITool("file_exists", parameters))
-                check(exists.success) { exists.error.orEmpty() }
-                val info = exists.result
-                check(info is FileExistsData && info.exists) {
-                    context.getString(R.string.cannot_open_file, target.path)
-                }
-                val openedFile = if (info.isDirectory) null else {
-                    val mimeType = workspaceMimeTypeForFile(context, target.path, target.environment)
-                    when {
-                        workspaceShouldOpenAsDirectPreview(target.path, mimeType) ->
-                            OpenFileInfo(target.path, "", System.currentTimeMillis(),
-                                mimeType = mimeType, environment = target.environment)
-                        FileUtils.isTextBasedFileName(File(target.path).name) -> readWorkspaceTextWithinLimit(info.size) {
-                            val read = handler.executeTool(AITool("read_file_full", parameters + ToolParameter("text_only", "true")))
-                            check(read.success) { read.error.orEmpty() }
-                            val result = read.result
-                            check(result is FileContentData) { context.getString(R.string.file_error_open_failed) }
-                            val initialLine = if (target.anchor == null) target.line else {
-                                checkNotNull(findWorkspaceMarkdownAnchorLine(result.content, target.anchor)) {
-                                    context.getString(R.string.workspace_markdown_anchor_not_found, target.anchor)
-                                }
-                            }
-                            OpenFileInfo(target.path, result.content, System.currentTimeMillis(),
-                                mimeType = mimeType, environment = target.environment,
-                                initialLine = initialLine)
-                        }
-                        else -> null
-                    }
-                }
-                info to openedFile
+            val (info, openedFile, route) = withContext(Dispatchers.IO) {
+                prepared ?: readWorkspaceFileLink(context, target)
             }
             fileInfo = info
+            fileRoute = route
             if (info.isDirectory) directory = target.path
+            else if (route == WorkspaceFileRoute.ARCHIVE) archive = WorkspaceLocation(target.path, target.environment)
+            else if (route == WorkspaceFileRoute.SYSTEM) { onDismiss(); return@LaunchedEffect }
             if (openedFile != null && onFileOpen != null) {
                 onFileOpen(openedFile)
                 onDismiss()
@@ -145,6 +126,17 @@ internal fun WorkspaceFileLinkDialog(
         }
     }
 
+    val openedArchive = archive
+    if (openedArchive != null) {
+        WorkspaceArchiveBrowser(openedArchive, onDismiss,
+            onOpen = { opened -> archiveEntry = WorkspaceFileLink(opened.path, opened.environment) })
+        archiveEntry?.let { entry ->
+            WorkspaceFileLinkDialog(actualViewModel, currentChat, entry, { archiveEntry = null },
+                onFileOpen = onFileOpen?.let { opener -> { info: OpenFileInfo -> opener(info); onDismiss() } })
+        }
+        return
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         // 编辑器通过关闭标签处理未保存内容，系统返回不能直接销毁文件窗口。
@@ -159,7 +151,8 @@ internal fun WorkspaceFileLinkDialog(
             val openedFile = file
             val openedDirectory = directory
             when {
-                openedFile != null -> WorkspaceManager(
+                openedFile != null -> CompositionLocalProvider(LocalWorkspaceHeader provides null) {
+                    WorkspaceManager(
                     actualViewModel = actualViewModel,
                     currentChat = currentChat,
                     workspacePath = openedDirectory ?: File(openedFile.path).parent.orEmpty(),
@@ -168,7 +161,8 @@ internal fun WorkspaceFileLinkDialog(
                     onExportClick = {},
                     initialFile = openedFile,
                     onReturnToBrowser = { if (openedDirectory != null) file = null else onDismiss() },
-                )
+                    )
+                }
                 openedDirectory != null -> browserState.SaveableStateProvider("directory") {
                     FileBrowser(
                         initialPath = openedDirectory,
@@ -203,7 +197,7 @@ internal fun WorkspaceFileLinkDialog(
                                 val info = fileInfo
                                 if (info != null) {
                                     Text("${stringResource(R.string.ffmpeg_file_size)}: ${info.size}")
-                                    if (FileUtils.isTextBasedFileName(File(target.path).name) &&
+                                    if (fileRoute == WorkspaceFileRoute.TEXT &&
                                         info.size > WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES) {
                                         Text(stringResource(R.string.workspace_text_preview_too_large,
                                             (WORKSPACE_TEXT_PREVIEW_LIMIT_BYTES / (1024 * 1024)).toInt()))

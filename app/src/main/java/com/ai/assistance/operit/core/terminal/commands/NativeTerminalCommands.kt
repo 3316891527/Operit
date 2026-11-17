@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.core.terminal.commands
 
 import android.content.Context
+import com.ai.assistance.operit.core.htmlbuild.HtmlBuildCommandServer
 import com.ai.assistance.operit.integrations.http.commands.WebChatCommandServer
 import org.json.JSONObject
 import java.io.File
@@ -49,7 +50,22 @@ object NativeTerminalCommands {
         val socket = WebChatCommandServer.ensureStarted(context)
         val patchInstall = "bash ${quote(script.absolutePath)} ${quote(executable.absolutePath)} ${quote(binary.getString("sha256"))} ${quote(COMMAND_DIRECTORY)}"
         val webInstall = "bash ${quote(webScript.absolutePath)} ${quote(webExecutable.absolutePath)} ${quote(webBinary.getString("sha256"))} ${quote(COMMAND_DIRECTORY)} ${quote(socket)}"
-        return "$patchInstall && $webInstall"
+        val buildRoot = "html_build_command"
+        val buildManifest = context.assets.open("$buildRoot/manifest.json").bufferedReader(Charsets.UTF_8).use { JSONObject(it.readText()) }
+        check(buildManifest.getInt("format") == 1 && buildManifest.getString("target") == "aarch64-unknown-linux-gnu") { "build 命令资源格式不受支持" }
+        val buildBinary = buildManifest.getJSONObject("binary")
+        val buildInstaller = buildManifest.getJSONObject("installer")
+        check(buildBinary.getString("file") == "aarch64/build" && buildInstaller.getString("file") == "install.sh") { "build 命令资源路径无效" }
+        val buildDirectory = File(directory, "html-build-command")
+        val buildExecutable = NativeCommandAssets.install(File(buildDirectory, "build"), buildBinary.getString("sha256")) {
+            context.assets.open("$buildRoot/${buildBinary.getString("file")}")
+        }
+        val buildScript = NativeCommandAssets.install(File(buildDirectory, "install.sh"), buildInstaller.getString("sha256")) {
+            context.assets.open("$buildRoot/${buildInstaller.getString("file")}")
+        }
+        val buildSocket = HtmlBuildCommandServer.ensureStarted(context)
+        val buildInstall = "bash ${quote(buildScript.absolutePath)} ${quote(buildExecutable.absolutePath)} ${quote(buildBinary.getString("sha256"))} ${quote(COMMAND_DIRECTORY)} ${quote(buildSocket)}"
+        return "$patchInstall && $webInstall && $buildInstall"
     }
 
     private fun quote(value: String): String = "'" + value.replace("'", "'\"'\"'") + "'"

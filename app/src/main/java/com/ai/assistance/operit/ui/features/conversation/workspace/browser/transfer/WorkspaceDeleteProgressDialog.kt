@@ -11,18 +11,19 @@ internal fun WorkspaceDeleteProgressDialog(progress: WorkspaceDeleteProgress, ca
     val target = progress.target
     WorkspaceFileOperationDialog(
         title = stringResource(R.string.workspace_transfer_deleting),
-        status = stringResource(R.string.workspace_transfer_deleting),
+        status = stringResource(if (progress.scanning) R.string.workspace_transfer_scanning_delete else R.string.workspace_transfer_deleting),
         fraction = progress.fraction,
         cancelling = cancelling,
         onCancel = onCancel,
     ) {
         WorkspaceOperationDetail(stringResource(R.string.workspace_transfer_name), target.path.trimEnd('/').substringAfterLast('/'))
         WorkspaceOperationDetail(stringResource(R.string.workspace_transfer_source), "${target.environment ?: "android"}:${target.path}")
-        Text(stringResource(R.string.workspace_transfer_deleted_items, progress.completedItems, progress.totalItems),
+        Text(if (progress.scanning) stringResource(R.string.workspace_transfer_discovered_items, progress.totalItems)
+            else stringResource(R.string.workspace_transfer_deleted_items, progress.completedItems, progress.totalItems),
             style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(R.string.workspace_transfer_delete_scope),
+        Text(stringResource(R.string.workspace_transfer_delete_recursive_scope),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(stringResource(R.string.workspace_transfer_delete_cancel_note),
+        Text(stringResource(R.string.workspace_transfer_delete_recursive_cancel_note),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

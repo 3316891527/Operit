@@ -10,3 +10,11 @@
 *.aar binary
 *.zip binary
 *.so binary
+
+# 第三方规则和通知默认折叠展示，来源目录与应用适配仍按正常代码审阅。
+app/src/main/assets/workspace-textmate/grammars/** linguist-vendored linguist-generated
+app/src/main/assets/workspace-textmate/NOTICE linguist-vendored linguist-generated
+app/src/main/assets/workspace-textmate/LICENSE linguist-vendored
+app/src/main/assets/workspace-textmate/licenses/** linguist-vendored
+# 文件识别目录由统一资源清单生成。
+app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/editor/textmate/TextMateCatalogData.kt linguist-generated

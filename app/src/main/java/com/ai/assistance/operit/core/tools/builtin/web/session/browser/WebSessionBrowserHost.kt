@@ -20,6 +20,22 @@ import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,7 +122,117 @@ internal class WebSessionBrowserHost(
 
     private var isExpanded: Boolean = false
     private var hostState by mutableStateOf(WebSessionBrowserHostState())
+    private var embedded = false
+    private var embeddedSelectionAnchor by mutableStateOf<IntOffset?>(null)
+    fun isEmbedded(): Boolean = embedded
+
+    /** 同一组 WebView 由工作台或浮窗持有，挂载前先释放另一个显示容器。 */
+    fun beginEmbedded() {
+        if (embedded) return
+        embedded = true
+        destroy()
+        isExpanded = false
+    }
+
+    fun endEmbedded() {
+        embedded = false
+        hideTextSelectionActionsOverlay()
+        webViewHost.clear()
+    }
+
+    @Composable
+    fun Content(modifier: Modifier = Modifier, embedded: Boolean = false, onMinimize: () -> Unit = callbacks::onMinimize) {
+        val bookmarks by store.bookmarksFlow.collectAsState(initial = emptyList())
+        val history by store.historyFlow.collectAsState(initial = emptyList())
+        val userscriptUiState by userscriptStore.state.collectAsState()
+
+        WebSessionFloatingTheme {
+            WebSessionBrowserScreen(
+                hostState = hostState,
+                bookmarks = bookmarks,
+                globalHistory = history,
+                userscriptUiState = userscriptUiState,
+                webViewHost = webViewHost,
+                onHostStateChange = { transform ->
+                    updateHostState(transform)
+                },
+                onNavigate = callbacks::onNavigate,
+                onBack = callbacks::onBack,
+                onForward = callbacks::onForward,
+                onRefreshOrStop = callbacks::onRefreshOrStop,
+                onSelectTab = callbacks::onSelectTab,
+                onCloseTab = callbacks::onCloseTab,
+                onNewTab = callbacks::onNewTab,
+                onMinimize = onMinimize,
+                onCloseCurrentTab = callbacks::onCloseCurrentTab,
+                onCloseAllTabs = callbacks::onCloseAllTabs,
+                onToggleBookmark = callbacks::onToggleBookmark,
+                onRemoveBookmark = callbacks::onRemoveBookmark,
+                onSelectSessionHistory = callbacks::onSelectSessionHistory,
+                onOpenUrl = callbacks::onOpenUrl,
+                onClearHistory = callbacks::onClearHistory,
+                onToggleDesktopMode = callbacks::onToggleDesktopMode,
+                onOpenUserscripts = callbacks::onOpenUserscripts,
+                onImportUserscript = callbacks::onImportUserscript,
+                onInstallUserscriptFromUrl = callbacks::onInstallUserscriptFromUrl,
+                onConfirmUserscriptInstall = callbacks::onConfirmUserscriptInstall,
+                onCancelUserscriptInstall = callbacks::onCancelUserscriptInstall,
+                onSetUserscriptEnabled = callbacks::onSetUserscriptEnabled,
+                onDeleteUserscript = callbacks::onDeleteUserscript,
+                onCheckUserscriptUpdate = callbacks::onCheckUserscriptUpdate,
+                onInvokeUserscriptMenu = callbacks::onInvokeUserscriptMenu,
+                onPauseDownload = callbacks::onPauseDownload,
+                onResumeDownload = callbacks::onResumeDownload,
+                onCancelDownload = callbacks::onCancelDownload,
+                onRetryDownload = callbacks::onRetryDownload,
+                onDeleteDownload = callbacks::onDeleteDownload,
+                onOpenDownloadedFile = callbacks::onOpenDownloadedFile,
+                onOpenDownloadLocation = callbacks::onOpenDownloadLocation,
+                onConfirmExternalOpen = callbacks::onConfirmExternalOpen,
+                onCancelExternalOpen = callbacks::onCancelExternalOpen,
+                onHandlePendingDialog = callbacks::onHandlePendingDialog,
+                modifier = modifier,
+                embedded = embedded,
+            )
+            if (embedded) EmbeddedSelectionMenu()
+        }
+    }
+
+    /** 嵌入页面的菜单依附当前应用窗口，避免要求悬浮窗权限。 */
+    @Composable
+    private fun EmbeddedSelectionMenu() {
+        val anchor = embeddedSelectionAnchor ?: return
+        val margin = with(LocalDensity.current) { 10.dp.roundToPx() }
+        Popup(
+            popupPositionProvider = object : PopupPositionProvider {
+                override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize,
+                    layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+                    val maxX = (windowSize.width - popupContentSize.width - margin).coerceAtLeast(margin)
+                    val maxY = (windowSize.height - popupContentSize.height - margin).coerceAtLeast(margin)
+                    val above = anchor.y - popupContentSize.height - margin
+                    val y = if (above >= margin) above else anchor.y + margin
+                    return IntOffset((anchor.x - popupContentSize.width / 2).coerceIn(margin, maxX), y.coerceIn(margin, maxY))
+                }
+            },
+            onDismissRequest = ::dismissTextSelectionActions,
+            properties = PopupProperties(focusable = false),
+        ) {
+            Surface(shape = RoundedCornerShape(12.dp), shadowElevation = 6.dp) {
+                Row {
+                    TextButton(onClick = ::copyActiveWebViewSelection) { Text(appContext.getString(R.string.copy)) }
+                    TextButton(onClick = ::selectAllActiveWebViewText) { Text(appContext.getString(android.R.string.selectAll)) }
+                    TextButton(onClick = ::dismissTextSelectionActions) { Text(appContext.getString(R.string.cancel)) }
+                }
+            }
+        }
+    }
+
+    fun ensureWindow(initialExpanded: Boolean) {
+        if (rootView == null) ensureCreated(initialExpanded)
+    }
+
     fun ensureCreated(initialExpanded: Boolean = false) {
+        if (embedded) return
         if (rootView != null) {
             if (isExpanded != initialExpanded) {
                 setExpanded(initialExpanded)
@@ -135,57 +261,7 @@ internal class WebSessionBrowserHost(
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                 installViewTreeOwners(this, lifecycleOwner)
                 setContent {
-                    val bookmarks by store.bookmarksFlow.collectAsState(initial = emptyList())
-                    val history by store.historyFlow.collectAsState(initial = emptyList())
-                    val userscriptUiState by userscriptStore.state.collectAsState()
-
-                    WebSessionFloatingTheme {
-                        WebSessionBrowserScreen(
-                            hostState = hostState,
-                            bookmarks = bookmarks,
-                            globalHistory = history,
-                            userscriptUiState = userscriptUiState,
-                            webViewHost = webViewHost,
-                            onHostStateChange = { transform ->
-                                updateHostState(transform)
-                            },
-                            onNavigate = callbacks::onNavigate,
-                            onBack = callbacks::onBack,
-                            onForward = callbacks::onForward,
-                            onRefreshOrStop = callbacks::onRefreshOrStop,
-                            onSelectTab = callbacks::onSelectTab,
-                            onCloseTab = callbacks::onCloseTab,
-                            onNewTab = callbacks::onNewTab,
-                            onMinimize = callbacks::onMinimize,
-                            onCloseCurrentTab = callbacks::onCloseCurrentTab,
-                            onCloseAllTabs = callbacks::onCloseAllTabs,
-                            onToggleBookmark = callbacks::onToggleBookmark,
-                            onRemoveBookmark = callbacks::onRemoveBookmark,
-                            onSelectSessionHistory = callbacks::onSelectSessionHistory,
-                            onOpenUrl = callbacks::onOpenUrl,
-                            onClearHistory = callbacks::onClearHistory,
-                            onToggleDesktopMode = callbacks::onToggleDesktopMode,
-                            onOpenUserscripts = callbacks::onOpenUserscripts,
-                            onImportUserscript = callbacks::onImportUserscript,
-                            onInstallUserscriptFromUrl = callbacks::onInstallUserscriptFromUrl,
-                            onConfirmUserscriptInstall = callbacks::onConfirmUserscriptInstall,
-                            onCancelUserscriptInstall = callbacks::onCancelUserscriptInstall,
-                            onSetUserscriptEnabled = callbacks::onSetUserscriptEnabled,
-                            onDeleteUserscript = callbacks::onDeleteUserscript,
-                            onCheckUserscriptUpdate = callbacks::onCheckUserscriptUpdate,
-                            onInvokeUserscriptMenu = callbacks::onInvokeUserscriptMenu,
-                            onPauseDownload = callbacks::onPauseDownload,
-                            onResumeDownload = callbacks::onResumeDownload,
-                            onCancelDownload = callbacks::onCancelDownload,
-                            onRetryDownload = callbacks::onRetryDownload,
-                            onDeleteDownload = callbacks::onDeleteDownload,
-                            onOpenDownloadedFile = callbacks::onOpenDownloadedFile,
-                            onOpenDownloadLocation = callbacks::onOpenDownloadLocation,
-                            onConfirmExternalOpen = callbacks::onConfirmExternalOpen,
-                            onCancelExternalOpen = callbacks::onCancelExternalOpen,
-                            onHandlePendingDialog = callbacks::onHandlePendingDialog
-                        )
-                    }
+                    Content()
                 }
             }
 
@@ -262,6 +338,14 @@ internal class WebSessionBrowserHost(
     }
 
     fun showTextSelectionActionsOverlay(anchorX: Double, anchorY: Double) {
+        if (embedded) {
+            val webView = webViewHost.currentWebView() ?: return
+            val location = IntArray(2)
+            webView.getLocationInWindow(location)
+            val scale = webView.scale * webView.scaleX
+            embeddedSelectionAnchor = IntOffset((location[0] + anchorX * scale).roundToInt(), (location[1] + anchorY * scale).roundToInt())
+            return
+        }
         if (!isExpanded) {
             return
         }
@@ -288,13 +372,15 @@ internal class WebSessionBrowserHost(
     }
 
     fun performTextSelectionHaptic() {
-        rootView?.performHapticFeedback(
+        val target = if (embedded) webViewHost.currentWebView() else rootView
+        target?.performHapticFeedback(
             HapticFeedbackConstants.LONG_PRESS,
             HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
         )
     }
 
     fun hideTextSelectionActionsOverlay() {
+        embeddedSelectionAnchor = null
         val view = selectionActionsView ?: return
         try {
             windowManager.removeView(view)
@@ -305,7 +391,7 @@ internal class WebSessionBrowserHost(
         selectionActionsParams = null
     }
 
-    fun isExpanded(): Boolean = isExpanded
+    fun isExpanded(): Boolean = embedded || isExpanded
 
     fun setViewportSize(width: Int, height: Int) {
         updateHostState {
@@ -333,6 +419,7 @@ internal class WebSessionBrowserHost(
         hostState.browserAreaWidthPx.coerceAtLeast(0) to hostState.browserAreaHeightPx.coerceAtLeast(0)
 
     fun setExpanded(expanded: Boolean) {
+        if (embedded) return
         val params = overlayParams ?: return
         val root = rootView ?: return
         val compose = composeView ?: return
@@ -590,6 +677,7 @@ internal class WebSessionBrowserHost(
     }
 
     fun syncIndicatorWithMinimizedWindow() {
+        if (embedded) { hideIndicator(); return }
         if (isExpanded) {
             return
         }

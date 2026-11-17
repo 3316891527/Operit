@@ -93,8 +93,8 @@ internal class WorkspacePropertiesRepository private constructor(private val sou
         WorkspaceProperties(node, source.canModifyTime && !node.symbolicLink)
     }
 
-    suspend fun totals(): WorkspaceDirectoryTotals = withContext(Dispatchers.IO) {
-        val root = source.stat(source.root)
+    suspend fun totals(root: PropertyNode): WorkspaceDirectoryTotals = withContext(Dispatchers.IO) {
+        require(root.id == source.root)
         var bytes = 0L
         var files = 0L
         var directories = 0L
@@ -185,7 +185,13 @@ private class LocalWorkspacePropertySource(private val context: Context, path: P
         Files.newDirectoryStream(File(node.id).toPath()).use { entries ->
             for (entry in entries) {
                 currentCoroutineContext().ensureActive()
-                result += stat(entry.toString())
+                // 父目录已完成来源与权限校验，NOFOLLOW 读取子项无需重复解析规范路径。
+                val attributes = Files.readAttributes(entry, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+                if (!attributes.isSymbolicLink && !Files.isReadable(entry)) {
+                    throw SecurityException(context.getString(R.string.file_manager_permission_denied))
+                }
+                result += PropertyNode(entry.toString(), attributes.isDirectory, attributes.isSymbolicLink,
+                    attributes.size(), attributes.lastModifiedTime().toMillis())
             }
         }
         return result

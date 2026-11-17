@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">Nu se pot citi informațiile aplicației din acest APK.</string>
+    <string name="workspace_apk_loading">Se citesc informațiile aplicației…</string>
+    <string name="workspace_apk_version_code">Codul versiunii</string>
+    <string name="workspace_apk_size">Dimensiunea APK</string>
+    <string name="workspace_apk_min_sdk">SDK minim</string>
+    <string name="workspace_apk_target_sdk">SDK țintă</string>
+    <string name="workspace_apk_installed">Versiune instalată</string>
+    <string name="workspace_apk_not_installed">Neinstalat</string>
+    <string name="workspace_apk_view">Vizualizează</string>
+    <string name="workspace_apk_install">Instalează</string>
+    <string name="workspace_apk_allow_install">Permite acestei aplicații să instaleze aplicații necunoscute, apoi apasă din nou Instalează.</string>
+    <string name="workspace_archive_preparing">Se pregătește…</string>
+    <string name="workspace_archive_reading_index">Se citește directorul arhivei…</string>
+    <string name="workspace_archive_extracting">Se extrage…</string>
+    <string name="workspace_archive_transferring">Se copiază la destinație…</string>
+    <string name="workspace_archive_publishing">Se scrie la destinație…</string>
+    <string name="workspace_archive_entry_progress">%1$d / %2$d elemente finalizate</string>
+    <string name="workspace_archive_entries_done">%1$d elemente finalizate</string>
+    <string name="workspace_archive_byte_progress">%1$s / %2$s procesat</string>
+    <string name="workspace_archive_current_file">Progresul fișierului curent</string>
+    <string name="workspace_transfer_scanning_delete">Se numără fișierele de șters…</string>
+    <string name="workspace_transfer_discovered_items">S-au găsit %1$d elemente</string>
+    <string name="workspace_transfer_delete_recursive_scope">Include fișierele și subdirectoarele din folderele selectate.</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">Anularea oprește ștergerile următoare. Conținutul șters nu va fi restaurat.</string>
+</resources>

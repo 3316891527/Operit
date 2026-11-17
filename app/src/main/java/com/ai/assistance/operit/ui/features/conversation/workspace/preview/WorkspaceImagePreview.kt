@@ -28,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -44,6 +46,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.icons.SvgImageAssetDecoder
 
 private const val WORKSPACE_IMAGE_MIN_SCALE = 1f
 private const val WORKSPACE_IMAGE_DOUBLE_TAP_SCALE = 2.5f
@@ -58,6 +61,7 @@ internal fun WorkspaceImagePreview(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val isSvg = fileName.substringAfterLast('.').equals("svg", true)
     var scale by remember(previewUri) { mutableStateOf(WORKSPACE_IMAGE_MIN_SCALE) }
     var offset by remember(previewUri) { mutableStateOf(Offset.Zero) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
@@ -67,12 +71,18 @@ internal fun WorkspaceImagePreview(
         if (previewUri != null) {
             rememberAsyncImagePainter(
                 model =
-                    remember(context, previewUri) {
+                    remember(context, previewUri, isSvg) {
                         ImageRequest.Builder(context)
                             .data(previewUri)
                             .memoryCachePolicy(CachePolicy.DISABLED)
                             .diskCachePolicy(CachePolicy.DISABLED)
                             .crossfade(false)
+                            .apply {
+                                if (isSvg) {
+                                    decoderFactory(SvgImageAssetDecoder.Factory(2048))
+                                    allowHardware(false)
+                                }
+                            }
                             .build()
                     }
             )
@@ -91,19 +101,30 @@ internal fun WorkspaceImagePreview(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(Color.Black)
+                .background(if (isSvg) Color(0xFFE6E6E6) else Color.Black)
+                .drawBehind {
+                    if (isSvg) {
+                        val cell = 12.dp.toPx()
+                        for (row in 0..(size.height / cell).toInt()) {
+                            for (column in 0..(size.width / cell).toInt()) {
+                                if ((row + column) % 2 == 0) drawRect(Color(0xFFCCCCCC),
+                                    Offset(column * cell, row * cell), Size(cell, cell))
+                            }
+                        }
+                    }
+                }
                 .onSizeChanged { viewportSize = it },
         contentAlignment = Alignment.Center
     ) {
         when {
             previewUri == null -> {
                 if (!isSourceLoading) {
-                    WorkspaceImageErrorMessage(message = resolvedErrorMessage)
+                    WorkspaceImageErrorMessage(message = resolvedErrorMessage, lightBackground = isSvg)
                 }
             }
 
             hasImageError -> {
-                WorkspaceImageErrorMessage(message = resolvedErrorMessage)
+                WorkspaceImageErrorMessage(message = resolvedErrorMessage, lightBackground = isSvg)
             }
 
             painter != null -> {
@@ -223,10 +244,10 @@ private fun WorkspaceImageLoadingBadge(fileName: String) {
 }
 
 @Composable
-private fun WorkspaceImageErrorMessage(message: String) {
+private fun WorkspaceImageErrorMessage(message: String, lightBackground: Boolean) {
     Text(
         text = message,
-        color = Color.White,
+        color = if (lightBackground) Color(0xFF202124) else Color.White,
         style = MaterialTheme.typography.bodyMedium
     )
 }

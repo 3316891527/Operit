@@ -22,12 +22,12 @@ internal class EditorMetrics(
         update(textSizePx)
     }
 
-    fun update(textSizePx: Float) {
+    fun update(textSizePx: Float, lineSpacing: Float = 1.25f) {
         paint.textSize = textSizePx
         charWidth = ceil(paint.measureText("M").toDouble()).toFloat()
         val fontMetrics = paint.fontMetrics
         charHeight = fontMetrics.descent - fontMetrics.ascent
-        lineHeight = charHeight * 1.25f
+        lineHeight = charHeight * lineSpacing
         baseline = -fontMetrics.ascent + (lineHeight - charHeight) / 2f
     }
 

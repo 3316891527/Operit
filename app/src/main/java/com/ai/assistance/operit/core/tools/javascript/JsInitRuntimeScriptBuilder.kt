@@ -464,6 +464,8 @@ private fun buildRuntimeToolCallScript(): String {
 
             function toolCall() {
                 var rawArgs = arguments;
+                var originatingContext = this;
+                var originatingCallId = this && typeof this.__operitCallId === 'string' ? this.__operitCallId : '';
                 return new Promise(function(resolve, reject) {
                     try {
                         var parsed = parseToolCallArguments(rawArgs);
@@ -501,22 +503,26 @@ private fun buildRuntimeToolCallScript(): String {
                                     reject(error);
                                 }
                             };
-                            callNative(
-                                'callToolAsyncStreaming',
+                            var streamingArgs = [
                                 callbackId,
                                 intermediateCallbackId,
                                 parsed.type || 'default',
                                 parsed.name,
                                 JSON.stringify(nativeParams)
-                            );
+                            ];
+                            if (originatingCallId) streamingArgs.unshift(originatingCallId);
+                            streamingArgs.unshift(originatingCallId ? originatingContext.__operitStreamingToolMethod : 'callToolAsyncStreaming');
+                            callNative.apply(null, streamingArgs);
                         } else {
-                            callNative(
-                                'callToolAsync',
+                            var asyncArgs = [
                                 callbackId,
                                 parsed.type || 'default',
                                 parsed.name,
                                 JSON.stringify(nativeParams)
-                            );
+                            ];
+                            if (originatingCallId) asyncArgs.unshift(originatingCallId);
+                            asyncArgs.unshift(originatingCallId ? originatingContext.__operitAsyncToolMethod : 'callToolAsync');
+                            callNative.apply(null, asyncArgs);
                         }
                     } catch (error) {
                         reject(error);

@@ -1,0 +1,8 @@
+// TODO：运算符与注释区域分开匹配
+section settings
+let count = 12 + 3 * 4
+let message = "中文与插值 ${count + 1}，转义 \n"
+/* FIXME：块注释 */
+```js
+const message = "embedded JavaScript";
+```

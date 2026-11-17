@@ -136,7 +136,6 @@ fun AIChatScreen(
         onNavigateToModelConfig: () -> Unit = {},
         onNavigateToModelPrompts: () -> Unit = {},
         onNavigateToPackageManager: () -> Unit = {},
-        onNavigateToHtmlPackager: () -> Unit = {},
         onGestureConsumed: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -818,7 +817,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                     currentChat = currentChatView,
                     chatHistories = chatHistories,
                     isVisible = overlayVisible,
-                    onOpenHtmlPackager = onNavigateToHtmlPackager,
                     reserveChatControlsSpace = true,
                     onExportClick = { workDir ->
                         webContentDir = workDir

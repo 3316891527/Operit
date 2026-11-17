@@ -65,6 +65,9 @@ object CommentSyntaxRegistry {
         "fsharp" to lineAndBlock("//", "(*", "*)"),
 
         "css" to block("/*", "*/"),
+        "scss" to lineAndBlock("//", "/*", "*/"),
+        "less" to lineAndBlock("//", "/*", "*/"),
+        "sass" to line("//"),
 
         // HTML/XML 风格块注释。
         "html" to block("<!--", "-->"),
@@ -131,6 +134,26 @@ object CommentSyntaxRegistry {
         "json5" to lineAndBlock("//", "/*", "*/")
     )
 
-    fun forLanguage(language: String): CommentSyntax? =
-        syntaxes[language.lowercase()]
+    fun forLanguage(language: String): CommentSyntax? {
+        val key = when (val name = language.lowercase(java.util.Locale.ROOT)) {
+            "c" -> "cpp"
+            "jsx" -> "javascript"
+            "tsx", "angular-ts" -> "typescript"
+            "shellscript", "fish" -> "shell"
+            "bat" -> "batch"
+            "as", "as3", "actionscript-3" -> "actionscript"
+            "coffee" -> "coffeescript"
+            "common-lisp", "emacs-lisp" -> "lisp"
+            "fortran-fixed-form", "fortran-free-form" -> "fortran"
+            "viml" -> "vim"
+            "system-verilog" -> "verilog"
+            "terraform" -> "hcl"
+            "jsonc" -> "json5"
+            "asm", "mipsasm", "riscv" -> "assembly"
+            "angular-html", "vue-html" -> "html"
+            "xsl" -> "xml"
+            else -> name
+        }
+        return syntaxes[key]
+    }
 }

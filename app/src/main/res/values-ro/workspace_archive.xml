@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">Comprimă</string>
+    <string name="workspace_archive_extract">Extrage</string>
+    <string name="workspace_archive_add">Adaugă</string>
+    <string name="workspace_archive_choose_directory">Selectează acest dosar</string>
+    <string name="workspace_archive_password">Parolă de decriptare</string>
+    <string name="workspace_archive_name">Numele arhivei</string>
+    <string name="workspace_archive_format">Format</string>
+    <string name="workspace_archive_destination">Dosar destinație</string>
+    <string name="workspace_archive_level">Nivel de comprimare</string>
+    <string name="workspace_archive_level_fast">Rapid</string>
+    <string name="workspace_archive_level_normal">Normal</string>
+    <string name="workspace_archive_level_maximum">Maxim</string>
+    <string name="workspace_archive_working">Se procesează</string>
+    <string name="workspace_archive_processed">Procesat: %1$s</string>
+    <string name="workspace_archive_read_only">Arhivă doar în citire</string>
+    <string name="workspace_archive_retry">Reîncearcă</string>
+    <string name="workspace_archive_entries">%1$d elemente</string>
+    <string name="workspace_archive_signed">Modificarea acestui fișier invalidează semnătura existentă.</string>
+    <string name="workspace_archive_link">Elementele legătură nu pot fi deschise sau extrase.</string>
+    <string name="workspace_archive_extract_all">Extrage tot</string>
+    <string name="workspace_archive_extract_selected">Extrage %1$d elemente selectate</string>
+    <string name="workspace_archive_encrypt_password">Parolă de criptare (opțională)</string>
+    <string name="workspace_archive_read_password_hint">Este folosită pentru citirea unei arhive criptate. Nu schimbă parola acesteia.</string>
+    <string name="workspace_archive_password_required">Este necesară o parolă de decriptare pentru a citi această arhivă.</string>
+    <string name="workspace_archive_source">Arhivă sursă</string>
+    <string name="workspace_archive_packed_size">Dimensiune comprimată</string>
+    <string name="workspace_archive_encrypted">Criptat</string>
+    <string name="workspace_archive_name_hint">Formatul selectat adaugă automat extensia.</string>
+    <string name="workspace_archive_stage_target">Verifică destinația</string>
+    <string name="workspace_archive_stage_sources">Citește sursele</string>
+    <string name="workspace_archive_stage_write">Scrie arhiva</string>
+    <string name="workspace_archive_stage_verify">Verifică arhiva</string>
+    <string name="workspace_archive_stage_publish">Publică arhiva</string>
+    <string name="workspace_archive_create_failed_detail">Nu se poate crea %1$s\nPas: %2$s\nDestinație: %3$s\nMotiv: %4$s</string>
+</resources>

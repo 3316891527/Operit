@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">この APK のアプリ情報を読み取れません。</string>
+    <string name="workspace_apk_loading">アプリ情報を読み取り中…</string>
+    <string name="workspace_apk_version_code">バージョンコード</string>
+    <string name="workspace_apk_size">APK サイズ</string>
+    <string name="workspace_apk_min_sdk">最小 SDK</string>
+    <string name="workspace_apk_target_sdk">対象 SDK</string>
+    <string name="workspace_apk_installed">インストール済みバージョン</string>
+    <string name="workspace_apk_not_installed">未インストール</string>
+    <string name="workspace_apk_view">表示</string>
+    <string name="workspace_apk_install">インストール</string>
+    <string name="workspace_apk_allow_install">このアプリから不明なアプリをインストールすることを許可してから、もう一度インストールを押してください。</string>
+    <string name="workspace_archive_preparing">準備中…</string>
+    <string name="workspace_archive_reading_index">アーカイブのディレクトリを読み取り中…</string>
+    <string name="workspace_archive_extracting">展開中…</string>
+    <string name="workspace_archive_transferring">保存先にコピー中…</string>
+    <string name="workspace_archive_publishing">保存先に書き込み中…</string>
+    <string name="workspace_archive_entry_progress">%1$d / %2$d 項目が完了</string>
+    <string name="workspace_archive_entries_done">%1$d 項目が完了</string>
+    <string name="workspace_archive_byte_progress">%1$s / %2$s を処理済み</string>
+    <string name="workspace_archive_current_file">現在のファイルの進行状況</string>
+    <string name="workspace_transfer_scanning_delete">削除するファイルを集計中…</string>
+    <string name="workspace_transfer_discovered_items">%1$d 項目を検出</string>
+    <string name="workspace_transfer_delete_recursive_scope">選択したフォルダー内のファイルとサブフォルダーを含みます。</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">キャンセルすると以降の削除を停止します。削除済みの内容は復元されません。</string>
+</resources>

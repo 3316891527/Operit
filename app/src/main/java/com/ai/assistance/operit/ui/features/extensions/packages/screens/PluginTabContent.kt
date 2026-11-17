@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager
 import com.ai.assistance.operit.core.tools.packTool.metadata.PluginActivity
-import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
+import com.ai.assistance.operit.ui.common.icons.rememberImageAssetPainter
 import com.ai.assistance.operit.ui.features.extensions.packages.components.EmptyState
 import com.ai.assistance.operit.ui.features.extensions.packages.management.PluginSortEntry
 import com.ai.assistance.operit.ui.features.extensions.packages.management.PluginSortSelection
@@ -126,8 +126,8 @@ fun PluginTabContent(
                     value = if (details.logoResourceKey == null) null
                     else withContext(Dispatchers.IO) { loadPluginLogo(packageName) }
                 }
-                val logoPainter = rememberLogoPainter(
-                    logoKey = "$packageName:${details.version}:${details.logoResourceKey}",
+                val logoPainter = rememberImageAssetPainter(
+                    imageKey = "$packageName:${details.version}:${details.logoResourceKey}",
                     bytes = logo?.bytes,
                     mimeType = logo?.mimeType,
                     fileName = logo?.fileName,

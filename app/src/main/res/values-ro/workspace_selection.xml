@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_selection_share_files_only">Se pot partaja doar fișiere, nu și foldere</string>
+    <string name="workspace_selection_properties_progress">Calculate %1$d / %2$d elemente selectate</string>
+    <string name="workspace_selection_properties_hint">Include folderele selectate și descendenții lor. Nu urmărește legături simbolice. Închide pentru a opri.</string>
+</resources>

@@ -2,6 +2,7 @@ package com.ai.assistance.operit.core.tools.javascript
 
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Looper
@@ -94,6 +95,7 @@ class JsEngine(private val context: Context) {
         val dispatchIntermediateOnMain: Boolean,
         val envOverrides: Map<String, String>,
         val packageChatId: String?,
+        val toolRuntimeContext: ToolExecutionManager.ToolRuntimeContext?,
         val packageName: String?,
         val toolPkgApiVersion: ToolPkgApiVersion?,
         val toolPkgLogSnapshot: JsToolPkgExecutionContext.LogSnapshot,
@@ -359,6 +361,9 @@ class JsEngine(private val context: Context) {
                     ?.toString()
                     ?.trim()
                     ?.ifBlank { null },
+            toolRuntimeContext = ToolExecutionManager.currentToolRuntimeContext()
+                ?: params["__operit_package_chat_id"]?.toString()?.takeIf { it.isNotBlank() }
+                    ?.let { ToolExecutionManager.ToolRuntimeContext(callerChatId = it) },
             packageName = params["__operit_package_name"]?.toString(),
             toolPkgApiVersion = toolPkgApiVersion,
             toolPkgLogSnapshot = toolPkgExecutionContext.capture(script, functionName, params),
@@ -2503,6 +2508,29 @@ class JsEngine(private val context: Context) {
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Error processing call intermediate result: callId=$callId, reason=${e.message}", e)
             }
+        }
+
+        /** 发起调用在进入异步线程前解析，不借用当前界面选中的聊天。 */
+        @JavascriptInterface
+        fun callToolAsyncForCall(callId: String, callbackId: String, toolType: String, toolName: String, paramsJson: String) {
+            JsNativeInterfaceDelegates.callToolAsync(
+                toolHandler = toolHandler, callbackId = callbackId, toolType = toolType, toolName = toolName, paramsJson = paramsJson,
+                binaryDataRegistry = binaryDataRegistry, binaryHandlePrefix = BINARY_HANDLE_PREFIX, binaryDataThreshold = BINARY_DATA_THRESHOLD,
+                runtimeContext = resolveExecutionSession(callId)?.toolRuntimeContext,
+                sendToolResult = { callback, result, isError -> sendToolResult(callback, result, isError) },
+            )
+        }
+
+        @JavascriptInterface
+        fun callToolAsyncStreamingForCall(callId: String, callbackId: String, intermediateCallbackId: String, toolType: String, toolName: String, paramsJson: String) {
+            JsNativeInterfaceDelegates.callToolAsyncStreaming(
+                toolHandler = toolHandler, callbackId = callbackId, intermediateCallbackId = intermediateCallbackId,
+                toolType = toolType, toolName = toolName, paramsJson = paramsJson,
+                binaryDataRegistry = binaryDataRegistry, binaryHandlePrefix = BINARY_HANDLE_PREFIX, binaryDataThreshold = BINARY_DATA_THRESHOLD,
+                runtimeContext = resolveExecutionSession(callId)?.toolRuntimeContext,
+                sendToolResult = { callback, result, isError -> sendToolResult(callback, result, isError) },
+                sendIntermediateResult = { callback, result, isError -> sendToolResult(callback, result, isError) },
+            )
         }
 
         /** 同步工具调用 */

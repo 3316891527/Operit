@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_selection_share_files_only">仅支持分享文件，文件夹暂不支持</string>
+    <string name="workspace_selection_properties_progress">已统计 %1$d / %2$d 个所选项目</string>
+    <string name="workspace_selection_properties_hint">数量包含所选文件夹自身及其子项，不跟随符号链接；关闭面板可停止统计。</string>
+</resources>

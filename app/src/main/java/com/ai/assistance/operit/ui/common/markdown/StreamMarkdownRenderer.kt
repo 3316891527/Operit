@@ -24,6 +24,7 @@ import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -34,6 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import kotlin.math.roundToInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -1120,7 +1124,8 @@ internal fun AnimatedNode(
     xmlStream: Stream<String>?,
     enableDialogs: Boolean,
     fillMaxWidth: Boolean,
-    isLastNode: Boolean = false
+    isLastNode: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     // alpha 动画状态在这里，变化只影响这个 Composable 的作用域
     val alpha by animateFloatAsState(
@@ -1131,7 +1136,7 @@ internal fun AnimatedNode(
     // 使用 graphicsLayer 代替 alpha modifier
     // graphicsLayer 只影响绘制层，不会触发内容的 recompose
     // CanvasMarkdownNodeRenderer 内部已经使用 key 来控制重组
-    Box(modifier = Modifier.graphicsLayer { this.alpha = alpha }) {
+    Box(modifier = modifier.graphicsLayer { this.alpha = alpha }) {
         // 所有节点都使用CanvasMarkdownNodeRenderer
         // 它内部已经实现了Canvas绘制优化和基于内容长度的 key 控制
         CanvasMarkdownNodeRenderer(
@@ -1168,6 +1173,10 @@ internal fun UnifiedMarkdownCanvas(
     collapseCompletedProcess: Boolean = false,
     responseDurationMs: Long = 0L,
 ) {
+    val outline = LocalMarkdownOutline.current
+    val headings = if (outline == null) emptyList() else remember(nodes.toList()) { markdownHeadings(nodes) }
+    SideEffect { outline?.updateHeadings(headings) }
+    val headingIndices = remember(headings) { headings.map { it.nodeIndex }.toSet() }
     val lastRenderableIndex = run {
         val idx = nodes.indexOfLast { it.content.isNotEmpty() || it.children.isNotEmpty() }
         if (idx >= 0) idx else nodes.lastIndex
@@ -1201,6 +1210,8 @@ internal fun UnifiedMarkdownCanvas(
         }
         responseProcessItemVisible(end, processEnd, processExpanded)
     }
+    // 只观察当前文档的顶层节点，嵌套渲染器不会覆盖目录。
+    CompositionLocalProvider(LocalMarkdownOutline provides null) {
     nodeGrouper.RenderScope(nodes) {
     Column(modifier = modifier) {
         if (processEnd >= 0 && processId != null) {
@@ -1231,6 +1242,9 @@ internal fun UnifiedMarkdownCanvas(
                             enableDialogs = enableDialogs,
                             fillMaxWidth = fillMaxWidth,
                             isLastNode = index == lastRenderableIndex,
+                            modifier = if (outline != null && index in headingIndices) Modifier.onGloballyPositioned {
+                                outline.updateOffset(index, it.positionInParent().y.roundToInt())
+                            } else Modifier,
                         )
                     }
                 }
@@ -1257,6 +1271,7 @@ internal fun UnifiedMarkdownCanvas(
                 }
             }
         }
+    }
     }
     }
 }

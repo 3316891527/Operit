@@ -879,7 +879,6 @@
     <string name="show_help">Show help</string>
     <string name="hide_help">Hide help</string>
     <string name="request_permission">Request Shizuku permission</string>
-    <string name="screen_title_html_packager">HTML Packager</string>
     <string name="execute_shell">Execute Shell Command</string>
     <string name="enter_command">Enter ADB Command</string>
     <string name="show_samples">Show Example Commands</string>
@@ -1902,8 +1901,6 @@
     <string name="tool_token_config_desc">Open the API key acquisition and configuration page for quick model setup</string>
     <string name="tool_process_limit_remover">Phantom Process Limit Remover</string>
     <string name="tool_process_limit_remover_desc">Manage Android 12+ phantom process count limits to allow more background child processes</string>
-    <string name="tool_html_packager">HTML Packager</string>
-    <string name="tool_html_packager_desc">Export web projects as Android packages or Windows ZIPs</string>
 
     <!-- Process Limit Remover Screen -->
     <string name="process_limit_title">Phantom Process Limit Remover</string>
@@ -5920,12 +5917,6 @@
     <!-- Auto GLM Tool Screen -->
 
     <!-- HTML Packager Screen -->
-    <string name="htmlpackager_step1_title">Step 1: Select project folder</string>
-    <string name="htmlpackager_select_folder">Select Folder</string>
-    <string name="htmlpackager_selected">Selected: %1$s</string>
-    <string name="htmlpackager_step2_title">Step 2: Specify entry file</string>
-    <string name="htmlpackager_main_html">Main HTML file</string>
-    <string name="htmlpackager_generate_package">Generate Package</string>
 
     <!-- Common Expand/Collapse -->
     <string name="common_expand">Expand</string>
@@ -8556,11 +8547,8 @@
 <string name="enhanced_retrying_request">Retrying request...</string>
 <string name="backup_format_csv">CSV</string>
 <string name="backup_format_csv_desc">Structured table format that preserves chat metadata, messages, and response variants and can be imported again</string>
-<string name="workspace_default_open">Default viewer</string>
 <string name="workspace_invalid_paste">Cannot paste a file into itself or its own subdirectory</string>
 <string name="workspace_markdown_anchor_not_found">Heading not found in the document: %1$s</string>
-<string name="workspace_open_as_text">Open as text</string>
-<string name="workspace_open_external">Open in a system app</string>
 <string name="workspace_open_with">Open with</string>
 <string name="workspace_search_content">Search content</string>
 <string name="workspace_search_next">Next match</string>
@@ -9349,7 +9337,6 @@
     <string name="studio_page_markdowndemo">Markdown Demo</string>
     <string name="studio_page_speechtotext">Speech To Text</string>
     <string name="studio_page_defaultassistantguide">Default Assistant Guide</string>
-    <string name="studio_page_htmlpackager">Html Packager</string>
     <string name="studio_text_displaylarge">display Large</string>
     <string name="studio_text_displaymedium">display Medium</string>
     <string name="studio_text_displaysmall">display Small</string>
@@ -9478,4 +9465,124 @@
     <string name="thinking_config_preview_invalid">Configuration is not valid yet: %1$s</string>
     <string name="thinking_config_unsupported">No thinking controls</string>
     <string name="thinking_config_advanced_preserved">Compound match conditions and advanced fields are preserved. Only the displayed match condition is edited here.</string>
+
+    <!-- SVG 预览、编辑与转换 -->
+    <string name="workspace_svg_edit">Edit source</string>
+    <string name="workspace_svg_to_xml">Convert to XML</string>
+    <string name="workspace_svg_to_png">Convert to PNG</string>
+    <string name="workspace_svg_convert">Convert</string>
+    <string name="workspace_svg_converting">Converting…</string>
+    <string name="workspace_svg_width">Width (px)</string>
+    <string name="workspace_svg_height">Height (px)</string>
+    <string name="workspace_svg_keep_ratio">Keep aspect ratio</string>
+    <string name="workspace_svg_size_hint">Width and height: 1–4096 px. PNG keeps transparency.</string>
+    <string name="workspace_svg_error">SVG conversion failed: %1$s</string>
+    <string name="workspace_svg_unsupported">This SVG feature cannot be converted to XML: %1$s</string>
+    <string name="workspace_svg_exported">Saved: %1$s</string>
+
+    <!-- 工作台文件变更与对话产出 -->
+    <string name="workspace_changes_title">File changes</string>
+    <string name="workspace_changes_description">Review workspace operations, uncommitted changes and branch differences</string>
+    <string name="workspace_changes_scope">Scope: %1$s</string>
+    <string name="workspace_changes_operations">Operation history</string>
+    <string name="workspace_changes_working">Uncommitted</string>
+    <string name="workspace_changes_branch">Compare branches</string>
+    <string name="workspace_changes_refresh">Refresh</string>
+    <string name="workspace_changes_tree">Directory tree</string>
+    <string name="workspace_changes_choose_base">Choose comparison branch</string>
+    <string name="workspace_changes_load_failed">Could not load file changes</string>
+    <string name="workspace_changes_count">%1$d files</string>
+    <string name="workspace_changes_empty_records">No recorded file operations yet. Successful file tool operations will appear here.</string>
+    <string name="workspace_changes_empty_git">No file changes in this scope.</string>
+    <string name="workspace_changes_choose_file">Select a file to review its differences</string>
+    <string name="workspace_changes_history_count">%1$s · %2$d operations</string>
+    <string name="workspace_changes_files">Files</string>
+    <string name="workspace_changes_open">Open file</string>
+    <string name="workspace_changes_renamed_from">Original path: %1$s</string>
+    <string name="workspace_changes_too_large">The file exceeds 2 MiB. Operation information is kept without expanding its content.</string>
+    <string name="workspace_changes_unavailable">Some content could not be captured for this operation, so its full difference is unavailable.</string>
+    <string name="workspace_changes_directory">This is a directory operation. Captured files are listed separately.</string>
+    <string name="workspace_changes_binary">Binary or non-UTF-8 content is recorded without a text difference.</string>
+    <string name="workspace_changes_operation_title">%1$s · %2$s</string>
+    <string name="workspace_changes_unified">Unified</string>
+    <string name="workspace_changes_split">Side by side</string>
+    <string name="workspace_changes_wrap">Wrap lines</string>
+    <string name="workspace_changes_full">Full file</string>
+    <string name="workspace_changes_newline">End-of-file newline changed</string>
+    <string name="workspace_changes_expand">Expand %1$d unchanged lines</string>
+    <string name="workspace_changes_unborn">The repository has no commits yet. Uncommitted files can be reviewed.</string>
+    <string name="workspace_changes_git_environment">This file environment cannot run Git. Operation history remains available.</string>
+    <string name="workspace_changes_git_runtime">Install Ubuntu from Offline resources, then install Git in that environment.</string>
+    <string name="workspace_outputs_title">Conversation outputs</string>
+    <string name="workspace_outputs_description">Review successful file operations from this conversation across all locations</string>
+    <string name="workspace_outputs_scope">File operations from this conversation, including files outside the workspace</string>
+    <string name="workspace_changes_flat_list">Flat list</string>
+    <string name="workspace_changes_filter">Filter files…</string>
+    <string name="workspace_changes_clear_filter">Clear file filter</string>
+    <string name="workspace_changes_no_matches">No changed files match the filter</string>
+    <string name="workspace_changes_toggle_files">Show or hide files</string>
+    <string name="workspace_changes_previous_file">Previous changed file</string>
+    <string name="workspace_changes_next_file">Next changed file</string>
+    <string name="workspace_changes_previous_hunk">Previous change</string>
+    <string name="workspace_changes_next_hunk">Next change</string>
+    <string name="workspace_changes_resize_files">Drag to resize the file panel</string>
+    <string name="workspace_changes_resize_split">Drag to resize the before and after panes</string>
+    <string name="workspace_changes_before">Before</string>
+    <string name="workspace_changes_after">After</string>
+    <string name="workspace_hub_optional">Workspace (optional)</string>
+    <string name="workspace_hub_optional_description">Use the terminal and browser directly. Bind a workspace to manage project files.</string>
+    <string name="workspace_hub_terminal_work">Terminals</string>
+    <string name="workspace_hub_browser_work">Browsers</string>
+    <string name="workspace_hub_no_terminals">No terminal sessions are running</string>
+    <string name="workspace_hub_no_browsers">No browser pages are open</string>
+    <string name="workspace_changes_last_turn">Last turn</string>
+    <string name="workspace_changes_turn_summary">%1$s · Turn summary</string>
+    <string name="workspace_changes_open_with">Open with</string>
+    <string name="workspace_changes_open_files">File manager</string>
+    <string name="workspace_changes_open_editor">Text editor</string>
+    <string name="workspace_changes_open_terminal">Terminal</string>
+    <string name="workspace_changes_copy_path">Copy path</string>
+    <string name="workspace_changes_terminal_backend">The terminal connection does not match the file source. Select the matching local or SSH environment.</string>
+    <string name="workspace_changes_added_only">No previous content; showing additions</string>
+    <string name="workspace_changes_deleted_only">No remaining content; showing deletions</string>
+    <string name="workspace_changes_project_tree">Switch to project tree</string>
+    <!-- 当前行只读代码溯源 -->
+    <string name="workspace_blame_title">Code provenance</string>
+    <string name="workspace_blame_commit_diff">File changes in commit</string>
+    <string name="workspace_blame_current_line">%1$s · Line %2$d</string>
+    <string name="workspace_blame_time">Author date</string>
+    <string name="workspace_blame_summary">Commit message</string>
+    <string name="workspace_blame_hash">Commit hash</string>
+    <string name="workspace_blame_source_path">Historical path and line</string>
+    <string name="workspace_blame_repository">Repository</string>
+    <string name="workspace_blame_boundary">The boundary of locally available history has been reached.</string>
+    <string name="workspace_blame_show_diff">View file changes</string>
+    <string name="workspace_blame_root_commit">Root commit · Compared with an empty file</string>
+    <string name="workspace_blame_comparison">%1$s → %2$s</string>
+    <string name="workspace_blame_failed">Unable to read code provenance</string>
+    <string name="workspace_blame_retry">Retry</string>
+    <string name="workspace_blame_uncommitted">Uncommitted</string>
+    <string name="workspace_blame_uncommitted_hint">This line has no matching committed content.</string>
+    <string name="workspace_blame_not_repository">Unable to locate the Git repository for this file.</string>
+    <string name="workspace_blame_too_large">The file or its lines are too large to show code provenance.</string>
+    <string name="workspace_blame_no_text">Code provenance supports regular UTF-8 text files only.</string>
+    <string name="workspace_blame_history_unavailable">Parent commit history is missing locally, so these file changes cannot be shown.</string>
+    <string name="workspace_blame_backend_changed">The file connection has changed. Switch back to the original local or SSH environment and reopen the file.</string>
+    <!-- 操作记录清理与当前文件打开诊断 -->
+    <string name="workspace_records_manage">Manage operation records</string>
+    <string name="workspace_records_remove_one">Delete this record</string>
+    <string name="workspace_records_remove_all">Clear all records for this file</string>
+    <string name="workspace_records_remove_message">Remove the selected %1$d file change records and snapshots no longer referenced. The actual file will not be deleted or restored.</string>
+    <string name="workspace_records_scope_workspace">Scope: records for this file across all conversations, including other turns.</string>
+    <string name="workspace_records_scope_chat">Scope: records for this file in this conversation only, including other turns.</string>
+    <string name="workspace_records_remove_other_history">Other records for this file will remain, so the file may still appear in the list.</string>
+    <string name="workspace_records_remove_failed">Unable to clear records: %1$s</string>
+    <string name="workspace_open_missing">The file no longer exists and cannot be opened. Historical snapshots remain available.</string>
+    <string name="workspace_open_permission">No permission to read this location. Check file access permissions or authorize the directory again.</string>
+    <string name="workspace_open_backend">The file connection has changed. Switch back to the original local or SSH environment.</string>
+    <string name="workspace_open_directory">The current path is a directory and cannot be opened as a text file.</string>
+    <string name="workspace_open_too_large">The text file exceeds 10 MiB and cannot be opened in the built-in editor.</string>
+    <string name="workspace_open_not_text">The current file is not readable text and cannot be opened in the text editor.</string>
+    <string name="workspace_open_failed">Unable to open the file. Check the detailed cause below for path, connection or storage issues.</string>
+    <string name="workspace_open_checking">Checking and reading the current file…</string>
 </resources>

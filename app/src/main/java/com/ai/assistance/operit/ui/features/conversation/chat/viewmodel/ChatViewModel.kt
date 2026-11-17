@@ -2598,11 +2598,22 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatId
     }
 
+    /** 审阅页直接进入，不启动项目服务器，也不要求绑定工作区。 */
+    fun openChangesFromHub(conversation: Boolean = false) {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = if (conversation) WorkspaceHubPage.OUTPUTS else WorkspaceHubPage.CHANGES
+    }
+
     fun openTerminalFromHub(page: EmbeddedTerminalPage = EmbeddedTerminalPage.CONSOLE) {
         cancelWorkspaceOpen()
         _embeddedTerminalPage.value = page
         _workspaceHubPage.value = WorkspaceHubPage.TERMINAL
     }
+    fun openBrowserFromHub() {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = WorkspaceHubPage.BROWSER
+    }
+
     fun showEmbeddedTerminalPage(page: EmbeddedTerminalPage) {
         _embeddedTerminalPage.value = page
     }

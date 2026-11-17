@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_selection_share_files_only">파일만 공유할 수 있으며 폴더는 아직 지원하지 않습니다</string>
+    <string name="workspace_selection_properties_progress">선택 항목 %2$d개 중 %1$d개 집계</string>
+    <string name="workspace_selection_properties_hint">선택한 폴더와 하위 항목을 포함하며 심볼릭 링크는 따라가지 않습니다. 닫으면 집계가 중지됩니다.</string>
+</resources>

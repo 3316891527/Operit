@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">Kompres</string>
+    <string name="workspace_archive_extract">Ekstrak</string>
+    <string name="workspace_archive_add">Tambah</string>
+    <string name="workspace_archive_choose_directory">Pilih folder ini</string>
+    <string name="workspace_archive_password">Kata sandi dekripsi</string>
+    <string name="workspace_archive_name">Nama arsip</string>
+    <string name="workspace_archive_format">Format</string>
+    <string name="workspace_archive_destination">Folder tujuan</string>
+    <string name="workspace_archive_level">Tingkat kompresi</string>
+    <string name="workspace_archive_level_fast">Cepat</string>
+    <string name="workspace_archive_level_normal">Normal</string>
+    <string name="workspace_archive_level_maximum">Maksimum</string>
+    <string name="workspace_archive_working">Memproses</string>
+    <string name="workspace_archive_processed">Diproses %1$s</string>
+    <string name="workspace_archive_read_only">Arsip hanya baca</string>
+    <string name="workspace_archive_retry">Coba lagi</string>
+    <string name="workspace_archive_entries">%1$d entri</string>
+    <string name="workspace_archive_signed">Mengubah file ini membatalkan tanda tangan yang ada.</string>
+    <string name="workspace_archive_link">Entri tautan tidak dapat dibuka atau diekstrak.</string>
+    <string name="workspace_archive_extract_all">Ekstrak semua</string>
+    <string name="workspace_archive_extract_selected">Ekstrak %1$d item terpilih</string>
+    <string name="workspace_archive_encrypt_password">Kata sandi enkripsi (opsional)</string>
+    <string name="workspace_archive_read_password_hint">Digunakan untuk membaca arsip terenkripsi. Tidak mengubah kata sandinya.</string>
+    <string name="workspace_archive_password_required">Kata sandi dekripsi diperlukan untuk membaca arsip ini.</string>
+    <string name="workspace_archive_source">Sumber arsip</string>
+    <string name="workspace_archive_packed_size">Ukuran terkompresi</string>
+    <string name="workspace_archive_encrypted">Terenkripsi</string>
+    <string name="workspace_archive_name_hint">Format yang dipilih menambahkan ekstensi secara otomatis.</string>
+    <string name="workspace_archive_stage_target">Periksa tujuan</string>
+    <string name="workspace_archive_stage_sources">Baca sumber</string>
+    <string name="workspace_archive_stage_write">Tulis arsip</string>
+    <string name="workspace_archive_stage_verify">Verifikasi arsip</string>
+    <string name="workspace_archive_stage_publish">Terbitkan arsip</string>
+    <string name="workspace_archive_create_failed_detail">Tidak dapat membuat %1$s\nLangkah: %2$s\nTujuan: %3$s\nAlasan: %4$s</string>
+</resources>

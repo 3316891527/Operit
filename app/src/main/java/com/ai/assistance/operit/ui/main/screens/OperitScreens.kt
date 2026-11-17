@@ -82,7 +82,6 @@ import com.ai.assistance.operit.ui.features.automation.terminal.EmbeddedTerminal
 import com.ai.assistance.operit.ui.features.automation.terminal.TerminalEntryScreen
 import com.ai.assistance.operit.ui.common.composedsl.ToolPkgComposeDslToolScreen
 import com.ai.assistance.operit.ui.main.screens.UIDebuggerToolScreen
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.htmlpackager.HtmlPackagerScreen
 import com.ai.assistance.operit.ui.features.management.settings.speech.stt.SpeechToTextToolScreen
 import com.ai.assistance.operit.ui.features.management.update.screens.UpdateScreen
 import com.ai.assistance.operit.ui.features.automation.workflow.screens.WorkflowListScreen
@@ -162,7 +161,6 @@ sealed class Screen(
                     onNavigateToModelConfig = { navigateTo(ModelConfig) },
                     onNavigateToModelPrompts = { navigateTo(ModelPromptsSettings) },
                     onNavigateToPackageManager = { navigateTo(Packages) },
-                    onNavigateToHtmlPackager = { navigateTo(HtmlPackager) },
                     onLoading = onLoading,
                     onError = onError,
                     onGestureConsumed = onGestureConsumed
@@ -1536,20 +1534,6 @@ sealed class Screen(
     }
 
 
-    data object HtmlPackager : Screen(navItem = NavItem.AiChat, titleRes = R.string.screen_title_html_packager) {
-        @Composable
-        override fun Content(
-                navController: NavController,
-                navigateTo: ScreenNavigationHandler,
-                onGoBack: () -> Unit,
-                hasBackgroundImage: Boolean,
-                onLoading: (Boolean) -> Unit,
-                onError: (String) -> Unit,
-                onGestureConsumed: (Boolean) -> Unit
-        ) {
-            HtmlPackagerScreen(onGoBack = onGoBack)
-        }
-    }
 
     // 获取屏幕标题
     @Composable

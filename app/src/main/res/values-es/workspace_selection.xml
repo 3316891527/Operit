@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_selection_share_files_only">Solo se pueden compartir archivos, no carpetas</string>
+    <string name="workspace_selection_properties_progress">Calculados %1$d / %2$d elementos seleccionados</string>
+    <string name="workspace_selection_properties_hint">Incluye las carpetas seleccionadas y sus descendientes. No sigue enlaces simbólicos. Cierra para detener.</string>
+</resources>
