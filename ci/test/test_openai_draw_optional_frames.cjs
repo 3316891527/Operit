@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const scriptPath = process.argv[2] || path.resolve(__dirname, '../../examples/openai_draw.js');
+const scriptPath = process.argv[2] || path.resolve(__dirname, '../../plugins/examples/openai_draw.js');
 const source = fs.readFileSync(scriptPath, 'utf8');
 
 async function invoke(parameters) {
@@ -161,6 +161,6 @@ test('bundled drawing script matches the maintained example', () => {
     const root = path.resolve(__dirname, '../..');
     assert.equal(
         fs.readFileSync(path.join(root, 'app/src/main/assets/packages/openai_draw.js'), 'utf8'),
-        fs.readFileSync(path.join(root, 'examples/openai_draw.js'), 'utf8')
+        fs.readFileSync(path.join(root, 'plugins/examples/openai_draw.js'), 'utf8')
     );
 });

@@ -76,7 +76,7 @@ import com.ai.assistance.operit.ui.features.extensions.packages.market.sameArtif
 import com.ai.assistance.operit.ui.features.extensions.packages.components.MarketCategoryDropdown
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.artifact.viewmodel.ArtifactMarketViewModel
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.artifact.viewmodel.ArtifactPublishDraft
-import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
+import com.ai.assistance.operit.ui.common.icons.rememberImageAssetPainter
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.packTool.minify.ToolPkgArtifactMinifier
 import kotlinx.coroutines.Dispatchers
@@ -428,8 +428,8 @@ fun ArtifactPublishScreen(
     // Snapshot the delegated state before smart-casting; Kotlin cannot smart-cast delegated properties.
     val displayedLogo = packageLogo
     val logoPainter =
-        rememberLogoPainter(
-            logoKey = "${selectedPackageName}:${displayedLogo?.fileName}:${displayedLogo?.bytes?.contentHashCode()}",
+        rememberImageAssetPainter(
+            imageKey = "${selectedPackageName}:${displayedLogo?.fileName}:${displayedLogo?.bytes?.contentHashCode()}",
             bytes = displayedLogo?.bytes,
             mimeType = displayedLogo?.contentType,
             fileName = displayedLogo?.fileName,

@@ -820,7 +820,6 @@
     <string name="show_help">显示帮助</string>
     <string name="hide_help">隐藏帮助</string>
     <string name="request_permission">请求Shizuku权限</string>
-    <string name="screen_title_html_packager">HTML Packager</string>
     <string name="execute_shell">执行shell命令</string>
     <string name="enter_command">输入ADB命令</string>
     <string name="show_samples">显示示例命令</string>
@@ -2040,9 +2039,6 @@
     <string name="tool_token_config_desc">打开 API 密钥获取与配置页面，便于快速完成模型接入</string>
     <string name="tool_process_limit_remover">解除幻象进程限制</string>
     <string name="tool_process_limit_remover_desc">管理Android 12+的幻象进程数量限制，允许更多后台子进程</string>
-
-    <string name="tool_html_packager">HTML打包器</string>
-    <string name="tool_html_packager_desc">将网页项目导出为 Android 安装包或 Windows ZIP</string>
 
 
     <!-- AutoGLM One-Click Configuration -->
@@ -6311,12 +6307,6 @@
     <!-- Auto GLM Tool Screen -->
 
     <!-- HTML Packager Screen -->
-    <string name="htmlpackager_step1_title">第一步：选择项目文件夹</string>
-    <string name="htmlpackager_select_folder">选择文件夹</string>
-    <string name="htmlpackager_selected">已选: %1$s</string>
-    <string name="htmlpackager_step2_title">第二步：指定入口文件</string>
-    <string name="htmlpackager_main_html">主HTML文件</string>
-    <string name="htmlpackager_generate_package">生成安装包</string>
 
     <!-- Common Expand/Collapse -->
     <string name="common_expand">展开</string>
@@ -8550,11 +8540,8 @@
 <string name="theme_thinking_particle_color">粒子颜色</string>
 <string name="theme_thinking_particle_color_desc">自定义开启思考时滑块粒子流动的颜色，默认使用白色</string>
 <string name="theme_thinking_particle_color_title">思考粒子颜色</string>
-<string name="workspace_default_open">默认打开</string>
 <string name="workspace_invalid_paste">不能将文件粘贴到自身目录中</string>
 <string name="workspace_markdown_anchor_not_found">找不到文档标题：%1$s</string>
-<string name="workspace_open_as_text">作为文本打开</string>
-<string name="workspace_open_external">使用系统应用打开</string>
 <string name="workspace_open_with">打开方式</string>
 <string name="workspace_search_content">搜索内容</string>
 <string name="workspace_search_next">下一个匹配</string>
@@ -9325,7 +9312,6 @@
     <string name="studio_page_markdowndemo">Markdown 示例</string>
     <string name="studio_page_speechtotext">语音转文字</string>
     <string name="studio_page_defaultassistantguide">默认助手设置</string>
-    <string name="studio_page_htmlpackager">HTML 打包</string>
     <string name="studio_text_displaylarge">展示大字</string>
     <string name="studio_text_displaymedium">展示中字</string>
     <string name="studio_text_displaysmall">展示小字</string>
@@ -9407,9 +9393,7 @@
     <string name="collapse_process_title">回复过程</string>
     <string name="collapse_process_show">展开回复过程</string>
     <string name="collapse_process_hide">收起回复过程</string>
-    <string name="collapse_process_duration_seconds">用时 %1$d秒</string>
-    <string name="collapse_process_duration_minutes">用时 %1$d分钟 %2$d秒</string>
-    <string name="collapse_process_duration_hours">用时 %1$d时%2$d分%3$d秒</string>
+    <string name="collapse_process_duration">用时 %1$s</string>
     <string name="extension_update_success">更新成功</string>
     <string name="extension_update_failed">更新失败：%1$s</string>
     <string name="extension_update_cancelled">更新已取消</string>
@@ -9457,4 +9441,124 @@
     <string name="thinking_config_preview_invalid">配置尚未有效：%1$s</string>
     <string name="thinking_config_unsupported">不控制思考</string>
     <string name="thinking_config_advanced_preserved">复合匹配条件和高级字段会完整保留；这里只修改显示出的匹配条件。</string>
+
+    <!-- SVG 预览、编辑与转换 -->
+    <string name="workspace_svg_edit">编辑源码</string>
+    <string name="workspace_svg_to_xml">转为 XML</string>
+    <string name="workspace_svg_to_png">转为 PNG</string>
+    <string name="workspace_svg_convert">转换</string>
+    <string name="workspace_svg_converting">正在转换…</string>
+    <string name="workspace_svg_width">宽度（px）</string>
+    <string name="workspace_svg_height">高度（px）</string>
+    <string name="workspace_svg_keep_ratio">保持宽高比</string>
+    <string name="workspace_svg_size_hint">宽高范围：1–4096 px。PNG 保留透明背景。</string>
+    <string name="workspace_svg_error">SVG 转换失败：%1$s</string>
+    <string name="workspace_svg_unsupported">无法将此 SVG 特性转换为 XML：%1$s</string>
+    <string name="workspace_svg_exported">已保存：%1$s</string>
+
+    <!-- 工作台文件变更与对话产出 -->
+    <string name="workspace_changes_title">文件变更</string>
+    <string name="workspace_changes_description">查看工作区操作记录、未提交变更和分支差异</string>
+    <string name="workspace_changes_scope">范围：%1$s</string>
+    <string name="workspace_changes_operations">操作记录</string>
+    <string name="workspace_changes_working">Git 变更</string>
+    <string name="workspace_changes_branch">分支变更</string>
+    <string name="workspace_changes_refresh">刷新</string>
+    <string name="workspace_changes_tree">目录树</string>
+    <string name="workspace_changes_choose_base">选择比较分支</string>
+    <string name="workspace_changes_load_failed">读取文件变更失败</string>
+    <string name="workspace_changes_count">%1$d 个文件</string>
+    <string name="workspace_changes_empty_records">还没有记录到文件操作。成功的文件工具操作会保存在这里。</string>
+    <string name="workspace_changes_empty_git">当前范围没有文件变更。</string>
+    <string name="workspace_changes_choose_file">选择文件查看差异</string>
+    <string name="workspace_changes_history_count">%1$s · %2$d 次操作</string>
+    <string name="workspace_changes_files">文件列表</string>
+    <string name="workspace_changes_open">打开文件</string>
+    <string name="workspace_changes_renamed_from">原路径：%1$s</string>
+    <string name="workspace_changes_too_large">文件超过 2 MiB，保留操作信息，不展开内容。</string>
+    <string name="workspace_changes_unavailable">这次操作的部分内容未能采集，无法还原完整差异。</string>
+    <string name="workspace_changes_directory">这是一次目录操作。目录内已采集的文件分别列出。</string>
+    <string name="workspace_changes_binary">二进制或非 UTF-8 文本内容已记录，不显示文本差异。</string>
+    <string name="workspace_changes_operation_title">%1$s · %2$s</string>
+    <string name="workspace_changes_unified">单栏</string>
+    <string name="workspace_changes_split">双栏</string>
+    <string name="workspace_changes_wrap">自动换行</string>
+    <string name="workspace_changes_full">完整文件</string>
+    <string name="workspace_changes_newline">文件末尾换行已改变</string>
+    <string name="workspace_changes_expand">展开 %1$d 行未修改内容</string>
+    <string name="workspace_changes_unborn">仓库尚无提交，可以查看未提交文件。</string>
+    <string name="workspace_changes_git_environment">此文件环境不支持执行 Git，仍可查看操作记录。</string>
+    <string name="workspace_changes_git_runtime">请先在离线资源中安装 Ubuntu，并在该环境安装 Git。</string>
+    <string name="workspace_outputs_title">对话产出</string>
+    <string name="workspace_outputs_description">查看当前对话成功执行的文件操作，不受工作区绑定范围限制</string>
+    <string name="workspace_outputs_scope">当前对话的文件操作，包含工作区外的文件</string>
+    <string name="workspace_changes_flat_list">平铺列表</string>
+    <string name="workspace_changes_filter">筛选文件…</string>
+    <string name="workspace_changes_clear_filter">清除文件筛选</string>
+    <string name="workspace_changes_no_matches">没有匹配的变更文件</string>
+    <string name="workspace_changes_toggle_files">展开或收起文件区</string>
+    <string name="workspace_changes_previous_file">上一个变更文件</string>
+    <string name="workspace_changes_next_file">下一个变更文件</string>
+    <string name="workspace_changes_previous_hunk">上一处改动</string>
+    <string name="workspace_changes_next_hunk">下一处改动</string>
+    <string name="workspace_changes_resize_files">拖动以调整文件区宽度</string>
+    <string name="workspace_changes_resize_split">拖动以调整前后版本宽度</string>
+    <string name="workspace_changes_before">修改前</string>
+    <string name="workspace_changes_after">修改后</string>
+    <string name="workspace_hub_optional">工作区（可选）</string>
+    <string name="workspace_hub_optional_description">终端和浏览器可直接使用，绑定工作区后可管理项目文件。</string>
+    <string name="workspace_hub_terminal_work">终端工作</string>
+    <string name="workspace_hub_browser_work">浏览器工作</string>
+    <string name="workspace_hub_no_terminals">暂无运行中的终端会话</string>
+    <string name="workspace_hub_no_browsers">暂无打开的浏览器页面</string>
+    <string name="workspace_changes_last_turn">上一轮变更</string>
+    <string name="workspace_changes_turn_summary">%1$s · 本轮汇总</string>
+    <string name="workspace_changes_open_with">打开方式</string>
+    <string name="workspace_changes_open_files">文件资源管理器</string>
+    <string name="workspace_changes_open_editor">文本编辑器</string>
+    <string name="workspace_changes_open_terminal">终端</string>
+    <string name="workspace_changes_copy_path">复制路径</string>
+    <string name="workspace_changes_terminal_backend">终端连接与文件来源不一致，请切换到对应的本机或 SSH 环境。</string>
+    <string name="workspace_changes_added_only">修改前为空，仅显示新增内容</string>
+    <string name="workspace_changes_deleted_only">修改后为空，仅显示删除内容</string>
+    <string name="workspace_changes_project_tree">切换至项目工作树</string>
+    <!-- 当前行只读代码溯源 -->
+    <string name="workspace_blame_title">代码溯源</string>
+    <string name="workspace_blame_commit_diff">提交中的文件差异</string>
+    <string name="workspace_blame_current_line">%1$s · 第 %2$d 行</string>
+    <string name="workspace_blame_time">作者时间</string>
+    <string name="workspace_blame_summary">提交说明</string>
+    <string name="workspace_blame_hash">提交哈希</string>
+    <string name="workspace_blame_source_path">历史路径与行号</string>
+    <string name="workspace_blame_repository">仓库</string>
+    <string name="workspace_blame_boundary">已到达本地可追溯历史的边界。</string>
+    <string name="workspace_blame_show_diff">查看此次文件改动</string>
+    <string name="workspace_blame_root_commit">根提交 · 与空文件比较</string>
+    <string name="workspace_blame_comparison">%1$s → %2$s</string>
+    <string name="workspace_blame_failed">无法读取代码来源</string>
+    <string name="workspace_blame_retry">重试</string>
+    <string name="workspace_blame_uncommitted">未提交</string>
+    <string name="workspace_blame_uncommitted_hint">当前行没有对应的已提交内容。</string>
+    <string name="workspace_blame_not_repository">无法定位这个文件的 Git 仓库。</string>
+    <string name="workspace_blame_too_large">文件过大或单行过长，无法显示代码溯源。</string>
+    <string name="workspace_blame_no_text">代码溯源仅支持普通 UTF-8 文本文件。</string>
+    <string name="workspace_blame_history_unavailable">本地缺少父提交历史，无法显示这次文件差异。</string>
+    <string name="workspace_blame_backend_changed">文件连接已改变，请切回原来的本机或 SSH 环境后重新打开文件。</string>
+    <!-- 操作记录清理与当前文件打开诊断 -->
+    <string name="workspace_records_manage">管理操作记录</string>
+    <string name="workspace_records_remove_one">删除此次记录</string>
+    <string name="workspace_records_remove_all">清除此文件全部记录</string>
+    <string name="workspace_records_remove_message">移除所选的 %1$d 条文件变更记录，并清理不再被引用的快照。不会删除或还原实际文件。</string>
+    <string name="workspace_records_scope_workspace">范围：当前文件的全部对话记录，包含其他轮次。</string>
+    <string name="workspace_records_scope_chat">范围：仅当前对话中此文件的记录，包含其他轮次。</string>
+    <string name="workspace_records_remove_other_history">此文件的其他操作记录将继续保留，文件仍可能出现在列表中。</string>
+    <string name="workspace_records_remove_failed">清理记录失败：%1$s</string>
+    <string name="workspace_open_missing">文件已不存在，无法打开。历史快照仍可查看。</string>
+    <string name="workspace_open_permission">没有读取此位置的权限。请检查文件管理权限或重新授权目录。</string>
+    <string name="workspace_open_backend">文件连接已改变，请切回原来的本机或 SSH 环境。</string>
+    <string name="workspace_open_directory">当前路径是文件夹，无法作为文本文件打开。</string>
+    <string name="workspace_open_too_large">文本文件超过 10 MiB，无法在内置编辑器中打开。</string>
+    <string name="workspace_open_not_text">当前文件不是可读取的文本，无法用文本编辑器打开。</string>
+    <string name="workspace_open_failed">无法打开文件，请根据下面的详细原因检查路径、连接或存储状态。</string>
+    <string name="workspace_open_checking">正在检查并读取当前文件…</string>
 </resources>

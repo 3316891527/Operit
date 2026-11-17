@@ -51,7 +51,7 @@ python3 -B ci/script/check_localizations.py --base "$BASE_SHA" --candidate "$CAN
 - WebChat：运行 TypeScript typecheck 与 Vite build
 - ToolPkg：重建并核对 GitHub 示例，按独立锁文件编译 WASM 示例，再构建测试集合和生产白名单集合；JSON manifest 声明的入口与 WASM 文件必须存在且进入归档
 
-根项目、`web-chat` 和独立的 `examples/toolpkg_wasm_demo` 分别提交 `package-lock.json`，CI 使用 `npm ci` 安装确定的依赖树。
+根项目、`app/web-chat` 和独立的 `plugins/examples/toolpkg_wasm_demo` 分别提交 `package-lock.json`，CI 使用 `npm ci` 安装确定的依赖树。
 
 PR workflow 只有 `contents: read` 权限，不读取仓库 secret，也不上传 APK/AAB。`Android Build`
 是只负责编译和打包的可信 main/手工构建 workflow，`Android Tests` 单独负责可信 main/手工 JVM 单测。
@@ -62,6 +62,10 @@ PR workflow 只有 `contents: read` 权限，不读取仓库 secret，也不上�
 
 ## Android dependencies
 
+主工程的 Gradle 仓库由根目录 `settings.gradle.kts` 和 `build.gradle.kts` 统一声明。Maven Central 构件通过阿里云的 `https://maven.aliyun.com/repository/central` 获取，覆盖插件解析、普通依赖及 ObjectBox 构建插件的 classpath；Gradle 插件门户元数据通过 `https://maven.aliyun.com/repository/gradle-plugin` 获取。Google Maven、JitPack 等独立仓库沿用现有声明。
+
+Build、Android Tests 和 PR Check 使用同一套仓库配置，无需在 runner 中额外注入镜像初始化脚本。切换镜像只改变下载地址，依赖坐标、版本及既有构件校验保持原有约束。排查下载错误时，应按日志中的具体坐标核对镜像的 POM、Gradle module 元数据与构件文件，并确认响应没有重定向回受限地址。
+
 MNN 使用官方 `3.6.1` 发布提交 `d407447ed56c4121a11ccbd266dc184ca1ead0c2`，不跟随 `master`；其余原生源码依赖仍由各模块通过 `cmake/operit_git_source.cmake` 下载固定 GitHub archive。
 
 JVM lane 只下载 `libs.zip`，完整 Android lane 下载 `libs.zip` 和 `jniLibs.zip` 两个固定归档；导出模板由应用从个人仓库的固定资源 Release 按需下载，不参与 APK 构建。`download_android_dependencies.sh` 使用固定 Google Drive file ID；`prepare_android_dependencies.py` 限制成员数量、解压大小、压缩比和文件类型，重建固定输出根目录，只验证本次实际解出的文件，并拒绝越界路径、重复成员及符号链接。原生源码依赖由各模块通过 `cmake/operit_git_source.cmake` 下载固定 GitHub archive。`arsc.jar` 已无消费者，`smart-exception` 改由 Maven Central 提供，`android-gif-drawable` 的重复 native 库也不会从归档写入构建目录。应用打包前，Gradle 会检查外部构建的 `liboperit_ripgrep.so`，以及本地 FFmpegKit AAR 中 10 个 arm64 native 库；缺失或零长度文件会使打包失败。共用的 Silero VAD 由 Gradle 按 `app/config/stt-model-assets.properties` 获取到生成 assets 目录并校验 SHA-256；大型 Sherpa-NCNN 模型不打进 APK。外置资源的大小、SHA-256、来源和许可说明固定在 `app/config/offline-resources.properties`，模型、Ubuntu 归档和导出模板的离线使用说明见 `docs/TODO/feat/offline-resources/01-implementation.md`。
@@ -70,9 +74,9 @@ JVM lane 只下载 `libs.zip`，完整 Android lane 下载 `libs.zip` 和 `jniLi
 
 ## Terminal core sync
 
-`terminal/` 是 `3316891527/OperitTerminalCore` 的 Git 子模块。同一提交的受版本控制文件完全一致；主应用记录固定提交，独立仓库的默认分支用于展示已经被应用采用的最新终端版本。
+`modules/terminal/` 是 `3316891527/OperitTerminalCore` 的 Git 子模块。同一提交的受版本控制文件完全一致；主应用记录固定提交，独立仓库的默认分支用于展示已经被应用采用的最新终端版本。
 
-[Sync terminal core](../.github/workflows/sync-terminal-core.yml) 在 `dev`、`main` 更新 `terminal`、`.gitmodules` 或同步实现时自动调用 [同步脚本](script/sync_terminal_core.py)。它不初始化子模块、不编译应用，读取两个分支最新应用提交的 gitlink、选择包含另一版本的较新提交后，通过 GitHub API 快进终端仓库的默认分支。运行摘要记录触发提交、两个分支的终端引用和更新前后版本。同组等待运行可能被后续事件合并，每次读取最新引用可避免漏同步。
+[Sync terminal core](../.github/workflows/sync-terminal-core.yml) 在 `dev`、`main` 更新 `modules/terminal`、`.gitmodules` 或同步实现时自动调用 [同步脚本](script/sync_terminal_core.py)。它不初始化子模块、不编译应用，读取两个分支最新应用提交的 gitlink、选择包含另一版本的较新提交后，通过 GitHub API 快进终端仓库的默认分支。运行摘要记录触发提交、两个分支的终端引用和更新前后版本。同组等待运行可能被后续事件合并，每次读取最新引用可避免漏同步。
 
 沿用源码仓库的 `OPERIT_DISTRIBUTION_TOKEN` secret，该凭据需对 `3316891527/OperitTerminalCore` 具有 Contents 写权限。工作流只处理维护者仓库的 `dev`、`main`，不在 PR 或其他 fork 中使用该凭据。
 

@@ -45,7 +45,7 @@ import com.ai.assistance.operit.ui.features.extensions.packages.components.dialo
 import com.ai.assistance.operit.core.tools.ToolPackage
 import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager
 import com.ai.assistance.operit.core.tools.packTool.runtime.ToolPkgRuntimeMonitor
-import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
+import com.ai.assistance.operit.ui.common.icons.rememberImageAssetPainter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -151,8 +151,8 @@ internal fun PackageDetailsScreen(
             }
     }
     val logoPainter =
-        rememberLogoPainter(
-            logoKey = "${packageName}:${toolPkgDetails?.version}:${toolPkgDetails?.logoResourceKey}",
+        rememberImageAssetPainter(
+            imageKey = "${packageName}:${toolPkgDetails?.version}:${toolPkgDetails?.logoResourceKey}",
             bytes = logo?.bytes,
             mimeType = logo?.mimeType,
             fileName = logo?.fileName,

@@ -64,6 +64,10 @@ class ScopeClassificationTest(unittest.TestCase):
             "tools/web_chat_cli/install.sh",
             "tools/web_chat_cli/package_assets.py",
             "tools/web_chat_cli/Cargo.lock",
+            "tools/html_build_cli/src/main.rs",
+            "tools/html_build_cli/install.sh",
+            "tools/html_build_cli/package_assets.py",
+            "tools/html_build_cli/Cargo.lock",
             "tools/terminal_commands/verify_assets.py",
             "tools/terminal_commands/rust-toolchain.toml",
             ".github/actions/terminal-commands/action.yml",
@@ -82,8 +86,8 @@ class ScopeClassificationTest(unittest.TestCase):
 
     def test_relocated_native_modules_use_full_lane(self) -> None:
         for path in (
-            "llm/llama/CMakeLists.txt",
-            "llm/mnn/CMakeLists.txt",
+            "modules/llm/llama/CMakeLists.txt",
+            "modules/llm/mnn/CMakeLists.txt",
         ):
             with self.subTest(path=path):
                 self.assertTrue(classify_paths([path]).android_full)
@@ -96,7 +100,7 @@ class ScopeClassificationTest(unittest.TestCase):
     def test_rename_source_and_destination_cover_both_scopes(self) -> None:
         plan = classify_paths(
             [
-                "web-chat/src/legacy.tsx",
+                "app/web-chat/src/legacy.tsx",
                 "app/src/main/java/com/example/Current.kt",
             ]
         )
@@ -104,6 +108,12 @@ class ScopeClassificationTest(unittest.TestCase):
         self.assertTrue(plan.web)
         self.assertTrue(plan.android_jvm)
 
+    def test_web_chat_under_app_stays_out_of_android_lanes(self) -> None:
+        plan = classify_paths(["app/web-chat/src/legacy.tsx"])
+        self.assertTrue(plan.web)
+        self.assertFalse(plan.android_jvm)
+        self.assertFalse(plan.android_resources)
+        self.assertFalse(plan.android_full)
     def test_type_change_path_is_classified_normally(self) -> None:
         plan = classify_paths(["app/src/main/java/com/example/Current.kt"])
 

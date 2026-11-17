@@ -24,7 +24,7 @@ class WorkspaceEditorInitialLineTest {
         var editor: NativeCodeEditor? = null
         compose.setContent {
             MaterialTheme {
-                CodeEditor(code = content.value, language = "text", fileKey = fileKey.value,
+                CodeEditor(code = content.value, language = "text", fileKey = fileKey.value, fileName = fileKey.value.substringAfterLast('/'),
                     onCodeChange = { content.value = it }, initialLine = 12,
                     enableCompletion = false, editorRef = { editor = it })
             }
@@ -56,7 +56,7 @@ class WorkspaceEditorInitialLineTest {
         var editor: NativeCodeEditor? = null
         compose.setContent {
             MaterialTheme {
-                CodeEditor(code = content.value, language = "text", fileKey = "linux:/same.txt",
+                CodeEditor(code = content.value, language = "text", fileKey = "linux:/same.txt", fileName = "same.txt",
                     onCodeChange = { content.value = it }, initialLine = 12,
                     initialLineRequest = request.value, enableCompletion = false,
                     editorRef = { editor = it })

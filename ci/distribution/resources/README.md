@@ -24,7 +24,7 @@ Build 工作流在白名单扩展构建后调用 `prepare_signing.py`，签名�
 
 发行权限预检同时检查源码、统一更新和资源仓库，资源凭据只在既有正式发布步骤中使用。准备阶段不读取发布凭据，普通 Debug/JVM 构建继续使用开发固定快照。
 
-目录、源码快照、总校验清单和准备摘要保存到 `app/build/reports/offline-resources`，由既有 Android reports artifact 上传。正式发行的 `distribution-release.json` 另附 `offlineResources`，记录同轮资源标签、源码提交、摘要和公开结果。手动 `publishOfflineResources` 的固定清单及产物入口保留既有参数和校验规则。
+目录、源码快照、总校验清单和准备摘要保存到 `app/build/reports/offline-resources`，由既有 Android reports artifact 上传。正式发行的 `distribution-release.json` 另附 `offlineResources`，记录同轮资源标签、源码提交、摘要和公开结果。手动 `publishOfflineResources` 的固定清单及产物入口保留既有参数和校验规则。 独立更新先在同一源码提交运行 `:app:verifyCiPreviewRelease` 并设置 `publish_release=false`；该构建上传 `operit-offline-resources-<run_number>` 资源 artifact，但不发布 APK。随后在同一源码提交手动运行 `publishOfflineResources`，将该 artifact 的 ID 传入 `resource_artifact_id`；发布器验证产物来源与内容后只发布离线资源。
 
 
 ## 内置扩展市场目录

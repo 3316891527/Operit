@@ -21,6 +21,8 @@ plugins {
     id("kotlin-kapt")
 }
 
+apply(from = "workspace-textmate.gradle.kts")
+
 // 此独立发行分支在 GitHub Actions 中生成固定签名的 Kong 共存包。
 val ciPreviewRelease = providers.environmentVariable("GITHUB_ACTIONS").orNull == "true"
 val ciDistributionCertificateSha256 = "5E01FFF4DD01A44BAB8318BE35107AE39C60A1261CFCE33003EA3528727EA799"
@@ -409,6 +411,8 @@ val verifyTerminalCommandAssets by tasks.registering {
         rootProject.file("tools/native_apply_patch/install.sh"),
         rootProject.file("tools/web_chat_cli/package_assets.py"),
         rootProject.file("tools/web_chat_cli/install.sh"),
+        rootProject.file("tools/html_build_cli/package_assets.py"),
+        rootProject.file("tools/html_build_cli/install.sh"),
     )
     doLast {
         val execution = providers.exec {
@@ -444,16 +448,16 @@ val syncMainAssets by tasks.registering(Sync::class) {
     inputs.file(rootProject.file("ci/distribution/resources/builtin_source_snapshot.py"))
     inputs.file(file("config/offline-pack-sources.json"))
     inputs.file(rootProject.file("ci/distribution/resources/prepare_extension_metadata.py"))
-    inputs.dir(rootProject.file("examples"))
-    inputs.file(rootProject.file("tools/example_packages/packages_whitelist.txt"))
+    inputs.dir(rootProject.file("plugins/examples"))
+    inputs.file(rootProject.file("plugins/tooling/example_packages/packages_whitelist.txt"))
     inputs.dir(file("src/main/assets/templates"))
-    inputs.dir(rootProject.file("examples/apktool/resources/apktool"))
+    inputs.dir(rootProject.file("plugins/examples/apktool/resources/apktool"))
     into(generatedMainAssetsDir)
     doLast {
         runResourceScript("verify_hub_catalog.py")
         runResourceScript("prepare_extension_metadata.py", listOf(
             "--catalog", file("config/offline-packs.json").path,
-            "--examples", rootProject.file("examples").path,
+            "--examples", rootProject.file("plugins/examples").path,
             "--output", File(generatedMainAssetsDir.get().asFile, "offline-extension-metadata.json").path,
         ))
         // 只修改生成目录，源码模板和完整插件仍保留，供独立资源发行与完整构建使用。
@@ -523,12 +527,15 @@ android {
         }
     }
 
+    // JVM 回归读取与 APK 相同的语法资源，不复制另一套规则样本。
+    sourceSets.getByName("test").resources.srcDir("src/main/assets/workspace-textmate")
+
     defaultConfig {
         applicationId = "com.ai.assistance.operit"
         minSdk = 26
         targetSdk = 34
-        versionCode = 81
-        versionName = "1.12.2+25"
+        versionCode = 82
+        versionName = "1.12.2+26"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -871,6 +878,7 @@ dependencies {
     implementation(libs.itextg)
     implementation(libs.pdfbox)
     implementation(libs.zip4j)
+    implementation("me.zhanghai.android.libarchive:library:1.1.6")
     
     // 图片加载库
     implementation(libs.coil)
@@ -896,6 +904,12 @@ dependencies {
     
     // Gson for JSON parsing
     implementation(libs.gson)
+    // TextMate 引擎由兼容脚本引入；配套模块提供其日志与匹配工具，不替换现有编辑器控件。
+    implementation(libs.sora.editor)
+    implementation(libs.jcodings)
+    implementation(libs.joni)
+    implementation(libs.snakeyaml.engine)
+    implementation(libs.jdt.annotation)
 
     // HJSON dependency for human-friendly JSON parsing
     implementation(libs.hjson)

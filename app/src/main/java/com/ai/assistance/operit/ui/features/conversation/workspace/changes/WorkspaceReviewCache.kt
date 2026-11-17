@@ -1,0 +1,47 @@
+package com.ai.assistance.operit.ui.features.conversation.workspace.changes
+
+/** 来源和快照版本共同确定缓存，文件切换不重新读取或分词。 */
+internal data class ReviewCacheKey(val file: ReviewFile, val recordId: String?)
+
+internal data class LoadedFileReview(val content: ReviewContent, val diff: PreparedReviewDiff?) {
+    init { require(content.isText == (diff != null)) }
+    val characters: Int get() = (content.before?.length ?: 0) + (content.after?.length ?: 0)
+}
+
+/** 页面释放即释放缓存；限制条目数和文本总量，避免长对话无限持有高亮快照。 */
+internal class WorkspaceReviewCache(private val maximumEntries: Int = 12, private val maximumCharacters: Int = 4 * 1024 * 1024) {
+    private val entries = LinkedHashMap<ReviewCacheKey, LoadedFileReview>(16, 0.75f, true)
+    private var characters = 0
+
+    operator fun get(key: ReviewCacheKey): LoadedFileReview? = entries[key]
+
+    fun put(key: ReviewCacheKey, value: LoadedFileReview) {
+        characters -= entries.remove(key)?.characters ?: 0
+        if (value.characters > maximumCharacters) return
+        entries[key] = value
+        characters += value.characters
+        while (entries.size > maximumEntries || characters > maximumCharacters) {
+            val oldest = entries.entries.iterator()
+            val removed = oldest.next()
+            characters -= removed.value.characters
+            oldest.remove()
+        }
+    }
+}
+
+/** 只按真实用户消息划分轮次，选取最近一次包含文件操作的请求。 */
+internal fun latestTurnRecords(records: List<FileChangeRecord>, userMessages: List<Long>): List<FileChangeRecord> {
+    val latest = records.maxOfOrNull { it.timestamp } ?: return emptyList()
+    val starts = userMessages.distinct().sorted()
+    val start = starts.lastOrNull { it <= latest } ?: return emptyList()
+    val end = starts.firstOrNull { it > start }
+    return records.filter { it.timestamp >= start && (end == null || it.timestamp < end) }
+}
+
+internal fun reviewDiffSupported(content: ReviewContent): Boolean {
+    if (!content.isText) return false
+    val before = checkNotNull(content.before)
+    val after = checkNotNull(content.after)
+    return before.count { it == '\n' } + after.count { it == '\n' } <= 20_000 &&
+        before.lineSequence().none { it.length > 8_192 } && after.lineSequence().none { it.length > 8_192 }
+}

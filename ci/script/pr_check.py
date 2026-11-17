@@ -25,18 +25,17 @@ WEB_PATTERNS = (
     "npm-shrinkwrap.json",
     "package-lock.json",
     "package.json",
-    "web-chat/**",
+    "app/web-chat/**",
 )
 TOOLPKG_PATTERNS = (
     ".npmrc",
     "app/src/main/assets/packages/**",
-    "examples/**",
+    "plugins/examples/**",
     "package.json",
     "package-lock.json",
     "npm-shrinkwrap.json",
     "pnpm-workspace.yaml",
-    "tools/packages_whitelist.txt",
-    "tools/example_packages/sync_example_packages.py",
+    "plugins/tooling/example_packages/**",
 )
 ANDROID_FULL_PATTERNS = (
     ".github/workflows/build.yml",
@@ -58,17 +57,18 @@ ANDROID_FULL_PATTERNS = (
     "tools/native_ripgrep/**",
     "tools/native_apply_patch/**",
     "tools/web_chat_cli/**",
+    "tools/html_build_cli/**",
     "tools/terminal_commands/**",
     ".github/actions/terminal-commands/**",
 )
 ANDROID_MODULE_ROOTS = (
-    "a2ui-compat",
-    "material-icons-subset",
-    "llm/llama",
-    "llm/mnn",
-    "quickjs",
-    "showerclient",
-    "terminal",
+    "modules/a2ui-compat",
+    "modules/material-icons-subset",
+    "modules/llm/llama",
+    "modules/llm/mnn",
+    "modules/quickjs",
+    "modules/showerclient",
+    "modules/terminal",
 )
 CI_PATTERNS = (
     ".github/actions/**",
@@ -150,7 +150,7 @@ def classify_paths(paths: list[str] | tuple[str, ...], *, full_android: bool = F
     resource_change = False
     android_jvm_change = False
     for path in normalized_paths:
-        if not path.startswith("app/"):
+        if not path.startswith("app/") or path_matches(path, WEB_PATTERNS):
             continue
         if path_matches(path, ANDROID_FULL_PATTERNS):
             continue

@@ -71,7 +71,7 @@ __pycache__/
 *.py[cod]
 
 # generated React web-chat build outputs
-web-chat/dist/
+app/web-chat/dist/
 app/src/main/assets/web-chat/
 
 

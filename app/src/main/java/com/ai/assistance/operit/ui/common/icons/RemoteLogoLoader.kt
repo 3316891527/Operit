@@ -60,7 +60,7 @@ object RemoteLogoLoader {
                     }
                 }
             logo?.let { value ->
-                LogoBitmapLoader.load(
+                ImageAssetLoader.load(
                     bytes = value.bytes,
                     mimeType = value.contentType,
                     fileName = parsedUrl.encodedPath,

@@ -1,289 +1,152 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.editor
 
-import android.graphics.Color
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightConfiguration
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightFiles
+
+import android.content.res.AssetManager
+import android.os.FileObserver
 import android.os.Handler
 import android.os.Looper
-import com.ai.assistance.operit.ui.features.conversation.workspace.editor.language.LanguageFactory
-import com.ai.assistance.operit.ui.features.conversation.workspace.editor.language.LanguageSupport
-import java.util.concurrent.ExecutorService
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.textmate.TextMateGrammarRegistry
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-
-internal data class HighlightSnapshot(
-    val version: Int,
-    val colors: IntArray
-)
+import java.util.concurrent.atomic.AtomicReference
 
 internal class EditorSyntaxHighlighter(
+    private val assets: AssetManager,
     initialLanguage: String,
-    private val onResult: (HighlightSnapshot) -> Unit
+    private val onFailure: (EditorTextSnapshot, String, Exception) -> Unit,
+    private val configurationDirectory: File? = null,
+    private val onResult: (HighlightSnapshot) -> Unit,
 ) {
-    companion object {}
-
+    private data class Request(val text: EditorTextSnapshot, val language: String, val fileName: String, val sequence: Int)
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
-    private val latestRequestedVersion = AtomicInteger(0)
-
-    @Volatile
-    private var released = false
-    @Volatile
-    private var language = initialLanguage.lowercase()
-    @Volatile
-    private var languageSupport = LanguageFactory.getLanguageSupport(language)
-    @Volatile
-    private var commentSyntax = CommentSyntaxRegistry.forLanguage(language)
-
-    fun setLanguage(language: String) {
-        this.language = language.lowercase()
-        languageSupport = LanguageFactory.getLanguageSupport(this.language)
-        commentSyntax = CommentSyntaxRegistry.forLanguage(this.language)
+    private val executor = Executors.newSingleThreadExecutor()
+    private val sequence = AtomicInteger()
+    private val pending = AtomicReference<Request?>()
+    private val scheduled = AtomicBoolean()
+    private val reload = AtomicBoolean(true)
+    private val observerLock = Any()
+    private var observer: FileObserver? = null
+    private var loadedRegistry: Result<TextMateGrammarRegistry>? = null
+    @Volatile private var released = false
+    private var language = initialLanguage
+    private var fileName = ""
+    private var latestText: EditorTextSnapshot? = null
+    private var reportedFailure: Pair<String, String>? = null
+    private val reloadRunnable = Runnable {
+        if (!released) {
+            reload.set(true)
+            latestText?.let(::requestHighlight)
+        }
     }
 
-    fun requestHighlight(text: String, version: Int) {
-        if (released) {
-            return
-        }
-        latestRequestedVersion.set(version)
-        val activeSupport = languageSupport
-        val activeCommentSyntax = commentSyntax
+    fun setLanguage(language: String) {
+        if (this.language.equals(language, ignoreCase = true)) return
+        this.language = language
+        reportedFailure = null
+        sequence.incrementAndGet()
+        pending.set(null)
+    }
 
+    fun setFileName(fileName: String) {
+        if (this.fileName == fileName) return
+        this.fileName = fileName
+        sequence.incrementAndGet()
+        pending.set(null)
+        latestText?.let(::requestHighlight)
+    }
+
+    fun reloadConfiguration() {
+        if (released || configurationDirectory == null) return
+        mainHandler.removeCallbacks(reloadRunnable)
+        mainHandler.postDelayed(reloadRunnable, 150L)
+    }
+
+    fun requestHighlight(text: EditorTextSnapshot) {
+        if (released) return
+        latestText = text
+        pending.set(Request(text, language, fileName, sequence.incrementAndGet()))
+        schedule()
+    }
+
+    private fun registry(): TextMateGrammarRegistry {
+        if (reload.getAndSet(false) || loadedRegistry == null) {
+            // 缓存本修订的成功或失败，损坏配置不会继续使用上一个修订的规则。
+            loadedRegistry = runCatching {
+                val configuration = if (configurationDirectory == null) EditorHighlightConfiguration.Empty else {
+                    configurationDirectory.mkdirs()
+                    require(configurationDirectory.isDirectory) { "Cannot create $configurationDirectory" }
+                    synchronized(observerLock) {
+                        observer?.stopWatching()
+                        if (!released) {
+                            observer = object : FileObserver(configurationDirectory.absolutePath, FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO or FileObserver.MOVED_FROM or FileObserver.DELETE or FileObserver.DELETE_SELF or FileObserver.MOVE_SELF) {
+                                override fun onEvent(event: Int, path: String?) {
+                                    if (path == null || path.endsWith(".json")) reloadConfiguration()
+                                }
+                            }.also { it.startWatching() }
+                        }
+                    }
+                    EditorHighlightFiles.load(configurationDirectory)
+                }
+                TextMateGrammarRegistry(configuration) { assets.open("workspace-textmate/$it").bufferedReader(Charsets.UTF_8) }
+            }
+        }
+        return checkNotNull(loadedRegistry).getOrThrow()
+    }
+
+    /** 规则加载和分词均在同一个后台线程；只保留当前任务与最新请求。 */
+    private fun schedule() {
+        if (released || !scheduled.compareAndSet(false, true)) return
         try {
             executor.execute {
-                if (released) {
-                    return@execute
-                }
-
-                val colors = IntArray(text.length)
-                if (text.isNotEmpty()) {
-                    parseFullText(text, colors, activeSupport, activeCommentSyntax)
-                }
-                if (released || latestRequestedVersion.get() != version) {
-                    return@execute
-                }
-                mainHandler.post {
-                    if (!released && latestRequestedVersion.get() == version) {
-                        onResult(HighlightSnapshot(version, colors))
+                try {
+                    while (!released) {
+                        val request = pending.getAndSet(null) ?: break
+                        fun current(): Boolean = !released && sequence.get() == request.sequence && !Thread.currentThread().isInterrupted
+                        if (!current()) continue
+                        try {
+                            val rules = registry().rulesFor(request.language, request.fileName)
+                            val result = EditorTextMateHighlighter.highlight(request.text, rules, ::current)
+                            if (result != null) mainHandler.post {
+                                if (!released && sequence.get() == request.sequence) {
+                                    reportedFailure = null
+                                    onResult(result)
+                                }
+                            }
+                        } catch (failure: Exception) {
+                            if (current()) mainHandler.post {
+                                if (!released && sequence.get() == request.sequence) {
+                                    val identity = request.language to failure.toString()
+                                    if (reportedFailure != identity) {
+                                        reportedFailure = identity
+                                        onFailure(request.text, request.language, failure)
+                                    }
+                                }
+                            }
+                        }
                     }
+                } finally {
+                    scheduled.set(false)
+                    if (!released && pending.get() != null) schedule()
                 }
             }
-        } catch (_: RejectedExecutionException) {
-            // The view was released while a new highlight request was being scheduled.
+        } catch (failure: RejectedExecutionException) {
+            scheduled.set(false)
+            if (!released) throw failure
         }
     }
 
     fun release() {
-        if (released) {
-            return
-        }
         released = true
+        sequence.incrementAndGet()
+        pending.set(null)
+        latestText = null
         mainHandler.removeCallbacksAndMessages(null)
+        synchronized(observerLock) { observer?.stopWatching(); observer = null }
         executor.shutdownNow()
-    }
-
-    private fun parseFullText(
-        text: String,
-        colors: IntArray,
-        support: LanguageSupport?,
-        syntax: CommentSyntax?
-    ) {
-        if (support == null) {
-            simpleHighlight(text, colors, syntax)
-            return
-        }
-
-        var index = 0
-        while (index < text.length) {
-            val current = text[index]
-
-            var handled = false
-            if (syntax != null) {
-                val blockStart = syntax.blockStart
-                val blockEnd = syntax.blockEnd
-                if (
-                    !blockStart.isNullOrEmpty() &&
-                        !blockEnd.isNullOrEmpty() &&
-                        text.startsWith(blockStart, index)
-                ) {
-                    val end = text.indexOf(blockEnd, index + blockStart.length)
-                    val commentEnd = if (end == -1) text.length else end + blockEnd.length
-                    fill(colors, index, commentEnd, LanguageSupport.COMMENT_COLOR)
-                    index = commentEnd
-                    handled = true
-                }
-
-                if (!handled) {
-                    val linePrefix = syntax.linePrefixes.firstOrNull { prefix ->
-                        text.startsWith(prefix, index)
-                    }
-                    if (linePrefix != null) {
-                        val end = text.indexOf('\n', index)
-                        val commentEnd = if (end == -1) text.length else end
-                        fill(colors, index, commentEnd, LanguageSupport.COMMENT_COLOR)
-                        index = commentEnd
-                        handled = true
-                    }
-                }
-            }
-            if (handled) continue
-
-            if (support.isStringDelimiter(current)) {
-                val start = index
-                index = consumeString(text, start, support.getStringEscapeChar())
-                fill(colors, start, index, LanguageSupport.STRING_COLOR)
-                continue
-            }
-
-            if (
-                current.isDigit() ||
-                (current == '0' && index + 1 < text.length && text[index + 1] in charArrayOf('x', 'X', 'b', 'B'))
-            ) {
-                val start = index
-                if (current == '0' && index + 1 < text.length) {
-                    when (text[index + 1]) {
-                        'x', 'X' -> {
-                            index += 2
-                            while (index < text.length && (text[index].isDigit() || text[index] in 'a'..'f' || text[index] in 'A'..'F')) {
-                                index++
-                            }
-                        }
-                        'b', 'B' -> {
-                            index += 2
-                            while (index < text.length && text[index] in charArrayOf('0', '1')) {
-                                index++
-                            }
-                        }
-                        else -> {
-                            index = consumeNumber(text, index)
-                        }
-                    }
-                } else {
-                    index = consumeNumber(text, index)
-                }
-                if (index < text.length && text[index] in charArrayOf('L', 'l', 'F', 'f', 'D', 'd')) {
-                    index++
-                }
-                fill(colors, start, index, LanguageSupport.NUMBER_COLOR)
-                continue
-            }
-
-            if (Character.isJavaIdentifierStart(current)) {
-                val start = index
-                while (index < text.length && Character.isJavaIdentifierPart(text[index])) {
-                    index++
-                }
-                val word = text.substring(start, index)
-                var nextCharIndex = index
-                while (nextCharIndex < text.length && (text[nextCharIndex] == ' ' || text[nextCharIndex] == '\t')) {
-                    nextCharIndex++
-                }
-                val nextChar = if (nextCharIndex < text.length) text[nextCharIndex] else ' '
-                val isCapitalized = word.isNotEmpty() && word[0].isUpperCase()
-                val color = when {
-                    support.getKeywords().contains(word) -> LanguageSupport.KEYWORD_COLOR
-                    support.getBuiltInTypes().contains(word) -> LanguageSupport.TYPE_COLOR
-                    support.getBuiltInVariables().contains(word) -> LanguageSupport.VARIABLE_COLOR
-                    support.getBuiltInFunctions().contains(word) -> LanguageSupport.FUNCTION_COLOR
-                    nextChar == '(' -> LanguageSupport.FUNCTION_COLOR
-                    isCapitalized -> LanguageSupport.TYPE_COLOR
-                    else -> LanguageSupport.VARIABLE_COLOR
-                }
-                fill(colors, start, index, color)
-                continue
-            }
-
-            if ("+-*/%=&|<>!~^?:;,(){}[].".contains(current)) {
-                if (index + 1 < text.length) {
-                    val twoChars = text.substring(index, index + 2)
-                    if (twoChars in listOf("==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "=>", "->", "::")) {
-                        fill(colors, index, index + 2, LanguageSupport.OPERATOR_COLOR)
-                        index += 2
-                        continue
-                    }
-                }
-                colors[index] = LanguageSupport.OPERATOR_COLOR
-            } else {
-                colors[index] = LanguageSupport.DEFAULT_COLOR
-            }
-            index++
-        }
-    }
-
-    private fun simpleHighlight(text: String, colors: IntArray, syntax: CommentSyntax?) {
-        var index = 0
-        while (index < text.length) {
-            val blockStart = syntax?.blockStart
-            val blockEnd = syntax?.blockEnd
-            when {
-                !blockStart.isNullOrEmpty() &&
-                    !blockEnd.isNullOrEmpty() &&
-                    text.startsWith(blockStart, index) -> {
-                    val end = text.indexOf(blockEnd, index + blockStart.length)
-                    val commentEnd = if (end == -1) text.length else end + blockEnd.length
-                    fill(colors, index, commentEnd, LanguageSupport.COMMENT_COLOR)
-                    index = commentEnd
-                }
-                syntax?.linePrefixes?.any { prefix -> text.startsWith(prefix, index) } == true -> {
-                    val end = text.indexOf('\n', index)
-                    val commentEnd = if (end == -1) text.length else end
-                    fill(colors, index, commentEnd, LanguageSupport.COMMENT_COLOR)
-                    index = commentEnd
-                }
-                text[index] == '"' || text[index] == '\'' || text[index] == '`' -> {
-                    val start = index
-                    index = consumeString(text, start, '\\')
-                    fill(colors, start, index, LanguageSupport.STRING_COLOR)
-                }
-                text[index].isDigit() -> {
-                    val start = index
-                    index = consumeNumber(text, index)
-                    fill(colors, start, index, LanguageSupport.NUMBER_COLOR)
-                }
-                else -> {
-                    colors[index] = LanguageSupport.DEFAULT_COLOR
-                    index++
-                }
-            }
-        }
-    }
-
-    private fun consumeString(text: String, startIndex: Int, escape: Char): Int {
-        val quote = text[startIndex]
-        val isTripleQuoted =
-            startIndex + 2 < text.length &&
-                text[startIndex + 1] == quote &&
-                text[startIndex + 2] == quote
-        val delimiter = quote.toString().repeat(if (isTripleQuoted) 3 else 1)
-        var index = startIndex + delimiter.length
-
-        while (index < text.length) {
-            if (text.startsWith(delimiter, index)) {
-                return index + delimiter.length
-            }
-            if (!isTripleQuoted && text[index] == escape && index + 1 < text.length) {
-                index += 2
-            } else {
-                index++
-            }
-        }
-        return text.length
-    }
-
-    private fun consumeNumber(text: String, startIndex: Int): Int {
-        var index = startIndex
-        while (
-            index < text.length &&
-            (text[index].isDigit() || text[index] == '.' || text[index] == 'e' || text[index] == 'E' || text[index] == '-' || text[index] == '+')
-        ) {
-            index++
-        }
-        return index
-    }
-
-    private fun fill(colors: IntArray, start: Int, end: Int, color: Int) {
-        val safeEnd = end.coerceAtMost(colors.size)
-        for (index in start until safeEnd) {
-            colors[index] = color
-        }
     }
 }

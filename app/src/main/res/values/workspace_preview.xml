@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s：%2$s</string>
+    <string name="workspace_search_option_on">开</string>
+    <string name="workspace_search_option_off">关</string>
+    <string name="workspace_markdown_outline">章节目录</string>
+    <string name="workspace_markdown_outline_empty">此文档没有标题</string>
+    <string name="workspace_markdown_outline_expand">展开章节</string>
+    <string name="workspace_markdown_outline_collapse">收起章节</string>
+</resources>

@@ -21,14 +21,6 @@ internal fun formatCompactMessageTokens(value: Long): String {
     return "$rounded$suffix"
 }
 
-internal fun formatMessageDuration(durationMs: Long): String {
-    return if (durationMs >= 1_000L) {
-        String.format(Locale.US, "%,.2f s", durationMs / 1000.0)
-    } else {
-        "${formatMessageNumber(durationMs)} ms"
-    }
-}
-
 internal fun calculateMessageTokenSpeed(outputTokens: Long, outputDurationMs: Long): Double? {
     if (outputTokens <= 0L || outputDurationMs <= 0L) return null
     return outputTokens.toDouble() * 1000.0 / outputDurationMs.toDouble()

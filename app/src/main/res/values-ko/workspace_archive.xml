@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">압축</string>
+    <string name="workspace_archive_extract">압축 풀기</string>
+    <string name="workspace_archive_add">추가</string>
+    <string name="workspace_archive_choose_directory">이 폴더 선택</string>
+    <string name="workspace_archive_password">복호화 비밀번호</string>
+    <string name="workspace_archive_name">압축 파일 이름</string>
+    <string name="workspace_archive_format">형식</string>
+    <string name="workspace_archive_destination">대상 폴더</string>
+    <string name="workspace_archive_level">압축 수준</string>
+    <string name="workspace_archive_level_fast">빠름</string>
+    <string name="workspace_archive_level_normal">표준</string>
+    <string name="workspace_archive_level_maximum">최대</string>
+    <string name="workspace_archive_working">처리 중</string>
+    <string name="workspace_archive_processed">%1$s 처리됨</string>
+    <string name="workspace_archive_read_only">읽기 전용 압축 파일</string>
+    <string name="workspace_archive_retry">다시 시도</string>
+    <string name="workspace_archive_entries">%1$d개 항목</string>
+    <string name="workspace_archive_signed">이 파일을 수정하면 기존 서명이 무효화됩니다.</string>
+    <string name="workspace_archive_link">링크 항목은 열거나 압축을 풀 수 없습니다.</string>
+    <string name="workspace_archive_extract_all">모두 압축 풀기</string>
+    <string name="workspace_archive_extract_selected">선택한 %1$d개 항목 압축 풀기</string>
+    <string name="workspace_archive_encrypt_password">암호화 비밀번호(선택 사항)</string>
+    <string name="workspace_archive_read_password_hint">암호화된 압축 파일을 읽는 데 사용합니다. 비밀번호는 변경하지 않습니다.</string>
+    <string name="workspace_archive_password_required">이 압축 파일을 읽으려면 복호화 비밀번호가 필요합니다.</string>
+    <string name="workspace_archive_source">원본 압축 파일</string>
+    <string name="workspace_archive_packed_size">압축 크기</string>
+    <string name="workspace_archive_encrypted">암호화됨</string>
+    <string name="workspace_archive_name_hint">선택한 형식에 따라 확장자가 자동으로 추가됩니다.</string>
+    <string name="workspace_archive_stage_target">대상 확인</string>
+    <string name="workspace_archive_stage_sources">원본 읽기</string>
+    <string name="workspace_archive_stage_write">압축 파일 쓰기</string>
+    <string name="workspace_archive_stage_verify">압축 파일 검증</string>
+    <string name="workspace_archive_stage_publish">압축 파일 게시</string>
+    <string name="workspace_archive_create_failed_detail">%1$s을(를) 만들 수 없습니다\n단계: %2$s\n대상: %3$s\n원인: %4$s</string>
+</resources>

@@ -147,14 +147,14 @@ class BuiltInSourceFingerprintTest(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.repository = Path(self.temporary.name)
         self.sources = {
-            "examples/sample.js": b"old generated script",
-            "examples/sample.ts": b"export const value = 1;",
-            "examples/plugin/src/main.ts": b"export const plugin = 1;",
-            "examples/plugin/dist/main.js": b"old generated plugin",
-            "examples/types/global.d.ts": b"declare const version: string;",
-            "examples/tsconfig.json": b"{}",
-            "tools/example_packages/sync_example_packages.py": b"sync input",
-            "tools/example_packages/packages_whitelist.txt": b"sample.js\nplugin\n",
+            "plugins/examples/sample.js": b"old generated script",
+            "plugins/examples/sample.ts": b"export const value = 1;",
+            "plugins/examples/plugin/src/main.ts": b"export const plugin = 1;",
+            "plugins/examples/plugin/dist/main.js": b"old generated plugin",
+            "plugins/examples/types/global.d.ts": b"declare const version: string;",
+            "plugins/examples/tsconfig.json": b"{}",
+            "plugins/tooling/example_packages/sync_example_packages.py": b"sync input",
+            "plugins/tooling/example_packages/packages_whitelist.txt": b"sample.js\nplugin\n",
         }
         for name, content in self.sources.items():
             target = self.repository / name
@@ -170,31 +170,55 @@ class BuiltInSourceFingerprintTest(unittest.TestCase):
         subprocess.run(["git", *arguments], cwd=self.repository, check=True, capture_output=True)
 
     def test_regenerated_script_keeps_published_clean_checkout_fingerprint(self) -> None:
-        expected_files = [(name, hashlib.sha256(data).hexdigest())
-            for name, data in sorted(self.sources.items()) if not name.startswith("examples/plugin/")]
+        expected_files = [(builtin_source_snapshot.logical_input_path(name), hashlib.sha256(data).hexdigest())
+            for name, data in sorted(self.sources.items())
+            if not builtin_source_snapshot.logical_input_path(name).startswith("examples/plugin/")]
         expected = hashlib.sha256(json.dumps(expected_files, ensure_ascii=False).encode()).hexdigest()
         self.assertEqual(expected, builtin_packages.source_fingerprint("sample.js"))
-        (self.repository / "examples/sample.js").write_bytes(b"new generated script")
+        (self.repository / "plugins/examples/sample.js").write_bytes(b"new generated script")
         self.assertEqual(expected, builtin_packages.source_fingerprint("sample.js"))
 
     def test_regenerated_plugin_dist_keeps_indexed_fingerprint(self) -> None:
         expected = builtin_packages.source_fingerprint("plugin")
-        (self.repository / "examples/plugin/dist/main.js").write_bytes(b"new generated plugin")
-        (self.repository / "examples/plugin/dist/extra.js").write_bytes(b"new untracked output")
+        (self.repository / "plugins/examples/plugin/dist/main.js").write_bytes(b"new generated plugin")
+        (self.repository / "plugins/examples/plugin/dist/extra.js").write_bytes(b"new untracked output")
         self.assertEqual(expected, builtin_packages.source_fingerprint("plugin"))
 
     def test_indexed_typescript_change_still_invalidates_fingerprint(self) -> None:
         expected = builtin_packages.source_fingerprint("sample.js")
-        (self.repository / "examples/sample.ts").write_bytes(b"export const value = 2;")
-        self.git("add", "examples/sample.ts")
+        (self.repository / "plugins/examples/sample.ts").write_bytes(b"export const value = 2;")
+        self.git("add", "plugins/examples/sample.ts")
         self.assertNotEqual(expected, builtin_packages.source_fingerprint("sample.js"))
 
     def test_indexed_javascript_change_still_invalidates_fingerprint(self) -> None:
         expected = builtin_packages.source_fingerprint("sample.js")
-        (self.repository / "examples/sample.js").write_bytes(b"updated source script")
-        self.git("add", "examples/sample.js")
+        (self.repository / "plugins/examples/sample.js").write_bytes(b"updated source script")
+        self.git("add", "plugins/examples/sample.js")
         self.assertNotEqual(expected, builtin_packages.source_fingerprint("sample.js"))
 
+
+    def test_snapshot_creation_keeps_logical_paths_across_layouts(self) -> None:
+        self.git("config", "user.name", "Resource Snapshot Test")
+        self.git("config", "user.email", "resource-snapshot@example.invalid")
+        self.git("commit", "-m", "current plugin source layout")
+        current_revision = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=self.repository, text=True).strip()
+        current_snapshot = builtin_source_snapshot.create_snapshot(
+            self.repository, ["sample.js"], "resources-v3-test", current_revision)
+        current_files = dict(current_snapshot["files"])
+        self.assertIn("examples/sample.js", current_files)
+        self.assertIn("tools/example_packages/packages_whitelist.txt", current_files)
+        self.assertFalse(any(name.startswith("plugins/") for name in current_files))
+
+        (self.repository / "tools").mkdir()
+        self.git("mv", "plugins/examples", "examples")
+        self.git("mv", "plugins/tooling/example_packages", "tools/example_packages")
+        self.git("commit", "-m", "legacy plugin source layout")
+        legacy_revision = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=self.repository, text=True).strip()
+        legacy_snapshot = builtin_source_snapshot.create_snapshot(
+            self.repository, ["sample.js"], "resources-v3-test", legacy_revision)
+        self.assertEqual(current_snapshot["files"], legacy_snapshot["files"])
 
 class FixedCatalogSourceSnapshotTest(unittest.TestCase):
     def setUp(self) -> None:

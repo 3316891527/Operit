@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">Compactar</string>
+    <string name="workspace_archive_extract">Extrair</string>
+    <string name="workspace_archive_add">Adicionar</string>
+    <string name="workspace_archive_choose_directory">Selecionar esta pasta</string>
+    <string name="workspace_archive_password">Senha de descriptografia</string>
+    <string name="workspace_archive_name">Nome do arquivo compactado</string>
+    <string name="workspace_archive_format">Formato</string>
+    <string name="workspace_archive_destination">Pasta de destino</string>
+    <string name="workspace_archive_level">Nível de compactação</string>
+    <string name="workspace_archive_level_fast">Rápido</string>
+    <string name="workspace_archive_level_normal">Normal</string>
+    <string name="workspace_archive_level_maximum">Máximo</string>
+    <string name="workspace_archive_working">Processando</string>
+    <string name="workspace_archive_processed">Processados %1$s</string>
+    <string name="workspace_archive_read_only">Arquivo somente leitura</string>
+    <string name="workspace_archive_retry">Tentar novamente</string>
+    <string name="workspace_archive_entries">%1$d itens</string>
+    <string name="workspace_archive_signed">Modificar este arquivo invalida sua assinatura existente.</string>
+    <string name="workspace_archive_link">Links não podem ser abertos ou extraídos.</string>
+    <string name="workspace_archive_extract_all">Extrair tudo</string>
+    <string name="workspace_archive_extract_selected">Extrair %1$d itens selecionados</string>
+    <string name="workspace_archive_encrypt_password">Senha de criptografia (opcional)</string>
+    <string name="workspace_archive_read_password_hint">Usada para ler um arquivo criptografado. Não altera sua senha.</string>
+    <string name="workspace_archive_password_required">Uma senha de descriptografia é necessária para ler este arquivo.</string>
+    <string name="workspace_archive_source">Arquivo de origem</string>
+    <string name="workspace_archive_packed_size">Tamanho compactado</string>
+    <string name="workspace_archive_encrypted">Criptografado</string>
+    <string name="workspace_archive_name_hint">O formato selecionado adiciona a extensão automaticamente.</string>
+    <string name="workspace_archive_stage_target">Verificar destino</string>
+    <string name="workspace_archive_stage_sources">Ler origens</string>
+    <string name="workspace_archive_stage_write">Gravar arquivo compactado</string>
+    <string name="workspace_archive_stage_verify">Verificar arquivo compactado</string>
+    <string name="workspace_archive_stage_publish">Publicar arquivo compactado</string>
+    <string name="workspace_archive_create_failed_detail">Não foi possível criar %1$s\nEtapa: %2$s\nDestino: %3$s\nMotivo: %4$s</string>
+</resources>

@@ -7,7 +7,7 @@
 - `architecture/`：整体架构、核心模块和运行流程设计
 - `dev-core/`：核心开发资料，包括构建、贡献指南和底层接口说明
 - `feature-protocol/`：具体功能与协议流程，例如意图触发、工具调用和聊天导入
-- `toolpkg_developer_documentation/`：完整的 ToolPkg 开发者参考，按入门、包模型、运行时、模块、Hook、UI、类型/库、示例和兼容性组织
+- ToolPkg 开发者参考位于仓库根目录 `plugins/docs/toolpkg_developer_documentation/`，按入门、包模型、运行时、模块、Hook、UI、类型/库、示例和兼容性组织
 - `research/`：对引入、接入的外部依赖或api等的调研记录和技术验证结果
 - `test-example/`：对项目内功能的测试示例、实验记录和问题分析
 
@@ -20,6 +20,8 @@
 - 建议使用 Agent 来移动文件位置（除非你清楚自己在做什么），并记得明确提示检查各类引用和相对链接
 - 构建 App 不应直接依赖文档的相对位置，应先解析适当的元数据；若没有，应做必要的创建
 - 严禁让发布版或 CDN 直接索引项目目录位置，这会严重限制日后结构改动，且降低稳健性
+
+工作区编辑器的自由样式、匹配规则与文件关联见[自定义语法高亮](dev-core/editor-highlighting/editor-highlighting.md)。
 
 建议参考[文档撰写指南](before_docing.md)
 角色主题制作从 [JSON 与 JavaScript 制作手册](feature-protocol/theme_authoring_guide.md) 开始；全部只读设置见 [参数目录](feature-protocol/theme_settings_reference.md)，实现概览见 [JavaScript 外观 API](feature-protocol/theme_script_api.md)。

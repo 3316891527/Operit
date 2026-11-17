@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s: %2$s</string>
+    <string name="workspace_search_option_on">Activado</string>
+    <string name="workspace_search_option_off">Desactivado</string>
+    <string name="workspace_markdown_outline">Índice</string>
+    <string name="workspace_markdown_outline_empty">Este documento no tiene encabezados.</string>
+    <string name="workspace_markdown_outline_expand">Expandir sección</string>
+    <string name="workspace_markdown_outline_collapse">Contraer sección</string>
+</resources>

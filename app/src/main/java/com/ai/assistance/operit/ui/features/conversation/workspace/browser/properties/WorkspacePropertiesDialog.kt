@@ -63,7 +63,7 @@ internal fun WorkspacePropertiesDialog(
             repository = reader
             val loaded = reader.read()
             properties = loaded
-            if (loaded.node.directory && !loaded.node.symbolicLink) totals = reader.totals()
+            if (loaded.node.directory && !loaded.node.symbolicLink) totals = reader.totals(loaded.node)
         } catch (cancel: CancellationException) {
             throw cancel
         } catch (failure: Exception) {
@@ -176,7 +176,7 @@ internal fun WorkspacePropertiesDialog(
 }
 
 @Composable
-private fun PropertyRow(label: String, value: String, copy: (() -> Unit)? = null) {
+internal fun PropertyRow(label: String, value: String, copy: (() -> Unit)? = null) {
     val modifier = Modifier.fillMaxWidth().then(if (copy == null) Modifier else Modifier.clickable(onClick = copy))
     Row(modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(label, modifier = Modifier.width(68.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -185,16 +185,16 @@ private fun PropertyRow(label: String, value: String, copy: (() -> Unit)? = null
     }
 }
 
-private fun copyProperty(context: Context, value: String) {
+internal fun copyProperty(context: Context, value: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText("", value))
     OKToast.success(context, R.string.workspace_properties_copied, OKToast.LENGTH_SHORT).show()
 }
 
 private val propertyTimeFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss").withResolverStyle(ResolverStyle.STRICT)
-private fun propertyTime(millis: Long): String = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(propertyTimeFormat)
-private fun propertyCount(value: Long): String = NumberFormat.getIntegerInstance().format(value)
-private fun propertySize(bytes: Long): String {
+internal fun propertyTime(millis: Long): String = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(propertyTimeFormat)
+internal fun propertyCount(value: Long): String = NumberFormat.getIntegerInstance().format(value)
+internal fun propertySize(bytes: Long): String {
     val units = listOf("B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB")
     var amount = bytes.toDouble()
     var unit = 0

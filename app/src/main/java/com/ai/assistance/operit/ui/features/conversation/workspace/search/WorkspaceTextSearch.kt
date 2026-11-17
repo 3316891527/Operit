@@ -41,7 +41,7 @@ internal fun activeSearchMatchAfterUpdate(active: Int, count: Int): Int =
 
 @Composable
 internal fun FileSearchBar(query: String, onQueryChange: (String) -> Unit, count: Int, active: Int,
-    onPrevious: () -> Unit, onNext: () -> Unit, onClose: () -> Unit) {
+    onPrevious: () -> Unit, onNext: () -> Unit, onClose: () -> Unit, searching: Boolean = false) {
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -50,10 +50,11 @@ internal fun FileSearchBar(query: String, onQueryChange: (String) -> Unit, count
             label = { Text(stringResource(R.string.workspace_search_content)) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onNext() }))
-        Text("${if (count == 0) 0 else active + 1}/$count", modifier = Modifier.padding(horizontal = 8.dp),
-            style = MaterialTheme.typography.labelMedium)
-        IconButton(onClick = onPrevious, enabled = count > 0) { Icon(Icons.Default.KeyboardArrowUp, stringResource(R.string.workspace_search_previous)) }
-        IconButton(onClick = onNext, enabled = count > 0) { Icon(Icons.Default.KeyboardArrowDown, stringResource(R.string.workspace_search_next)) }
+        Text(if (searching) "…" else "${if (count == 0) 0 else active + 1}/$count", modifier = Modifier.padding(horizontal = 8.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (query.isNotEmpty() && count == 0 && !searching) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+        IconButton(onClick = onPrevious, enabled = count > 0 && !searching) { Icon(Icons.Default.KeyboardArrowUp, stringResource(R.string.workspace_search_previous)) }
+        IconButton(onClick = onNext, enabled = count > 0 && !searching) { Icon(Icons.Default.KeyboardArrowDown, stringResource(R.string.workspace_search_next)) }
         IconButton(onClick = { keyboard?.hide(); onClose() }) { Icon(Icons.Default.Close, stringResource(R.string.close)) }
     }
 }

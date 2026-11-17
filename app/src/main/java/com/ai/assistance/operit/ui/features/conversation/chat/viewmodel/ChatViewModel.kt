@@ -1961,7 +1961,7 @@ class ChatViewModel(context: Context) : ViewModel() {
     // UI状态相关方法
     fun showErrorMessage(message: String) = uiStateDelegate.showErrorMessage(message)
     fun clearError() = uiStateDelegate.clearError()
-    fun dismissErrorDialog() {
+    fun consumeErrorMessage() {
         uiStateDelegate.clearError()
         val chatId = chatHistoryDelegate.currentChatId.value
         if (chatId != null) {
@@ -2598,11 +2598,22 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatId
     }
 
+    /** 审阅页直接进入，不启动项目服务器，也不要求绑定工作区。 */
+    fun openChangesFromHub(conversation: Boolean = false) {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = if (conversation) WorkspaceHubPage.OUTPUTS else WorkspaceHubPage.CHANGES
+    }
+
     fun openTerminalFromHub(page: EmbeddedTerminalPage = EmbeddedTerminalPage.CONSOLE) {
         cancelWorkspaceOpen()
         _embeddedTerminalPage.value = page
         _workspaceHubPage.value = WorkspaceHubPage.TERMINAL
     }
+    fun openBrowserFromHub() {
+        cancelWorkspaceOpen()
+        _workspaceHubPage.value = WorkspaceHubPage.BROWSER
+    }
+
     fun showEmbeddedTerminalPage(page: EmbeddedTerminalPage) {
         _embeddedTerminalPage.value = page
     }

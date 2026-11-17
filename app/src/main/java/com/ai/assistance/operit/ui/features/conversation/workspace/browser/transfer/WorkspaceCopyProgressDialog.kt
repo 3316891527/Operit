@@ -43,7 +43,8 @@ internal fun WorkspaceCopyProgressDialog(progress: WorkspaceCopyProgress, cancel
         WorkspaceOperationDetail(stringResource(R.string.workspace_transfer_remaining), detail?.remainingBytes?.let(::size) ?: unknown)
         WorkspaceOperationDetail(stringResource(R.string.workspace_transfer_speed), detail?.bytesPerSecond?.let { "${size(it.toLong())}/s" } ?: unknown)
         if (detail != null) {
-            Text(stringResource(R.string.workspace_transfer_files, detail.copiedFiles, detail.totalFiles),
+            Text(if (detail.totalBytes == null) stringResource(R.string.workspace_browser_copied_files, detail.copiedFiles)
+                else stringResource(R.string.workspace_transfer_files, detail.copiedFiles, detail.totalFiles),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

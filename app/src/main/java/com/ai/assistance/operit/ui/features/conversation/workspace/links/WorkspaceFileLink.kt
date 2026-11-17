@@ -10,6 +10,7 @@ internal data class WorkspaceFileLink(
     val environment: String,
     val line: Int? = null,
     val anchor: String? = null,
+    val editAsText: Boolean = false,
 )
 
 /** 识别绝对路径及显式环境链接，普通网页和应用协议继续交给外部入口。 */

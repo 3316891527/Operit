@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.history.folders
 
+import com.ai.assistance.operit.ui.common.oktoast.ErrorToast
 import com.ai.assistance.operit.ui.theme.script.text.ThemeOutlinedTextField as OutlinedTextField
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
@@ -540,6 +541,7 @@ fun FolderChatHistoryPanel(
             collapsed = collapsed + folders.flatMap { folder -> (bindings.map(::scope) + "folders").map { folderKey(it, folder.id) } }
             collapsedBindings = collapsedBindings + bindings.map(::scope)
         }, onDismiss = { showSettings = false })
-    error?.let { message -> AlertDialog(onDismissRequest = { error = null }, title = { Text(stringResource(R.string.folder_actions)) },
-        text = { Text(message) }, confirmButton = { TextButton(onClick = { error = null }) { Text(stringResource(R.string.cancel)) } }) }
+    error?.let { message ->
+        ErrorToast(errorMessage = message, onShown = { error = null })
+    }
 }

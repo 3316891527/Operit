@@ -61,7 +61,9 @@ class ThemeStudioCatalogTest {
     @Test
     fun rootPickerKeepsOneBackgroundEntryWithoutLosingPageEditors() {
         val pages = com.ai.assistance.operit.data.theme.script.ThemeStyleTargets.pageIds
-        assertEquals(66, pages.size)
+        // 独立 HTML 打包页已移除，目录数量和退役页面检查必须同步更新。
+        assertEquals(65, pages.size)
+        assertFalse("已移除的 HTML 打包页不应继续注册", "page.htmlPackager" in pages)
         assertTrue(ThemeStudioRootTargets.none { it.id in pages })
         assertEquals(listOf("background"), ThemeStudioRootTargets.filter { it.isBackground }.map { it.id })
         ThemeStudioTargets.filter { it.id in pages }.forEach {

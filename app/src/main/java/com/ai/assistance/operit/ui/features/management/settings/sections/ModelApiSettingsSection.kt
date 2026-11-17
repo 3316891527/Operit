@@ -88,7 +88,6 @@ import com.ai.assistance.operit.plugins.toolpkg.ToolPkgAiProviderRegistry
 import com.ai.assistance.operit.ui.common.input.bringIntoViewOnImeFocus
 import com.ai.assistance.operit.ui.features.management.settings.DebouncedModelConfigAutoSaveEffect
 import com.ai.assistance.operit.ui.features.management.settings.ModelConfigSaveCoordinator
-import com.ai.assistance.operit.ui.common.icons.providerLogoColorFilter
 import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
 import com.ai.assistance.operit.ui.features.management.settings.RegisterModelConfigSaveAction
 import com.ai.assistance.operit.ui.features.models.antigravity.AntigravityLoginDialog
@@ -681,7 +680,7 @@ fun ModelApiSettingsSection(
             ) {
                 val logo = rememberProviderLogoPainter(selectedProviderTypeId, 32.dp)
                 if (logo != null) {
-                    androidx.compose.foundation.Image(painter = logo, contentDescription = null, modifier = Modifier.size(32.dp), colorFilter = providerLogoColorFilter())
+                    androidx.compose.foundation.Image(painter = logo, contentDescription = null, modifier = Modifier.size(32.dp))
                 } else {
                     Icon(Icons.Default.Api, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
                 }
@@ -2527,7 +2526,6 @@ private fun ApiProviderDialog(
                                                     painter = providerLogo,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(24.dp),
-                                                    colorFilter = providerLogoColorFilter()
                                             )
                                         }
                                     } else {

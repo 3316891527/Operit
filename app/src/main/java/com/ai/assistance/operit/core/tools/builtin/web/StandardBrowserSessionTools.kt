@@ -213,6 +213,8 @@ class StandardBrowserSessionTools(internal val context: Context) : ToolExecutor 
         internal val overlayLock = Any()
         internal val sessionConfigLock = Any()
 
+        internal val workbenchState = kotlinx.coroutines.flow.MutableStateFlow(
+            com.ai.assistance.operit.core.tools.builtin.web.session.browser.WebSessionBrowserState())
         @Volatile internal var browserHost: WebSessionBrowserHost? = null
         @Volatile internal var activeSessionId: String? = null
         @Volatile internal var desktopModeEnabled: Boolean = true

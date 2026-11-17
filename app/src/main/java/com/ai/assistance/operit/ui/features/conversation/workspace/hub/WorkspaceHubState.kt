@@ -6,6 +6,9 @@ enum class WorkspaceHubPage {
     HOME,
     WORKSPACE,
     TERMINAL,
+    CHANGES,
+    OUTPUTS,
+    BROWSER,
 }
 
 /** 主页入口指定要打开的现有工作区功能。 */

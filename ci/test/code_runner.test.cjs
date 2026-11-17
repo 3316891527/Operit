@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const { test, after } = require('node:test');
 
 const root = path.resolve(__dirname, '../..');
-const exampleSource = fs.readFileSync(path.join(root, 'examples/code_runner.js'), 'utf8');
+const exampleSource = fs.readFileSync(path.join(root, 'plugins/examples/code_runner.js'), 'utf8');
 const bundledSource = fs.readFileSync(path.join(root, 'app/src/main/assets/packages/code_runner.js'), 'utf8');
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'operit-code-runner-ci-'));
 const parentDirectories = [];

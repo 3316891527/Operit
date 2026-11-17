@@ -1,0 +1,143 @@
+{
+  "project": "Lobe Icons",
+  "repository": "https://github.com/lobehub/lobe-icons",
+  "commit": "55746b0b082258211121c70bd26e6878fd3bd292",
+  "license": "MIT",
+  "license_sha256": "add9d7531d1b21646317a8958e38fc727506fa39d24bdecb44154d943c82753a",
+  "assets": [
+    {
+      "asset": "ALIYUN/qwen.svg",
+      "upstream_path": "packages/static-svg/icons/qwen-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/qwen-color.svg",
+      "sha256": "a158a0e3ed5b541e4f91384ece02c3acf0a0d81b7b11a46d77bafb248b09e32c",
+      "bytes": 1016,
+      "color_mode": "original"
+    },
+    {
+      "asset": "ANTHROPIC_GENERIC/claude.svg",
+      "upstream_path": "packages/static-svg/icons/claude-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/claude-color.svg",
+      "sha256": "a3101f3047a119aa11825ad9369510f0c472428c8c52d420e31bc62db44a8364",
+      "bytes": 1696,
+      "color_mode": "original"
+    },
+    {
+      "asset": "BAICHUAN/baichuan.svg",
+      "upstream_path": "packages/static-svg/icons/baichuan-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/baichuan-color.svg",
+      "sha256": "7d49311206402734850ed9dc112759780429bb363dcee31eccb5a92f428532a6",
+      "bytes": 571,
+      "color_mode": "original"
+    },
+    {
+      "asset": "BAIDU/baidu.svg",
+      "upstream_path": "packages/static-svg/icons/baidu-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/baidu-color.svg",
+      "sha256": "1059750a2069aec6080ff48732931e87a99bd3d22db3e8471cebe255b6014b75",
+      "bytes": 1384,
+      "color_mode": "original"
+    },
+    {
+      "asset": "DEEPSEEK/deepseek.svg",
+      "upstream_path": "packages/static-svg/icons/deepseek-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/deepseek-color.svg",
+      "sha256": "deba5f98a5c1796e20fcac3149bcd7eb8a32f0bdd04d048819400b1f28bd1439",
+      "bytes": 2164,
+      "color_mode": "original"
+    },
+    {
+      "asset": "DOUBAO/bytedance.svg",
+      "upstream_path": "packages/static-svg/icons/doubao-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/doubao-color.svg",
+      "sha256": "3cd31ba03ae44b8c29561597a3b863809efecb13fcdfd08407a086df86a69b55",
+      "bytes": 1153,
+      "color_mode": "original"
+    },
+    {
+      "asset": "GEMINI_GENERIC/googlegemini.svg",
+      "upstream_path": "packages/static-svg/icons/gemini-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/gemini-color.svg",
+      "sha256": "8ab0a9bafec11f7e69bcb9fc4ffd8f1bc927d1ddcbbb6ff36dee5ae8b5a9d602",
+      "bytes": 2836,
+      "color_mode": "original"
+    },
+    {
+      "asset": "GOOGLE/google.svg",
+      "upstream_path": "packages/static-svg/icons/google-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/google-color.svg",
+      "sha256": "4e6aa8892ef15a6b431f40f2c9045979bf7e2357524e7bbb89b353cf4f32a5ac",
+      "bytes": 920,
+      "color_mode": "original"
+    },
+    {
+      "asset": "MISTRAL/mistralai.svg",
+      "upstream_path": "packages/static-svg/icons/mistral-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/mistral-color.svg",
+      "sha256": "722f74b289d95486b43662fe24fa883b333701296f618406cd0ed502299170b6",
+      "bytes": 655,
+      "color_mode": "original"
+    },
+    {
+      "asset": "MOONSHOT/kimi.svg",
+      "upstream_path": "packages/static-svg/icons/kimi-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/kimi-color.svg",
+      "sha256": "0bdb95375d7c6e90a1850e91cd36770da2bc98fa33ec2d783f4a8fed027da85f",
+      "bytes": 781,
+      "color_mode": "original"
+    },
+    {
+      "asset": "NOVITA/novita.svg",
+      "upstream_path": "packages/static-svg/icons/novita-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/novita-color.svg",
+      "sha256": "e41321ff6a421b958c7f402f11ffcf44dbcef9c703c952736bcc92c0fd6624c4",
+      "bytes": 286,
+      "color_mode": "original"
+    },
+    {
+      "asset": "NVIDIA/nvidia.svg",
+      "upstream_path": "packages/static-svg/icons/nvidia-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/nvidia-color.svg",
+      "sha256": "8c941e4eb8b782eccaaea1240c059d20be33ab8eda28d7c9ed9b53ac802fe683",
+      "bytes": 1025,
+      "color_mode": "original"
+    },
+    {
+      "asset": "PPINFRA/ppio.svg",
+      "upstream_path": "packages/static-svg/icons/ppio-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/ppio-color.svg",
+      "sha256": "a1735277c456430e099bdc397b29e817c27c3890a7d072926be3125812ce0942",
+      "bytes": 808,
+      "color_mode": "original"
+    },
+    {
+      "asset": "SILICONFLOW/siliconcloud.svg",
+      "upstream_path": "packages/static-svg/icons/siliconcloud-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/siliconcloud-color.svg",
+      "sha256": "a02d8d7ccb81739fbc720e2e5daaf149013dd5088605dc2dce1b71df0784d424",
+      "bytes": 520,
+      "color_mode": "original"
+    },
+    {
+      "asset": "XUNFEI/spark.svg",
+      "upstream_path": "packages/static-svg/icons/spark-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/spark-color.svg",
+      "sha256": "4068581452b808e4d9f8c5b43b42d324512d6801de26e57cf848125c28db85bc",
+      "bytes": 882,
+      "color_mode": "original"
+    },
+    {
+      "asset": "ZHIPU/zhipu.svg",
+      "upstream_path": "packages/static-svg/icons/zhipu-color.svg",
+      "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/55746b0b082258211121c70bd26e6878fd3bd292/packages/static-svg/icons/zhipu-color.svg",
+      "sha256": "8174e65ff71647d5c705c920c953a82bd723d9e3e42887bdd4ffc9dfe51207a0",
+      "bytes": 3597,
+      "color_mode": "original"
+    }
+  ],
+  "excluded": [
+    {
+      "icon": "antigravity-color.svg",
+      "reason": "使用 AndroidSVG 1.4 不支持的 SVG filter，保留现有单色版本"
+    }
+  ]
+}

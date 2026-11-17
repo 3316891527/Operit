@@ -68,7 +68,7 @@ import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.skill.SkillRepository
 import com.ai.assistance.operit.ui.features.extensions.packages.screens.mcp.components.MCPEnvironmentVariablesDialog
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
-import com.ai.assistance.operit.ui.components.ErrorDialog
+import com.ai.assistance.operit.ui.common.oktoast.ErrorToast
 import com.ai.assistance.operit.ui.features.extensions.packages.components.EmptyState
 import com.ai.assistance.operit.ui.features.extensions.packages.components.PackageTab
 import com.ai.assistance.operit.ui.features.extensions.packages.dialogs.PackageAddActionDialog
@@ -1058,9 +1058,9 @@ fun PackageManagerScreen(
             }
 
             importErrorMessage?.let { errorMessage ->
-                ErrorDialog(
+                ErrorToast(
                     errorMessage = errorMessage,
-                    onDismiss = { importErrorMessage = null }
+                    onShown = { importErrorMessage = null }
                 )
             }
 

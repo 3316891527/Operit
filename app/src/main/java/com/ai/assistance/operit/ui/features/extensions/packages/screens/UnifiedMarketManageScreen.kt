@@ -228,6 +228,7 @@ fun UnifiedMarketManageScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.market_creator_my_publications),
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
@@ -493,6 +494,7 @@ private fun CreatorPublishSection(
     ) {
         Text(
             text = stringResource(R.string.publish_to_market),
+            color = MaterialTheme.colorScheme.onBackground,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )

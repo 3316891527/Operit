@@ -37,7 +37,7 @@ internal data class FileCopyProgress(
         get() = totalBytes?.let { (it - copiedBytes).coerceAtLeast(0L) }
 }
 
-/** 两次逐层遍历分别统计和复制，不缓存整棵目录树，也不将文件内容转成字符串。 */
+/** 边发现边复制，目录总量在完成前保持未知，避免复制前再完整扫描一次。 */
 internal object StreamingFileCopy {
     const val BUFFER_SIZE = 256 * 1024
     private const val REPORT_INTERVAL_NANOS = 200_000_000L
@@ -87,7 +87,7 @@ internal object StreamingFileCopy {
             lastReportedAt = now
             return FileCopyProgress(
                 phase, currentFile, copiedBytes,
-                totalBytes.takeUnless { phase == FileCopyPhase.SCANNING }, totalFiles = totalFiles,
+                totalBytes.takeIf { phase == FileCopyPhase.COMPLETED || (!attributes.isDirectory && phase == FileCopyPhase.COPYING) }, totalFiles = totalFiles,
                 copiedFiles = copiedFiles, bytesPerSecond = speed,
             ).also(onProgress)
         }
@@ -98,32 +98,23 @@ internal object StreamingFileCopy {
         }
 
         report(force = true)
-        Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
-            override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-                select(dir)
-                report()
-                return FileVisitResult.CONTINUE
-            }
-
-            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                select(file)
-                require(attrs.isRegularFile || attrs.isSymbolicLink) { "Unsupported file type: $file" }
-                totalFiles = Math.addExact(totalFiles, 1L)
-                if (attrs.isRegularFile) totalBytes = Math.addExact(totalBytes, attrs.size())
-                report()
-                return FileVisitResult.CONTINUE
-            }
-        })
-
+        if (!attributes.isDirectory) {
+            require(attributes.isRegularFile || attributes.isSymbolicLink) { "Unsupported file type: $sourcePath" }
+            totalFiles = 1L
+            if (attributes.isRegularFile) totalBytes = attributes.size()
+        }
         phase = FileCopyPhase.COPYING
         windowStartedAt = System.nanoTime()
         windowStartedBytes = 0L
         report(force = true)
-        if (attributes.isDirectory && !overwrite) {
-            destinationPath.parent?.let { Files.createDirectories(it) }
-            // 原子创建顶层目标，统计期间出现同名目录时也不能合并写入。
-            Files.createDirectory(destinationPath)
+        destinationPath.parent?.let { Files.createDirectories(it) }
+        fun requireUnchanged(path: Path, before: BasicFileAttributes, after: BasicFileAttributes) {
+            if (before.fileKey() != after.fileKey() || before.lastModifiedTime() != after.lastModifiedTime() ||
+                before.size() != after.size() || before.isDirectory != after.isDirectory || before.isSymbolicLink != after.isSymbolicLink) {
+                throw IOException("Source changed while copying: $path")
+            }
         }
+        val directories = mutableMapOf<Path, BasicFileAttributes>()
         // 整个任务复用这一块缓冲区，内存占用不随文件大小或文件数量增长。
         val buffer = ByteArray(BUFFER_SIZE)
         Files.walkFileTree(sourcePath, object : SimpleFileVisitor<Path>() {
@@ -131,15 +122,22 @@ internal object StreamingFileCopy {
 
             override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
                 select(dir)
-                Files.createDirectories(target(dir))
+                if (dir == sourcePath) requireUnchanged(dir, attributes, attrs)
+                directories[dir] = attrs
+                // 每个新目录原子创建，执行期间出现的目标也不能合并写入。
+                if (overwrite) Files.createDirectories(target(dir)) else Files.createDirectory(target(dir))
                 report()
                 return FileVisitResult.CONTINUE
             }
 
             override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
                 select(file)
+                if (file == sourcePath) requireUnchanged(file, attributes, attrs)
+                if (attributes.isDirectory) {
+                    totalFiles = Math.addExact(totalFiles, 1L)
+                    if (attrs.isRegularFile) totalBytes = Math.addExact(totalBytes, attrs.size())
+                }
                 val target = target(file)
-                target.parent?.let { Files.createDirectories(it) }
                 if (attrs.isSymbolicLink) {
                     // 不遍历链接目标，避免目录环和将链接指向的外部目录一并复制。
                     if (overwrite) Files.copy(file, target, LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING)
@@ -168,7 +166,17 @@ internal object StreamingFileCopy {
                     }
                     if (fileBytes != attrs.size()) throw IOException("Source size changed while copying: $file")
                 }
+                requireUnchanged(file, attrs, Files.readAttributes(file, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS))
                 copiedFiles++
+                report()
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
+                if (exc != null) throw exc
+                checkCancelled()
+                requireUnchanged(dir, checkNotNull(directories.remove(dir)),
+                    Files.readAttributes(dir, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS))
                 report()
                 return FileVisitResult.CONTINUE
             }

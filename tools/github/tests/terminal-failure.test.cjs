@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { toolFailure } = require('../../../examples/github/src/utils/toolFailure.js');
+const { toolFailure } = require('../../../plugins/examples/github/src/utils/toolFailure.js');
 
 function nativeFailure(code, output) {
     const error = new Error(`终端命令以非零状态退出（exitCode=${code}）`);

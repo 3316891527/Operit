@@ -5,6 +5,7 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [聊天耗时单位进位](chat-duration-units/index.md) · `chat-duration-units`
 
 - [终端内置 apply_patch 命令](terminal-apply-patch/index.md)
 - [A2A Server](a2a_server_20260807/index.md) · `a2a_server_20260807`
@@ -98,3 +99,5 @@
 - [补丁 18：统一集成与完整回归](patch18-integration/index.md)
 
 - [折叠已完成的回复过程](collapse-completed-response-process/index.md)
+
+- [工作区文件管理第一版](workspace-file-management/index.md) · `workspace-file-management`

@@ -57,31 +57,32 @@ on:
       - ci/script/download_android_dependencies.sh
       - ci/script/prepare_android_dependencies.py
       - cmake/**
-      - examples/**
+      - plugins/examples/**
       - gradle/**
       - gradle.properties
       - gradlew
       - gradlew.bat
-      - llm/**
+      - modules/a2ui-compat/**
+      - modules/llm/**
       - package.json
       - package-lock.json
       - npm-shrinkwrap.json
       - pnpm-workspace.yaml
-      - quickjs/**
+      - modules/quickjs/**
       - settings.gradle.kts
-      - material-icons-subset/**
+      - modules/material-icons-subset/**
       - tools/icons/**
-      - showerclient/**
-      - terminal/**
-      - terminal
+      - modules/showerclient/**
+      - modules/terminal/**
+      - modules/terminal
       - tools/native_ripgrep/**
       - tools/native_apply_patch/**
       - tools/web_chat_cli/**
+      - tools/html_build_cli/**
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
-      - tools/packages_whitelist.txt
-      - tools/example_packages/sync_example_packages.py
-      - web-chat/**
+      - plugins/tooling/example_packages/**
+      - app/web-chat/**
 
 concurrency:
   group: android-build-${{ github.event_name }}-${{ github.ref }}-${{ inputs.gradle_task }}
@@ -167,9 +168,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git submodule sync -- terminal
-          git submodule update --init --recursive --depth 1 terminal
-          git submodule status -- terminal
+          git submodule sync -- modules/terminal
+          git submodule update --init --recursive --depth 1 modules/terminal
+          git submodule status -- modules/terminal
 
       - name: Check Material icon references
         run: python3 tools/icons/sync_material_icons.py --check
@@ -270,7 +271,7 @@ jobs:
           set -euo pipefail
           npm install -g pnpm@10.34.5
           npm ci --no-audit --no-fund
-          npm --prefix web-chat ci --no-audit --no-fund
+          npm --prefix app/web-chat ci --no-audit --no-fund
 
       - name: Build WebChat assets
         run: |
@@ -279,7 +280,7 @@ jobs:
       - name: Build bundled ToolPkg packages
         run: |
           npm run build:examples:github
-          python3 tools/example_packages/sync_example_packages.py --no-hot-reload
+          python3 plugins/tooling/example_packages/sync_example_packages.py --no-hot-reload
 
       - name: Configure Android SDK
         shell: bash
@@ -319,6 +320,14 @@ jobs:
       - name: Verify external resource packaging and report APK size
         if: github.event_name == 'push' || inputs.gradle_task != ':app:bundleRelease'
         run: python3 ci/distribution/resources/verify_packaged_resources.py
+      - name: Upload prepared offline-resource bundle
+        if: github.event_name == 'workflow_dispatch' && inputs.gradle_task == ':app:verifyCiPreviewRelease' && inputs.publish_release == false
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: operit-offline-resources-${{ github.run_number }}
+          path: .ci-current-resources/assets/*
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Android reports
         if: always()

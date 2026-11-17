@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "styles": {
+    "heading": {
+      "light": "#E45649",
+      "dark": "#61AFEF",
+      "bold": true
+    },
+    "quote": {
+      "italic": true
+    },
+    "link": {
+      "light": "#0184BC",
+      "dark": "#56B6C2",
+      "underline": true
+    },
+    "strikethrough": {
+      "strike": true
+    }
+  }
+}

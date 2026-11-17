@@ -1060,7 +1060,9 @@ class MessageCoordinationDelegate(
         }
 
         if (messageProcessingDelegate.isChatLoading(chatId)) return null
-        if (pendingText.isBlank() && currentAttachments.isEmpty() && !isAutoContinuation && !isGroupOrchestrationTurn) return null
+        if (pendingText.isBlank() && currentAttachments.isEmpty() &&
+            !sendMode.canSendWithoutUserInput(isGroupOrchestrationTurn)
+        ) return null
         if (!forceDisableSummary && chatContextSettings.enableSummary && turnOptions.persistTurn &&
             !isBackgroundSend && !isContinuation && !skipSummaryCheck) {
             val currentMessages = withContext(Dispatchers.IO) {

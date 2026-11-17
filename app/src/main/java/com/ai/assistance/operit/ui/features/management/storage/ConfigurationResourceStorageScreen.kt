@@ -32,7 +32,7 @@ import com.ai.assistance.operit.core.tools.packTool.runtime.PackageManager
 import com.ai.assistance.operit.data.storage.ExtensionCategory
 import com.ai.assistance.operit.data.storage.ExtensionItem
 import com.ai.assistance.operit.data.storage.formatStorageSize
-import com.ai.assistance.operit.ui.common.icons.rememberLogoPainter
+import com.ai.assistance.operit.ui.common.icons.rememberImageAssetPainter
 import com.ai.assistance.operit.ui.common.icons.rememberProviderLogoPainter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -273,8 +273,8 @@ private fun ExtensionItemRow(
             withContext(Dispatchers.IO) { loadLogo(packageName) }
         }
     }
-    val painter = rememberLogoPainter(
-        logoKey = "${entry.packageName}:${logo?.resourceKey}",
+    val painter = rememberImageAssetPainter(
+        imageKey = "${entry.packageName}:${logo?.resourceKey}",
         bytes = logo?.bytes,
         mimeType = logo?.mimeType,
         fileName = logo?.fileName,

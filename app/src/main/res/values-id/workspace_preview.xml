@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s: %2$s</string>
+    <string name="workspace_search_option_on">Aktif</string>
+    <string name="workspace_search_option_off">Nonaktif</string>
+    <string name="workspace_markdown_outline">Daftar isi</string>
+    <string name="workspace_markdown_outline_empty">Dokumen ini tidak memiliki judul.</string>
+    <string name="workspace_markdown_outline_expand">Perluas bagian</string>
+    <string name="workspace_markdown_outline_collapse">Ciutkan bagian</string>
+</resources>

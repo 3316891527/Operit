@@ -68,5 +68,4 @@ internal val Screen.themePageId: String
         is Screen.MarkdownDemo -> "page.markdownDemo"
         is Screen.SpeechToText -> "page.speechToText"
         is Screen.DefaultAssistantGuide -> "page.defaultAssistantGuide"
-        is Screen.HtmlPackager -> "page.htmlPackager"
     }

@@ -33,21 +33,21 @@ class PrepareCurrentResourcesTest(unittest.TestCase):
         self.addCleanup(stack.close)
         for module in (current, prepare_hub, builtin_packages, verify_hub_catalog):
             stack.enter_context(patch.object(module, 'ROOT', self.root))
-        for directory in ('examples/types', 'tools/example_packages', 'app/config'):
+        for directory in ('plugins/examples/types', 'plugins/tooling/example_packages', 'app/config'):
             (self.root / directory).mkdir(parents=True)
-        self.source = self.root / 'examples/fixture.js'
+        self.source = self.root / 'plugins/examples/fixture.js'
         self.source.write_text('/* {"name": "fixture"} */\nexports.value = 1;\n')
-        self.types = self.root / 'examples/types/index.d.ts'
+        self.types = self.root / 'plugins/examples/types/index.d.ts'
         self.types.write_text('export type Result = string;\n')
-        (self.root / 'examples/tsconfig.json').write_text('{}\n')
-        (self.root / 'tools/example_packages/packages_whitelist.txt').write_text('fixture.js\n')
-        (self.root / 'tools/example_packages/sync_example_packages.py').write_text('# 固定资源回归输入\n')
+        (self.root / 'plugins/examples/tsconfig.json').write_text('{}\n')
+        (self.root / 'plugins/tooling/example_packages/packages_whitelist.txt').write_text('fixture.js\n')
+        (self.root / 'plugins/tooling/example_packages/sync_example_packages.py').write_text('# 固定资源回归输入\n')
         for name in prepare_hub.TEMPLATES:
             folder = self.root / 'app/src/main/assets/templates' / name
             folder.mkdir(parents=True)
             (folder / 'README.md').write_text('固定模板\n')
         self.git('init', '-q')
-        self.git('add', 'examples', 'tools', 'app/src')
+        self.git('add', 'plugins/examples', 'plugins/tooling/example_packages', 'app/src')
         self.git('-c', 'user.name=资源回归', '-c', 'user.email=resource-test@example.invalid', 'commit', '-qm', '记录原资源源码')
         self.packages = self.root / 'built-packages'
         self.packages.mkdir()
@@ -74,7 +74,7 @@ class PrepareCurrentResourcesTest(unittest.TestCase):
         }
         # 只更新已提交公共类型，复现扩展正文未改、发行指纹仍然变化的路径。
         self.types.write_text('export type Result = string | null;\n')
-        self.git('add', 'examples/types')
+        self.git('add', 'plugins/examples/types')
         self.git('-c', 'user.name=资源回归', '-c', 'user.email=resource-test@example.invalid', 'commit', '-qm', '更新公共类型')
         self.revision = self.git('rev-parse', 'HEAD')
         self.requests = []
@@ -92,7 +92,12 @@ class PrepareCurrentResourcesTest(unittest.TestCase):
         report = current.prepare_current(self.packages, self.root / 'candidate')
         verify_hub_catalog.main(current_source=True)
         self.assertNotEqual(self.old_catalog['releaseTag'], report['releaseTag'])
-        self.assertEqual(self.revision, json.loads(self.snapshot.read_text())['sourceRevision'])
+        snapshot = json.loads(self.snapshot.read_text())
+        self.assertEqual(self.revision, snapshot['sourceRevision'])
+        logical_files = dict(snapshot['files'])
+        self.assertIn('examples/types/index.d.ts', logical_files)
+        self.assertIn('tools/example_packages/packages_whitelist.txt', logical_files)
+        self.assertFalse(any(name.startswith('plugins/') for name in logical_files))
         self.assertFalse(report['published'])
         self.assertEqual(2, len(self.requests))
         self.publisher.assert_not_called()

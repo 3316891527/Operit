@@ -1,6 +1,6 @@
 # 角色主题的原生外观接口
 
-从零制作与查完整字段，请读 [JSON 与 JavaScript 制作手册](theme_authoring_guide.md)、[只读设置参数目录](theme_settings_reference.md) 和 [无外部素材入门工程](../../../examples/theme-script/starter/README.md)。本页保留协议概览。
+从零制作与查完整字段，请读 [JSON 与 JavaScript 制作手册](theme_authoring_guide.md)、[只读设置参数目录](theme_settings_reference.md) 和 [无外部素材入门工程](../../../plugins/examples/theme-script/starter/README.md)。本页保留协议概览。
 
 `.oktheme` 同时携带原有主题参数、声明式外观、JavaScript 和绘图素材。主题属于角色卡或角色组，沿用草稿、预览、保存、放弃和重置；Android Compose 绘制原生界面，独立 QuickJS 实例计算外观数据。
 
@@ -31,10 +31,10 @@ module.exports = {
 
 需要条件样式时在“源码”工作区编辑 JS 或导入源码。自定义 `render` 应显式合并需要保留的 `context.appearance`；可视化编辑不覆写自定义源码。TypeScript 由制作环境编译为 CommonJS JS，Android 不执行 TypeScript。
 
-类型声明位于仓库根目录 `examples/theme-script/oktheme.d.ts`，合并基础外观的示例为 `examples/theme-script/minimal.ts`。在已安装 TypeScript 的制作环境中运行：
+类型声明位于仓库根目录 `plugins/examples/theme-script/oktheme.d.ts`，合并基础外观的示例为 `plugins/examples/theme-script/minimal.ts`。在已安装 TypeScript 的制作环境中运行：
 
 ```sh
-tsc --strict --target ES2020 --module commonjs --outDir dist examples/theme-script/minimal.ts
+tsc --strict --target ES2020 --module commonjs --outDir dist plugins/examples/theme-script/minimal.ts
 ```
 
 导入生成的 `dist/minimal.js`；分享的完整主题仍使用 `.oktheme`。`schema` 和 `apiVersion` 仅供机器校验，不是主题或产品的版本名称。

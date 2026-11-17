@@ -59,13 +59,13 @@ interface LanguageSupport {
     fun getFileExtensions(): List<String>
 
     /**
-     * 语法高亮颜色 - VSCode Dark+ Theme
+     * 语法高亮分类颜色，以深色主题为基准，由视图映射到当前主题
      */
     companion object {
-        // VSCode Dark+ Theme Colors - Professional and comfortable for long-term use
+        // 分类颜色保持各自独立，字符串使用经典绿色；浅深主题由编辑器统一映射。
         val KEYWORD_COLOR = Color.parseColor("#569CD6")      // Blue for keywords (if, else, return, etc.)
         val FUNCTION_COLOR = Color.parseColor("#DCDCAA")     // Yellow for functions and methods
-        val STRING_COLOR = Color.parseColor("#CE9178")       // Orange-brown for strings
+        val STRING_COLOR = Color.parseColor("#6A8759")       // 字符串使用经典绿色
         val NUMBER_COLOR = Color.parseColor("#B5CEA8")       // Light green for numbers
         val COMMENT_COLOR = Color.parseColor("#9E9E9E")      // 灰色注释
         val TYPE_COLOR = Color.parseColor("#4EC9B0")         // Cyan for types, classes, interfaces

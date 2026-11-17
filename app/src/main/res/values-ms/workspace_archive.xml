@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">Mampatkan</string>
+    <string name="workspace_archive_extract">Ekstrak</string>
+    <string name="workspace_archive_add">Tambah</string>
+    <string name="workspace_archive_choose_directory">Pilih folder ini</string>
+    <string name="workspace_archive_password">Kata laluan penyahsulitan</string>
+    <string name="workspace_archive_name">Nama arkib</string>
+    <string name="workspace_archive_format">Format</string>
+    <string name="workspace_archive_destination">Folder destinasi</string>
+    <string name="workspace_archive_level">Tahap pemampatan</string>
+    <string name="workspace_archive_level_fast">Pantas</string>
+    <string name="workspace_archive_level_normal">Biasa</string>
+    <string name="workspace_archive_level_maximum">Maksimum</string>
+    <string name="workspace_archive_working">Memproses</string>
+    <string name="workspace_archive_processed">%1$s diproses</string>
+    <string name="workspace_archive_read_only">Arkib baca sahaja</string>
+    <string name="workspace_archive_retry">Cuba lagi</string>
+    <string name="workspace_archive_entries">%1$d entri</string>
+    <string name="workspace_archive_signed">Mengubah fail ini membatalkan tandatangan sedia ada.</string>
+    <string name="workspace_archive_link">Entri pautan tidak boleh dibuka atau diekstrak.</string>
+    <string name="workspace_archive_extract_all">Ekstrak semua</string>
+    <string name="workspace_archive_extract_selected">Ekstrak %1$d item dipilih</string>
+    <string name="workspace_archive_encrypt_password">Kata laluan penyulitan (pilihan)</string>
+    <string name="workspace_archive_read_password_hint">Digunakan untuk membaca arkib yang disulitkan. Tidak menukar kata laluannya.</string>
+    <string name="workspace_archive_password_required">Kata laluan penyahsulitan diperlukan untuk membaca arkib ini.</string>
+    <string name="workspace_archive_source">Sumber arkib</string>
+    <string name="workspace_archive_packed_size">Saiz termampat</string>
+    <string name="workspace_archive_encrypted">Disulitkan</string>
+    <string name="workspace_archive_name_hint">Format yang dipilih menambah sambungan secara automatik.</string>
+    <string name="workspace_archive_stage_target">Semak destinasi</string>
+    <string name="workspace_archive_stage_sources">Baca sumber</string>
+    <string name="workspace_archive_stage_write">Tulis arkib</string>
+    <string name="workspace_archive_stage_verify">Sahkan arkib</string>
+    <string name="workspace_archive_stage_publish">Terbitkan arkib</string>
+    <string name="workspace_archive_create_failed_detail">Tidak dapat mencipta %1$s\nLangkah: %2$s\nDestinasi: %3$s\nSebab: %4$s</string>
+</resources>

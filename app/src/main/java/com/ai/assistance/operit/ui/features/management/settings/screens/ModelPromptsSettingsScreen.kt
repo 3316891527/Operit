@@ -63,6 +63,8 @@ import android.provider.MediaStore
 import android.content.ClipData
 import android.content.ClipboardManager
 import com.ai.assistance.operit.ui.features.management.settings.components.character.CharacterCardActionsMenu
+import com.ai.assistance.operit.ui.features.management.settings.components.character.CharacterCardDropdownMenu
+import com.ai.assistance.operit.ui.features.management.settings.components.character.CharacterCardMenuItem
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.character.CharacterCardMemoryProfileBindingMode
 import com.ai.assistance.operit.data.preferences.MemorySpaceProfileDocumentRepository
@@ -2011,39 +2013,33 @@ fun CharacterCardTab(
                                 )
                             }
 
-                            DropdownMenu(
+                            CharacterCardDropdownMenu(
                                 expanded = importMenuExpanded,
-                                onDismissRequest = { importMenuExpanded = false }
+                                onDismissRequest = { importMenuExpanded = false },
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.import_tavern_card)) },
+                                CharacterCardMenuItem(
+                                    icon = Icons.Default.FileDownload,
+                                    label = stringResource(R.string.import_tavern_card),
                                     onClick = {
                                         importMenuExpanded = false
                                         onImportTavernCard()
                                     },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.FileDownload, contentDescription = null)
-                                    }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.import_color_qr)) },
+                                CharacterCardMenuItem(
+                                    icon = Icons.Default.Image,
+                                    label = stringResource(R.string.import_color_qr),
                                     onClick = {
                                         importMenuExpanded = false
                                         onImportColorQrCode()
                                     },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.Image, contentDescription = null)
-                                    }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.scan_color_qr)) },
+                                CharacterCardMenuItem(
+                                    icon = Icons.Default.PhotoCamera,
+                                    label = stringResource(R.string.scan_color_qr),
                                     onClick = {
                                         importMenuExpanded = false
                                         onScanColorQrCode()
                                     },
-                                    leadingIcon = {
-                                        Icon(Icons.Default.PhotoCamera, contentDescription = null)
-                                    }
                                 )
                             }
                         }
@@ -2061,32 +2057,33 @@ fun CharacterCardTab(
                             )
                         }
 
-                        DropdownMenu(
+                        CharacterCardDropdownMenu(
                             expanded = sortMenuExpanded,
                             onDismissRequest = { sortMenuExpanded = false },
-                            modifier = Modifier
-                                .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.character_card_sort_default)) },
+                            CharacterCardMenuItem(
+                                icon = Icons.Default.Sort,
+                                label = stringResource(R.string.character_card_sort_default),
                                 onClick = {
                                     sortOptionNameState.value = CharacterCardSortOption.DEFAULT.name
                                     sortMenuExpanded = false
-                                }
+                                },
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.character_card_sort_by_name)) },
+                            CharacterCardMenuItem(
+                                icon = Icons.Default.SortByAlpha,
+                                label = stringResource(R.string.character_card_sort_by_name),
                                 onClick = {
                                     sortOptionNameState.value = CharacterCardSortOption.NAME_ASC.name
                                     sortMenuExpanded = false
-                                }
+                                },
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.character_card_sort_by_created)) },
+                            CharacterCardMenuItem(
+                                icon = Icons.Default.Schedule,
+                                label = stringResource(R.string.character_card_sort_by_created),
                                 onClick = {
                                     sortOptionNameState.value = CharacterCardSortOption.CREATED_DESC.name
                                     sortMenuExpanded = false
-                                }
+                                },
                             )
                         }
                     }

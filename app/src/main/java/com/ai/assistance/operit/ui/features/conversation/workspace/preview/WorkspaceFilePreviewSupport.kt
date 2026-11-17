@@ -1,23 +1,60 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.preview
 
+import android.content.Context
 import android.net.Uri
+import com.ai.assistance.operit.core.tools.builtin.ToolGetter
 import android.webkit.MimeTypeMap
 import java.io.File
 import java.util.Locale
 import com.ai.assistance.operit.ui.features.conversation.workspace.OpenFileInfo
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.textmate.TextMateCatalog
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightConfiguration
+import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightFiles
+import com.ai.assistance.operit.ui.features.conversation.workspace.archive.WorkspaceFileRoute
+import com.ai.assistance.operit.ui.features.conversation.workspace.archive.workspaceFileRoute
 
 private const val LOCAL_WORKSPACE_HOST = "127.0.0.1"
+
+internal suspend fun workspaceMimeTypeForFile(
+    context: Context,
+    path: String,
+    environment: String?
+): String {
+    val mimeType = workspaceMimeTypeForPath(path)
+    // 内置源码与媒体后缀冲突时沿用内容采样；普通媒体和归档保持原打开方式。
+    if (TextMateCatalog.detectLanguage(path) != "text" && workspaceShouldOpenAsDirectPreview(path, mimeType)) {
+        val isText = ToolGetter.getFileSystemTools(context).isTextFile(path, environment)
+        return workspaceMimeTypeForContent(path, mimeType, isText)
+    }
+    if (workspaceFileRoute(path, mimeType) != WorkspaceFileRoute.SYSTEM) return mimeType
+    // 只为陌生格式读取配置，损坏配置本身仍能通过 JSON 文本入口打开修正。
+    val configuration = EditorHighlightFiles.load(EditorHighlightFiles.directory(context))
+    if (configuration.associatedLanguage(path) == null) return mimeType
+    val isText = ToolGetter.getFileSystemTools(context).isTextFile(path, environment)
+    return workspaceMimeTypeForContent(path, mimeType, isText, configuration)
+}
+
+/** 登记的陌生格式经内容确认后进入编辑器，二进制与已有预览类型保持原路由。 */
+internal fun workspaceMimeTypeForContent(
+    path: String, mimeType: String, isText: Boolean,
+    configuration: EditorHighlightConfiguration = EditorHighlightConfiguration.Empty,
+): String {
+    val sourceConflict = TextMateCatalog.detectLanguage(path) != "text" && workspaceShouldOpenAsDirectPreview(path, mimeType)
+    val customText = configuration.associatedLanguage(path) != null && workspaceFileRoute(path, mimeType) == WorkspaceFileRoute.SYSTEM
+    return if (isText && (sourceConflict || customText)) "text/plain" else mimeType
+}
 
 internal fun workspaceMimeTypeForPath(path: String): String {
     val extension = path.substringAfterLast('.', "").lowercase(Locale.ROOT)
     if (extension.isBlank()) return "application/octet-stream"
-
     return when (extension) {
         "html", "htm" -> "text/html"
         "css" -> "text/css"
         "js", "mjs", "cjs" -> "application/javascript"
         "json" -> "application/json"
-        "txt", "md", "log" -> "text/plain"
+        "txt", "md", "log", "tsx" -> "text/plain"
+        "ts" -> "video/mp2t"
+
         "xml" -> "application/xml"
         "csv" -> "text/csv"
         "yaml", "yml" -> "application/yaml"
@@ -95,9 +132,11 @@ internal val OpenFileInfo.isReadOnlyPreview: Boolean
 
 internal val OpenFileInfo.resolvedMimeType: String
     get() = mimeType.ifBlank { workspaceMimeTypeForPath(path) }
+internal fun workspaceShouldOpenAsDirectPreview(
+    path: String,
+    mimeType: String = workspaceMimeTypeForPath(path)
+): Boolean {
 
-internal fun workspaceShouldOpenAsDirectPreview(path: String): Boolean {
-    val mimeType = workspaceMimeTypeForPath(path)
     return mimeType.startsWith("image/", ignoreCase = true) ||
         mimeType.startsWith("audio/", ignoreCase = true) ||
         mimeType.startsWith("video/", ignoreCase = true) ||

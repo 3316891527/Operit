@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">Comprimir</string>
+    <string name="workspace_archive_extract">Extraer</string>
+    <string name="workspace_archive_add">Añadir</string>
+    <string name="workspace_archive_choose_directory">Elegir esta carpeta</string>
+    <string name="workspace_archive_password">Contraseña de descifrado</string>
+    <string name="workspace_archive_name">Nombre del archivo comprimido</string>
+    <string name="workspace_archive_format">Formato</string>
+    <string name="workspace_archive_destination">Carpeta de destino</string>
+    <string name="workspace_archive_level">Nivel de compresión</string>
+    <string name="workspace_archive_level_fast">Rápido</string>
+    <string name="workspace_archive_level_normal">Normal</string>
+    <string name="workspace_archive_level_maximum">Máximo</string>
+    <string name="workspace_archive_working">Procesando</string>
+    <string name="workspace_archive_processed">Procesado: %1$s</string>
+    <string name="workspace_archive_read_only">Archivo de solo lectura</string>
+    <string name="workspace_archive_retry">Reintentar</string>
+    <string name="workspace_archive_entries">%1$d elementos</string>
+    <string name="workspace_archive_signed">Modificar este archivo invalida su firma existente.</string>
+    <string name="workspace_archive_link">No se pueden abrir ni extraer enlaces.</string>
+    <string name="workspace_archive_extract_all">Extraer todo</string>
+    <string name="workspace_archive_extract_selected">Extraer %1$d elementos seleccionados</string>
+    <string name="workspace_archive_encrypt_password">Contraseña de cifrado (opcional)</string>
+    <string name="workspace_archive_read_password_hint">Se usa para leer un archivo cifrado. No cambia su contraseña.</string>
+    <string name="workspace_archive_password_required">Se requiere una contraseña de descifrado para leer este archivo.</string>
+    <string name="workspace_archive_source">Archivo de origen</string>
+    <string name="workspace_archive_packed_size">Tamaño comprimido</string>
+    <string name="workspace_archive_encrypted">Cifrado</string>
+    <string name="workspace_archive_name_hint">El formato seleccionado añade la extensión automáticamente.</string>
+    <string name="workspace_archive_stage_target">Comprobar destino</string>
+    <string name="workspace_archive_stage_sources">Leer archivos de origen</string>
+    <string name="workspace_archive_stage_write">Escribir archivo comprimido</string>
+    <string name="workspace_archive_stage_verify">Verificar archivo comprimido</string>
+    <string name="workspace_archive_stage_publish">Publicar archivo comprimido</string>
+    <string name="workspace_archive_create_failed_detail">No se puede crear %1$s\nPaso: %2$s\nDestino: %3$s\nMotivo: %4$s</string>
+</resources>

@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.editor
 
 import android.text.SpannableStringBuilder
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -260,14 +261,30 @@ internal data class EditorEditCommand(
     val beforeSelectionStart: Int,
     val beforeSelectionEnd: Int,
     val afterSelectionStart: Int,
-    val afterSelectionEnd: Int
+    val afterSelectionEnd: Int,
+    val searchScopeRevision: Int = -1,
+    val beforeSearchScope: EditorSearchScope? = null,
+    val afterSearchScope: EditorSearchScope? = null,
 )
 
 internal class EditorDocument(initialText: String = "") {
+    private var searchScopeRevision = 0
+    private var trackedSearchScope: EditorSearchScope? = null
+    var searchScope: EditorSearchScope?
+        get() = trackedSearchScope
+        set(value) { trackedSearchScope = value; searchScopeRevision++ }
+    private var indexedText = EditorTextSnapshot(EditorLineIndex.fromText(initialText), 0, Any())
+    var tabWidth: Int = 4
+        set(value) {
+            require(value in 1..8)
+            if (field == value) return
+            field = value
+            indexedText = EditorTextSnapshot(indexedText.lines.withTabWidth(value), version, indexedText.owner)
+        }
     private val buffer = SpannableStringBuilder(initialText)
     private val undoStack = ArrayDeque<EditorEditCommand>()
     private val redoStack = ArrayDeque<EditorEditCommand>()
-    private val lineStarts = mutableListOf<Int>()
+    private var compositionBefore: EditorEditCommand? = null
 
     var selectionStart: Int = 0
         private set
@@ -279,8 +296,7 @@ internal class EditorDocument(initialText: String = "") {
         private set
     var version: Int = 0
         private set
-    var maxLineCells: Int = 0
-        private set
+    val maxLineCells: Int get() = indexedText.lines.maxCells
 
     private data class OffsetEdit(
         val position: Int,
@@ -289,23 +305,25 @@ internal class EditorDocument(initialText: String = "") {
     )
 
     init {
-        rebuildMetadata()
         collapseSelection(length())
     }
 
     fun text(): CharSequence = buffer
 
-    fun textString(): String = buffer.toString()
+    fun textString(): String = indexedText.toString()
+
+    fun snapshot(): EditorTextSnapshot = indexedText
 
     fun length(): Int = buffer.length
 
-    fun lineCount(): Int = lineStarts.size.coerceAtLeast(1)
+    fun lineCount(): Int = indexedText.lines.size
 
     fun hasSelection(): Boolean = selectionStart != selectionEnd
 
     fun hasComposingRegion(): Boolean = composingStart >= 0 && composingEnd >= composingStart
 
     fun clearHistory() {
+        compositionBefore = null
         undoStack.clear()
         redoStack.clear()
     }
@@ -315,7 +333,7 @@ internal class EditorDocument(initialText: String = "") {
     fun canRedo(): Boolean = redoStack.isNotEmpty()
 
     fun setText(newText: String, clearHistory: Boolean = true) {
-        if (newText == buffer.toString()) {
+        if (newText.contentEquals(buffer)) {
             if (clearHistory) {
                 clearHistory()
             }
@@ -337,6 +355,7 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun replaceAllText(newText: String) {
+        finishComposingText()
         replaceRangeInternal(
             start = 0,
             end = buffer.length,
@@ -387,6 +406,19 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun replaceSelection(text: String, recordHistory: Boolean = true) {
+        val composing = compositionBefore
+        if (recordHistory && composing != null && hasComposingRegion()) {
+            val start = composingStart
+            val end = composingEnd
+            val caret = start + text.length
+            replaceRangeInternal(start, end, text, caret, caret, false)
+            if (composing.beforeText != text) {
+                undoStack.addLast(composing.copy(afterText = text, afterSelectionStart = caret, afterSelectionEnd = caret, afterSearchScope = trackedSearchScope))
+                redoStack.clear()
+            }
+            compositionBefore = null
+            return
+        }
         val range = activeReplaceRange()
         val cursor = range.first + text.length
         replaceRangeInternal(
@@ -401,6 +433,9 @@ internal class EditorDocument(initialText: String = "") {
 
     fun setComposingText(text: String) {
         val range = activeReplaceRange()
+        if (compositionBefore == null) compositionBefore = EditorEditCommand(range.first, buffer.substring(range.first, range.last), "",
+            selectionStart, selectionEnd, selectionStart, selectionEnd,
+            searchScopeRevision, trackedSearchScope, trackedSearchScope)
         val end = range.first + text.length
         replaceRangeInternal(
             start = range.first,
@@ -415,10 +450,20 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun finishComposingText() {
+        val before = compositionBefore
+        if (before != null && hasComposingRegion()) {
+            val content = buffer.substring(composingStart, composingEnd)
+            if (content != before.beforeText) {
+                undoStack.addLast(before.copy(afterText = content, afterSelectionStart = selectionStart, afterSelectionEnd = selectionEnd, afterSearchScope = trackedSearchScope))
+                redoStack.clear()
+            }
+        }
+        compositionBefore = null
         clearComposingRegion()
     }
 
     fun deleteSurroundingText(beforeLength: Int, afterLength: Int) {
+        finishComposingText()
         if (hasSelection()) {
             replaceSelection("")
             return
@@ -446,6 +491,7 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun deleteBackward() {
+        finishComposingText()
         if (hasSelection()) {
             replaceSelection("")
             return
@@ -463,6 +509,7 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun deleteForward() {
+        finishComposingText()
         if (hasSelection()) {
             replaceSelection("")
             return
@@ -480,6 +527,7 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun deleteSurroundingCodePoints(beforeLength: Int, afterLength: Int) {
+        finishComposingText()
         if (hasSelection()) {
             replaceSelection("")
             return
@@ -507,45 +555,74 @@ internal class EditorDocument(initialText: String = "") {
         )
     }
 
-    fun insertNewlineWithIndent() {
-        val cursor = selectionEnd
+    fun insertNewlineWithIndent(autoIndent: Boolean = true, indentUnit: String = "    ") {
+        finishComposingText()
+        val range = normalizedSelection()
+        val cursor = range.first
         val currentLine = getLineForOffset(cursor)
-        val lineStart = getLineStart(currentLine)
-        val lineEnd = getLineEnd(currentLine)
-        val currentLineText = buffer.subSequence(lineStart, lineEnd)
+        val prefix = buffer.substring(getLineStart(currentLine), cursor).takeWhile { it == ' ' || it == '\t' }
+        val indent = if (autoIndent) prefix else ""
+        val increase = autoIndent && cursor > 0 && buffer[cursor - 1] in "{[("
+        val paired = increase && range.last < buffer.length && (buffer[cursor - 1].toString() + buffer[range.last]) in setOf("{}", "[]", "()")
+        val leading = indent + if (increase) indentUnit else ""
+        val insertion = if (paired) "\n$leading\n$indent" else "\n$leading"
+        val caret = cursor + 1 + leading.length
+        replaceRangeInternal(cursor, range.last, insertion, caret, caret, true)
+    }
 
-        val indent = buildString {
-            for (i in currentLineText.indices) {
-                val char = currentLineText[i]
-                if (char == ' ' || char == '\t') {
-                    append(char)
-                } else {
-                    break
-                }
+    /** 行操作只使用真实行，软换行不会扩大修改范围；一次操作只加入一条撤销记录。 */
+    fun selectedLinesText(): String {
+        val (first, last) = selectedLineBounds()
+        val start = getLineStart(first)
+        val end = if (last + 1 < lineCount()) getLineStart(last + 1) else length()
+        return buffer.substring(start, end)
+    }
+
+    fun editLines(action: EditorAction, indent: String = "    "): Boolean {
+        val (first, last) = selectedLineBounds()
+        val start = getLineStart(first)
+        val end = getLineEnd(last)
+        val original = buffer.substring(start, end)
+        when (action) {
+            EditorAction.DELETE_LINE, EditorAction.CUT_LINE -> {
+                val removeStart = if (end == length() && start > 0) start - 1 else start
+                val removeEnd = if (end < length()) end + 1 else end
+                replaceRangeInternal(removeStart, removeEnd, "", removeStart, removeStart, true)
             }
+            EditorAction.CLEAR_LINE -> {
+                val replacement = "\n".repeat(last - first)
+                replaceRangeInternal(start, end, replacement, start, start, true)
+            }
+            EditorAction.DUPLICATE_LINE -> {
+                val inserted = "\n$original"
+                replaceRangeInternal(end, end, inserted, end + 1, end + inserted.length, true)
+            }
+            EditorAction.INDENT -> {
+                val edits = (first..last).map { OffsetEdit(getLineStart(it), 0, indent.length) }
+                val updated = original.split('\n').joinToString("\n") { indent + it }
+                replaceRangeInternal(start, end, updated, mapOffsetAfterEdits(selectionStart, edits), mapOffsetAfterEdits(selectionEnd, edits), true)
+            }
+            else -> return false
         }
+        return true
+    }
 
-        val shouldIncreaseIndent = cursor > 0 && buffer[cursor - 1] in charArrayOf('{', '[', '(')
-        val insertion = if (shouldIncreaseIndent) {
-            "\n${indent}    \n$indent"
-        } else {
-            "\n$indent"
-        }
+    fun changeSelectionCase(uppercase: Boolean): Boolean {
+        if (!hasSelection()) return false
+        val range = normalizedSelection()
+        val text = buffer.substring(range.first, range.last)
+        val updated = if (uppercase) text.uppercase(Locale.ROOT) else text.lowercase(Locale.ROOT)
+        if (updated == text) return false
+        val reversed = selectionStart > selectionEnd
+        val end = range.first + updated.length
+        replaceRangeInternal(range.first, range.last, updated, if (reversed) end else range.first, if (reversed) range.first else end, true)
+        return true
+    }
 
-        val insertionCursor = if (shouldIncreaseIndent) {
-            cursor + 1 + indent.length + 4
-        } else {
-            cursor + insertion.length
-        }
-
-        replaceRangeInternal(
-            start = cursor,
-            end = cursor,
-            replacement = insertion,
-            afterSelectionStart = insertionCursor,
-            afterSelectionEnd = insertionCursor,
-            recordHistory = true
-        )
+    fun replaceRange(start: Int, end: Int, text: String) {
+        finishComposingText()
+        require(start in 0..length() && end in start..length())
+        replaceRangeInternal(start, end, text, start + text.length, start + text.length, true)
     }
 
     fun unindentSelection(spaces: Int = EDITOR_TAB_SPACES): Boolean {
@@ -708,6 +785,7 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun setSelection(start: Int, end: Int) {
+        finishComposingText()
         selectionStart = editorSnapOffsetToCharacterBoundary(buffer, start)
         selectionEnd = editorSnapOffsetToCharacterBoundary(buffer, end)
         clearComposingRegion()
@@ -751,46 +829,26 @@ internal class EditorDocument(initialText: String = "") {
     }
 
     fun undo(): Boolean {
+        finishComposingText()
         val command = undoStack.removeLastOrNull() ?: return false
         applyCommand(command, reverse = true, targetStack = redoStack)
         return true
     }
 
     fun redo(): Boolean {
+        finishComposingText()
         val command = redoStack.removeLastOrNull() ?: return false
         applyCommand(command, reverse = false, targetStack = undoStack)
         return true
     }
 
-    fun getLineForOffset(offset: Int): Int {
-        if (lineStarts.isEmpty()) return 0
-        val safeOffset = offset.coerceIn(0, buffer.length)
-        var low = 0
-        var high = lineStarts.lastIndex
-        while (low <= high) {
-            val mid = (low + high) ushr 1
-            val lineStart = lineStarts[mid]
-            val nextStart = if (mid == lineStarts.lastIndex) buffer.length + 1 else lineStarts[mid + 1]
-            when {
-                safeOffset < lineStart -> high = mid - 1
-                safeOffset >= nextStart -> low = mid + 1
-                else -> return mid
-            }
-        }
-        return lineStarts.lastIndex
-    }
+    fun getLineForOffset(offset: Int): Int = indexedText.lines.lineForOffset(offset)
 
-    fun getLineStart(line: Int): Int {
-        if (lineStarts.isEmpty()) return 0
-        return lineStarts[line.coerceIn(0, lineStarts.lastIndex)]
-    }
+    fun getLineStart(line: Int): Int = indexedText.lines.start(line.coerceIn(0, lineCount() - 1))
 
     fun getLineEnd(line: Int): Int {
-        if (lineStarts.isEmpty()) return 0
-        val safeLine = line.coerceIn(0, lineStarts.lastIndex)
-        val nextLineStart = if (safeLine == lineStarts.lastIndex) buffer.length else lineStarts[safeLine + 1]
-        val rawEnd = (nextLineStart - 1).coerceAtLeast(lineStarts[safeLine])
-        return if (rawEnd < buffer.length && rawEnd >= 0 && buffer[rawEnd] == '\n') rawEnd else nextLineStart
+        val safe = line.coerceIn(0, lineCount() - 1)
+        return indexedText.lines.start(safe) + indexedText.lines.line(safe).text.length
     }
 
     fun getLineText(line: Int): CharSequence {
@@ -811,7 +869,7 @@ internal class EditorDocument(initialText: String = "") {
             if (next > safeOffset) {
                 break
             }
-            cells += editorCellWidth(buffer, i, lineEnd)
+            cells += if (buffer[i] == '\t') tabWidth else editorCellWidth(buffer, i, lineEnd)
             i = next
         }
         return cells
@@ -827,7 +885,7 @@ internal class EditorDocument(initialText: String = "") {
         var offset = lineStart
         while (offset < lineEnd) {
             val nextOffset = editorNextSymbolOffset(buffer, offset, lineEnd)
-            val cellWidth = editorCellWidth(buffer, offset, lineEnd)
+            val cellWidth = if (buffer[offset] == '\t') tabWidth else editorCellWidth(buffer, offset, lineEnd)
             val nextCells = cells + cellWidth
             if (targetCells < nextCells) {
                 return if (targetCells - cells >= cellWidth / 2f) nextOffset else offset
@@ -882,6 +940,7 @@ internal class EditorDocument(initialText: String = "") {
             return
         }
 
+        val nextSearchScope = trackedSearchScope?.afterEdit(safeStart, safeEnd, replacement.length)
         val command = if (recordHistory) {
             EditorEditCommand(
                 start = safeStart,
@@ -890,18 +949,21 @@ internal class EditorDocument(initialText: String = "") {
                 beforeSelectionStart = selectionStart,
                 beforeSelectionEnd = selectionEnd,
                 afterSelectionStart = afterSelectionStart,
-                afterSelectionEnd = afterSelectionEnd
+                afterSelectionEnd = afterSelectionEnd,
+                searchScopeRevision = searchScopeRevision,
+                beforeSearchScope = trackedSearchScope,
+                afterSearchScope = nextSearchScope,
             )
         } else {
             null
         }
 
+        trackedSearchScope = nextSearchScope
         buffer.replace(safeStart, safeEnd, replacement)
         selectionStart = afterSelectionStart.coerceIn(0, buffer.length)
         selectionEnd = afterSelectionEnd.coerceIn(0, buffer.length)
         clearComposingRegion()
-        rebuildMetadata()
-        version++
+        publishEdit(safeStart, safeEnd, replacement)
 
         if (recordHistory && command != null) {
             undoStack.addLast(command)
@@ -922,6 +984,10 @@ internal class EditorDocument(initialText: String = "") {
         }
 
         val replacement = if (reverse) command.beforeText else command.afterText
+        // 同一轮圈选恢复真实边界；重新圈选后只映射偏移，不恢复旧搜索范围。
+        trackedSearchScope = if (command.searchScopeRevision == searchScopeRevision) {
+            if (reverse) command.beforeSearchScope else command.afterSearchScope
+        } else trackedSearchScope?.afterEdit(replaceStart, currentEnd, replacement.length)
         buffer.replace(replaceStart, currentEnd, replacement)
 
         if (reverse) {
@@ -933,8 +999,7 @@ internal class EditorDocument(initialText: String = "") {
         }
 
         clearComposingRegion()
-        rebuildMetadata()
-        version++
+        publishEdit(replaceStart, currentEnd, replacement)
         targetStack.addLast(command)
     }
 
@@ -943,32 +1008,11 @@ internal class EditorDocument(initialText: String = "") {
         composingEnd = -1
     }
 
-    private fun rebuildMetadata() {
-        lineStarts.clear()
-        lineStarts.add(0)
-
-        var currentCells = 0
-        var maxCells = 0
-        var index = 0
-        while (index < buffer.length) {
-            val char = buffer[index]
-            if (char == '\n') {
-                maxCells = max(maxCells, currentCells)
-                if (index + 1 <= buffer.length) {
-                    lineStarts.add(index + 1)
-                }
-                currentCells = 0
-                index++
-            } else {
-                currentCells += editorCellWidth(buffer, index)
-                index = editorNextSymbolOffset(buffer, index)
-            }
-        }
-        maxCells = max(maxCells, currentCells)
-        maxLineCells = maxCells
-        if (lineStarts.isEmpty()) {
-            lineStarts.add(0)
-        }
+    /** 索引和快照沿用旧版本的未修改行，输入路径不再扫描全文。 */
+    private fun publishEdit(start: Int, end: Int, replacement: String) {
+        val lines = indexedText.lines.replace(start, end, replacement)
+        version++
+        indexedText = EditorTextSnapshot(lines, version, indexedText.owner)
     }
 
     private fun isWordChar(char: Char): Boolean {

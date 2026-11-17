@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_selection_share_files_only">共有はファイルのみ対応しています。フォルダーは未対応です</string>
+    <string name="workspace_selection_properties_progress">選択した %2$d 項目中 %1$d 項目を集計済み</string>
+    <string name="workspace_selection_properties_hint">選択フォルダー自身と配下を含みます。シンボリックリンクはたどりません。閉じると集計を停止します。</string>
+</resources>

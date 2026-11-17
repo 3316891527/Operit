@@ -7,12 +7,13 @@
 - `tools/terminal_commands/`：固定公共编译工具链，调用全部组件的资源或 APK 校验器。
 - [native_apply_patch](../native_apply_patch/README.md)：补丁引擎、CLI、安装器、许可文件、独立打包及校验。
 - [web_chat_cli](../web_chat_cli/README.md)：HTTP 服务管理命令、安装器、独立打包及校验。
+- [html_build_cli](../html_build_cli/README.md)：HTML 项目构建命令、实时进度协议、安装器、独立打包及校验。
 
-两个组件的 `package_assets.py` 都只处理自身资源。新增命令在自己的目录维护打包规则，再注册到公共校验入口及共享构建步骤；无需修改其他命令的打包脚本。
+各组件的 `package_assets.py` 都只处理自身资源。新增命令在自己的目录维护打包规则，再注册到公共校验入口及共享构建步骤；无需修改其他命令的打包脚本。
 
 ## 汇总校验
 
-两个命令均准备好资源后，从仓库根目录执行：
+三个命令均准备好资源后，从仓库根目录执行：
 
 ```bash
 python3 tools/terminal_commands/verify_assets.py \

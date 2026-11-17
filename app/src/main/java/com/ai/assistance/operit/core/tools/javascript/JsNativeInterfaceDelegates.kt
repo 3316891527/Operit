@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.tools.javascript
 
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -661,7 +662,8 @@ internal object JsNativeInterfaceDelegates {
         paramsJson: String,
         binaryDataRegistry: ConcurrentHashMap<String, ByteArray>,
         binaryHandlePrefix: String,
-        binaryDataThreshold: Int
+        binaryDataThreshold: Int,
+        runtimeContext: ToolExecutionManager.ToolRuntimeContext? = null
     ): String {
         if (toolName.trim().isEmpty()) {
             AppLogger.e(TAG, "Tool name cannot be empty")
@@ -670,7 +672,7 @@ internal object JsNativeInterfaceDelegates {
 
         return try {
             val parsed = parseToolCall(toolType, toolName, paramsJson)
-            val result = toolHandler.executeTool(parsed.aiTool)
+            val result = ToolExecutionManager.withToolRuntimeContext(runtimeContext) { toolHandler.executeTool(parsed.aiTool) }
             if (!result.success) {
                 AppLogger.e(TAG, "[Sync] Tool execution failed: ${result.error}")
             }
@@ -696,7 +698,8 @@ internal object JsNativeInterfaceDelegates {
         binaryDataRegistry: ConcurrentHashMap<String, ByteArray>,
         binaryHandlePrefix: String,
         binaryDataThreshold: Int,
-        sendToolResult: (callbackId: String, result: String, isError: Boolean) -> Unit
+        sendToolResult: (callbackId: String, result: String, isError: Boolean) -> Unit,
+        runtimeContext: ToolExecutionManager.ToolRuntimeContext? = null
     ) {
         val parsed =
             try {
@@ -713,7 +716,7 @@ internal object JsNativeInterfaceDelegates {
 
         Thread {
             try {
-                val result = toolHandler.executeTool(parsed.aiTool)
+                val result = ToolExecutionManager.withToolRuntimeContext(runtimeContext) { toolHandler.executeTool(parsed.aiTool) }
 
                 if (!result.success) {
                     AppLogger.e(TAG, "[Async] Tool execution failed: ${result.error}")
@@ -749,7 +752,8 @@ internal object JsNativeInterfaceDelegates {
         binaryHandlePrefix: String,
         binaryDataThreshold: Int,
         sendToolResult: (callbackId: String, result: String, isError: Boolean) -> Unit,
-        sendIntermediateResult: (callbackId: String, result: String, isError: Boolean) -> Unit
+        sendIntermediateResult: (callbackId: String, result: String, isError: Boolean) -> Unit,
+        runtimeContext: ToolExecutionManager.ToolRuntimeContext? = null
     ) {
         val parsed =
             try {
@@ -767,7 +771,7 @@ internal object JsNativeInterfaceDelegates {
         Thread {
             try {
                 var pendingFinalResult: ToolResult? = null
-                runBlocking {
+                ToolExecutionManager.withToolRuntimeContext(runtimeContext) { runBlocking {
                     toolHandler.executeToolAndStream(parsed.aiTool).collect { result ->
                         val previous = pendingFinalResult
                         pendingFinalResult = result
@@ -782,7 +786,7 @@ internal object JsNativeInterfaceDelegates {
                             sendIntermediateResult(intermediateCallbackId, intermediateJson, !previous.success)
                         }
                     }
-                }
+                } }
 
                 val finalResult =
                     pendingFinalResult

@@ -1,8 +1,8 @@
 name: Prepare terminal commands
-description: 构建并打包 Ubuntu ARM64 的 apply_patch 与 web-chat 命令
+description: 构建并打包 Ubuntu ARM64 的 apply_patch、web-chat 与 build 命令
 inputs:
   run-tests:
-    description: 执行 apply_patch、web-chat 及 ARM64 分发安装回归
+    description: 执行 apply_patch、web-chat、build 及 ARM64 分发安装回归
     required: false
     default: 'false'
 runs:
@@ -28,7 +28,8 @@ runs:
           ~/.cargo/git
           tools/native_apply_patch/target
           tools/web_chat_cli/target
-        key: terminal-commands-gnu-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/native_apply_patch/**/Cargo.toml', 'tools/native_apply_patch/Cargo.lock', 'tools/terminal_commands/rust-toolchain.toml', 'tools/native_apply_patch/**/*.rs', 'tools/web_chat_cli/Cargo.toml', 'tools/web_chat_cli/Cargo.lock', 'tools/web_chat_cli/**/*.rs') }}
+          tools/html_build_cli/target
+        key: terminal-commands-gnu-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/native_apply_patch/**/Cargo.toml', 'tools/native_apply_patch/Cargo.lock', 'tools/terminal_commands/rust-toolchain.toml', 'tools/native_apply_patch/**/*.rs', 'tools/web_chat_cli/Cargo.toml', 'tools/web_chat_cli/Cargo.lock', 'tools/web_chat_cli/**/*.rs', 'tools/html_build_cli/Cargo.toml', 'tools/html_build_cli/Cargo.lock', 'tools/html_build_cli/**/*.rs') }}
 
     - name: Build Ubuntu ARM64 terminal commands
       shell: bash
@@ -52,6 +53,13 @@ runs:
           --binary tools/web_chat_cli/target/aarch64-unknown-linux-gnu/release/web-chat \
           --output app/build/generated/terminal-command-assets
 
+        cargo "+$terminal_commands_rust" build \
+          --manifest-path tools/html_build_cli/Cargo.toml --bin operit-html-build \
+          --release --target aarch64-unknown-linux-gnu --locked
+        python3 tools/html_build_cli/package_assets.py \
+          --binary tools/html_build_cli/target/aarch64-unknown-linux-gnu/release/operit-html-build \
+          --output app/build/generated/terminal-command-assets
+
     - name: Check terminal command semantics and installation
       if: inputs.run-tests == 'true'
       shell: bash
@@ -67,4 +75,10 @@ runs:
           --sysroot /usr/aarch64-linux-gnu
         python3 tools/native_apply_patch/tests/check_distribution.py \
           --binary tools/native_apply_patch/target/aarch64-unknown-linux-gnu/release/apply_patch \
+          --sysroot /usr/aarch64-linux-gnu
+
+        cargo "+$terminal_commands_rust" test \
+          --manifest-path tools/html_build_cli/Cargo.toml --locked
+        python3 tools/html_build_cli/tests/check_distribution.py \
+          --binary tools/html_build_cli/target/aarch64-unknown-linux-gnu/release/operit-html-build \
           --sysroot /usr/aarch64-linux-gnu

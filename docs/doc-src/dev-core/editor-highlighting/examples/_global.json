@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "styles": {
+    "运算符": {
+      "light": "#0184BC",
+      "dark": "#56B6C2"
+    },
+    "comment": {
+      "light": "#696C77"
+    }
+  },
+  "scopes": [
+    {
+      "scope": "keyword.operator",
+      "style": "运算符"
+    }
+  ]
+}

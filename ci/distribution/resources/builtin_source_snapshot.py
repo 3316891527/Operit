@@ -12,10 +12,20 @@ SHARED_INPUTS = ('examples/types', 'examples/tsconfig.json',
     'tools/example_packages/sync_example_packages.py', 'tools/example_packages/packages_whitelist.txt')
 
 
+SOURCE_PATHS = (('examples/', 'plugins/examples/'),
+    ('tools/example_packages/', 'plugins/tooling/example_packages/'))
 def source_inputs(source: str) -> tuple[str, ...]:
     return ('examples/' + source, 'examples/' + source.removesuffix('.js') + '.ts', *SHARED_INPUTS)
-
-
+def physical_input_paths(logical_path: str) -> tuple[str, ...]:
+    for logical_root, physical_root in SOURCE_PATHS:
+        if logical_path.startswith(logical_root):
+            return logical_path, physical_root + logical_path[len(logical_root):]
+    return (logical_path,)
+def logical_input_path(physical_path: str) -> str:
+    for logical_root, physical_root in SOURCE_PATHS:
+        if physical_path.startswith(physical_root):
+            return logical_root + physical_path[len(physical_root):]
+    return physical_path
 def fingerprint(files: dict[str, str], source: str) -> str:
     selected = [(name, value) for name, value in sorted(files.items())
         if any(name == root or name.startswith(root + '/') for root in source_inputs(source))]
@@ -45,7 +55,8 @@ def load_snapshot(path: Path, release_tag: str) -> dict:
 
 
 def create_snapshot(root: Path, sources: list[str], release_tag: str, revision: str) -> dict:
-    inputs = sorted({name for source in sources for name in source_inputs(source)})
+    logical_inputs = sorted({name for source in sources for name in source_inputs(source)})
+    inputs = sorted({path for name in logical_inputs for path in physical_input_paths(name)})
     entries = subprocess.check_output(['git', 'ls-tree', '-r', '-z', revision, '--', *inputs], cwd=root).split(b'\0')
     objects = {}
     for entry in entries:
@@ -55,7 +66,10 @@ def create_snapshot(root: Path, sources: list[str], release_tag: str, revision: 
         _, kind, object_id = metadata.split()
         if kind != b'blob':
             raise ValueError('固定资源源码输入不是文件：' + name.decode())
-        objects[name.decode()] = object_id
+        logical_name = logical_input_path(name.decode())
+        if logical_name in objects:
+            raise ValueError('固定资源源码同时存在新旧路径：' + logical_name)
+        objects[logical_name] = object_id
     names = sorted(objects)
     raw = subprocess.check_output(['git', 'cat-file', '--batch'], cwd=root,
         input=b'\n'.join(objects[name] for name in names) + b'\n')

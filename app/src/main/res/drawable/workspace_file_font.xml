@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 源自 MIT Material Icon Theme，来源与许可证见 assets/workspace-file-icons。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="32" android:viewportHeight="32">
+    <path android:pathData="M24 28h4L18 4h-4L4 28h4l8-19.422" android:fillColor="#f44336" android:fillAlpha="1.0" />
+    <path android:pathData="M8 20h16v4H8z" android:fillColor="#f44336" android:fillAlpha="1.0" />
+</vector>

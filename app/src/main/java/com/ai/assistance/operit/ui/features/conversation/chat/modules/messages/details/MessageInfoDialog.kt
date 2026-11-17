@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
 import com.ai.assistance.operit.data.model.ChatMessage
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,7 +51,7 @@ fun MessageInfoDialog(
     }
 
     fun formatDuration(value: Long): String {
-        val duration = formatMessageDuration(value)
+        val duration = formatElapsedDuration(value)
         return if (value >= 1_000L) {
             "$duration (${formatMessageNumber(value)} ms)"
         } else {

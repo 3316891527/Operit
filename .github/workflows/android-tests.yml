@@ -13,30 +13,33 @@ on:
       - ci/script/download_android_dependencies.sh
       - ci/script/prepare_android_dependencies.py
       - ci/test/code_runner.test.cjs
+      - ci/test/workspace_change_context.test.cjs
       - cmake/**
-      - examples/**
+      - plugins/examples/**
       - gradle/**
       - gradle.properties
       - gradlew
       - gradlew.bat
-      - llm/**
+      - modules/a2ui-compat/**
+      - modules/llm/**
+      - modules/material-icons-subset/**
       - package.json
       - package-lock.json
       - npm-shrinkwrap.json
       - pnpm-workspace.yaml
-      - quickjs/**
+      - modules/quickjs/**
       - settings.gradle.kts
-      - showerclient/**
-      - terminal/**
-      - terminal
+      - modules/showerclient/**
+      - modules/terminal/**
+      - modules/terminal
       - tools/native_ripgrep/**
       - tools/native_apply_patch/**
       - tools/web_chat_cli/**
+      - tools/html_build_cli/**
       - tools/terminal_commands/**
       - .github/actions/terminal-commands/**
-      - tools/packages_whitelist.txt
-      - tools/example_packages/sync_example_packages.py
-      - web-chat/**
+      - plugins/tooling/example_packages/**
+      - app/web-chat/**
 
 concurrency:
   group: android-tests-${{ github.event_name }}-${{ github.ref }}
@@ -80,7 +83,7 @@ jobs:
           node-version: '22'
 
       - name: Run Code Runner regression tests
-        run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs
+        run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/workspace_change_context.test.cjs
 
   tests:
     name: Android JVM tests
@@ -105,9 +108,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git submodule sync -- terminal
-          git submodule update --init --recursive --depth 1 terminal
-          git submodule status -- terminal
+          git submodule sync -- modules/terminal
+          git submodule update --init --recursive --depth 1 modules/terminal
+          git submodule status -- modules/terminal
 
       - name: Set up JDK
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5

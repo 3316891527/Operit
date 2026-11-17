@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_apk_invalid">No se pudo leer la información de la aplicación en este APK.</string>
+    <string name="workspace_apk_loading">Leyendo información de la aplicación…</string>
+    <string name="workspace_apk_version_code">Código de versión</string>
+    <string name="workspace_apk_size">Tamaño del APK</string>
+    <string name="workspace_apk_min_sdk">SDK mínimo</string>
+    <string name="workspace_apk_target_sdk">SDK de destino</string>
+    <string name="workspace_apk_installed">Versión instalada</string>
+    <string name="workspace_apk_not_installed">No instalada</string>
+    <string name="workspace_apk_view">Ver</string>
+    <string name="workspace_apk_install">Instalar</string>
+    <string name="workspace_apk_allow_install">Permite que esta aplicación instale aplicaciones desconocidas y pulsa Instalar de nuevo.</string>
+    <string name="workspace_archive_preparing">Preparando…</string>
+    <string name="workspace_archive_reading_index">Leyendo el directorio del archivo…</string>
+    <string name="workspace_archive_extracting">Extrayendo…</string>
+    <string name="workspace_archive_transferring">Copiando al destino…</string>
+    <string name="workspace_archive_publishing">Escribiendo en el destino…</string>
+    <string name="workspace_archive_entry_progress">Completados %1$d / %2$d elementos</string>
+    <string name="workspace_archive_entries_done">%1$d elementos completados</string>
+    <string name="workspace_archive_byte_progress">Procesados %1$s / %2$s</string>
+    <string name="workspace_archive_current_file">Progreso del archivo actual</string>
+    <string name="workspace_transfer_scanning_delete">Contando archivos para eliminar…</string>
+    <string name="workspace_transfer_discovered_items">Se encontraron %1$d elementos</string>
+    <string name="workspace_transfer_delete_recursive_scope">Incluye los archivos y subdirectorios de las carpetas seleccionadas.</string>
+    <string name="workspace_transfer_delete_recursive_cancel_note">La cancelación detiene las siguientes eliminaciones. El contenido eliminado no se restaurará.</string>
+</resources>

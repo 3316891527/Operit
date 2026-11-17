@@ -7,6 +7,9 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [插件开发材料归组](plugin-source-layout/index.md) · `plugin-source-layout`
+- [根目录普通文件归组](root-file-layout/index.md) · `root-file-layout`
+- [支持模块与 Web Chat 归组](module-source-layout/index.md) · `module-source-layout`
 
 - [工具、文件操作与聊天目录联合验证](chat-workspace-tools-integration/index.md)
 
@@ -54,3 +57,6 @@
 - [1.12.2+23 正式发行](release-1.12.2-plus-23/index.md)
 - [1.12.2+24 发行准备](release-1.12.2-plus-24/index.md)
 - [1.12.2+25 发行准备](release-1.12.2-plus25/index.md)
+- [1.12.2+26 集成与 Debug 验收](release-1.12.2-plus26/index.md)
+
+- [通用图片资源加载与提供商图标分层](image-asset-loader/index.md)

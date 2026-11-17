@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_search_option_state">%1$s: %2$s</string>
+    <string name="workspace_search_option_on">켜짐</string>
+    <string name="workspace_search_option_off">꺼짐</string>
+    <string name="workspace_markdown_outline">목차</string>
+    <string name="workspace_markdown_outline_empty">이 문서에는 제목이 없습니다.</string>
+    <string name="workspace_markdown_outline_expand">섹션 펼치기</string>
+    <string name="workspace_markdown_outline_collapse">섹션 접기</string>
+</resources>

@@ -132,6 +132,17 @@ object FileUtils {
         return isTextLikeBytes(bytes, bytes.size)
     }
 
+    fun isTextLike(input: java.io.InputStream, sampleSize: Int = 512): Boolean {
+        val buffer = ByteArray(sampleSize)
+        var length = 0
+        while (length < buffer.size) {
+            val read = input.read(buffer, length, buffer.size - length)
+            if (read <= 0) break
+            length += read
+        }
+        return isTextLikeBytes(buffer, length)
+    }
+
     /**
      * Analyzes a byte array to determine if it contains text-like content.
      * 

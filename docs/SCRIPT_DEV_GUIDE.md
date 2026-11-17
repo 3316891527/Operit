@@ -63,7 +63,7 @@ npm install
 
 **步骤 2: 创建你的第一个脚本**
 
-所有的脚本都存放在 `examples/` 目录下。请在该目录中创建一个新文件，例如 `my_first_script.ts`，然后将下面的代码复制进去。
+所有的脚本都存放在 `plugins/examples/` 目录下。请在该目录中创建一个新文件，例如 `my_first_script.ts`，然后将下面的代码复制进去。
 
 ```typescript
 /*
@@ -147,7 +147,7 @@ cd ..
 # Windows:
 tools\\adb\\execute_js.bat examples\\my_first_script.js hello_world "{\\"name\\":\\"世界\\"}"
 # Linux / macOS:
-./tools/adb/execute_js.sh examples/my_first_script.js hello_world '{"name":"世界"}'
+./tools/adb/execute_js.sh plugins/examples/my_first_script.js hello_world '{"name":"世界"}'
 ```
 
 如果你要直接运行整段 sandbox script，而不是指定某个导出函数：
@@ -156,7 +156,7 @@ tools\\adb\\execute_js.bat examples\\my_first_script.js hello_world "{\\"name\\"
 # Windows:
 tools\\adb\\run_sandbox_script.bat examples\\my_first_script.js "{\\"name\\":\\"世界\\"}"
 # Linux / macOS:
-./tools/adb/run_sandbox_script.sh examples/my_first_script.js '{"name":"世界"}'
+./tools/adb/run_sandbox_script.sh plugins/examples/my_first_script.js '{"name":"世界"}'
 ```
 
 **步骤 5: 查看结果**
@@ -213,7 +213,7 @@ npm install
 
 **步骤: 创建 `tsconfig.json`**
 
-在项目根目录创建 `tsconfig.json` 文件，并复制以下推荐配置。这个配置与本项目使用的标准配置 (`examples/tsconfig.json`) 保持一致，确保了兼容性。
+在项目根目录创建 `tsconfig.json` 文件，并复制以下推荐配置。这个配置与本项目使用的标准配置 (`plugins/examples/tsconfig.json`) 保持一致，确保了兼容性。
 
 ```json
 {
@@ -268,7 +268,7 @@ npm install
 
 **需要复制的内容：**
 
-1.  **类型定义文件**: 将源项目中的 `examples/types/` 整个文件夹复制到你的新项目根目录，并确保文件夹名称就是 `types`。这与 `tsconfig.json` 中的 `"typeRoots": ["./types"]` 配置相对应。这些文件定义了 `Tools` 等全局对象的类型，是获得代码智能提示的关键。
+1.  **类型定义文件**: 将源项目中的 `plugins/examples/types/` 整个文件夹复制到你的新项目根目录，并确保文件夹名称就是 `types`。这与 `tsconfig.json` 中的 `"typeRoots": ["./types"]` 配置相对应。这些文件定义了 `Tools` 等全局对象的类型，是获得代码智能提示的关键。
 2.  **执行工具**: 将源项目根目录下的 `tools/` 整个文件夹复制到你的新项目根目录。这些脚本（如 `execute_js.bat`）是用来在设备上运行和测试你的代码的。
 
 **复制后的项目结构**
@@ -304,7 +304,7 @@ my-script-project/
 
 每个脚本文件的开头都必须包含一个 `/* METADATA ... */` 注释块。这个块定义了脚本的名称、描述、分类以及最重要的——它所提供的工具。**这块元数据是 Operit AI 理解并调用你所编写功能的唯一途径。AI 会解析 `METADATA` 中的信息，将其作为可用的“工具”呈现给大语言模型（LLM），从而实现通过自然语言指令来执行复杂脚本的能力。**
 
-**示例：** (`examples/automatic_bilibili_assistant.ts`)
+**示例：** (`plugins/examples/automatic_bilibili_assistant.ts`)
 
 ```typescript
 /*
@@ -499,7 +499,7 @@ METADATA
 
 ### 3.1.3. `category` 字段规范
 
-`category` 为 **可选字段**，类型为字符串，用于脚本分类展示与检索。建议直接复用 `examples/` 中已使用的分类，避免创建语义重复的新分类。
+`category` 为 **可选字段**，类型为字符串，用于脚本分类展示与检索。建议直接复用 `plugins/examples/` 中已使用的分类，避免创建语义重复的新分类。
 
 ```json
 "category": "Utility"
@@ -511,7 +511,7 @@ METADATA
 "category": "Other"
 ```
 
-当前 `examples/` 中可参考的分类值：
+当前 `plugins/examples/` 中可参考的分类值：
 
 -   `Automatic`
 -   `Chat`
@@ -642,7 +642,7 @@ if (!parsed.success) throw new Error(parsed.error);
 console.log(parsed.data); // 42
 ```
 
-如果你在 TypeScript 中开发，建议先引用 `examples/types/index.d.ts`，即可获得 Java Bridge 的类型提示（含 `Java`、`Kotlin`、`NativeInterface`）。
+如果你在 TypeScript 中开发，建议先引用 `plugins/examples/types/index.d.ts`，即可获得 Java Bridge 的类型提示（含 `Java`、`Kotlin`、`NativeInterface`）。
 
 #### 3.4.7. 示例：suspend 调用（callback / Promise）
 
@@ -749,9 +749,9 @@ exports.hello_world = MyNewScript.hello_world;
 
 ## 5. 深入学习：示例脚本解析
 
-当你掌握了基础脚本的写法后，最好的学习方式就是阅读现有的优秀代码。`examples/` 目录下包含了许多功能各异的脚本，我们精选了以下几个作为推荐的进阶学习材料：
+当你掌握了基础脚本的写法后，最好的学习方式就是阅读现有的优秀代码。`plugins/examples/` 目录下包含了许多功能各异的脚本，我们精选了以下几个作为推荐的进阶学习材料：
 
-### 5.1. 终极入门教程: `examples/quick_start.ts`
+### 5.1. 终极入门教程: `plugins/examples/quick_start.ts`
 
 这个脚本是一部从零开始的、带有超详细注释的教科书。它不仅仅是一个工具，更是一份动态的开发文档。
 
@@ -761,7 +761,7 @@ exports.hello_world = MyNewScript.hello_world;
     *   **`Tools` API 调用**: 演示了如何调用 `Tools.System` 和 `Tools.Files` 来与系统交互。
 *   **建议**: 如果你对 TypeScript/JavaScript 不熟悉，或者对 `IIFE` 和 `Wrapper` 模式感到困惑，请务必完整阅读一遍此文件。
 
-### 5.2. 网络请求与并发: `examples/various_search.ts`
+### 5.2. 网络请求与并发: `plugins/examples/various_search.ts`
 
 这个脚本实现了一个实用的多平台搜索引擎聚合工具，是学习网络操作的最佳范例。
 
@@ -770,7 +770,7 @@ exports.hello_world = MyNewScript.hello_world;
     *   **多工具聚合**: `combined_search` 函数展示了如何在一个工具内部调用其他多个工具的逻辑，并使用 `Promise.all` 来同时等待多个 `toolCall()`。注意：这不等于底层工具一定真正并行，实际并发度仍取决于宿主实现与具体工具执行器。
     *   **代码复用**: `performSearch` 作为一个内部辅助函数，被多个导出的工具复用，展示了良好的代码组织。
 
-### 5.3. 纯粹的工具集: `examples/time.ts`
+### 5.3. 纯粹的工具集: `plugins/examples/time.ts`
 
 这是一个非常简洁的工具包，提供了多种时间格式化功能。
 
@@ -779,7 +779,7 @@ exports.hello_world = MyNewScript.hello_world;
     *   **多函数导出**: 演示了如何在一个文件中定义并导出多个小而美的功能函数。
     *   **无外部依赖**: 这个脚本完全不依赖 `Tools` API，是一个纯粹的逻辑计算示例。
 
-### 5.4. “元数据”的高级技巧: `examples/various_output.ts`
+### 5.4. “元数据”的高级技巧: `plugins/examples/various_output.ts`
 
 这个脚本看起来很简单，但它展示了一种与AI交互的特殊技巧。
 
@@ -910,7 +910,7 @@ tools\\adb\\execute_js.bat examples\\my_new_script.js hello_world "{\\"name\\":\
 如果脚本执行时间比较长，可以通过环境变量调整等待时间：
 
 ```bash
-OPERIT_RESULT_WAIT_SECONDS=30 ./tools/adb/execute_js.sh examples/my_script.js main '{}'
+OPERIT_RESULT_WAIT_SECONDS=30 ./tools/adb/execute_js.sh plugins/examples/my_script.js main '{}'
 ```
 
 这样就完成了一个从编写到设备上测试的完整开发循环。 

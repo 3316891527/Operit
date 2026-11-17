@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_archive_compress">圧縮</string>
+    <string name="workspace_archive_extract">展開</string>
+    <string name="workspace_archive_add">追加</string>
+    <string name="workspace_archive_choose_directory">このフォルダーを選択</string>
+    <string name="workspace_archive_password">復号パスワード</string>
+    <string name="workspace_archive_name">アーカイブ名</string>
+    <string name="workspace_archive_format">形式</string>
+    <string name="workspace_archive_destination">保存先フォルダー</string>
+    <string name="workspace_archive_level">圧縮レベル</string>
+    <string name="workspace_archive_level_fast">高速</string>
+    <string name="workspace_archive_level_normal">標準</string>
+    <string name="workspace_archive_level_maximum">最大</string>
+    <string name="workspace_archive_working">処理中</string>
+    <string name="workspace_archive_processed">処理済み %1$s</string>
+    <string name="workspace_archive_read_only">読み取り専用アーカイブ</string>
+    <string name="workspace_archive_retry">再試行</string>
+    <string name="workspace_archive_entries">%1$d 項目</string>
+    <string name="workspace_archive_signed">このファイルを変更すると既存の署名が無効になります。</string>
+    <string name="workspace_archive_link">リンク項目は開いたり展開したりできません。</string>
+    <string name="workspace_archive_extract_all">すべて展開</string>
+    <string name="workspace_archive_extract_selected">選択した %1$d 項目を展開</string>
+    <string name="workspace_archive_encrypt_password">暗号化パスワード（任意）</string>
+    <string name="workspace_archive_read_password_hint">暗号化されたアーカイブの読み取りに使用します。パスワードは変更しません。</string>
+    <string name="workspace_archive_password_required">このアーカイブの読み取りには復号パスワードが必要です。</string>
+    <string name="workspace_archive_source">アーカイブ元</string>
+    <string name="workspace_archive_packed_size">圧縮サイズ</string>
+    <string name="workspace_archive_encrypted">暗号化済み</string>
+    <string name="workspace_archive_name_hint">拡張子は選択した形式に応じて自動追加されます。</string>
+    <string name="workspace_archive_stage_target">保存先を確認</string>
+    <string name="workspace_archive_stage_sources">元ファイルを読み込み</string>
+    <string name="workspace_archive_stage_write">アーカイブを書き込み</string>
+    <string name="workspace_archive_stage_verify">アーカイブを検証</string>
+    <string name="workspace_archive_stage_publish">アーカイブを保存先に配置</string>
+    <string name="workspace_archive_create_failed_detail">%1$s を作成できません\n手順：%2$s\n保存先：%3$s\n原因：%4$s</string>
+</resources>

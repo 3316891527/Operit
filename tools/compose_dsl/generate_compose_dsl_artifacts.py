@@ -2087,7 +2087,7 @@ def main() -> None:
     all_params.update(base_params)
     all_params.update(extra_params)
 
-    ts_output = ROOT / "examples" / "types" / "compose-dsl.material3.generated.d.ts"
+    ts_output = ROOT / "plugins" / "examples" / "types" / "compose-dsl.material3.generated.d.ts"
     kt_output = (
         ROOT
         / "app"
