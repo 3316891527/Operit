@@ -31,21 +31,40 @@ fun NewChatIntro(
     requestId: String?, currentChatId: String?, ready: Boolean, empty: Boolean, hasDraft: Boolean,
     onConsumed: (String) -> Unit, modifier: Modifier = Modifier,
 ) {
+    val id = requestId ?: return
+    // 请求失效时移除整轮子组合，避免绘制先于协程取消收尾读取到空 ID。
+    key(id) {
+        NewChatIntroForRequest(
+            requestId = id,
+            currentChatId = currentChatId,
+            ready = ready,
+            empty = empty,
+            hasDraft = hasDraft,
+            onConsumed = onConsumed,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+private fun NewChatIntroForRequest(
+    requestId: String, currentChatId: String?, ready: Boolean, empty: Boolean, hasDraft: Boolean,
+    onConsumed: (String) -> Unit, modifier: Modifier,
+) {
     val progress = remember { Animatable(0f) }
     var playing by remember { mutableStateOf(false) }
     val consume by rememberUpdatedState(onConsumed)
-    val latestRequest by rememberUpdatedState(requestId)
-    DisposableEffect(Unit) {
-        onDispose { latestRequest?.let(consume) }
+    DisposableEffect(requestId) {
+        // 旧动画离页时只消费本轮请求，不能使用后来替换的新请求 ID。
+        onDispose { consume(requestId) }
     }
     LaunchedEffect(requestId) {
-        val id = requestId ?: return@LaunchedEffect
         // 创建后没有进入对应页面的请求不会在之后切回时意外播放。
         delay(5000)
-        consume(id)
+        consume(requestId)
     }
     LaunchedEffect(requestId, currentChatId, ready, empty, hasDraft) {
-        val id = requestId ?: return@LaunchedEffect
+        val id = requestId
         if (id != currentChatId || !ready) return@LaunchedEffect
         if (hasDraft || !empty) {
             consume(id)
@@ -74,7 +93,7 @@ fun NewChatIntro(
             wordmarkPoints(widthPx.coerceAtMost(with(density) { 280.dp.toPx() }), with(density) { 60.dp.toPx() })
         }
         val trajectories = remember(requestId, points.offsets.size) {
-            val random = Random(requireNotNull(requestId).hashCode())
+            val random = Random(requestId.hashCode())
             List(points.offsets.size) { Offset(random.nextFloat(), random.nextFloat()) }
         }
         Canvas(Modifier.fillMaxSize()) {
