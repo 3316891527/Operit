@@ -7,7 +7,7 @@
 - `demolang.json` 为 `.operitdemo` 和 `OperitDemo` 提供完整自定义规则，演示注释、字符串、插值、递归表达式、捕获组和嵌入 JavaScript
 - `sample.operitdemo` 是 `demolang.json` 对应的编辑示例
 
-保存配置后，已打开的编辑器自动重新分析；Diff 在打开或刷新时重新读取配置。完整字段、匹配顺序和错误处理见[配置说明](../../docs/doc-src/dev-core/editor-highlighting.md)。
+保存配置后，已打开的编辑器自动重新分析；Diff 在打开或刷新时重新读取配置。完整字段、匹配顺序和错误处理见[配置说明](../editor-highlighting.md)。
 
 
 新建的空 JSON 可以直接留在配置目录中继续编辑，不会触发配置错误。填写内容并保存后才会校验和生效。

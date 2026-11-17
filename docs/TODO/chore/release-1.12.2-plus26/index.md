@@ -1,14 +1,14 @@
 ---
 fork: https://github.com/3316891527/Operit
-branch: ci/prepare-release-26
-status: validating
+branch: docs/organize-editor-highlighting
+status: awaiting-dev-debug-acceptance
 version: 1.12.2+26
 versionCode: 82
 ---
 
-# 1.12.2+26 集成与发行
+# 1.12.2+26 集成与 Debug 验收
 
-按维护者要求将所有开放 PR 合入 dev，排除更新日志归档 PR #105。A2UI 组件样式本轮暂不调整。dev 的 Android Tests 和 assembleDebug 全部通过后，才同步 main 并执行正式发行。
+按维护者要求将所有开放 PR 合入 dev，排除更新日志归档 PR #105。A2UI 组件样式本轮暂不调整。按维护者最新要求，本阶段只从 dev 派发 assembleDebug，publish_release=false。等待维护者验收合格并另行通知后，才同步 main 和发布正式 26；构建成功不触发后续发布。
 
 ## 集成范围
 
@@ -24,15 +24,14 @@ versionCode: 82
 
 ## 验证与发布顺序
 
-1. 准备版本名 1.12.2+26、versionCode 82 和[发行说明](../../../../ci/distribution/updates/releases/1.12.2+26.md)，合入 dev。
-2. 对最终 dev 执行仓库门禁、Python 和 Node 回归；从 dev 派发 Android Tests 与 assembleDebug，跟进完整结论并修复真实失败。
-3. JVM、终端命令和构建结果按工作流记录；Android 设备界面回归须单独执行，不以静态解析或源码存在替代。
-4. 全部指定验证通过后，通过维护者同步 PR 将 dev 合入 main，并核对代码树与已测试的 dev 一致。
-5. 从 main 派发 Build，使用 :app:verifyCiPreviewRelease、publish_release=true、previous_tag=v1.12.2+25 和非空中文发行说明。
-6. 核验正式 Release、完整 APK、增量包、更新元数据和新离线资源的实际发布结果。
+1. 版本名 1.12.2+26、versionCode 82 和[发行说明草稿](../../../../ci/distribution/updates/releases/1.12.2+26.md)已由 #217 合入 dev。
+2. 将[高亮开发说明](../../../doc-src/dev-core/editor-highlighting/editor-highlighting.md)、同目录 Schema 与[示例](../../../doc-src/dev-core/editor-highlighting/examples/README.md)统一归档到 dev-core/editor-highlighting，示例直接位于 examples 子目录，移除根目录旧位置并修正引用。
+3. 检查本轮文档链接、JSON 内容与迁移前后一致性，再将文档整理合入 dev。
+4. 只对新的 dev 提交派发 assembleDebug，publish_release=false，不另行派发 Android Tests。此前已发起的测试与构建属于迁移前提交，结果按各自运行记录保留。
+5. 维护者验收 Debug；同步 main、签名构建和公开发行均等待新的明确通知。Android 设备交互验收与编译结果分别记录。
 
 ## 发行参数
 
 发行仓库为 3316891527/Operit-Kong-patch，离线资源仓库为 3316891527/Operit-Kong-resources。保留 Kong 包名与既有固定签名，基础正式发行已核实为 v1.12.2+25。complete_repository_migration 和 cleanup_merged_branches 均保持 false。
 
-当前记录集成和发行准备，测试及正式公开状态以实际工作流与 Release 收据为准。版本准备 [DONE]。
+本轮只整理开发资料并派发 dev Debug，正式发行尚未获本阶段授权。高亮资料与示例归档 [DONE]。

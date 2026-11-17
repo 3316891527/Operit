@@ -22,7 +22,7 @@ highlighting/
 
 配置整组校验后生效。重复键、未知字段、未知引用、非法正则、颜色或版本会报告错误，不继续使用上一个配置修订。修正文件后，编辑器重新加载；Diff 可点击刷新。
 
-可复制[全局示例](../../../examples/editor-highlighting/_global.json)、[Markdown 示例](../../../examples/editor-highlighting/markdown.json)或[完整自定义语言示例](../../../examples/editor-highlighting/demolang.json)。[示例目录](../../../examples/editor-highlighting/README.md)附有对应文本。[JSON Schema](editor-highlighting.schema.json)可用于编辑器外部校验，全局文件使用其中的 `#/$defs/global` 定义，语言文件使用根定义；引用存在性和运行限额仍由应用检查。不要把 schema 文件复制到运行配置目录。
+可复制[全局示例](examples/_global.json)、[Markdown 示例](examples/markdown.json)或[完整自定义语言示例](examples/demolang.json)。[示例目录](examples/README.md)附有对应文本。[JSON Schema](editor-highlighting.schema.json)可用于编辑器外部校验，全局文件使用其中的 `#/$defs/global` 定义，语言文件使用根定义；引用存在性和运行限额仍由应用检查。不要把 schema 文件复制到运行配置目录。
 
 ## 样式与 scope
 

@@ -57,6 +57,6 @@
 - [1.12.2+23 正式发行](release-1.12.2-plus-23/index.md)
 - [1.12.2+24 发行准备](release-1.12.2-plus-24/index.md)
 - [1.12.2+25 发行准备](release-1.12.2-plus25/index.md)
-- [1.12.2+26 集成与发行](release-1.12.2-plus26/index.md)
+- [1.12.2+26 集成与 Debug 验收](release-1.12.2-plus26/index.md)
 
 - [通用图片资源加载与提供商图标分层](image-asset-loader/index.md)
