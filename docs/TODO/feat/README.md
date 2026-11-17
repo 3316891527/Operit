@@ -5,6 +5,7 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+- [聊天耗时单位进位](chat-duration-units/index.md) · `chat-duration-units`
 
 - [终端内置 apply_patch 命令](terminal-apply-patch/index.md)
 - [A2A Server](a2a_server_20260807/index.md) · `a2a_server_20260807`

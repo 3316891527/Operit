@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
 
 @Composable
 internal fun ResponseActivityHeader(
@@ -35,17 +36,10 @@ internal fun ResponseActivityHeader(
     textColor: Color,
     onClick: () -> Unit,
 ) {
-    val seconds = durationMs.coerceAtLeast(0L) / 1000
-    val title = when {
-        durationMs <= 0L -> stringResource(R.string.collapse_process_title)
-        seconds < 60 -> stringResource(R.string.collapse_process_duration_seconds, seconds)
-        seconds < 3600 -> stringResource(R.string.collapse_process_duration_minutes, seconds / 60, seconds % 60)
-        else -> stringResource(
-            R.string.collapse_process_duration_hours,
-            seconds / 3600,
-            (seconds % 3600) / 60,
-            seconds % 60,
-        )
+    val title = if (durationMs > 0L) {
+        stringResource(R.string.collapse_process_duration, formatElapsedDuration(durationMs))
+    } else {
+        stringResource(R.string.collapse_process_title)
     }
     val action = stringResource(
         if (expanded) R.string.collapse_process_hide else R.string.collapse_process_show

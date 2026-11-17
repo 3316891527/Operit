@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details
 
+import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -39,11 +40,11 @@ class MessageStatsFormattingTest {
 
     @Test
     fun durationAndSpeedKeepTheAgreedPrecision() {
-        assertEquals("0 ms", formatMessageDuration(0L))
-        assertEquals("999 ms", formatMessageDuration(999L))
-        assertEquals("4.00 s", formatMessageDuration(4_000L))
-        assertEquals("419.18 s", formatMessageDuration(419_177L))
-        assertEquals("1,133.33 s", formatMessageDuration(1_133_333L))
+        assertEquals("0ms", formatElapsedDuration(0L))
+        assertEquals("999ms", formatElapsedDuration(999L))
+        assertEquals("4.00s", formatElapsedDuration(4_000L))
+        assertEquals("6m59.18s", formatElapsedDuration(419_177L))
+        assertEquals("18m53.33s", formatElapsedDuration(1_133_333L))
         assertEquals("26.8", formatMessageTokenSpeed(calculateMessageTokenSpeed(11_248L, 419_177L)!!))
     }
 
@@ -53,7 +54,7 @@ class MessageStatsFormattingTest {
         try {
             Locale.setDefault(Locale.GERMANY)
             assertEquals("406,514", formatMessageNumber(406_514L))
-            assertEquals("419.18 s", formatMessageDuration(419_177L))
+            assertEquals("6m59.18s", formatElapsedDuration(419_177L))
             assertEquals("1,234.5", formatMessageTokenSpeed(1_234.5))
         } finally {
             Locale.setDefault(previousLocale)

@@ -9407,9 +9407,7 @@
     <string name="collapse_process_title">回复过程</string>
     <string name="collapse_process_show">展开回复过程</string>
     <string name="collapse_process_hide">收起回复过程</string>
-    <string name="collapse_process_duration_seconds">用时 %1$d秒</string>
-    <string name="collapse_process_duration_minutes">用时 %1$d分钟 %2$d秒</string>
-    <string name="collapse_process_duration_hours">用时 %1$d时%2$d分%3$d秒</string>
+    <string name="collapse_process_duration">用时 %1$s</string>
     <string name="extension_update_success">更新成功</string>
     <string name="extension_update_failed">更新失败：%1$s</string>
     <string name="extension_update_cancelled">更新已取消</string>

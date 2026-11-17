@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.format.formatElapsedDuration
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.format.formatCacheHitRate
 
@@ -158,8 +159,8 @@ internal fun MessageGenerationDetails(
                     Text(
                         text = stringResource(
                             R.string.chat_message_generation_timing,
-                            formatMessageDuration(message.waitDurationMs),
-                            formatMessageDuration(message.outputDurationMs),
+                            formatElapsedDuration(message.waitDurationMs),
+                            formatElapsedDuration(message.outputDurationMs),
                         ),
                         style = MaterialTheme.typography.labelMedium,
                         color = statsTextColor,
