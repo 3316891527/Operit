@@ -60,7 +60,7 @@ internal class WorkspaceGitRepository(private val context: Context, private val 
                 val uncatalogued = if (entry.untracked || unborn) command.workingFile(location.path).let { (text, kind) ->
                     ReviewContent("", text, SnapshotKind.ABSENT, kind)
                 } else null
-                val newCounts = uncatalogued?.takeIf { reviewDiffSupported(it) }?.let {
+                val newCounts = uncatalogued?.takeIf { reviewDiffAutomatic(it) }?.let {
                     WorkspaceDiff.compare("", checkNotNull(it.after))
                 }
                 val retained = uncatalogued?.takeIf { cachedCharacters + (it.after?.length ?: 0) <= 1024 * 1024 }?.also {

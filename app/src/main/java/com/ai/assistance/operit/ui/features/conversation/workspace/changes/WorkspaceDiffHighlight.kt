@@ -23,11 +23,14 @@ internal data class PreparedReviewDiff(
 internal suspend fun prepareReviewDiff(context: Context, path: String, content: ReviewContent): PreparedReviewDiff {
     val before = checkNotNull(content.before)
     val after = checkNotNull(content.after)
-    require(before.count { it == '\n' } + after.count { it == '\n' } <= 20_000) { "Diff exceeds 20,000 lines" }
+    val load = WorkspaceDiffPolicy.classify(content)
+    require(load != ReviewDiffLoad.BLOCKED) { "Diff exceeds review limits" }
     val coroutine = currentCoroutineContext()
     coroutine.ensureActive()
     val document = WorkspaceDiff.compare(before, after)
-    require(document.rows.none { it.text.length > 8_192 }) { "Diff line exceeds 8,192 characters" }
+    val columns = document.rows.maxOfOrNull { line -> line.text.sumOf { if (it == '\t') 4 else if (it.code > 127) 2 else 1 } } ?: 0
+    // 用户确认的大型差异只计算行差异，避免长行正则分词占用过多资源。
+    if (load == ReviewDiffLoad.MANUAL) return PreparedReviewDiff(document, null, null, columns)
     val language = TextMateCatalog.detectLanguage(path)
     val configuration = EditorHighlightFiles.load(EditorHighlightFiles.directory(context))
     val registry = TextMateGrammarRegistry(configuration) { context.assets.open("workspace-textmate/$it").bufferedReader(Charsets.UTF_8) }
@@ -37,5 +40,5 @@ internal suspend fun prepareReviewDiff(context: Context, path: String, content: 
         val snapshot = EditorTextSnapshot(EditorLineIndex.fromText(text), 0, Any())
         return EditorTextMateHighlighter.highlight(snapshot, rules) { coroutine.isActive }
     }
-    return PreparedReviewDiff(document, highlight(before), highlight(after), document.rows.maxOfOrNull { line -> line.text.sumOf { if (it == '\t') 4 else if (it.code > 127) 2 else 1 } } ?: 0)
+    return PreparedReviewDiff(document, highlight(before), highlight(after), columns)
 }

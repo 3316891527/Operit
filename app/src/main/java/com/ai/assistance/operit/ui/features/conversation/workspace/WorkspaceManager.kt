@@ -330,6 +330,7 @@ fun WorkspaceManager(
     val editorPreferences = remember(context) { WorkspaceBrowserPreferences(context) }
     val persistedEditorSettings by editorPreferences.settings.collectAsState(initial = WorkspaceBrowserSettings())
     val editorSettings = persistedEditorSettings.editor.copy(wordWrap = persistedEditorSettings.wordWrap)
+    var editorSettingsOpen by remember(workspacePath, workspaceEnv) { mutableStateOf(false) }
     val currentPreviewFile = openFiles.getOrNull(currentFileIndex)
     var markdownOutlineVisible by remember(currentPreviewFile?.key) { mutableStateOf(false) }
     var htmlFindVisible by remember(currentPreviewFile?.key) { mutableStateOf(false) }
@@ -905,7 +906,7 @@ fun WorkspaceManager(
                         key(currentTextFile.key) {
                             EditorToolbar(editorSession, activeEditor, editorSettings, ::changeEditorSettings,
                                 currentTextFile.key in unsavedFiles, saving, { saveFile(currentTextFile) },
-                                { openEditorSearch() }, { saveAsRequested = true }, { reloadRequested = true }, { closeFile(currentFileIndex) },
+                                { openEditorSearch() }, { saveAsRequested = true }, { reloadRequested = true }, { closeFile(currentFileIndex) }, { editorSettingsOpen = true },
                                 path = currentTextFile.path, environment = currentTextFile.environment)
                         }
                     }
@@ -978,6 +979,7 @@ fun WorkspaceManager(
         SideEffect { navigation.register(headerOwner, headerTabs, headerActions, currentFileIndex != -2) { currentFileIndex = -2 } }
         DisposableEffect(navigation) { onDispose { navigation.unregister(headerOwner) } }
     }
+    if (editorSettingsOpen) EditorSettingsScreen(editorSettings, ::changeEditorSettings) { editorSettingsOpen = false }
     // 不透明底色与主题前景色一起提供，避免编辑按钮沿用外层聊天颜色。
     Surface(
         modifier = Modifier.fillMaxSize().imePadding(),

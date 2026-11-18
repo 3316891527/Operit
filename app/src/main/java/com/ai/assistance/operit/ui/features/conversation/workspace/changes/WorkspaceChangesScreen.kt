@@ -312,12 +312,13 @@ private fun ChangeFileDetail(
     var loaded by remember(cache, cacheKey) { mutableStateOf(cache[cacheKey]) }
     var loading by remember(cache, cacheKey) { mutableStateOf(loaded == null) }
     var error by remember(cache, cacheKey) { mutableStateOf<String?>(null) }
-    LaunchedEffect(cache, cacheKey, active) {
-        if (!active || loaded != null) return@LaunchedEffect
+    var loadRequested by remember(cache, cacheKey) { mutableStateOf(false) }
+    LaunchedEffect(cache, cacheKey, active, loadRequested) {
+        if (!active || loaded?.diff != null || (loaded != null && !loadRequested)) return@LaunchedEffect
         loading = true
         error = null
         try {
-            val content = withContext(Dispatchers.IO) {
+            val content = loaded?.content ?: withContext(Dispatchers.IO) {
                 when {
                     record != null -> store.content(record)
                     file.aggregateRecords -> store.content(file.records.asReversed())
@@ -325,9 +326,11 @@ private fun ChangeFileDetail(
                     else -> checkNotNull(repository).content(file)
                 }
             }
-            val prepared = if (content.isText) withContext(Dispatchers.Default) { prepareReviewDiff(context, file.location.path, content) } else null
-            // 内容和分词结果一起发布，文本准备期间不能进入二进制提示分支。
-            val result = LoadedFileReview(content, prepared)
+            val policy = withContext(Dispatchers.Default) { WorkspaceDiffPolicy.classify(content) }
+            val prepared = if (content.isText && (policy == ReviewDiffLoad.AUTOMATIC || (policy == ReviewDiffLoad.MANUAL && loadRequested)))
+                withContext(Dispatchers.Default) { prepareReviewDiff(context, file.location.path, content) } else null
+            // 需要用户确认的文本只缓存内容，点击后才计算差异。
+            val result = LoadedFileReview(content, prepared, policy)
             cache.put(cacheKey, result)
             loaded = result
         } catch (cancelled: CancellationException) {
@@ -407,6 +410,14 @@ private fun ChangeFileDetail(
         when {
             error != null -> Text(checkNotNull(error), Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
             loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) }
+            result != null && result.content.isText -> {
+                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(if (result.load == ReviewDiffLoad.BLOCKED) R.string.workspace_changes_hard_limit else R.string.workspace_changes_load_on_demand), fontSize = 12.sp)
+                    if (result.load == ReviewDiffLoad.MANUAL) TextButton(onClick = { loadRequested = true }) {
+                        Text(stringResource(R.string.workspace_changes_load_diff))
+                    }
+                }
+            }
             result != null && !result.content.isText -> {
                 val data = result.content
                 Text(stringResource(when {

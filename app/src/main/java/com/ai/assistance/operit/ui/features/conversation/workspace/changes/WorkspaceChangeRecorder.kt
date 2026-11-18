@@ -156,7 +156,7 @@ internal class WorkspaceChangeRecorder(
             val store = WorkspaceChangeStore.get(context)
             store.save(records.map { record ->
                 val content = store.content(record)
-                if (reviewDiffSupported(content)) {
+                if (reviewDiffAutomatic(content)) {
                     val diff = WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after))
                     record.copy(additions = diff.additions, deletions = diff.deletions)
                 } else record

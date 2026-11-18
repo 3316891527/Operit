@@ -86,7 +86,7 @@ internal class WorkspaceChangeStore(context: Context) {
             val statisticsKey = first.id + ":" + latest.id
             val savedCounts = if (!aggregate && latest.additions != null && latest.deletions != null) latest.additions to latest.deletions else null
             val counts = savedCounts ?: if (text) statistics[statisticsKey] ?: content(before, after).let { data ->
-                if (reviewDiffSupported(data)) WorkspaceDiff.compare(checkNotNull(data.before), checkNotNull(data.after)).let { document ->
+                if (reviewDiffAutomatic(data)) WorkspaceDiff.compare(checkNotNull(data.before), checkNotNull(data.after)).let { document ->
                     (document.additions to document.deletions).also { statistics[statisticsKey] = it }
                 } else null
             } else null

@@ -77,6 +77,31 @@ class WorkspaceDiffTest {
         assertEquals(DiffRange(1, 3), ranges.second)
     }
 
+    @Test fun longLinesAreSlicedWithoutLosingTextOrSplittingEmoji() {
+        val text = "a😀z".repeat(2000)
+        val slices = WorkspaceDiff.slices(WorkspaceDiff.items(WorkspaceDiff.compare("", text), false, true, emptySet()), 7)
+            .filterIsInstance<ReviewDiffItem.Line>()
+        assertEquals(text, slices.joinToString("") { WorkspaceDiff.sliceRange(text, it.offset, it.end).let { range -> text.substring(range.start, range.end) } })
+        assertTrue(slices.all { WorkspaceDiff.sliceRange(text, it.offset, it.end).let { range -> range.end - range.start <= 7 && !text[range.start].isLowSurrogate() } })
+    }
+
+    @Test fun splitLongLinesKeepBothSidesOnValidSurrogateBoundaries() {
+        val old = "😀a".repeat(1000)
+        val next = "x😀b".repeat(1000)
+        val slices = WorkspaceDiff.slices(WorkspaceDiff.items(WorkspaceDiff.compare(old, next), true, true, emptySet()), 7)
+            .filterIsInstance<ReviewDiffItem.Line>()
+        for (side in listOf(old to { line: ReviewDiffItem.Line -> line.left }, next to { line: ReviewDiffItem.Line -> line.right })) {
+            assertEquals(side.first, slices.joinToString("") {
+                val text = side.second(it)!!.text
+                val range = WorkspaceDiff.sliceRange(text, it.offset, it.end)
+                val start = range.start
+                val end = range.end
+                assertTrue(start == text.length || !text[start].isLowSurrogate())
+                text.substring(start, end)
+            })
+        }
+    }
+
     @Test fun `binding scope respects path segments and environments`() {
         assertTrue(changePathContains("/workspace/", "/workspace/src/../main.as"))
         assertFalse(changePathContains("/workspace", "/workspace-other/main.as"))

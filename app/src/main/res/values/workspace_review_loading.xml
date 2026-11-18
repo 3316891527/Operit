@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">此差异较大，点击后加载。大型差异不启用语法高亮。</string>
+    <string name="workspace_changes_load_diff">加载差异</string>
+    <string name="workspace_changes_hard_limit">此差异超过显示上限：两侧合计 4,194,304 字符或 20,000 行，单行最多 131,072 字符。请打开原文件查看。</string>
+    <string name="workspace_changes_long_lines_wrap">超长行已按窗口宽度自动换行。</string>
+</resources>

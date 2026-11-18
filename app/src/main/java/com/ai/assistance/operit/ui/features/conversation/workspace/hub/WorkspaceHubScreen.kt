@@ -269,13 +269,13 @@ private fun WorkspaceHubContent(
                     )
                 }
                 val workspaceVisible = isVisible && page == WorkspaceHubPage.WORKSPACE
-                // 工作区隐藏时保留编辑状态；未绑定工作区的选择器仅在当前页面组合。
+                // 临时浏览目录和文件也属于工作区会话，切到终端后继续保留编辑状态。
                 Layout(
                     modifier = if (workspaceVisible) Modifier.fillMaxSize() else {
                         Modifier.size(0.dp).clearAndSetSemantics {}
                     },
                     content = {
-                        if ((hasOpenedWorkspace && currentChat?.workspace != null) || workspaceVisible) {
+                        if (hasOpenedWorkspace || workspaceVisible) {
                             CompositionLocalProvider(LocalWorkspaceBrowserActive provides workspaceVisible) {
                                 WorkspaceScreen(
                                     actualViewModel = actualViewModel,
@@ -354,7 +354,7 @@ private fun WorkspaceHubContent(
             confirmButton = { TextButton(onClick = {
                 terminalManager.closeSession(session.id)
                 sessionToClose = null
-                if (terminalManager.terminalState.value.sessions.none { !it.automation }) { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() }
+                if (page == WorkspaceHubPage.TERMINAL && terminalManager.terminalState.value.sessions.none { !it.automation }) { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() }
             }) { Text(stringResource(R.string.close)) } },
             dismissButton = { TextButton(onClick = { sessionToClose = null }) { Text(stringResource(R.string.cancel)) } },
         )

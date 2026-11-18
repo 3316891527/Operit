@@ -32,7 +32,6 @@ internal fun WorkbenchSlider(
 ) {
     // 九宫格切片可固定为单一值，零长度区间按零比例绘制，避免 0/0 产生 NaN。
     val length = valueRange.endInclusive - valueRange.start
-    val fraction = if (length == 0f) 0f else (value - valueRange.start) / length
     Slider(
         value = value,
         onValueChange = onValueChange,
@@ -44,10 +43,11 @@ internal fun WorkbenchSlider(
         interactionSource = interactionSource,
         modifier = modifier.fillMaxWidth(),
         thumb = { WorkbenchSliderThumb(enabled) },
-        track = {
+        track = { state ->
+            // 原生滑块会吸附到步进值，轨道必须读取同一个值才能与圆形滑块对齐。
             WorkbenchSliderTrack(
                 0f,
-                fraction,
+                if (length == 0f) 0f else (state.value - valueRange.start) / length,
                 enabled,
             )
         },

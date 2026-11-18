@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">Perbezaan ini besar. Muatkan untuk melihat perubahan tanpa penyerlahan sintaks.</string>
+    <string name="workspace_changes_load_diff">Muatkan perbezaan</string>
+    <string name="workspace_changes_hard_limit">Perbezaan melebihi had: jumlah 4,194,304 aksara atau 20,000 baris bagi kedua-dua versi, atau 131,072 aksara sebaris. Buka fail asal untuk melihatnya.</string>
+    <string name="workspace_changes_long_lines_wrap">Baris yang sangat panjang dibalut mengikut lebar tetingkap.</string>
+</resources>

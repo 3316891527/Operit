@@ -1,6 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.editor
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,7 @@ internal fun EditorSettingsScreen(settings: EditorSettings, change: ((EditorSett
                     EditorSettingSection(R.string.workspace_editor_section_typography)
                     EditorSettingSlider(R.string.workspace_editor_font_size, settings.fontSize, 8f..40f, 31,
                         format = { it.roundToInt().toString() }) { value -> change { it.copy(fontSize = value.roundToInt().toFloat()) } }
-                    EditorSettingSlider(R.string.workspace_editor_line_spacing, settings.lineSpacing, 1f..2.5f, 14,
+                    EditorSettingSlider(R.string.workspace_editor_line_spacing, settings.lineSpacing, 1f..2.5f, 29,
                         format = { String.format(java.util.Locale.getDefault(), "%.2f", it) }) { value -> change { it.copy(lineSpacing = value) } }
                     EditorSettingToggle(R.string.workspace_browser_word_wrap, settings.wordWrap) { value -> change { it.copy(wordWrap = value) } }
                     EditorSettingToggle(R.string.workspace_editor_wrap_words, settings.wrapWords, settings.wordWrap) { value -> change { it.copy(wrapWords = value) } }
@@ -96,11 +97,11 @@ private fun EditorSettingDivider() {
 
 @Composable
 private fun EditorSettingToggle(label: Int, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(enabled = enabled) { onChange(!checked) }.padding(horizontal = 20.dp, vertical = 8.dp).heightIn(min = 44.dp),
+    Row(Modifier.fillMaxWidth().toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange).padding(horizontal = 20.dp, vertical = 8.dp).heightIn(min = 44.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
         Text(stringResource(label), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f))
-        Switch(checked, onCheckedChange = onChange, enabled = enabled)
+        Switch(checked, onCheckedChange = null, enabled = enabled)
     }
 }
 

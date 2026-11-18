@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">Archive source</string>
     <string name="workspace_archive_packed_size">Packed size</string>
     <string name="workspace_archive_encrypted">Encrypted</string>
-    <string name="workspace_archive_name_hint">The selected format adds the extension automatically.</string>
+    <string name="workspace_archive_name_hint">Typed extensions are kept. The default name or the original source name gets the selected format extension.</string>
     <string name="workspace_archive_stage_target">Check destination</string>
     <string name="workspace_archive_stage_sources">Read sources</string>
     <string name="workspace_archive_stage_write">Write archive</string>

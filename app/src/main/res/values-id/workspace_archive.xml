@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">Sumber arsip</string>
     <string name="workspace_archive_packed_size">Ukuran terkompresi</string>
     <string name="workspace_archive_encrypted">Terenkripsi</string>
-    <string name="workspace_archive_name_hint">Format yang dipilih menambahkan ekstensi secara otomatis.</string>
+    <string name="workspace_archive_name_hint">Ekstensi yang diketik dipertahankan. Nama bawaan atau nama sumber asli mendapat ekstensi format terpilih.</string>
     <string name="workspace_archive_stage_target">Periksa tujuan</string>
     <string name="workspace_archive_stage_sources">Baca sumber</string>
     <string name="workspace_archive_stage_write">Tulis arsip</string>
