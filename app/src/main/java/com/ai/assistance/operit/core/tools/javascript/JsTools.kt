@@ -163,6 +163,70 @@ fun getJsToolsDefinition(): String {
                     return toolCall("download_file", params);
                 },
             }; }
+        // 终端方法捕获本次脚本的 toolCall，异步执行时仍能关联发起对话。
+        function __operitCreateTerminalTools(toolCall) {
+            return {
+                create: (sessionName) => toolCall("create_terminal_session", { session_name: sessionName }),
+                start: (sessionId, command, options = {}) => {
+                    const params = { session_id: sessionId, command };
+                    if (options.timeoutMs !== undefined && options.timeoutMs !== null) params.timeout_ms = String(options.timeoutMs);
+                    if (options.yieldMs !== undefined && options.yieldMs !== null) params.yield_ms = String(options.yieldMs);
+                    return toolCall("start_terminal_task", params);
+                },
+                poll: (runId, options = {}) => {
+                    const params = { run_id: runId };
+                    if (options.yieldMs !== undefined && options.yieldMs !== null) params.yield_ms = String(options.yieldMs);
+                    return toolCall("poll_terminal_task", params);
+                },
+                cancel: (runId) => toolCall("cancel_terminal_task", { run_id: runId }),
+                exec: (sessionId, command, timeoutMs) => {
+                    const params = { session_id: sessionId, command };
+                    if (timeoutMs !== undefined && timeoutMs !== null) {
+                        params.timeout_ms = String(timeoutMs);
+                    }
+                    return toolCall("execute_in_terminal_session", params);
+                },
+                execStreaming: (sessionId, command, options = {}) => {
+                    const params = { session_id: sessionId, command };
+                    const toolOptions = {};
+                    if (options && typeof options === "object") {
+                        if (options.timeoutMs !== undefined && options.timeoutMs !== null) {
+                            params.timeout_ms = String(options.timeoutMs);
+                        }
+                        if (typeof options.onIntermediateResult === "function") {
+                            toolOptions.onIntermediateResult = options.onIntermediateResult;
+                        }
+                    }
+                    return toolCall("execute_in_terminal_session_streaming", params, toolOptions);
+                },
+                hiddenExec: (command, options = {}) => {
+                    const params = { command };
+                    if (options && typeof options === "object") {
+                        if (options.executorKey !== undefined && options.executorKey !== null) {
+                            params.executor_key = String(options.executorKey);
+                        }
+                        if (options.timeoutMs !== undefined && options.timeoutMs !== null) {
+                            params.timeout_ms = String(options.timeoutMs);
+                        }
+                    }
+                    return toolCall("execute_hidden_terminal_command", params);
+                },
+                screen: (sessionId) => toolCall("get_terminal_session_screen", { session_id: sessionId }),
+                close: (sessionId) => toolCall("close_terminal_session", { session_id: sessionId }),
+                input: (sessionId, options = {}) => {
+                    const params = { session_id: sessionId };
+                    if (options && typeof options === "object") {
+                        if (options.input !== undefined && options.input !== null) {
+                            params.input = String(options.input);
+                        }
+                        if (options.control !== undefined && options.control !== null) {
+                            params.control = String(options.control);
+                        }
+                    }
+                    return toolCall("input_in_terminal_session", params);
+                }
+            };
+        }
         var Tools = {
             // 文件系统操作
             Files: __operitCreateFileTools(toolCall),
@@ -817,68 +881,7 @@ fun getJsToolsDefinition(): String {
                     }
                 },
                 shell: (command) => toolCall("execute_shell", { command }),
-                // 执行终端命令 - 一次性收集输出
-                terminal: {
-                    create: (sessionName) => toolCall("create_terminal_session", { session_name: sessionName }),
-                    start: (sessionId, command, options = {}) => {
-                        const params = { session_id: sessionId, command };
-                        if (options.timeoutMs !== undefined && options.timeoutMs !== null) params.timeout_ms = String(options.timeoutMs);
-                        if (options.yieldMs !== undefined && options.yieldMs !== null) params.yield_ms = String(options.yieldMs);
-                        return toolCall("start_terminal_task", params);
-                    },
-                    poll: (runId, options = {}) => {
-                        const params = { run_id: runId };
-                        if (options.yieldMs !== undefined && options.yieldMs !== null) params.yield_ms = String(options.yieldMs);
-                        return toolCall("poll_terminal_task", params);
-                    },
-                    cancel: (runId) => toolCall("cancel_terminal_task", { run_id: runId }),
-                    exec: (sessionId, command, timeoutMs) => {
-                        const params = { session_id: sessionId, command };
-                        if (timeoutMs !== undefined && timeoutMs !== null) {
-                            params.timeout_ms = String(timeoutMs);
-                        }
-                        return toolCall("execute_in_terminal_session", params);
-                    },
-                    execStreaming: (sessionId, command, options = {}) => {
-                        const params = { session_id: sessionId, command };
-                        const toolOptions = {};
-                        if (options && typeof options === "object") {
-                            if (options.timeoutMs !== undefined && options.timeoutMs !== null) {
-                                params.timeout_ms = String(options.timeoutMs);
-                            }
-                            if (typeof options.onIntermediateResult === "function") {
-                                toolOptions.onIntermediateResult = options.onIntermediateResult;
-                            }
-                        }
-                        return toolCall("execute_in_terminal_session_streaming", params, toolOptions);
-                    },
-                    hiddenExec: (command, options = {}) => {
-                        const params = { command };
-                        if (options && typeof options === "object") {
-                            if (options.executorKey !== undefined && options.executorKey !== null) {
-                                params.executor_key = String(options.executorKey);
-                            }
-                            if (options.timeoutMs !== undefined && options.timeoutMs !== null) {
-                                params.timeout_ms = String(options.timeoutMs);
-                            }
-                        }
-                        return toolCall("execute_hidden_terminal_command", params);
-                    },
-                    screen: (sessionId) => toolCall("get_terminal_session_screen", { session_id: sessionId }),
-                    close: (sessionId) => toolCall("close_terminal_session", { session_id: sessionId }),
-                    input: (sessionId, options = {}) => {
-                        const params = { session_id: sessionId };
-                        if (options && typeof options === "object") {
-                            if (options.input !== undefined && options.input !== null) {
-                                params.input = String(options.input);
-                            }
-                            if (options.control !== undefined && options.control !== null) {
-                                params.control = String(options.control);
-                            }
-                        }
-                        return toolCall("input_in_terminal_session", params);
-                    }
-                },
+                terminal: __operitCreateTerminalTools(toolCall),
                 music: {
                     play: (options) => {
                         if (!options || typeof options !== "object" || Array.isArray(options)) {

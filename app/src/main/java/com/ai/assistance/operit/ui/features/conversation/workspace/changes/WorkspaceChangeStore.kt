@@ -37,13 +37,15 @@ internal class WorkspaceChangeStore(context: Context) {
     private var trackedChat: String? = null
     private var trackedLocations = emptyList<ChangeLocation>()
 
-    /** 终端核对当前对话已有的 Linux 文件，连续的只读命令复用路径清单。 */
+    /** 终端核对本对话记录过的本地文件，包含 Android 与 Ubuntu 共用的存储。 */
     @Synchronized
-    fun trackedLinuxFiles(chatId: String): List<ChangeLocation> {
+    fun trackedLocalFiles(chatId: String): List<ChangeLocation> {
         if (chatId.isBlank()) return emptyList()
         if (trackedChat != chatId || trackedRevision != revisionState.value) {
-            trackedLocations = records(chatId).asSequence().filter { it.location.backend == "linux:local" }
-                .associateBy { it.location.key }.values.filter { it.after.kind == SnapshotKind.TEXT || it.after.kind == SnapshotKind.BINARY }
+            trackedLocations = records(chatId).asSequence()
+                .filter { it.location.backend == "linux:local" || it.location.backend == "android" }
+                .associateBy { it.location.historyLocation().key }.values
+                .filter { it.after.kind == SnapshotKind.TEXT || it.after.kind == SnapshotKind.BINARY }
                 .map { it.location }
             trackedRevision = revisionState.value
             trackedChat = chatId
@@ -131,9 +133,13 @@ internal class WorkspaceChangeStore(context: Context) {
         operations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
             json.decodeFromString<List<FileChangeRecord>>(file.readText(Charsets.UTF_8))
         }.filter { record ->
-            (chatId == null || record.chatId == chatId) &&
-                (backend == null || record.location.backend == backend) &&
-                (directory == null || changePathContains(directory, record.location.path))
+            val inScope = if (directory == null) {
+                backend == null || record.location.backend == backend
+            } else {
+                val scope = ChangeLocation(directory, record.location.environment, backend ?: record.location.backend)
+                relativeChangePath(scope, record.location) != null
+            }
+            (chatId == null || record.chatId == chatId) && inScope
         }.sortedWith(compareBy<FileChangeRecord> { it.timestamp }.thenBy { it.id })
 
     @Synchronized
@@ -157,8 +163,9 @@ internal class WorkspaceChangeStore(context: Context) {
     }
 
     @Synchronized
-    fun reviewFiles(records: List<FileChangeRecord>, directory: String? = null, aggregate: Boolean = false): List<ReviewFile> =
-        records.groupBy { it.location.key }.map { (key, unsorted) ->
+    fun reviewFiles(
+        records: List<FileChangeRecord>, directory: ChangeLocation? = null, aggregate: Boolean = false,
+    ): List<ReviewFile> = records.groupBy { it.location.historyLocation().key }.map { (key, unsorted) ->
             val history = unsorted.sortedWith(compareBy<FileChangeRecord> { it.timestamp }.thenBy { it.id })
             val latest = history.last()
             val first = if (aggregate) history.first() else latest
@@ -175,7 +182,7 @@ internal class WorkspaceChangeStore(context: Context) {
             } else null
             ReviewFile(
                 id = key, location = latest.location,
-                displayPath = if (directory == null) latest.location.path else latest.location.path.removePrefix(changePath(directory).trimEnd('/') + "/"),
+                displayPath = if (directory == null) latest.location.path else checkNotNull(relativeChangePath(directory, latest.location)),
                 status = when { before.kind == SnapshotKind.ABSENT -> "A"; after.kind == SnapshotKind.ABSENT -> "D"; else -> "M" },
                 additions = counts?.first ?: 0, deletions = counts?.second ?: 0,
                 binary = before.kind == SnapshotKind.BINARY || after.kind == SnapshotKind.BINARY,
@@ -189,8 +196,10 @@ internal class WorkspaceChangeStore(context: Context) {
     }
 
     @Synchronized
-    fun fileRecords(location: ChangeLocation, chatId: String?): List<FileChangeRecord> =
-        records(chatId = chatId).filter { it.location.key == location.key }
+    fun fileRecords(location: ChangeLocation, chatId: String?): List<FileChangeRecord> {
+        val key = location.historyLocation().key
+        return records(chatId = chatId).filter { it.location.historyLocation().key == key }
+    }
 
     private fun removeLocked(ids: Set<String>): Int {
         if (ids.isEmpty()) return 0

@@ -7,10 +7,6 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.LinkOption.NOFOLLOW_LINKS
-import java.nio.file.NoSuchFileException
-import java.nio.file.attribute.BasicFileAttributes
 import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -76,8 +72,8 @@ internal class TerminalFileJournal internal constructor(
                 if (prepared) awaitEventsFor(origin.chatId)
                 WorkspaceChangeStore.operationMutex.withLock {
                     prepare()
-                    execution.tracked = store.trackedLinuxFiles(origin.chatId)
-                    queueTrackedChanges(execution.tracked, source())
+                    execution.tracked = store.trackedLocalFiles(origin.chatId)
+                    queueTrackedPaths(execution.tracked, source())
                     inspectPending()
                     executions[checkNotNull(origin.executionId)] = execution
                     prepared = true
@@ -113,7 +109,7 @@ internal class TerminalFileJournal internal constructor(
             awaitEventsFor(execution.origin.chatId)
             WorkspaceChangeStore.operationMutex.withLock {
                 if (executions[execution.origin.executionId] === execution) {
-                    queueTrackedChanges(execution.tracked, source())
+                    queueTrackedPaths(execution.tracked, source())
                 }
                 inspectPending()
                 persistBaselines()
@@ -122,28 +118,17 @@ internal class TerminalFileJournal internal constructor(
         finally { execution.finished = true; executions.remove(execution.origin.executionId, execution) }
     }
 
-    /** 核对当前对话已经记录过的文件；通知与退出检查共用同一份待处理路径和基线。 */
-    private fun queueTrackedChanges(locations: List<ChangeLocation>, origin: TerminalChangeOrigin?) {
+    /** 以观察根的实际相对路径核对当前对话的文件，前后读取使用同一份快照逻辑。 */
+    private fun queueTrackedPaths(locations: List<ChangeLocation>, origin: TerminalChangeOrigin?) {
         for (location in locations) {
-            val state = observedStates.filter { it.root.location.backend == location.backend &&
-                changePathContains(it.root.location.path, location.path) }.maxByOrNull { it.root.location.path.length } ?: continue
-            val name = location.path.removePrefix(state.root.location.path.trimEnd('/') + "/")
-            if (name.isEmpty() || name.split('/').any { it == ".." }) continue
-            val file = File(state.root.file, name)
-            if (excluded(state, file)) continue
-            val path = file.toPath()
-            var parent = path.parent
-            while (parent != null && parent != state.root.file.toPath() && !Files.isSymbolicLink(parent)) parent = parent.parent
-            if (parent != state.root.file.toPath()) continue
-            val old = state.baseline.files[name]
-            val differs = try {
-                val attrs = Files.readAttributes(path, BasicFileAttributes::class.java, NOFOLLOW_LINKS)
-                !attrs.isDirectory && (old?.stamp != terminalFileStamp(attrs) || old.snapshot.kind == SnapshotKind.UNAVAILABLE)
-            } catch (_: NoSuchFileException) { old != null }
-            catch (_: IOException) { true }
-            if (differs) synchronized(state) {
-                // 已有文件事件优先保留写入发生时的归属。
-                if (name !in state.pending) state.pending[name] = origin
+            val target = observedStates.mapNotNull { state ->
+                relativeChangePath(state.root.location, location)?.let { state to it }
+            }.minByOrNull { (_, path) -> path.length } ?: continue
+            val (state, path) = target
+            if (path.isEmpty() || excluded(state, File(state.root.file, path))) continue
+            synchronized(state) {
+                // 已有明确来源的通知保留归属，空来源的通知也参与本次实际内容对比。
+                if (state.pending[path] == null) state.pending[path] = origin
             }
         }
     }
@@ -291,14 +276,15 @@ internal class TerminalFileJournal internal constructor(
             return
         }
         // 长任务可逐批更新界面，同一次执行的同一文件保留最早 before 和最新 after。
-        val next = store.operationRecords(execution.operationId).associateBy { it.location.key }.toMutableMap()
+        val next = store.operationRecords(execution.operationId).associateBy { it.location.historyLocation().key }.toMutableMap()
         for (record in changes) {
-            val prior = next[record.location.key]
+            val key = record.location.historyLocation().key
+            val prior = next[key]
             val merged = if (prior == null) record.copy(operationId = execution.operationId) else record.copy(
                 id = prior.id, operationId = execution.operationId, timestamp = prior.timestamp, before = prior.before)
             val comparable = merged.before.kind !in setOf(SnapshotKind.TOO_LARGE, SnapshotKind.UNAVAILABLE)
-            if (comparable && merged.before == merged.after) next.remove(record.location.key)
-            else next[record.location.key] = statistics(merged)
+            if (comparable && merged.before == merged.after) next.remove(key)
+            else next[key] = statistics(merged)
         }
         store.replaceOperation(execution.operationId, next.values.toList())
         recorded(changes)

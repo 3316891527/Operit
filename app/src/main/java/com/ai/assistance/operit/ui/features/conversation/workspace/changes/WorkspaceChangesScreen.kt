@@ -120,21 +120,19 @@ internal fun WorkspaceChangesScreen(
             val loadedFiles = if (source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN) {
                 git = null
                 withContext(Dispatchers.IO) {
+                    val workspace = if (!conversation && directory != null) WorkspaceChangeAccess(context).location(directory, environment) else null
                     val records = when {
                         source == ChangeReviewSource.LAST_TURN && chatId != null -> {
                             val turn = latestTurnRecords(store.records(chatId = chatId), userMessages)
-                            if (conversation || directory == null) turn else {
-                                val backend = WorkspaceChangeAccess.resolvedBackend(context, environment)
-                                turn.filter { it.location.backend == backend && changePathContains(directory, it.location.path) }
-                            }
+                            if (workspace == null) turn else turn.filter { relativeChangePath(workspace, it.location) != null }
                         }
                         source == ChangeReviewSource.LAST_TURN -> emptyList()
                         conversation && chatId != null -> store.records(chatId = chatId)
                         conversation -> emptyList()
-                        directory != null -> store.records(directory = directory, backend = WorkspaceChangeAccess.resolvedBackend(context, environment))
+                        workspace != null -> store.records(directory = workspace.path, backend = workspace.backend)
                         else -> emptyList()
                     }
-                    store.reviewFiles(records, if (conversation) null else directory, aggregate = true)
+                    store.reviewFiles(records, workspace, aggregate = true)
                 }
             } else {
                 val review = checkNotNull(repository).load(source == ChangeReviewSource.BRANCH, base)
@@ -232,7 +230,8 @@ internal fun WorkspaceChangesScreen(
                     HorizontalDivider(color = colors.outlineVariant.copy(alpha = 0.35f))
                     if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp))
                     if (projectTree && directory != null) ChangeProjectTree(directory, environment, query, selected?.id, refresh) { location ->
-                        val changed = files.firstOrNull { it.location.key == location.key }
+                        val target = if (historical) location.historyLocation() else location
+                        val changed = files.firstOrNull { (if (historical) it.location.historyLocation() else it.location).key == target.key }
                         if (changed != null) { selectFile(changed); query = "" }
                         else {
                             previewJob?.cancel()
@@ -313,8 +312,9 @@ private fun ChangeFileDetail(
     var recordId by rememberSaveable(file.id) { mutableStateOf<String?>(null) }
     val effectiveRecordId = recordId?.takeIf { id -> file.records.any { it.id == id } }
     LaunchedEffect(effectiveRecordId) { if (recordId != effectiveRecordId) recordId = effectiveRecordId }
+    // 只有显式选择单次操作时才显示操作来源，汇总和记录条数互不影响。
     val record = if (effectiveRecordId != null) file.records.first { it.id == effectiveRecordId }
-        else if (file.aggregateRecords && file.records.size > 1) null else file.records.firstOrNull()
+        else if (file.aggregateRecords) null else file.records.firstOrNull()
     val scope = rememberCoroutineScope()
     var actionJob by remember(file.id) { mutableStateOf<Job?>(null) }
     var actionError by remember(file.id) { mutableStateOf<String?>(null) }
@@ -419,7 +419,7 @@ private fun ChangeFileDetail(
                         TextButton(onClick = { historyOpen = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.height(26.dp)) {
                             Text(record?.let { recordTitle(it) } ?: stringResource(summaryLabel,
                                 changeTime(file.records.first().timestamp)), fontSize = 9.sp, fontWeight = FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            if (file.records.size > 1) Icon(Icons.Default.ArrowDropDown, null, Modifier.size(12.dp))
+                            if (file.aggregateRecords || file.records.size > 1) Icon(Icons.Default.ArrowDropDown, null, Modifier.size(12.dp))
                         }
                         DropdownMenu(expanded = historyOpen, onDismissRequest = { historyOpen = false }) {
                             if (file.aggregateRecords) DropdownMenuItem(text = { Text(stringResource(summaryLabel, changeTime(file.records.first().timestamp)), fontSize = 11.sp) }, onClick = { recordId = null; historyOpen = false })

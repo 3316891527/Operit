@@ -118,7 +118,7 @@ internal fun scanTerminalFiles(
     return TerminalObservationBaseline(result, unreadable)
 }
 
-internal fun terminalFileStamp(attrs: BasicFileAttributes): String =
+private fun terminalFileStamp(attrs: BasicFileAttributes): String =
     "${attrs.lastModifiedTime()}:${attrs.size()}:${attrs.fileKey()}"
 
 internal fun TerminalObservationBaseline.snapshot(path: String): ChangeSnapshot = files[path]?.snapshot

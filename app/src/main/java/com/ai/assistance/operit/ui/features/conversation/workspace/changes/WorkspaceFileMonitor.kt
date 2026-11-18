@@ -119,12 +119,12 @@ internal class WorkspaceFileMonitor internal constructor(
     /** 文件工具已经固化的同份快照同步进观察基线，避免随后通知重复记录。调用方持有操作锁。 */
     fun acknowledge(records: List<FileChangeRecord>) {
         for (state in states.values) {
-            val updates = records.filter { it.chatId == state.binding.chatId && it.location.backend == state.binding.location.backend &&
-                changePathContains(state.binding.location.path, it.location.path) }
+            val updates = records.filter { it.chatId == state.binding.chatId }.mapNotNull { record ->
+                relativeChangePath(state.binding.location, record.location)?.let { it to record }
+            }
             if (updates.isEmpty() || !state.baselineLoaded) continue
             val next = state.before.toMutableMap()
-            for (record in updates) {
-                val relative = record.location.path.removePrefix(state.binding.location.path.trimEnd('/') + "/")
+            for ((relative, record) in updates) {
                 if (record.after.kind == SnapshotKind.ABSENT) next.remove(relative)
                 else if (record.after.kind != SnapshotKind.DIRECTORY) next[relative] = ObservedWorkspaceFile("", record.after)
             }
