@@ -52,6 +52,18 @@ class TerminalObservedFilesTest {
         assertEquals(initial.snapshot("two"), next.snapshot("two"))
     }
 
+    @Test fun baselineRegistersVisibleDirectoriesDuringTheSameTraversal() {
+        val root = temporary.newFolder()
+        File(root, "tmp/operit-edit-demo").mkdirs()
+        File(root, "tmp/operit-edit-demo/message.txt").writeText("first")
+        File(root, ".git/objects").mkdirs()
+        val watched = mutableListOf<String>()
+        val initial = scanTerminalFiles(root, TerminalObservationBaseline(),
+            onDirectory = { watched += it.relativeTo(root).invariantSeparatorsPath }, snapshotBytes = ::snapshot)
+        assertEquals(listOf("", "tmp", "tmp/operit-edit-demo"), watched)
+        assertEquals(snapshot("first".toByteArray()), initial.snapshot("tmp/operit-edit-demo/message.txt"))
+    }
+
     @Test fun directoryEventCapturesAlreadyCreatedDescendants() {
         val root = temporary.newFolder()
         val initial = scan(root)

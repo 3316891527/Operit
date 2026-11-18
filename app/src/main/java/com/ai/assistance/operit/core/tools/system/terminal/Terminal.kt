@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withTimeout
 import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import com.ai.assistance.operit.terminal.provider.type.TerminalType
 import com.ai.assistance.operit.terminal.provider.filesystem.LocalFileSystemProvider
@@ -132,26 +133,38 @@ class Terminal internal constructor(
         command: String,
         commandId: String = UUID.randomUUID().toString(),
         onCancellationOutcome: (com.ai.assistance.operit.terminal.command.CommandCancellationOutcome) -> Unit = {},
+    ): Flow<CommandExecutionEvent> = observedCommandFlow(sessionId, command, commandId, null, onCancellationOutcome)
+
+    internal fun timedCommandFlow(sessionId: String, command: String, timeoutMs: Long): Flow<CommandExecutionEvent> =
+        observedCommandFlow(sessionId, command, UUID.randomUUID().toString(), timeoutMs) {}
+
+    private fun observedCommandFlow(
+        sessionId: String, command: String, commandId: String, timeoutMs: Long?,
+        onCancellationOutcome: (com.ai.assistance.operit.terminal.command.CommandCancellationOutcome) -> Unit,
     ): Flow<CommandExecutionEvent> {
         // 在创建 Flow 时冻结调用者，托管任务换协程收集后仍保留原始工具身份。
         val origin = executionOrigin(commandId)
         return flow {
             val local = terminalState.value.sessions.firstOrNull { it.id == sessionId }?.terminalType == TerminalType.LOCAL
             val observation = if (local) fileJournal?.begin(origin) else null
-            try {
+            var completion: CommandExecutionEvent? = null
+            val execute: suspend () -> Unit = {
                 terminalCommandFlow(
                     events = commandEvents, sessionId = sessionId, commandId = commandId,
                     submit = { terminalManager.sendCommandToSession(sessionId, command, commandId) },
                     cancel = { terminalManager.cancelCommand(sessionId, commandId) },
                     onCancellationOutcome = onCancellationOutcome,
                 ).collect { event ->
-                    // 最终结果发布前保存文件变化，不依赖调用工具的返回顺序。
-                    if (event.isCompleted && observation != null) fileJournal?.finish(observation)
-                    emit(event)
+                    if (event.isCompleted) completion = event else emit(event)
                 }
+            }
+            try {
+                // 只对命令从提交到退出计时。历史采集用时不能覆盖进程已经给出的退出码。
+                if (timeoutMs == null) execute() else withTimeout(timeoutMs) { execute() }
             } finally {
                 if (observation != null) fileJournal?.finish(observation)
             }
+            completion?.let { emit(it) }
         }
     }
 

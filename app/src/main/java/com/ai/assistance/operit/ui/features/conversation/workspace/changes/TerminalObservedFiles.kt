@@ -26,6 +26,7 @@ internal fun scanTerminalFiles(
     paths: Set<String>? = null,
     excluded: (File) -> Boolean = { false },
     byteBudget: Long = 64L * 1024 * 1024,
+    onDirectory: (File) -> Unit = {},
     snapshotBytes: (ByteArray) -> ChangeSnapshot,
 ): TerminalObservationBaseline {
     val rootPath = root.toPath().toAbsolutePath().normalize()
@@ -64,7 +65,10 @@ internal fun scanTerminalFiles(
     val visitor = object : SimpleFileVisitor<Path>() {
         override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult =
             if (excluded(dir.toFile()) || relative(dir).split('/').any { it == ".git" }) FileVisitResult.SKIP_SUBTREE
-            else FileVisitResult.CONTINUE
+            else {
+                onDirectory(dir.toFile())
+                FileVisitResult.CONTINUE
+            }
 
         override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
             if (excluded(file.toFile()) || relative(file).split('/').any { it == ".git" }) return FileVisitResult.CONTINUE
@@ -95,7 +99,8 @@ internal fun scanTerminalFiles(
     for (name in selected) {
         val path = rootPath.resolve(name).normalize()
         if (paths != null) {
-            result.keys.removeAll { contains(name, it) }
+            // 普通文件的旧基线没有子路径，单文件更新无需遍历整个观察根的键集。
+            if (name in before.files) result.remove(name) else result.keys.removeAll { contains(name, it) }
             unreadable.removeAll { contains(name, it) }
         }
         // 路径的任意中间段是链接时，不能沿链接读到观察范围之外。
@@ -113,7 +118,7 @@ internal fun scanTerminalFiles(
     return TerminalObservationBaseline(result, unreadable)
 }
 
-private fun terminalFileStamp(attrs: BasicFileAttributes): String =
+internal fun terminalFileStamp(attrs: BasicFileAttributes): String =
     "${attrs.lastModifiedTime()}:${attrs.size()}:${attrs.fileKey()}"
 
 internal fun TerminalObservationBaseline.snapshot(path: String): ChangeSnapshot = files[path]?.snapshot

@@ -7,6 +7,7 @@ internal data class LoadedFileReview(
     val content: ReviewContent, val diff: PreparedReviewDiff?, val load: ReviewDiffLoad = WorkspaceDiffPolicy.classify(content),
     val snapshotKey: String? = if (content.isText) diff?.document?.snapshotKey
         ?: reviewSnapshotKey(checkNotNull(content.before), checkNotNull(content.after)) else null,
+    val highlightComplete: Boolean = false,
 ) {
     init { require(diff == null || content.isText) }
     val characters: Int get() = (content.before?.length ?: 0) + (content.after?.length ?: 0)
@@ -48,3 +49,12 @@ internal fun reviewDiffSupported(content: ReviewContent): Boolean =
 /** 后台统计不提前计算需要用户主动加载的大型差异。 */
 internal fun reviewDiffAutomatic(content: ReviewContent): Boolean =
     WorkspaceDiffPolicy.classify(content) == ReviewDiffLoad.AUTOMATIC
+
+/** 行差异可直接显示，高亮使用同一个行模型，避免等候 Markdown 等语法的初始化。 */
+internal fun prepareReviewLines(content: ReviewContent): PreparedReviewDiff {
+    val document = WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after))
+    val columns = document.rows.maxOfOrNull { line ->
+        line.text.sumOf { ch: Char -> if (ch == '\t') 4L else if (ch.code > 127) 2L else 1L }.toInt()
+    } ?: 0
+    return PreparedReviewDiff(document, null, null, columns)
+}

@@ -24,6 +24,8 @@ internal class WorkspaceChangeStore(context: Context) {
     private val operations = File(root, "operations")
     private val observations = File(root, "observations")
     private val terminalObservations = File(root, "terminal-observations")
+    // 大基线的序列化和落盘使用独立锁，详情读取现有快照时无需等待整份基线。
+    private val baselineIo = Any()
     private val activeBaselines = linkedMapOf<String, TerminalObservationBaseline>()
     private val json = Json { encodeDefaults = true }
     private val revisionState = MutableStateFlow(0L)
@@ -31,10 +33,36 @@ internal class WorkspaceChangeStore(context: Context) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Int, Int>>): Boolean = size > 512
     }
     val revision = revisionState.asStateFlow()
+    private var trackedRevision = -1L
+    private var trackedChat: String? = null
+    private var trackedLocations = emptyList<ChangeLocation>()
+
+    /** 终端核对当前对话已有的 Linux 文件，连续的只读命令复用路径清单。 */
+    @Synchronized
+    fun trackedLinuxFiles(chatId: String): List<ChangeLocation> {
+        if (chatId.isBlank()) return emptyList()
+        if (trackedChat != chatId || trackedRevision != revisionState.value) {
+            trackedLocations = records(chatId).asSequence().filter { it.location.backend == "linux:local" }
+                .associateBy { it.location.key }.values.filter { it.after.kind == SnapshotKind.TEXT || it.after.kind == SnapshotKind.BINARY }
+                .map { it.location }
+            trackedRevision = revisionState.value
+            trackedChat = chatId
+        }
+        return trackedLocations
+    }
 
     @Synchronized
     fun putBlob(bytes: ByteArray): String {
-        val hash = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        // 冷启动会计算许多小文件的哈希，逐字节创建格式化器的开销会落到命令启动路径。
+        val alphabet = "0123456789abcdef"
+        val hex = CharArray(digest.size * 2)
+        for ((index, byte) in digest.withIndex()) {
+            val value = byte.toInt() and 255
+            hex[2 * index] = alphabet[value ushr 4]
+            hex[2 * index + 1] = alphabet[value and 15]
+        }
+        val hash = String(hex)
         val target = File(objects, hash)
         if (!target.exists()) writeAtomic(target, bytes)
         return hash
@@ -76,28 +104,24 @@ internal class WorkspaceChangeStore(context: Context) {
         activeBaselines[key] = baseline
     }
 
-    @Synchronized
-    fun terminalBaseline(key: String): TerminalObservationBaseline? {
+    fun terminalBaseline(key: String): TerminalObservationBaseline? = synchronized(baselineIo) {
         require(Regex("[0-9a-f]{64}").matches(key))
         val file = File(terminalObservations, "$key.json")
-        return if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
+        if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
     }
 
-    @Synchronized
-    fun saveTerminalBaseline(key: String, baseline: TerminalObservationBaseline) {
+    fun saveTerminalBaseline(key: String, baseline: TerminalObservationBaseline) = synchronized(baselineIo) {
         require(Regex("[0-9a-f]{64}").matches(key))
         writeAtomic(File(terminalObservations, "$key.json"), json.encodeToString(baseline).toByteArray(Charsets.UTF_8))
     }
 
-    @Synchronized
-    fun observedFiles(key: String): Map<String, ObservedWorkspaceFile>? {
+    fun observedFiles(key: String): Map<String, ObservedWorkspaceFile>? = synchronized(baselineIo) {
         require(Regex("[0-9a-f]{64}").matches(key))
         val file = File(observations, "$key.json")
-        return if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
+        if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
     }
 
-    @Synchronized
-    fun saveObservedFiles(key: String, files: Map<String, ObservedWorkspaceFile>) {
+    fun saveObservedFiles(key: String, files: Map<String, ObservedWorkspaceFile>) = synchronized(baselineIo) {
         require(Regex("[0-9a-f]{64}").matches(key))
         writeAtomic(File(observations, "$key.json"), json.encodeToString(files).toByteArray(Charsets.UTF_8))
     }

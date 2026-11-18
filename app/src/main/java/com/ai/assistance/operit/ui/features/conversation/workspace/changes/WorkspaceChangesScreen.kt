@@ -106,7 +106,9 @@ internal fun WorkspaceChangesScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var selectedId by rememberSaveable(directory, environment, conversation) { mutableStateOf<String?>(null) }
     val repository = remember(directory, environment, refresh) { directory?.let { WorkspaceGitRepository(context, it, environment) } }
-    val cache = remember(chatId, directory, environment, source, base, revision, refresh) { WorkspaceReviewCache() }
+    val historical = source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN
+    // 历史记录携带快照版本，无关文件写入无需使已看过的差异和语法颜色失效。
+    val cache = remember(chatId, directory, environment, source, base, if (historical) 0L else revision, refresh) { WorkspaceReviewCache() }
     val request = listOf(chatId, directory, environment, source, base, revision, refresh, userMessages)
     var loadedRequest by remember { mutableStateOf<List<Any?>?>(null) }
     LaunchedEffect(isVisible, request) {
@@ -338,11 +340,13 @@ private fun ChangeFileDetail(
                 }
             }
             val policy = withContext(Dispatchers.Default) { WorkspaceDiffPolicy.classify(content) }
-            val snapshotKey = loaded?.snapshotKey ?: withContext(Dispatchers.Default) {
-                if (content.isText) reviewSnapshotKey(checkNotNull(content.before), checkNotNull(content.after)) else null
-            }
-            val prepared = if (content.isText && (policy == ReviewDiffLoad.AUTOMATIC || (policy == ReviewDiffLoad.MANUAL && reviewState.isLoadRequested(snapshotKey))))
-                withContext(Dispatchers.Default) { prepareReviewDiff(context, file.location.path, content) } else null
+            val manualKey = if (policy == ReviewDiffLoad.MANUAL) loaded?.snapshotKey ?: withContext(Dispatchers.Default) {
+                reviewSnapshotKey(checkNotNull(content.before), checkNotNull(content.after))
+            } else null
+            val prepared = if (policy == ReviewDiffLoad.AUTOMATIC || reviewState.isLoadRequested(manualKey)) {
+                withContext(Dispatchers.Default) { prepareReviewLines(content) }
+            } else null
+            val snapshotKey = prepared?.document?.snapshotKey ?: manualKey
             // 需要用户确认的文本只缓存内容，点击后才计算差异。
             val result = LoadedFileReview(content, prepared, policy, snapshotKey)
             cache.put(cacheKey, result)
@@ -353,6 +357,23 @@ private fun ChangeFileDetail(
             AppLogger.e("WorkspaceChanges", "读取文件差异失败", failure)
             error = failure.message ?: failure.javaClass.simpleName
         } finally { loading = false }
+    }
+    val visibleLines = loaded?.diff?.document
+    LaunchedEffect(cache, cacheKey, active, visibleLines?.snapshotKey) {
+        val entry = loaded ?: return@LaunchedEffect
+        val lines = entry.diff ?: return@LaunchedEffect
+        if (!active || entry.load != ReviewDiffLoad.AUTOMATIC || entry.highlightComplete) return@LaunchedEffect
+        try {
+            val highlighted = withContext(Dispatchers.Default) { highlightReviewLines(context, file.location.path, entry.content, lines) }
+            val result = entry.copy(diff = highlighted, highlightComplete = true)
+            cache.put(cacheKey, result)
+            loaded = result
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            AppLogger.e("WorkspaceChanges", "读取差异语法颜色失败", failure)
+            actionError = failure.message ?: failure.javaClass.simpleName
+        }
     }
     val navigation: @Composable () -> Unit = {
         ChangeFileNavigation(file, onToggleFiles, onPrevious, onNext, hasPrevious, hasNext, { location, action ->

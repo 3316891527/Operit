@@ -12,6 +12,45 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TerminalFileJournalAndroidTest {
+    @Test fun mappedEditOfTrackedFileIsSavedOnCommandExit() = runBlocking {
+        val target = InstrumentationRegistry.getInstrumentation().targetContext
+        val id = UUID.randomUUID().toString()
+        val directory = File(target.cacheDir, "mapped-edit-$id").apply { mkdirs() }
+        val context = object : ContextWrapper(target) {
+            override fun getFilesDir() = File(directory, "files").apply { mkdirs() }
+            override fun getCacheDir() = File(directory, "cache").apply { mkdirs() }
+            override fun getApplicationContext() = this
+        }
+        val root = File(context.filesDir, "linux").apply { mkdirs() }
+        val file = File(root, "message.txt").apply { writeText("first") }
+        val store = WorkspaceChangeStore(context)
+        val location = ChangeLocation("/message.txt", "linux", "linux:local")
+        val before = ChangeSnapshot(SnapshotKind.TEXT, file.length(), store.putBlob(file.readBytes()))
+        store.save(listOf(FileChangeRecord(id, id, id, 1, "create_file", location, ChangeSnapshot(SnapshotKind.ABSENT), before)))
+        val journal = TerminalFileJournal(context, { listOf(TerminalObservationRoot(root, location.copy(path = "/"))) }, store, {})
+        try {
+            java.io.RandomAccessFile(file, "rw").use { opened ->
+                val mapped = opened.channel.map(java.nio.channels.FileChannel.MapMode.READ_WRITE, 0, file.length())
+                val execution = journal.begin(TerminalChangeOrigin(id, "demo:terminal", UUID.randomUUID().toString()))
+                // 映射写入时描述符仍然打开，命令收尾不应依赖 CLOSE_WRITE 通知。
+                mapped.put("final".toByteArray())
+                mapped.force()
+                assertTrue(file.setLastModified(file.lastModified() + 2_000L))
+                journal.finish(execution)
+                val history = store.records(id)
+                assertEquals(2, history.size)
+                val change = history.last()
+                assertEquals("demo:terminal", change.toolName)
+                assertEquals("terminal", change.sourceKind)
+                assertEquals("first", store.content(change).before)
+                assertEquals("final", store.content(change).after)
+            }
+        } finally {
+            journal.close()
+            directory.deleteRecursively()
+        }
+    }
+
     @Test fun fastCreationIsSavedBeforeExecutionFinishesWithoutWorkspace() = runBlocking {
         val target = InstrumentationRegistry.getInstrumentation().targetContext
         val id = UUID.randomUUID().toString()

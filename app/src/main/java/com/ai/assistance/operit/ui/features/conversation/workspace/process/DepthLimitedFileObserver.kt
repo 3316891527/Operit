@@ -58,8 +58,9 @@ class DepthLimitedFileObserver(
         observers.clear()
     }
 
+    /** 基线枚举进入目录时立即订阅，该轮扫描无需再递归遍历一次目录。 */
     @Synchronized
-    private fun watchDirectory(directory: File): Boolean {
+    internal fun watchDirectory(directory: File): Boolean {
         if (!Files.isDirectory(directory.toPath(), NOFOLLOW_LINKS)) return false
         val canonicalDir = directory.canonicalFile
         val relativePath = relativePathFor(canonicalDir) ?: return false

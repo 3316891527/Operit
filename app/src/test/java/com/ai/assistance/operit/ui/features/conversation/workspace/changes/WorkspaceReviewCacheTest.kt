@@ -44,6 +44,18 @@ class WorkspaceReviewCacheTest {
         assertNotNull(cache[key("second")])
     }
 
+    @Test fun markdownLinesAreReadyAndCacheableBeforeGrammarInitialization() {
+        val content = ReviewContent("# 演示\n", "# 演示\n终端追加\n", SnapshotKind.TEXT, SnapshotKind.TEXT)
+        val lines = prepareReviewLines(content)
+        assertEquals(1, lines.document.additions)
+        assertEquals("终端追加", lines.document.rows.last().text)
+        val entry = LoadedFileReview(content, lines)
+        val cache = WorkspaceReviewCache()
+        cache.put(key("notes.md"), entry)
+        assertSame(lines, cache[key("notes.md")]?.diff)
+        assertFalse(entry.highlightComplete)
+    }
+
     @Test fun textCanBeDeferredWithoutBeingMisclassifiedAsBinary() {
         val content = ReviewContent("", "hello", SnapshotKind.ABSENT, SnapshotKind.TEXT)
         assertEquals(ReviewDiffLoad.AUTOMATIC, LoadedFileReview(content, null).load)

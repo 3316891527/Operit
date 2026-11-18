@@ -6,6 +6,11 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.process.Depth
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
+import java.nio.file.NoSuchFileException
+import java.nio.file.attribute.BasicFileAttributes
 import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -26,6 +31,7 @@ internal class TerminalFileJournal internal constructor(
     private class State(val root: TerminalObservationRoot, val key: String) {
         var baseline = TerminalObservationBaseline()
         var initialized = false
+        var setupFailure: Exception? = null
         var observer: DepthLimitedFileObserver? = null
         val pending = linkedMapOf<String, TerminalChangeOrigin?>()
         var needsSave = false
@@ -34,6 +40,7 @@ internal class TerminalFileJournal internal constructor(
     internal class Execution(val origin: TerminalChangeOrigin) {
         val operationId: String = UUID.randomUUID().toString()
         var finished = false
+        internal var tracked = emptyList<ChangeLocation>()
     }
     private val excludedDirectories = listOf(
         File(context.filesDir, "workspace_changes"), context.cacheDir, File(context.filesDir, "logs"),
@@ -62,45 +69,88 @@ internal class TerminalFileJournal internal constructor(
         }
     }
 
-    suspend fun begin(origin: TerminalChangeOrigin): Execution = withContext(Dispatchers.IO) {
+    suspend fun begin(origin: TerminalChangeOrigin): Execution {
         val execution = Execution(origin)
         try {
-            if (prepared) awaitEvents()
-            WorkspaceChangeStore.operationMutex.withLock {
-                prepare()
-                inspectPending()
-                persistBaselines()
-                executions[checkNotNull(origin.executionId)] = execution
-                prepared = true
+            withContext(Dispatchers.IO) {
+                if (prepared) awaitEventsFor(origin.chatId)
+                WorkspaceChangeStore.operationMutex.withLock {
+                    prepare()
+                    execution.tracked = store.trackedLinuxFiles(origin.chatId)
+                    queueTrackedChanges(execution.tracked, source())
+                    inspectPending()
+                    executions[checkNotNull(origin.executionId)] = execution
+                    prepared = true
+                    val setupError = states.values.firstNotNullOfOrNull { it.setupFailure }
+                    val unreadable = states.values.asSequence().flatMap { state ->
+                        state.baseline.unreadable.asSequence().map { File(state.root.file, it).path }
+                    }.take(3).toList()
+                    if (setupError != null) report(origin.chatId, setupError)
+                    else if (unreadable.isNotEmpty()) report(origin.chatId, IOException("Cannot observe: " + unreadable.joinToString()))
+                    else failures.update { it - origin.chatId }
+                }
             }
-            val unreadable = states.values.flatMap { state ->
-                state.baseline.unreadable.map { File(state.root.file, it).path }
-            }
-            if (unreadable.isEmpty()) failures.update { it - origin.chatId }
-            else report(origin.chatId, java.io.IOException("Cannot observe: " + unreadable.take(3).joinToString()))
-        } catch (timeout: TimeoutCancellationException) { report(origin.chatId, timeout) }
-        catch (cancelled: CancellationException) { throw cancelled }
-        catch (error: Exception) { report(origin.chatId, error) }
-        execution
+        } catch (cancelled: CancellationException) {
+            // 切回调用线程时也可能取消，必须释放已经登记但尚未提交的执行。
+            executions.remove(origin.executionId, execution)
+            throw cancelled
+        } catch (error: Exception) { report(origin.chatId, error) }
+        return execution
+    }
+
+    private suspend fun awaitEventsFor(chatId: String) {
+        try {
+            awaitEvents()
+        } catch (error: CancellationException) {
+            currentCoroutineContext().ensureActive()
+            report(chatId, error)
+        } catch (error: Exception) { report(chatId, error) }
     }
 
     suspend fun finish(execution: Execution) = withContext(NonCancellable + Dispatchers.IO) {
         if (execution.finished) return@withContext
         try {
-            // 保留执行来源直到先前文件通知全部入队，避免终端完成后的通知变成未知来源。
-            awaitEvents()
+            awaitEventsFor(execution.origin.chatId)
             WorkspaceChangeStore.operationMutex.withLock {
+                if (executions[execution.origin.executionId] === execution) {
+                    queueTrackedChanges(execution.tracked, source())
+                }
                 inspectPending()
                 persistBaselines()
-                execution.finished = true
             }
         } catch (error: Exception) { report(execution.origin.chatId, error) }
         finally { execution.finished = true; executions.remove(execution.origin.executionId, execution) }
     }
 
+    /** 核对当前对话已经记录过的文件；通知与退出检查共用同一份待处理路径和基线。 */
+    private fun queueTrackedChanges(locations: List<ChangeLocation>, origin: TerminalChangeOrigin?) {
+        for (location in locations) {
+            val state = observedStates.filter { it.root.location.backend == location.backend &&
+                changePathContains(it.root.location.path, location.path) }.maxByOrNull { it.root.location.path.length } ?: continue
+            val name = location.path.removePrefix(state.root.location.path.trimEnd('/') + "/")
+            if (name.isEmpty() || name.split('/').any { it == ".." }) continue
+            val file = File(state.root.file, name)
+            if (excluded(state, file)) continue
+            val path = file.toPath()
+            var parent = path.parent
+            while (parent != null && parent != state.root.file.toPath() && !Files.isSymbolicLink(parent)) parent = parent.parent
+            if (parent != state.root.file.toPath()) continue
+            val old = state.baseline.files[name]
+            val differs = try {
+                val attrs = Files.readAttributes(path, BasicFileAttributes::class.java, NOFOLLOW_LINKS)
+                !attrs.isDirectory && (old?.stamp != terminalFileStamp(attrs) || old.snapshot.kind == SnapshotKind.UNAVAILABLE)
+            } catch (_: NoSuchFileException) { old != null }
+            catch (_: IOException) { true }
+            if (differs) synchronized(state) {
+                // 已有文件事件优先保留写入发生时的归属。
+                if (name !in state.pending) state.pending[name] = origin
+            }
+        }
+    }
+
     suspend fun interactiveInput(sessionId: String, origin: TerminalChangeOrigin) = withContext(Dispatchers.IO) {
         try {
-            if (prepared) awaitEvents()
+            if (prepared) awaitEventsFor(origin.chatId)
             WorkspaceChangeStore.operationMutex.withLock {
                 prepare()
                 inspectPending()
@@ -156,24 +206,36 @@ internal class TerminalFileJournal internal constructor(
         }
         for (state in states.values) {
             if (state.initialized) continue
-            val saved = store.terminalBaseline(state.key) ?: TerminalObservationBaseline()
-            state.observer ?: DepthLimitedFileObserver(state.root.file, Int.MAX_VALUE,
-                shouldIgnore = { path, _ -> excluded(state, File(state.root.file, path)) },
-                onChange = { event ->
-                    val origin = source()
-                    synchronized(state) {
-                        val previous = state.pending[event.relativePath]
-                        state.pending[event.relativePath] = if (previous != null && origin != null) previous.merge(origin) else origin ?: previous
-                    }
-                    signals.trySend(Unit)
-                }).also { state.observer = it; it.start() }
-            state.baseline = scanTerminalFiles(state.root.file, saved, excluded = { excluded(state, it) }, snapshotBytes = ::snapshotBytes)
-            store.pinTerminalBaseline(state.key, state.baseline)
-            state.initialized = true
-            state.needsSave = true
-            // 初次快照只建立基线；启动前的文件不归入本次终端创建记录。
+            try {
+                initializeState(state)
+                state.setupFailure = null
+            } catch (failure: Exception) {
+                state.observer?.stop()
+                state.observer = null
+                state.setupFailure = failure
+            }
         }
-        observedStates = states.values.toList()
+        observedStates = states.values.filter { it.initialized }
+    }
+
+    private fun initializeState(state: State) {
+        val saved = store.terminalBaseline(state.key) ?: TerminalObservationBaseline()
+        val observer = DepthLimitedFileObserver(state.root.file, Int.MAX_VALUE,
+            shouldIgnore = { path, _ -> excluded(state, File(state.root.file, path)) },
+            onChange = { event ->
+                val origin = source()
+                synchronized(state) {
+                    val previous = state.pending[event.relativePath]
+                    state.pending[event.relativePath] = if (previous != null && origin != null) previous.merge(origin) else origin ?: previous
+                }
+                signals.trySend(Unit)
+            })
+        state.observer = observer
+        state.baseline = scanTerminalFiles(state.root.file, saved, excluded = { excluded(state, it) },
+            onDirectory = { observer.watchDirectory(it) }, snapshotBytes = ::snapshotBytes)
+        store.pinTerminalBaseline(state.key, state.baseline)
+        state.initialized = true
+        state.needsSave = true
     }
 
     private fun inspectPending() {
@@ -185,7 +247,9 @@ internal class TerminalFileJournal internal constructor(
                 val previous = state.baseline
                 val next = scanTerminalFiles(state.root.file, previous, pending.keys,
                     excluded = { excluded(state, it) }, snapshotBytes = ::snapshotBytes)
-                val changed = (previous.files.keys + next.files.keys).filter { path ->
+                val candidates = if (pending.keys.all { it in previous.files && it in next.files }) pending.keys
+                    else previous.files.keys + next.files.keys
+                val changed = candidates.filter { path ->
                     val after = next.snapshot(path)
                     previous.snapshot(path) != after ||
                         (after.kind in setOf(SnapshotKind.TOO_LARGE, SnapshotKind.UNAVAILABLE) &&
@@ -264,11 +328,12 @@ internal class TerminalFileJournal internal constructor(
         val path = file.absolutePath
         val relative = state.root.file.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/')
         if (relative.split('/').any { it == ".git" }) return true
-        if (excludedDirectories.any { changePathContains(it.path, path) }) return true
-        if (state.excludedRoots.any { changePathContains(it.path, path) }) return true
+        // 所有物理根已经规范化。逐项拆分并拼接完整路径会放大每个文件的遍历成本。
+        fun contains(root: File) = path == root.path || path.startsWith(root.path + File.separator)
+        if (excludedDirectories.any(::contains) || state.excludedRoots.any(::contains)) return true
         if (state.root.location.path == "/") {
-            val relative = state.root.file.toPath().relativize(file.toPath()).toString().substringBefore('/')
-            if (relative in setOf("dev", "proc", "sys")) return true
+            val first = relative.substringBefore('/')
+            if (first == "dev" || first == "proc" || first == "sys") return true
         }
         return false
     }
