@@ -23,12 +23,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -44,14 +40,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
 import androidx.compose.ui.zIndex
 import com.ai.assistance.operit.R
@@ -65,7 +58,6 @@ import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.core.tools.protocol.ToolParameter
 import com.ai.assistance.operit.ui.common.rememberLocal
-import com.ai.assistance.operit.ui.features.conversation.chat.foundation.layout.rememberCompactDialogMetrics
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview.AudioAttachmentPlayer
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview.VideoAttachmentPlayer
 import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
@@ -839,7 +831,8 @@ fun WorkspaceManager(
                                     fileInfo = fileInfo,
                                     searchVisible = htmlFindVisible,
                                     onCloseSearch = { htmlFindVisible = false },
-                                    onFileChooserRequest = webViewHandler.onFileChooserRequest,
+                                    // 文件预览直接使用对话选择器，避免依赖已移除的项目预览处理器。
+                                    onFileChooserRequest = actualViewModel::startFileChooserForResult,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -1034,195 +1027,6 @@ fun WorkspaceManager(
             }
         }
 
-        val commandDialogState = workspaceCommandExecutionState
-        if (isVisible && !standalone && commandDialogState != null &&
-            commandDialogState.workspacePath == workspacePath &&
-            commandDialogState.isVisible
-        ) {
-            WorkspaceCommandExecutionDialog(
-                state = commandDialogState,
-                onClose = { actualViewModel.dismissWorkspaceCommandExecutionDialog(workspacePath) },
-                onCancel = {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        actualViewModel.cancelWorkspaceCommandExecution()
-                    }
-                },
-                onCopyOutput = { output ->
-                    clipboardManager.setText(AnnotatedString(output))
-                    OKToast.success(context, context.getString(R.string.copied_to_clipboard)).show()
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun WorkspaceCommandExecutionDialog(
-    state: WorkspaceCommandExecutionState,
-    onClose: () -> Unit,
-    onCancel: () -> Unit,
-    onCopyOutput: (String) -> Unit
-) {
-    val listState = rememberLazyListState()
-    val outputText = remember(state.outputEntries) {
-        state.outputEntries.joinToString(separator = "\n")
-    }
-
-    LaunchedEffect(state.outputEntries.size) {
-        if (state.outputEntries.isNotEmpty()) {
-            listState.animateScrollToItem(state.outputEntries.lastIndex)
-        }
-    }
-
-    val dialogMetrics = rememberCompactDialogMetrics()
-    val outerPadding = if (dialogMetrics.isCompact) 8.dp else 20.dp
-    val contentPadding = if (dialogMetrics.isCompact) 16.dp else 20.dp
-    val outputMinHeight = if (dialogMetrics.isCompact) 96.dp else 180.dp
-    val outputMaxHeight = if (dialogMetrics.isCompact) 220.dp else 360.dp
-    val surfaceModifier =
-        Modifier
-            .fillMaxWidth()
-            .padding(outerPadding)
-            .let { base ->
-                if (dialogMetrics.isCompact) {
-                    base.heightIn(max = dialogMetrics.maxHeight - outerPadding * 2)
-                } else {
-                    base
-                }
-            }
-
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
-    ) {
-        Surface(
-            modifier = surfaceModifier,
-            shape = RoundedCornerShape(20.dp),
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(contentPadding),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = state.commandLabel,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = state.commandText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = stringResource(
-                        if (!state.isRunning) {
-                            R.string.workspace_command_finished
-                        } else if (state.isCancelling) {
-                            R.string.workspace_command_cancelling
-                        } else {
-                            R.string.workspace_command_running
-                        }
-                    ),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (state.isRunning) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-                Surface(
-                    modifier =
-                        if (dialogMetrics.isCompact) {
-                            Modifier
-                                .fillMaxWidth()
-                                .weight(1f, fill = false)
-                                .heightIn(min = outputMinHeight, max = outputMaxHeight)
-                        } else {
-                            Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = outputMinHeight, max = outputMaxHeight)
-                        },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                ) {
-                    if (state.outputEntries.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    if (state.isRunning) {
-                                        R.string.workspace_command_waiting_output
-                                    } else {
-                                        R.string.workspace_command_no_output
-                                    }
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else {
-                        SelectionContainer {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                itemsIndexed(
-                                    items = state.outputEntries,
-                                    key = { index, _ -> index }
-                                ) { _, line ->
-                                    Text(
-                                        text = line.ifEmpty { " " },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontFamily = FontFamily.Monospace
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    if (state.isRunning) {
-                        TextButton(onClick = onClose) {
-                            Text(stringResource(R.string.workspace_command_hide))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(
-                            onClick = onCancel,
-                            enabled = !state.isCancelling
-                        ) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                    } else {
-                        TextButton(
-                            onClick = { onCopyOutput(outputText) },
-                            enabled = state.outputEntries.isNotEmpty()
-                        ) {
-                            Text(stringResource(R.string.copy_result))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = onClose) {
-                            Text(stringResource(R.string.confirm))
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
