@@ -64,12 +64,34 @@ internal class WorkspaceDiffOptions(split: Boolean = false, wrap: Boolean = fals
     }
 }
 
+/** 状态放在文件详情层，加载占位内容替换差异视图时也不会销毁选择。 */
+@Stable
+internal class WorkspaceReviewState(initial: ReviewViewChoices = ReviewViewChoices()) {
+    private var choices by mutableStateOf(initial)
+
+    fun isLoadRequested(key: String?): Boolean = key != null && choices.forSnapshot(key).loadRequested
+    fun expanded(key: String): Set<Int> = choices.forSnapshot(key).expanded
+    fun requestLoad(key: String) { choices = choices.requestLoad(key) }
+    fun expand(key: String, start: Int) { choices = choices.expand(key, start) }
+
+    companion object {
+        val Saver = listSaver<WorkspaceReviewState, String>(
+            save = { it.choices.saved() }, restore = { WorkspaceReviewState(ReviewViewChoices.restore(it)) },
+        )
+    }
+}
+
+@Composable
+internal fun rememberWorkspaceReviewState(): WorkspaceReviewState =
+    rememberSaveable(saver = WorkspaceReviewState.Saver) { WorkspaceReviewState() }
+
 @Composable
 internal fun WorkspaceDiffView(
     diff: PreparedReviewDiff, modifier: Modifier, options: WorkspaceDiffOptions,
     toolbarPrefix: @Composable () -> Unit = {}, fileHeader: @Composable () -> Unit = {},
+    reviewState: WorkspaceReviewState = rememberWorkspaceReviewState(),
 ) {
-    var expanded by remember(diff) { mutableStateOf(emptySet<Int>()) }
+    val expanded = reviewState.expanded(diff.document.snapshotKey)
     var splitRatio by rememberSaveable { mutableFloatStateOf(0.5f) }
     // 整个版本为空时，不为不存在的一侧占用半幅画布；用户的双栏偏好仍保留。
     val hasBefore = diff.document.rows.any { it.oldLine != null }
@@ -141,7 +163,7 @@ internal fun WorkspaceDiffView(
                                         is ReviewDiffItem.Hunk -> Text("@@ −${item.oldStart},${item.oldCount} +${item.newStart},${item.newCount} @@",
                                             Modifier.fillMaxWidth().background(theme.gutterBackground).padding(start = gutterWidth + 19.dp, top = 4.dp, bottom = 4.dp),
                                             fontSize = 10.sp, fontFamily = FontFamily.Monospace, color = theme.lineNumberColor, maxLines = 1)
-                                        is ReviewDiffItem.Gap -> DiffGap(item.count, theme) { expanded = expanded + item.start }
+                                        is ReviewDiffItem.Gap -> DiffGap(item.count, theme) { reviewState.expand(diff.document.snapshotKey, item.start) }
                                         is ReviewDiffItem.Line -> if (split) {
                                             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
                                                 DiffCell(item.left, true, true, diff.oldHighlight, theme, rendering, add, remove, wrap, gutterWidth, Modifier.width(leftWidth).fillMaxHeight(), item.offset, item.end)

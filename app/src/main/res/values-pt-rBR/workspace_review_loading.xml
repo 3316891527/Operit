@@ -4,4 +4,6 @@
     <string name="workspace_changes_load_diff">Carregar diferenças</string>
     <string name="workspace_changes_hard_limit">Esta diferença excede o limite: 4.194.304 caracteres ou 20.000 linhas nas duas versões, ou 131.072 caracteres por linha. Abra o arquivo original para visualizá-lo.</string>
     <string name="workspace_changes_long_lines_wrap">Linhas muito longas são ajustadas à largura da janela.</string>
+    <string name="workspace_changes_record_summary">%1$s · Resumo das alterações registradas</string>
+    <string name="workspace_changes_record_scope">Inclui apenas o histórico salvo por ferramentas de arquivos. Para edições no terminal ou externas, compare a árvore de trabalho ou os branches.</string>
 </resources>

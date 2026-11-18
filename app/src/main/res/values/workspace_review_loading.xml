@@ -4,4 +4,6 @@
     <string name="workspace_changes_load_diff">加载差异</string>
     <string name="workspace_changes_hard_limit">此差异超过显示上限：两侧合计 4,194,304 字符或 20,000 行，单行最多 131,072 字符。请打开原文件查看。</string>
     <string name="workspace_changes_long_lines_wrap">超长行已按窗口宽度自动换行。</string>
+    <string name="workspace_changes_record_summary">%1$s · 已记录变更汇总</string>
+    <string name="workspace_changes_record_scope">仅包含文件工具保存的历史；终端或外部编辑请使用工作区或分支比较。</string>
 </resources>

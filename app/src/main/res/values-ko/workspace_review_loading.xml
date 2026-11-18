@@ -4,4 +4,6 @@
     <string name="workspace_changes_load_diff">차이 불러오기</string>
     <string name="workspace_changes_hard_limit">표시 한도를 초과했습니다. 두 버전 합계 4,194,304자 또는 20,000줄, 한 줄은 131,072자까지입니다. 원본 파일을 열어 확인하세요.</string>
     <string name="workspace_changes_long_lines_wrap">매우 긴 줄은 창 너비에 맞춰 줄바꿈됩니다.</string>
+    <string name="workspace_changes_record_summary">%1$s · 기록된 변경 요약</string>
+    <string name="workspace_changes_record_scope">파일 도구로 저장한 기록만 포함합니다. 터미널이나 외부 편집은 작업 트리 또는 브랜치 비교를 사용하세요.</string>
 </resources>

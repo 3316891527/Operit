@@ -41,6 +41,33 @@ class WorkspaceChangeStoreStatisticsTest {
         assertEquals(1, latest.deletions)
     }
 
+    @Test fun summaryRetainsAnEarlierDeletionWhenTheLatestOperationOnlyAdds() = withStore { store ->
+        val first = record(store, "keep\nremoved\n", "keep\n", 100)
+        val second = record(store, "keep\n", "keep\nadded\n", 200)
+        val summary = store.reviewFiles(listOf(second, first), aggregate = true).single()
+        val latest = store.reviewFiles(listOf(first, second), aggregate = false).single()
+        assertEquals(1, summary.additions)
+        assertEquals(1, summary.deletions)
+        assertEquals(1, latest.additions)
+        assertEquals(0, latest.deletions)
+        val content = store.content(summary.records.asReversed())
+        val detail = WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after))
+        assertEquals(summary.additions, detail.additions)
+        assertEquals(summary.deletions, detail.deletions)
+    }
+
+    @Test fun deletedFilesRetainTheirBeforeSnapshotAndNegativeCount() = withStore { store ->
+        val deletion = record(store, "first\nsecond\n", "", 100).copy(after = ChangeSnapshot(SnapshotKind.ABSENT))
+        store.save(listOf(deletion))
+        val file = store.reviewFiles(store.records(chatId = "test-chat"), aggregate = true).single()
+        assertEquals("D", file.status)
+        assertEquals(0, file.additions)
+        assertEquals(2, file.deletions)
+        assertEquals("first\nsecond\n", store.content(deletion).before)
+        assertEquals("", store.content(deletion).after)
+        assertTrue(file.statisticsAvailable)
+    }
+
     @Test fun binarySnapshotsExposeUnknownStatisticsInsteadOfClaimingZeroTextChanges() = withStore { store ->
         val record = FileChangeRecord("binary", "operation", "test-chat", 100, "write_file_binary",
             ChangeLocation("/outside/data.bin", "android", "android"), ChangeSnapshot(SnapshotKind.ABSENT), ChangeSnapshot(SnapshotKind.BINARY))

@@ -128,7 +128,7 @@ internal fun WorkspaceChangesScreen(
                         directory != null -> store.records(directory = directory, backend = WorkspaceChangeAccess.resolvedBackend(context, environment))
                         else -> emptyList()
                     }
-                    store.reviewFiles(records, if (conversation) null else directory, aggregate = source == ChangeReviewSource.LAST_TURN)
+                    store.reviewFiles(records, if (conversation) null else directory, aggregate = true)
                 }
             } else {
                 val review = checkNotNull(repository).load(source == ChangeReviewSource.BRANCH, base)
@@ -158,7 +158,7 @@ internal fun WorkspaceChangesScreen(
         collapsed = collapsed - parents
     }
     val fileListState = rememberLazyListState()
-    val fileStates = rememberSaveableStateHolder()
+    val fileStates = key(chatId, directory, environment, conversation) { rememberSaveableStateHolder() }
     val options = rememberSaveable(saver = WorkspaceDiffOptions.Saver) { WorkspaceDiffOptions() }
     val filtered = remember(files, query) { files.filter { it.displayPath.contains(query.trim(), ignoreCase = true) } }
     val selected = filtered.firstOrNull { it.id == selectedId } ?: filtered.firstOrNull()
@@ -258,8 +258,9 @@ internal fun WorkspaceChangesScreen(
             val file = selected?.takeIf { loadedRequest == request }
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 previewError?.let { ChangeActionError(it) { previewError = null } }
-                if (file != null) fileStates.SaveableStateProvider(source.name + ":" + file.id) {
+                if (file != null) fileStates.SaveableStateProvider(source.name + ":" + base.orEmpty() + ":" + file.id) {
                     ChangeFileDetail(file, repository, isVisible, cache, options, if (conversation) chatId else null, scope,
+                        summaryLabel = if (source == ChangeReviewSource.LAST_TURN) R.string.workspace_changes_turn_summary else R.string.workspace_changes_record_summary,
                         onRecordError = { previewError = it },
                         onToggleFiles = { showFiles = !showFiles },
                         onPrevious = { filtered.getOrNull(currentIndex - 1)?.let(::selectFile) },
@@ -292,7 +293,7 @@ private fun sourceLabel(source: ChangeReviewSource): String = stringResource(whe
 @Composable
 private fun ChangeFileDetail(
     file: ReviewFile, repository: WorkspaceGitRepository?, active: Boolean, cache: WorkspaceReviewCache,
-    options: WorkspaceDiffOptions, removalChatId: String?, recordScope: CoroutineScope, onRecordError: (String) -> Unit, onToggleFiles: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit,
+    options: WorkspaceDiffOptions, removalChatId: String?, recordScope: CoroutineScope, summaryLabel: Int, onRecordError: (String) -> Unit, onToggleFiles: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit,
     hasPrevious: Boolean, hasNext: Boolean, onOpenFile: suspend (ChangeLocation, ChangeOpenAction) -> Unit,
     onRefresh: () -> Unit, modifier: Modifier,
 ) {
@@ -302,7 +303,7 @@ private fun ChangeFileDetail(
     val effectiveRecordId = recordId?.takeIf { id -> file.records.any { it.id == id } }
     LaunchedEffect(effectiveRecordId) { if (recordId != effectiveRecordId) recordId = effectiveRecordId }
     val record = if (effectiveRecordId != null) file.records.first { it.id == effectiveRecordId }
-        else if (file.aggregateRecords) null else file.records.firstOrNull()
+        else if (file.aggregateRecords && file.records.size > 1) null else file.records.firstOrNull()
     val scope = rememberCoroutineScope()
     var actionJob by remember(file.id) { mutableStateOf<Job?>(null) }
     var actionError by remember(file.id) { mutableStateOf<String?>(null) }
@@ -312,7 +313,8 @@ private fun ChangeFileDetail(
     var loaded by remember(cache, cacheKey) { mutableStateOf(cache[cacheKey]) }
     var loading by remember(cache, cacheKey) { mutableStateOf(loaded == null) }
     var error by remember(cache, cacheKey) { mutableStateOf<String?>(null) }
-    var loadRequested by remember(cache, cacheKey) { mutableStateOf(false) }
+    val reviewState = rememberWorkspaceReviewState()
+    val loadRequested = reviewState.isLoadRequested(loaded?.snapshotKey)
     LaunchedEffect(cache, cacheKey, active, loadRequested) {
         if (!active || loaded?.diff != null || (loaded != null && !loadRequested)) return@LaunchedEffect
         loading = true
@@ -327,10 +329,13 @@ private fun ChangeFileDetail(
                 }
             }
             val policy = withContext(Dispatchers.Default) { WorkspaceDiffPolicy.classify(content) }
-            val prepared = if (content.isText && (policy == ReviewDiffLoad.AUTOMATIC || (policy == ReviewDiffLoad.MANUAL && loadRequested)))
+            val snapshotKey = loaded?.snapshotKey ?: withContext(Dispatchers.Default) {
+                if (content.isText) reviewSnapshotKey(checkNotNull(content.before), checkNotNull(content.after)) else null
+            }
+            val prepared = if (content.isText && (policy == ReviewDiffLoad.AUTOMATIC || (policy == ReviewDiffLoad.MANUAL && reviewState.isLoadRequested(snapshotKey))))
                 withContext(Dispatchers.Default) { prepareReviewDiff(context, file.location.path, content) } else null
             // 需要用户确认的文本只缓存内容，点击后才计算差异。
-            val result = LoadedFileReview(content, prepared, policy)
+            val result = LoadedFileReview(content, prepared, policy, snapshotKey)
             cache.put(cacheKey, result)
             loaded = result
         } catch (cancelled: CancellationException) {
@@ -382,24 +387,26 @@ private fun ChangeFileDetail(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f)) {
                         TextButton(onClick = { historyOpen = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.height(26.dp)) {
-                            Text(record?.let { recordTitle(it) } ?: stringResource(R.string.workspace_changes_turn_summary,
+                            Text(record?.let { recordTitle(it) } ?: stringResource(summaryLabel,
                                 changeTime(file.records.first().timestamp)), fontSize = 9.sp, fontWeight = FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             if (file.records.size > 1) Icon(Icons.Default.ArrowDropDown, null, Modifier.size(12.dp))
                         }
                         DropdownMenu(expanded = historyOpen, onDismissRequest = { historyOpen = false }) {
-                            if (file.aggregateRecords) DropdownMenuItem(text = { Text(stringResource(R.string.workspace_changes_turn_summary, changeTime(file.records.first().timestamp)), fontSize = 11.sp) }, onClick = { recordId = null; historyOpen = false })
+                            if (file.aggregateRecords) DropdownMenuItem(text = { Text(stringResource(summaryLabel, changeTime(file.records.first().timestamp)), fontSize = 11.sp) }, onClick = { recordId = null; historyOpen = false })
                             file.records.forEach { item -> DropdownMenuItem(text = { Text(recordTitle(item), fontSize = 11.sp) }, onClick = { recordId = item.id; historyOpen = false }) }
                         }
                     }
                     ChangeRecordActions(file, record, removalChatId, recordScope, onChanged = onRefresh, onError = onRecordError)
                 }
             }
+            if (file.records.isNotEmpty()) Text(stringResource(R.string.workspace_changes_record_scope),
+                Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             file.originalPath?.let { Text(stringResource(R.string.workspace_changes_renamed_from, it), Modifier.padding(horizontal = 8.dp), fontSize = 10.sp) }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         }
     }
     val result = loaded
-    if (result?.diff != null) WorkspaceDiffView(result.diff, modifier, options, toolbarPrefix = navigation, fileHeader = ribbon)
+    if (result?.diff != null) WorkspaceDiffView(result.diff, modifier, options, toolbarPrefix = navigation, fileHeader = ribbon, reviewState = reviewState)
     else Column(modifier) {
         Row(Modifier.fillMaxWidth().height(32.dp).horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
             navigation()
@@ -413,7 +420,7 @@ private fun ChangeFileDetail(
             result != null && result.content.isText -> {
                 Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(if (result.load == ReviewDiffLoad.BLOCKED) R.string.workspace_changes_hard_limit else R.string.workspace_changes_load_on_demand), fontSize = 12.sp)
-                    if (result.load == ReviewDiffLoad.MANUAL) TextButton(onClick = { loadRequested = true }) {
+                    if (result.load == ReviewDiffLoad.MANUAL) TextButton(onClick = { reviewState.requestLoad(checkNotNull(result.snapshotKey)) }) {
                         Text(stringResource(R.string.workspace_changes_load_diff))
                     }
                 }
@@ -435,7 +442,10 @@ private fun ChangeFileDetail(
 private fun changeTime(timestamp: Long): String = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date(timestamp))
 
 @Composable
-private fun recordTitle(record: FileChangeRecord): String = stringResource(R.string.workspace_changes_operation_title, changeTime(record.timestamp), record.toolName)
+private fun recordTitle(record: FileChangeRecord): String {
+    val title = stringResource(R.string.workspace_changes_operation_title, changeTime(record.timestamp), record.toolName)
+    return if (record.additions != null && record.deletions != null) "$title  +${record.additions}/−${record.deletions}" else title
+}
 
 @Composable
 private fun ChangeFileFilter(query: String, onChange: (String) -> Unit) {

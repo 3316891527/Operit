@@ -4,4 +4,6 @@
     <string name="workspace_changes_load_diff">差分を読み込む</string>
     <string name="workspace_changes_hard_limit">表示上限を超えています。両バージョンの合計は 4,194,304 文字または 20,000 行、1 行は 131,072 文字までです。元のファイルを開いてください。</string>
     <string name="workspace_changes_long_lines_wrap">非常に長い行はウィンドウ幅で折り返します。</string>
+    <string name="workspace_changes_record_summary">%1$s · 記録済み変更の概要</string>
+    <string name="workspace_changes_record_scope">ファイルツールで保存した履歴のみ含みます。ターミナルや外部の編集には作業ツリーまたはブランチ比較を使用してください。</string>
 </resources>

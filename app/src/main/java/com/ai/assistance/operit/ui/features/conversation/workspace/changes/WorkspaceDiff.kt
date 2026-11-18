@@ -10,7 +10,7 @@ internal data class ReviewDiffLine(
     val oldLine: Int?, val newLine: Int?, val text: String, val kind: DiffLineKind,
     val emphasis: DiffRange? = null,
 )
-internal data class ReviewDiffDocument(val rows: List<ReviewDiffLine>, val additions: Int, val deletions: Int, val newlineChanged: Boolean)
+internal data class ReviewDiffDocument(val rows: List<ReviewDiffLine>, val additions: Int, val deletions: Int, val newlineChanged: Boolean, val snapshotKey: String)
 internal sealed interface ReviewDiffItem {
     data class Line(val left: ReviewDiffLine?, val right: ReviewDiffLine?, val offset: Int = 0, val end: Int = Int.MAX_VALUE) : ReviewDiffItem
     data class Gap(val start: Int, val count: Int) : ReviewDiffItem
@@ -40,7 +40,7 @@ internal object WorkspaceDiff {
             rows += ReviewDiffLine(++oldIndex, ++newIndex, old[oldIndex - 1], DiffLineKind.CONTEXT)
         }
         return ReviewDiffDocument(pairChanges(rows), rows.count { it.kind == DiffLineKind.ADD }, rows.count { it.kind == DiffLineKind.REMOVE },
-            before.endsWith('\n') != after.endsWith('\n'))
+            before.endsWith('\n') != after.endsWith('\n'), reviewSnapshotKey(before, after))
     }
 
     /** 算法可分别返回相邻的新增与删除，按连续改动块配对后再计算行内强调。 */

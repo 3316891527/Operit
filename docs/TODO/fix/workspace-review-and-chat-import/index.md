@@ -11,4 +11,5 @@ status: ready-for-ci
 
 - [工作区修复](01-workspace.md)：分级加载、临时目录与文件保留、压缩名称和编辑器设置
 - [聊天导入优化](02-chat-import.md)：消息级读取、有限批次保存和单会话原子替换
+- [记录汇总与展开保留](03-review-history-and-expansion.md)：默认比较已记录历史，区分单次操作与整个提交，按比较内容保留展开和加载选择
 - 验证：针对边界、兼容性及失败回滚补充回归用例，推送后发起 Debug 构建与 Android Tests

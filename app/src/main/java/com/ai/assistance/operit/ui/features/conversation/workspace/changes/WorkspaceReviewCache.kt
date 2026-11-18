@@ -3,7 +3,11 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 /** 来源和快照版本共同确定缓存，文件切换不重新读取或分词。 */
 internal data class ReviewCacheKey(val file: ReviewFile, val recordId: String?)
 
-internal data class LoadedFileReview(val content: ReviewContent, val diff: PreparedReviewDiff?, val load: ReviewDiffLoad = WorkspaceDiffPolicy.classify(content)) {
+internal data class LoadedFileReview(
+    val content: ReviewContent, val diff: PreparedReviewDiff?, val load: ReviewDiffLoad = WorkspaceDiffPolicy.classify(content),
+    val snapshotKey: String? = if (content.isText) diff?.document?.snapshotKey
+        ?: reviewSnapshotKey(checkNotNull(content.before), checkNotNull(content.after)) else null,
+) {
     init { require(diff == null || content.isText) }
     val characters: Int get() = (content.before?.length ?: 0) + (content.after?.length ?: 0)
 }
