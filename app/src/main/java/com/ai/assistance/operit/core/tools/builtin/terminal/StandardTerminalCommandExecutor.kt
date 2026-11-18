@@ -108,9 +108,15 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                     val command = requireNotNull(parameter("command")) { "command is required" }
                     require(command.isNotBlank()) { "command must not be blank" }
                     val timeoutMs = parameter("timeout_ms")?.toLong() ?: 1_800_000L
+                    val caller = com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext()
                     taskRegistry.start(sessionId, command, timeoutMs,
                         collect = { commandId, onCancellation ->
-                            terminal.executeCommandFlow(sessionId, command, commandId, onCancellation)
+                            kotlinx.coroutines.flow.flow {
+                                val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(context)
+                                val source = monitor.beginTool(caller?.callerChatId, caller?.invokingToolName ?: tool.name, command = true)
+                                try { terminal.executeCommandFlow(sessionId, command, commandId, onCancellation).collect { emit(it) } }
+                                finally { monitor.endTool(source) }
+                            }
                         },
                     ).also { createdId = it }
                 }

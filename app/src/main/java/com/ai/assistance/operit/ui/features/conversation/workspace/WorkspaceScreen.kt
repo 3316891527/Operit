@@ -4,7 +4,6 @@ import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +28,6 @@ fun WorkspaceScreen(
     currentChat: ChatHistory?,
     isVisible: Boolean,
     entryRequest: WorkspaceEntryRequest = WorkspaceEntryRequest(),
-    onExportClick: (workDir: File) -> Unit
 ) {
     var temporaryFile by remember(currentChat?.id, currentChat?.workspace) { mutableStateOf<OpenFileInfo?>(null) }
     val setupState = rememberSaveableStateHolder()
@@ -43,7 +41,6 @@ fun WorkspaceScreen(
             workspaceEnv = currentChat.workspaceEnv,
             isVisible = isVisible,
             entryRequest = entryRequest,
-            onExportClick = onExportClick
         )
     } else if (currentChat != null && file != null) {
         key(file.key) {
@@ -54,7 +51,6 @@ fun WorkspaceScreen(
                 workspaceEnv = file.environment.takeUnless { it == "android" },
                 isVisible = isVisible,
                 entryRequest = entryRequest,
-                onExportClick = onExportClick,
                 initialFile = file,
                 // 保留临时浏览器实例，关闭文件后回到打开文件所在目录。
                 onReturnToBrowser = {}

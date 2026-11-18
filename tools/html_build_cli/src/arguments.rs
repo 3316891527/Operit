@@ -1,6 +1,12 @@
 use serde::Serialize;
 
-pub const HELP: &str = "Operit HTML 应用构建\n\n  build html <项目目录> --target apk|exe --output <输出目录>\n\n选项：\n  --target apk|android|exe|windows  目标平台，默认 apk\n  --output PATH                   输出目录，默认 ./dist\n  --entry PATH                    项目内的入口，默认 index.html\n  --name NAME                     应用名称，默认项目目录名\n  --package ID                    Android 包名，默认 com.operit.webapp\n  --version-name VERSION          版本名称，默认 1.0\n  --version-code NUMBER           正整数版本号，默认 1\n  --icon PATH                     图标文件\n\n示例：\n  build html ./web --target apk --output ./dist\n  build html ./web --target exe --output ./dist --icon ./icon.png\n\n输出按阶段实时刷新。Windows 输出完整运行目录和 EXE，分发时须保留同目录的 DLL 和 data。已有同名产物会报错，不会覆盖。";
+#[path = "../../terminal_commands/language.rs"]
+mod command_language;
+
+pub fn help() -> std::io::Result<&'static str> {
+    command_language::help(include_str!("../../terminal_commands/help/zh/build.txt"),
+        include_str!("../../terminal_commands/help/en/build.txt"))
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

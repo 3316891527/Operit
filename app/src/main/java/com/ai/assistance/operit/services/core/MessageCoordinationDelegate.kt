@@ -909,7 +909,6 @@ class MessageCoordinationDelegate(
 
         if (!isBackgroundSend) {
             // 更新本地Web服务器的聊天ID
-            uiBridge.updateWebServerForCurrentChat(chatId)
         }
 
         // 获取当前附件列表

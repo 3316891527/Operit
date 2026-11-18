@@ -58,7 +58,6 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceScre
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceChangesScreen
 import com.ai.assistance.operit.ui.features.conversation.workspace.links.WorkspaceFileLink
 import com.ai.assistance.operit.ui.features.conversation.workspace.links.WorkspaceFileLinkHost
-import java.io.File
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,7 +77,6 @@ fun WorkspaceHubScreen(
     chatHistories: List<ChatHistory>,
     isVisible: Boolean,
     reserveChatControlsSpace: Boolean = false,
-    onExportClick: (File) -> Unit,
 ) {
     key(currentChat?.id) {
         WorkspaceFileLinkHost(actualViewModel, currentChat, Modifier.fillMaxSize()) {
@@ -88,7 +86,6 @@ fun WorkspaceHubScreen(
             chatHistories = chatHistories,
             isVisible = isVisible,
             reserveChatControlsSpace = reserveChatControlsSpace,
-            onExportClick = onExportClick,
         )
         }
     }
@@ -102,7 +99,6 @@ private fun WorkspaceHubContent(
     chatHistories: List<ChatHistory>,
     isVisible: Boolean,
     reserveChatControlsSpace: Boolean = false,
-    onExportClick: (File) -> Unit,
 ) {
     val requestedPage by actualViewModel.workspaceHubPage.collectAsState()
     val messages by actualViewModel.chatHistory.collectAsState()
@@ -282,7 +278,6 @@ private fun WorkspaceHubContent(
                                     currentChat = currentChat,
                                     isVisible = workspaceVisible,
                                     entryRequest = entryRequest,
-                                    onExportClick = onExportClick,
                                 )
                             }
                         }

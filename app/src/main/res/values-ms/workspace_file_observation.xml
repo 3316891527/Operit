@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">Pemantauan fail gagal: %1$s. Sejarah tersimpan masih tersedia.</string>
+    <string name="workspace_changes_base_deleted">Cabang perbandingan %1$s tidak lagi wujud. Pilih cabang yang tersedia daripada senarai.</string>
+</resources>

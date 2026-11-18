@@ -189,6 +189,7 @@ object LocaleUtils {
         
         // 设置默认语言
         setDefaultLocales(localeToSet)
+        com.ai.assistance.operit.core.terminal.commands.NativeTerminalCommands.updateLanguage(context, localeToSet.language)
         
         // 根据Android版本应用语言设置
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

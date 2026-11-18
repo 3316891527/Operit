@@ -5,6 +5,7 @@ import android.util.AtomicFile
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,6 +22,7 @@ internal class WorkspaceChangeStore(context: Context) {
     private val root = File(context.filesDir, "workspace_changes/v1")
     private val objects = File(root, "objects")
     private val operations = File(root, "operations")
+    private val observations = File(root, "observations")
     private val json = Json { encodeDefaults = true }
     private val revisionState = MutableStateFlow(0L)
     private val statistics = object : LinkedHashMap<String, Pair<Int, Int>>(128, 0.75f, true) {
@@ -41,6 +43,19 @@ internal class WorkspaceChangeStore(context: Context) {
         if (records.isEmpty()) return
         writeAtomic(File(operations, "${records.first().operationId}.json"), json.encodeToString(records).toByteArray(Charsets.UTF_8))
         revisionState.update { it + 1 }
+    }
+
+    @Synchronized
+    fun observedFiles(key: String): Map<String, ObservedWorkspaceFile>? {
+        require(Regex("[0-9a-f]{64}").matches(key))
+        val file = File(observations, "$key.json")
+        return if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
+    }
+
+    @Synchronized
+    fun saveObservedFiles(key: String, files: Map<String, ObservedWorkspaceFile>) {
+        require(Regex("[0-9a-f]{64}").matches(key))
+        writeAtomic(File(observations, "$key.json"), json.encodeToString(files).toByteArray(Charsets.UTF_8))
     }
 
     @Synchronized
@@ -126,8 +141,11 @@ internal class WorkspaceChangeStore(context: Context) {
                 } else writeAtomic(file, json.encodeToString(kept).toByteArray(Charsets.UTF_8))
                 changed = true
             }
+            val baselineBlobs = observations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
+                json.decodeFromString<Map<String, ObservedWorkspaceFile>>(file.readText(Charsets.UTF_8)).values.mapNotNull { it.snapshot.blob }
+            }
             val retained = inventory.values.flatten().filterNot { it.id in ids }
-                .flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet()
+                .flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() + baselineBlobs
             val candidates = removed.flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() - retained
             // 采集与清理共用互斥锁，不能删掉进行中操作即将引用的相同内容。
             for (hash in candidates) {
@@ -159,6 +177,8 @@ internal class WorkspaceChangeStore(context: Context) {
 
     companion object {
         internal val operationMutex = Mutex()
+        private val timestamp = AtomicLong()
+        internal fun nextTimestamp(): Long = timestamp.updateAndGet { maxOf(System.currentTimeMillis(), it + 1) }
         @Volatile private var instance: WorkspaceChangeStore? = null
         fun get(context: Context): WorkspaceChangeStore = instance ?: synchronized(this) {
             instance ?: WorkspaceChangeStore(context.applicationContext).also { instance = it }

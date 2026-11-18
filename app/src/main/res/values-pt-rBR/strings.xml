@@ -8385,7 +8385,7 @@
     <string name="workspace_changes_choose_base">Escolher branch de comparação</string>
     <string name="workspace_changes_load_failed">Não foi possível carregar as alterações</string>
     <string name="workspace_changes_count">%1$d arquivos</string>
-    <string name="workspace_changes_empty_records">Ainda não há operações registradas. Operações de arquivo bem-sucedidas aparecerão aqui.</string>
+    <string name="workspace_changes_empty_records">Nenhuma alteração registrada. Vincule um espaço de trabalho para registrar também edições pelo terminal e externas.</string>
     <string name="workspace_changes_empty_git">Não há alterações neste escopo.</string>
     <string name="workspace_changes_choose_file">Selecione um arquivo para ver as diferenças</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operações</string>
@@ -8407,7 +8407,7 @@
     <string name="workspace_changes_git_environment">Este ambiente não pode executar o Git. O histórico permanece disponível.</string>
     <string name="workspace_changes_git_runtime">Instale o Ubuntu em Recursos offline e depois instale o Git nesse ambiente.</string>
     <string name="workspace_outputs_title">Resultados da conversa</string>
-    <string name="workspace_outputs_description">Revisar operações desta conversa em qualquer local</string>
+    <string name="workspace_outputs_description">Ver alterações salvas desta conversa, incluindo ferramentas de arquivos e mudanças reais no diretório vinculado</string>
     <string name="workspace_outputs_scope">Operações desta conversa, incluindo arquivos fora do espaço de trabalho</string>
     <string name="workspace_changes_last_turn">Último turno</string>
     <string name="workspace_changes_turn_summary">%1$s · Resumo do turno</string>

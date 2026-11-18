@@ -81,6 +81,7 @@ internal fun WorkspaceChangesScreen(
 ) {
     val context = LocalContext.current
     val store = remember(context) { WorkspaceChangeStore.get(context) }
+    val observationErrors by remember(context) { WorkspaceFileMonitor.get(context).errors }.collectAsState()
     val scope = rememberCoroutineScope()
     var previewJob by remember { mutableStateOf<Job?>(null) }
     var previewError by remember { mutableStateOf<String?>(null) }
@@ -110,6 +111,7 @@ internal fun WorkspaceChangesScreen(
         if (!isVisible || request == loadedRequest) return@LaunchedEffect
         loading = true
         error = null
+        if (source == ChangeReviewSource.BRANCH || source == ChangeReviewSource.WORKING_TREE) git = null
         try {
             val loadedFiles = if (source == ChangeReviewSource.OPERATIONS || source == ChangeReviewSource.LAST_TURN) {
                 git = null
@@ -133,6 +135,7 @@ internal fun WorkspaceChangesScreen(
             } else {
                 val review = checkNotNull(repository).load(source == ChangeReviewSource.BRANCH, base)
                 git = review
+                review.missingBase?.let { error = context.getString(R.string.workspace_changes_base_deleted, it.removePrefix("refs/heads/").removePrefix("refs/remotes/")) }
                 if (source == ChangeReviewSource.BRANCH && base == null && review.upstream != null && review.references.any { it.name == review.upstream }) base = review.upstream
                 review.files
             }
@@ -257,6 +260,10 @@ internal fun WorkspaceChangesScreen(
             }
             val file = selected?.takeIf { loadedRequest == request }
             Column(Modifier.weight(1f).fillMaxHeight()) {
+                chatId?.let(observationErrors::get)?.let { message ->
+                    Text(stringResource(R.string.workspace_changes_observation_error, message),
+                        Modifier.fillMaxWidth().padding(8.dp), color = colors.error, fontSize = 11.sp)
+                }
                 previewError?.let { ChangeActionError(it) { previewError = null } }
                 if (file != null) fileStates.SaveableStateProvider(source.name + ":" + base.orEmpty() + ":" + file.id) {
                     ChangeFileDetail(file, repository, isVisible, cache, options, if (conversation) chatId else null, scope,

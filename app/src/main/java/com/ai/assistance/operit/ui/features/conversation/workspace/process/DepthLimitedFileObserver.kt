@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.process
 import android.os.FileObserver
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
+import java.nio.file.Files
 
 data class WorkspaceFileChange(
     val relativePath: String,
@@ -76,7 +77,7 @@ class DepthLimitedFileObserver(
         if (depth >= maxDepth) return
         directory.listFiles()
             ?.asSequence()
-            ?.filter { it.isDirectory }
+            ?.filter { it.isDirectory && !Files.isSymbolicLink(it.toPath()) }
             ?.forEach { child ->
                 val relativePath = relativePathFor(child.canonicalFile) ?: return@forEach
                 if (shouldIgnore(relativePath, true)) return@forEach
@@ -98,7 +99,7 @@ class DepthLimitedFileObserver(
     }
 
     private fun relativePathFor(file: File): String? {
-        val fullPath = file.canonicalFile.absolutePath
+        val fullPath = file.toPath().toAbsolutePath().normalize().toString()
         if (fullPath == rootPath) return ""
         if (!fullPath.startsWith("$rootPath${File.separator}")) return null
         return fullPath.removePrefix("$rootPath${File.separator}").replace(File.separatorChar, '/')
@@ -128,12 +129,11 @@ class DepthLimitedFileObserver(
     private inner class DirectoryObserver(val directory: File) :
         FileObserver(directory.absolutePath, EVENT_MASK) {
         override fun onEvent(event: Int, path: String?) {
-            val relativeChild = path?.takeIf { it.isNotBlank() } ?: return
-            val changedFile = File(directory, relativeChild)
+            val changedFile = if (path.isNullOrBlank()) directory else File(directory, path)
             val relativePath = relativePathFor(changedFile) ?: return
             val eventKind = kindFor(event) ?: return
 
-            val isDirectoryNow = changedFile.exists() && changedFile.isDirectory
+            val isDirectoryNow = changedFile.isDirectory && !Files.isSymbolicLink(changedFile.toPath())
             val wasObservedDirectory =
                 synchronized(this@DepthLimitedFileObserver) {
                     observers.containsKey(changedFile.canonicalFile.absolutePath)
