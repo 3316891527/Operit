@@ -81,7 +81,9 @@ internal fun WorkspaceChangesScreen(
 ) {
     val context = LocalContext.current
     val store = remember(context) { WorkspaceChangeStore.get(context) }
-    val observationErrors by remember(context) { WorkspaceFileMonitor.get(context).errors }.collectAsState()
+    val workspaceObservationErrors by remember(context) { WorkspaceFileMonitor.get(context).errors }.collectAsState()
+    val terminalObservationErrors by remember(context) { TerminalFileJournal.get(context).errors }.collectAsState()
+    val observationErrors = workspaceObservationErrors + terminalObservationErrors
     val scope = rememberCoroutineScope()
     var previewJob by remember { mutableStateOf<Job?>(null) }
     var previewError by remember { mutableStateOf<String?>(null) }

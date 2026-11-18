@@ -17,7 +17,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.withLock
 
 /** 监视绑定目录的真实文件，来源仅用于标注，不决定哪些文件能够进入历史。 */
-internal class WorkspaceFileMonitor private constructor(private val context: Context) {
+internal class WorkspaceFileMonitor internal constructor(
+    private val context: Context,
+    private val terminalOwns: (File) -> Boolean = TerminalFileJournal::observesActiveFile,
+) {
+    private data class EventOrigin(val name: String, val terminalOwned: Boolean) {
+        fun merge(other: EventOrigin) = EventOrigin(
+            if (name == other.name) name else "filesystem", terminalOwned || other.terminalOwned,
+        )
+    }
     private data class Binding(val chatId: String, val location: ChangeLocation)
     private class State(val binding: Binding, val key: String, val local: File?) {
         var before: Map<String, ObservedWorkspaceFile> = emptyMap()
@@ -26,7 +34,7 @@ internal class WorkspaceFileMonitor private constructor(private val context: Con
         var lastScan = 0L
         var observer: DepthLimitedFileObserver? = null
         @Volatile var restartObserver = false
-        val dirty = linkedMapOf<String, String>()
+        val dirty = linkedMapOf<String, EventOrigin>()
     }
     internal data class ToolScope(val id: String, val chatId: String?, val name: String, val command: Boolean)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -161,11 +169,9 @@ internal class WorkspaceFileMonitor private constructor(private val context: Con
             shouldIgnore = { path, _ -> !observedWorkspacePath(path) || isHistoryStorage(File(root, path)) },
             onChange = { event ->
                 if (event.relativePath.isEmpty()) state.restartObserver = true
-                val origin = source(state)
+                val origin = EventOrigin(source(state), terminalOwns(File(root, event.relativePath)))
                 synchronized(state) {
-                    state.dirty.merge(event.relativePath, origin) { previous, current ->
-                        if (previous == current) current else "filesystem"
-                    }
+                    state.dirty.merge(event.relativePath, origin) { previous, current -> previous.merge(current) }
                 }
                 changes.trySend(Unit)
             }).also { it.start() }
@@ -198,23 +204,28 @@ internal class WorkspaceFileMonitor private constructor(private val context: Con
         }
     }
 
-    private fun restoreEvents(state: State, pending: Map<String, String>) = synchronized(state) {
+    private fun restoreEvents(state: State, pending: Map<String, EventOrigin>) = synchronized(state) {
         pending.forEach { (path, source) -> state.dirty.merge(path, source) { current, previous ->
-            if (current == previous) current else "filesystem"
+            current.merge(previous)
         } }
     }
 
-    private fun saveChanges(state: State, next: Map<String, ObservedWorkspaceFile>, origin: String, pending: Map<String, String>) {
-        val paths = observedWorkspaceChanges(state.before, next)
+    private fun saveChanges(state: State, next: Map<String, ObservedWorkspaceFile>, origin: String, pending: Map<String, EventOrigin>) {
+        val paths = observedWorkspaceChanges(state.before, next).filterNot { path ->
+            // 归属随通知保存，执行结束后处理的旧通知也不能再次生成 filesystem 记录。
+            (state.local != null && terminalOwns(File(state.local, path))) || pending.any { (parent, event) ->
+                event.terminalOwned && (parent.isEmpty() || path == parent || path.startsWith("$parent/"))
+            }
+        }
         if (paths.isEmpty()) return
         val operation = UUID.randomUUID().toString()
         val time = WorkspaceChangeStore.nextTimestamp()
         val records = paths.map { path ->
             val before = state.before[path]?.snapshot ?: ChangeSnapshot(SnapshotKind.ABSENT)
             val after = next[path]?.snapshot ?: ChangeSnapshot(SnapshotKind.ABSENT)
-            val eventSource = pending[path] ?: pending.entries.filter { (parent, _) ->
+            val eventSource = pending[path]?.name ?: pending.entries.filter { (parent, _) ->
                 parent.isEmpty() || path.startsWith("$parent/")
-            }.maxByOrNull { it.key.length }?.value ?: origin
+            }.maxByOrNull { it.key.length }?.value?.name ?: origin
             val record = FileChangeRecord(UUID.randomUUID().toString(), operation, state.binding.chatId, time,
                 eventSource, state.binding.location.copy(path = changePath(state.binding.location.path + "/" + path)), before, after)
             val content = store.content(record)
@@ -288,7 +299,20 @@ internal class WorkspaceFileMonitor private constructor(private val context: Con
     private fun key(binding: Binding): String = MessageDigest.getInstance("SHA-256")
         .digest((binding.chatId + "\u0000" + binding.location.key).toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
 
+    internal suspend fun close() = withContext(NonCancellable + Dispatchers.IO) {
+        WorkspaceChangeStore.operationMutex.withLock {
+            states.values.forEach { it.observer?.stop() }
+            states.clear()
+            owners.clear()
+            synchronized(sources) { sources.clear() }
+            changes.close()
+            scope.cancel()
+            if (instance === this@WorkspaceFileMonitor) instance = null
+        }
+    }
+
     companion object {
+        fun acknowledgeExisting(records: List<FileChangeRecord>) { instance?.acknowledge(records) }
         @Volatile private var instance: WorkspaceFileMonitor? = null
         fun get(context: Context): WorkspaceFileMonitor = instance ?: synchronized(this) {
             instance ?: WorkspaceFileMonitor(context.applicationContext).also { instance = it }

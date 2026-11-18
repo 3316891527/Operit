@@ -111,11 +111,8 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                     val caller = com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext()
                     taskRegistry.start(sessionId, command, timeoutMs,
                         collect = { commandId, onCancellation ->
-                            kotlinx.coroutines.flow.flow {
-                                val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(context)
-                                val source = monitor.beginTool(caller?.callerChatId, caller?.invokingToolName ?: tool.name, command = true)
-                                try { terminal.executeCommandFlow(sessionId, command, commandId, onCancellation).collect { emit(it) } }
-                                finally { monitor.endTool(source) }
+                            com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.withToolRuntimeContext(caller) {
+                                terminal.executeCommandFlow(sessionId, command, commandId, onCancellation)
                             }
                         },
                     ).also { createdId = it }

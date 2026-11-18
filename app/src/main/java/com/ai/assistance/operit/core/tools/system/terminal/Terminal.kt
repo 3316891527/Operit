@@ -13,6 +13,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
+import com.ai.assistance.operit.terminal.provider.type.TerminalType
+import com.ai.assistance.operit.terminal.provider.filesystem.LocalFileSystemProvider
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.TerminalFileJournal
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.TerminalChangeOrigin
 import java.util.UUID
 
 /**
@@ -20,7 +29,10 @@ import java.util.UUID
  * 提供应用程序级别的终端服务管理和访问
  */
 @RequiresApi(Build.VERSION_CODES.O)
-class Terminal internal constructor(private val terminalManager: TerminalManager) {
+class Terminal internal constructor(
+    private val terminalManager: TerminalManager,
+    private val fileJournal: TerminalFileJournal? = null,
+) {
 
     companion object {
         @Volatile
@@ -28,7 +40,7 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
 
         fun getInstance(context: Context): Terminal {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Terminal(TerminalManager.getInstance(context.applicationContext)).also { INSTANCE = it }
+                INSTANCE ?: Terminal(TerminalManager.getInstance(context.applicationContext), TerminalFileJournal.get(context)).also { INSTANCE = it }
             }
         }
 
@@ -58,7 +70,11 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
      * 销毁终端管理器
      */
     fun destroy() {
-        terminalManager.cleanup()
+        try {
+            terminalManager.cleanup()
+        } finally {
+            runBlocking(Dispatchers.IO) { fileJournal?.close() }
+        }
     }
 
     /**
@@ -83,6 +99,7 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
      */
     fun closeSession(sessionId: String) {
         terminalManager.closeSession(sessionId)
+        fileJournal?.closeSession(sessionId)
     }
 
     /**
@@ -96,11 +113,14 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
         executorKey: String = "default",
         timeoutMs: Long = 120000L
     ): HiddenExecResult {
-        return terminalManager.executeHiddenCommand(
-            command = command,
-            executorKey = executorKey,
-            timeoutMs = timeoutMs
-        )
+        val origin = executionOrigin(UUID.randomUUID().toString())
+        val local = terminalManager.getFileSystemProvider() is LocalFileSystemProvider
+        val observation = if (local) fileJournal?.begin(origin) else null
+        try {
+            return terminalManager.executeHiddenCommand(command, executorKey, timeoutMs)
+        } finally {
+            if (observation != null) fileJournal?.finish(observation)
+        }
     }
 
     /**
@@ -112,12 +132,33 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
         command: String,
         commandId: String = UUID.randomUUID().toString(),
         onCancellationOutcome: (com.ai.assistance.operit.terminal.command.CommandCancellationOutcome) -> Unit = {},
-    ): Flow<CommandExecutionEvent> = terminalCommandFlow(
-        events = commandEvents, sessionId = sessionId, commandId = commandId,
-        submit = { terminalManager.sendCommandToSession(sessionId, command, commandId) },
-        cancel = { terminalManager.cancelCommand(sessionId, commandId) },
-        onCancellationOutcome = onCancellationOutcome,
-    )
+    ): Flow<CommandExecutionEvent> {
+        // 在创建 Flow 时冻结调用者，托管任务换协程收集后仍保留原始工具身份。
+        val origin = executionOrigin(commandId)
+        return flow {
+            val local = terminalState.value.sessions.firstOrNull { it.id == sessionId }?.terminalType == TerminalType.LOCAL
+            val observation = if (local) fileJournal?.begin(origin) else null
+            try {
+                terminalCommandFlow(
+                    events = commandEvents, sessionId = sessionId, commandId = commandId,
+                    submit = { terminalManager.sendCommandToSession(sessionId, command, commandId) },
+                    cancel = { terminalManager.cancelCommand(sessionId, commandId) },
+                    onCancellationOutcome = onCancellationOutcome,
+                ).collect { event ->
+                    // 最终结果发布前保存文件变化，不依赖调用工具的返回顺序。
+                    if (event.isCompleted && observation != null) fileJournal?.finish(observation)
+                    emit(event)
+                }
+            } finally {
+                if (observation != null) fileJournal?.finish(observation)
+            }
+        }
+    }
+
+    private fun executionOrigin(commandId: String): TerminalChangeOrigin {
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        return TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", commandId)
+    }
 
     suspend fun cancelCommand(sessionId: String, commandId: String) =
         terminalManager.cancelCommand(sessionId, commandId)
@@ -126,6 +167,10 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
      * 发送输入到当前会话
      */
     fun sendInput(sessionId: String, input: String) {
+        val local = terminalState.value.sessions.firstOrNull { it.id == sessionId }?.terminalType == TerminalType.LOCAL
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        val origin = TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", null)
+        if (local && input.isNotEmpty()) runBlocking(Dispatchers.IO) { fileJournal?.interactiveInput(sessionId, origin) }
         terminalManager.sendInput(input, sessionId)
     }
 

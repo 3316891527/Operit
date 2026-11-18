@@ -23,6 +23,8 @@ internal class WorkspaceChangeStore(context: Context) {
     private val objects = File(root, "objects")
     private val operations = File(root, "operations")
     private val observations = File(root, "observations")
+    private val terminalObservations = File(root, "terminal-observations")
+    private val activeBaselines = linkedMapOf<String, TerminalObservationBaseline>()
     private val json = Json { encodeDefaults = true }
     private val revisionState = MutableStateFlow(0L)
     private val statistics = object : LinkedHashMap<String, Pair<Int, Int>>(128, 0.75f, true) {
@@ -43,6 +45,48 @@ internal class WorkspaceChangeStore(context: Context) {
         if (records.isEmpty()) return
         writeAtomic(File(operations, "${records.first().operationId}.json"), json.encodeToString(records).toByteArray(Charsets.UTF_8))
         revisionState.update { it + 1 }
+    }
+
+    /** 长任务每批保存完整操作清单，同一次执行不会丢掉先前批次的其他文件。 */
+    @Synchronized
+    fun replaceOperation(operationId: String, records: List<FileChangeRecord>) {
+        require(java.util.UUID.fromString(operationId).toString() == operationId)
+        require(records.all { it.operationId == operationId })
+        if (records.isEmpty()) {
+            val file = File(operations, "$operationId.json")
+            if (!file.exists()) return
+            AtomicFile(file).delete()
+            check(!file.exists()) { "Cannot remove empty terminal operation" }
+        } else {
+            writeAtomic(File(operations, "$operationId.json"), json.encodeToString(records).toByteArray(Charsets.UTF_8))
+        }
+        statistics.clear()
+        revisionState.update { it + 1 }
+    }
+
+    @Synchronized
+    fun operationRecords(operationId: String): List<FileChangeRecord> {
+        require(java.util.UUID.fromString(operationId).toString() == operationId)
+        val file = File(operations, "$operationId.json")
+        return if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else emptyList()
+    }
+
+    @Synchronized
+    fun pinTerminalBaseline(key: String, baseline: TerminalObservationBaseline) {
+        activeBaselines[key] = baseline
+    }
+
+    @Synchronized
+    fun terminalBaseline(key: String): TerminalObservationBaseline? {
+        require(Regex("[0-9a-f]{64}").matches(key))
+        val file = File(terminalObservations, "$key.json")
+        return if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
+    }
+
+    @Synchronized
+    fun saveTerminalBaseline(key: String, baseline: TerminalObservationBaseline) {
+        require(Regex("[0-9a-f]{64}").matches(key))
+        writeAtomic(File(terminalObservations, "$key.json"), json.encodeToString(baseline).toByteArray(Charsets.UTF_8))
     }
 
     @Synchronized
@@ -141,11 +185,15 @@ internal class WorkspaceChangeStore(context: Context) {
                 } else writeAtomic(file, json.encodeToString(kept).toByteArray(Charsets.UTF_8))
                 changed = true
             }
-            val baselineBlobs = observations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
+            val baselineBlobs = terminalObservations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
+                json.decodeFromString<TerminalObservationBaseline>(file.readText(Charsets.UTF_8)).files.values.mapNotNull { it.snapshot.blob }
+            }
+            val workspaceBaselineBlobs = observations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
                 json.decodeFromString<Map<String, ObservedWorkspaceFile>>(file.readText(Charsets.UTF_8)).values.mapNotNull { it.snapshot.blob }
             }
             val retained = inventory.values.flatten().filterNot { it.id in ids }
-                .flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() + baselineBlobs
+                .flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() + baselineBlobs + workspaceBaselineBlobs +
+                activeBaselines.values.flatMap { it.files.values.mapNotNull { file -> file.snapshot.blob } }
             val candidates = removed.flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() - retained
             // 采集与清理共用互斥锁，不能删掉进行中操作即将引用的相同内容。
             for (hash in candidates) {

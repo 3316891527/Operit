@@ -31,6 +31,8 @@ internal data class FileChangeRecord(
     val after: ChangeSnapshot,
     val additions: Int? = null,
     val deletions: Int? = null,
+    val executionId: String? = null,
+    val sourceKind: String? = null,
 )
 
 internal enum class ChangeReviewSource { OPERATIONS, WORKING_TREE, BRANCH, LAST_TURN }

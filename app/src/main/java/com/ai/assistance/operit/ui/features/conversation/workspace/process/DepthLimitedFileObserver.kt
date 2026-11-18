@@ -4,6 +4,7 @@ import android.os.FileObserver
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 
 data class WorkspaceFileChange(
     val relativePath: String,
@@ -58,31 +59,32 @@ class DepthLimitedFileObserver(
     }
 
     @Synchronized
-    private fun watchDirectory(directory: File) {
+    private fun watchDirectory(directory: File): Boolean {
+        if (!Files.isDirectory(directory.toPath(), NOFOLLOW_LINKS)) return false
         val canonicalDir = directory.canonicalFile
-        val relativePath = relativePathFor(canonicalDir)
-        if (relativePath != null && shouldIgnore(relativePath, true)) return
-        val depth = depthOf(relativePath.orEmpty())
-        if (depth > maxDepth) return
+        val relativePath = relativePathFor(canonicalDir) ?: return false
+        if (shouldIgnore(relativePath, true)) return false
+        val depth = depthOf(relativePath)
+        if (depth > maxDepth) return false
 
         val key = canonicalDir.absolutePath
-        if (observers.containsKey(key)) return
+        if (observers.containsKey(key)) return false
 
         val observer = DirectoryObserver(canonicalDir)
         observer.startWatching()
         observers[key] = observer
+        return true
     }
 
     private fun addExistingDirectories(directory: File, depth: Int) {
         if (depth >= maxDepth) return
         directory.listFiles()
             ?.asSequence()
-            ?.filter { it.isDirectory && !Files.isSymbolicLink(it.toPath()) }
+            ?.filter { Files.isDirectory(it.toPath(), NOFOLLOW_LINKS) }
             ?.forEach { child ->
                 val relativePath = relativePathFor(child.canonicalFile) ?: return@forEach
                 if (shouldIgnore(relativePath, true)) return@forEach
-                watchDirectory(child)
-                addExistingDirectories(child, depth + 1)
+                if (watchDirectory(child)) addExistingDirectories(child, depth + 1)
             }
     }
 
@@ -129,14 +131,15 @@ class DepthLimitedFileObserver(
     private inner class DirectoryObserver(val directory: File) :
         FileObserver(directory.absolutePath, EVENT_MASK) {
         override fun onEvent(event: Int, path: String?) {
-            val changedFile = if (path.isNullOrBlank()) directory else File(directory, path)
+            // SELF 通知没有子路径，仍须让日志看到观察目录本身被移动或删除。
+            val changedFile = path?.takeIf { it.isNotBlank() }?.let { File(directory, it) } ?: directory
             val relativePath = relativePathFor(changedFile) ?: return
             val eventKind = kindFor(event) ?: return
 
-            val isDirectoryNow = changedFile.isDirectory && !Files.isSymbolicLink(changedFile.toPath())
+            val isDirectoryNow = Files.isDirectory(changedFile.toPath(), NOFOLLOW_LINKS)
             val wasObservedDirectory =
                 synchronized(this@DepthLimitedFileObserver) {
-                    observers.containsKey(changedFile.canonicalFile.absolutePath)
+                    observers.containsKey(changedFile.absolutePath)
                 }
             if (shouldIgnore(relativePath, isDirectoryNow || wasObservedDirectory)) return
 
