@@ -69,7 +69,6 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.runtime.ToolExecutor
 import com.ai.assistance.operit.core.tools.VisitWebResultData
-import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.core.tools.protocol.ToolValidationResult
@@ -79,7 +78,6 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -229,11 +227,12 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
         val resolvedUserAgent = resolveUserAgent(userAgentPresetParam, userAgentParam)
 
         return try {
-            val pageContent = withTimeoutOrNull(WebVisitSession.TOTAL_TIMEOUT_MS) {
+            val options = WebVisitOptions.fromParameters(tool.parameters.associate { it.name to it.value })
+            val pageContent = withWebVisitTimeout(options) {
                 visitSlots.withPermit {
-                    visitWebPage(targetUrl, headers, resolvedUserAgent, includeImageLinks)
+                    visitWebPage(targetUrl, headers, resolvedUserAgent, includeImageLinks, options)
                 }
-            } ?: throw WebVisitException(WebVisitFailure.TOTAL_TIMEOUT)
+            }
             ToolResult(toolName = tool.name, success = true, result = pageContent, error = null)
         } catch (e: CancellationException) {
             throw e
@@ -389,10 +388,8 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
     }
 
     /** 访问网页并提取结构化内容。 */
-    private suspend fun visitWebPage(url: String, headers: Map<String, String>, userAgent: String, includeImageLinks: Boolean): VisitWebResultData {
-        val waitSeconds = DisplayPreferencesManager.getInstance(context).visitWebWaitSeconds.first()
-            .coerceIn(0, WebVisitSession.MAX_WAIT_SECONDS)
-        val extractedJson = loadWebPageAndExtractContent(url, headers, userAgent, includeImageLinks, waitSeconds)
+    private suspend fun visitWebPage(url: String, headers: Map<String, String>, userAgent: String, includeImageLinks: Boolean, options: WebVisitOptions): VisitWebResultData {
+        val extractedJson = loadWebPageAndExtractContent(url, headers, userAgent, includeImageLinks, options)
         return withContext(Dispatchers.IO) {
             val result = decodeWebVisitContent(extractedJson)
 
@@ -558,14 +555,15 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
         headers: Map<String, String>,
         userAgent: String,
         includeImageLinks: Boolean,
-        waitSeconds: Int,
+        options: WebVisitOptions,
     ): String = withContext(Dispatchers.Main) {
         val content = CompletableDeferred<String>()
         val visit = WebVisitSession(
             scope = CoroutineScope(currentCoroutineContext()),
-            waitSeconds = waitSeconds,
+            options = options,
             read = { extractPageContent(webViewReference, includeImageLinks) },
-            scroll = { webViewReference?.let { autoScrollToBottom(it, 0) {} } },
+            inspect = { inspectPageForBlock(webViewReference) },
+            scroll = { webViewReference?.let { autoScrollToBottom(it) } },
             finish = { result ->
                 result.fold({ content.complete(it) }, { content.completeExceptionally(it) })
             },
@@ -603,6 +601,11 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                                 currentUrl.value = startedUrl
                                 hasSslError.value = false
                                 visit.onPageStarted()
+                            }
+
+                            override fun onPageCommitVisible(view: WebView, visibleUrl: String) {
+                                super.onPageCommitVisible(view, visibleUrl)
+                                visit.onPageVisible()
                             }
 
                             override fun onPageFinished(
@@ -651,7 +654,10 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                                     return
                                 }
                                 AppLogger.e(TAG, "WebView main page failed: ${error.errorCode} - ${error.description}")
-                                visit.fail(WebVisitFailure.NETWORK, "${error.errorCode}: ${error.description}")
+                                val failure = if (error.errorCode == WebViewClient.ERROR_UNSAFE_RESOURCE) {
+                                    WebVisitFailure.ACCESS_BLOCKED
+                                } else WebVisitFailure.NETWORK
+                                visit.fail(failure, "${error.errorCode}: ${error.description}")
                             }
 
                             override fun onReceivedHttpError(
@@ -660,8 +666,20 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                                     response: android.webkit.WebResourceResponse
                             ) {
                                 if (request.isForMainFrame && response.statusCode >= 400) {
-                                    visit.fail(WebVisitFailure.HTTP, "HTTP ${response.statusCode}")
+                                    val failure = classifyWebVisitHttpError(response.statusCode, response.responseHeaders.orEmpty())
+                                    visit.fail(failure.reason, failure.detail)
                                 }
+                            }
+
+                            override fun onSafeBrowsingHit(
+                                view: WebView,
+                                request: WebResourceRequest,
+                                threatType: Int,
+                                response: android.webkit.SafeBrowsingResponse,
+                            ) {
+                                // 安全检查明确拒绝时直接结束，不等待浏览器拦截提示页。
+                                response.backToSafety(false)
+                                if (request.isForMainFrame) visit.fail(WebVisitFailure.ACCESS_BLOCKED, "Safe Browsing threat=$threatType")
                             }
 
                             override fun onReceivedSslError(
@@ -765,6 +783,10 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
             WebVisitFailure.INVALID_CONTENT -> R.string.webvisit_error_invalid_content
             WebVisitFailure.EXTRACTION -> R.string.webvisit_error_extraction
             WebVisitFailure.DISPLAY -> R.string.webvisit_error_display
+            WebVisitFailure.INVALID_ARGUMENT -> R.string.webvisit_error_invalid_argument
+            WebVisitFailure.ACCESS_BLOCKED -> R.string.webvisit_error_access_blocked
+            WebVisitFailure.CLOUDFLARE_CHALLENGE -> R.string.webvisit_error_cloudflare_challenge
+            WebVisitFailure.CLOUDFLARE_BLOCKED -> R.string.webvisit_error_cloudflare_blocked
         }
         val message = context.getString(resource)
         val detail = error.detail.take(500)
@@ -1002,11 +1024,11 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
             onMinimizeRequested: () -> Unit
     ) {
         // 倒计时只用于显示，访问的完成与超时不依赖界面重组。
-        val secondsLeft = remember { mutableStateOf(0) }
+        val secondsLeft = remember { mutableStateOf(0L) }
         val phase by visit.phase.collectAsState()
         LaunchedEffect(phase) {
             if (phase == WebVisitPhase.WAITING) {
-                for (remaining in visit.waitSeconds downTo 0) {
+                for (remaining in visit.options.waitSeconds downTo 0L) {
                     secondsLeft.value = remaining
                     delay(1000)
                 }
@@ -1267,132 +1289,26 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
         }
     }
 
-    /** 从加载的WebView提取页面内容 */
-    private suspend fun extractPageContent(webView: WebView?, includeImageLinks: Boolean): String {
-        if (webView == null) throw WebVisitException(WebVisitFailure.EXTRACTION)
+    /** 加载及等待期间检查拦截，提取正文前也复用同一检查。 */
+    private suspend fun inspectPageForBlock(webView: WebView?): WebVisitException? {
+        val value = evaluatePageJavascript(webView, WEB_VISIT_PAGE_CHECK_SCRIPT)
+        return detectWebVisitBlock(decodeWebVisitPageSignals(value))
+    }
+
+    /** 所有脚本读取都可取消，并由调用参数中的读取时限约束。 */
+    private suspend fun evaluatePageJavascript(webView: WebView?, script: String): String {
+        if (webView == null || !webView.isAttachedToWindow) {
+            throw WebVisitException(WebVisitFailure.EXTRACTION, "WebView is not attached")
+        }
         return suspendCancellableCoroutine { continuation ->
             fun fail(error: Exception) {
                 if (continuation.isActive) continuation.resumeWithException(error)
             }
-            // 检查WebView是否有效
-            if (!webView.isAttachedToWindow) {
-                AppLogger.e(TAG, "WebView is not attached to window, cannot extract content")
-                fail(WebVisitException(WebVisitFailure.EXTRACTION))
-                return@suspendCancellableCoroutine
-            }
-
-            // 记录提取开始
-            AppLogger.d(TAG, "Starting to extract content from web page")
-
-            // 用于提取页面内容的JavaScript
-            val extractionScript =
-                    """
-                (function() {
-                    try {
-                        console.log("Starting content extraction script");
-
-                        // 提取链接
-                        var links = [];
-                        var linkNodes = document.querySelectorAll('a');
-                        for (var i = 0; i < linkNodes.length; i++) {
-                            var node = linkNodes[i];
-                            var href = node.href;
-                            var text = node.innerText.trim();
-                            if (href && text) {
-                                links.push({url: href, text: text});
-                            }
-                        }
-
-                        // 图片链接（可选）
-                        var imageLinks = [];
-                        if (${includeImageLinks.toString().lowercase()}) {
-                            var normalizeImageUrl = function(u) {
-                                if (!u) return null;
-                                try {
-                                    u = String(u).trim();
-                                } catch (e) {
-                                    return null;
-                                }
-                                if (!u) return null;
-                                // download_file 仅支持 HTTP 与 HTTPS
-                                if (u.indexOf('http://') !== 0 && u.indexOf('https://') !== 0) return null;
-                                // 排除无法下载的内联与临时来源
-                                if (u.indexOf('data:') === 0 || u.indexOf('blob:') === 0) return null;
-                                var clean = u.split('#')[0];
-                                var pathOnly = clean.split('?')[0].toLowerCase();
-                                // 排除常见图标与 SVG
-                                if (pathOnly.endsWith('.svg')) return null;
-                                return clean;
-                            };
-                            var imgNodes = document.querySelectorAll('img');
-                            var imgSeen = {};
-                            for (var j = 0; j < imgNodes.length; j++) {
-                                var imgNode = imgNodes[j];
-                                var imgUrlRaw = imgNode.currentSrc || imgNode.src || imgNode.getAttribute('data-src');
-                                var imgUrl = normalizeImageUrl(imgUrlRaw);
-                                if (imgUrl && !imgSeen[imgUrl]) {
-                                    imgSeen[imgUrl] = true;
-                                    imageLinks.push(imgUrl);
-                                }
-                            }
-                        }
-
-                        // 页面基本信息
-                        var result = {
-                            title: document.title || "No Title",
-                            url: window.location.href,
-                            content: "",
-                            links: links,
-                            imageLinks: imageLinks
-                        };
-
-                        // 获取页面当前可见的正文
-                        var fullText = document.body.innerText;
-
-                        // 添加元数据
-                        var metadata = {};
-
-                        // 提取所有meta标签的信息
-                        var metaTags = document.querySelectorAll('meta');
-                        for (var i = 0; i < metaTags.length; i++) {
-                            var name = metaTags[i].getAttribute('name') ||
-                                       metaTags[i].getAttribute('property') ||
-                                       metaTags[i].getAttribute('itemprop');
-                            var content = metaTags[i].getAttribute('content');
-
-                            if (name && content) {
-                                metadata[name] = content;
-                            }
-                        }
-
-                        // 添加特别关注的元数据
-                        var importantMetadata = ['description', 'keywords', 'author', 'og:title', 'og:description'];
-                        var metaStr = "---METADATA---\n";
-                        importantMetadata.forEach(function(key) {
-                            if (metadata[key]) {
-                                metaStr += key + ": " + metadata[key] + "\n";
-                            }
-                        });
-
-                        // 组合最终结果
-                        result.content = "# " + result.title + "\n\n" +
-                                          metaStr + "\n" +
-                                          "---CONTENT---\n" +
-                                          fullText;
-
-                        console.log("Content extraction complete");
-                        return JSON.stringify(result);
-                    } catch(e) {
-                        return JSON.stringify({error: "Error extracting content: " + e.toString()});
-                    }
-                })();
-            """.trimIndent()
-
             try {
-                webView.evaluateJavascript(extractionScript) { resultContent ->
+                webView.evaluateJavascript(script) { value ->
                     if (!continuation.isActive) return@evaluateJavascript
                     try {
-                        continuation.resume(decodeWebVisitJavascript(resultContent))
+                        continuation.resume(decodeWebVisitJavascript(value))
                     } catch (error: Exception) {
                         fail(error)
                     }
@@ -1401,6 +1317,114 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                 fail(WebVisitException(WebVisitFailure.EXTRACTION, error.message.orEmpty()))
             }
         }
+    }
+
+    /** 从加载的 WebView 提取页面当前内容。 */
+    private suspend fun extractPageContent(webView: WebView?, includeImageLinks: Boolean): String {
+        // 用于提取页面内容的JavaScript
+        val extractionScript =
+                """
+            (function() {
+                try {
+                    console.log("Starting content extraction script");
+
+                    // 提取链接
+                    var links = [];
+                    var linkNodes = document.querySelectorAll('a');
+                    for (var i = 0; i < linkNodes.length; i++) {
+                        var node = linkNodes[i];
+                        var href = node.href;
+                        var text = node.innerText.trim();
+                        if (href && text) {
+                            links.push({url: href, text: text});
+                        }
+                    }
+
+                    // 图片链接（可选）
+                    var imageLinks = [];
+                    if (${includeImageLinks.toString().lowercase()}) {
+                        var normalizeImageUrl = function(u) {
+                            if (!u) return null;
+                            try {
+                                u = String(u).trim();
+                            } catch (e) {
+                                return null;
+                            }
+                            if (!u) return null;
+                            // download_file 仅支持 HTTP 与 HTTPS
+                            if (u.indexOf('http://') !== 0 && u.indexOf('https://') !== 0) return null;
+                            // 排除无法下载的内联与临时来源
+                            if (u.indexOf('data:') === 0 || u.indexOf('blob:') === 0) return null;
+                            var clean = u.split('#')[0];
+                            var pathOnly = clean.split('?')[0].toLowerCase();
+                            // 排除常见图标与 SVG
+                            if (pathOnly.endsWith('.svg')) return null;
+                            return clean;
+                        };
+                        var imgNodes = document.querySelectorAll('img');
+                        var imgSeen = {};
+                        for (var j = 0; j < imgNodes.length; j++) {
+                            var imgNode = imgNodes[j];
+                            var imgUrlRaw = imgNode.currentSrc || imgNode.src || imgNode.getAttribute('data-src');
+                            var imgUrl = normalizeImageUrl(imgUrlRaw);
+                            if (imgUrl && !imgSeen[imgUrl]) {
+                                imgSeen[imgUrl] = true;
+                                imageLinks.push(imgUrl);
+                            }
+                        }
+                    }
+
+                    // 页面基本信息
+                    var result = {
+                        title: document.title || "No Title",
+                        url: window.location.href,
+                        content: "",
+                        links: links,
+                        imageLinks: imageLinks
+                    };
+
+                    // 获取页面当前可见的正文
+                    var fullText = document.body.innerText;
+
+                    // 添加元数据
+                    var metadata = {};
+
+                    // 提取所有meta标签的信息
+                    var metaTags = document.querySelectorAll('meta');
+                    for (var i = 0; i < metaTags.length; i++) {
+                        var name = metaTags[i].getAttribute('name') ||
+                                   metaTags[i].getAttribute('property') ||
+                                   metaTags[i].getAttribute('itemprop');
+                        var content = metaTags[i].getAttribute('content');
+
+                        if (name && content) {
+                            metadata[name] = content;
+                        }
+                    }
+
+                    // 添加特别关注的元数据
+                    var importantMetadata = ['description', 'keywords', 'author', 'og:title', 'og:description'];
+                    var metaStr = "---METADATA---\n";
+                    importantMetadata.forEach(function(key) {
+                        if (metadata[key]) {
+                            metaStr += key + ": " + metadata[key] + "\n";
+                        }
+                    });
+
+                    // 组合最终结果
+                    result.content = "# " + result.title + "\n\n" +
+                                      metaStr + "\n" +
+                                      "---CONTENT---\n" +
+                                      fullText;
+
+                    console.log("Content extraction complete");
+                    return JSON.stringify(result);
+                } catch(e) {
+                    return JSON.stringify({error: "Error extracting content: " + e.toString()});
+                }
+            })();
+        """.trimIndent()
+        return evaluatePageJavascript(webView, extractionScript)
     }
 
     private fun sanitizeHeaderName(name: String?): String? {
@@ -1419,8 +1443,7 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
     }
 
     /** 自动滚动页面到底部以触发可能的懒加载内容 */
-    private fun autoScrollToBottom(webView: WebView, scrollWaitSeconds: Int, onScrollComplete: () -> Unit) {
-        val scrollWaitMillis = scrollWaitSeconds.coerceAtLeast(0) * 1000L
+    private fun autoScrollToBottom(webView: WebView) {
         val scrollScript =
                 """
             (function() {
@@ -1497,12 +1520,7 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                         }
                     }, 1000); // 每秒滚动一次
 
-                    // 无论如何，最多滚动8秒
-                    setTimeout(function() {
-                        clearInterval(scrollInterval);
-                        console.log('自动滚动超时完成');
-                    }, 8000);
-
+                    // 滚动随当前页面一起销毁；等待时长只由调用参数控制。
                     return 'scrolling-started';
                 } catch(e) {
                     console.error('滚动过程出错: ' + e);
@@ -1515,19 +1533,8 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
             AppLogger.d(TAG, "开始执行自动滚动脚本")
             webView.evaluateJavascript(scrollScript) { result -> AppLogger.d(TAG, "滚动脚本初始执行结果: $result") }
 
-            // 等待滚动完成后执行回调
-            Handler(Looper.getMainLooper())
-                    .postDelayed(
-                            {
-                                AppLogger.d(TAG, "自动滚动等待完成，继续处理")
-                                onScrollComplete()
-                            },
-                            scrollWaitMillis
-                    )
         } catch (e: Exception) {
             AppLogger.e(TAG, "执行滚动脚本时出错", e)
-            // 出错时也要继续后续流程
-            onScrollComplete()
         }
     }
 }

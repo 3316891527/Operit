@@ -6983,9 +6983,6 @@
     <string name="global_display_image_format">图片格式</string>
     <string name="global_display_image_quality">画质（仅对 JPG 生效）</string>
     <string name="global_display_resolution_scale">分辨率缩放（发送前缩小截图）</string>
-    <string name="visit_web_wait_time_title">Visit Web 网页访问等待时间</string>
-    <string name="visit_web_wait_time_description">控制 visit_web 在提取页面内容后自动返回前的等待时长。设为 0 秒会立即返回。</string>
-    <string name="visit_web_wait_time_value">%1$d 秒</string>
     <string name="toolpkg_hook_timeout_title">前置插件 Hook 超时</string>
     <string name="toolpkg_hook_timeout_description">限制发送路径上的 ToolPkg 聊天输入、Prompt 和摘要 Hook 链总等待时间。超时会跳过当前 Hook 并继续处理，默认 10 秒；不影响消息处理回复接管。</string>
     <string name="toolpkg_hook_timeout_value">%1$d 秒</string>
@@ -8814,8 +8811,6 @@
     <string name="display_behavior_screenshot_jpg_summary">%1$d%% 画质 · %2$d%% 分辨率</string>
     <string name="display_behavior_tools_plugins">工具与插件</string>
     <string name="display_behavior_seconds_suffix">" 秒"</string>
-    <string name="display_behavior_web_wait">网页访问等待</string>
-    <string name="display_behavior_web_wait_desc">提取网页内容后的返回等待；0 秒为立即返回。</string>
     <string name="display_behavior_hook_timeout">前置插件 Hook 超时</string>
     <string name="display_behavior_hook_timeout_desc">聊天输入、Prompt 和摘要 Hook 的总等待上限。</string>
     <string name="display_behavior_hook_hint">Hook 超时后跳过当前 Hook 并继续处理；不影响消息处理回复接管。</string>
@@ -9561,9 +9556,9 @@
     <string name="workspace_open_not_text">当前文件不是可读取的文本，无法用文本编辑器打开。</string>
     <string name="workspace_open_failed">无法打开文件，请根据下面的详细原因检查路径、连接或存储状态。</string>
     <string name="workspace_open_checking">正在检查并读取当前文件…</string>
-    <string name="webvisit_error_load_timeout">网页在 10 秒内未完成加载，本次访问已结束。请检查网络、代理或站点是否可达。</string>
-    <string name="webvisit_error_read_timeout">网页内容提取超过 3 秒，本次访问已结束。</string>
-    <string name="webvisit_error_total_timeout">网页访问超过 30 秒，本次访问已结束。请检查网络、代理或站点是否可达。</string>
+    <string name="webvisit_error_load_timeout">网页加载超过本次调用设定的时限，已结束访问。请检查网络、代理或站点是否可达；慢网络可增大 timeout_seconds 或 load_timeout_seconds。</string>
+    <string name="webvisit_error_read_timeout">网页检查或内容提取超过本次调用设定的时限，已结束访问。可在下次增大 timeout_seconds 或 read_timeout_seconds。</string>
+    <string name="webvisit_error_total_timeout">网页访问超过本次调用设定的整次时限，已结束。请检查网络、代理或站点是否可达；慢网络可在下次增大 timeout_seconds。</string>
     <string name="webvisit_error_network">网页连接失败。请检查网络、代理或站点是否可达。</string>
     <string name="webvisit_error_http">服务器返回 HTTP 错误，未成功读取网页。</string>
     <string name="webvisit_error_certificate">网页证书验证失败，已停止访问。</string>
@@ -9573,4 +9568,8 @@
     <string name="webvisit_error_extraction">无法提取网页内容，本次访问失败。</string>
     <string name="webvisit_error_display">无法创建网页访问窗口，请检查悬浮窗权限与系统 WebView。</string>
     <string name="webvisit_status_reading">正在读取网页内容...</string>
+    <string name="webvisit_error_invalid_argument">网页访问时间参数无效，请根据详细原因调整调用参数。</string>
+    <string name="webvisit_error_access_blocked">站点、浏览器安全检查或访问策略明确拒绝了访问，已提前结束。请检查访问权限、网络与代理配置；不能仅凭此确定是否被网络封锁。</string>
+    <string name="webvisit_error_cloudflare_challenge">检测到 Cloudflare 人机验证或浏览器验证页，已提前结束。此只读工具不处理验证，单纯延长超时不能解决。</string>
+    <string name="webvisit_error_cloudflare_blocked">收到 Cloudflare 返回的访问拒绝响应或拦截页，已提前结束。请检查站点访问权限与安全策略。</string>
 </resources>

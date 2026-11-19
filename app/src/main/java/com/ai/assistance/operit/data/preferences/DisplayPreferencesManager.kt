@@ -70,7 +70,6 @@ class DisplayPreferencesManager private constructor(private val context: Context
         private val KEY_SCREENSHOT_FORMAT = stringPreferencesKey("screenshot_format")
         private val KEY_SCREENSHOT_QUALITY = intPreferencesKey("screenshot_quality")
         private val KEY_SCREENSHOT_SCALE_PERCENT = intPreferencesKey("screenshot_scale_percent")
-        private val KEY_VISIT_WEB_WAIT_SECONDS = intPreferencesKey("visit_web_wait_seconds")
         private val KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS = intPreferencesKey("toolpkg_hook_timeout_seconds")
 
         // 虚拟屏幕相关设置的 Key
@@ -97,7 +96,6 @@ class DisplayPreferencesManager private constructor(private val context: Context
             preferences.remove(KEY_SCREENSHOT_FORMAT)
             preferences.remove(KEY_SCREENSHOT_QUALITY)
             preferences.remove(KEY_SCREENSHOT_SCALE_PERCENT)
-            preferences.remove(KEY_VISIT_WEB_WAIT_SECONDS)
             preferences.remove(KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS)
             preferences.remove(KEY_VIRTUAL_DISPLAY_BITRATE_KBPS)
             preferences.remove(KEY_COLLAPSE_COMPLETED_PROCESS)
@@ -219,10 +217,6 @@ class DisplayPreferencesManager private constructor(private val context: Context
             preferences[KEY_SCREENSHOT_SCALE_PERCENT] ?: 75
         }
 
-    val visitWebWaitSeconds: Flow<Int> =
-        context.displayPreferencesDataStore.data.map { preferences ->
-            preferences[KEY_VISIT_WEB_WAIT_SECONDS] ?: 0
-        }
 
     val toolPkgHookTimeoutSeconds: Flow<Int> =
         context.displayPreferencesDataStore.data.map { preferences ->
@@ -262,7 +256,6 @@ class DisplayPreferencesManager private constructor(private val context: Context
         screenshotFormat: String? = null,
         screenshotQuality: Int? = null,
         screenshotScalePercent: Int? = null,
-        visitWebWaitSeconds: Int? = null,
         toolPkgHookTimeoutSeconds: Int? = null,
         virtualDisplayBitrateKbps: Int? = null,
         toolCollapseMode: ToolCollapseMode? = null,
@@ -301,7 +294,6 @@ class DisplayPreferencesManager private constructor(private val context: Context
             screenshotFormat?.let { preferences[KEY_SCREENSHOT_FORMAT] = it }
             screenshotQuality?.let { preferences[KEY_SCREENSHOT_QUALITY] = it }
             screenshotScalePercent?.let { preferences[KEY_SCREENSHOT_SCALE_PERCENT] = it }
-            visitWebWaitSeconds?.let { preferences[KEY_VISIT_WEB_WAIT_SECONDS] = it.coerceAtLeast(0) }
             toolPkgHookTimeoutSeconds?.let {
                 preferences[KEY_TOOLPKG_HOOK_TIMEOUT_SECONDS] = it.coerceIn(1, 60)
             }
@@ -335,11 +327,6 @@ class DisplayPreferencesManager private constructor(private val context: Context
         }
     }
 
-    fun getVisitWebWaitSeconds(): Int {
-        return runBlocking {
-            visitWebWaitSeconds.first()
-        }
-    }
 
     fun getToolPkgHookTimeoutSeconds(): Int {
         return runBlocking {

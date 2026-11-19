@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -19,17 +20,20 @@ import org.junit.Test
 class WebVisitSessionTest {
     private fun TestScope.session(
         results: MutableList<Result<String>>,
-        waitSeconds: Int = 0,
+        waitSeconds: Long = 0,
+        options: WebVisitOptions = WebVisitOptions(30, 10, 3, waitSeconds),
         read: suspend () -> String = { "page" },
         scroll: () -> Unit = {},
+        inspect: suspend () -> WebVisitException? = { null },
         scope: CoroutineScope = this,
-    ) = WebVisitSession(scope, waitSeconds, read, scroll, { results.add(it) }, { testScheduler.currentTime })
-        .also { it.start() }
+    ) = WebVisitSession(
+        scope, options, read, scroll, { results.add(it) }, inspect, { testScheduler.currentTime },
+    ).also { it.start() }
 
     private fun reason(result: Result<String>) = (result.exceptionOrNull() as WebVisitException).reason
 
     @Test
-    fun noPageCallbackFailsAtTheLoadDeadline() = runTest {
+    fun noPageCallbackFailsAtTheConfiguredLoadDeadline() = runTest {
         val results = mutableListOf<Result<String>>()
         session(results)
         advanceTimeBy(9_999)
@@ -41,27 +45,25 @@ class WebVisitSessionTest {
     }
 
     @Test
-    fun repeatedRedirectsCannotRestartTheTenSecondBudget() = runTest {
+    fun repeatedRedirectsCannotRestartTheConfiguredBudget() = runTest {
         val results = mutableListOf<Result<String>>()
         val visit = session(results)
         repeat(3) {
             advanceTimeBy(3_000)
             visit.onPageStarted()
-            visit.onPageFinished()
-            advanceTimeBy(400)
-            visit.onPageStarted()
         }
-        advanceUntilIdle()
+        advanceTimeBy(1_000)
+        runCurrent()
         assertEquals(WebVisitFailure.LOAD_TIMEOUT, reason(results.single()))
-        assertEquals(10_200L, testScheduler.currentTime)
+        assertEquals(10_000L, testScheduler.currentTime)
     }
 
     @Test
-    fun missingJavascriptCallbackFailsAfterThreeSeconds() = runTest {
+    fun missingJavascriptCallbackRespectsTheConfiguredReadDeadline() = runTest {
         val results = mutableListOf<Result<String>>()
         val visit = session(results, read = { awaitCancellation() })
         visit.onPageFinished()
-        advanceTimeBy(WebVisitSession.SETTLE_MS + WebVisitSession.READ_TIMEOUT_MS)
+        advanceTimeBy(3_000)
         runCurrent()
         assertEquals(WebVisitFailure.READ_TIMEOUT, reason(results.single()))
         assertEquals(WebVisitPhase.DONE, visit.phase.value)
@@ -74,7 +76,6 @@ class WebVisitSessionTest {
         var scrollCount = 0
         val visit = session(results, waitSeconds = 2, read = { body }, scroll = { scrollCount++ })
         visit.onPageFinished()
-        advanceTimeBy(WebVisitSession.SETTLE_MS)
         runCurrent()
         assertEquals(WebVisitPhase.WAITING, visit.phase.value)
         assertEquals(1, scrollCount)
@@ -89,10 +90,10 @@ class WebVisitSessionTest {
         val results = mutableListOf<Result<String>>()
         val visit = session(results, waitSeconds = 2)
         visit.onPageFinished()
-        advanceTimeBy(WebVisitSession.SETTLE_MS)
         runCurrent()
         visit.fail(WebVisitFailure.CANCELLED)
         visit.onPageStarted()
+        visit.onPageVisible()
         visit.onPageFinished()
         visit.readNow()
         visit.fail(WebVisitFailure.NETWORK)
@@ -104,13 +105,12 @@ class WebVisitSessionTest {
     @Test
     fun stoppingTheCallerCancelsAnInFlightReadWithoutPublishingSuccess() = runTest {
         val results = mutableListOf<Result<String>>()
-        val caller = CoroutineScope(coroutineContext + Job())
+        val caller = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
         var readCancelled = false
         val visit = session(results, scope = caller, read = {
             try { awaitCancellation() } finally { readCancelled = true }
         })
         visit.onPageFinished()
-        advanceTimeBy(WebVisitSession.SETTLE_MS)
         runCurrent()
         caller.cancel()
         runCurrent()
@@ -123,9 +123,8 @@ class WebVisitSessionTest {
     fun readNowSkipsOnlyTheLazyWaitAndFinishesOnce() = runTest {
         val results = mutableListOf<Result<String>>()
         var reads = 0
-        val visit = session(results, waitSeconds = 10, read = { reads++; "fresh" })
+        val visit = session(results, waitSeconds = 20, read = { reads++; "fresh" })
         visit.onPageFinished()
-        advanceTimeBy(WebVisitSession.SETTLE_MS)
         runCurrent()
         visit.readNow()
         runCurrent()
@@ -135,9 +134,10 @@ class WebVisitSessionTest {
     }
 
     @Test
-    fun networkHttpCertificateRendererAndDisplayErrorsAreTerminal() = runTest {
+    fun explicitFailuresAreTerminalWithoutWaitingForTheDeadline() = runTest {
         for (failure in listOf(WebVisitFailure.NETWORK, WebVisitFailure.HTTP, WebVisitFailure.CERTIFICATE,
-            WebVisitFailure.RENDERER_GONE, WebVisitFailure.DISPLAY)) {
+            WebVisitFailure.RENDERER_GONE, WebVisitFailure.DISPLAY, WebVisitFailure.ACCESS_BLOCKED,
+            WebVisitFailure.CLOUDFLARE_CHALLENGE, WebVisitFailure.CLOUDFLARE_BLOCKED)) {
             val results = mutableListOf<Result<String>>()
             val visit = session(results)
             visit.fail(failure)
@@ -145,5 +145,120 @@ class WebVisitSessionTest {
             advanceUntilIdle()
             assertEquals(failure, reason(results.single()))
         }
+        assertEquals(0L, testScheduler.currentTime)
+    }
+
+    @Test
+    fun extendedLoadingContinuesPastTheOldTenSecondLimit() = runTest {
+        val results = mutableListOf<Result<String>>()
+        session(results, options = WebVisitOptions(timeoutSeconds = 90))
+        advanceTimeBy(89_999)
+        runCurrent()
+        assertTrue(results.isEmpty())
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(WebVisitFailure.LOAD_TIMEOUT, reason(results.single()))
+    }
+
+    @Test
+    fun lazyContentWaitCanExceedTheOldTenSecondLimit() = runTest {
+        val results = mutableListOf<Result<String>>()
+        val visit = session(results, waitSeconds = 20)
+        visit.onPageFinished()
+        advanceTimeBy(19_999)
+        runCurrent()
+        assertTrue(results.isEmpty())
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals("page", results.single().getOrThrow())
+    }
+
+    @Test
+    fun extendedReadsContinuePastTheOldThreeSecondLimit() = runTest {
+        val results = mutableListOf<Result<String>>()
+        val visit = session(results, options = WebVisitOptions(90, 90, 10), read = {
+            delay(6_000)
+            "slow content"
+        })
+        visit.onPageFinished()
+        advanceTimeBy(6_000)
+        runCurrent()
+        assertEquals("slow content", results.single().getOrThrow())
+    }
+
+    @Test
+    fun cloudflareAppearingDuringLoadingFailsBeforePageFinishedOrTimeout() = runTest {
+        val results = mutableListOf<Result<String>>()
+        var challenged = false
+        val visit = session(results, inspect = {
+            if (challenged) WebVisitException(WebVisitFailure.CLOUDFLARE_CHALLENGE) else null
+        })
+        visit.onPageVisible()
+        advanceTimeBy(2_000)
+        challenged = true
+        runCurrent()
+        assertEquals(WebVisitFailure.CLOUDFLARE_CHALLENGE, reason(results.single()))
+        assertEquals(2_000L, testScheduler.currentTime)
+        visit.onPageFinished()
+        advanceUntilIdle()
+        assertEquals(1, results.size)
+    }
+
+    @Test
+    fun aPolicyBlockInterruptsTheLazyWaitImmediately() = runTest {
+        val results = mutableListOf<Result<String>>()
+        var blocked = false
+        val visit = session(results, waitSeconds = 20, inspect = {
+            if (blocked) WebVisitException(WebVisitFailure.ACCESS_BLOCKED) else null
+        })
+        visit.onPageFinished()
+        advanceTimeBy(1_000)
+        blocked = true
+        runCurrent()
+        assertEquals(WebVisitFailure.ACCESS_BLOCKED, reason(results.single()))
+        assertEquals(1_000L, testScheduler.currentTime)
+    }
+
+    @Test
+    fun aChallengeOnACompletedHttp200PageIsNotExtractedAsSuccess() = runTest {
+        val results = mutableListOf<Result<String>>()
+        var reads = 0
+        val visit = session(results, inspect = {
+            WebVisitException(WebVisitFailure.CLOUDFLARE_CHALLENGE)
+        }, read = { reads++; "challenge text" })
+        visit.onPageFinished()
+        runCurrent()
+        assertEquals(WebVisitFailure.CLOUDFLARE_CHALLENGE, reason(results.single()))
+        assertEquals(0, reads)
+    }
+
+    @Test
+    fun callerCancellationStopsInspectionWithoutMisreportingAReadTimeout() = runTest {
+        val results = mutableListOf<Result<String>>()
+        val caller = CoroutineScope(coroutineContext + Job(coroutineContext[Job]))
+        var cancelled = false
+        val visit = session(results, scope = caller, inspect = {
+            try { awaitCancellation() } finally { cancelled = true }
+        })
+        visit.onPageVisible()
+        runCurrent()
+        caller.cancel()
+        runCurrent()
+        visit.stop()
+        assertTrue(cancelled)
+        assertTrue(results.isEmpty())
+    }
+
+    @Test
+    fun duplicateFinishedCallbacksDoNotRestartTheWait() = runTest {
+        val results = mutableListOf<Result<String>>()
+        var scrolls = 0
+        val visit = session(results, waitSeconds = 2, scroll = { scrolls++ })
+        visit.onPageFinished()
+        visit.onPageFinished()
+        advanceUntilIdle()
+        assertEquals(1, scrolls)
+        assertEquals("page", results.single().getOrThrow())
+        assertEquals(2_000L, testScheduler.currentTime)
     }
 }

@@ -48,7 +48,6 @@ internal enum class DisplayNumber(val default: Int, val range: IntRange) {
     TEXT_THRESHOLD(3000, 1000..100000),
     QUALITY(75, 50..100),
     SCALE(75, 50..100),
-    WEB_WAIT(0, 0..10),
     HOOK_TIMEOUT(10, 1..60),
     BITRATE(3000, 1500..20000),
 }
@@ -259,7 +258,6 @@ internal class DisplayBehaviorController(context: Context) {
             DisplayNumber.TEXT_THRESHOLD -> user.longPastedTextFileThreshold.first()
             DisplayNumber.QUALITY -> display.screenshotQuality.first()
             DisplayNumber.SCALE -> display.screenshotScalePercent.first()
-            DisplayNumber.WEB_WAIT -> display.visitWebWaitSeconds.first()
             DisplayNumber.HOOK_TIMEOUT -> display.toolPkgHookTimeoutSeconds.first()
             DisplayNumber.BITRATE -> display.virtualDisplayBitrateKbps.first()
         }
@@ -309,7 +307,6 @@ internal class DisplayBehaviorController(context: Context) {
             DisplayNumber.TEXT_THRESHOLD -> user.saveLongPastedTextFileThreshold(value)
             DisplayNumber.QUALITY -> display.saveDisplaySettings(screenshotQuality = value)
             DisplayNumber.SCALE -> display.saveDisplaySettings(screenshotScalePercent = value)
-            DisplayNumber.WEB_WAIT -> display.saveDisplaySettings(visitWebWaitSeconds = value)
             DisplayNumber.HOOK_TIMEOUT ->
                 display.saveDisplaySettings(toolPkgHookTimeoutSeconds = value)
             DisplayNumber.BITRATE -> display.saveDisplaySettings(virtualDisplayBitrateKbps = value)
