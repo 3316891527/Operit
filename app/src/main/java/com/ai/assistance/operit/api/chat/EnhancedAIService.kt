@@ -2345,7 +2345,11 @@ class EnhancedAIService private constructor(context: Context) {
 
         if (!isSubTask && toolInvocations.isNotEmpty()) {
             withContext(Dispatchers.Main) {
-                val toolNames = toolInvocations.joinToString(", ") { resolveToolDisplayName(it.tool) }
+                // 批量同名调用只在状态栏列一次，实际调用及计数仍由工具批次持有。
+                val toolNames = toolInvocations
+                    .map { resolveToolDisplayName(it.tool) }
+                    .distinct()
+                    .joinToString(", ")
                 _inputProcessingState.value = InputProcessingState.ExecutingTool(toolNames)
             }
         }
