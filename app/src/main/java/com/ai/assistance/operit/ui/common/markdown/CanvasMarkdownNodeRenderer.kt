@@ -613,6 +613,7 @@ private fun renderNodeContent(
                     code = codeBlock.code,
                     language = codeBlock.language,
                     modifier = Modifier.fillMaxWidth(),
+                    closed = codeBlock.closed,
                 )
             }
         }
@@ -664,7 +665,7 @@ private fun renderNodeContent(
         // ========== 分隔线 ==========
         MarkdownProcessorType.HORIZONTAL_RULE -> {
             HorizontalDivider(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
             )

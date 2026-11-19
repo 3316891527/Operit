@@ -8459,4 +8459,5 @@
     <string name="workspace_open_not_text">O arquivo atual não é texto legível e não pode ser aberto no editor de texto.</string>
     <string name="workspace_open_failed">Não foi possível abrir o arquivo. Verifique a causa detalhada abaixo para problemas de caminho, conexão ou armazenamento.</string>
     <string name="workspace_open_checking">Verificando e lendo o arquivo atual…</string>
+    <string name="markdown_mermaid_render_failed">Não foi possível renderizar o diagrama Mermaid. Verifique a sintaxe.</string>
 </resources>

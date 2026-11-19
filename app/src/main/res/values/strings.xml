@@ -9561,4 +9561,5 @@
     <string name="workspace_open_not_text">当前文件不是可读取的文本，无法用文本编辑器打开。</string>
     <string name="workspace_open_failed">无法打开文件，请根据下面的详细原因检查路径、连接或存储状态。</string>
     <string name="workspace_open_checking">正在检查并读取当前文件…</string>
+    <string name="markdown_mermaid_render_failed">Mermaid 图表渲染失败，请检查语法。</string>
 </resources>

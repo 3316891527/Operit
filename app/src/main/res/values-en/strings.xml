@@ -9585,4 +9585,5 @@
     <string name="workspace_open_not_text">The current file is not readable text and cannot be opened in the text editor.</string>
     <string name="workspace_open_failed">Unable to open the file. Check the detailed cause below for path, connection or storage issues.</string>
     <string name="workspace_open_checking">Checking and reading the current file…</string>
+    <string name="markdown_mermaid_render_failed">Could not render the Mermaid diagram. Check the syntax.</string>
 </resources>

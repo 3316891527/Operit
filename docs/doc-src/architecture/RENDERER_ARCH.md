@@ -151,3 +151,12 @@ blockGroup.stream.splitBy(inlinePlugins).collect { inlineGroup ->
 
 ### 5. 数据输出
 解析结果最终构建成 `MarkdownNode` 树结构，支持实时的流式 UI 渲染，实现流畅的"打字机"效果。
+
+
+## 共享代码块与离线图表
+
+聊天正文和工作区 Markdown 预览共用 `CanvasMarkdownNodeRenderer` 与 `EnhancedCodeBlock`。代码块语言标签始终占据工具栏剩余宽度，空标签和长标签都不会改变右侧按钮的位置；分隔线上下各保留 12dp。
+
+`mermaid` 围栏在闭合并包含正文后默认显示图表，开放的流式围栏继续显示源码。用户可以切换源码、复制和进入全屏。图表由应用内置的 Mermaid 11.17.2 浏览器包渲染，页面通过 `WebViewAssetLoader` 加载本地资源，源码通过 JSON 参数传递。外部资源与页面导航均被拒绝，解析错误明确显示。
+
+资源来源及校验值见应用 assets 中的 `markdown/mermaid/README.md`，实现说明、扩展语法对照和验收边界见 [Markdown 代码块与图表预览计划](../../TODO/feat/markdown-mermaid-preview/index.md)。
