@@ -130,6 +130,7 @@ object ThemeScriptContract {
         result.textStyles.values.forEach { validateText(it, manifest) }
         require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
         result.surfaces.forEach { (id, surface) ->
+            require(id == "input" || surface.placeholder == null) { "Placeholder belongs to the chat input" }
             surface.transition?.let {
                 require(id in interactiveSurfaceIds) { "State transitions require an interactive surface" }
                 require(it.durationMillis in 0..1000) { "State transition duration must be 0..1000 ms" }

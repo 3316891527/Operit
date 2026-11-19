@@ -8,6 +8,7 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
 import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+import com.ai.assistance.operit.ui.theme.script.themeScriptInputPlaceholder
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
@@ -678,11 +679,13 @@ internal fun ClassicChatInputContent(
                                     if (userMessage.text.isEmpty()) {
                                         Text(
                                             text =
-                                                if (isWorkspaceOpen) {
-                                                    context.getString(R.string.input_question_with_workspace)
-                                                } else {
-                                                    context.getString(R.string.input_question_hint)
-                                                },
+                                                themeScriptInputPlaceholder(
+                                                    if (isWorkspaceOpen) {
+                                                        context.getString(R.string.input_question_with_workspace)
+                                                    } else {
+                                                        context.getString(R.string.input_question_hint)
+                                                    }
+                                                ),
                                             style = themeScriptTextStyle("input", modernTextStyle),
                                             color = themeScriptContentColor("input", MaterialTheme.colorScheme.onSurfaceVariant),
                                          textStroke = themeTextStroke("input", "composer"))

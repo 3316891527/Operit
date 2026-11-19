@@ -8,6 +8,7 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.comm
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
 import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+import com.ai.assistance.operit.ui.theme.script.themeScriptInputPlaceholder
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptPopupPanel
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptPopupHost
@@ -1010,11 +1011,13 @@ internal fun AgentChatInputContent(
                         visualTransformation = mentionVisualTransformation,
                         placeholder = {
                             Text(
-                                if (isWorkspaceOpen) {
-                                    context.getString(R.string.input_question_with_workspace)
-                                } else {
-                                    context.getString(R.string.input_question_hint)
-                                },
+                                themeScriptInputPlaceholder(
+                                    if (isWorkspaceOpen) {
+                                        context.getString(R.string.input_question_with_workspace)
+                                    } else {
+                                        context.getString(R.string.input_question_hint)
+                                    }
+                                ),
                                 style = themeScriptTextStyle("input", inputTextStyle),
                                 color = themeScriptContentColor("input", MaterialTheme.colorScheme.onSurfaceVariant),
                              textStroke = themeTextStroke("input", "composer"))
@@ -1326,11 +1329,13 @@ internal fun AgentChatInputContent(
                             visualTransformation = mentionVisualTransformation,
                             placeholder = {
                                 Text(
-                                    if (isWorkspaceOpen) {
-                                        context.getString(R.string.input_question_with_workspace)
-                                    } else {
-                                        context.getString(R.string.input_question_hint)
-                                    },
+                                    themeScriptInputPlaceholder(
+                                        if (isWorkspaceOpen) {
+                                            context.getString(R.string.input_question_with_workspace)
+                                        } else {
+                                            context.getString(R.string.input_question_hint)
+                                        }
+                                    ),
                                     style = themeScriptTextStyle("input", inputTextStyle),
                                     color = themeScriptContentColor("input", MaterialTheme.colorScheme.onSurfaceVariant),
                                  textStroke = themeTextStroke("input", "composer"))
