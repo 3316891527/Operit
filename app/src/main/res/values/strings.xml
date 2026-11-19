@@ -9561,4 +9561,16 @@
     <string name="workspace_open_not_text">当前文件不是可读取的文本，无法用文本编辑器打开。</string>
     <string name="workspace_open_failed">无法打开文件，请根据下面的详细原因检查路径、连接或存储状态。</string>
     <string name="workspace_open_checking">正在检查并读取当前文件…</string>
+    <string name="webvisit_error_load_timeout">网页在 10 秒内未完成加载，本次访问已结束。请检查网络、代理或站点是否可达。</string>
+    <string name="webvisit_error_read_timeout">网页内容提取超过 3 秒，本次访问已结束。</string>
+    <string name="webvisit_error_total_timeout">网页访问超过 30 秒，本次访问已结束。请检查网络、代理或站点是否可达。</string>
+    <string name="webvisit_error_network">网页连接失败。请检查网络、代理或站点是否可达。</string>
+    <string name="webvisit_error_http">服务器返回 HTTP 错误，未成功读取网页。</string>
+    <string name="webvisit_error_certificate">网页证书验证失败，已停止访问。</string>
+    <string name="webvisit_error_renderer">网页渲染进程已退出，本次访问失败。</string>
+    <string name="webvisit_error_empty">网页没有可读取的正文、链接或图片。页面可能为空白、尚未加载内容或限制了访问。</string>
+    <string name="webvisit_error_invalid_content">网页提取返回了无效数据，本次访问失败。</string>
+    <string name="webvisit_error_extraction">无法提取网页内容，本次访问失败。</string>
+    <string name="webvisit_error_display">无法创建网页访问窗口，请检查悬浮窗权限与系统 WebView。</string>
+    <string name="webvisit_status_reading">正在读取网页内容...</string>
 </resources>

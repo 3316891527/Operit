@@ -77,8 +77,12 @@ import com.ai.assistance.operit.util.files.OperitPaths
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.math.roundToInt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers
@@ -86,10 +90,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
-import okhttp3.OkHttpClient
 import org.json.JSONObject
 
-/** Tool for web page visiting and content extraction */
+/**
+ * 网页访问与内容提取。
+ * 访问生命周期和只读界面参考 CATMIAOZHI/Operit personal/main 5f2b735，按本项目协程与错误协议适配。
+ */
 class StandardWebVisitTool(private val context: Context) : ToolExecutor {
 
     companion object {
@@ -105,19 +111,14 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
 
         // Cache to store visit results
         private val visitCache = ConcurrentHashMap<String, VisitWebResultData>()
+        // 借鉴 Ry 的并发上限，避免批量访问同时创建过多 WebView；排队也计入总时限。
+        private val visitSlots = Semaphore(3)
 
         fun getCachedVisitResult(visitKey: String): VisitWebResultData? {
             if (visitKey.isBlank()) return null
             return visitCache[visitKey]
         }
     }
-
-    // 创建OkHttpClient实例，配置超时
-    private val client =
-            OkHttpClient.Builder()
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(15, TimeUnit.SECONDS)
-                    .build()
 
     // 存储WebView引用，用于在不同方法间共享
     private var webViewReference: WebView? = null
@@ -133,7 +134,12 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
     private val isExpandedState = mutableStateOf(false)
     private val isExpandedByUserState = mutableStateOf(false)
 
-    override fun invoke(tool: AITool): ToolResult {
+    override fun invoke(tool: AITool): ToolResult = runBlocking { invokeSuspend(tool) }
+
+    override fun invokeAndStream(tool: AITool) = flow { emit(invokeSuspend(tool)) }
+
+    /** 工具调用沿用调用方协程，停止对话时立即取消页面等待并清理窗口。 */
+    internal suspend fun invokeSuspend(tool: AITool): ToolResult {
         val url = tool.parameters.find { it.name == "url" }?.value
         val visitKey = tool.parameters.find { it.name == "visit_key" }?.value
         val linkNumberStr = tool.parameters.find { it.name == "link_number" }?.value
@@ -223,8 +229,16 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
         val resolvedUserAgent = resolveUserAgent(userAgentPresetParam, userAgentParam)
 
         return try {
-            val pageContent = visitWebPage(targetUrl, headers, resolvedUserAgent, includeImageLinks)
+            val pageContent = withTimeoutOrNull(WebVisitSession.TOTAL_TIMEOUT_MS) {
+                visitSlots.withPermit {
+                    visitWebPage(targetUrl, headers, resolvedUserAgent, includeImageLinks)
+                }
+            } ?: throw WebVisitException(WebVisitFailure.TOTAL_TIMEOUT)
             ToolResult(toolName = tool.name, success = true, result = pageContent, error = null)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: WebVisitException) {
+            ToolResult(tool.name, false, StringResultData(""), visitFailureMessage(e))
         } catch (e: Exception) {
             AppLogger.e(TAG, "Error visiting web page", e)
 
@@ -374,14 +388,13 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
         }
     }
 
-    /** Visit web page and extract content */
-    private fun visitWebPage(url: String, headers: Map<String, String>, userAgent: String, includeImageLinks: Boolean): VisitWebResultData {
-        // Use WebView to visit the page and extract content
-        val extractedJson = runBlocking { loadWebPageAndExtractContent(url, headers, userAgent, includeImageLinks) }
-
-        return try {
-            val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-            val result = json.decodeFromString<ExtractedWebData>(extractedJson)
+    /** 访问网页并提取结构化内容。 */
+    private suspend fun visitWebPage(url: String, headers: Map<String, String>, userAgent: String, includeImageLinks: Boolean): VisitWebResultData {
+        val waitSeconds = DisplayPreferencesManager.getInstance(context).visitWebWaitSeconds.first()
+            .coerceIn(0, WebVisitSession.MAX_WAIT_SECONDS)
+        val extractedJson = loadWebPageAndExtractContent(url, headers, userAgent, includeImageLinks, waitSeconds)
+        return withContext(Dispatchers.IO) {
+            val result = decodeWebVisitContent(extractedJson)
 
             // 将内容解析为结构化数据
             val lines = result.content.split("\n")
@@ -441,7 +454,7 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
 
             val visitKey = UUID.randomUUID().toString()
             val resultData = VisitWebResultData(
-                    url = url,
+                    url = result.url,
                     title = title,
                     content = content,
                     metadata = metadata,
@@ -450,14 +463,9 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                     visitKey = visitKey
             )
             val compactResultData = persistVisitContentIfNeeded(resultData)
+            currentCoroutineContext().ensureActive()
             visitCache[visitKey] = compactResultData
             compactResultData
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Error parsing extracted web content", e)
-            // Fallback for old format or error
-            persistVisitContentIfNeeded(
-                    VisitWebResultData(url = url, title = "Error", content = extractedJson)
-            )
         }
     }
 
@@ -545,169 +553,222 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
     }
 
     /** 使用WebView加载页面并提取内容 */
-    private suspend fun loadWebPageAndExtractContent(url: String, headers: Map<String, String>, userAgent: String, includeImageLinks: Boolean): String {
-        return suspendCancellableCoroutine { continuation ->
-            AppLogger.d(TAG, "Starting to load web page: $url")
-
-            // 确保UI操作在主线程上执行
-            Handler(Looper.getMainLooper()).post {
-                try {
-                    val windowManager =
-                            context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                    overlayWindowManager = windowManager
-
-                    // 创建生命周期管理器
-                    val lifecycleOwner =
-                            ServiceLifecycleOwner().apply {
-                                handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-                                handleLifecycleEvent(Lifecycle.Event.ON_START)
-                                handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    private suspend fun loadWebPageAndExtractContent(
+        url: String,
+        headers: Map<String, String>,
+        userAgent: String,
+        includeImageLinks: Boolean,
+        waitSeconds: Int,
+    ): String = withContext(Dispatchers.Main) {
+        val content = CompletableDeferred<String>()
+        val visit = WebVisitSession(
+            scope = CoroutineScope(currentCoroutineContext()),
+            waitSeconds = waitSeconds,
+            read = { extractPageContent(webViewReference, includeImageLinks) },
+            scroll = { webViewReference?.let { autoScrollToBottom(it, 0) {} } },
+            finish = { result ->
+                result.fold({ content.complete(it) }, { content.completeExceptionally(it) })
+            },
+        )
+        try {
+            visit.start()
+            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            overlayWindowManager = windowManager
+            val lifecycleOwner = ServiceLifecycleOwner().apply {
+                handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+                handleLifecycleEvent(Lifecycle.Event.ON_START)
+                handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+            }
+            overlayLifecycleOwner = lifecycleOwner
+            isExpandedState.value = false
+            isExpandedByUserState.value = false
+            indicatorLayoutParams = createIndicatorLayoutParams()
+            val params = setupWindowParams()
+            overlayLayoutParams = params
+            // 先同步创建并持有 WebView，配置失败也由外层返回失败并释放已创建的资源。
+            val currentUrl = mutableStateOf(url)
+            val pageTitle = mutableStateOf("")
+            val hasSslError = mutableStateOf(false)
+            val webView = WebView(context)
+            webViewReference = webView
+            createOptimizedWebView(webView, url, userAgent, headers) { webView ->
+                webView.webViewClient =
+                        object : WebViewClient() {
+                            override fun onPageStarted(
+                                    view: WebView,
+                                    startedUrl: String,
+                                    favicon: android.graphics.Bitmap?
+                            ) {
+                                super.onPageStarted(view, startedUrl, favicon)
+                                currentUrl.value = startedUrl
+                                hasSslError.value = false
+                                visit.onPageStarted()
                             }
 
-                    overlayLifecycleOwner = lifecycleOwner
-                    isExpandedState.value = false
-                    isExpandedByUserState.value = false
+                            override fun onPageFinished(
+                                    view: WebView,
+                                    loadedUrl: String
+                            ) {
+                                super.onPageFinished(view, loadedUrl)
+                                AppLogger.d(TAG, "Loaded URL: $loadedUrl")
+                                currentUrl.value = loadedUrl
+                                pageTitle.value = view.title ?: ""
 
-                    if (indicatorLayoutParams == null) {
-                        indicatorLayoutParams = createIndicatorLayoutParams()
-                    }
+                                if (loadedUrl == view.url) visit.onPageFinished()
+                            }
 
-                    val params = setupWindowParams()
-                    overlayLayoutParams = params
+                            override fun shouldOverrideUrlLoading(
+                                    view: WebView,
+                                    request: WebResourceRequest
+                            ): Boolean {
+                                val uri = request.url
+                                val newUrl = uri.toString()
+                                AppLogger.d(TAG, "URL变化: $newUrl")
 
-                    val composeView =
-                            ComposeView(context).apply {
-                                // 设置视图组合策略
-                                setViewCompositionStrategy(
-                                        ViewCompositionStrategy.DisposeOnDetachedFromWindow
+                                val scheme = uri.scheme?.lowercase()
+                                if (scheme != "http" && scheme != "https") {
+                                    AppLogger.w(TAG, "Blocked navigation to unsupported URL scheme: $newUrl")
+                                    return true
+                                }
+
+                                currentUrl.value = newUrl
+
+                                if (headers.isNotEmpty() && request.isForMainFrame) {
+                                    view.loadUrl(newUrl, headers)
+                                    return true
+                                }
+
+                                return false
+                            }
+
+                            override fun onReceivedError(
+                                    view: WebView,
+                                    request: WebResourceRequest,
+                                    error: android.webkit.WebResourceError
+                            ) {
+                                if (!request.isForMainFrame) {
+                                    AppLogger.w(TAG, "WebView subresource error: ${error.errorCode}")
+                                    return
+                                }
+                                AppLogger.e(TAG, "WebView main page failed: ${error.errorCode} - ${error.description}")
+                                visit.fail(WebVisitFailure.NETWORK, "${error.errorCode}: ${error.description}")
+                            }
+
+                            override fun onReceivedHttpError(
+                                    view: WebView,
+                                    request: WebResourceRequest,
+                                    response: android.webkit.WebResourceResponse
+                            ) {
+                                if (request.isForMainFrame && response.statusCode >= 400) {
+                                    visit.fail(WebVisitFailure.HTTP, "HTTP ${response.statusCode}")
+                                }
+                            }
+
+                            override fun onReceivedSslError(
+                                    view: WebView,
+                                    handler: SslErrorHandler,
+                                    error: android.net.http.SslError
+                            ) {
+                                AppLogger.w(
+                                        TAG,
+                                        "visit_web certificate validation failed: ${error.primaryError}"
                                 )
-
-                                // 使用自定义的生命周期所有者
-                                setViewTreeLifecycleOwner(lifecycleOwner)
-                                setViewTreeViewModelStoreOwner(lifecycleOwner)
-                                setViewTreeSavedStateRegistryOwner(lifecycleOwner)
+                                hasSslError.value = true
+                                handler.cancel()
+                                visit.fail(WebVisitFailure.CERTIFICATE)
                             }
-                    overlayComposeView = composeView
 
-                    composeView.setContent {
-                        WebVisitUI(
-                                url = url,
-                                headers = headers,
-                                userAgent = userAgent,
-                                includeImageLinks = includeImageLinks,
-                                onWebViewCreated = { webView ->
-                                    // 存储WebView引用以便清理
-                                    webViewReference = webView
-                                },
-                                onContentExtracted = { content ->
-                                    AppLogger.d(TAG, "Content extracted, length: ${content.length}")
-
-                                    // 在完成内容提取后进行资源清理
-                                    try {
-                                        // 清理生命周期资源
-                                        lifecycleOwner.handleLifecycleEvent(
-                                                Lifecycle.Event.ON_PAUSE
-                                        )
-                                        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
-                                        lifecycleOwner.handleLifecycleEvent(
-                                                Lifecycle.Event.ON_DESTROY
-                                        )
-
-                                        // 清理WebView
-                                        cleanupWebView(webViewReference)
-
-                                        removeIndicatorWindow()
-
-                                        // 清理Compose View并移除窗口
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            // 首先设置内容为空，释放组合资源
-                                            composeView.setContent {}
-
-                                            // 使用try-catch以确保即使移除窗口失败也能继续
-                                            try {
-                                                windowManager.removeView(composeView)
-                                                AppLogger.d(TAG, "ComposeView removed from window")
-                                            } catch (e: Exception) {
-                                                AppLogger.e(
-                                                        TAG,
-                                                        "Error removing ComposeView: ${e.message}"
-                                                )
-                                            }
-
-                                            if (overlayComposeView === composeView) {
-                                                overlayComposeView = null
-                                                overlayWindowManager = null
-                                                overlayLayoutParams = null
-                                                overlayLifecycleOwner = null
-                                            }
-
-                                            // 恢复协程
-                                            if (continuation.isActive) {
-                                                continuation.resume(content)
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        AppLogger.e(TAG, "Error cleaning up resources: ${e.message}")
-                                        if (continuation.isActive) {
-                                            continuation.resume(
-                                                    "Error extracting content: ${e.message}"
-                                            )
-                                        }
-                                    }
-                                },
-                                isExpanded = isExpandedState,
-                                onMinimizeRequested = {
-                                    setExpanded(false)
-                                }
-                        )
-                    }
-
-                    try {
-                        windowManager.addView(composeView, params)
-                        AppLogger.d(TAG, "Web browser window added")
-
-                        showIndicatorWindow()
-
-                        // 添加取消回调以处理协程取消
-                        continuation.invokeOnCancellation {
-                            // 确保在主线程上执行UI操作
-                            Handler(Looper.getMainLooper()).post {
-                                try {
-                                    // 清理生命周期资源
-                                    lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-                                    lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
-                                    lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-
-                                    // 清理WebView资源
-                                    cleanupWebView(webViewReference)
-
-                                    removeIndicatorWindow()
-
-                                    // 移除视图
-                                    composeView.setContent {}
-                                    windowManager.removeView(composeView)
-                                    AppLogger.d(TAG, "Web browser window removed on cancellation")
-                                    if (overlayComposeView === composeView) {
-                                        overlayComposeView = null
-                                        overlayWindowManager = null
-                                        overlayLayoutParams = null
-                                        overlayLifecycleOwner = null
-                                    }
-                                } catch (e: Exception) {
-                                    AppLogger.e(TAG, "Error removing view on cancellation: ${e.message}")
-                                }
+                            // 渲染进程退出后立即结束访问。
+                            override fun onRenderProcessGone(
+                                    view: WebView,
+                                    detail: android.webkit.RenderProcessGoneDetail
+                            ): Boolean {
+                                AppLogger.e(TAG, "visit_web renderer gone, crashed=${detail.didCrash()}")
+                                visit.fail(WebVisitFailure.RENDERER_GONE)
+                                return true
                             }
                         }
-                    } catch (e: Exception) {
-                        AppLogger.e(TAG, "Error showing web browser: ${e.message}")
-                        continuation.resume("Error displaying web browser: ${e.message}")
-                    }
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "Error in loadWebPageAndExtractContent: ${e.message}")
-                    continuation.resume("General error: ${e.message}")
-                }
+                webView
+            }
+            val composeView = ComposeView(context).apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                setViewTreeLifecycleOwner(lifecycleOwner)
+                setViewTreeViewModelStoreOwner(lifecycleOwner)
+                setViewTreeSavedStateRegistryOwner(lifecycleOwner)
+            }
+            overlayComposeView = composeView
+            composeView.setContent {
+                WebVisitUI(
+                    webView = webView,
+                    currentUrl = currentUrl,
+                    pageTitle = pageTitle,
+                    hasSslError = hasSslError,
+                    visit = visit,
+                    isExpanded = isExpandedState,
+                    onMinimizeRequested = { setExpanded(false) },
+                )
+            }
+            windowManager.addView(composeView, params)
+            showIndicatorWindow()
+            content.await()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: WebVisitException) {
+            throw error
+        } catch (error: Exception) {
+            throw WebVisitException(WebVisitFailure.DISPLAY, error.message.orEmpty())
+        } finally {
+            // 所有终态均在主线程走同一清理路径，部分初始化失败也不会遗留窗口。
+            visit.stop()
+            cleanupVisit()
+        }
+    }
+
+    private fun cleanupVisit() {
+        fun release(action: () -> Unit) {
+            try {
+                action()
+            } catch (error: Exception) {
+                AppLogger.w(TAG, "网页访问资源清理失败", error)
             }
         }
+        release { removeIndicatorWindow() }
+        val view = overlayComposeView
+        release { view?.disposeComposition() }
+        release { if (view?.parent != null) overlayWindowManager?.removeViewImmediate(view) }
+        val webView = webViewReference
+        webViewReference = null
+        release { cleanupWebView(webView) }
+        val owner = overlayLifecycleOwner
+        release { owner?.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE) }
+        release { owner?.handleLifecycleEvent(Lifecycle.Event.ON_STOP) }
+        release { owner?.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY) }
+        release { owner?.viewModelStore?.clear() }
+        overlayComposeView = null
+        overlayWindowManager = null
+        overlayLayoutParams = null
+        overlayLifecycleOwner = null
+        indicatorLayoutParams = null
+    }
+
+    private fun visitFailureMessage(error: WebVisitException): String {
+        val resource = when (error.reason) {
+            WebVisitFailure.LOAD_TIMEOUT -> R.string.webvisit_error_load_timeout
+            WebVisitFailure.READ_TIMEOUT -> R.string.webvisit_error_read_timeout
+            WebVisitFailure.TOTAL_TIMEOUT -> R.string.webvisit_error_total_timeout
+            WebVisitFailure.CANCELLED -> R.string.webvisit_cancelled
+            WebVisitFailure.NETWORK -> R.string.webvisit_error_network
+            WebVisitFailure.HTTP -> R.string.webvisit_error_http
+            WebVisitFailure.CERTIFICATE -> R.string.webvisit_error_certificate
+            WebVisitFailure.RENDERER_GONE -> R.string.webvisit_error_renderer
+            WebVisitFailure.EMPTY_CONTENT -> R.string.webvisit_error_empty
+            WebVisitFailure.INVALID_CONTENT -> R.string.webvisit_error_invalid_content
+            WebVisitFailure.EXTRACTION -> R.string.webvisit_error_extraction
+            WebVisitFailure.DISPLAY -> R.string.webvisit_error_display
+        }
+        val message = context.getString(resource)
+        val detail = error.detail.take(500)
+        return "[${error.reason.name.lowercase()}] $message" + if (detail.isBlank()) "" else " ($detail)"
     }
 
     /** Setup window parameters for the WebView dialog */
@@ -912,103 +973,43 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
         }
     }
 
-    /** 清理WebView资源的辅助方法 */
+    /** 不清空全局网页缓存，也不强制 GC；先断开回调再销毁当前访问。 */
     private fun cleanupWebView(webView: WebView?) {
         webView?.apply {
-            // 先停止加载
-            stopLoading()
-
-            // 清理WebView状态
-            clearHistory()
-            clearCache(true)
-            clearFormData()
-            clearSslPreferences()
-
-            // 清理JavaScript状态
-            evaluateJavascript("javascript:void(0);", null)
-
-            // 加载空白页以释放资源
-            loadUrl("about:blank")
-
-            // 暂停WebView
-            onPause()
-
-            // 移除回调和消息
-            handler?.removeCallbacksAndMessages(null)
-
-            // 销毁WebView
-            destroy()
-        }
-
-        // 请求GC回收资源
-        System.gc()
-    }
-
-    /** Compose UI for the web browser */
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    private fun WebVisitUI(
-            url: String,
-            headers: Map<String, String>,
-            userAgent: String,
-            includeImageLinks: Boolean,
-            onWebViewCreated: (WebView) -> Unit,
-            onContentExtracted: (String) -> Unit,
-            isExpanded: State<Boolean>,
-            onMinimizeRequested: () -> Unit
-    ) {
-        // 页面状态
-        val isLoading = remember { mutableStateOf(true) } // 页面是否正在加载
-        val pageLoaded = remember { mutableStateOf(false) } // 页面是否已加载完成
-        val currentUrl = remember { mutableStateOf(url) } // 当前URL
-        val pageTitle = remember { mutableStateOf("") } // 页面标题
-        val hasSslError = remember { mutableStateOf(false) }
-
-        // 内容状态
-        val pageContent = remember { mutableStateOf("") } // 提取的页面内容
-        val hasExtractedContent = remember { mutableStateOf(false) } // 是否已提取内容
-
-        val extractionRequested = remember { mutableStateOf(false) }
-        val loadToken = remember { mutableStateOf(0) }
-        val displayPreferencesManager = remember { DisplayPreferencesManager.getInstance(context) }
-        val visitWebWaitSeconds by displayPreferencesManager.visitWebWaitSeconds.collectAsState(initial = 0)
-
-        // 自动模式状态
-        val autoModeEnabled = remember { mutableStateOf(true) } // 是否启用自动模式
-        val autoCountdownActive = remember { mutableStateOf(false) } // 倒计时是否激活
-        val autoCountdownSeconds = remember { mutableStateOf(0) } // 倒计时秒数
-
-        LaunchedEffect(autoCountdownActive.value) {
-            if (autoCountdownActive.value) {
-                autoCountdownSeconds.value = visitWebWaitSeconds
-
-                for (i in visitWebWaitSeconds downTo 1) {
-                    autoCountdownSeconds.value = i
-                    delay(1000)
-
-                    if (!autoCountdownActive.value) {
-                        break
-                    }
-                }
-
-                if (autoCountdownActive.value) {
-                    autoCountdownActive.value = false
-                    if (pageContent.value.isNotEmpty()) {
-                        onContentExtracted(pageContent.value)
-                    }
+            try {
+                webViewClient = WebViewClient()
+                stopLoading()
+            } finally {
+                try {
+                    (parent as? android.view.ViewGroup)?.removeView(this)
+                } finally {
+                    destroy()
                 }
             }
         }
+    }
 
-        LaunchedEffect(loadToken.value) {
-            if (loadToken.value <= 0) return@LaunchedEffect
-            delay(10_000)
-            if (!pageLoaded.value &&
-                            !hasExtractedContent.value &&
-                            !extractionRequested.value
-            ) {
-                AppLogger.w(TAG, "Page load timeout (10s): ${currentUrl.value}")
-                onContentExtracted(context.getString(R.string.webvisit_load_timeout))
+    /** 界面显示访问进度；超时和终态由独立会话管理。 */
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun WebVisitUI(
+            webView: WebView,
+            currentUrl: State<String>,
+            pageTitle: State<String>,
+            hasSslError: State<Boolean>,
+            visit: WebVisitSession,
+            isExpanded: State<Boolean>,
+            onMinimizeRequested: () -> Unit
+    ) {
+        // 倒计时只用于显示，访问的完成与超时不依赖界面重组。
+        val secondsLeft = remember { mutableStateOf(0) }
+        val phase by visit.phase.collectAsState()
+        LaunchedEffect(phase) {
+            if (phase == WebVisitPhase.WAITING) {
+                for (remaining in visit.waitSeconds downTo 0) {
+                    secondsLeft.value = remaining
+                    delay(1000)
+                }
             }
         }
 
@@ -1028,15 +1029,14 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                             horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val statusText =
-                                when {
-                                    !pageLoaded.value -> context.getString(R.string.webvisit_status_loading_page)
-                                    isLoading.value -> context.getString(R.string.webvisit_status_waiting_page)
-                                    autoCountdownActive.value -> context.getString(R.string.webvisit_status_extracting, autoCountdownSeconds.value)
-                                    hasExtractedContent.value -> context.getString(R.string.webvisit_status_extracted_waiting)
-                                    else -> context.getString(R.string.webvisit_status_waiting_extraction)
+                                when (phase) {
+                                    WebVisitPhase.LOADING -> context.getString(R.string.webvisit_status_loading_page)
+                                    WebVisitPhase.READING -> context.getString(R.string.webvisit_status_reading)
+                                    WebVisitPhase.WAITING -> context.getString(R.string.webvisit_status_extracting, secondsLeft.value)
+                                    WebVisitPhase.DONE -> context.getString(R.string.webvisit_status_waiting_extraction)
                                 }
 
-                        // Header
+                        // 页面标题与状态
                         Row(
                                 modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -1063,7 +1063,7 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                             }
                         }
 
-                        // URL info
+                        // 当前地址
                         Box(
                                 modifier =
                                         Modifier.fillMaxWidth()
@@ -1101,10 +1101,8 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.height(2.dp))
-
                                 if (pageTitle.value.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                             text = pageTitle.value,
                                             fontSize = 12.sp,
@@ -1118,198 +1116,38 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // WebView
+                        // 网页视图
                         AndroidView(
-                                factory = { context ->
-                                    createOptimizedWebView(context, url, userAgent, headers) { webView ->
-                                        // Register created WebView instance for later cleanup
-                                        onWebViewCreated(webView)
-
-                                        // Configure WebViewClient
-                                        webView.webViewClient =
-                                                object : WebViewClient() {
-                                                    // 追踪上一个URL，用于检测重定向
-                                                    private var lastLoadedUrl: String = ""
-
-                                                    override fun onPageStarted(
-                                                            view: WebView,
-                                                            startedUrl: String,
-                                                            favicon: android.graphics.Bitmap?
-                                                    ) {
-                                                        super.onPageStarted(view, startedUrl, favicon)
-                                                        currentUrl.value = startedUrl
-                                                        hasSslError.value = false
-                                                        isLoading.value = true
-                                                        pageLoaded.value = false
-                                                        loadToken.value = loadToken.value + 1
-                                                    }
-
-                                                    override fun onPageFinished(
-                                                            view: WebView,
-                                                            loadedUrl: String
-                                                    ) {
-                                                        super.onPageFinished(view, loadedUrl)
-                                                        AppLogger.d(TAG, "Loaded URL: $loadedUrl")
-
-                                                        // 检查是否是重定向或新页面
-                                                        val isNewPage = lastLoadedUrl != loadedUrl
-                                                        lastLoadedUrl = loadedUrl
-
-                                                        currentUrl.value = loadedUrl
-                                                        pageTitle.value = view.title ?: ""
-                                                        pageLoaded.value = true
-
-                                                        // 如果是重定向或新页面，重置提取状态
-                                                        if (isNewPage) {
-                                                            AppLogger.d(TAG, "页面发生重定向或加载了新页面，重置提取状态")
-                                                            isLoading.value = true
-                                                            hasExtractedContent.value = false
-                                                            extractionRequested.value = false
-                                                            pageContent.value = ""
-                                                            autoCountdownActive.value = false
-                                                            autoModeEnabled.value = true
-                                                        }
-
-                                                        // 页面无论显示什么内容都按普通网页处理，不把站点页面转换为交互式验证流程。
-                                                        triggerContentExtraction(view)
-                                                    }
-
-                                                    private fun triggerContentExtraction(view: WebView) {
-                                                        Handler(Looper.getMainLooper()).postDelayed({
-                                                            if (!view.isAttachedToWindow) {
-                                                                AppLogger.d(TAG, "WebView不再附加到窗口，跳过提取")
-                                                                return@postDelayed
-                                                            }
-
-                                                            if (!hasExtractedContent.value && !extractionRequested.value && autoModeEnabled.value) {
-                                                                extractionRequested.value = true
-                                                                isLoading.value = true
-                                                                extractPageContent(view, includeImageLinks) { content ->
-                                                                    isLoading.value = false
-                                                                    hasExtractedContent.value = true
-                                                                    pageContent.value = content
-
-                                                                    if (autoModeEnabled.value) {
-                                                                        autoCountdownActive.value = true
-                                                                        autoScrollToBottom(view, visitWebWaitSeconds) {
-                                                                            AppLogger.d(TAG, "页面滚动完成")
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }, 800)
-                                                    }
-
-                                                    override fun shouldOverrideUrlLoading(
-                                                            view: WebView,
-                                                            request: WebResourceRequest
-                                                    ): Boolean {
-                                                        val uri = request.url
-                                                        val newUrl = uri.toString()
-                                                        AppLogger.d(TAG, "URL变化: $newUrl")
-
-                                                        val scheme = uri.scheme?.lowercase()
-                                                        if (scheme != "http" && scheme != "https") {
-                                                            AppLogger.w(TAG, "Blocked navigation to unsupported URL scheme: $newUrl")
-                                                            return true
-                                                        }
-
-                                                        currentUrl.value = newUrl
-
-                                                        isLoading.value = true
-                                                        pageLoaded.value = false
-
-                                                        if (headers.isNotEmpty() && request.isForMainFrame) {
-                                                            view.loadUrl(newUrl, headers)
-                                                            return true
-                                                        }
-
-                                                        return false
-                                                    }
-
-                                                    override fun onReceivedError(
-                                                            view: WebView,
-                                                            errorCode: Int,
-                                                            description: String,
-                                                            failingUrl: String
-                                                    ) {
-                                                        AppLogger.e(
-                                                                TAG,
-                                                                "WebView error: $errorCode - $description"
-                                                        )
-                                                        super.onReceivedError(
-                                                                view,
-                                                                errorCode,
-                                                                description,
-                                                                failingUrl
-                                                        )
-                                                    }
-
-                                                    override fun onReceivedSslError(
-                                                            view: WebView,
-                                                            handler: SslErrorHandler,
-                                                            error: android.net.http.SslError
-                                                    ) {
-                                                        AppLogger.w(
-                                                                TAG,
-                                                                "visit_web SSL error, proceeding anyway. " +
-                                                                        "url=${error.url}, primaryError=${error.primaryError}"
-                                                        )
-                                                        hasSslError.value = true
-                                                        handler.proceed()
-                                                    }
-                                                }
-
-                                        return@createOptimizedWebView webView
-                                    }
-                                },
+                                factory = { webView },
                                 modifier = Modifier.fillMaxWidth().weight(1f),
-                                update = { webView ->
-                                    // 存储最新的WebView引用
-                                    webViewReference = webView
-                                    // 只更新重要属性以避免重新创建
-                                    webView.requestFocus()
-                                }
                         )
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // 按钮区域 - 根据当前状态显示不同按钮
+                        // 取消立即结束；等待懒加载时仍可选择提前提取。
                         Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // 左侧按钮 - 根据状态变化
                             FilledTonalButton(
-                                    onClick = {
-                                        if (autoCountdownActive.value) {
-                                            // 如果正在倒计时，则取消倒计时
-                                            autoCountdownActive.value = false
-                                        } else if (!hasExtractedContent.value &&
-                                                        autoModeEnabled.value
-                                        ) {
-                                            // 如果尚未提取内容，且处于自动模式，则切换到手动模式
-                                            autoModeEnabled.value = false
-                                        } else {
-                                            // 其他情况为取消操作
-                                            onContentExtracted(context.getString(R.string.webvisit_cancelled))
-                                        }
-                                    }
-                            ,
+                                    onClick = { visit.fail(WebVisitFailure.CANCELLED) },
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.weight(1f).heightIn(min = 42.dp)
                             ) {
                                 Text(
-                                        when {
-                                            autoCountdownActive.value -> context.getString(R.string.webvisit_button_cancel_countdown)
-                                            !hasExtractedContent.value &&
-                                                    autoModeEnabled.value -> context.getString(R.string.webvisit_button_cancel_auto)
-                                            else -> context.getString(R.string.webvisit_button_cancel)
-                                        },
+                                        context.getString(R.string.webvisit_button_cancel),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                 )
+                            }
+
+                            Button(
+                                    onClick = { visit.readNow() },
+                                    enabled = phase == WebVisitPhase.WAITING,
+                                    modifier = Modifier.weight(1f).heightIn(min = 42.dp),
+                            ) {
+                                Text(stringResource(R.string.webvisit_button_extract))
                             }
 
                             if (isExpanded.value) {
@@ -1323,79 +1161,12 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                                     )
                                 }
                             }
-
-                            // 右侧按钮 - 根据状态变化
-                            Button(
-                                    onClick = {
-                                        if (autoCountdownActive.value) {
-                                            // 如果正在倒计时，立即继续
-                                            autoCountdownActive.value = false
-                                            if (pageContent.value.isNotEmpty()) {
-                                                onContentExtracted(pageContent.value)
-                                            }
-                                        } else if (hasExtractedContent.value) {
-                                            // 如果已提取内容，直接继续
-                                            onContentExtracted(pageContent.value)
-                                        } else {
-                                            // 否则提取内容
-                                            webViewReference?.let { webView ->
-                                                // 显示正在提取提示
-                                                isLoading.value = true
-
-                                                AppLogger.d(TAG, "触发内容提取，当前页面: ${currentUrl.value}")
-
-                                                extractionRequested.value = true
-                                                extractPageContent(webView, includeImageLinks) { content ->
-                                                    isLoading.value = false
-                                                    hasExtractedContent.value = true
-                                                    pageContent.value = content
-
-                                                    // 如果是自动模式，开始倒计时
-                                                    if (autoModeEnabled.value) {
-                                                        autoCountdownActive.value = true
-                                                    }
-                                                }
-                                            }
-                                                    ?: onContentExtracted(context.getString(R.string.webvisit_webview_unavailable))
-                                        }
-                                    },
-                                    enabled = pageLoaded.value,
-                                    colors =
-                                            ButtonDefaults.buttonColors(
-                                                    containerColor = MaterialTheme.colorScheme.primary
-                                            ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f).heightIn(min = 42.dp)
-                            ) {
-                                Text(
-                                        when {
-                                            autoCountdownActive.value ->
-                                                    context.getString(R.string.webvisit_button_continue_now, autoCountdownSeconds.value)
-                                            hasExtractedContent.value -> context.getString(R.string.webvisit_button_continue)
-                                            !autoModeEnabled.value -> context.getString(R.string.webvisit_button_manual_extract)
-                                            else -> context.getString(R.string.webvisit_button_extract)
-                                        },
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                )
-                            }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // 帮助文本
-                        val helperText =
-                                when {
-                                    !pageLoaded.value -> stringResource(R.string.webvisit_help_loading_page)
-                                    autoCountdownActive.value -> stringResource(R.string.webvisit_help_countdown)
-                                    !hasExtractedContent.value && !autoModeEnabled.value ->
-                                            stringResource(R.string.webvisit_help_manual_mode)
-                                    else -> ""
-                                }
-
-                        if (helperText.isNotEmpty()) {
+                        if (phase == WebVisitPhase.LOADING) {
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                    text = helperText,
+                                    text = stringResource(R.string.webvisit_help_loading_page),
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
@@ -1412,13 +1183,13 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
 
     /** 创建优化的WebView实例，配置所有必要的设置 */
     private fun createOptimizedWebView(
-            context: Context,
+            webView: WebView,
             url: String,
             userAgent: String,
             headers: Map<String, String>,
             configure: (WebView) -> WebView
     ): WebView {
-        return WebView(context).apply {
+        return webView.apply {
             layoutParams =
                     LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1497,152 +1268,138 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
     }
 
     /** 从加载的WebView提取页面内容 */
-    private fun extractPageContent(webView: WebView, includeImageLinks: Boolean, callback: (String) -> Unit) {
-        // 检查WebView是否有效
-        if (!webView.isAttachedToWindow) {
-            AppLogger.e(TAG, "WebView is not attached to window, cannot extract content")
-            callback("Error: WebView is not attached to window")
-            return
-        }
-
-        // 记录提取开始
-        AppLogger.d(TAG, "Starting to extract content from web page")
-
-        // 用于提取页面内容的JavaScript
-        val extractionScript =
-                """
-            (function() {
-                try {
-                    console.log("Starting content extraction script");
-
-                    // 提取链接
-                    var links = [];
-                    var linkNodes = document.querySelectorAll('a');
-                    for (var i = 0; i < linkNodes.length; i++) {
-                        var node = linkNodes[i];
-                        var href = node.href;
-                        var text = node.innerText.trim();
-                        if (href && text) {
-                            links.push({url: href, text: text});
-                        }
-                    }
-                    
-                    // 图片链接（可选）
-                    var imageLinks = [];
-                    if (${includeImageLinks.toString().lowercase()}) {
-                        var normalizeImageUrl = function(u) {
-                            if (!u) return null;
-                            try {
-                                u = String(u).trim();
-                            } catch (e) {
-                                return null;
-                            }
-                            if (!u) return null;
-                            // download_file only supports http(s)
-                            if (u.indexOf('http://') !== 0 && u.indexOf('https://') !== 0) return null;
-                            // drop non-downloadable / noisy sources
-                            if (u.indexOf('data:') === 0 || u.indexOf('blob:') === 0) return null;
-                            var clean = u.split('#')[0];
-                            var pathOnly = clean.split('?')[0].toLowerCase();
-                            // exclude common icon/svg noise
-                            if (pathOnly.endsWith('.svg')) return null;
-                            return clean;
-                        };
-                        var imgNodes = document.querySelectorAll('img');
-                        var imgSeen = {};
-                        for (var j = 0; j < imgNodes.length; j++) {
-                            var imgNode = imgNodes[j];
-                            var imgUrlRaw = imgNode.currentSrc || imgNode.src || imgNode.getAttribute('data-src');
-                            var imgUrl = normalizeImageUrl(imgUrlRaw);
-                            if (imgUrl && !imgSeen[imgUrl]) {
-                                imgSeen[imgUrl] = true;
-                                imageLinks.push(imgUrl);
-                            }
-                        }
-                    }
-
-                    // 页面基本信息
-                    var result = {
-                        title: document.title || "No Title",
-                        url: window.location.href,
-                        content: "",
-                        links: links,
-                        imageLinks: imageLinks
-                    };
-                    
-                    // 直接获取整个文档的HTML和文本内容
-                    var fullHtml = document.documentElement.outerHTML;
-                    var fullText = document.body.innerText;
-                    
-                    // 添加元数据
-                    var metadata = {};
-                    
-                    // 提取所有meta标签的信息
-                    var metaTags = document.querySelectorAll('meta');
-                    for (var i = 0; i < metaTags.length; i++) {
-                        var name = metaTags[i].getAttribute('name') || 
-                                   metaTags[i].getAttribute('property') || 
-                                   metaTags[i].getAttribute('itemprop');
-                        var content = metaTags[i].getAttribute('content');
-                        
-                        if (name && content) {
-                            metadata[name] = content;
-                        }
-                    }
-                    
-                    // 添加特别关注的元数据
-                    var importantMetadata = ['description', 'keywords', 'author', 'og:title', 'og:description'];
-                    var metaStr = "---METADATA---\n";
-                    importantMetadata.forEach(function(key) {
-                        if (metadata[key]) {
-                            metaStr += key + ": " + metadata[key] + "\n";
-                        }
-                    });
-                    
-                    // 组合最终结果
-                    result.content = "# " + result.title + "\n\n" +
-                                      metaStr + "\n" +
-                                      "---CONTENT---\n" +
-                                      fullText;
-                                      
-                    console.log("Content extraction complete");
-                    return JSON.stringify(result);
-                } catch(e) {
-                    return JSON.stringify({error: "Error extracting content: " + e.toString()});
-                }
-            })();
-        """.trimIndent()
-
-        try {
-            webView.evaluateJavascript(extractionScript) { resultContent ->
-                try {
-                    AppLogger.d(
-                            TAG,
-                            "Content extraction result received. Length: ${resultContent.length}"
-                    )
-
-                    // 处理JavaScript结果，去掉引号包装
-                    val processedContent =
-                            if (resultContent.startsWith("\"") && resultContent.endsWith("\"")) {
-                                // 解码JavaScript字符串到Kotlin字符串
-                                resultContent
-                                        .substring(1, resultContent.length - 1)
-                                        .replace("\\\"", "\"")
-                                        .replace("\\\\", "\\")
-                                        .replace("\\n", "\n")
-                            } else {
-                                resultContent
-                            }
-
-                    callback(processedContent)
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "Error processing extracted content", e)
-                    callback("Error processing content: ${e.message}")
-                }
+    private suspend fun extractPageContent(webView: WebView?, includeImageLinks: Boolean): String {
+        if (webView == null) throw WebVisitException(WebVisitFailure.EXTRACTION)
+        return suspendCancellableCoroutine { continuation ->
+            fun fail(error: Exception) {
+                if (continuation.isActive) continuation.resumeWithException(error)
             }
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Exception during JavaScript evaluation", e)
-            callback("Error evaluating JavaScript: ${e.message}")
+            // 检查WebView是否有效
+            if (!webView.isAttachedToWindow) {
+                AppLogger.e(TAG, "WebView is not attached to window, cannot extract content")
+                fail(WebVisitException(WebVisitFailure.EXTRACTION))
+                return@suspendCancellableCoroutine
+            }
+
+            // 记录提取开始
+            AppLogger.d(TAG, "Starting to extract content from web page")
+
+            // 用于提取页面内容的JavaScript
+            val extractionScript =
+                    """
+                (function() {
+                    try {
+                        console.log("Starting content extraction script");
+
+                        // 提取链接
+                        var links = [];
+                        var linkNodes = document.querySelectorAll('a');
+                        for (var i = 0; i < linkNodes.length; i++) {
+                            var node = linkNodes[i];
+                            var href = node.href;
+                            var text = node.innerText.trim();
+                            if (href && text) {
+                                links.push({url: href, text: text});
+                            }
+                        }
+
+                        // 图片链接（可选）
+                        var imageLinks = [];
+                        if (${includeImageLinks.toString().lowercase()}) {
+                            var normalizeImageUrl = function(u) {
+                                if (!u) return null;
+                                try {
+                                    u = String(u).trim();
+                                } catch (e) {
+                                    return null;
+                                }
+                                if (!u) return null;
+                                // download_file 仅支持 HTTP 与 HTTPS
+                                if (u.indexOf('http://') !== 0 && u.indexOf('https://') !== 0) return null;
+                                // 排除无法下载的内联与临时来源
+                                if (u.indexOf('data:') === 0 || u.indexOf('blob:') === 0) return null;
+                                var clean = u.split('#')[0];
+                                var pathOnly = clean.split('?')[0].toLowerCase();
+                                // 排除常见图标与 SVG
+                                if (pathOnly.endsWith('.svg')) return null;
+                                return clean;
+                            };
+                            var imgNodes = document.querySelectorAll('img');
+                            var imgSeen = {};
+                            for (var j = 0; j < imgNodes.length; j++) {
+                                var imgNode = imgNodes[j];
+                                var imgUrlRaw = imgNode.currentSrc || imgNode.src || imgNode.getAttribute('data-src');
+                                var imgUrl = normalizeImageUrl(imgUrlRaw);
+                                if (imgUrl && !imgSeen[imgUrl]) {
+                                    imgSeen[imgUrl] = true;
+                                    imageLinks.push(imgUrl);
+                                }
+                            }
+                        }
+
+                        // 页面基本信息
+                        var result = {
+                            title: document.title || "No Title",
+                            url: window.location.href,
+                            content: "",
+                            links: links,
+                            imageLinks: imageLinks
+                        };
+
+                        // 获取页面当前可见的正文
+                        var fullText = document.body.innerText;
+
+                        // 添加元数据
+                        var metadata = {};
+
+                        // 提取所有meta标签的信息
+                        var metaTags = document.querySelectorAll('meta');
+                        for (var i = 0; i < metaTags.length; i++) {
+                            var name = metaTags[i].getAttribute('name') ||
+                                       metaTags[i].getAttribute('property') ||
+                                       metaTags[i].getAttribute('itemprop');
+                            var content = metaTags[i].getAttribute('content');
+
+                            if (name && content) {
+                                metadata[name] = content;
+                            }
+                        }
+
+                        // 添加特别关注的元数据
+                        var importantMetadata = ['description', 'keywords', 'author', 'og:title', 'og:description'];
+                        var metaStr = "---METADATA---\n";
+                        importantMetadata.forEach(function(key) {
+                            if (metadata[key]) {
+                                metaStr += key + ": " + metadata[key] + "\n";
+                            }
+                        });
+
+                        // 组合最终结果
+                        result.content = "# " + result.title + "\n\n" +
+                                          metaStr + "\n" +
+                                          "---CONTENT---\n" +
+                                          fullText;
+
+                        console.log("Content extraction complete");
+                        return JSON.stringify(result);
+                    } catch(e) {
+                        return JSON.stringify({error: "Error extracting content: " + e.toString()});
+                    }
+                })();
+            """.trimIndent()
+
+            try {
+                webView.evaluateJavascript(extractionScript) { resultContent ->
+                    if (!continuation.isActive) return@evaluateJavascript
+                    try {
+                        continuation.resume(decodeWebVisitJavascript(resultContent))
+                    } catch (error: Exception) {
+                        fail(error)
+                    }
+                }
+            } catch (error: Exception) {
+                fail(WebVisitException(WebVisitFailure.EXTRACTION, error.message.orEmpty()))
+            }
         }
     }
 
@@ -1674,7 +1431,7 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                     var maxScrollAttempts = 3;
                     var scrollInterval;
                     var lastScrollHeight = 0;
-                    
+
                     function smoothScroll() {
                         // 检查是否到达尝试次数上限
                         if (scrollAttempts >= maxScrollAttempts) {
@@ -1682,10 +1439,10 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                             console.log('自动滚动完成 - 达到最大尝试次数');
                             return true; // 滚动完成
                         }
-                        
+
                         // 获取当前文档高度
                         var currentHeight = document.body.scrollHeight;
-                        
+
                         // 如果两次滚动后高度没有变化，认为已经滚动到底部
                         if (currentHeight === lastScrollHeight && scrollAttempts > 0) {
                             scrollAttempts++;
@@ -1694,20 +1451,20 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                             // 更新上次高度
                             lastScrollHeight = currentHeight;
                         }
-                        
+
                         // 执行滚动
                         var currentPosition = window.pageYOffset || document.documentElement.scrollTop;
                         var targetPosition = currentHeight - window.innerHeight;
                         var distance = targetPosition - currentPosition;
-                        
+
                         if (Math.abs(distance) < 10) {
                             // 已接近底部，增加尝试次数
                             scrollAttempts++;
                             console.log('已接近底部，尝试次数: ' + scrollAttempts);
-                            
+
                             // 额外触发一次滚动确保触发所有加载
                             window.scrollTo(0, targetPosition + 1);
-                            
+
                             // 短暂等待后滚回正常位置
                             setTimeout(function() {
                                 window.scrollTo(0, targetPosition);
@@ -1720,16 +1477,16 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                             });
                             console.log('滚动到位置: ' + targetPosition + '，总高度: ' + currentHeight);
                         }
-                        
+
                         return scrollAttempts >= maxScrollAttempts;
                     }
-                    
+
                     // 立即执行一次初始滚动
                     var isComplete = smoothScroll();
                     if (isComplete) {
                         return 'scroll-complete';
                     }
-                    
+
                     // 设置定时滚动
                     scrollInterval = setInterval(function() {
                         var isComplete = smoothScroll();
@@ -1739,13 +1496,13 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
                             return 'scroll-complete';
                         }
                     }, 1000); // 每秒滚动一次
-                    
+
                     // 无论如何，最多滚动8秒
                     setTimeout(function() {
                         clearInterval(scrollInterval);
                         console.log('自动滚动超时完成');
                     }, 8000);
-                    
+
                     return 'scrolling-started';
                 } catch(e) {
                     console.error('滚动过程出错: ' + e);
@@ -1773,19 +1530,6 @@ class StandardWebVisitTool(private val context: Context) : ToolExecutor {
             onScrollComplete()
         }
     }
-}
-
-@kotlinx.serialization.Serializable
-private data class ExtractedWebData(
-    val title: String,
-    val url: String,
-    val content: String,
-    val links: List<LinkInfo> = emptyList(),
-    val imageLinks: List<String> = emptyList(),
-    val error: String? = null
-) {
-    @kotlinx.serialization.Serializable
-    data class LinkInfo(val url: String, val text: String)
 }
 
 /** 服务生命周期所有者 - 为Compose UI提供生命周期支持 必须在主线程上初始化 */

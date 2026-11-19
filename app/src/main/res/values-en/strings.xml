@@ -9585,4 +9585,16 @@
     <string name="workspace_open_not_text">The current file is not readable text and cannot be opened in the text editor.</string>
     <string name="workspace_open_failed">Unable to open the file. Check the detailed cause below for path, connection or storage issues.</string>
     <string name="workspace_open_checking">Checking and reading the current file…</string>
+    <string name="webvisit_error_load_timeout">The page did not finish loading within 10 seconds. Check the network, proxy, or site availability.</string>
+    <string name="webvisit_error_read_timeout">Reading the page took longer than 3 seconds. The visit was ended.</string>
+    <string name="webvisit_error_total_timeout">The visit exceeded 30 seconds and was ended. Check the network, proxy, or site availability.</string>
+    <string name="webvisit_error_network">The page connection failed. Check the network, proxy, or site availability.</string>
+    <string name="webvisit_error_http">The server returned an HTTP error. The page could not be read.</string>
+    <string name="webvisit_error_certificate">Certificate validation failed. The visit was stopped.</string>
+    <string name="webvisit_error_renderer">The page renderer exited. The visit failed.</string>
+    <string name="webvisit_error_empty">The page has no readable text, links, or requested images. It may be blank, unfinished, or restricting access.</string>
+    <string name="webvisit_error_invalid_content">The page extraction returned invalid data. The visit failed.</string>
+    <string name="webvisit_error_extraction">The page content could not be extracted. The visit failed.</string>
+    <string name="webvisit_error_display">The browser window could not be created. Check overlay permission and the system WebView.</string>
+    <string name="webvisit_status_reading">Reading page content...</string>
 </resources>
