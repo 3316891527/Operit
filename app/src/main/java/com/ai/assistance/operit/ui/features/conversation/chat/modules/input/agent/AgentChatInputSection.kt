@@ -801,7 +801,7 @@ internal fun AgentChatInputContent(
                 if (event != null && inputState.toolName.contains(event.toolName)) {
                     progressValue = event.progress
                     if (event.message.isNotBlank()) {
-                        message = event.message
+                        message = "$baseMessage · ${event.message}"
                     }
                 }
             }

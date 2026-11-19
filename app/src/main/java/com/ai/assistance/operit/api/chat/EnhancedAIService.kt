@@ -2343,14 +2343,10 @@ class EnhancedAIService private constructor(context: Context) {
             onToolInvocation?.invoke(invocation.tool.name)
         }
 
+        val toolBatchStatus = ToolBatchStatus(toolInvocations.map { resolveToolDisplayName(it.tool) })
         if (!isSubTask && toolInvocations.isNotEmpty()) {
             withContext(Dispatchers.Main) {
-                // 批量同名调用只在状态栏列一次，实际调用及计数仍由工具批次持有。
-                val toolNames = toolInvocations
-                    .map { resolveToolDisplayName(it.tool) }
-                    .distinct()
-                    .joinToString(", ")
-                _inputProcessingState.value = InputProcessingState.ExecutingTool(toolNames)
+                _inputProcessingState.value = toolBatchStatus.state
             }
         }
 
@@ -2383,7 +2379,17 @@ class EnhancedAIService private constructor(context: Context) {
                     collector.emit(suffix)
                 },
                 toolCallOffset = callOffset,
-                onToolTiming = context.onToolTiming,
+                onToolTiming = { record ->
+                    context.onToolTiming(record)
+                    if (!isSubTask && record.durationMs != null) {
+                        // 完成事件按真实返回顺序递减；回到主线程串行更新，避免并行调用丢失计数。
+                        withContext(Dispatchers.Main) {
+                            toolBatchStatus.onTiming(record, callOffset)?.let { state ->
+                                _inputProcessingState.value = state
+                            }
+                        }
+                    }
+                },
             )
 
             if (toolBatch.results.isNotEmpty()) {
@@ -2490,7 +2496,7 @@ class EnhancedAIService private constructor(context: Context) {
 
         val displayToolNames =
             when {
-                toolNames.isNotBlank() -> toolNames
+                toolNames.isNotBlank() -> formatToolCallCounts(results.map { it.toolName })
                 continuationMessage != null -> "user"
                 else -> "warning"
             }

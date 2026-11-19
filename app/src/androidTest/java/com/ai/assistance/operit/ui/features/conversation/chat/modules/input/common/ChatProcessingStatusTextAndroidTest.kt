@@ -32,6 +32,12 @@ class ChatProcessingStatusTextAndroidTest {
             "正在执行工具：读取文件、编辑文件、执行终端命令、检查工作区差异、搜索项目代码",
             "正在执行工具：终端\n进度：已完成目录扫描\n正在等待下一条命令",
             "正在接收响应",
+            "正在执行工具：create_file * 5, read_file * 2",
+            "正在执行工具：create_file * 4, read_file * 2",
+            "正在执行工具：create_file * 3, read_file",
+            "正在执行工具：create_file * 2",
+            "正在执行工具：create_file",
+            "正在处理工具结果：create_file * 5, read_file * 2",
         )
         val message = mutableStateOf(statuses.first())
         composeRule.setContent {
