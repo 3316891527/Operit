@@ -462,6 +462,36 @@ class RootShellExecutor(private val context: Context) : ShellExecutor {
                 }
             }
 
+    /** 一次性工具独占 su 进程，避免长期任务占用共享 libsu 队列。 */
+    internal suspend fun executeIsolatedCommand(command: String, timeoutMs: Long): ShellExecutor.CommandResult {
+        applyExecutionModePreferenceOverride()
+        val invocation = if (useExecMode) parseCommandTokens(suCommand) else
+            listOf(AndroidPermissionPreferences.DEFAULT_SU_COMMAND)
+        val launcher = OwnedShellLauncher { script ->
+            val guardedScript = "[ \"\$(/system/bin/id -u)\" = 0 ] || exit 126\n$script"
+            LocalOwnedShellProcess(ProcessBuilder(invocation + listOf("-c", guardedScript)).start())
+        }
+        val runId = java.util.UUID.randomUUID().toString()
+        val started = System.nanoTime()
+        AppLogger.d(TAG, "开始独立 Root Shell 调用, runId=$runId, timeoutMs=$timeoutMs")
+        try {
+            val result = IsolatedShellCommand().execute(extractActualCommand(command), timeoutMs, launcher)
+            AppLogger.d(TAG, "独立 Root Shell 结果, runId=$runId, exitCode=${result.exitCode}, error=${result.error}")
+            return ShellExecutor.CommandResult(
+                result.exitCode == 0 && result.error.isEmpty(), result.output, result.error, result.exitCode
+            )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            AppLogger.d(TAG, "独立 Root Shell 已取消, runId=$runId")
+            throw e
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "独立 Root Shell 失败, runId=$runId", e)
+            throw e
+        } finally {
+            val elapsedMs = (System.nanoTime() - started) / 1_000_000
+            AppLogger.d(TAG, "独立 Root Shell 调用结束, runId=$runId, elapsedMs=$elapsedMs")
+        }
+    }
+
     override suspend fun startProcess(command: String): ShellProcess {
         applyExecutionModePreferenceOverride()
 
