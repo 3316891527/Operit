@@ -279,9 +279,12 @@ fun registerAllTools(handler: AIToolHandler, context: Context) {
                 val command = tool.parameters.find { it.name == "command" }?.value ?: ""
                 s(R.string.toolreg_execute_shell_desc, command)
             },
-            executor = { tool ->
-                val adbTool = ToolGetter.getShellToolExecutor(context)
-                adbTool.invoke(tool)
+            executor = object : ToolExecutor {
+                override fun invoke(tool: AITool): ToolResult =
+                    ToolGetter.getShellToolExecutor(context).invoke(tool)
+                override fun invokeAndStream(tool: AITool) = kotlinx.coroutines.flow.flow {
+                    emit(ToolGetter.getShellToolExecutor(context).invokeSuspend(tool))
+                }
             }
     )
 

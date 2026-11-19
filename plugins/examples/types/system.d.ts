@@ -237,10 +237,11 @@ export namespace System {
     }
 
     /**
-     * Execute an shell command (requires root access)
-     * @param command The shell command to execute
+     * 执行一次性 Android Shell 命令，Root 调用使用独立进程。
+     * @param command 要执行的命令；没有交互输入，后台服务应自行重定向输入输出
+     * @param timeoutMs 本次执行期限，正整数毫秒，默认 30000；超时不自动重试
      */
-    function shell(command: string): Promise<ADBResultData>;
+    function shell(command: string, timeoutMs?: number): Promise<ADBResultData>;
 
     /**
      * Execute an Intent
