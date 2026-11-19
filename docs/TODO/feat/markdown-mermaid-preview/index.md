@@ -1,7 +1,7 @@
 ---
 owner: https://github.com/3316891527/Operit
 branch: feat/markdown-mermaid-preview
-status: implementation-complete-validation-pending
+status: viewport-revision-implemented-validation-pending
 ---
 
 # Markdown 代码块与图表预览
@@ -14,9 +14,10 @@ status: implementation-complete-validation-pending
 
 1. [共享布局与离线 Mermaid](01-implementation.md)
 2. [检查与设备验收](02-validation.md)
+3. [SVG 显示范围与缩放修正](03-svg-viewport.md)
 
 修改围绕 `EnhancedCodeBlock`、代码围栏节点、分隔线节点和本地 Mermaid 页面展开。保持 Markdown 文本和文件格式兼容，不改变其他格式的导入导出。常见扩展语法另列支持范围与待办，不把新增语法隐含为已经完成。
 
 ## 交付
 
-PR 创建后补充链接。开发基线为 `dev` 的 `1e346500fe32e0a81e48aa4412d20d7cfc22c083`，通过 GitHub API 核实远程分支指向相同提交。
+交付见 [PR #230](https://github.com/3316891527/Operit/pull/230)。开发基线为 `dev` 的 `1e346500fe32e0a81e48aa4412d20d7cfc22c083`，通过 GitHub API 核实远程分支指向相同提交。

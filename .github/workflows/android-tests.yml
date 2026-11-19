@@ -14,6 +14,7 @@ on:
       - ci/script/prepare_android_dependencies.py
       - ci/test/code_runner.test.cjs
       - ci/test/workspace_change_context.test.cjs
+      - ci/mermaid-preview/**
       - cmake/**
       - plugins/examples/**
       - gradle/**
@@ -84,6 +85,42 @@ jobs:
 
       - name: Run Code Runner regression tests
         run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/workspace_change_context.test.cjs
+
+  mermaid-preview:
+    name: Mermaid browser geometry
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ci/mermaid-preview
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ci/mermaid-preview/package-lock.json
+      - name: Install browser checks
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps --only-shell chromium
+      - name: Check actual diagram bounds
+        run: npm test
+      - name: Upload geometry and screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: mermaid-browser-geometry
+          path: artifacts/mermaid-preview
+          if-no-files-found: warn
+          retention-days: 7
 
   tests:
     name: Android JVM tests

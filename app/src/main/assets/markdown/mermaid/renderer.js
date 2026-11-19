@@ -2,70 +2,141 @@
 
 (() => {
     const viewport = document.getElementById("viewport");
-    const sizer = document.getElementById("sizer");
     const diagram = document.getElementById("diagram");
     const status = document.getElementById("status");
     const controls = document.querySelectorAll("button");
+    const pointers = new Map();
     let renderVersion = 0;
-    let width = 0;
-    let height = 0;
-    let scale = 1;
-    let fitScale = 1;
-    let pinchDistance = 0;
-    let pinchScale = 1;
+    let svg = null;
+    let naturalBox = null;
+    let visibleBox = null;
+    let zoom = 1;
+    let gesture = null;
+    let cancelViewportWait = () => {};
 
-    function applyZoom(nextScale) {
-        scale = nextScale;
-        sizer.style.width = `${width * scale}px`;
-        sizer.style.height = `${height * scale}px`;
-        diagram.style.transform = `scale(${scale})`;
+    function applyViewBox() {
+        svg.setAttribute("viewBox", `${visibleBox.x} ${visibleBox.y} ${visibleBox.width} ${visibleBox.height}`);
     }
 
     function fitDiagram() {
-        if (!width) return;
-        fitScale = Math.min(1, (viewport.clientWidth - 32) / width);
-        applyZoom(fitScale);
-        viewport.scrollTo(0, 0);
+        if (!svg || !naturalBox) return;
+        zoom = 1;
+        visibleBox = { ...naturalBox };
+        applyViewBox();
     }
 
-    // 工具按钮与双指缩放共享一个比例，避免页面缩放和图表缩放叠加。
-    document.getElementById("zoom-in").addEventListener("click", () => applyZoom(Math.min(scale * 1.25, 4)));
-    document.getElementById("zoom-out").addEventListener("click", () => applyZoom(Math.max(scale / 1.25, Math.min(.05, fitScale))));
-    document.getElementById("fit").addEventListener("click", fitDiagram);
-    viewport.addEventListener("touchstart", (event) => {
-        if (event.touches.length !== 2 || !width) return;
-        pinchDistance = Math.hypot(
-            event.touches[0].clientX - event.touches[1].clientX,
-            event.touches[0].clientY - event.touches[1].clientY,
-        );
-        pinchScale = scale;
-    }, { passive: true });
-    viewport.addEventListener("touchmove", (event) => {
-        if (event.touches.length !== 2 || !pinchDistance) return;
+    function svgPoint(clientX, clientY) {
+        return new DOMPoint(clientX, clientY).matrixTransform(svg.getScreenCTM().inverse());
+    }
+
+    function viewportCenter() {
+        const bounds = viewport.getBoundingClientRect();
+        return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+    }
+
+    function zoomAt(nextZoom, screenPoint, anchor) {
+        if (!svg || !visibleBox) return;
+        const point = svgPoint(screenPoint.x, screenPoint.y);
+        const target = anchor || point;
+        const fractionX = (point.x - visibleBox.x) / visibleBox.width;
+        const fractionY = (point.y - visibleBox.y) / visibleBox.height;
+        zoom = Math.max(.1, Math.min(16, nextZoom));
+        const width = naturalBox.width / zoom;
+        const height = naturalBox.height / zoom;
+        visibleBox = { x: target.x - fractionX * width, y: target.y - fractionY * height, width, height };
+        applyViewBox();
+    }
+
+    function startGesture() {
+        gesture = null;
+        if (!svg || !visibleBox) return;
+        const points = [...pointers.values()];
+        if (points.length === 1) {
+            gesture = { anchor: svgPoint(points[0].x, points[0].y) };
+        } else if (points.length === 2) {
+            const center = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+            gesture = {
+                anchor: svgPoint(center.x, center.y),
+                distance: Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y),
+                zoom,
+            };
+        }
+    }
+
+    // 拖动和双指缩放都在 SVG 坐标中进行，不再叠加 CSS transform 与滚动容器坐标。
+    viewport.addEventListener("pointerdown", event => {
+        if (!svg || !visibleBox || event.button !== 0) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        viewport.setPointerCapture(event.pointerId);
+        startGesture();
+    });
+    viewport.addEventListener("pointermove", event => {
+        if (!pointers.has(event.pointerId) || !gesture) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const points = [...pointers.values()];
+        if (points.length === 1) {
+            const point = svgPoint(points[0].x, points[0].y);
+            visibleBox.x += gesture.anchor.x - point.x;
+            visibleBox.y += gesture.anchor.y - point.y;
+            applyViewBox();
+        } else if (points.length === 2 && gesture.distance > 0) {
+            const center = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+            const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+            zoomAt(gesture.zoom * distance / gesture.distance, center, gesture.anchor);
+        }
+    });
+    function endPointer(event) {
+        pointers.delete(event.pointerId);
+        startGesture();
+    }
+    viewport.addEventListener("pointerup", endPointer);
+    viewport.addEventListener("pointercancel", endPointer);
+    viewport.addEventListener("lostpointercapture", endPointer);
+    viewport.addEventListener("wheel", event => {
+        if (!svg || !visibleBox) return;
         event.preventDefault();
-        const distance = Math.hypot(
-            event.touches[0].clientX - event.touches[1].clientX,
-            event.touches[0].clientY - event.touches[1].clientY,
-        );
-        applyZoom(Math.min(4, Math.max(Math.min(.05, fitScale), pinchScale * distance / pinchDistance)));
+        zoomAt(zoom * Math.exp(-event.deltaY * .002), { x: event.clientX, y: event.clientY });
     }, { passive: false });
-    viewport.addEventListener("touchend", () => { pinchDistance = 0; });
-    viewport.addEventListener("touchcancel", () => { pinchDistance = 0; });
-    window.addEventListener("resize", fitDiagram);
+    viewport.addEventListener("dblclick", fitDiagram);
+    document.getElementById("zoom-in").addEventListener("click", () => zoomAt(zoom * 1.25, viewportCenter()));
+    document.getElementById("zoom-out").addEventListener("click", () => zoomAt(zoom / 1.25, viewportCenter()));
+    document.getElementById("fit").addEventListener("click", fitDiagram);
+
+    function waitForViewport(version) {
+        return new Promise(resolve => {
+            const observer = new ResizeObserver(() => {
+                if (version !== renderVersion) { observer.disconnect(); resolve(false); return; }
+                if (viewport.clientWidth > 0 && viewport.clientHeight > 0) {
+                    observer.disconnect();
+                    cancelViewportWait = () => {};
+                    resolve(true);
+                }
+            });
+            cancelViewportWait = () => { observer.disconnect(); resolve(false); };
+            observer.observe(viewport);
+        });
+    }
 
     window.renderMermaid = async ({ code, errorMessage, loadingMessage }) => {
         const version = ++renderVersion;
         const renderId = `mermaid-diagram-${version}`;
+        cancelViewportWait();
+        pointers.clear();
+        gesture = null;
+        svg = null;
+        naturalBox = null;
+        visibleBox = null;
         diagram.replaceChildren();
-        width = 0;
-        height = 0;
-        sizer.style.width = "0px";
-        sizer.style.height = "0px";
+        diagram.style.visibility = "hidden";
         status.className = "";
         status.hidden = false;
         status.textContent = loadingMessage;
-        controls.forEach((button) => { button.disabled = true; });
+        controls.forEach(button => { button.disabled = true; });
         try {
+            // WebView 首次布局可能尚未完成，不能以零宽度视口计算文字和缩放。
+            if (!await waitForViewport(version) || version !== renderVersion) return;
+            await document.fonts.ready;
+            if (version !== renderVersion) return;
             mermaid.initialize({
                 startOnLoad: false,
                 securityLevel: "strict",
@@ -76,27 +147,43 @@
                 flowchart: { htmlLabels: false, useMaxWidth: false },
             });
             const result = await mermaid.render(renderId, code);
-            // 切换源码时旧任务可能晚到，只显示最新一次请求的图表。
             if (version !== renderVersion) return;
             diagram.innerHTML = result.svg;
-            const svg = diagram.querySelector("svg");
-            if (!svg) throw new Error("Mermaid did not return an SVG diagram");
-            const bounds = svg.viewBox.baseVal;
-            width = bounds.width;
-            height = bounds.height;
-            if (!(width > 0 && height > 0)) throw new Error("Mermaid returned an empty diagram");
-            svg.style.width = `${width}px`;
-            svg.style.height = `${height}px`;
-            status.hidden = true;
+            const renderedSvg = diagram.querySelector("svg");
+            if (!renderedSvg) throw new Error("Mermaid did not return an SVG diagram");
+            renderedSvg.setAttribute("width", "100%");
+            renderedSvg.setAttribute("height", "100%");
+            renderedSvg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+            await document.fonts.ready;
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            if (version !== renderVersion) return;
+            // 使用实际绘制范围建立视框，不能把上游 viewBox 的宽高当成固定像素画布。
+            const bounds = renderedSvg.getBBox();
+            if (![bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite) ||
+                bounds.width <= 0 || bounds.height <= 0) {
+                throw new Error("Mermaid returned an empty diagram");
+            }
+            const padding = 12;
+            naturalBox = {
+                x: bounds.x - padding,
+                y: bounds.y - padding,
+                width: bounds.width + padding * 2,
+                height: bounds.height + padding * 2,
+            };
+            svg = renderedSvg;
             fitDiagram();
-            controls.forEach((button) => { button.disabled = false; });
+            diagram.style.visibility = "visible";
+            status.hidden = true;
+            controls.forEach(button => { button.disabled = false; });
         } catch (error) {
             if (version !== renderVersion) return;
+            svg = null;
+            naturalBox = null;
+            visibleBox = null;
             diagram.replaceChildren();
             document.getElementById(`d${renderId}`)?.remove();
             status.className = "error";
             status.hidden = false;
-            // 错误和源码都作为文本处理，不把异常内容插入 HTML。
             status.textContent = `${errorMessage}\n${error instanceof Error ? error.message : error}`;
             console.error("Mermaid render failed", error);
         }

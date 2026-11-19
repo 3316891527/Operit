@@ -50,7 +50,7 @@ class MermaidRendererAndroidTest {
             compose.runOnIdle { payload.value = buildPayload(source) }
             val id = JSONObject.quote("mermaid-diagram-${index + 1}")
             compose.waitUntil(30_000) {
-                javascript("document.querySelector('#diagram svg')?.id === $id && document.getElementById('status').hidden") == "true"
+                javascript("document.querySelector('#diagram svg')?.id === $id && document.getElementById('status').hidden") == "true" && diagramFitsViewport()
             }
         }
         compose.runOnIdle {
@@ -77,9 +77,28 @@ class MermaidRendererAndroidTest {
         assertEquals("true", javascript("document.getElementById('status').textContent.startsWith('Diagram error')"))
         compose.runOnIdle { payload.value = buildPayload("flowchart LR\nA[Fixed] --> B[Done]") }
         compose.waitUntil(30_000) {
-            javascript("document.querySelector('#diagram svg')?.id === 'mermaid-diagram-2' && document.getElementById('status').hidden") == "true"
+            javascript("document.querySelector('#diagram svg')?.id === 'mermaid-diagram-2' && document.getElementById('status').hidden") == "true" && diagramFitsViewport()
         }
     }
+
+    // 验证实际图形的屏幕范围，不能以根 SVG 存在代替完整可见。
+    private fun diagramFitsViewport(): Boolean = javascript(
+        """
+        (() => {
+            const svg = document.querySelector('#diagram > svg');
+            if (!svg) return false;
+            const area = document.getElementById('viewport').getBoundingClientRect();
+            const box = svg.getBBox();
+            const matrix = svg.getScreenCTM();
+            const first = new DOMPoint(box.x, box.y).matrixTransform(matrix);
+            const last = new DOMPoint(box.x + box.width, box.y + box.height).matrixTransform(matrix);
+            return [first.x, first.y, last.x, last.y].every(Number.isFinite) &&
+                last.x > first.x && last.y > first.y &&
+                first.x >= area.left - .5 && first.y >= area.top - .5 &&
+                last.x <= area.right + .5 && last.y <= area.bottom + .5;
+        })()
+        """.trimIndent()
+    ) == "true"
 
     private fun buildPayload(source: String): String = JSONObject()
         .put("code", source)

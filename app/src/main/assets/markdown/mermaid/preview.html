@@ -10,11 +10,10 @@
         * { box-sizing: border-box; }
         html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #1e1e1e; color: #ddd; }
         body { -webkit-user-select: none; user-select: none; }
-        #viewport { position: absolute; inset: 0; overflow: auto; padding: 16px; touch-action: pan-x pan-y; }
-        #sizer { position: relative; }
-        #diagram { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
-        #diagram svg { display: block; max-width: none !important; }
-        #status { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.5 sans-serif; }
+        #viewport { position: absolute; inset: 16px 16px 56px; overflow: hidden; touch-action: none; cursor: grab; }
+        #diagram { width: 100%; height: 100%; }
+        #diagram > svg { display: block; width: 100% !important; height: 100% !important; max-width: none !important; max-height: none !important; }
+        #status { position: absolute; inset: 16px; margin: 0; white-space: pre-wrap; overflow: auto; overflow-wrap: anywhere; font: 14px/1.5 sans-serif; }
         #status.error { color: #f2b8b5; }
         #controls { position: fixed; right: 8px; bottom: 8px; display: flex; gap: 4px; padding: 4px; border-radius: 6px; background: #252526ed; }
         button { width: 32px; height: 32px; border: 0; border-radius: 4px; background: #383838; color: #eee; font-size: 18px; }
@@ -24,10 +23,8 @@
     <script defer src="renderer.js"></script>
 </head>
 <body>
-    <div id="viewport">
-        <pre id="status" role="status" aria-live="polite"></pre>
-        <div id="sizer"><div id="diagram"></div></div>
-    </div>
+    <div id="viewport"><div id="diagram"></div></div>
+    <pre id="status" role="status" aria-live="polite"></pre>
     <div id="controls">
         <button id="zoom-out" disabled>−</button>
         <button id="fit" disabled>↺</button>

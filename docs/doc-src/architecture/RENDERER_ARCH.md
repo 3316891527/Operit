@@ -159,4 +159,6 @@ blockGroup.stream.splitBy(inlinePlugins).collect { inlineGroup ->
 
 `mermaid` 围栏在闭合并包含正文后默认显示图表，开放的流式围栏继续显示源码。用户可以切换源码、复制和进入全屏。图表由应用内置的 Mermaid 11.17.2 浏览器包渲染，页面通过 `WebViewAssetLoader` 加载本地资源，源码通过 JSON 参数传递。外部资源与页面导航均被拒绝，解析错误明确显示。
 
+图表插入页面并完成布局后，根据 SVG 的实际图形边界建立 `viewBox`，以等比居中的方式同时适配视口宽高，并为底部操作按钮预留空间。按钮缩放、双指缩放和单指拖动都修改同一个 SVG 视框；复位恢复完整图形，视口尺寸变化由 SVG 自动重新适配。初始视口为零时等待有效布局，连续源码更新只展示最新请求。浏览器几何回归见 `ci/mermaid-preview`，该检查不能替代 Android WebView 的设备验收。
+
 资源来源及校验值见应用 assets 中的 `markdown/mermaid/README.md`，实现说明、扩展语法对照和验收边界见 [Markdown 代码块与图表预览计划](../../TODO/feat/markdown-mermaid-preview/index.md)。
