@@ -145,13 +145,20 @@ class Terminal internal constructor(
         // 在创建 Flow 时冻结调用者，托管任务换协程收集后仍保留原始工具身份。
         val origin = executionOrigin(commandId)
         return flow {
-            val local = terminalState.value.sessions.firstOrNull { it.id == sessionId }?.terminalType == TerminalType.LOCAL
-            val observation = if (local) fileJournal?.begin(origin) else null
+            val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
+            val journal = fileJournal?.takeIf { session?.terminalType == TerminalType.LOCAL }
+            val prepareStarted = System.nanoTime()
+            if (journal != null) AppLogger.d(TAG, "终端命令 $commandId 开始观察准备，会话=$sessionId")
+            val observation = journal?.begin(origin, session?.currentDirectory)
+            val executionStarted = System.nanoTime()
             var completion: CommandExecutionEvent? = null
             val execute: suspend () -> Unit = {
                 terminalCommandFlow(
                     events = commandEvents, sessionId = sessionId, commandId = commandId,
-                    submit = { terminalManager.sendCommandToSession(sessionId, command, commandId) },
+                    submit = {
+                        if (observation != null) AppLogger.d(TAG, "终端命令 $commandId 提交，观察准备=${(executionStarted - prepareStarted) / 1_000_000}ms")
+                        terminalManager.sendCommandToSession(sessionId, command, commandId)
+                    },
                     cancel = { terminalManager.cancelCommand(sessionId, commandId) },
                     onCancellationOutcome = onCancellationOutcome,
                 ).collect { event ->
@@ -162,7 +169,11 @@ class Terminal internal constructor(
                 // 只对命令从提交到退出计时。历史采集用时不能覆盖进程已经给出的退出码。
                 if (timeoutMs == null) execute() else withTimeout(timeoutMs) { execute() }
             } finally {
-                if (observation != null) fileJournal?.finish(observation)
+                if (journal != null && observation != null) {
+                    val finishStarted = System.nanoTime()
+                    AppLogger.d(TAG, "终端命令 $commandId 执行阶段结束，完成事件=${completion != null}，耗时=${(finishStarted - executionStarted) / 1_000_000}ms")
+                    journal.finish(observation)
+                }
             }
             completion?.let { emit(it) }
         }
@@ -180,10 +191,12 @@ class Terminal internal constructor(
      * 发送输入到当前会话
      */
     fun sendInput(sessionId: String, input: String) {
-        val local = terminalState.value.sessions.firstOrNull { it.id == sessionId }?.terminalType == TerminalType.LOCAL
+        val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
         val caller = ToolExecutionManager.currentToolRuntimeContext()
         val origin = TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", null)
-        if (local && input.isNotEmpty()) runBlocking(Dispatchers.IO) { fileJournal?.interactiveInput(sessionId, origin) }
+        if (session?.terminalType == TerminalType.LOCAL && input.isNotEmpty()) runBlocking(Dispatchers.IO) {
+            fileJournal?.interactiveInput(sessionId, origin, session.currentDirectory)
+        }
         terminalManager.sendInput(input, sessionId)
     }
 

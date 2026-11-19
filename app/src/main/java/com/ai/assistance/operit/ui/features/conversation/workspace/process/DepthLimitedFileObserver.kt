@@ -8,7 +8,8 @@ import java.nio.file.LinkOption.NOFOLLOW_LINKS
 
 data class WorkspaceFileChange(
     val relativePath: String,
-    val kind: WorkspaceFileChangeKind
+    val kind: WorkspaceFileChangeKind,
+    val createdInPlace: Boolean = false,
 )
 
 enum class WorkspaceFileChangeKind {
@@ -22,7 +23,8 @@ class DepthLimitedFileObserver(
     private val rootDir: File,
     maxDepth: Int,
     private val shouldIgnore: (relativePath: String, isDirectory: Boolean) -> Boolean,
-    private val onChange: (WorkspaceFileChange) -> Unit
+    private val discoverDescendantsOnEvent: Boolean = true,
+    private val onChange: (WorkspaceFileChange) -> Unit,
 ) {
     companion object {
         private const val TAG = "DepthLimitedFileObserver"
@@ -40,6 +42,9 @@ class DepthLimitedFileObserver(
     private val maxDepth = maxDepth.coerceAtLeast(0)
     private val observers = LinkedHashMap<String, DirectoryObserver>()
     private val rootPath: String = rootDir.canonicalFile.absolutePath
+
+    @Synchronized
+    internal fun isWatchingDirectory(directory: File): Boolean = directory.absolutePath in observers
 
     @Synchronized
     fun start() {
@@ -147,20 +152,20 @@ class DepthLimitedFileObserver(
             if (eventKind == WorkspaceFileChangeKind.CREATED && isDirectoryNow) {
                 synchronized(this@DepthLimitedFileObserver) {
                     watchDirectory(changedFile)
-                    addExistingDirectories(changedFile, depthOf(relativePath))
+                    // 终端日志会在采集事件子树时注册后代，避免阻塞 Android 共享事件线程。
+                    if (discoverDescendantsOnEvent) addExistingDirectories(changedFile, depthOf(relativePath))
                 }
             }
 
-            if (eventKind == WorkspaceFileChangeKind.DELETED || eventKind == WorkspaceFileChangeKind.MOVED) {
-                synchronized(this@DepthLimitedFileObserver) {
-                    removeDirectoryObservers(changedFile)
-                }
+            if (wasObservedDirectory && (eventKind == WorkspaceFileChangeKind.DELETED || eventKind == WorkspaceFileChangeKind.MOVED)) {
+                removeDirectoryObservers(changedFile)
             }
 
             onChange(
                 WorkspaceFileChange(
                     relativePath = relativePath,
-                    kind = eventKind
+                    kind = eventKind,
+                    createdInPlace = event and FileObserver.CREATE != 0,
                 )
             )
         }

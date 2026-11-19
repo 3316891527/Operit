@@ -19,6 +19,17 @@ internal data class TerminalObservationBaseline(
     val unreadable: Set<String> = emptySet(),
 )
 
+/** 从具体路径向上查找命中项，避免逐个比较批量事件中的所有路径。 */
+internal inline fun anyObservationAncestor(path: String, matches: (String) -> Boolean): Boolean {
+    if (matches(path)) return true
+    var slash = path.lastIndexOf('/')
+    while (slash >= 0) {
+        if (matches(path.substring(0, slash))) return true
+        slash = path.lastIndexOf('/', slash - 1)
+    }
+    return path.isNotEmpty() && matches("")
+}
+
 /** 首次扫描建立基线，后续只替换收到事件的子树；不可读目录保留旧基线。 */
 internal fun scanTerminalFiles(
     root: File,
@@ -27,6 +38,7 @@ internal fun scanTerminalFiles(
     excluded: (File) -> Boolean = { false },
     byteBudget: Long = 64L * 1024 * 1024,
     onDirectory: (File) -> Unit = {},
+    checkCancelled: () -> Unit = {},
     snapshotBytes: (ByteArray) -> ChangeSnapshot,
 ): TerminalObservationBaseline {
     val rootPath = root.toPath().toAbsolutePath().normalize()
@@ -38,7 +50,9 @@ internal fun scanTerminalFiles(
     fun unknown(path: Path) {
         val name = relative(path)
         unreadable += name
-        before.files.filterKeys { contains(name, it) }.forEach { (key, value) -> result[key] = value }
+        val previous = before.files[name]
+        if (previous != null) result[name] = previous
+        else before.files.filterKeys { contains(name, it) }.forEach { (key, value) -> result[key] = value }
     }
     fun read(path: Path, attrs: BasicFileAttributes): ChangeSnapshot = when {
         attrs.isSymbolicLink -> snapshotBytes(Files.readSymbolicLink(path).toString().toByteArray(Charsets.UTF_8))
@@ -63,14 +77,15 @@ internal fun scanTerminalFiles(
         }
     }
     val visitor = object : SimpleFileVisitor<Path>() {
-        override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult =
-            if (excluded(dir.toFile()) || relative(dir).split('/').any { it == ".git" }) FileVisitResult.SKIP_SUBTREE
-            else {
-                onDirectory(dir.toFile())
-                FileVisitResult.CONTINUE
-            }
+        override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+            checkCancelled()
+            if (excluded(dir.toFile()) || relative(dir).split('/').any { it == ".git" }) return FileVisitResult.SKIP_SUBTREE
+            onDirectory(dir.toFile())
+            return FileVisitResult.CONTINUE
+        }
 
         override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+            checkCancelled()
             if (excluded(file.toFile()) || relative(file).split('/').any { it == ".git" }) return FileVisitResult.CONTINUE
             val name = relative(file)
             val previous = before.files[name]
@@ -91,18 +106,21 @@ internal fun scanTerminalFiles(
             return FileVisitResult.CONTINUE
         }
     }
-    val selected = paths?.sortedBy { it.length }?.fold(mutableListOf<String>()) { kept, path ->
+    val selected = paths?.sortedBy { it.length }?.fold(linkedSetOf<String>()) { kept, path ->
         require(!path.startsWith('/') && path.split('/').none { it == ".." }) { "Invalid observation path" }
-        if (kept.none { contains(it, path) }) kept += path
+        if (!anyObservationAncestor(path, kept::contains)) kept += path
         kept
-    } ?: listOf("")
+    } ?: setOf("")
+    if (paths != null) {
+        // 先按批次丢弃旧条目，一次批量增删无需为每个名字重新扫描整个键集。
+        val subtreeRoots = selected.filterNotTo(mutableSetOf()) { it in before.files }
+        if (subtreeRoots.isNotEmpty()) result.keys.removeAll { anyObservationAncestor(it, subtreeRoots::contains) }
+        for (name in selected) result.remove(name)
+        unreadable.removeAll { anyObservationAncestor(it, selected::contains) }
+    }
     for (name in selected) {
+        checkCancelled()
         val path = rootPath.resolve(name).normalize()
-        if (paths != null) {
-            // 普通文件的旧基线没有子路径，单文件更新无需遍历整个观察根的键集。
-            if (name in before.files) result.remove(name) else result.keys.removeAll { contains(name, it) }
-            unreadable.removeAll { contains(name, it) }
-        }
         // 路径的任意中间段是链接时，不能沿链接读到观察范围之外。
         var parent = path.parent
         var linkedParent = false
@@ -115,6 +133,7 @@ internal fun scanTerminalFiles(
         if (Files.notExists(path, NOFOLLOW_LINKS)) continue
         try { Files.walkFileTree(path, visitor) } catch (error: java.io.IOException) { unknown(path) }
     }
+    if (paths != null && result == before.files && unreadable == before.unreadable) return before
     return TerminalObservationBaseline(result, unreadable)
 }
 

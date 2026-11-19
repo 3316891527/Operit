@@ -3,6 +3,7 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 import android.content.Context
 import android.util.AtomicFile
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicLong
@@ -15,7 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 
 /** 每次操作单独原子落盘，内容按哈希去重，不依赖聊天气泡或当前工作区绑定。 */
 internal class WorkspaceChangeStore(context: Context) {
@@ -26,7 +30,10 @@ internal class WorkspaceChangeStore(context: Context) {
     private val terminalObservations = File(root, "terminal-observations")
     // 大基线的序列化和落盘使用独立锁，详情读取现有快照时无需等待整份基线。
     private val baselineIo = Any()
+    private val terminalBaselineIo = Any()
     private val activeBaselines = linkedMapOf<String, TerminalObservationBaseline>()
+    private val writingTerminalBaselines = mutableMapOf<String, TerminalObservationBaseline>()
+    private val preparingTerminalBlobs = mutableMapOf<String, MutableSet<String>>()
     private val json = Json { encodeDefaults = true }
     private val revisionState = MutableStateFlow(0L)
     private val statistics = object : LinkedHashMap<String, Pair<Int, Int>>(128, 0.75f, true) {
@@ -54,7 +61,7 @@ internal class WorkspaceChangeStore(context: Context) {
     }
 
     @Synchronized
-    fun putBlob(bytes: ByteArray): String {
+    fun putBlob(bytes: ByteArray, preparingTerminalKey: String? = null): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
         // 冷启动会计算许多小文件的哈希，逐字节创建格式化器的开销会落到命令启动路径。
         val alphabet = "0123456789abcdef"
@@ -67,6 +74,7 @@ internal class WorkspaceChangeStore(context: Context) {
         val hash = String(hex)
         val target = File(objects, hash)
         if (!target.exists()) writeAtomic(target, bytes)
+        if (preparingTerminalKey != null) preparingTerminalBlobs.getOrPut(preparingTerminalKey) { mutableSetOf() }.add(hash)
         return hash
     }
 
@@ -106,15 +114,29 @@ internal class WorkspaceChangeStore(context: Context) {
         activeBaselines[key] = baseline
     }
 
-    fun terminalBaseline(key: String): TerminalObservationBaseline? = synchronized(baselineIo) {
-        require(Regex("[0-9a-f]{64}").matches(key))
-        val file = File(terminalObservations, "$key.json")
-        if (file.exists()) json.decodeFromString(file.readText(Charsets.UTF_8)) else null
+    // 清历史时保留扫描准备中与异步写盘中的对象，直到相应清单发布。
+    @Synchronized
+    fun releasePreparingTerminalBlobs(key: String) {
+        preparingTerminalBlobs.remove(key)
     }
 
-    fun saveTerminalBaseline(key: String, baseline: TerminalObservationBaseline) = synchronized(baselineIo) {
+    @Synchronized
+    fun pinWritingTerminalBaseline(key: String, baseline: TerminalObservationBaseline?) {
+        if (baseline == null) writingTerminalBaselines.remove(key)
+        else writingTerminalBaselines[key] = baseline
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    fun terminalBaseline(key: String): TerminalObservationBaseline? = synchronized(terminalBaselineIo) {
         require(Regex("[0-9a-f]{64}").matches(key))
-        writeAtomic(File(terminalObservations, "$key.json"), json.encodeToString(baseline).toByteArray(Charsets.UTF_8))
+        val file = File(terminalObservations, "$key.json")
+        if (file.exists()) file.inputStream().use { json.decodeFromStream(it) } else null
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    fun saveTerminalBaseline(key: String, baseline: TerminalObservationBaseline) = synchronized(terminalBaselineIo) {
+        require(Regex("[0-9a-f]{64}").matches(key))
+        writeAtomic(File(terminalObservations, "$key.json")) { json.encodeToStream(baseline, it) }
     }
 
     fun observedFiles(key: String): Map<String, ObservedWorkspaceFile>? = synchronized(baselineIo) {
@@ -201,6 +223,7 @@ internal class WorkspaceChangeStore(context: Context) {
         return records(chatId = chatId).filter { it.location.historyLocation().key == key }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private fun removeLocked(ids: Set<String>): Int {
         if (ids.isEmpty()) return 0
         val files = operations.listFiles().orEmpty().filter { it.extension == "json" }
@@ -218,15 +241,19 @@ internal class WorkspaceChangeStore(context: Context) {
                 } else writeAtomic(file, json.encodeToString(kept).toByteArray(Charsets.UTF_8))
                 changed = true
             }
-            val baselineBlobs = terminalObservations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
-                json.decodeFromString<TerminalObservationBaseline>(file.readText(Charsets.UTF_8)).files.values.mapNotNull { it.snapshot.blob }
+            val baselineBlobs = synchronized(terminalBaselineIo) {
+                terminalObservations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
+                    file.inputStream().use { json.decodeFromStream<TerminalObservationBaseline>(it) }
+                        .files.values.mapNotNull { it.snapshot.blob }
+                }
             }
             val workspaceBaselineBlobs = observations.listFiles().orEmpty().filter { it.extension == "json" }.flatMap { file ->
                 json.decodeFromString<Map<String, ObservedWorkspaceFile>>(file.readText(Charsets.UTF_8)).values.mapNotNull { it.snapshot.blob }
             }
             val retained = inventory.values.flatten().filterNot { it.id in ids }
                 .flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() + baselineBlobs + workspaceBaselineBlobs +
-                activeBaselines.values.flatMap { it.files.values.mapNotNull { file -> file.snapshot.blob } }
+                (activeBaselines.values + writingTerminalBaselines.values)
+                    .flatMap { it.files.values.mapNotNull { file -> file.snapshot.blob } } + preparingTerminalBlobs.values.flatten()
             val candidates = removed.flatMap { listOfNotNull(it.before.blob, it.after.blob) }.toSet() - retained
             // 采集与清理共用互斥锁，不能删掉进行中操作即将引用的相同内容。
             for (hash in candidates) {
@@ -243,12 +270,14 @@ internal class WorkspaceChangeStore(context: Context) {
         }
     }
 
-    private fun writeAtomic(file: File, bytes: ByteArray) {
+    private fun writeAtomic(file: File, bytes: ByteArray) = writeAtomic(file) { it.write(bytes) }
+
+    private fun writeAtomic(file: File, write: (FileOutputStream) -> Unit) {
         check(file.parentFile?.mkdirs() == true || file.parentFile?.isDirectory == true)
         val atomic = AtomicFile(file)
         val stream = atomic.startWrite()
         try {
-            stream.write(bytes)
+            write(stream)
             atomic.finishWrite(stream)
         } catch (error: Exception) {
             atomic.failWrite(stream)
