@@ -254,6 +254,19 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
     val target = state.target
     val message = target.id in setOf("userMessage", "assistantMessage")
+    if (target.id == "input") StudioSection(stringResource(R.string.studio_input_placeholder)) {
+        val placeholder = state.surface().placeholder
+        OutlinedTextField(
+            value = placeholder ?: stringResource(R.string.input_question_hint),
+            onValueChange = { value -> state.updateSurface { it.copy(placeholder = value) } },
+            modifier = Modifier.fillMaxWidth(),
+            supportingText = { StudioHint(stringResource(R.string.studio_input_placeholder_hint)) },
+        )
+        TextButton(
+            onClick = { state.updateSurface { it.copy(placeholder = null) } },
+            enabled = placeholder != null,
+        ) { Text(stringResource(R.string.studio_input_placeholder_reset)) }
+    }
     StudioPropertyGroup(state, "appearance", stringResource(if (message) R.string.studio_group_message_appearance else R.string.studio_group_component_appearance), stringResource(R.string.studio_group_appearance_hint)) {
         StudioSurfaceAppearance(state, onColor)
     }
