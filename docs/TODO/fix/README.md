@@ -144,3 +144,4 @@
 - [插件文字主题色、复制预览自动滚动与 A2UI 即时渲染](theme-copy-a2ui-stream/index.md) · `fix/theme-copy-a2ui-stream`
 - [协议标签与流式停更的行内代码边界修复](stream-meta-live-refresh/index.md)
 - [工作区交互与聊天导入内存优化](workspace-review-and-chat-import/index.md)
+- [终端文件变化采集与来源](terminal-file-observation/index.md)

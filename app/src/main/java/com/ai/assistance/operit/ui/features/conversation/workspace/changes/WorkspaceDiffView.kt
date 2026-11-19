@@ -101,7 +101,7 @@ internal fun WorkspaceDiffView(
     // 超长行按屏幕宽度排版，避免 Compose 接收超出约束编码范围的横向画布。
     val forcedWrap = with(density) { diff.maxColumns * 6.7.sp.toPx() * (if (split) 2 else 1) } > 32_000f
     val wrap = options.wrap || forcedWrap
-    val rows = remember(diff, split, options.full, expanded, wrap) {
+    val rows = remember(diff.document, split, options.full, expanded, wrap) {
         val items = WorkspaceDiff.items(diff.document, split, options.full, expanded)
         if (wrap) WorkspaceDiff.slices(items) else items
     }

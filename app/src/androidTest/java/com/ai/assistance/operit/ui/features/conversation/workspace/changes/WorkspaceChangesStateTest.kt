@@ -18,6 +18,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ai.assistance.operit.R
+import java.text.DateFormat
+import java.util.Date
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -48,6 +50,21 @@ class WorkspaceChangesStateTest {
         compose.onNodeWithText("removed code").assertIsDisplayed()
         compose.onNodeWithText("added code").assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.workspace_changes_record_scope)).assertIsDisplayed()
+    }
+
+    @Test fun singleOperationCanSwitchBackToSummary() {
+        seed("", "initial file", 100, "create_file")
+        showScreen()
+        val time = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date(100L))
+        val summary = context.getString(R.string.workspace_changes_record_summary, time)
+        waitForText("initial file")
+        compose.onNodeWithText(summary, substring = true).performClick()
+        compose.onNodeWithText("create_file", substring = true).performClick()
+        compose.onNodeWithText("create_file", substring = true).assertIsDisplayed().performClick()
+        compose.onNodeWithText(summary, substring = true).performClick()
+        compose.onNodeWithText(summary, substring = true).assertIsDisplayed()
+        compose.onNodeWithText("create_file", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("initial file").assertIsDisplayed()
     }
 
     @Test fun resumeKeepsTheManualLoadAndExpandedContext() {
@@ -109,9 +126,11 @@ class WorkspaceChangesStateTest {
         }
     }
 
-    private fun seed(before: String, after: String, timestamp: Long) {
-        store.save(listOf(FileChangeRecord(UUID.randomUUID().toString(), UUID.randomUUID().toString(), chat, timestamp, "edit_file",
-            location, ChangeSnapshot(SnapshotKind.TEXT, blob = store.putBlob(before.toByteArray(Charsets.UTF_8))),
+    private fun seed(before: String, after: String, timestamp: Long, tool: String = "edit_file") {
+        val old = if (before.isEmpty()) ChangeSnapshot(SnapshotKind.ABSENT)
+            else ChangeSnapshot(SnapshotKind.TEXT, blob = store.putBlob(before.toByteArray(Charsets.UTF_8)))
+        store.save(listOf(FileChangeRecord(UUID.randomUUID().toString(), UUID.randomUUID().toString(), chat, timestamp, tool,
+            location, old,
             ChangeSnapshot(SnapshotKind.TEXT, blob = store.putBlob(after.toByteArray(Charsets.UTF_8))))))
     }
 

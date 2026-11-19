@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 internal class WorkspaceChangeRecorder(
     private val context: Context,
     private val delegate: ToolExecutor,
+    private val acknowledge: (List<FileChangeRecord>) -> Unit = TerminalFileJournal::acknowledgeExisting,
 ) : ToolExecutor {
     override fun validateParameters(tool: AITool) = delegate.validateParameters(tool)
 
@@ -165,7 +166,8 @@ internal class WorkspaceChangeRecorder(
                 } else record
             }
             store.save(saved)
-            WorkspaceFileMonitor.get(context).acknowledge(saved)
+            WorkspaceFileMonitor.acknowledgeExisting(saved)
+            acknowledge(saved)
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {

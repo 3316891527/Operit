@@ -56,6 +56,26 @@ class WorkspaceChangeStoreStatisticsTest {
         assertEquals(summary.deletions, detail.deletions)
     }
 
+    @Test fun sharedStorageAliasesKeepOneHistoryAndRemoteFilesStaySeparate() = withStore { store ->
+        val storage = com.ai.assistance.operit.terminal.provider.filesystem.PRootMountMapping.currentEmulatedStoragePath()
+        val android = ChangeLocation("/sdcard/Download/demo.txt", "android", "android")
+        val linux = ChangeLocation("$storage/Download/demo.txt", "linux", "linux:local")
+        val created = record(store, "", "pending", 100).copy(location = android, toolName = "create_file")
+        val edited = record(store, "pending", "modified", 200)
+            .copy(location = linux, toolName = "super_admin:terminal", sourceKind = "terminal")
+        val remote = record(store, "", "remote", 300).copy(location = linux.copy(backend = "linux:ssh:test"))
+        listOf(created, edited, remote).forEach { store.save(listOf(it)) }
+
+        val workspace = ChangeLocation("/storage/self/primary/Download", "android", "android")
+        val scoped = store.records(directory = workspace.path, backend = workspace.backend)
+        val file = store.reviewFiles(scoped, workspace, aggregate = true).single()
+        assertEquals(listOf(edited, created), file.records)
+        assertEquals("demo.txt", file.displayPath)
+        assertEquals("modified", store.content(file.records.asReversed()).after)
+        assertEquals(listOf(created, edited), store.fileRecords(android, "test-chat"))
+        assertEquals(2, store.reviewFiles(store.records(), aggregate = true).size)
+    }
+
     @Test fun deletedFilesRetainTheirBeforeSnapshotAndNegativeCount() = withStore { store ->
         val deletion = record(store, "first\nsecond\n", "", 100).copy(after = ChangeSnapshot(SnapshotKind.ABSENT))
         store.save(listOf(deletion))
