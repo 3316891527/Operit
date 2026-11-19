@@ -1039,8 +1039,6 @@
     <string name="display_behavior_screenshot_jpg_summary">画質 %1$d%% · 解像度 %2$d%%</string>
     <string name="display_behavior_tools_plugins">ツールとプラグイン</string>
     <string name="display_behavior_seconds_suffix">" 秒"</string>
-    <string name="display_behavior_web_wait">ウェブアクセスの待機時間</string>
-    <string name="display_behavior_web_wait_desc">ウェブ内容の抽出後、結果を返すまで待機します。0 秒ですぐに返します。</string>
     <string name="display_behavior_hook_timeout">前処理プラグイン Hook のタイムアウト</string>
     <string name="display_behavior_hook_timeout_desc">チャット入力、Prompt、要約 Hook の合計待機時間の上限です。</string>
     <string name="display_behavior_hook_hint">タイムアウトした Hook はスキップして処理を続行します。メッセージ処理による返信の引き継ぎには影響しません。</string>
@@ -7316,9 +7314,6 @@
     <string name="global_display_screenshot_settings">自動操作のスクリーンショット設定</string>
     <string name="global_display_image_quality">画質（JPG のみ）</string>
     <string name="global_display_resolution_scale">解像度の倍率（送信前にスクリーンショットを縮小）</string>
-    <string name="visit_web_wait_time_title">Visit Web のページ取得後の待ち時間</string>
-    <string name="visit_web_wait_time_description">visit_web がページの内容を取得してから自動で返すまでの待ち時間です。0 秒ならすぐに返します。</string>
-    <string name="visit_web_wait_time_value">%1$d 秒</string>
     <string name="toolpkg_hook_timeout_description">送信時の ToolPkg チャット入力・Prompt・要約 Hook の合計待ち時間を制限します。タイムアウトした Hook はスキップして処理を続けます。既定値は 10 秒です。メッセージ処理・応答の引き継ぎには影響しません。</string>
     <string name="toolpkg_hook_timeout_value">%1$d 秒</string>
     <string name="toolpkg_hook_timeout_continue_sending">前処理プラグインがタイムアウトしたため、スキップして送信を続けます</string>

@@ -5711,9 +5711,6 @@
     <string name="global_display_image_format">이미지 형식</string>
     <string name="global_display_image_quality">품질(JPG만 해당)</string>
     <string name="global_display_resolution_scale">해상도 배율(보내기 전 축소)</string>
-    <string name="visit_web_wait_time_title">웹 방문 대기 시간</string>
-    <string name="visit_web_wait_time_description">visit_web이 페이지 콘텐츠를 추출한 뒤 반환하기 전에 대기하는 시간을 설정합니다. 0초로 설정하면 즉시 반환합니다.</string>
-    <string name="visit_web_wait_time_value">%1$ds</string>
     <string name="toolpkg_hook_timeout_title">ToolPkg Hook 제한 시간</string>
     <string name="toolpkg_hook_timeout_description">전송 경로에서 ToolPkg 채팅 입력, 프롬프트 및 요약 Hook 체인의 총 대기 시간을 제한합니다. 제한 시간이 지나면 현재 Hook을 건너뛰고 처리를 계속합니다. 기본값은 10초입니다. message_processing 응답 인계에는 영향을 주지 않습니다.</string>
     <string name="toolpkg_hook_timeout_value">%1$d초</string>
@@ -7703,8 +7700,6 @@
     <string name="display_behavior_screenshot_jpg_summary">화질 %1$d%% · 해상도 %2$d%%</string>
     <string name="display_behavior_tools_plugins">도구 및 플러그인</string>
     <string name="display_behavior_seconds_suffix">" 초"</string>
-    <string name="display_behavior_web_wait">웹 접근 대기</string>
-    <string name="display_behavior_web_wait_desc">웹 내용을 추출한 후 반환하기까지 기다립니다. 0초면 즉시 반환합니다.</string>
     <string name="display_behavior_hook_timeout">전처리 플러그인 Hook 제한 시간</string>
     <string name="display_behavior_hook_timeout_desc">채팅 입력, Prompt, 요약 Hook의 총 대기 시간 상한입니다.</string>
     <string name="display_behavior_hook_hint">시간이 초과된 Hook은 건너뛰고 처리를 계속합니다. 메시지 처리의 답장 인계에는 영향을 주지 않습니다.</string>

@@ -5733,9 +5733,6 @@
     <string name="global_display_image_format">Format imej</string>
     <string name="global_display_image_quality">Kualiti imej (hanya untuk JPG)</string>
     <string name="global_display_resolution_scale">Skala resolusi (kecilkan tangkapan skrin sebelum hantar)</string>
-    <string name="visit_web_wait_time_title">Masa tunggu lawatan web Visit Web</string>
-    <string name="visit_web_wait_time_description">Kawal tempoh tunggu visit_web sebelum kembali automatik selepas ekstrak kandungan halaman. Tetapkan 0 saat untuk kembali serta-merta.</string>
-    <string name="visit_web_wait_time_value">%1$d saat</string>
     <string name="toolpkg_hook_timeout_title">Had Masa Hook ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Mengehadkan jumlah masa menunggu rantaian Hook input sembang, gesaan dan ringkasan ToolPkg pada laluan penghantaran. Apabila tamat masa, Hook semasa dilangkau dan pemprosesan diteruskan. Lalai: 10 saat. Tidak menjejaskan pengambilalihan respons message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d saat</string>
@@ -7855,8 +7852,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Kualiti %1$d%% · resolusi %2$d%%</string>
     <string name="display_behavior_tools_plugins">Alat dan pemalam</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Masa tunggu akses web</string>
-    <string name="display_behavior_web_wait_desc">Tunggu sebelum memulangkan kandungan web yang diekstrak; 0 saat bermakna serta-merta.</string>
     <string name="display_behavior_hook_timeout">Had masa Hook pemalam prapemprosesan</string>
     <string name="display_behavior_hook_timeout_desc">Had jumlah masa tunggu Hook input sembang, prompt dan ringkasan.</string>
     <string name="display_behavior_hook_hint">Langkau Hook yang tamat masa dan teruskan pemprosesan; pengambilalihan balasan oleh pemprosesan mesej tidak terjejas.</string>

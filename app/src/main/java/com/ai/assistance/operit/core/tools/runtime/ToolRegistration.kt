@@ -1272,9 +1272,15 @@ fun registerAllTools(handler: AIToolHandler, context: Context) {
                     else -> s(R.string.toolreg_visit_web_desc)
                 }
             },
-            executor = { tool ->
-                val webVisitTool = ToolGetter.getWebVisitTool(context)
-                webVisitTool.invoke(tool)
+            executor = object : ToolExecutor {
+                override fun invoke(tool: AITool): ToolResult =
+                    ToolGetter.getWebVisitTool(context).invoke(tool)
+
+                override fun invokeAndStream(tool: AITool): kotlinx.coroutines.flow.Flow<ToolResult> =
+                    kotlinx.coroutines.flow.flow {
+                        // 每次访问独立持有 WebView，取消沿用当前调用方协程。
+                        emit(ToolGetter.getWebVisitTool(context).invokeSuspend(tool))
+                    }
             }
     )
 

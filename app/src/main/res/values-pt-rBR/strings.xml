@@ -5249,9 +5249,6 @@
     <string name="global_display_image_format">Formato de imagem</string>
     <string name="global_display_image_quality">Qualidade de imagem (válido apenas para JPG)</string>
     <string name="global_display_resolution_scale">Escala de resolução (reduzir capturas de tela antes de enviar)</string>
-    <string name="visit_web_wait_time_title">Visite o tempo de espera para acesso à página da Web</string>
-    <string name="visit_web_wait_time_description">Controla quanto tempo visit_web espera antes de retornar automaticamente após buscar o conteúdo da página. Defina como 0 segundos para retornar imediatamente.</string>
-    <string name="visit_web_wait_time_value">%1$d segundos</string>
     <string name="toolpkg_hook_timeout_title">Tempo limite de Hook do ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Limita o tempo total de espera das cadeias de Hook de entrada de chat, prompt e resumo do ToolPkg no caminho de envio. Ao expirar, o Hook atual é ignorado e o processamento continua. Padrão: 10 segundos. Não afeta a tomada de resposta de message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d segundos</string>
@@ -7696,8 +7693,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Qualidade %1$d%% · resolução %2$d%%</string>
     <string name="display_behavior_tools_plugins">Ferramentas e plugins</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Espera de acesso à web</string>
-    <string name="display_behavior_web_wait_desc">Aguarde antes de retornar o conteúdo extraído da web; 0 segundos retorna imediatamente.</string>
     <string name="display_behavior_hook_timeout">Tempo limite de hooks de pré-processamento</string>
     <string name="display_behavior_hook_timeout_desc">Limite total de espera dos hooks de entrada, prompt e resumo.</string>
     <string name="display_behavior_hook_hint">O hook que exceder o tempo será ignorado e o processamento continuará; a tomada de controle da resposta pelo processamento de mensagens não é afetada.</string>

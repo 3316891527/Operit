@@ -36,6 +36,14 @@ export namespace Net {
         headers?: Record<string, string>;
         user_agent_preset?: string;
         user_agent?: string;
+        /** 整次访问时限，正整数秒，默认 30，包含排队。 */
+        timeout_seconds?: number;
+        /** 加载阶段时限，默认跟随整次时限，不得超过它。 */
+        load_timeout_seconds?: number;
+        /** 页面检查与内容提取时限，默认跟随整次时限。 */
+        read_timeout_seconds?: number;
+        /** 加载完成后的懒加载等待秒数，默认 0，须小于整次时限。 */
+        wait_seconds?: number;
     }): Promise<VisitWebResultData>;
 
     /**
