@@ -67,7 +67,6 @@ internal fun VoiceRecordingOverlayContent(
     val busy = sending || state.phase == VoiceMessagePhase.TRANSCRIBING || state.phase == VoiceMessagePhase.EDITING
     val preparing = state.phase == VoiceMessagePhase.PREPARING
     val finishing = !holding && state.phase == VoiceMessagePhase.RECORDING
-    VoiceRecordingWindowEffect(active = preparing || state.phase == VoiceMessagePhase.RECORDING || (holding && state.phase == VoiceMessagePhase.READY))
     Box(
         Modifier.fillMaxSize().background(
             Brush.verticalGradient(
@@ -76,7 +75,7 @@ internal fun VoiceRecordingOverlayContent(
                 0.78f to backdrop,
                 1f to backdrop,
             ),
-        ).windowInsetsPadding(WindowInsets.safeGestures)
+        ).systemGestureExclusion().windowInsetsPadding(WindowInsets.safeGestures)
             .pointerInput(gesture) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -190,7 +189,7 @@ private fun VoiceRecordingTarget(
         if (action == VoiceHoldAction.CANCEL) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
     } else foreground
     Surface(
-        modifier = modifier.height(80.dp).systemGestureExclusion()
+        modifier = modifier.height(80.dp)
             .onGloballyPositioned { coordinates ->
                 val topLeft = coordinates.voiceScreenPoint(view, Offset.Zero)
                 val bottomRight = coordinates.voiceScreenPoint(view, Offset(coordinates.size.width.toFloat(), coordinates.size.height.toFloat()))

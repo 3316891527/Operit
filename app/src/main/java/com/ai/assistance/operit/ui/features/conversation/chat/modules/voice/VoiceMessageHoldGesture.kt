@@ -2,6 +2,7 @@ package com.ai.assistance.operit.ui.features.conversation.chat.modules.voice
 
 import android.view.View
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
@@ -70,6 +71,8 @@ internal fun Modifier.voiceMessageHoldGesture(enabled: Boolean, onStart: () -> U
     val latestStart by rememberUpdatedState(onStart)
     val label = stringResource(R.string.voice_message_hold_to_record)
     return this
+        // 系统在按下时就判断侧滑归属，按钮起点也必须提前排除。
+        .systemGestureExclusion()
         .onGloballyPositioned { anchor.coordinates = it }
         .semantics {
             onLongClick(label) {

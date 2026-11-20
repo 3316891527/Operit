@@ -13,6 +13,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.voice.VoiceHoldAction
 import com.ai.assistance.operit.core.chat.voice.VoiceHoldPhase
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageSendResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
@@ -22,7 +23,7 @@ import kotlinx.coroutines.launch
 internal fun VoiceRecordingOverlay(
     gesture: VoiceRecordingGestureController,
     onDismiss: () -> Unit,
-    onSend: suspend (VoiceMessageData, () -> Unit) -> Boolean,
+    onSend: suspend (VoiceMessageData, () -> Unit) -> VoiceMessageSendResult,
     onUseText: (String) -> Boolean,
 ) {
     val context = LocalContext.current
@@ -55,8 +56,11 @@ internal fun VoiceRecordingOverlay(
         session.beginSend()
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                if (latestSend(message, session::retainSentRecording)) latestDismiss()
-                else rejected = context.getString(R.string.voice_message_standalone)
+                when (latestSend(message, session::retainSentRecording)) {
+                    VoiceMessageSendResult.SENT -> latestDismiss()
+                    VoiceMessageSendResult.CONFIGURATION_REJECTED -> dismiss()
+                    VoiceMessageSendResult.REJECTED -> rejected = context.getString(R.string.voice_message_standalone)
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
@@ -71,6 +75,10 @@ internal fun VoiceRecordingOverlay(
         if (gesture.state.id == recordingId &&
             (gesture.state.phase == VoiceHoldPhase.HOLDING || gesture.state.phase == VoiceHoldPhase.RELEASED)) session.start()
     }
+    // 长按指针仍属于主窗口，常亮、导航栏和侧边手势排除必须安装在 Popup 外。
+    VoiceRecordingWindowEffect(active = state.phase == VoiceMessagePhase.PREPARING ||
+        state.phase == VoiceMessagePhase.RECORDING ||
+        (gesture.state.phase == VoiceHoldPhase.HOLDING && state.phase == VoiceMessagePhase.READY))
     VoiceRecordingInterruptionEffect(::dismiss)
     DisposableEffect(session) {
         onDispose { session.close() }
@@ -107,7 +115,8 @@ internal fun VoiceRecordingOverlay(
         popupPositionProvider = positionProvider,
         onDismissRequest = ::dismiss,
         properties = PopupProperties(focusable = false, clippingEnabled = false,
-            dismissOnBackPress = false, dismissOnClickOutside = false),
+            dismissOnBackPress = false, dismissOnClickOutside = false,
+            excludeFromSystemGesture = true),
     ) {
         val error = state.error ?: rejected
         val retry: (() -> Unit)? = when {

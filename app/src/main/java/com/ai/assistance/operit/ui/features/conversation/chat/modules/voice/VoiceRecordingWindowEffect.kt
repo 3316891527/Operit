@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.voice
 
+import android.graphics.Rect
+import android.view.View
 import android.view.ViewTreeObserver
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -40,34 +42,45 @@ internal fun VoiceRecordingInterruptionEffect(onInterrupted: () -> Unit) {
     BackHandler { latestInterrupted() }
 }
 
-/** 仅在录音准备或录制期间持有常亮；浮层关闭和所有结束路径都会恢复。 */
+/** 录音期间临时持有原窗口的常亮、沉浸和手势排除，结束后恢复原值。 */
 @Composable
 internal fun VoiceRecordingWindowEffect(active: Boolean) {
+    if (!active) return
     val view = LocalView.current
-    DisposableEffect(view, active) {
+    val exclusionView = view.rootView
+    DisposableEffect(view, exclusionView) {
         val previousKeepScreenOn = view.keepScreenOn
+        val previousExclusions = ViewCompat.getSystemGestureExclusionRects(exclusionView).map(::Rect)
         val activity = ActivityLifecycleManager.getCurrentActivity()
         val window = activity?.window
         val insets = window?.decorView?.let(ViewCompat::getRootWindowInsets)
         val controller = if (window != null) WindowCompat.getInsetsController(window, window.decorView) else null
         val previousBehavior = controller?.systemBarsBehavior
         val navigationWasVisible = insets?.isVisible(WindowInsetsCompat.Type.navigationBars())
-        if (active) {
-            view.keepScreenOn = true
-            if (controller != null && navigationWasVisible != null) {
-                // 沉浸模式和排除区只能减少误触，不能禁用系统强制保留的 Home 手势。
-                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                controller.hide(WindowInsetsCompat.Type.navigationBars())
+        fun updateExclusionBounds() {
+            if (exclusionView.width > 0 && exclusionView.height > 0) {
+                // 原始长按属于主窗口；排除区必须延伸到左右边缘，不能只覆盖浮层按钮。
+                ViewCompat.setSystemGestureExclusionRects(exclusionView,
+                    listOf(Rect(0, 0, exclusionView.width, exclusionView.height)))
             }
         }
+        val layoutListener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateExclusionBounds() }
+        exclusionView.addOnLayoutChangeListener(layoutListener)
+        updateExclusionBounds()
+        view.keepScreenOn = true
+        if (controller != null && navigationWasVisible != null) {
+            // 排除请求受系统裁定；普通应用不能禁用强制 Home、最近任务或厂商独立手势。
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.navigationBars())
+        }
         onDispose {
-            if (active) {
-                view.keepScreenOn = previousKeepScreenOn
-                if (controller != null && previousBehavior != null && navigationWasVisible != null) {
-                    controller.systemBarsBehavior = previousBehavior
-                    if (navigationWasVisible) controller.show(WindowInsetsCompat.Type.navigationBars())
-                    else controller.hide(WindowInsetsCompat.Type.navigationBars())
-                }
+            exclusionView.removeOnLayoutChangeListener(layoutListener)
+            ViewCompat.setSystemGestureExclusionRects(exclusionView, previousExclusions)
+            view.keepScreenOn = previousKeepScreenOn
+            if (controller != null && previousBehavior != null && navigationWasVisible != null) {
+                controller.systemBarsBehavior = previousBehavior
+                if (navigationWasVisible) controller.show(WindowInsetsCompat.Type.navigationBars())
+                else controller.hide(WindowInsetsCompat.Type.navigationBars())
             }
         }
     }

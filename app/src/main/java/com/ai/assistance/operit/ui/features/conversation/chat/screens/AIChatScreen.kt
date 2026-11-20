@@ -9,6 +9,8 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertD
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingOverlay
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingGestureController
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingInterruptionEffect
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingWindowEffect
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageSendResult
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.LocalVoiceRecordingGesture
 import com.ai.assistance.operit.core.chat.voice.VoiceHoldPhase
 import android.Manifest
@@ -1540,6 +1542,7 @@ private fun ChatInputBottomBar(
         else OKToast.warning(context, context.getString(R.string.voice_message_permission)).show()
     }
     if (prepareVoiceChat) {
+        VoiceRecordingWindowEffect(active = true)
         VoiceRecordingInterruptionEffect {
             prepareVoiceChat = false
             voiceGesture.reset()
@@ -1606,12 +1609,12 @@ private fun ChatInputBottomBar(
                 )
                 if (decision.action == ChatInputSubmitActions.BLOCK || decision.action == ChatInputSubmitActions.CONSUME) {
                     showChatInputHookMessage(decision.message)
-                    false
+                    VoiceMessageSendResult.REJECTED
                 } else {
                     showChatInputHookMessage(decision.noticeMessage)
                     val finalTranscript = decision.text ?: message.transcript
-                    val accepted = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
-                    if (accepted) {
+                    val result = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
+                    if (result == VoiceMessageSendResult.SENT) {
                         onRequestAutoScrollToBottom()
                         ChatInputHookRegistry.dispatchNotification(
                             buildChatInputHookContext(eventName = ChatInputEvents.SUBMITTED,
@@ -1619,8 +1622,10 @@ private fun ChatInputBottomBar(
                                 selectionEnd = finalTranscript.length, submitSource = "voice",
                                 chatId = originChatId, attachmentCount = 1)
                         )
-                    } else OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
-                    accepted
+                    } else if (result == VoiceMessageSendResult.REJECTED) {
+                        OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
+                    }
+                    result
                 }
             }, onUseText = { transcript ->
                 if (currentChatId == originChatId && transcript.isNotBlank() &&
