@@ -61,6 +61,7 @@ object ToolExecutionManager {
         val a2uiRunId: String? = null,
         val publishA2ui: (suspend (String) -> Unit)? = null,
         val publishA2uiAfterToolResult: (suspend (String) -> Unit)? = null,
+        val callerName: String? = null,
     )
 
     private data class ToolExecutionOutput(
@@ -581,6 +582,7 @@ object ToolExecutionManager {
         val toolRuntimeContext =
             ToolRuntimeContext(
                 callerCardId = callerCardId,
+                callerName = callerName,
                 toolExposureMode = toolExposureMode,
                 callerChatId = callerChatId,
                 a2uiRunId = a2uiRunId,

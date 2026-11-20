@@ -2880,35 +2880,71 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
      * from manifest defaults when requested, and reactivates any subpackages that were active
      * before the refresh so tool registrations do not stay stale.
      */
+    internal data class DebugToolPkgInstallResult(
+        val success: Boolean,
+        val message: String,
+        val installed: Boolean = false,
+        val activationTargets: List<String> = emptyList(),
+    )
+
     fun installDebugToolPkg(
         containerPackageName: String,
         externalFilePath: String,
         resetSubpackageStatesToManifest: Boolean = true
-    ): String {
+    ): String = installDebugToolPkgResult(
+        containerPackageName, externalFilePath, resetSubpackageStatesToManifest
+    ).message
+
+    /** 调试命令先解析真实包内容，在写入文件前校验身份和元数据。 */
+    internal fun inspectDebugJsPackage(file: File): ToolPackage {
+        pluginDenylistRejection(file)?.let { throw IllegalArgumentException(it) }
+        val errors = mutableListOf<String>()
+        return loadPackageFromJsFile(file) { _, message -> errors += message }
+            ?: throw IllegalArgumentException("Failed to parse JS package: " + errors.joinToString("\n"))
+    }
+
+    internal fun findDuplicateExternalJsPackageFiles(packageName: String, target: File): List<File> {
+        val normalizedName = normalizePackageName(packageName)
+        return externalPackagesDir.listFiles().orEmpty().filter { candidate ->
+            candidate.isFile && candidate.extension.equals("js", true) &&
+                candidate.canonicalFile != target.canonicalFile &&
+                loadPackageFromJsFile(candidate, reportPackageLoadError = { _, _ -> })?.let {
+                    normalizePackageName(it.name) == normalizedName
+                } == true
+        }
+    }
+
+    internal fun installDebugToolPkgResult(
+        containerPackageName: String,
+        externalFilePath: String,
+        resetSubpackageStatesToManifest: Boolean = true,
+        enableContainer: Boolean = true,
+        reactivatePackages: Boolean = true
+    ): DebugToolPkgInstallResult {
         ensureInitialized()
 
         val normalizedContainerPackageName = normalizePackageName(containerPackageName)
         if (normalizedContainerPackageName.isBlank()) {
-            return "Missing toolpkg package name"
+            return DebugToolPkgInstallResult(false, "Missing toolpkg package name")
         }
 
         val normalizedExternalFilePath = externalFilePath.trim()
         if (normalizedExternalFilePath.isBlank()) {
-            return "Missing toolpkg file path"
+            return DebugToolPkgInstallResult(false, "Missing toolpkg file path")
         }
 
         val targetFile = File(normalizedExternalFilePath)
         if (!targetFile.exists()) {
-            return "ToolPkg file not found: ${targetFile.absolutePath}"
+            return DebugToolPkgInstallResult(false, "ToolPkg file not found: ${targetFile.absolutePath}")
         }
         if (!targetFile.isFile) {
-            return "ToolPkg path is not a file: ${targetFile.absolutePath}"
+            return DebugToolPkgInstallResult(false, "ToolPkg path is not a file: ${targetFile.absolutePath}")
         }
         if (!targetFile.name.endsWith(TOOLPKG_EXTENSION, ignoreCase = true)) {
-            return "ToolPkg debug install only supports .toolpkg files: ${targetFile.absolutePath}"
+            return DebugToolPkgInstallResult(false, "ToolPkg debug install only supports .toolpkg files: ${targetFile.absolutePath}")
         }
 
-        pluginDenylistRejection(targetFile)?.let { return it }
+        pluginDenylistRejection(targetFile)?.let { return DebugToolPkgInstallResult(false, it) }
 
         val externalPackagesCanonicalPath =
             runCatching { externalPackagesDir.canonicalPath }.getOrElse { externalPackagesDir.absolutePath }
@@ -2917,7 +2953,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                 .getOrElse { targetFile.parentFile?.absolutePath }
                 .orEmpty()
         if (targetParentCanonicalPath != externalPackagesCanonicalPath) {
-            return "ToolPkg debug install expects file inside external packages dir: $externalPackagesCanonicalPath"
+            return DebugToolPkgInstallResult(false, "ToolPkg debug install expects file inside external packages dir: $externalPackagesCanonicalPath")
         }
 
         val previousContainerRuntime = toolPkgContainers[normalizedContainerPackageName]
@@ -2937,7 +2973,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             preferredFilePath = normalizedExternalFilePath
         ).forEach { duplicateFile ->
             if (!duplicateFile.delete()) {
-                return "Failed to remove duplicate external toolpkg file: ${duplicateFile.absolutePath}"
+                return DebugToolPkgInstallResult(false, "Failed to remove duplicate external toolpkg file: ${duplicateFile.absolutePath}")
             }
             removedDuplicateArchives += duplicateFile.absolutePath
         }
@@ -2951,7 +2987,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                     containerPackageName = normalizedContainerPackageName,
                     externalFilePath = normalizedExternalFilePath
                 )
-            return buildString {
+            return DebugToolPkgInstallResult(false, buildString {
                 append("Failed to reload debug toolpkg: ")
                 append(normalizedContainerPackageName)
                 if (relatedErrors.isNotEmpty()) {
@@ -2963,7 +2999,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                         append(value)
                     }
                 }
-            }
+            })
         }
 
         if (runtime.sourceType != ToolPkgSourceType.EXTERNAL) {
@@ -2972,7 +3008,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                     containerPackageName = normalizedContainerPackageName,
                     externalFilePath = normalizedExternalFilePath
                 )
-            return buildString {
+            return DebugToolPkgInstallResult(false, buildString {
                 append("Failed to install debug toolpkg '")
                 append(normalizedContainerPackageName)
                 append("': a built-in package with the same name is taking precedence")
@@ -2985,7 +3021,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                         append(value)
                     }
                 }
-            }
+            })
         }
 
         val runtimeSourceCanonicalPath =
@@ -2993,14 +3029,14 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val targetCanonicalPath =
             runCatching { targetFile.canonicalPath }.getOrElse { targetFile.absolutePath }
         if (runtimeSourceCanonicalPath != targetCanonicalPath) {
-            return buildString {
+            return DebugToolPkgInstallResult(false, buildString {
                 append("Reloaded toolpkg source does not match pushed archive for '")
                 append(normalizedContainerPackageName)
                 append("'\nExpected: ")
                 append(targetCanonicalPath)
                 append("\nActual: ")
                 append(runtimeSourceCanonicalPath)
-            }
+            })
         }
 
         if (resetSubpackageStatesToManifest) {
@@ -3021,7 +3057,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
             saveToolPkgSubpackageStates(updatedStates)
         }
 
-        val enableMessage = enablePackage(normalizedContainerPackageName)
+        val enableMessage = if (enableContainer) enablePackage(normalizedContainerPackageName) else "Container enable state preserved"
 
         destroyToolPkgExecutionEngines(normalizedContainerPackageName)
 
@@ -3035,6 +3071,7 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
         val reactivatedPackages = mutableListOf<String>()
         val reactivationFailures = mutableListOf<String>()
         previouslyActivePackages.forEach { packageName ->
+            if (!reactivatePackages) return@forEach
             if (!toolPkgSubpackageByPackageName.containsKey(packageName)) {
                 return@forEach
             }
@@ -3055,8 +3092,9 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                 .map(ToolPkgSubpackageRuntime::packageName)
                 .filter(::isPackageEnabled)
 
-        return buildString {
-            append("Successfully installed debug toolpkg: ")
+        val completed = (!enableContainer || isPackageEnabled(normalizedContainerPackageName)) && reactivationFailures.isEmpty()
+        return DebugToolPkgInstallResult(completed, buildString {
+            append(if (completed) "Successfully installed debug toolpkg: " else "Debug toolpkg installation incomplete: ")
             append(normalizedContainerPackageName)
             append("\nSource file: ")
             append(targetCanonicalPath)
@@ -3076,9 +3114,10 @@ private constructor(private val context: Context, private val aiToolHandler: AIT
                 append("\nReactivation failures: ")
                 append(reactivationFailures.joinToString(" | "))
             }
-        }
+        }, installed = true, activationTargets = previouslyActivePackages.filter {
+            toolPkgSubpackageByPackageName.containsKey(it) && isPackageEnabled(it)
+        })
     }
-
     fun refreshExternalPackagesForDebug(
         reactivateActivePackages: Boolean = true
     ): String {
