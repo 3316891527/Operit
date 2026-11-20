@@ -1,121 +1,78 @@
 package com.ai.assistance.operit.ui.common.markdown
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.view.View
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import org.json.JSONObject
-import org.junit.Assert.assertEquals
+import com.ai.assistance.operit.ui.common.markdown.mermaid.MermaidBounds
+import com.ai.assistance.operit.ui.common.markdown.mermaid.MermaidCanvasView
+import com.ai.assistance.operit.ui.common.markdown.mermaid.MermaidParser
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class MermaidRendererAndroidTest {
-    @get:Rule
-    val compose = createComposeRule()
-    private lateinit var browser: MermaidWebView
+    @get:Rule val compose = createComposeRule()
 
-    @Test
-    fun bundledBrowserRendersCommonDiagramTypesWithoutNetworkAccess() {
+    @Test fun nativeCanvasDrawsAllCommonDiagramsAndRefitsAfterZoomAndResize() {
         val sources = listOf(
-            "flowchart LR\nA[开始] --> B[结束]",
-            "sequenceDiagram\nAlice->>Bob: Hello",
+            "flowchart TD\nA[中文入口] --> B{继续吗}\nB -->|是| C[生成代码]",
+            "sequenceDiagram\nAlice->>Bob: Hello\nBob-->>Alice: Ready",
             "classDiagram\nAnimal <|-- Duck",
             "stateDiagram-v2\n[*] --> Ready\nReady --> [*]",
             "erDiagram\nCUSTOMER ||--o{ ORDER : places",
-            "gantt\ntitle Plan\ndateFormat YYYY-MM-DD\nsection Work\nTask :2026-01-01, 1d",
-            "pie\ntitle Plan\n\"Done\" : 60\n\"Remaining\" : 40",
+            "gantt\ndateFormat YYYY-MM-DD\nTask :2026-01-01, 1d",
+            "pie\n\"Done\" : 60\n\"Remaining\" : 40",
             "mindmap\n  root((Plan))\n    Done\n    Remaining",
         )
-        val payload = mutableStateOf(buildPayload(sources.first()))
+        lateinit var view: MermaidCanvasView
         compose.setContent {
-            AndroidView(
-                factory = { context -> MermaidWebView(context).also { browser = it } },
-                modifier = Modifier.width(320.dp).height(300.dp),
-                update = { it.render(payload.value) },
-                onRelease = { it.destroy() },
-            )
-        }
-        for ((index, source) in sources.withIndex()) {
-            compose.runOnIdle { payload.value = buildPayload(source) }
-            val id = JSONObject.quote("mermaid-diagram-${index + 1}")
-            compose.waitUntil(30_000) {
-                javascript("document.querySelector('#diagram svg')?.id === $id && document.getElementById('status').hidden") == "true" && diagramFitsViewport()
-            }
+            AndroidView(factory = { context -> MermaidCanvasView(context).also { view = it } }, modifier = Modifier.width(320.dp).height(300.dp))
         }
         compose.runOnIdle {
-            assertTrue(browser.settings.blockNetworkLoads)
-            assertEquals(false, browser.settings.allowFileAccess)
-            assertEquals(false, browser.settings.allowContentAccess)
-        }
-    }
-
-    @Test
-    fun invalidDiagramShowsAnErrorAndSubsequentValidSourceCanRender() {
-        val payload = mutableStateOf(buildPayload("flowchart LR\nA -->"))
-        compose.setContent {
-            AndroidView(
-                factory = { context -> MermaidWebView(context).also { browser = it } },
-                modifier = Modifier.width(320.dp).height(300.dp),
-                update = { it.render(payload.value) },
-                onRelease = { it.destroy() },
-            )
-        }
-        compose.waitUntil(30_000) {
-            javascript("document.getElementById('status')?.className === 'error'") == "true"
-        }
-        assertEquals("true", javascript("document.getElementById('status').textContent.startsWith('Diagram error')"))
-        compose.runOnIdle { payload.value = buildPayload("flowchart LR\nA[Fixed] --> B[Done]") }
-        compose.waitUntil(30_000) {
-            javascript("document.querySelector('#diagram svg')?.id === 'mermaid-diagram-2' && document.getElementById('status').hidden") == "true" && diagramFitsViewport()
-        }
-    }
-
-    // 验证实际图形的屏幕范围，不能以根 SVG 存在代替完整可见。
-    private fun diagramFitsViewport(): Boolean = javascript(
-        """
-        (() => {
-            const svg = document.querySelector('#diagram > svg');
-            if (!svg) return false;
-            const area = document.getElementById('viewport').getBoundingClientRect();
-            const box = svg.getBBox();
-            const matrix = svg.getScreenCTM();
-            const first = new DOMPoint(box.x, box.y).matrixTransform(matrix);
-            const last = new DOMPoint(box.x + box.width, box.y + box.height).matrixTransform(matrix);
-            return [first.x, first.y, last.x, last.y].every(Number.isFinite) &&
-                last.x > first.x && last.y > first.y &&
-                first.x >= area.left - .5 && first.y >= area.top - .5 &&
-                last.x <= area.right + .5 && last.y <= area.bottom + .5;
-        })()
-        """.trimIndent()
-    ) == "true"
-
-    private fun buildPayload(source: String): String = JSONObject()
-        .put("code", source)
-        .put("loadingMessage", "Loading")
-        .put("errorMessage", "Diagram error")
-        .toString()
-
-    private fun javascript(script: String): String {
-        val result = AtomicReference("")
-        val ready = CountDownLatch(1)
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            browser.evaluateJavascript(script) {
-                result.set(it)
-                ready.countDown()
+            for (source in sources) {
+                view.render(MermaidCanvasView.buildScene(MermaidParser.parse(source)))
+                for ((width, height) in listOf(380 to 252, 380 to 832, 832 to 332)) {
+                    view.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+                    view.layout(0, 0, width, height)
+                    view.zoom(2f)
+                    view.fit()
+                    val scene = requireNotNull(view.scene)
+                    val area = MermaidBounds(0f, 0f, width.toFloat(), height.toFloat())
+                    scene.commands.forEach { assertTrue("绘图内容超出视口", area.contains(view.viewport.screen(it.bounds), .1f)) }
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    try {
+                        view.draw(Canvas(bitmap))
+                        val pixels = IntArray(width * height)
+                        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+                        assertTrue("Canvas 只有背景，没有图形像素", pixels.count { it != MermaidCanvasView.BACKGROUND } > 100)
+                    } finally {
+                        bitmap.recycle()
+                    }
+                }
             }
         }
-        assertTrue("WebView 未返回 JavaScript 结果", ready.await(3, TimeUnit.SECONDS))
-        return result.get()
+    }
+
+    @Test fun invalidSourceShowsAnErrorAndEditedSourceProducesANativeView() {
+        val source = mutableStateOf("flowchart TD\nA -->")
+        compose.setContent { MermaidRenderer(source.value, Modifier.width(320.dp).height(300.dp)) }
+        compose.waitUntil(30_000) { compose.onAllNodes(androidx.compose.ui.test.hasText("Line 2", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Line 2", substring = true).assertExists()
+        compose.runOnIdle { source.value = "flowchart TD\nA[已修正] --> B[完成]" }
+        compose.waitUntil(30_000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasContentDescription("已修正; 完成")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

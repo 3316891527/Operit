@@ -16,8 +16,5 @@ app/src/main/assets/workspace-textmate/grammars/** linguist-vendored linguist-ge
 app/src/main/assets/workspace-textmate/NOTICE linguist-vendored linguist-generated
 app/src/main/assets/workspace-textmate/LICENSE linguist-vendored
 app/src/main/assets/workspace-textmate/licenses/** linguist-vendored
-# Mermaid 浏览器包保留上游压缩产物和许可证注释，应用控制器仍按普通代码审阅。
-app/src/main/assets/markdown/mermaid/mermaid.min.js linguist-vendored linguist-generated -whitespace
-app/src/main/assets/markdown/mermaid/LICENSE linguist-vendored
 # 文件识别目录由统一资源清单生成。
 app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/editor/textmate/TextMateCatalogData.kt linguist-generated

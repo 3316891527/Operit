@@ -1,20 +1,16 @@
-# 共享布局与离线 Mermaid
+# 共享布局与原生 Mermaid
 
-## 原实现与意图
+## 布局调整
 
-`EnhancedCodeBlock` 的工具栏使用 `Arrangement.SpaceBetween`。无语言标签时只剩按钮行，布局把唯一子项放到起点。改用始终存在且占满剩余宽度的标签区域，标签为空也保留空间；超长标签单行省略，给按钮留出位置。
+代码块语言标签始终占据工具栏剩余宽度，无语言标签时也保留右侧按钮的位置，超长标签单行省略。共享分隔线的上下留白从 2dp 改为 12dp。
 
-`CanvasMarkdownNodeRenderer` 的分隔线把上下留白从 2dp 改为 12dp，让聊天和工作区共用同一间距。
+## 当前原生实现
 
-Mermaid 原实现将源码插入 HTML，使用远程 CDN 和宽松的渲染配置。替换为应用本地的 Mermaid 11.17.2 完整浏览器包、本地预览页面和页面控制器。原包及其内置许可证注释保持原样，记录 npm 包 SHA-512 和文件 SHA-256。
+Mermaid 围栏闭合且非空后默认显示图表，开放的流式围栏继续显示源码。源码切换、复制和全屏继续沿用原有入口。
 
-## 预期行为
+Kotlin 解析器生成明确的节点、关系和图表模型；纯 Kotlin 布局根据文字测量安排节点、嵌套子图、连线及时间轴。Android Canvas 直接绘制图形和文字。整体范围由全部绘制指令计算，预览、缩放、平移和复位共用一个变换。
 
-- Mermaid 围栏闭合且包含正文时默认显示图表。生成中的开放围栏仍显示代码，闭合后可以直接绘图，不需要等待整条回复结束。
-- 查看源码、复制源码、预览切换、缩放和全屏继续可用。
-- 使用本地 HTTPS assets 地址，只有页面、控制器和 Mermaid 脚本可以加载。禁用外部网络、文件访问、内容访问和页面导航。
-- 源码经 JSON 参数传给页面，由 Mermaid `render` API 处理。渲染错误明确展示，用户可手动切到源码检查。
-- WebView 随 Compose 平台视图释放而销毁，源码变化更新已有页面，不插入 Android JavascriptInterface。
+Mermaid 专用的 WebView、HTML 页面、JavaScript 包及 Playwright 检查已移除。此实现覆盖常用 Mermaid 语法子集，未实现的语句会带行号报错；具体范围见项目根目录的 `ci/mermaid-native/README.md`。
 
 ## 常见语法对照
 
@@ -30,5 +26,4 @@ Mermaid 原实现将源码插入 HTML，使用远程 CDN 和宽松的渲染配�
 
 参考 [GitHub 图表文档](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)、[Mermaid 使用说明](https://mermaid.js.org/config/usage.html)和 [Markdown Guide 扩展语法](https://www.markdownguide.org/extended-syntax/)。扩展语法不存在统一的完整超集，应按明确的输入与行为逐项实现。
 
-
-[DONE] 共享布局、离线页面和闭合时机的实现已完成；设备回归尚待执行。
+[DONE] 共享布局、原生绘制与围栏闭合时机已经实现；应用内集成验收记录见检查文档。

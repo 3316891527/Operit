@@ -14,7 +14,7 @@ on:
       - ci/script/prepare_android_dependencies.py
       - ci/test/code_runner.test.cjs
       - ci/test/workspace_change_context.test.cjs
-      - ci/mermaid-preview/**
+      - ci/mermaid-native/**
       - cmake/**
       - plugins/examples/**
       - gradle/**
@@ -86,13 +86,10 @@ jobs:
       - name: Run Code Runner regression tests
         run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/workspace_change_context.test.cjs
 
-  mermaid-preview:
-    name: Mermaid browser geometry
+  mermaid-native:
+    name: Mermaid native core
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: ci/mermaid-preview
     steps:
       - name: Checkout source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
@@ -101,26 +98,19 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
           submodules: false
-      - name: Set up Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+      - name: Set up JDK
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: ci/mermaid-preview/package-lock.json
-      - name: Install browser checks
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Install Chromium
-        run: npx playwright install --with-deps --only-shell chromium
-      - name: Check actual diagram bounds
-        run: npm test
-      - name: Upload geometry and screenshots
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with:
-          name: mermaid-browser-geometry
-          path: artifacts/mermaid-preview
-          if-no-files-found: warn
-          retention-days: 7
+          distribution: temurin
+          java-version: '21'
+      - name: Download Gradle toolchain
+        run: ./gradlew --version
+      - name: Check native parsing layout and viewport
+        shell: bash
+        run: |
+          operit_mermaid_compiler=$(rg --files "$HOME/.gradle/wrapper/dists" -g 'kotlin-compiler-embeddable-*.jar' | head -n 1)
+          test -n "$operit_mermaid_compiler"
+          bash ci/mermaid-native/run-core.sh "$(dirname "$operit_mermaid_compiler")"
 
   tests:
     name: Android JVM tests

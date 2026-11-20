@@ -1,8 +1,0 @@
-{
-  "name": "operit-mermaid-preview-checks",
-  "version": "1.0.0",
-  "private": true,
-  "engines": { "node": ">=22" },
-  "scripts": { "test": "node --test --test-timeout=45000 preview.test.cjs" },
-  "devDependencies": { "playwright": "1.65.1" }
-}

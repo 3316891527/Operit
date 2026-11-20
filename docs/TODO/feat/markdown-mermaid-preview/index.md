@@ -1,7 +1,7 @@
 ---
 owner: https://github.com/3316891527/Operit
 branch: feat/markdown-mermaid-preview
-status: viewport-revision-implemented-validation-pending
+status: native-canvas-integration-validation-pending
 ---
 
 # Markdown 代码块与图表预览
@@ -14,9 +14,10 @@ status: viewport-revision-implemented-validation-pending
 
 1. [共享布局与离线 Mermaid](01-implementation.md)
 2. [检查与设备验收](02-validation.md)
-3. [SVG 显示范围与缩放修正](03-svg-viewport.md)
+3. [SVG 显示范围与缩放修正（历史方案）](03-svg-viewport.md)
+4. [原生 Canvas 实现](04-native-canvas.md)
 
-修改围绕 `EnhancedCodeBlock`、代码围栏节点、分隔线节点和本地 Mermaid 页面展开。保持 Markdown 文本和文件格式兼容，不改变其他格式的导入导出。常见扩展语法另列支持范围与待办，不把新增语法隐含为已经完成。
+当前 Mermaid 使用 Kotlin 解析与布局、Android Canvas 绘制，已移除两次未通过设备验收的 WebView/SVG 方案。修改围绕 `EnhancedCodeBlock`、代码围栏节点、分隔线节点和原生图表组件展开。保持 Markdown 文本和文件格式兼容，不改变其他格式的导入导出。常见扩展语法另列支持范围与待办，不把新增语法隐含为已经完成。
 
 ## 交付
 

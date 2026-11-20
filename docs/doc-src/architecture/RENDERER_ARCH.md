@@ -153,12 +153,12 @@ blockGroup.stream.splitBy(inlinePlugins).collect { inlineGroup ->
 解析结果最终构建成 `MarkdownNode` 树结构，支持实时的流式 UI 渲染，实现流畅的"打字机"效果。
 
 
-## 共享代码块与离线图表
+## 共享代码块与原生图表
 
-聊天正文和工作区 Markdown 预览共用 `CanvasMarkdownNodeRenderer` 与 `EnhancedCodeBlock`。代码块语言标签始终占据工具栏剩余宽度，空标签和长标签都不会改变右侧按钮的位置；分隔线上下各保留 12dp。
+聊天正文和工作区预览共用 `CanvasMarkdownNodeRenderer` 与 `EnhancedCodeBlock`。语言标签占据工具栏剩余宽度，空标签和长标签保持按钮靠右；分隔线上下各保留 12dp。
 
-`mermaid` 围栏在闭合并包含正文后默认显示图表，开放的流式围栏继续显示源码。用户可以切换源码、复制和进入全屏。图表由应用内置的 Mermaid 11.17.2 浏览器包渲染，页面通过 `WebViewAssetLoader` 加载本地资源，源码通过 JSON 参数传递。外部资源与页面导航均被拒绝，解析错误明确显示。
+Mermaid 围栏闭合且非空后默认显示图表，开放围栏显示代码。源码切换、复制和全屏入口一致。共享 `MermaidRenderer` 在后台用 Kotlin 完成解析、文字测量与布局，再交给 `MermaidCanvasView` 绘制原生节点、文字、连线、图例和时间轴。该路径不创建 WebView，不加载网页或 JavaScript。
 
-图表插入页面并完成布局后，根据 SVG 的实际图形边界建立 `viewBox`，以等比居中的方式同时适配视口宽高，并为底部操作按钮预留空间。按钮缩放、双指缩放和单指拖动都修改同一个 SVG 视框；复位恢复完整图形，视口尺寸变化由 SVG 自动重新适配。初始视口为零时等待有效布局，连续源码更新只展示最新请求。浏览器几何回归见 `ci/mermaid-preview`，该检查不能替代 Android WebView 的设备验收。
+所有绘制指令具有明确边界，整体适配同时考虑宽高及非零原点。单指拖动、双指缩放、按钮和复位共享 `MermaidViewport`；操作栏独占布局空间，尺寸变化会重新适配完整内容。源码变化取消旧的组合任务，解析错误带行号展示，不跳过无法识别的语句。
 
-资源来源及校验值见应用 assets 中的 `markdown/mermaid/README.md`，实现说明、扩展语法对照和验收边界见 [Markdown 代码块与图表预览计划](../../TODO/feat/markdown-mermaid-preview/index.md)。
+原生实现是常用 Mermaid 语法子集，支持范围及独立核心 CI 见项目的 `ci/mermaid-native/README.md`。解析、布局与变换由 JVM 测试覆盖；Android instrumentation 检查真实文字测量、绘制像素、视口和错误恢复。实现及验收边界见 [Markdown 图表计划](../../TODO/feat/markdown-mermaid-preview/index.md)。
