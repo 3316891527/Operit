@@ -14,8 +14,12 @@ trap 'rm -rf -- "$operit_markdown_output"' EXIT
 java -Xmx512m -cp "$operit_markdown_lib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler \
     -no-stdlib -no-reflect -jvm-target 17 -classpath "$operit_markdown_cp" \
     -d "$operit_markdown_output/tests.jar" \
+    "$operit_markdown_root/app/src/main/java/com/ai/assistance/operit/util/markdown/MarkdownProcessorType.kt" \
+    "$operit_markdown_root/app/src/main/java/com/ai/assistance/operit/util/markdown/MarkdownBlockBoundary.kt" \
     "$operit_markdown_root/app/src/main/java/com/ai/assistance/operit/util/markdown/MarkdownSyntax.kt" \
     "$operit_markdown_root/app/src/main/java/com/ai/assistance/operit/util/markdown/MarkdownDocumentSyntax.kt" \
-    "$operit_markdown_root/app/src/test/java/com/ai/assistance/operit/util/markdown/MarkdownSyntaxTest.kt" || exit 1
+    "$operit_markdown_root/app/src/test/java/com/ai/assistance/operit/util/markdown/MarkdownSyntaxTest.kt" \
+    "$operit_markdown_root/app/src/test/java/com/ai/assistance/operit/util/markdown/MarkdownBlockBoundaryTest.kt" || exit 1
 java -Xmx128m -cp "$operit_markdown_output/tests.jar:$operit_markdown_cp" org.junit.runner.JUnitCore \
-    com.ai.assistance.operit.util.markdown.MarkdownSyntaxTest
+    com.ai.assistance.operit.util.markdown.MarkdownSyntaxTest \
+    com.ai.assistance.operit.util.markdown.MarkdownBlockBoundaryTest

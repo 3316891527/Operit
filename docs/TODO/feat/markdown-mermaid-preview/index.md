@@ -18,6 +18,7 @@ status: markdown-extensions-device-validation-pending
 4. [原生 Canvas 实现](04-native-canvas.md)
 5. [Markdown 扩展与编辑器体验](05-markdown-extensions-editor.md)
 6. [扩展检查与验收](06-extension-validation.md)
+7. [枚举遗漏的编译修复](07-enum-compilation-fix.md)
 
 当前 Mermaid 使用 Kotlin 解析与布局、Android Canvas 绘制，已移除两次未通过设备验收的 WebView/SVG 方案。修改围绕 `EnhancedCodeBlock`、代码围栏节点、分隔线节点和原生图表组件展开。保持 Markdown 文本和文件格式兼容，不改变其他格式的导入导出。常见扩展语法另列支持范围与待办，不把新增语法隐含为已经完成。
 
