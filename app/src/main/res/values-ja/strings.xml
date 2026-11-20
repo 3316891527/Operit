@@ -8456,4 +8456,17 @@
     <string name="workspace_open_not_text">現在のファイルは読み取り可能なテキストではないため、テキストエディタで開けません。</string>
     <string name="workspace_open_failed">ファイルを開けません。以下の詳細を確認し、パス、接続、ストレージの問題を調べてください。</string>
     <string name="workspace_open_checking">現在のファイルを確認して読み取り中…</string>
+
+    <string name="voice_message_hold_to_record">押して録音、離して送信</string>
+    <string name="voice_message_release_send">離して送信</string>
+    <string name="voice_message_release_cancel">離してキャンセル</string>
+    <string name="voice_message_release_transcribe">離して文字起こし</string>
+    <string name="voice_message_hold_slide_hint">左右にスライドしてキャンセルまたは文字起こし</string>
+    <string name="voice_message_transcribe">文字起こし</string>
+    <string name="voice_message_transcribing">文字起こし中…</string>
+    <string name="voice_message_hold_limit">%1$d秒に達しました。離して送信</string>
+    <string name="voice_message_retry_transcribe">文字起こしを再試行</string>
+    <string name="voice_message_finishing">録音を終了中…</string>
+    <string name="studio_background_blur_hint">背景だけをぼかし、文字やコントロールは鮮明に保ちます。</string>
+    <string name="studio_background_blur_inherit_hint">独立した背景の塗りつぶしまたはレイヤーを追加すると調整できます。継承した背景は継承元のぼかし設定を使用します。</string>
 </resources>

@@ -4,7 +4,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// 沿用 Operit2 的 #BBDEFB 种子色和 TonalSpot 灰阶，让默认表面不再随系统壁纸改变。
+// 沿用 #BBDEFB 种子强调色；浅色灰阶保持原样，默认深色表面采用中性灰。
 // 正文按深浅主题使用白色和黑色，强调色仅用于交互与选中状态。
 internal val OperitLightColorScheme =
     lightColorScheme(
@@ -60,28 +60,28 @@ internal val OperitDarkColorScheme =
         onTertiary = Color(0xFF352B4B),
         tertiaryContainer = Color(0xFF4C4163),
         onTertiaryContainer = Color(0xFFEADDFF),
-        background = Color(0xFF101417),
+        background = Color(0xFF161616),
         onBackground = Color.White,
-        surface = Color(0xFF101417),
+        surface = Color(0xFF161616),
         onSurface = Color.White,
-        surfaceVariant = Color(0xFF41474D),
-        onSurfaceVariant = Color(0xFFC1C7CE),
+        surfaceVariant = Color(0xFF414141),
+        onSurfaceVariant = Color(0xFFC5C5C5),
         surfaceTint = Color(0xFF95CDF7),
-        inverseSurface = Color(0xFFE0E3E8),
-        inverseOnSurface = Color(0xFF2D3135),
+        inverseSurface = Color(0xFFE3E3E3),
+        inverseOnSurface = Color(0xFF303030),
         inversePrimary = Color(0xFF266489),
         error = Color(0xFFFFB4AB),
         onError = Color(0xFF690005),
         errorContainer = Color(0xFF93000A),
         onErrorContainer = Color(0xFFFFDAD6),
-        outline = Color(0xFF8B9198),
-        outlineVariant = Color(0xFF41474D),
+        outline = Color(0xFF8F8F8F),
+        outlineVariant = Color(0xFF414141),
         scrim = Color.Black,
-        surfaceBright = Color(0xFF363A3E),
-        surfaceDim = Color(0xFF101417),
-        surfaceContainer = Color(0xFF1C2024),
-        surfaceContainerHigh = Color(0xFF262A2E),
-        surfaceContainerHighest = Color(0xFF313539),
-        surfaceContainerLow = Color(0xFF181C20),
-        surfaceContainerLowest = Color(0xFF0B0F12),
+        surfaceBright = Color(0xFF3B3B3B),
+        surfaceDim = Color(0xFF161616),
+        surfaceContainer = Color(0xFF202020),
+        surfaceContainerHigh = Color(0xFF2A2A2A),
+        surfaceContainerHighest = Color(0xFF353535),
+        surfaceContainerLow = Color(0xFF1C1C1C),
+        surfaceContainerLowest = Color(0xFF101010),
     )

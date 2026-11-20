@@ -8459,4 +8459,17 @@
     <string name="workspace_open_not_text">O arquivo atual não é texto legível e não pode ser aberto no editor de texto.</string>
     <string name="workspace_open_failed">Não foi possível abrir o arquivo. Verifique a causa detalhada abaixo para problemas de caminho, conexão ou armazenamento.</string>
     <string name="workspace_open_checking">Verificando e lendo o arquivo atual…</string>
+
+    <string name="voice_message_hold_to_record">Segure para gravar, solte para enviar</string>
+    <string name="voice_message_release_send">Solte para enviar</string>
+    <string name="voice_message_release_cancel">Solte para cancelar</string>
+    <string name="voice_message_release_transcribe">Solte para transcrever</string>
+    <string name="voice_message_hold_slide_hint">Deslize para os lados para cancelar ou transcrever</string>
+    <string name="voice_message_transcribe">Transcrever</string>
+    <string name="voice_message_transcribing">Transcrevendo…</string>
+    <string name="voice_message_hold_limit">Limite de %1$d segundos atingido. Solte para enviar</string>
+    <string name="voice_message_retry_transcribe">Tentar transcrever novamente</string>
+    <string name="voice_message_finishing">Finalizando gravação…</string>
+    <string name="studio_background_blur_hint">Apenas o fundo fica desfocado; o texto e os controles permanecem nítidos.</string>
+    <string name="studio_background_blur_inherit_hint">Adicione um preenchimento ou uma camada de fundo independente para ajustar o desfoque. Fundos herdados usam a configuração de origem.</string>
 </resources>

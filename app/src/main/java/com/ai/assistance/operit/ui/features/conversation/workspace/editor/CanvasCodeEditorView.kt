@@ -496,8 +496,9 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         if (abs(viewportBottomPaddingPx - resolvedPadding) < 0.5f) {
             return
         }
+        val followCursor = shouldFollowCursorOnViewportChange(width, height)
         viewportBottomPaddingPx = resolvedPadding
-        ensureCursorVisible()
+        if (followCursor) ensureCursorVisible()
         requestRender()
     }
 
@@ -656,9 +657,10 @@ class CanvasCodeEditorView @JvmOverloads constructor(
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        val followCursor = shouldFollowCursorOnViewportChange(oldw, oldh)
         super.onSizeChanged(w, h, oldw, oldh)
         clampScrollOffsets()
-        ensureCursorVisible()
+        if (followCursor) ensureCursorVisible()
         requestRender()
     }
 
@@ -1781,6 +1783,21 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         val x = textRegionLeft() + layout.columnForOffset(offset, row) * metrics.charWidth - scrollOffsetX
         val y = verticalPaddingPx + row * metrics.lineHeight - scrollOffsetY + metrics.lineHeight
         return Point(x.roundToInt(), y.roundToInt())
+    }
+
+    /** 面板和键盘动画不能抢走滚动位置，仅保持变化前已可见的编辑光标。 */
+    private fun shouldFollowCursorOnViewportChange(viewportWidth: Int, viewportHeight: Int): Boolean {
+        if (!hasFocus() || !scroller.isFinished || hasMovedBeyondTouchSlop || isScaling ||
+            viewportWidth <= 0 || viewportHeight <= 0) return false
+        // 尺寸回调时 View 已使用新宽高，旧快照仍能准确判断换行前的光标位置。
+        val layout = visualSnapshot
+        val point = offsetToPoint(document.selectionEnd, layout)
+        val lineTop = verticalPaddingPx + layout.rowForOffset(document.selectionEnd) * metrics.lineHeight - scrollOffsetY
+        val bottomLimit = viewportHeight - verticalPaddingPx - viewportBottomPaddingPx
+        // 滚动偏移会忽略不足半像素的变化，边缘可见性使用相同容差。
+        val tolerance = 0.5f
+        return lineTop >= verticalPaddingPx - tolerance && lineTop + metrics.lineHeight <= bottomLimit + tolerance &&
+            point.x >= textRegionLeft() - tolerance && point.x <= viewportWidth - horizontalPaddingPx + tolerance
     }
 
     private fun ensureCursorVisible() {

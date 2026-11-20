@@ -8619,4 +8619,17 @@
     <string name="workspace_open_not_text">Berkas saat ini bukan teks yang dapat dibaca dan tidak dapat dibuka di editor teks.</string>
     <string name="workspace_open_failed">Tidak dapat membuka berkas. Periksa rincian penyebab terkait jalur, koneksi, atau penyimpanan.</string>
     <string name="workspace_open_checking">Memeriksa dan membaca berkas saat ini…</string>
+
+    <string name="voice_message_hold_to_record">Tekan dan tahan untuk merekam, lepaskan untuk mengirim</string>
+    <string name="voice_message_release_send">Lepaskan untuk mengirim</string>
+    <string name="voice_message_release_cancel">Lepaskan untuk membatalkan</string>
+    <string name="voice_message_release_transcribe">Lepaskan untuk menyalin teks</string>
+    <string name="voice_message_hold_slide_hint">Geser ke samping untuk membatalkan atau menyalin teks</string>
+    <string name="voice_message_transcribe">Salin teks</string>
+    <string name="voice_message_transcribing">Menyalin teks…</string>
+    <string name="voice_message_hold_limit">Batas %1$d detik tercapai. Lepaskan untuk mengirim</string>
+    <string name="voice_message_retry_transcribe">Coba lagi transkripsi</string>
+    <string name="voice_message_finishing">Menyelesaikan rekaman…</string>
+    <string name="studio_background_blur_hint">Hanya latar belakang yang diburamkan; teks dan kontrol tetap tajam.</string>
+    <string name="studio_background_blur_inherit_hint">Tambahkan isian atau lapisan latar belakang tersendiri untuk mengatur blur. Latar belakang yang diwarisi memakai pengaturan sumber.</string>
 </resources>

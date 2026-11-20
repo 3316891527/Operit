@@ -9561,4 +9561,17 @@
     <string name="workspace_open_not_text">当前文件不是可读取的文本，无法用文本编辑器打开。</string>
     <string name="workspace_open_failed">无法打开文件，请根据下面的详细原因检查路径、连接或存储状态。</string>
     <string name="workspace_open_checking">正在检查并读取当前文件…</string>
+
+    <string name="voice_message_hold_to_record">按住录音，松手发送</string>
+    <string name="voice_message_release_send">松手发送</string>
+    <string name="voice_message_release_cancel">松手取消</string>
+    <string name="voice_message_release_transcribe">松手转文字</string>
+    <string name="voice_message_hold_slide_hint">滑向两侧可取消或转文字</string>
+    <string name="voice_message_transcribe">转文字</string>
+    <string name="voice_message_transcribing">正在转文字…</string>
+    <string name="voice_message_hold_limit">已录满 %1$d 秒，松手发送</string>
+    <string name="voice_message_retry_transcribe">重试转写</string>
+    <string name="voice_message_finishing">正在结束录音…</string>
+    <string name="studio_background_blur_hint">只模糊当前背景，文字和控件保持清晰。</string>
+    <string name="studio_background_blur_inherit_hint">添加独立背景填充或图层后可调整；跟随其他背景时沿用其模糊设置。</string>
 </resources>

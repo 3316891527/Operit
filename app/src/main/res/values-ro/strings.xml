@@ -9211,4 +9211,17 @@
     <string name="workspace_open_not_text">Fișierul curent nu este text lizibil și nu poate fi deschis în editorul de text.</string>
     <string name="workspace_open_failed">Nu se poate deschide fișierul. Verifică detaliile de mai jos despre cale, conexiune sau stocare.</string>
     <string name="workspace_open_checking">Se verifică și se citește fișierul curent…</string>
+
+    <string name="voice_message_hold_to_record">Ține apăsat pentru a înregistra, eliberează pentru a trimite</string>
+    <string name="voice_message_release_send">Eliberează pentru a trimite</string>
+    <string name="voice_message_release_cancel">Eliberează pentru a anula</string>
+    <string name="voice_message_release_transcribe">Eliberează pentru transcriere</string>
+    <string name="voice_message_hold_slide_hint">Glisează în lateral pentru anulare sau transcriere</string>
+    <string name="voice_message_transcribe">Transcriere</string>
+    <string name="voice_message_transcribing">Se transcrie…</string>
+    <string name="voice_message_hold_limit">Limita de %1$d secunde a fost atinsă. Eliberează pentru a trimite</string>
+    <string name="voice_message_retry_transcribe">Reîncearcă transcrierea</string>
+    <string name="voice_message_finishing">Se finalizează înregistrarea…</string>
+    <string name="studio_background_blur_hint">Doar fundalul este estompat; textul și controalele rămân clare.</string>
+    <string name="studio_background_blur_inherit_hint">Adaugă o umplere sau un strat de fundal separat pentru a regla estomparea. Fundalurile moștenite folosesc setarea sursei.</string>
 </resources>

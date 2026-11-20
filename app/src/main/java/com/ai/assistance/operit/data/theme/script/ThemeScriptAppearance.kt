@@ -48,6 +48,10 @@ data class ThemeScriptSurface(
     @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val ripple: ThemeRipple? = null,
+    // 全局及页面背景独立合成；零值不改变已有主题的导出字段。
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val backgroundBlur: Float = 0f,
 )
 
 /** 弹起菜单的位置偏移，单位 dp；只提供上、下、左三个物理方向。 */
