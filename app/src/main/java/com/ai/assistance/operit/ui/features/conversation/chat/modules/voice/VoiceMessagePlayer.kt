@@ -18,7 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -45,9 +47,9 @@ private object VoicePlaybackCoordinator {
 internal fun voiceDurationLabel(milliseconds: Long): String =
     String.format(Locale.ROOT, "%02d:%02d", milliseconds / 60000, milliseconds / 1000 % 60)
 
-/** 短语音使用短条，时长增加只在有限范围内增加宽度。 */
-private fun voiceMessageWidth(durationMs: Long) =
-    (168f + durationMs.coerceIn(0L, 60000L) / 1000f).dp
+/** 消息内使用紧凑短条，录音预览保留独立播放器的宽度。 */
+private fun voiceMessageWidth(durationMs: Long, embedded: Boolean) =
+    ((if (embedded) 132f else 168f) + durationMs.coerceIn(0L, 60000L) / 1000f).dp
 
 private fun voiceCompactDurationLabel(durationMs: Long): String {
     val seconds = maxOf(1L, durationMs / 1000L)
@@ -155,27 +157,35 @@ private fun VoiceMessagePlayerContent(
     fun toggle() { checkFile { toggleAvailable() } }
     val playAction = stringResource(if (playing) R.string.voice_message_pause else R.string.voice_message_play)
     val textAction = stringResource(if (showText) R.string.voice_message_hide_text else R.string.voice_message_show_text)
+    // 嵌入语音沿用正文行高，消息气泡负责提供统一的内边距。
+    val controlHeight = if (embedded) {
+        with(LocalDensity.current) { MaterialTheme.typography.bodyMedium.lineHeight.toDp() }
+    } else 44.dp
+    val playButtonSize = if (embedded) controlHeight else 30.dp
+    val playIconSize = if (embedded) minOf(20.dp, controlHeight) else 20.dp
+    // 正文放大时同步增加宽度，为播放、时长和转写按钮保留空间。
+    val widthScale = if (embedded) controlHeight / 20.dp else 1f
     Surface(
-        modifier = modifier.animateContentSize().width(if (showText) 280.dp else voiceMessageWidth(durationMs)),
-        shape = RoundedCornerShape(18.dp),
+        modifier = modifier.animateContentSize().width(if (showText) 280.dp else voiceMessageWidth(durationMs, embedded) * widthScale),
+        shape = if (embedded) RectangleShape else RoundedCornerShape(18.dp),
         color = if (embedded) Color.Transparent else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
     ) {
         Column(Modifier.padding(horizontal = if (embedded) 0.dp else 12.dp, vertical = if (embedded) 0.dp else 6.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
-                    Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp))
+                    Modifier.weight(1f).heightIn(min = controlHeight).clip(RoundedCornerShape(12.dp))
                         .clickable(enabled = !preparing, role = Role.Button, onClickLabel = playAction, onClick = ::toggle),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Box(Modifier.size(30.dp).background(contentColor.copy(alpha = 0.1f), CircleShape),
+                    Box(Modifier.size(playButtonSize).background(contentColor.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center) {
                         if (preparing) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = contentColor)
                         else Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            playAction, tint = contentColor, modifier = Modifier.size(20.dp))
+                            playAction, tint = contentColor, modifier = Modifier.size(playIconSize))
                     }
-                    VoiceWaveform(waveform, Modifier.weight(1f).height(28.dp),
+                    VoiceWaveform(waveform, Modifier.weight(1f).height(if (embedded) controlHeight else 28.dp),
                         progress = if (durationMs > 0) position.toFloat() / durationMs else 0f, color = contentColor)
                     Text(voiceCompactDurationLabel(durationMs), style = MaterialTheme.typography.labelLarge,
                         color = contentColor, maxLines = 1)
@@ -183,7 +193,7 @@ private fun VoiceMessagePlayerContent(
                 if (transcript.isNotBlank()) {
                     Box(Modifier.width(1.dp).height(16.dp).background(contentColor.copy(alpha = 0.15f)))
                     Box(
-                        Modifier.heightIn(min = 44.dp).widthIn(min = 28.dp).clip(RoundedCornerShape(8.dp))
+                        Modifier.heightIn(min = controlHeight).widthIn(min = 28.dp).clip(RoundedCornerShape(8.dp))
                             .clickable(role = Role.Button, onClickLabel = textAction) { showText = !showText }
                             .padding(horizontal = 4.dp),
                         contentAlignment = Alignment.Center,

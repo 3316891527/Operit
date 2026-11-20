@@ -55,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.voiceMessageHoldGesture
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -757,7 +758,8 @@ internal fun ClassicChatInputContent(
                         else -> "composer.send"
                     },
                     modifier = Modifier
-                        .size(36.dp),
+                        .size(36.dp)
+                        .voiceMessageHoldGesture(showVoiceRecordAction && sendButtonEnabled) { onRecordVoiceMessage?.invoke() },
                     onClick = {
                         when {
                             showCancelAction ->
@@ -767,7 +769,7 @@ internal fun ClassicChatInputContent(
                                 setShowAttachmentPanel(false)
                             }
 
-                            showVoiceRecordAction -> onRecordVoiceMessage?.invoke()
+                            showVoiceRecordAction -> Unit
 
                             canSendMessage -> {
                                 if (isOverTokenLimit) {
@@ -839,7 +841,7 @@ internal fun ClassicChatInputContent(
                             showCancelAction -> context.getString(R.string.cancel)
                             showQueueAction -> context.getString(R.string.chat_queue_add_message)
                             canSendMessage -> context.getString(R.string.send)
-                            showVoiceRecordAction -> context.getString(R.string.voice_message_record_title)
+                            showVoiceRecordAction -> context.getString(R.string.voice_message_hold_to_record)
                             else -> context.getString(R.string.send)
                         },
                         tint = iconTint,

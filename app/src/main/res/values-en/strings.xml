@@ -9585,4 +9585,17 @@
     <string name="workspace_open_not_text">The current file is not readable text and cannot be opened in the text editor.</string>
     <string name="workspace_open_failed">Unable to open the file. Check the detailed cause below for path, connection or storage issues.</string>
     <string name="workspace_open_checking">Checking and reading the current file…</string>
+
+    <string name="voice_message_hold_to_record">Hold to record, release to send</string>
+    <string name="voice_message_release_send">Release to send</string>
+    <string name="voice_message_release_cancel">Release to cancel</string>
+    <string name="voice_message_release_transcribe">Release to transcribe</string>
+    <string name="voice_message_hold_slide_hint">Slide to either side to cancel or transcribe</string>
+    <string name="voice_message_transcribe">Transcribe</string>
+    <string name="voice_message_transcribing">Transcribing…</string>
+    <string name="voice_message_hold_limit">%1$d-second limit reached. Release to send</string>
+    <string name="voice_message_retry_transcribe">Retry transcription</string>
+    <string name="voice_message_finishing">Finishing recording…</string>
+    <string name="studio_background_blur_hint">Only the background is blurred; text and controls stay sharp.</string>
+    <string name="studio_background_blur_inherit_hint">Add a separate background fill or layer to adjust blur. Inherited backgrounds use the source setting.</string>
 </resources>

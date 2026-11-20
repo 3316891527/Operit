@@ -5,6 +5,8 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+
+- [聊天语音、主题背景与编辑器滚动集成验收](chat-theme-editor-polish/index.md)
 - [聊天耗时单位进位](chat-duration-units/index.md) · `chat-duration-units`
 
 - [终端内置 apply_patch 命令](terminal-apply-patch/index.md)
@@ -17,6 +19,7 @@
 - [聊天附件图片预览与应用内选择器](chat-image-picker-preview/index.md) · `chat-image-picker-preview`
 - [对话列表精简、短动画与 OKToast](chat-list-motion-and-oktoast/index.md) · `chat-list-motion-and-oktoast`
 - [语音通话入口调整](chat-voice-call-entry/index.md) · `chat-voice-call-entry`
+- [统一长按语音录制与录音期间常亮](chat-voice-hold-recording/index.md) · `chat-voice-hold-recording`
 - [聊天记录选择导出](chat_record_export_selection/index.md) · `chat_record_export_selection`
 - [聊天 UI 重构](chat_ui_redesign/index.md) · `chat_ui_redesign`
 - [Codex Settings, Quota, And PDF Input](codex_settings_quota_pdf_20260823/index.md) · `codex_settings_quota_pdf_20260823`
@@ -53,6 +56,7 @@
 - [主题布局页签与对话批量移动](theme-layout-batch-move/index.md) · `theme-layout-batch-move`
 - [主题导入与导出](theme-sharing/index.md) · `theme-sharing`
 - [主题背景透明度](theme-transparency/index.md)
+- [全局及页面背景独立模糊](theme-background-blur/index.md)
 - [聊天弹起菜单的主题形状与位置](chat-popup-theme-layout/index.md) · `theme-transparency`
 - [主题设置工作区](theme-workbench/index.md) · `theme-workbench`
 - [Theme Target Menu Avatars](theme_target_menu_avatars_20260805/index.md) · `theme_target_menu_avatars_20260805`

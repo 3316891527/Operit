@@ -77,6 +77,9 @@ internal object ThemeScriptAssets {
                 require(images[family.removePrefix("asset:")] is ThemeScriptImage.Font) { "Theme text requires a font resource" }
             }
             current.icons.values.forEach { icon -> require(images[icon.asset] is ThemeScriptImage.Bitmap || images[icon.asset] is ThemeScriptImage.Vector) { "Icon requires an image resource" } }
+            current.surfaces.values.forEach { surface ->
+                require(surface.backgroundBlur == 0f || Build.VERSION.SDK_INT >= 31) { "Theme background blur requires Android 12 or newer" }
+            }
             current.surfaces.values.flatMap { it.layers }.forEach { layer ->
                 require(layer.blur == 0f || Build.VERSION.SDK_INT >= 31) { "Theme image blur requires Android 12 or newer" }
                 if (layer.type == "image") require(images[layer.asset] is ThemeScriptImage.Bitmap || images[layer.asset] is ThemeScriptImage.Vector) { "Drawing layer requires an image resource" }

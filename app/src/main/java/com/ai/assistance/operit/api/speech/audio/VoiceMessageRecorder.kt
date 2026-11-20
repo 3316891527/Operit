@@ -42,7 +42,7 @@ internal class VoiceMessageRecorder(private val context: Context) {
     fun finish() { stopRequested = true }
 
     @SuppressLint("MissingPermission")
-    suspend fun record(onFrame: (Float, Long) -> Unit): RecordedVoiceMessage = withContext(Dispatchers.IO) {
+    suspend fun record(stopOnSilence: Boolean = true, onFrame: (Float, Long) -> Unit): RecordedVoiceMessage = withContext(Dispatchers.IO) {
         check(!cancelled)
         val directory = OperitPaths.cleanOnExitDir()
         check(directory.isDirectory || directory.mkdirs()) { context.getString(R.string.voice_message_record_failed) }
@@ -73,7 +73,7 @@ internal class VoiceMessageRecorder(private val context: Context) {
                     while (!stopRequested) {
                         currentCoroutineContext().ensureActive()
                         val now = SystemClock.elapsedRealtime()
-                        if (now - started >= MAX_DURATION_MS || samples >= SAMPLE_RATE * 60L || gate.shouldFinish(now)) break
+                        if (now - started >= MAX_DURATION_MS || samples >= SAMPLE_RATE * 60L || (stopOnSilence && gate.shouldFinish(now))) break
                         val read = microphone.read(frame, filled, frame.size - filled, AudioRecord.READ_NON_BLOCKING)
                         check(read >= 0) { context.getString(R.string.voice_message_record_failed) }
                         if (read == 0) { delay(10); continue }
