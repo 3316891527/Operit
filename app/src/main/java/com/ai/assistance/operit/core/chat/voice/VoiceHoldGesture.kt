@@ -4,7 +4,8 @@ internal enum class VoiceHoldAction { SEND, CANCEL, TRANSCRIBE }
 internal enum class VoiceHoldPhase { IDLE, HOLDING, RELEASED, HANDLED, CANCELLED }
 
 internal data class VoiceHoldBounds(val left: Float, val top: Float, val right: Float, val bottom: Float) {
-    fun contains(x: Float, y: Float): Boolean = x >= left && x <= right && y >= top && y <= bottom
+    fun contains(x: Float, y: Float, slop: Float = 0f): Boolean =
+        x >= left - slop && x <= right + slop && y >= top - slop && y <= bottom + slop
 }
 
 internal data class VoiceHoldState(
@@ -20,14 +21,17 @@ internal class VoiceHoldGesture {
     private var startX = 0f
     private var startY = 0f
     private var activationDistance = 0f
+    private var targetExitSlop = 0f
     private val targets = mutableMapOf<VoiceHoldAction, VoiceHoldBounds>()
 
-    fun begin(x: Float, y: Float, activationDistance: Float): Long? {
+    fun begin(x: Float, y: Float, activationDistance: Float, targetExitSlop: Float = 0f): Long? {
         require(activationDistance >= 0f && activationDistance.isFinite())
+        require(targetExitSlop >= 0f && targetExitSlop.isFinite())
         if (state.phase != VoiceHoldPhase.IDLE) return null
         startX = x
         startY = y
         this.activationDistance = activationDistance
+        this.targetExitSlop = targetExitSlop
         targets.clear()
         state = VoiceHoldState(state.id + 1, VoiceHoldPhase.HOLDING)
         return state.id
@@ -44,9 +48,15 @@ internal class VoiceHoldGesture {
         val dx = x - startX
         val dy = y - startY
         val moved = dx * dx + dy * dy >= activationDistance * activationDistance
-        val action = if (moved) {
-            targets.entries.firstOrNull { it.value.contains(x, y) }?.key ?: VoiceHoldAction.SEND
-        } else VoiceHoldAction.SEND
+        val target = if (moved) targets.entries.firstOrNull { it.value.contains(x, y) }?.key else null
+        val previousTarget = targets[state.action]
+        // 进入其他热区立即切换；退出当前热区保留少量余量，避免边缘抖动连续触发反馈。
+        val action = when {
+            !moved -> VoiceHoldAction.SEND
+            target != null -> target
+            previousTarget != null && previousTarget.contains(x, y, targetExitSlop) -> state.action
+            else -> VoiceHoldAction.SEND
+        }
         state = state.copy(action = action)
     }
 

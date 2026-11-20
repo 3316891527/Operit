@@ -139,4 +139,58 @@ class VoiceHoldGestureTest {
         gesture.move(id, 80f, 550f)
         assertEquals(VoiceHoldAction.TRANSCRIBE, gesture.takeReleasedAction())
     }
+
+    @Test fun cancelSelectionSurvivesSmallBoundaryJitter() {
+        val gesture = VoiceHoldGesture()
+        val id = gesture.begin(180f, 700f, 48f, 8f)!!
+        gesture.setTarget(VoiceHoldAction.CANCEL, VoiceHoldBounds(20f, 500f, 140f, 600f))
+        gesture.setTarget(VoiceHoldAction.TRANSCRIBE, VoiceHoldBounds(220f, 500f, 340f, 600f))
+        gesture.move(id, 80f, 550f)
+        for (x in listOf(139f, 142f, 147f, 141f)) {
+            gesture.move(id, x, 550f)
+            assertEquals(VoiceHoldAction.CANCEL, gesture.state.action)
+        }
+        gesture.move(id, 149f, 550f)
+        gesture.release(id)
+        assertEquals(VoiceHoldAction.SEND, gesture.takeReleasedAction())
+    }
+
+    @Test fun transcribeSelectionUsesExitSlopAtTheTopEdge() {
+        val gesture = VoiceHoldGesture()
+        val id = gesture.begin(180f, 700f, 48f, 8f)!!
+        gesture.setTarget(VoiceHoldAction.CANCEL, VoiceHoldBounds(20f, 500f, 140f, 600f))
+        gesture.setTarget(VoiceHoldAction.TRANSCRIBE, VoiceHoldBounds(220f, 500f, 340f, 600f))
+        gesture.move(id, 280f, 550f)
+        gesture.move(id, 280f, 493f)
+        assertEquals(VoiceHoldAction.TRANSCRIBE, gesture.state.action)
+        gesture.move(id, 280f, 491f)
+        gesture.release(id)
+        assertEquals(VoiceHoldAction.SEND, gesture.takeReleasedAction())
+    }
+
+    @Test fun enteringAnotherTargetOverridesThePreviousExitSlop() {
+        val gesture = VoiceHoldGesture()
+        val id = gesture.begin(180f, 700f, 48f, 24f)!!
+        gesture.setTarget(VoiceHoldAction.CANCEL, VoiceHoldBounds(20f, 500f, 140f, 600f))
+        gesture.setTarget(VoiceHoldAction.TRANSCRIBE, VoiceHoldBounds(150f, 500f, 270f, 600f))
+        gesture.move(id, 135f, 550f)
+        assertEquals(VoiceHoldAction.CANCEL, gesture.state.action)
+        gesture.move(id, 155f, 550f)
+        gesture.release(id)
+        assertEquals(VoiceHoldAction.TRANSCRIBE, gesture.takeReleasedAction())
+    }
+
+    @Test fun aNewRecordingReplacesThePreviousExitSlop() {
+        val gesture = VoiceHoldGesture()
+        val previous = gesture.begin(180f, 700f, 48f, 24f)!!
+        gesture.cancel(previous)
+        gesture.reset()
+        val id = gesture.begin(180f, 700f, 48f)!!
+        gesture.setTarget(VoiceHoldAction.CANCEL, VoiceHoldBounds(20f, 500f, 140f, 600f))
+        gesture.setTarget(VoiceHoldAction.TRANSCRIBE, VoiceHoldBounds(220f, 500f, 340f, 600f))
+        gesture.move(id, 80f, 550f)
+        gesture.move(id, 141f, 550f)
+        gesture.release(id)
+        assertEquals(VoiceHoldAction.SEND, gesture.takeReleasedAction())
+    }
 }

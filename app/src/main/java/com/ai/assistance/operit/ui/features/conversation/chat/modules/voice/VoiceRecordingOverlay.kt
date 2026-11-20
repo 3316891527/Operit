@@ -1,13 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.modules.voice
 
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupPositionProvider
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.platform.LocalContext
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.voice.VoiceHoldAction
@@ -18,7 +11,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
-/** 非焦点浮层保留原按钮的指针流，真实松手才结束本次录音。 */
+/** 同窗口录音层保留原按钮的指针流，真实松手才结束本次录音。 */
 @Composable
 internal fun VoiceRecordingOverlay(
     gesture: VoiceRecordingGestureController,
@@ -75,7 +68,7 @@ internal fun VoiceRecordingOverlay(
         if (gesture.state.id == recordingId &&
             (gesture.state.phase == VoiceHoldPhase.HOLDING || gesture.state.phase == VoiceHoldPhase.RELEASED)) session.start()
     }
-    // 长按指针仍属于主窗口，常亮、导航栏和侧边手势排除必须安装在 Popup 外。
+    // 录音层与原长按共用窗口，常亮、导航栏和侧边手势排除仍由原会话持有。
     VoiceRecordingWindowEffect(active = state.phase == VoiceMessagePhase.PREPARING ||
         state.phase == VoiceMessagePhase.RECORDING ||
         (gesture.state.phase == VoiceHoldPhase.HOLDING && state.phase == VoiceMessagePhase.READY))
@@ -105,19 +98,7 @@ internal fun VoiceRecordingOverlay(
             useText()
         }
     }
-    val positionProvider = remember {
-        object : PopupPositionProvider {
-            override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize,
-                layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset = IntOffset.Zero
-        }
-    }
-    Popup(
-        popupPositionProvider = positionProvider,
-        onDismissRequest = ::dismiss,
-        properties = PopupProperties(focusable = false, clippingEnabled = false,
-            dismissOnBackPress = false, dismissOnClickOutside = false,
-            excludeFromSystemGesture = true),
-    ) {
+    VoiceRecordingLayer {
         val error = state.error ?: rejected
         val retry: (() -> Unit)? = when {
             error == null || state.recording == null -> null
