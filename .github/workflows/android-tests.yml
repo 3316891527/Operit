@@ -234,6 +234,9 @@ jobs:
       - name: Run JVM unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
 
+      - name: Compile Android instrumentation tests
+        run: ./gradlew :app:compileDebugAndroidTestKotlin :app:compileDebugAndroidTestJavaWithJavac --stacktrace --no-daemon
+
       - name: Upload Android test reports
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
