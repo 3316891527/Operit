@@ -8466,4 +8466,5 @@
     <string name="workspace_open_not_text">현재 파일은 읽을 수 있는 텍스트가 아니므로 텍스트 편집기에서 열 수 없습니다.</string>
     <string name="workspace_open_failed">파일을 열 수 없습니다. 아래 원인을 확인하여 경로, 연결 또는 저장소 문제를 점검하세요.</string>
     <string name="workspace_open_checking">현재 파일을 확인하고 읽는 중…</string>
+    <string name="markdown_mermaid_render_failed">Mermaid 다이어그램을 렌더링할 수 없습니다. 구문을 확인하세요.</string>
 </resources>

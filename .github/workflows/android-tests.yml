@@ -14,6 +14,8 @@ on:
       - ci/script/prepare_android_dependencies.py
       - ci/test/code_runner.test.cjs
       - ci/test/workspace_change_context.test.cjs
+      - ci/mermaid-native/**
+      - ci/markdown-native/**
       - cmake/**
       - plugins/examples/**
       - gradle/**
@@ -84,6 +86,38 @@ jobs:
 
       - name: Run Code Runner regression tests
         run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/workspace_change_context.test.cjs
+
+  mermaid-native:
+    name: Markdown and Mermaid native core
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+      - name: Set up JDK
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Download Gradle toolchain
+        run: ./gradlew --version
+      - name: Check native parsing layout and viewport
+        shell: bash
+        run: |
+          shopt -s nullglob
+          operit_mermaid_compilers=("${GRADLE_USER_HOME:-$HOME/.gradle}"/wrapper/dists/gradle-8.13-bin/*/gradle-8.13/lib/kotlin-compiler-embeddable-*.jar)
+          if [ "${#operit_mermaid_compilers[@]}" -ne 1 ]; then
+            printf 'Expected one Gradle 8.13 Kotlin compiler, found %s\n' "${#operit_mermaid_compilers[@]}" >&2
+            exit 1
+          fi
+          bash ci/mermaid-native/run-core.sh "${operit_mermaid_compilers[0]%/*}"
+          bash ci/markdown-native/run-core.sh "${operit_mermaid_compilers[0]%/*}"
+          bash ci/markdown-native/run-stream.sh
 
   tests:
     name: Android JVM tests
@@ -199,6 +233,9 @@ jobs:
 
       - name: Run JVM unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+
+      - name: Compile Android instrumentation tests
+        run: ./gradlew :app:compileDebugAndroidTestKotlin :app:compileDebugAndroidTestJavaWithJavac --stacktrace --no-daemon
 
       - name: Upload Android test reports
         if: always()

@@ -5,6 +5,8 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+
+- [Markdown 代码块与离线图表预览](markdown-mermaid-preview/index.md)
 - [聊天耗时单位进位](chat-duration-units/index.md) · `chat-duration-units`
 
 - [终端内置 apply_patch 命令](terminal-apply-patch/index.md)

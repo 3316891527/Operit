@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.common.markdown
 
+import com.ai.assistance.operit.util.markdown.MarkdownColumnAlignment
+import com.ai.assistance.operit.util.markdown.markdownTableCells
+import com.ai.assistance.operit.util.markdown.markdownTableAlignments
 import com.ai.assistance.operit.ui.theme.script.text.LocalThemeTextStroke
 import com.ai.assistance.operit.ui.theme.script.text.drawThemeTextLayout
 import com.ai.assistance.operit.ui.theme.script.text.drawThemeNativeText
@@ -76,7 +79,8 @@ private const val TABLE_MAX_FLING_VELOCITY = 9000f
 /** 供表格渲染和复制为纯文本共用的表格解析结果。 */
 internal data class TableData(
     val rows: List<List<String>>,
-    val hasHeader: Boolean
+    val hasHeader: Boolean,
+    val alignments: List<MarkdownColumnAlignment> = emptyList(),
 )
 
 private data class TableCellRenderData(
@@ -533,7 +537,7 @@ private fun measureTableLayout(
         row.forEachIndexed { colIndex, cell ->
             val innerWidthPx =
                 (columnWidthsPx[colIndex] - cellHorizontalPaddingPx * 2).coerceAtLeast(innerMinWidthPx)
-            val layout = createCellStaticLayout(cell, paint, innerWidthPx, lineSpacingMultiplier)
+            val layout = createCellStaticLayout(cell, paint, innerWidthPx, lineSpacingMultiplier, tableData.alignments.getOrElse(colIndex) { MarkdownColumnAlignment.LEFT })
             val cellHeightPx = layout.height + cellVerticalPaddingPx * 2
             if (cellHeightPx > maxRowHeightPx) {
                 maxRowHeightPx = cellHeightPx
@@ -566,11 +570,17 @@ private fun createCellStaticLayout(
     paint: TextPaint,
     widthPx: Int,
     lineSpacingMultiplier: Float,
+    alignment: MarkdownColumnAlignment,
 ): StaticLayout {
+    val textAlignment = when (alignment) {
+        MarkdownColumnAlignment.LEFT -> android.text.Layout.Alignment.ALIGN_NORMAL
+        MarkdownColumnAlignment.CENTER -> android.text.Layout.Alignment.ALIGN_CENTER
+        MarkdownColumnAlignment.RIGHT -> android.text.Layout.Alignment.ALIGN_OPPOSITE
+    }
     val safeWidth = widthPx.coerceAtLeast(1)
     return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
         StaticLayout.Builder.obtain(text, 0, text.length, paint, safeWidth)
-            .setAlignment(android.text.Layout.Alignment.ALIGN_CENTER)
+            .setAlignment(textAlignment)
             .setLineSpacing(0f, lineSpacingMultiplier)
             .setIncludePad(false)
             .build()
@@ -580,7 +590,7 @@ private fun createCellStaticLayout(
             text,
             paint,
             safeWidth,
-            android.text.Layout.Alignment.ALIGN_CENTER,
+            textAlignment,
             lineSpacingMultiplier,
             0f,
             false
@@ -628,49 +638,11 @@ private fun calculateLetterSpacingEm(fontSizeSp: Float, letterSpacingSp: Float):
 
 /** 将原始 Markdown 表格文本解析成行列结构，供渲染和复制为纯文本共用。 */
 internal fun parseTable(content: String): TableData {
-    fun isHeaderSeparatorLine(line: String): Boolean {
-        return line.trim().matches(
-            Regex("^\\s*\\|?\\s*[-:]+\\s*(\\|\\s*[-:]+\\s*)+\\|?\\s*$")
-        )
-    }
-
-    fun parseCells(line: String): MutableList<String> {
-        val trimmed = line.trim()
-        var parts = trimmed.split('|').toMutableList()
-        if (trimmed.startsWith("|")) {
-            parts = parts.drop(1).toMutableList()
-        }
-        if (trimmed.endsWith("|") && parts.isNotEmpty()) {
-            parts.removeAt(parts.lastIndex)
-        }
-        return parts
-            .map { it.trim().replace(Regex("(?i)<br\\s*/?>"), "\n") }
-            .toMutableList()
-    }
-
-    val lines = content.lines().filter { it.trim().isNotEmpty() && it.contains('|') }
-    if (lines.isEmpty()) {
-        return TableData(emptyList(), false)
-    }
-
-    val hasHeader = lines.size > 1 && isHeaderSeparatorLine(lines[1])
-    val rawRows = mutableListOf<MutableList<String>>()
-    var maxColumns = 0
-
-    lines.forEachIndexed { index, line ->
-        if (index == 1 && hasHeader) return@forEachIndexed
-        val cells = parseCells(line)
-        maxColumns = maxOf(maxColumns, cells.size)
-        rawRows += cells
-    }
-
-    val rows =
-        rawRows.map { row ->
-            while (row.size < maxColumns) {
-                row += ""
-            }
-            row.toList()
-        }
-
-    return TableData(rows = rows, hasHeader = hasHeader)
+    val lines = content.lines().filter { it.isNotBlank() && '|' in it }
+    if (lines.isEmpty()) return TableData(emptyList(), false)
+    val alignments = lines.getOrNull(1)?.let(::markdownTableAlignments)
+    val rows = lines.filterIndexed { index, _ -> index != 1 || alignments == null }.map(::markdownTableCells)
+    val columns = rows.maxOfOrNull { it.size } ?: 0
+    return TableData(rows.map { it + List(columns - it.size) { "" } }, alignments != null,
+        alignments ?: List(columns) { MarkdownColumnAlignment.LEFT })
 }
