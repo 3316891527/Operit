@@ -3,6 +3,12 @@ package com.ai.assistance.operit.core.tools.runtime
 import android.content.Context
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.tools.parameters.ProxyParamsDiagnostics
+import com.ai.assistance.operit.core.config.SystemToolPrompts
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandExecutor
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandDispatcher
+import com.ai.assistance.operit.core.tools.commands.PlatformPackageInstaller
+import com.ai.assistance.operit.core.tools.skill.SkillManager
+import java.io.File
 import com.ai.assistance.operit.core.performance.PerformanceMonitorManager
 import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
 import com.ai.assistance.operit.core.tools.climode.CliToolModeSupport
@@ -271,6 +277,63 @@ fun registerAllTools(handler: AIToolHandler, context: Context) {
             error = proxiedResult.error
         )
     }
+
+    /** 每次命令调用绑定原运行上下文，目标仍经过角色卡限制、权限检查及工具 hook。 */
+    fun executePlatformTarget(parent: AITool, target: String, parameters: Map<String, String>): ToolResult {
+        val runtimeContext = ToolExecutionManager.currentToolRuntimeContext()
+        val trustedContext = if (runtimeContext == null) {
+            parent.parameters.filter { it.name in packageContextParamNames }
+        } else {
+            listOfNotNull(
+                runtimeContext.callerName?.let { ToolParameter("__operit_package_caller_name", it) },
+                runtimeContext.callerChatId?.let { ToolParameter("__operit_package_chat_id", it) },
+                runtimeContext.callerCardId?.let { ToolParameter("__operit_package_caller_card_id", it) },
+            )
+        }
+        val access = resolveCurrentRoleCardToolAccess()
+        return PlatformCommandDispatcher(
+            trustedContext = trustedContext,
+            isReserved = CliToolModeSupport::isReservedProxyTarget,
+            isAllowed = { isProxyTargetAllowedForRoleCard(it.name, it.parameters, access) },
+            executeWithPermission = { executeProxyTargetWithPermissionCheck(it.name, it.parameters, isEnglishLanguage()) },
+            accessDeniedMessage = CliToolModeSupport.buildRoleAccessDeniedMessage(isEnglishLanguage()),
+        ).execute(target, parameters)
+    }
+
+    handler.registerTool(
+        name = PlatformCommandExecutor.TOOL_NAME,
+        descriptionGenerator = { "Execute structured Operit platform command" },
+        executor = { tool ->
+            val access = resolveCurrentRoleCardToolAccess()
+            val prompts = if (isEnglishLanguage()) SystemToolPrompts.getAllCategoriesEn() else SystemToolPrompts.getAllCategoriesCn()
+            val schemas = prompts.flatMap { it.tools }.associate { it.name to it.parametersStructured }
+            val registeredNames = handler.getAllToolNames().toSet()
+            PlatformCommandExecutor(
+                invoke = { target, parameters -> executePlatformTarget(tool, target, parameters) },
+                catalog = { runBlocking {
+                    CliToolModeSupport.buildHiddenToolCatalog(context, handler.getOrCreatePackageManager(), access, isEnglishLanguage())
+                        .filter { it.targetToolName != PlatformCommandExecutor.TOOL_NAME }
+                } },
+                schema = { target -> schemas[target] },
+                isVisible = { target -> target in registeredNames && isProxyTargetAllowedForRoleCard(target, emptyList(), access) },
+                skillDirectory = SkillManager.getInstance(context).getSkillsDirectoryPath(),
+            ).execute(tool)
+        },
+    )
+
+    handler.registerTool(
+        name = "debug_install_sandbox_package",
+        descriptionGenerator = { "Install development sandbox package" },
+        executor = { tool ->
+            val access = resolveCurrentRoleCardToolAccess()
+            PlatformPackageInstaller(
+                packages = handler.getOrCreatePackageManager(),
+                cacheDirectory = File(context.cacheDir, "platform-package-staging"),
+                invoke = { target, parameters -> executePlatformTarget(tool, target, parameters) },
+                isExternalSourceAllowed = { access.isExternalSourceAllowed(it) },
+            ).execute(tool)
+        },
+    )
 
     // 不在提示词加入的工具
     handler.registerTool(

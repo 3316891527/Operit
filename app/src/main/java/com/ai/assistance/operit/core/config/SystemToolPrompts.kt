@@ -6,6 +6,7 @@ import com.ai.assistance.operit.core.tools.prompt.SystemToolPromptCategory
 import com.ai.assistance.operit.core.tools.prompt.ToolPrompt
 import com.ai.assistance.operit.core.tools.prompt.ToolParameterSchema
 import com.ai.assistance.operit.core.tools.builtin.a2ui.A2uiToolDefinitions
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandToolDefinitions
 
 /**
  * 系统工具提示词管理器
@@ -572,7 +573,7 @@ object SystemToolPrompts {
             chatModelHasDirectAudio = chatModelHasDirectAudio,
             chatModelHasDirectVideo = chatModelHasDirectVideo,
             safBookmarkNames = safBookmarkNames
-        ) + internalToolCategoriesEn
+        ) + internalToolCategoriesEn + PlatformCommandToolDefinitions.category(useEnglish = true)
     }
     
     /**
@@ -657,7 +658,7 @@ object SystemToolPrompts {
             chatModelHasDirectAudio = chatModelHasDirectAudio,
             chatModelHasDirectVideo = chatModelHasDirectVideo,
             safBookmarkNames = safBookmarkNames
-        ) + internalToolCategoriesCn
+        ) + internalToolCategoriesCn + PlatformCommandToolDefinitions.category(useEnglish = false)
     }
 
     data class ManageableToolPrompt(

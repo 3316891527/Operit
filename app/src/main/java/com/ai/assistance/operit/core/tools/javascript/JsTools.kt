@@ -976,6 +976,18 @@ fun getJsToolsDefinition(): String {
             },
             // 软件设置
             SoftwareSettings: {
+                // 结构化参数逐项传递，禁止拼接和重新分词。
+                exec: (args) => {
+                    if (!Array.isArray(args)) {
+                        throw new Error('SoftwareSettings.exec: args must be a string array; use [] for help.');
+                    }
+                    for (let index = 0; index < args.length; index++) {
+                        if (typeof args[index] !== 'string') {
+                            throw new Error('SoftwareSettings.exec: args[' + index + '] must be a string.');
+                        }
+                    }
+                    return toolCall("execute_cli_command", { args: JSON.stringify(args) });
+                },
                 readEnvironmentVariable: (key) => {
                     return toolCall("read_environment_variable", { key: String(key ?? "") });
                 },
