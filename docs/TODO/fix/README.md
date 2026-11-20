@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [上游小修复同步与输入框玻璃预览](upstream-small-fixes/index.md)
+
 - [正式构建的 Kotlin Gradle 脚本 Lint 崩溃](release-lint-kotlin-script/index.md)
 - [新建对话入场动画请求生命周期修复](new-chat-intro-lifecycle/index.md)
 - [市场与角色卡页面主题文字和菜单统一](market-character-theme/index.md)
