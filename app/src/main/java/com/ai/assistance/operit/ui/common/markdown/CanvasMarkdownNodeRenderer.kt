@@ -538,9 +538,7 @@ private fun renderNodeContent(
 ) {
     when (node.type) {
         // ========== 简单文本类型：使用单个大 Canvas 绘制 ==========
-        MarkdownProcessorType.HEADER,
-        MarkdownProcessorType.ORDERED_LIST,
-        MarkdownProcessorType.UNORDERED_LIST -> {
+        MarkdownProcessorType.HEADER -> {
             UnifiedCanvasRenderer(
                 nodeKey = nodeKey,
                 node = node,
@@ -630,36 +628,13 @@ private fun renderNodeContent(
         }
         
         // ========== 引用块：使用 Canvas 绘制文本 + 边框 ==========
-        MarkdownProcessorType.BLOCK_QUOTE -> {
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            width = 2.dp,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(4.dp)
-                        )
-                        .padding(4.dp)
-                ) {
-                    val quoteText = content.lines().joinToString("\n") {
-                        it.removePrefix("> ").removePrefix(">")
-                    }
-
-                    SingleTextCanvas(
-                        text = quoteText,
-                        textColor = textColor,
-                        fontSize = fontSizes.bodyMedium,
-                        fontWeight = FontWeight.Normal,
-                        density = density,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
+        MarkdownProcessorType.BLOCK_QUOTE,
+        MarkdownProcessorType.ORDERED_LIST,
+        MarkdownProcessorType.UNORDERED_LIST,
+        MarkdownProcessorType.DEFINITION_LIST,
+        MarkdownProcessorType.FOOTNOTE,
+        MarkdownProcessorType.HTML_BLOCK -> {
+            MarkdownContainerRenderer(node, textColor, fontSizes.bodyMedium, onLinkClick, xmlRenderer, enableDialogs)
         }
         
         // ========== 分隔线 ==========

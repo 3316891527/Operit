@@ -72,7 +72,14 @@ enum class MarkdownProcessorType {
 
     // 纯文本
     PLAIN_TEXT,
-    HTML_BREAK
+    HTML_BREAK,
+    ESCAPED_TEXT,
+    HIGHLIGHT,
+    SUBSCRIPT,
+    SUPERSCRIPT,
+    DEFINITION_LIST,
+    FOOTNOTE,
+    HTML_BLOCK
 }
 
 /** 

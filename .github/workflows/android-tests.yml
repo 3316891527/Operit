@@ -15,6 +15,7 @@ on:
       - ci/test/code_runner.test.cjs
       - ci/test/workspace_change_context.test.cjs
       - ci/mermaid-native/**
+      - ci/markdown-native/**
       - cmake/**
       - plugins/examples/**
       - gradle/**
@@ -87,7 +88,7 @@ jobs:
         run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/workspace_change_context.test.cjs
 
   mermaid-native:
-    name: Mermaid native core
+    name: Markdown and Mermaid native core
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -108,9 +109,15 @@ jobs:
       - name: Check native parsing layout and viewport
         shell: bash
         run: |
-          operit_mermaid_compiler=$(rg --files "$HOME/.gradle/wrapper/dists" -g 'kotlin-compiler-embeddable-*.jar' | head -n 1)
-          test -n "$operit_mermaid_compiler"
-          bash ci/mermaid-native/run-core.sh "$(dirname "$operit_mermaid_compiler")"
+          shopt -s nullglob
+          operit_mermaid_compilers=("${GRADLE_USER_HOME:-$HOME/.gradle}"/wrapper/dists/gradle-8.13-bin/*/gradle-8.13/lib/kotlin-compiler-embeddable-*.jar)
+          if [ "${#operit_mermaid_compilers[@]}" -ne 1 ]; then
+            printf 'Expected one Gradle 8.13 Kotlin compiler, found %s\n' "${#operit_mermaid_compilers[@]}" >&2
+            exit 1
+          fi
+          bash ci/mermaid-native/run-core.sh "${operit_mermaid_compilers[0]%/*}"
+          bash ci/markdown-native/run-core.sh "${operit_mermaid_compilers[0]%/*}"
+          bash ci/markdown-native/run-stream.sh
 
   tests:
     name: Android JVM tests

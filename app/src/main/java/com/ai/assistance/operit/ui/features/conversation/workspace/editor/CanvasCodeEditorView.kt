@@ -6,6 +6,8 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highli
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightRendering
 
 import android.animation.ValueAnimator
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -36,8 +38,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.OverScroller
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.graphics.toArgb
-import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion.CompletionItem
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion.CompletionProvider
@@ -1909,23 +1909,26 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         }
     }
 
-    private fun copySelectionToClipboard() {
-        if (!document.hasSelection()) {
-            return
-        }
+    private fun copySelectionToClipboard(showFeedback: Boolean = true): Boolean {
+        if (!document.hasSelection()) return false
+        val clipboard = clipboardManager ?: return false
         val start = min(document.selectionStart, document.selectionEnd)
         val end = max(document.selectionStart, document.selectionEnd)
         val selectedText = document.text().subSequence(start, end).toString()
-        clipboardManager?.setPrimaryClip(ClipData.newPlainText("Code", selectedText))
+        clipboard.setPrimaryClip(ClipData.newPlainText("Code", selectedText))
+        if (showFeedback) OKToast.success(context, R.string.file_op_copy_success, OKToast.LENGTH_SHORT).show()
+        return true
     }
 
     private fun cutSelectionToClipboard() {
         if (readOnly || !document.hasSelection()) {
             return
         }
-        copySelectionToClipboard()
+        // 剪贴板写入成功后再删除选区，只提示最终的剪切操作。
+        if (!copySelectionToClipboard(showFeedback = false)) return
         document.replaceSelection("", recordHistory = true)
         onDocumentMutated()
+        OKToast.success(context, R.string.file_op_cut_success, OKToast.LENGTH_SHORT).show()
     }
 
     private fun pasteFromClipboard() {

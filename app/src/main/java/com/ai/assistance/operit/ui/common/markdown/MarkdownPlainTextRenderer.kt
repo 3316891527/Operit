@@ -38,7 +38,7 @@ internal suspend fun markdownToPlainTextForCopy(
  * 其余相邻块之间空一行；HTML_BREAK 节点本身不参与渲染，只是原始 Markdown
  * 里空行数量的标记，最终统一交给上面的空行折叠逻辑处理。
  */
-private fun joinBlocks(nodes: List<MarkdownNodeStable>, latexSegments: MutableList<String>): String {
+private suspend fun joinBlocks(nodes: List<MarkdownNodeStable>, latexSegments: MutableList<String>): String {
     val contentNodes = nodes.filterNot { it.type == MarkdownProcessorType.HTML_BREAK }
     val builder = StringBuilder()
     contentNodes.forEachIndexed { index, node ->
@@ -55,7 +55,7 @@ private fun joinBlocks(nodes: List<MarkdownNodeStable>, latexSegments: MutableLi
 private fun MarkdownProcessorType.isListItem(): Boolean =
     this == MarkdownProcessorType.ORDERED_LIST || this == MarkdownProcessorType.UNORDERED_LIST
 
-private fun renderBlockNode(node: MarkdownNodeStable, latexSegments: MutableList<String>): String {
+private suspend fun renderBlockNode(node: MarkdownNodeStable, latexSegments: MutableList<String>): String {
     return when (node.type) {
         MarkdownProcessorType.HTML_BREAK,
         MarkdownProcessorType.HORIZONTAL_RULE -> ""
@@ -66,10 +66,33 @@ private fun renderBlockNode(node: MarkdownNodeStable, latexSegments: MutableList
         MarkdownProcessorType.XML_BLOCK -> node.content
         MarkdownProcessorType.IMAGE -> extractLinkText(node.content)
         MarkdownProcessorType.HEADER -> renderInlineBlock(node, latexSegments).trimStart('#', ' ')
-        MarkdownProcessorType.UNORDERED_LIST -> "• " + renderInlineBlock(node, latexSegments)
+        MarkdownProcessorType.BLOCK_QUOTE -> renderContainerText(node.content.lines().joinToString("\n") { it.replaceFirst(Regex("^ {0,3}> ?"), "") }, latexSegments)
+        MarkdownProcessorType.ORDERED_LIST, MarkdownProcessorType.UNORDERED_LIST -> {
+            val lines = node.content.trimEnd('\n').lines()
+            val marker = com.ai.assistance.operit.util.markdown.markdownListMarker(lines.first())
+            if (marker == null) node.content else {
+                val body = lines.first().drop(marker.prefixLength) + if (lines.size == 1) "" else "\n" + lines.drop(1).joinToString("\n") {
+                    it.drop(it.takeWhile { char -> char == ' ' }.length.coerceAtMost(marker.indent + 2))
+                }
+                val prefix = when (marker.checked) { true -> "☑ "; false -> "☐ "; null -> marker.number?.let { "$it. " } ?: "• " }
+                prefix + renderContainerText(body, latexSegments)
+            }
+        }
+        MarkdownProcessorType.DEFINITION_LIST -> {
+            val lines = node.content.lines()
+            renderRawInlineText(lines.first(), latexSegments) + "\n" + renderContainerText(lines.drop(1).joinToString("\n") { it.removePrefix(": ").removePrefix("  ") }, latexSegments)
+        }
+        MarkdownProcessorType.FOOTNOTE -> {
+            val parts = node.content.split('\n', limit = 3)
+            if (parts.size == 3) parts[1] + ". " + renderContainerText(parts[2], latexSegments) else node.content
+        }
+        MarkdownProcessorType.HTML_BLOCK -> org.jsoup.Jsoup.parse(node.content).text()
         else -> renderInlineBlock(node, latexSegments)
     }
 }
+
+private suspend fun renderContainerText(source: String, latexSegments: MutableList<String>): String =
+    joinBlocks(parseMarkdownToNodes(source).map { it.toStableNode() }, latexSegments)
 
 private fun renderInlineBlock(node: MarkdownNodeStable, latexSegments: MutableList<String>): String {
     if (node.children.isEmpty()) return node.content
