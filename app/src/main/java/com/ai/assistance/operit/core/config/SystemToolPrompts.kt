@@ -549,7 +549,7 @@ object SystemToolPrompts {
         return listOf(
             basicTools,
             A2uiToolDefinitions.category(useEnglish = true),
-            com.ai.assistance.operit.core.agent.SubagentTools.category(),
+            com.ai.assistance.operit.core.agent.SubagentTools.category(useEnglish = true),
             adjustedFileSystemTools,
             httpTools,
             memoryTools
@@ -635,7 +635,7 @@ object SystemToolPrompts {
         return listOf(
             basicToolsCn,
             A2uiToolDefinitions.category(useEnglish = false),
-            com.ai.assistance.operit.core.agent.SubagentTools.category(),
+            com.ai.assistance.operit.core.agent.SubagentTools.category(useEnglish = false),
             adjustedFileSystemTools,
             httpToolsCn,
             memoryToolsCn

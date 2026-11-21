@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 
 internal data class ResolvedSubagentModel(val entry: SubagentModel, val config: ModelConfigData)
 
@@ -41,6 +42,13 @@ class SubagentCatalog(context: Context) {
         val body = buildJsonObject {
             put("selection_policy", "Choose a preset and an allowed model independently. Use the supplied capability descriptions and limitations, not prior knowledge of model names. Never invent model quality, speed, price or capabilities. Explain missing configuration instead of selecting a model outside this pool.")
             put("auto_archive_completed_default", settings.autoArchiveCompleted)
+            putJsonObject("runtime_limits") {
+                put("global_concurrency", settings.limits.maxRunning)
+                put("per_chat_concurrency", settings.limits.maxPerChat)
+                put("execution_timeout_minutes", settings.limits.executionTimeoutMinutes)
+            }
+            put("fork_turns", "none (default), all, or the most recent 1–64 real user turns")
+            put("inherited_context_max_characters", SubagentContextHistory.MAX_CHARACTERS)
             putJsonArray("presets") {
                 settings.presets.filter { it.enabled }.forEach { preset ->
                     add(buildJsonObject { put("id", preset.id); put("name", preset.name); put("purpose", preset.description) })

@@ -57,7 +57,7 @@
     <string name="subagent_metrics">%1$d tool calls · %2$d seconds</string>
     <string name="subagent_report">Returned report</string>
     <string name="subagent_report_delivered">Main agent received this report</string>
-    <string name="subagent_child_hint">An independent conversation containing this task brief, supplements, and execution. The main chat model stays the same.</string>
+    <string name="subagent_child_hint">An independent child conversation containing its brief, selected parent context, supplements and execution records. The main chat model stays unchanged.</string>
     <string name="subagent_supplement">Add instructions</string>
     <string name="subagent_supplement_hint">Read at the next turn while preserving existing work</string>
     <string name="subagent_stop">Stop this task</string>
@@ -77,7 +77,7 @@
     <string name="subagent_helper">Subagent</string>
     <string name="subagent_select_task">Switch subagent task</string>
     <string name="subagent_execution_started">Started the delegated task</string>
-    <string name="subagent_execution_timeout">The 20 minute execution limit was reached. Records were retained.</string>
+    <string name="subagent_execution_timeout">The %1$d minute execution limit was reached. Records were retained.</string>
     <string name="subagent_execution_stopped">This execution was stopped. Records were retained.</string>
     <string name="subagent_execution_completed">Task completed; the report is ready to return.</string>
     <string name="subagent_discard_draft">Discard changes</string>
@@ -89,4 +89,20 @@
     <string name="subagent_auto_archive_completed_hint">Applies to new and continued executions. Successful tasks leave the tray while reports and conversations are retained. Failed, stopped, and interrupted tasks stay visible.</string>
     <string name="subagent_filter_completed">Completed</string>
     <string name="subagent_no_matching_tasks">No tasks match this filter</string>
+    <string name="subagent_limits_title">Runtime limits</string>
+    <string name="subagent_limits_summary">%1$d global · %2$d per chat · %3$d min per execution</string>
+    <string name="subagent_limits_hint">Concurrency changes apply to subsequent scheduling. Lowering a limit keeps running tasks active. The timeout applies to executions spawned or continued after saving; time in the queue is excluded.</string>
+    <string name="subagent_limits_global">Global concurrency</string>
+    <string name="subagent_limits_global_hint">Shared across all main chats, from 1 to 64</string>
+    <string name="subagent_limits_per_chat">Concurrency per main chat</string>
+    <string name="subagent_limits_per_chat_hint">At least 1, up to the global concurrency limit</string>
+    <string name="subagent_limits_timeout">Execution timeout (minutes)</string>
+    <string name="subagent_limits_timeout_hint">From 1 to 120 minutes; records are retained when time expires</string>
+    <string name="subagent_limits_invalid">Enter whole numbers: global 1–64, per chat 1–global, and timeout 1–120 minutes.</string>
+    <string name="subagent_context_label">Inherited parent context</string>
+    <string name="subagent_context_none">None; using an independent task brief</string>
+    <string name="subagent_context_all">All parent context available at delegation</string>
+    <string name="subagent_context_turns">Most recent %1$d user turns</string>
+    <string name="subagent_context_background">Parent context and summaries</string>
+    <string name="subagent_execution_limit">Timeout for this execution: %1$d minutes</string>
 </resources>

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.agent.SubagentConfiguration
+import com.ai.assistance.operit.core.agent.SubagentLimits
 import com.ai.assistance.operit.core.agent.SubagentModel
 import com.ai.assistance.operit.core.agent.SubagentPreset
 import com.ai.assistance.operit.core.agent.validate
@@ -32,7 +33,7 @@ class SubagentPreferences(context: Context) {
 
     private fun read(preferences: Preferences): SubagentConfiguration {
         val raw = preferences[key]
-        if (raw != null) return json.decodeFromString<SubagentConfiguration>(raw)
+        if (raw != null) return json.decodeFromString<SubagentConfiguration>(raw).also { it.limits.validate() }
         return SubagentConfiguration(
             presets = listOf(SubagentPreset(
                 id = "general",
@@ -89,6 +90,13 @@ class SubagentPreferences(context: Context) {
     suspend fun setAutoArchiveCompleted(enabled: Boolean) {
         store.edit { preferences ->
             preferences[key] = json.encodeToString(read(preferences).copy(autoArchiveCompleted = enabled))
+        }
+    }
+
+    suspend fun setLimits(limits: SubagentLimits) {
+        limits.validate()
+        store.edit { preferences ->
+            preferences[key] = json.encodeToString(read(preferences).copy(limits = limits))
         }
     }
 

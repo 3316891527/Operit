@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.core.agent.SubagentContextHistory
 import com.ai.assistance.operit.core.agent.selectSubagentThinking
 import com.ai.assistance.operit.core.agent.subagentThinkingMapping
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
@@ -464,6 +465,8 @@ class EnhancedAIService private constructor(context: Context) {
         val roundManager: ConversationRoundManager = ConversationRoundManager(),
         val isConversationActive: AtomicBoolean = AtomicBoolean(true),
         val conversationHistory: MutableList<PromptTurn>,
+        // 在模型请求边界发布不可变背景，工具并行派发时不直接读取正在修改的列表。
+        @Volatile var subagentHistorySnapshot: List<PromptTurn> = emptyList(),
         val eventChannel: MutableSharedStream<TextStreamEvent>,
         val permissionSession: PermissionCapabilitySession,
         val onToolTiming: suspend (ToolCallExecution) -> Unit,
@@ -933,9 +936,7 @@ class EnhancedAIService private constructor(context: Context) {
                 originalCurrentMessage = message,
                 finalizedCurrentMessage = finalProcessedInput
             ).mergeAdjacentTurns { previous, current ->
-                previous.kind == PromptTurnKind.USER &&
-                    current.kind == PromptTurnKind.USER &&
-                    previous.toolName == current.toolName
+                SubagentContextHistory.canMergeUserTurns(previous, current)
             }
 
         val voiceEstimate = VoiceAudioRequest(context, multiServiceManager) { _, _ -> }
@@ -1137,7 +1138,7 @@ class EnhancedAIService private constructor(context: Context) {
                         if (!isExecutionContextActive(execContext)) throw CancellationException("Voice input cancelled")
                     }
                     if (!isSubTask && functionType == FunctionType.CHAT && chatId != null && options.turnInputInbox != null) {
-                        com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).attachParent(chatId, requireNotNull(options.turnInputInbox))
+                        com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).attachParent(chatId, requireNotNull(options.turnInputInbox)) { execContext.subagentHistorySnapshot }
                         execContext.parentAttached = true
                     }
                     val startTime = messageTimingNow()
@@ -1281,14 +1282,13 @@ class EnhancedAIService private constructor(context: Context) {
                             finalizedCurrentMessage = finalProcessedInput,
                             historyOnly = options.historyOnly,
                         ).mergeAdjacentTurns { previous, current ->
-                            previous.kind == PromptTurnKind.USER &&
-                                current.kind == PromptTurnKind.USER &&
-                                previous.toolName == current.toolName
+                            SubagentContextHistory.canMergeUserTurns(previous, current)
                         }.map { turn ->
                             turn.copy(content = voiceAudioRequest.format(turn.content, modelSnapshot.config.enableDirectAudioProcessing))
                         }
                     execContext.conversationHistory.clear()
                     execContext.conversationHistory.addAll(requestHistory)
+                    execContext.subagentHistorySnapshot = requestHistory.toList()
                     AppLogger.d(
                         TAG,
                         "sendMessage requestHistory turns=${requestHistory.size} original=${ChatTrace.describe(message)} finalized=${ChatTrace.describe(finalProcessedInput)} lastUser=${ChatTrace.describe(requestHistory.lastOrNull { it.kind == PromptTurnKind.USER }?.content.orEmpty())}"
@@ -1343,6 +1343,7 @@ class EnhancedAIService private constructor(context: Context) {
                             onHistoryResolved = { textHistory ->
                                 execContext.conversationHistory.clear()
                                 execContext.conversationHistory.addAll(textHistory)
+                                execContext.subagentHistorySnapshot = textHistory.toList()
                                 estimatePreparedRequestWindow(serviceForFunction, textHistory, availableTools, publishEstimate = true)
                             },
                         )
@@ -2092,7 +2093,8 @@ class EnhancedAIService private constructor(context: Context) {
                 context.conversationHistory.add(
                     PromptTurn(
                         kind = PromptTurnKind.ASSISTANT,
-                        content = CardTranscript.forModel(context.roundManager.getCurrentRoundContent())
+                        content = CardTranscript.forModel(context.roundManager.getCurrentRoundContent()),
+                        metadata = if (extractedToolInvocations.isNotEmpty()) mapOf(SubagentContextHistory.INTERMEDIATE to true) else emptyMap(),
                     )
                 )
             } catch (e: Exception) {
@@ -2606,6 +2608,7 @@ class EnhancedAIService private constructor(context: Context) {
                 turnInputs.forEach { input ->
                     val inputTurn = PromptTurn(
                         kind = PromptTurnKind.USER, content = input.text,
+                        metadata = if (input.agentPath != null) mapOf(SubagentContextHistory.EVENT to true) else emptyMap(),
                     )
                     context.conversationHistory.add(inputTurn)
                 }
@@ -2617,6 +2620,7 @@ class EnhancedAIService private constructor(context: Context) {
             conversationService.normalizeConversationHistoryForModel(context.conversationHistory)
         context.conversationHistory.clear()
         context.conversationHistory.addAll(normalizedChatHistory)
+        context.subagentHistorySnapshot = normalizedChatHistory.toList()
 
         // Get current conversation history is now just the normalized context history
         val currentChatHistory = context.conversationHistory

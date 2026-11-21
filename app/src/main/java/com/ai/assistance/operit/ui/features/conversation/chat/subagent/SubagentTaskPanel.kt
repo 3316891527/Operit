@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ai.assistance.operit.ui.common.displays.MarkdownTextComposable
+import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.agent.*
 import com.ai.assistance.operit.util.logging.AppLogger
@@ -187,8 +189,15 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
                 when (tab) {
                     0 -> {
                         DetailText(stringResource(R.string.subagent_task_goal), task.goal)
-                        DetailText(stringResource(R.string.subagent_task_model), task.model.modelName)
-                        DetailText(stringResource(R.string.subagent_task_preset), task.preset.name)
+                        DetailText(stringResource(R.string.subagent_task_model), task.model.modelName, markdown = false)
+                        DetailText(stringResource(R.string.subagent_task_preset), task.preset.name, markdown = false)
+                        val inherited = when (task.forkTurns) {
+                            "none" -> stringResource(R.string.subagent_context_none)
+                            "all" -> stringResource(R.string.subagent_context_all)
+                            else -> stringResource(R.string.subagent_context_turns, task.forkTurns.toInt())
+                        }
+                        DetailText(stringResource(R.string.subagent_context_label), inherited, markdown = false)
+                        Text(stringResource(R.string.subagent_execution_limit, task.executionTimeoutMinutes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (task.error.isNotBlank()) Text(task.error, color = MaterialTheme.colorScheme.error)
                         if (task.reports.isEmpty()) Text(stringResource(R.string.subagent_no_report), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         task.reports.asReversed().forEach { report ->
@@ -204,7 +213,12 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
                     2 -> {
                         Text(stringResource(R.string.subagent_child_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         task.messages.forEach { message ->
-                            DetailText(if (message.role == "user") stringResource(R.string.subagent_main_agent) else stringResource(R.string.subagent_helper), message.content)
+                            val label = when (message.role) {
+                                "user" -> R.string.subagent_main_agent
+                                "summary" -> R.string.subagent_context_background
+                                else -> R.string.subagent_helper
+                            }
+                            DetailText(stringResource(label), message.content)
                             if (message.role == "user") Text(stringResource(if (message.pending) R.string.subagent_pending_message else R.string.subagent_read_message), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (task.currentOutput.isNotBlank()) DetailText(stringResource(R.string.subagent_helper), task.currentOutput)
@@ -234,10 +248,17 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
 }
 
 @Composable
-private fun DetailText(label: String, body: String) {
+private fun DetailText(label: String, body: String, markdown: Boolean = true, enableDialogs: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        SelectionContainer { Text(body, style = MaterialTheme.typography.bodySmall) }
+        SelectionContainer {
+            if (markdown) {
+                // 详情可能从时间线卡片打开，不能沿用外层消息的 Markdown 渲染片段。
+                CompositionLocalProvider(LocalMarkdownRenderFragment provides null) {
+                    MarkdownTextComposable(body, MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodySmall.fontSize, enableDialogs = enableDialogs)
+                }
+            } else Text(body, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
@@ -251,7 +272,7 @@ fun SubagentReportMessage(content: String, enableDialogs: Boolean = true) {
     var open by remember(content) { mutableStateOf(false) }
     var selectedId by remember(content) { mutableStateOf<String?>(null) }
     if (task == null) {
-        Surface(shape = RoundedCornerShape(12.dp), tonalElevation = 1.dp) { Column(Modifier.padding(12.dp)) { DetailText(stringResource(R.string.subagent_report), content) } }
+        Surface(shape = RoundedCornerShape(12.dp), tonalElevation = 1.dp) { Column(Modifier.padding(12.dp)) { DetailText(stringResource(R.string.subagent_report), content, enableDialogs = enableDialogs) } }
     } else {
         val report = requireNotNull(task.reports.find { content.startsWith(it.marker) })
         val card = task.copy(status = report.status, model = task.model.copy(modelName = report.modelName), reports = listOf(report), attempt = task.reports.indexOf(report) + 1)

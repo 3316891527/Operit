@@ -29,6 +29,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -44,9 +47,6 @@ class SubagentCoordinator private constructor(private val context: Context) {
         fun getInstance(context: Context): SubagentCoordinator = instance ?: synchronized(this) {
             instance ?: SubagentCoordinator(context.applicationContext).also { instance = it }
         }
-        private const val MAX_RUNNING = 6
-        private const val MAX_PER_CHAT = 3
-        private const val EXECUTION_TIMEOUT_MS = 20 * 60 * 1000L
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -60,12 +60,15 @@ class SubagentCoordinator private constructor(private val context: Context) {
     private val jobs = mutableMapOf<String, Job>()
     private val childInboxes = mutableMapOf<String, TurnInputInbox>()
     private val parents = mutableMapOf<String, TurnInputInbox>()
+    private val parentHistories = mutableMapOf<String, () -> List<PromptTurn>>()
+    private var schedulingLimits: SubagentLimits? = null
     private val reportOffers = mutableMapOf<String, String>()
     private val messageOffers = mutableSetOf<String>()
     private val stopping = mutableSetOf<String>()
     private val treeLocks = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
     private val ready = scope.async {
         try {
+            schedulingLimits = preferences.configuration.first().limits.validate()
             val restored = store.load().map { task ->
                 if (!task.status.isActive) task else store.save(task.copy(
                     status = SubagentStatus.INTERRUPTED,
@@ -81,6 +84,26 @@ class SubagentCoordinator private constructor(private val context: Context) {
             AppLogger.e("SubagentCoordinator", "读取子代理任务失败", failure)
             mutableState.value = SubagentState(loaded = true, error = failure.message ?: failure.javaClass.simpleName)
             throw failure
+        }
+    }
+
+    init {
+        scope.launch {
+            try {
+                ready.await()
+                preferences.configuration.map { it.limits.validate() }.distinctUntilChanged().collect { limits ->
+                    mutex.withLock {
+                        schedulingLimits = limits
+                        // 缩小并发只限制后续调度，不中断已经持有资源的执行。
+                        schedule()
+                    }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                AppLogger.e("SubagentCoordinator", "读取子代理运行限制失败", failure)
+                mutex.withLock { mutableState.value = state.value.copy(error = failure.message ?: failure.javaClass.simpleName) }
+            }
         }
     }
 
@@ -113,13 +136,22 @@ class SubagentCoordinator private constructor(private val context: Context) {
     suspend fun spawn(
         chatId: String, parentToolCallId: String, title: String, goal: String, presetId: String, modelId: String,
         workspacePath: String?, workspaceEnv: String?, roleCardId: String?, memorySpaceId: String?,
-        enableThinking: Boolean, thinkingOptionId: String? = null, autoArchive: Boolean? = null,
+        enableThinking: Boolean, thinkingOptionId: String? = null, autoArchive: Boolean? = null, forkTurns: String = "none",
     ): SubagentTask = withContext(Dispatchers.IO) {
         ready.await()
         require(!isChild(chatId)) { "Subagents cannot create further subagents" }
+        mutex.withLock { state.value.tasks.find { it.parentChatId == chatId && it.parentToolCallId == parentToolCallId } }
+            ?.let { return@withContext it }
+        val fork = SubagentFork.parse(forkTurns)
         require(title.isNotBlank() && title.length <= 120 && goal.isNotBlank() && goal.length <= 20000) { "Supply a concise title and a self-contained task brief" }
         require(parentToolCallId.isNotBlank()) { "Missing trusted tool invocation identity" }
         require(history.chatExistsOrThrow(chatId)) { "Parent conversation no longer exists" }
+        val parentSnapshot = mutex.withLock {
+            val parent = requireNotNull(parents[chatId]) { "The parent turn is unavailable" }
+            require(parent.isOpen() && chatId !in stopping) { "The parent turn is no longer accepting delegated work" }
+            parent.turnId to if (fork == SubagentFork.None) emptyList() else requireNotNull(parentHistories[chatId])().toList()
+        }
+        val inheritedText = SubagentContextHistory.render(parentSnapshot.second, fork)
         val settings = preferences.configuration.first()
         val preset = requireNotNull(settings.presets.find { it.id == presetId && it.enabled }) { "This prompt preset is not enabled" }
         val resolved = catalog.resolve(modelId)
@@ -128,26 +160,29 @@ class SubagentCoordinator private constructor(private val context: Context) {
         mutex.withLock {
             state.value.tasks.find { it.parentChatId == chatId && it.parentToolCallId == parentToolCallId }?.let { return@withLock it }
             require(state.value.error == null) { "Subagent storage is unavailable" }
-            require(chatId !in stopping && parents[chatId]?.isOpen() == true) { "The parent turn is no longer accepting delegated work" }
+            require(chatId !in stopping && parents[chatId]?.isOpen() == true && parents[chatId]?.turnId == parentSnapshot.first) { "The parent turn is no longer accepting delegated work" }
             require(state.value.tasks.count { it.parentChatId == chatId && !it.archived } < 64) { "Archive finished tasks before delegating more" }
             require(state.value.tasks.size < 4096) { "Task storage limit reached; remove historical conversations before delegating more" }
             require(state.value.tasks.count { it.status.isActive } < 128) { "Subagent queue is full" }
+            val inheritedMessage = inheritedText?.let { ChatMessage(sender = "summary", content = it, timestamp = ChatMessageTimestampAllocator.next()) }
             val task = SubagentTask(parentChatId = chatId, parentToolCallId = parentToolCallId, title = title.trim(), goal = goal.trim(), preset = preset, model = model,
                 workspacePath = workspacePath, workspaceEnv = workspaceEnv, roleCardId = roleCardId, memorySpaceId = memorySpaceId,
-                thinking = thinking, autoArchiveOnCompletion = autoArchive ?: settings.autoArchiveCompleted)
+                thinking = thinking, autoArchiveOnCompletion = autoArchive ?: settings.autoArchiveCompleted,
+                forkTurns = fork.parameter, executionTimeoutMinutes = settings.limits.executionTimeoutMinutes)
             val queued = task.copy(events = listOf(SubagentEvent(context.getString(R.string.subagent_waiting_slot))))
-            withContext(NonCancellable) { publish(store.create(queued)); schedule() }; owned(chatId, task.id)
+            withContext(NonCancellable) { publish(store.create(queued, inheritedMessage)); schedule() }; owned(chatId, task.id)
         }
     }
 
     /** 调度不占用父代理的名额；先登记作业所有权，再允许协程开始执行。 */
     private suspend fun schedule() {
         if (state.value.error != null) return
+        val limits = requireNotNull(schedulingLimits) { "Subagent scheduling limits have not loaded" }
         for (task in state.value.tasks.filter { it.status == SubagentStatus.QUEUED }) {
-            if (jobs.size >= MAX_RUNNING) break
+            if (jobs.size >= limits.maxRunning) break
             if (task.parentChatId in stopping || jobs.containsKey(task.id)) continue
             val runningForChat = jobs.keys.count { id -> state.value.tasks.any { it.id == id && it.parentChatId == task.parentChatId } }
-            if (runningForChat >= MAX_PER_CHAT) continue
+            if (runningForChat >= limits.maxPerChat) continue
             val running = task.copy(status = SubagentStatus.RUNNING, assistantTimestamp = ChatMessageTimestampAllocator.next(), startedAt = System.currentTimeMillis(), events = task.events + SubagentEvent(context.getString(R.string.subagent_execution_started)))
             write(running)
             val job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
@@ -224,7 +259,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
         }
 
         try {
-            withTimeout(EXECUTION_TIMEOUT_MS) {
+            withTimeout(initial.executionTimeoutMinutes * 60_000L) {
                 val executionService = EnhancedAIService.getChatInstance(context, initial.childChatId)
                 service = executionService
                 require(history.chatExistsOrThrow(initial.parentChatId)) { "Parent conversation was deleted" }
@@ -297,7 +332,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
                 terminal = SubagentStatus.COMPLETED
             }
         } catch (timeout: TimeoutCancellationException) {
-            terminal = SubagentStatus.FAILED; failureText = context.getString(R.string.subagent_execution_timeout)
+            terminal = SubagentStatus.FAILED; failureText = context.getString(R.string.subagent_execution_timeout, initial.executionTimeoutMinutes)
         } catch (cancelled: CancellationException) {
             terminal = SubagentStatus.CANCELLED; failureText = context.getString(R.string.subagent_execution_stopped)
         } catch (failure: Exception) {
@@ -388,6 +423,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
             val next = task.copy(executionId = execution, attempt = task.attempt + 1, status = SubagentStatus.QUEUED, model = selected,
                 goal = text.trim(), error = "", startedAt = 0, completedAt = 0,
                 thinking = thinking, autoArchiveOnCompletion = autoArchive ?: settings.autoArchiveCompleted,
+                executionTimeoutMinutes = settings.limits.executionTimeoutMinutes,
                 requestTimestamp = ChatMessageTimestampAllocator.next(), assistantTimestamp = 0,
                 events = task.events + SubagentEvent(context.getString(R.string.subagent_confirm_continue)))
             write(next, listOf(ChatMessage(sender = "user", content = next.goal, timestamp = next.requestTimestamp))); schedule(); owned(chatId, id)
@@ -419,7 +455,10 @@ class SubagentCoordinator private constructor(private val context: Context) {
         treeLocks.computeIfAbsent(chatId) { Mutex() }.withLock {
             val active = mutex.withLock {
                 stopping.add(chatId)
-                if (deleteRecords) parents.remove(chatId)?.close()?.forEach { it.returned() }
+                if (deleteRecords) {
+                    parents.remove(chatId)?.close()?.forEach { it.returned() }
+                    parentHistories.remove(chatId)
+                }
                 state.value.tasks.filter { it.parentChatId == chatId && it.status.isActive }.map { it.id to it.executionId }
             }
             try {
@@ -472,7 +511,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
     }
 
     /** 先检查父聊天里的稳定报告标记，处理持久化交接后进程中断的重复投递。 */
-    suspend fun attachParent(chatId: String, inbox: TurnInputInbox) = withContext(Dispatchers.IO) {
+    suspend fun attachParent(chatId: String, inbox: TurnInputInbox, historySnapshot: () -> List<PromptTurn>) = withContext(Dispatchers.IO) {
         ready.await()
         val pending = state.value.tasks.filter { it.parentChatId == chatId }.flatMap { it.reports }.filterNot { it.delivered }
         val persisted = if (pending.isEmpty()) emptySet() else history.loadChatMessagesOrThrow(chatId)
@@ -480,6 +519,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
         mutex.withLock {
             require(chatId !in stopping) { "The conversation is being stopped or deleted" }
             parents[chatId] = inbox
+            parentHistories[chatId] = historySnapshot
             state.value.tasks.filter { it.parentChatId == chatId }.forEach { task ->
                 val reports = task.reports.map { if (!it.delivered && it.marker in persisted) it.copy(delivered = true) else it }
                 if (reports != task.reports) write(task.copy(reports = reports))
@@ -502,7 +542,10 @@ class SubagentCoordinator private constructor(private val context: Context) {
     }
 
     suspend fun detachParent(chatId: String, turnId: String) = mutex.withLock {
-        if (parents[chatId]?.turnId == turnId) parents.remove(chatId)
+        if (parents[chatId]?.turnId == turnId) {
+            parents.remove(chatId)
+            parentHistories.remove(chatId)
+        }
         reportOffers.entries.removeAll { it.value == turnId }
     }
 

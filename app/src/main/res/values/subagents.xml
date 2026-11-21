@@ -57,7 +57,7 @@
     <string name="subagent_metrics">%1$d 次工具调用 · %2$d 秒</string>
     <string name="subagent_report">返回的报告</string>
     <string name="subagent_report_delivered">主代理已接收本次报告</string>
-    <string name="subagent_child_hint">独立子会话，仅包含任务简报、补充和本任务过程。主聊天的模型不变。</string>
+    <string name="subagent_child_hint">独立子会话，记录任务简报、选定的主对话背景、补充和执行过程。主聊天的模型不变。</string>
     <string name="subagent_supplement">补充要求</string>
     <string name="subagent_supplement_hint">在下一轮读取，保留已有工作</string>
     <string name="subagent_stop">停止这一项</string>
@@ -77,7 +77,7 @@
     <string name="subagent_helper">子代理</string>
     <string name="subagent_select_task">切换子代理任务</string>
     <string name="subagent_execution_started">开始执行子代理任务</string>
-    <string name="subagent_execution_timeout">执行达到 20 分钟期限，已停止并保留记录。</string>
+    <string name="subagent_execution_timeout">执行达到 %1$d 分钟期限，已停止并保留记录。</string>
     <string name="subagent_execution_stopped">本次执行已停止，已有记录保留。</string>
     <string name="subagent_execution_completed">任务完成，报告已准备返回。</string>
     <string name="subagent_discard_draft">放弃修改</string>
@@ -89,4 +89,20 @@
     <string name="subagent_auto_archive_completed_hint">用于之后派发或继续的执行。成功后收起任务卡，报告与子会话保留；失败、停止和中断仍留在列表。</string>
     <string name="subagent_filter_completed">已完成</string>
     <string name="subagent_no_matching_tasks">当前筛选下没有任务</string>
+    <string name="subagent_limits_title">运行限制</string>
+    <string name="subagent_limits_summary">全局 %1$d 项 · 每聊天 %2$d 项 · 每次 %3$d 分钟</string>
+    <string name="subagent_limits_hint">并发限制保存后用于后续调度；调低不会停止已运行的任务。执行时限用于之后派发或继续的执行，排队时间不计入。</string>
+    <string name="subagent_limits_global">全局并发</string>
+    <string name="subagent_limits_global_hint">所有主聊天共用，1～64 项</string>
+    <string name="subagent_limits_per_chat">每个主聊天的并发</string>
+    <string name="subagent_limits_per_chat_hint">至少 1 项，且不能超过全局并发</string>
+    <string name="subagent_limits_timeout">每次执行时限（分钟）</string>
+    <string name="subagent_limits_timeout_hint">1～120 分钟；到期停止并保留记录</string>
+    <string name="subagent_limits_invalid">请填写有效整数：全局 1～64，每聊天 1～全局，时限 1～120 分钟。</string>
+    <string name="subagent_context_label">继承的主对话背景</string>
+    <string name="subagent_context_none">未继承，使用独立任务简报</string>
+    <string name="subagent_context_all">派发时可用的全部主对话</string>
+    <string name="subagent_context_turns">最近 %1$d 个用户轮次</string>
+    <string name="subagent_context_background">主对话背景与总结</string>
+    <string name="subagent_execution_limit">本次执行时限：%1$d 分钟</string>
 </resources>

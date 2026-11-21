@@ -53,6 +53,8 @@ data class SubagentTask(
     val executionId: String = UUID.randomUUID().toString(),
     val thinking: SubagentThinking = SubagentThinking(),
     val autoArchiveOnCompletion: Boolean = false,
+    val forkTurns: String = "none",
+    val executionTimeoutMinutes: Int = 20,
     val attempt: Int = 1,
     val status: SubagentStatus = SubagentStatus.QUEUED,
     val requestTimestamp: Long = ChatMessageTimestampAllocator.next(),

@@ -30,7 +30,7 @@ internal class SubagentTaskStore(private val context: Context) {
         }
     }
 
-    suspend fun create(task: SubagentTask): SubagentTask = database.withTransaction {
+    suspend fun create(task: SubagentTask, inheritedContext: ChatMessage? = null): SubagentTask = database.withTransaction {
         check(runs.getById(task.id) == null) { "Task already exists" }
         val parent = requireNotNull(chats.getChatById(task.parentChatId)) { "Parent conversation no longer exists" }
         require(parent.chatKind == ChatKind.NORMAL) { "A subagent cannot create child conversations" }
@@ -45,6 +45,11 @@ internal class SubagentTaskStore(private val context: Context) {
         )
         chats.insertChat(child)
         runs.insert(entity(task))
+        require((inheritedContext == null) == (task.forkTurns == "none")) { "Context snapshot does not match the selected fork" }
+        if (inheritedContext != null) {
+            check(inheritedContext.sender == "summary" && inheritedContext.timestamp < task.requestTimestamp) { "Inherited context must precede the new brief" }
+            persistMessage(task.childChatId, inheritedContext)
+        }
         persistMessage(task.childChatId, ChatMessage(sender = "user", content = task.goal, timestamp = task.requestTimestamp))
         project(task)
     }
@@ -150,6 +155,7 @@ internal class SubagentTaskStore(private val context: Context) {
 
     private fun decode(row: SubagentRunEntity): SubagentTask {
         val task = json.decodeFromString<SubagentTask>(row.snapshotJson)
+        check(task.executionTimeoutMinutes in 1..120 && SubagentFork.parse(task.forkTurns).parameter == task.forkTurns) { "Invalid persisted subagent execution options" }
         check(task.schemaVersion == 2 && task.id == row.id && task.parentChatId == row.parentChatId &&
             task.childChatId == row.childChatId && task.parentToolCallId == row.parentToolCallId &&
             task.executionId == row.executionId && task.status.name == row.status && task.archived == row.archived) {
