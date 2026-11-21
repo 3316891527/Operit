@@ -5,6 +5,8 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+
+- [子代理交互 HTML 原型](subagent-interaction-prototype/index.md)
 - [聊天耗时单位进位](chat-duration-units/index.md) · `chat-duration-units`
 
 - [终端内置 apply_patch 命令](terminal-apply-patch/index.md)
