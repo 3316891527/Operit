@@ -48,3 +48,14 @@ class MergedBranchCleanupTest(unittest.TestCase):
                 self.cleanup["branches"] = branches
                 with self.assertRaises(ValueError):
                     self.check()
+
+    def test_integration_test_branch_can_be_cleaned_after_exact_publication(self):
+        self.cleanup["branches"] = ["test/release-27-integration"]
+        self.assertEqual(["test/release-27-integration"], self.check())
+
+    def test_test_prefix_does_not_allow_parent_paths_or_protected_refs(self):
+        for branches in [["test/../main"], ["refs/heads/main"], ["test/a", "test/a"]]:
+            with self.subTest(branches=branches):
+                self.cleanup["branches"] = branches
+                with self.assertRaises(ValueError):
+                    self.check()

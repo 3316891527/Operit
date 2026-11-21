@@ -53,7 +53,7 @@ fun MarkdownAudioRenderer(
     }
 
     val audioAlt = extractMarkdownImageAlt(audioMarkdown)
-    val audioUrl = extractMarkdownImageUrl(audioMarkdown)
+    val audioUrl = com.ai.assistance.operit.util.markdown.resolveMarkdownResource(extractMarkdownImageUrl(audioMarkdown), LocalMarkdownDocumentPath.current)
     if (audioUrl.isBlank() || !isLikelyAudioUrl(audioUrl)) {
         return
     }

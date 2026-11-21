@@ -29,7 +29,7 @@ internal fun buildRuntimeBootstrapModules(
         module(
             fileName = "quickjs/init/tools.js",
             source = getJsToolsDefinition(),
-            globals = listOf("Tools", "__operitCreateFileTools")
+            globals = listOf("Tools", "__operitCreateFileTools", "__operitCreateTerminalTools")
         ),
         module(
             fileName = "quickjs/init/compose-dsl-bridge.js",

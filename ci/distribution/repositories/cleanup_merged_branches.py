@@ -31,7 +31,7 @@ def validate_release(cleanup: dict, release_plan: dict, published: dict, commit:
     branches = cleanup["branches"]
     if not branches or len(branches) != len(set(branches)):
         raise ValueError("分支清理列表为空或包含重复项")
-    if any(re.fullmatch(r"(?:feat|fix|chore)/[A-Za-z0-9._/-]+", name) is None or ".." in name for name in branches):
+    if any(re.fullmatch(r"(?:feat|fix|chore|test)/[A-Za-z0-9._/-]+", name) is None or ".." in name for name in branches):
         raise ValueError("分支清理只接受本次明确列出的工作分支")
     return branches
 

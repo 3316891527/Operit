@@ -37,7 +37,7 @@ internal class WorkspaceGitBlameRepository(
 
     suspend fun load(snapshot: EditorTextSnapshot, line: Int): GitLineProvenance = mutex.withLock { withContext(Dispatchers.IO) {
         require(line in 1..snapshot.lines.size)
-        check(snapshot.length <= CHANGE_SNAPSHOT_LIMIT && snapshot.lines.line(line - 1).text.length <= 8_192) {
+        check(snapshot.length <= CHANGE_SNAPSHOT_LIMIT && snapshot.lines.line(line - 1).text.length <= BLAME_MAX_LINE_CHARACTERS) {
             context.getString(R.string.workspace_blame_too_large)
         }
         checkBackend()
@@ -68,7 +68,7 @@ internal class WorkspaceGitBlameRepository(
                 val map = withContext(Dispatchers.Default) {
                     val current = snapshot.toString()
                     check(current.toByteArray(Charsets.UTF_8).size <= CHANGE_SNAPSHOT_LIMIT) { context.getString(R.string.workspace_blame_too_large) }
-                    check(reviewDiffSupported(ReviewContent(content.first, current, SnapshotKind.TEXT, SnapshotKind.TEXT))) {
+                    check(blameDiffSupported(ReviewContent(content.first, current, SnapshotKind.TEXT, SnapshotKind.TEXT))) {
                         context.getString(R.string.workspace_blame_too_large)
                     }
                     blameLineMapping(content.first, current)
@@ -111,7 +111,7 @@ internal class WorkspaceGitBlameRepository(
             val after = blob(command, provenance.root, line.commit, line.path)
             check(after.second != SnapshotKind.ABSENT) { "Blamed file is absent from its source commit" }
             val content = ReviewContent(before.first, after.first, before.second, after.second)
-            check(reviewDiffSupported(content)) { context.getString(R.string.workspace_blame_too_large) }
+            check(blameDiffSupported(content)) { context.getString(R.string.workspace_blame_too_large) }
             val message = command.text("show", "--no-patch", "--encoding=UTF-8", "--format=%B", line.commit).trimEnd('\n')
             val prepared = withContext(Dispatchers.Default) { prepareReviewDiff(context, line.path, content) }
             GitBlameCommitDiff(provenance, message, prepared, parent, parentPath).also { commitDiff = it }

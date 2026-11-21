@@ -8,6 +8,12 @@
 
 ## 计划索引
 
+- [子代理预览版窗口与工具展示修复](subagent-preview-window/index.md)
+
+- [超级管理员 Shell 独立执行与卡住调查](shell-command-isolation/index.md)
+- [聊天记录导入的消息级内存优化](chat-import-memory/index.md)
+- [上游小修复同步与输入框玻璃预览](upstream-small-fixes/index.md)
+
 - [正式构建的 Kotlin Gradle 脚本 Lint 崩溃](release-lint-kotlin-script/index.md)
 - [新建对话入场动画请求生命周期修复](new-chat-intro-lifecycle/index.md)
 - [市场与角色卡页面主题文字和菜单统一](market-character-theme/index.md)
@@ -143,3 +149,6 @@
 - [插件更新过程与结果反馈](extension-update-feedback/index.md)
 - [插件文字主题色、复制预览自动滚动与 A2UI 即时渲染](theme-copy-a2ui-stream/index.md) · `fix/theme-copy-a2ui-stream`
 - [协议标签与流式停更的行内代码边界修复](stream-meta-live-refresh/index.md)
+- [内置浏览器浮窗内容递归](browser-overlay-content-recursion/index.md)
+- [工作区交互与聊天导入内存优化](workspace-review-and-chat-import/index.md)
+- [终端文件变化采集与来源](terminal-file-observation/index.md)

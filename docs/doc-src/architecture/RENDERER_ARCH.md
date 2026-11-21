@@ -151,3 +151,14 @@ blockGroup.stream.splitBy(inlinePlugins).collect { inlineGroup ->
 
 ### 5. 数据输出
 解析结果最终构建成 `MarkdownNode` 树结构，支持实时的流式 UI 渲染，实现流畅的"打字机"效果。
+
+
+## 共享代码块与原生图表
+
+聊天正文和工作区预览共用 `CanvasMarkdownNodeRenderer` 与 `EnhancedCodeBlock`。语言标签占据工具栏剩余宽度，空标签和长标签保持按钮靠右；分隔线上下各保留 12dp。
+
+Mermaid 围栏闭合且非空后默认显示图表，开放围栏显示代码。源码切换、复制和全屏入口一致。共享 `MermaidRenderer` 在后台用 Kotlin 完成解析、文字测量与布局，再交给 `MermaidCanvasView` 绘制原生节点、文字、连线、图例和时间轴。该路径不创建 WebView，不加载网页或 JavaScript。
+
+所有绘制指令具有明确边界，整体适配同时考虑宽高及非零原点。单指拖动、双指缩放、按钮和复位共享 `MermaidViewport`；操作栏独占布局空间，尺寸变化会重新适配完整内容。源码变化取消旧的组合任务，解析错误带行号展示，不跳过无法识别的语句。
+
+原生实现是常用 Mermaid 语法子集，支持范围及独立核心 CI 见项目的 `ci/mermaid-native/README.md`。解析、布局与变换由 JVM 测试覆盖；Android instrumentation 检查真实文字测量、绘制像素、视口和错误恢复。实现及验收边界见 [Markdown 图表计划](../../TODO/feat/markdown-mermaid-preview/index.md)。

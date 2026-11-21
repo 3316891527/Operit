@@ -5,6 +5,7 @@ import com.ai.assistance.operit.data.preferences.ActivePromptManager
 import com.ai.assistance.operit.data.repository.CustomEmojiRepository
 import com.ai.assistance.operit.ui.common.markdown.XmlRenderPluginRegistry
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
+import com.ai.assistance.operit.util.markdown.canCloseStableTextAtBlockBoundary
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import com.ai.assistance.operit.util.streamnative.nativeMarkdownSplitByBlock
@@ -1207,30 +1208,6 @@ object WaifuMessageProcessor {
         builder.append(content, index, content.length)
         return builder.toString()
     }
-
-    private fun MarkdownProcessorType.canCloseStableTextAtBlockBoundary(): Boolean =
-        when (this) {
-            MarkdownProcessorType.HEADER,
-            MarkdownProcessorType.BLOCK_QUOTE,
-            MarkdownProcessorType.CODE_BLOCK,
-            MarkdownProcessorType.ORDERED_LIST,
-            MarkdownProcessorType.UNORDERED_LIST,
-            MarkdownProcessorType.BLOCK_LATEX,
-            MarkdownProcessorType.TABLE,
-            MarkdownProcessorType.IMAGE -> true
-
-            MarkdownProcessorType.HORIZONTAL_RULE,
-            MarkdownProcessorType.XML_BLOCK,
-            MarkdownProcessorType.BOLD,
-            MarkdownProcessorType.ITALIC,
-            MarkdownProcessorType.INLINE_CODE,
-            MarkdownProcessorType.LINK,
-            MarkdownProcessorType.STRIKETHROUGH,
-            MarkdownProcessorType.UNDERLINE,
-            MarkdownProcessorType.INLINE_LATEX,
-            MarkdownProcessorType.PLAIN_TEXT,
-            MarkdownProcessorType.HTML_BREAK -> false
-        }
 
     private val TRAILING_PROTECTED_TEXT_CHARS =
         setOf('。', '！', '？', '.', '!', '?', '…', '，', ',', '；', ';', '：', ':', ')', '）', ']', '】', '}', '」', '"', '\'')

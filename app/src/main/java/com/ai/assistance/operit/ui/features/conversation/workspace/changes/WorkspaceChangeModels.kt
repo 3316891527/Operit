@@ -1,11 +1,33 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 
+import com.ai.assistance.operit.terminal.provider.filesystem.PRootMountMapping
 import kotlinx.serialization.Serializable
 
 /** 路径归属与对话归属分开保存，重新绑定工作区不改写历史。 */
 @Serializable
 internal data class ChangeLocation(val path: String, val environment: String, val backend: String) {
     val key: String get() = "$backend\u0000$path"
+}
+
+/** 对照本地终端的存储挂载识别同一文件，保留记录原本的读写路径。 */
+internal fun ChangeLocation.historyLocation(): ChangeLocation {
+    if (backend != "android" && backend != "linux:local") return this
+    val storage = PRootMountMapping.currentEmulatedStoragePath()
+    val aliases = if (backend == "android") listOf("/sdcard", storage, "/storage/self/primary") else listOf("/sdcard", storage)
+    val root = aliases.firstOrNull { path == it || path.startsWith("$it/") } ?: return this
+    return ChangeLocation("/sdcard" + path.removePrefix(root), "android", "android")
+}
+
+/** 作用域比较也使用挂载身份，工作区与终端可使用不同的共享存储路径。 */
+internal fun relativeChangePath(directory: ChangeLocation, file: ChangeLocation): String? {
+    val root = directory.historyLocation()
+    val target = file.historyLocation()
+    if (root.backend == target.backend && changePathContains(root.path, target.path)) {
+        return if (root.path == target.path) "" else target.path.removePrefix(root.path.trimEnd('/') + "/")
+    }
+    // 上层 Linux 目录使用原有的逻辑路径，挂载内的比较优先命中上述规范路径。
+    if (directory.backend != file.backend || !changePathContains(directory.path, file.path)) return null
+    return if (directory.path == file.path) "" else file.path.removePrefix(directory.path.trimEnd('/') + "/")
 }
 
 @Serializable
@@ -31,6 +53,8 @@ internal data class FileChangeRecord(
     val after: ChangeSnapshot,
     val additions: Int? = null,
     val deletions: Int? = null,
+    val executionId: String? = null,
+    val sourceKind: String? = null,
 )
 
 internal enum class ChangeReviewSource { OPERATIONS, WORKING_TREE, BRANCH, LAST_TURN }

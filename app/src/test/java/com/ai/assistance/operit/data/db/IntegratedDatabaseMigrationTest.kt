@@ -33,6 +33,7 @@ class IntegratedDatabaseMigrationTest {
                 AppDatabase.MIGRATION_26_27,
                 AppDatabase.MIGRATION_27_28,
                 AppDatabase.MIGRATION_28_29,
+                AppDatabase.MIGRATION_29_30,
             )
             var version = startVersion
             for (migration in migrations.filter { it.startVersion >= startVersion }) {
@@ -41,9 +42,9 @@ class IntegratedDatabaseMigrationTest {
                 version = migration.endVersion
             }
             assertEquals(AppDatabase.DATABASE_VERSION, version)
-            assertEquals(29, version)
+            assertEquals(30, version)
 
-            db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned, archived FROM chats").use { cursor ->
+            db.query("SELECT title, folderId, lastUsedAt, displayOrder, locked, pinned, archived, chatKind, parentChatId FROM chats WHERE id = 'chat'").use { cursor ->
                 assertTrue(cursor.moveToFirst())
                 assertEquals("保留对话", cursor.getString(0))
                 assertFalse(cursor.isNull(1))
@@ -52,7 +53,26 @@ class IntegratedDatabaseMigrationTest {
                 assertEquals(1, cursor.getInt(4))
                 assertEquals(1, cursor.getInt(5))
                 assertEquals(0, cursor.getInt(6))
+                assertEquals("NORMAL", cursor.getString(7))
+                assertTrue(cursor.isNull(8))
                 assertFalse(cursor.moveToNext())
+            }
+            // 普通分支也有父聊天，升级不能把既有分支误判成内部子代理会话。
+            db.query("SELECT title, parentChatId, chatKind, archived FROM chats WHERE id = 'branch'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("保留分支", cursor.getString(0))
+                assertEquals("chat", cursor.getString(1))
+                assertEquals("NORMAL", cursor.getString(2))
+                assertEquals(0, cursor.getInt(3))
+                assertFalse(cursor.moveToNext())
+            }
+            db.query("SELECT COUNT(*) FROM chats").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(2, cursor.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM subagent_runs").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
             }
             db.query("SELECT name FROM chat_folders").use { cursor ->
                 assertTrue(cursor.moveToFirst())
@@ -93,7 +113,8 @@ class IntegratedDatabaseMigrationTest {
             CREATE TABLE chats (
                 id TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL, `group` TEXT,
                 displayOrder INTEGER NOT NULL, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL,
-                characterCardName TEXT, characterGroupId TEXT, locked INTEGER NOT NULL, pinned INTEGER NOT NULL
+                characterCardName TEXT, characterGroupId TEXT, locked INTEGER NOT NULL, pinned INTEGER NOT NULL,
+                parentChatId TEXT
             )
         """.trimIndent())
         db.execSQL("""
@@ -117,7 +138,9 @@ class IntegratedDatabaseMigrationTest {
                 completedAt INTEGER NOT NULL
             )
         """.trimIndent())
-        db.execSQL("INSERT INTO chats VALUES ('chat', '保留对话', '测试分组', -5, 100, 300, '角色', NULL, 1, 1)")
+        // 夹具保留旧库已有的父分支字段，29→30 创建复合索引时才能覆盖真实结构。
+        db.execSQL("INSERT INTO chats VALUES ('chat', '保留对话', '测试分组', -5, 100, 300, '角色', NULL, 1, 1, NULL)")
+        db.execSQL("INSERT INTO chats VALUES ('branch', '保留分支', NULL, -6, 110, 310, '角色', NULL, 0, 0, 'chat')")
         db.execSQL("INSERT INTO messages VALUES (7, 'chat', 'ai', '原回复', 200, 0, '角色', 1, 'OPENAI', 'model', 120, 30, 20, 180, 15, 5, 220, 'NORMAL', 0)")
         db.execSQL("INSERT INTO message_variants VALUES (9, 'chat', 200, 1, '候选回复', '角色', 'OPENAI', 'model', 140, 40, 25, 180, 16, 4, 221)")
     }

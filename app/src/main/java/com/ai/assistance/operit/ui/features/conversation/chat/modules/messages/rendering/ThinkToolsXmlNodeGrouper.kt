@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.data.preferences.ToolCollapseMode
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
+import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownRenderMode
+import com.ai.assistance.operit.ui.common.markdown.MarkdownRenderMode
 import com.ai.assistance.operit.ui.common.markdown.MarkdownGroupedItem
 import com.ai.assistance.operit.ui.common.markdown.MarkdownNodeGrouper
 import com.ai.assistance.operit.ui.common.markdown.lazy.markdownNodeIdentityKeys
@@ -229,14 +231,14 @@ class ThinkToolsXmlNodeGrouper(
     internal fun describeGroup(
         group: MarkdownGroupedItem.Group,
         nodes: List<MarkdownNodeStable>,
-        xmlStreamResolver: (Int) -> Stream<String>?,
+        isMessageStreaming: Boolean,
     ): ThinkToolsGroupInfo {
         val end = (group.endIndexInclusive + 1).coerceAtMost(nodes.size)
         val slice = if (group.startIndex in 0 until end) nodes.subList(group.startIndex, end) else emptyList()
         val toolCount = slice.count { it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "tool" }
         val searchCount = slice.count { it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) == "search" }
-        val hasStream = slice.indices.any { xmlStreamResolver(group.startIndex + it) != null }
-        val hasNonConformingTail = hasStream && nodes.subList(end, nodes.size).any { node ->
+        // XML 子流在每个工具块完成后都会移除，批次间隙必须沿用整段回复的生成状态。
+        val hasNonConformingTail = isMessageStreaming && nodes.subList(end, nodes.size).any { node ->
             when (node.type) {
                 MarkdownProcessorType.PLAIN_TEXT -> node.content.isNotBlank()
                 MarkdownProcessorType.XML_BLOCK -> when (extractXmlTagName(node.content)) {
@@ -255,7 +257,7 @@ class ThinkToolsXmlNodeGrouper(
             it.type == MarkdownProcessorType.XML_BLOCK && extractXmlTagName(it.content) in setOf("think", "thinking")
         }
         return ThinkToolsGroupInfo(
-            group, toolCount, searchCount, hasStream && !hasNonConformingTail,
+            group, toolCount, searchCount, isMessageStreaming && !hasNonConformingTail,
             thoughtCount, timingFor(nodes).group(group.startIndex, group.endIndexInclusive),
         )
     }
@@ -290,7 +292,11 @@ class ThinkToolsXmlNodeGrouper(
         } else {
             emptyList()
         }
-        val info = describeGroup(group, nodes, xmlStreamResolver)
+        val info = describeGroup(
+            group,
+            nodes,
+            isMessageStreaming = LocalMarkdownRenderMode.current == MarkdownRenderMode.STREAMING,
+        )
         val titleText = thinkToolsGroupTitle(info)
         val shouldAutoExpand = info.autoExpand
 

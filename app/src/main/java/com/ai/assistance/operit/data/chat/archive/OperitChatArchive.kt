@@ -22,7 +22,7 @@ data class OperitChatArchive(
 ) {
     companion object {
         const val ARCHIVE_TYPE = "operit_chat_archive"
-        const val CURRENT_FORMAT_VERSION = 3
+        const val CURRENT_FORMAT_VERSION = 4
     }
 }
 
@@ -53,6 +53,8 @@ data class OperitArchivedChat(
     val lastUsedAt: Long = 0L,
     val folderPath: List<ChatFolder> = emptyList(),
     val usageBreakdownJson: String? = null,
+    val chatKind: String = com.ai.assistance.operit.data.model.ChatKind.NORMAL,
+    val subagentGraph: com.ai.assistance.operit.core.agent.SubagentGraphArchive? = null,
 ) {
     fun toChatHistory(): ChatHistory {
         return ChatHistory(
@@ -70,6 +72,7 @@ data class OperitArchivedChat(
             workspace = workspace,
             workspaceEnv = workspaceEnv,
             parentChatId = parentChatId,
+            chatKind = chatKind,
             characterCardName = characterCardName,
             characterGroupId = characterGroupId,
             locked = locked,
@@ -100,6 +103,7 @@ data class OperitArchivedChat(
                 workspace = history.workspace,
                 workspaceEnv = history.workspaceEnv,
                 parentChatId = history.parentChatId,
+                chatKind = history.chatKind,
                 characterCardName = history.characterCardName,
                 characterGroupId = history.characterGroupId,
                 locked = history.locked,

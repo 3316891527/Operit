@@ -2046,11 +2046,8 @@ internal fun renderWebViewNode(
                         isUserGesture: Boolean,
                         resultMsg: android.os.Message?
                     ): Boolean {
-                        val message = resultMsg ?: return false
-                        val transport = message.obj as? WebView.WebViewTransport ?: return false
-                        transport.webView = view
-                        message.sendToTarget()
-                        return true
+                        // 此控件尚未承载独立弹窗；把父 WebView 交回自身会导致 Chromium 抛异常。
+                        return false
                     }
 
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
@@ -2278,7 +2275,8 @@ internal fun renderWebViewNode(
             databaseEnabled = props.bool("databaseEnabled", true)
             javaScriptCanOpenWindowsAutomatically =
                 props.bool("javaScriptCanOpenWindowsAutomatically", true)
-            setSupportMultipleWindows(props.bool("supportMultipleWindows", true))
+            // 独立弹窗尚未实现，默认关闭多窗口，避免进入无效的父窗口复用路径。
+            setSupportMultipleWindows(props.bool("supportMultipleWindows", false))
             allowFileAccess = props.bool("allowFileAccess", true)
             allowContentAccess = props.bool("allowContentAccess", true)
             allowFileAccessFromFileURLs = props.bool("allowFileAccessFromFileURLs", true)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">Diferența este mare. Încarc-o pentru a vedea modificările fără evidențierea sintaxei.</string>
+    <string name="workspace_changes_load_diff">Încarcă diferența</string>
+    <string name="workspace_changes_hard_limit">Diferența depășește limita: 4.194.304 caractere sau 20.000 de linii în ambele versiuni, ori 131.072 de caractere pe linie. Deschide fișierul original.</string>
+    <string name="workspace_changes_long_lines_wrap">Liniile foarte lungi se încadrează în lățimea ferestrei.</string>
+    <string name="workspace_changes_record_summary">%1$s · Rezumatul modificărilor înregistrate</string>
+    <string name="workspace_changes_record_scope">Modificările reale din directorul asociat sunt salvate în timpul monitorizării, inclusiv editările din terminal și externe. Istoricul nesalvat nu poate fi recuperat.</string>
+</resources>

@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">원본 압축 파일</string>
     <string name="workspace_archive_packed_size">압축 크기</string>
     <string name="workspace_archive_encrypted">암호화됨</string>
-    <string name="workspace_archive_name_hint">선택한 형식에 따라 확장자가 자동으로 추가됩니다.</string>
+    <string name="workspace_archive_name_hint">입력한 확장자는 유지됩니다. 기본 이름이나 원본 이름에는 선택한 형식의 확장자가 추가됩니다.</string>
     <string name="workspace_archive_stage_target">대상 확인</string>
     <string name="workspace_archive_stage_sources">원본 읽기</string>
     <string name="workspace_archive_stage_write">압축 파일 쓰기</string>

@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownOutline
+import com.ai.assistance.operit.ui.common.markdown.LocalMarkdownDocumentPath
 import com.ai.assistance.operit.ui.common.markdown.MarkdownOutlineState
 import com.ai.assistance.operit.ui.common.markdown.StreamMarkdownRenderer
 import com.ai.assistance.operit.ui.common.markdown.links.openMarkdownLink
@@ -45,7 +46,8 @@ internal fun WorkspaceMarkdownPreview(
     val active by remember(outline, scroll, topInset) { derivedStateOf { outline.activeAt(scroll.value - topInset) } }
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 12.dp)) {
-            CompositionLocalProvider(LocalMarkdownOutline provides outline) {
+            CompositionLocalProvider(LocalMarkdownOutline provides outline,
+                LocalMarkdownDocumentPath provides if (fileInfo.environment == "android" || fileInfo.environment.isNullOrBlank()) fileInfo.path else null) {
                 StreamMarkdownRenderer(
                     content = fileInfo.content,
                     modifier = Modifier.fillMaxWidth(),

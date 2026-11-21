@@ -1,0 +1,18 @@
+Operit HTTP / Web Chat / A2A 服务管理
+
+用法：
+  web-chat start-server [--port PORT] [--login]
+  web-chat stop-server
+  web-chat status
+  web-chat token show
+  web-chat token reset
+  web-chat examples [sync|async|health|intent]
+  web-chat --help
+  web-chat --version
+
+说明：
+  在 Operit 自带终端中使用；端口默认为已保存配置，首次使用为 8094。
+  start-server 输出带说明的 URL 和 Token；--login 打开默认浏览器并自动登录。
+  token reset 更新 Token；普通启动继续使用已有 Token。
+  examples 不带类型时依次输出同步、异步、健康检查和 Intent 示例，不发送请求。
+  命令不会修改剪贴板。

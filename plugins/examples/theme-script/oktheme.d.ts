@@ -92,6 +92,8 @@ export interface Surface {
     fillColor?: Color;
     /** Mutually exclusive with fillColor. */
     fillGradient?: Gradient;
+    /** 仅全局及页面背景使用，0..30 dp；零关闭，需要 Android 12 或更新版本。 */
+    backgroundBlur?: number;
     contentColor?: Color;
     strokeColor?: Color;
     strokeWidth?: number;
@@ -102,6 +104,8 @@ export interface Surface {
     /** 仅用于消息，为现有最大宽度的比例。 */
     messageWidth?: number;
     textStyle?: Typography;
+    /** 仅用于 input；省略或 null 保留原生提示，空字符串隐藏占位符。 */
+    placeholder?: string | null;
 }
 /** 空状态字段继承该部件的默认值，透明度与默认透明度相乘。 */
 export interface SurfaceState {

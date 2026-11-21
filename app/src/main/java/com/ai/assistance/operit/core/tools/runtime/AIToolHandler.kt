@@ -197,7 +197,9 @@ class AIToolHandler private constructor(private val context: Context) {
             descriptionGenerator: ((AITool) -> String)? = null,
             executor: ToolExecutor
     ) {
-        availableTools[name] = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceChangeRecorder.wrap(context, name, executor)
+        availableTools[name] = com.ai.assistance.operit.core.agent.SubagentToolPolicy.guard(
+            com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceChangeRecorder.wrap(context, name, executor)
+        )
 
         // 注册描述生成器（如果提供）
         if (descriptionGenerator != null) {
@@ -378,6 +380,8 @@ class AIToolHandler private constructor(private val context: Context) {
     }
 
 
+    internal val applicationContext: Context get() = context.applicationContext
+
     /** Executes a tool directly */
     fun executeTool(tool: AITool): ToolResult {
         notifyToolCallRequested(tool)
@@ -423,7 +427,12 @@ class AIToolHandler private constructor(private val context: Context) {
 
         notifyToolExecutionStarted(tool)
         return try {
-            val result = executor.invoke(tool)
+            val result = if (com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext() != null) executor.invoke(tool)
+                else kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+                    val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(context)
+                    val source = monitor.beginTool(null, tool.name)
+                    try { executor.invoke(tool) } finally { monitor.endTool(source) }
+                }
             notifyToolExecutionResult(tool, result)
             result
         } catch (e: Exception) {

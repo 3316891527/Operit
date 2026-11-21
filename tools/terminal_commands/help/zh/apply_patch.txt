@@ -1,0 +1,51 @@
+用法：apply_patch [选项] [补丁]
+      apply_patch [选项] --file 路径
+      apply_patch [选项] < patch.txt
+
+应用 Codex 格式补丁。相对路径以当前目录为准。
+
+选项：
+  -v, -V, --version  显示 Operit 命令版本
+  -h, --help         显示帮助
+  -c, --check        按顺序检查补丁，不写入文件
+      --dry-run      与 --check 相同
+  -D, --diff         预览各操作的统一差异，不写入文件
+      --no-overwrite 拒绝覆盖 Add File 和 Move to 的现有目标
+  -q, --quiet        隐藏成功摘要，保留错误和显式请求的输出
+  -f, --file 路径    从文件读取 UTF-8 补丁；- 表示标准输入
+      --json         输出包含错误信息的单个 JSON 结果
+      --             结束选项解析，下一个参数作为补丁
+
+规则：
+  --no-overwrite 需要显式启用。现有文件、目录和符号链接（包括断链）均会阻止新增或移动目标。
+  Update File 仍可编辑现有文件，允许先删除再新增。--check 和 --diff 使用相同规则。
+  未指定 --no-overwrite 时沿用原有新增和移动的覆盖行为。
+  --diff 隐含只读检查，可与 --check 组合；按执行顺序展示变更。
+  移动分别展示目标写入和源删除；二进制会标记，空文件保留路径标题。
+  预览失败只返回错误，不输出部分差异。补丁输入仍使用 Codex 格式。
+  终端自动启用颜色；重定向、NO_COLOR 或 TERM=dumb 时禁用颜色。
+  --diff --json 将纯文本差异放入 diff 字段，失败为 null。
+  成功预览即退出 0，即使存在改动；不会执行 git diff。
+  --quiet 不隐藏差异、JSON、帮助、版本或错误。
+  --check 与 --diff 即使后续操作失败也不会写文件；检查不保证稍后应用时的权限、磁盘空间或并发状态。
+  实际应用按顺序执行，失败不会撤销先前已经完成的修改。
+
+示例：
+  apply_patch --no-overwrite --file change.patch
+  apply_patch --diff --no-overwrite --file change.patch
+  apply_patch --diff --file change.patch --json
+  apply_patch --check --no-overwrite --quiet < change.patch
+
+补丁格式：
+  *** Begin Patch
+  *** Add File: example.txt
+  +hello
+  *** Update File: example.txt
+  @@
+  -hello
+  +world
+  *** End Patch
+
+删除使用 *** Delete File: path；移动在 Update File 后添加 *** Move to: new/path。
+引用 heredoc 分隔符（<<'PATCH'）以保留 shell 字符。
+退出码：0 成功，1 补丁或读写错误，2 参数错误。

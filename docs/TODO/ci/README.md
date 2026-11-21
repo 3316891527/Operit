@@ -31,3 +31,4 @@
 - [终端核心默认分支自动同步](terminal-core-auto-sync/index.md)
 - [PR Check 候选基准校验](pr-check-candidate-base/index.md)
 - [PR 完整 Android 验证](full-android-pr-validation/index.md)
+- [1.12.2+27 更新统一集成与验收](release-27-integration/index.md)

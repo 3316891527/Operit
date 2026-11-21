@@ -1,7 +1,7 @@
 mod arguments;
 mod client;
 
-use arguments::{Arguments, HELP, Request, parse};
+use arguments::{Arguments, Request, parse};
 use std::io::{self, Write};
 use std::process::ExitCode;
 
@@ -21,8 +21,10 @@ fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let request = match parse(&args) {
         Ok(Arguments::Help) => {
-            println!("{HELP}");
-            return ExitCode::SUCCESS;
+            return match arguments::help() {
+                Ok(help) => { print!("{help}"); ExitCode::SUCCESS }
+                Err(error) => { eprintln!("{error}"); ExitCode::FAILURE }
+            };
         }
         Ok(Arguments::Version) => {
             println!("web-chat {}", env!("CARGO_PKG_VERSION"));

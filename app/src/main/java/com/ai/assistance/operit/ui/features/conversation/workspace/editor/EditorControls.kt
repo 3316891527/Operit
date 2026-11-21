@@ -26,20 +26,19 @@ import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 @Composable
 internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, settings: EditorSettings,
     change: ((EditorSettings) -> EditorSettings) -> Unit, canSave: Boolean, saving: Boolean, onSave: () -> Unit,
-    onFind: () -> Unit, onSaveAs: () -> Unit, onReload: () -> Unit, onClose: () -> Unit, path: String, environment: String) {
+    onFind: () -> Unit, onSaveAs: () -> Unit, onReload: () -> Unit, onClose: () -> Unit, onSettings: () -> Unit, path: String, environment: String) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
     val backend = checkNotNull(session.sourceBackend) { "Editor source backend missing" }
     val blame = remember(session, path, environment, backend) { WorkspaceGitBlameRepository(context, path, environment, backend) }
     var blameRequest by remember(session, path, environment) { mutableStateOf<GitBlameRequest?>(null) }
     var menu by remember { mutableStateOf<String?>(null) }
-    var settingsOpen by remember { mutableStateOf(false) }
     var lineOpen by remember { mutableStateOf(false) }
     var statistics by remember { mutableStateOf(false) }
     val ready = editor != null
     val writable = ready && !session.readOnly
-    LaunchedEffect(menu, settingsOpen, lineOpen, statistics, blameRequest) {
-        if (menu != null || settingsOpen || lineOpen || statistics || blameRequest != null) editor?.dismissSelectionMenu()
+    LaunchedEffect(menu, lineOpen, statistics, blameRequest) {
+        if (menu != null || lineOpen || statistics || blameRequest != null) editor?.dismissSelectionMenu()
     }
     Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
         EditorToolButton(Icons.Default.Undo, R.string.workspace_editor_undo, writable && session.status.canUndo) { editor?.undo() }
@@ -100,7 +99,7 @@ internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, se
                     }
                     EditorMenuItem(R.string.workspace_browser_word_wrap, Icons.Default.WrapText, checked = settings.wordWrap) { menu = null; change { it.copy(wordWrap = !it.wordWrap) } }
                     EditorMenuItem(R.string.workspace_editor_read_only, Icons.Default.Lock, checked = session.readOnly) { menu = null; session.readOnly = !session.readOnly }
-                    EditorMenuItem(R.string.settings, Icons.Default.Settings) { menu = null; settingsOpen = true }
+                    EditorMenuItem(R.string.settings, Icons.Default.Settings) { menu = null; editor?.dismissSelectionMenu(); onSettings() }
                 }
             }
         }
@@ -108,7 +107,6 @@ internal fun EditorToolbar(session: EditorSession, editor: NativeCodeEditor?, se
     blameRequest?.let { request ->
         WorkspaceGitBlameDialog(path, request, { blame.load(it.snapshot, it.line) }, blame::change) { blameRequest = null }
     }
-    if (settingsOpen) EditorSettingsScreen(settings, change) { settingsOpen = false }
     if (lineOpen) {
         var line by remember { mutableStateOf("") }
         val number = line.toIntOrNull()

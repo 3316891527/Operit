@@ -1039,8 +1039,6 @@
     <string name="display_behavior_screenshot_jpg_summary">画質 %1$d%% · 解像度 %2$d%%</string>
     <string name="display_behavior_tools_plugins">ツールとプラグイン</string>
     <string name="display_behavior_seconds_suffix">" 秒"</string>
-    <string name="display_behavior_web_wait">ウェブアクセスの待機時間</string>
-    <string name="display_behavior_web_wait_desc">ウェブ内容の抽出後、結果を返すまで待機します。0 秒ですぐに返します。</string>
     <string name="display_behavior_hook_timeout">前処理プラグイン Hook のタイムアウト</string>
     <string name="display_behavior_hook_timeout_desc">チャット入力、Prompt、要約 Hook の合計待機時間の上限です。</string>
     <string name="display_behavior_hook_hint">タイムアウトした Hook はスキップして処理を続行します。メッセージ処理による返信の引き継ぎには影響しません。</string>
@@ -7316,9 +7314,6 @@
     <string name="global_display_screenshot_settings">自動操作のスクリーンショット設定</string>
     <string name="global_display_image_quality">画質（JPG のみ）</string>
     <string name="global_display_resolution_scale">解像度の倍率（送信前にスクリーンショットを縮小）</string>
-    <string name="visit_web_wait_time_title">Visit Web のページ取得後の待ち時間</string>
-    <string name="visit_web_wait_time_description">visit_web がページの内容を取得してから自動で返すまでの待ち時間です。0 秒ならすぐに返します。</string>
-    <string name="visit_web_wait_time_value">%1$d 秒</string>
     <string name="toolpkg_hook_timeout_description">送信時の ToolPkg チャット入力・Prompt・要約 Hook の合計待ち時間を制限します。タイムアウトした Hook はスキップして処理を続けます。既定値は 10 秒です。メッセージ処理・応答の引き継ぎには影響しません。</string>
     <string name="toolpkg_hook_timeout_value">%1$d 秒</string>
     <string name="toolpkg_hook_timeout_continue_sending">前処理プラグインがタイムアウトしたため、スキップして送信を続けます</string>
@@ -8382,7 +8377,7 @@
     <string name="workspace_changes_choose_base">比較するブランチを選択</string>
     <string name="workspace_changes_load_failed">ファイルの変更を読み込めませんでした</string>
     <string name="workspace_changes_count">%1$d 個のファイル</string>
-    <string name="workspace_changes_empty_records">ファイル操作の記録はまだありません。成功したファイルツールの操作がここに表示されます。</string>
+    <string name="workspace_changes_empty_records">変更はまだ記録されていません。ワークスペースを紐づけると、ターミナルや外部編集も記録されます。</string>
     <string name="workspace_changes_empty_git">この範囲にファイルの変更はありません。</string>
     <string name="workspace_changes_choose_file">ファイルを選択して差分を確認</string>
     <string name="workspace_changes_history_count">%1$s · %2$d 回の操作</string>
@@ -8404,7 +8399,7 @@
     <string name="workspace_changes_git_environment">このファイル環境では Git を実行できません。操作履歴は確認できます。</string>
     <string name="workspace_changes_git_runtime">オフラインリソースから Ubuntu をインストールし、その環境に Git をインストールしてください。</string>
     <string name="workspace_outputs_title">会話の成果物</string>
-    <string name="workspace_outputs_description">場所を問わず、この会話で成功したファイル操作を確認</string>
+    <string name="workspace_outputs_description">ファイルツールの記録や紐づけたディレクトリの実際の変更を含む、この会話の保存済み変更を表示</string>
     <string name="workspace_outputs_scope">ワークスペース外のファイルを含む、この会話のファイル操作</string>
     <string name="workspace_changes_last_turn">前のターンの変更</string>
     <string name="workspace_changes_turn_summary">%1$s · ターンの概要</string>
@@ -8456,4 +8451,18 @@
     <string name="workspace_open_not_text">現在のファイルは読み取り可能なテキストではないため、テキストエディタで開けません。</string>
     <string name="workspace_open_failed">ファイルを開けません。以下の詳細を確認し、パス、接続、ストレージの問題を調べてください。</string>
     <string name="workspace_open_checking">現在のファイルを確認して読み取り中…</string>
+    <string name="markdown_mermaid_render_failed">Mermaid 図を描画できませんでした。構文を確認してください。</string>
+
+    <string name="voice_message_hold_to_record">押して録音、離して送信</string>
+    <string name="voice_message_release_send">離して送信</string>
+    <string name="voice_message_release_cancel">離してキャンセル</string>
+    <string name="voice_message_release_transcribe">離して文字起こし</string>
+    <string name="voice_message_hold_slide_hint">左右にスライドしてキャンセルまたは文字起こし</string>
+    <string name="voice_message_transcribe">文字起こし</string>
+    <string name="voice_message_transcribing">文字起こし中…</string>
+    <string name="voice_message_hold_limit">%1$d秒に達しました。離して送信</string>
+    <string name="voice_message_retry_transcribe">文字起こしを再試行</string>
+    <string name="voice_message_finishing">録音を終了中…</string>
+    <string name="studio_background_blur_hint">背景だけをぼかし、文字やコントロールは鮮明に保ちます。</string>
+    <string name="studio_background_blur_inherit_hint">独立した背景の塗りつぶしまたはレイヤーを追加すると調整できます。継承した背景は継承元のぼかし設定を使用します。</string>
 </resources>

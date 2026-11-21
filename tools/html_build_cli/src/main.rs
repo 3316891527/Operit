@@ -1,6 +1,6 @@
 mod arguments;
 
-use arguments::{Options, HELP};
+use arguments::{Options};
 use serde_json::{Value, json};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Read, Write};
@@ -226,7 +226,12 @@ fn run(mut options: Options) -> Result<bool, String> {
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.is_empty() || args == ["--help"] || args == ["html", "--help"] { println!("{HELP}"); return ExitCode::SUCCESS; }
+    if args.is_empty() || args == ["--help"] || args == ["-h"] || args == ["html", "--help"] || args == ["html", "-h"] {
+        return match arguments::help() {
+            Ok(help) => { print!("{help}"); ExitCode::SUCCESS }
+            Err(error) => { eprintln!("{error}"); ExitCode::FAILURE }
+        };
+    }
     if args == ["--version"] { println!("build {}", env!("CARGO_PKG_VERSION")); return ExitCode::SUCCESS; }
     let options = match arguments::parse(&args) { Ok(value) => value, Err(failure) => { eprintln!("{failure}"); return ExitCode::from(2); } };
     match run(options) { Ok(true) => ExitCode::SUCCESS, Ok(false) => ExitCode::FAILURE, Err(failure) => { eprintln!("构建失败：{failure}"); ExitCode::FAILURE } }
