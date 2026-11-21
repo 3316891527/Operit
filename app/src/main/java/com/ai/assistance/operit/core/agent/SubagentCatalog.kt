@@ -29,6 +29,14 @@ class SubagentCatalog(context: Context) {
     suspend fun describe(): String {
         val settings = preferences.configuration.first()
         val summaries = models.getAllConfigSummaries().associateBy { it.id }
+        // JSON 数组构建块不支持挂起，先在当前协程中读取配置，再序列化快照。
+        val availableModels = mutableListOf<ResolvedSubagentModel>()
+        for (entry in settings.models) {
+            if (!entry.enabled) continue
+            val summary = summaries[entry.configId] ?: continue
+            if (entry.modelName !in getModelList(summary.modelName)) continue
+            availableModels += ResolvedSubagentModel(entry, models.requireModelConfig(entry.configId))
+        }
         val body = buildJsonObject {
             put("selection_policy", "Choose a preset and an allowed model independently. Use the supplied capability descriptions and limitations, not prior knowledge of model names. Never invent model quality, speed, price or capabilities. Explain missing configuration instead of selecting a model outside this pool.")
             putJsonArray("presets") {
@@ -37,20 +45,16 @@ class SubagentCatalog(context: Context) {
                 }
             }
             putJsonArray("models") {
-                settings.models.filter { it.enabled }.forEach { entry ->
-                    val summary = summaries[entry.configId]
-                    if (summary != null && entry.modelName in getModelList(summary.modelName)) {
-                        val config = models.requireModelConfig(entry.configId)
-                        add(buildJsonObject {
-                            put("id", entry.id); put("profile", summary.name); put("model", entry.modelName)
-                            put("suitable_tasks", entry.capabilities); put("limitations", entry.limitations)
-                            put("configured_context_k_tokens", config.contextLength)
-                            put("configured_direct_images", config.enableDirectImageProcessing)
-                            put("configured_direct_audio", config.enableDirectAudioProcessing)
-                            put("configured_direct_video", config.enableDirectVideoProcessing)
-                            put("native_tool_call_enabled", config.enableToolCall)
-                        })
-                    }
+                availableModels.forEach { (entry, config) ->
+                    add(buildJsonObject {
+                        put("id", entry.id); put("profile", summaries.getValue(entry.configId).name); put("model", entry.modelName)
+                        put("suitable_tasks", entry.capabilities); put("limitations", entry.limitations)
+                        put("configured_context_k_tokens", config.contextLength)
+                        put("configured_direct_images", config.enableDirectImageProcessing)
+                        put("configured_direct_audio", config.enableDirectAudioProcessing)
+                        put("configured_direct_video", config.enableDirectVideoProcessing)
+                        put("native_tool_call_enabled", config.enableToolCall)
+                    })
                 }
             }
         }

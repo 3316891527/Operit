@@ -34,7 +34,8 @@ Follow supplementary instructions at the next model boundary. End with a concise
         ToolParameterSchema(name = name, type = type, description = description, required = required)
     private val identity = listOf(parameter("task_id", "Task ID from spawn_task/list_tasks."))
     private val execution = identity + parameter("execution_id", "Exact current execution ID; stale operations are rejected.")
-    fun category() = SystemToolPromptCategory("Subagent collaboration", listOf(
+    // 第二个位置参数是分类说明，工具列表必须明确传给 tools。
+    fun category() = SystemToolPromptCategory(categoryName = "Subagent collaboration", tools = listOf(
         ToolPrompt("subagent_catalog", "Read enabled prompt presets and the allowed model pool with capability descriptions. Configure these in model settings.", parametersStructured = emptyList()),
         ToolPrompt("spawn_task", "Delegate independent work and return immediately with task and execution IDs. The parent chat and resource context come from the runtime.", parametersStructured = listOf(
             parameter("title", "Short task title, 1–120 characters."), parameter("goal", "Self-contained task brief, relevant context, expected report and assigned resources; 1–20000 characters."),
