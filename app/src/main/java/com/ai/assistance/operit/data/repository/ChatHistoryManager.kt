@@ -21,6 +21,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.backup.OperitBackupDirs
 import com.ai.assistance.operit.data.db.AppDatabase
 import com.ai.assistance.operit.data.model.ChatEntity
+import com.ai.assistance.operit.data.model.ChatKind
+import com.ai.assistance.operit.core.agent.SubagentCoordinator
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
@@ -664,6 +666,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             workspace = this.workspace, // 映射workspace字段
             workspaceEnv = this.workspaceEnv, // 映射workspaceEnv字段
             parentChatId = this.parentChatId, // 映射parentChatId字段
+            chatKind = this.chatKind,
             characterCardName = this.characterCardName, // 映射characterCardName字段
             characterGroupId = this.characterGroupId, // 映射characterGroupId字段
             locked = this.locked,
@@ -798,8 +801,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
         history: ChatHistory,
         variantsByTimestamp: Map<Long, List<OperitArchivedMessageVariant>> = emptyMap(),
     ) {
+        require(history.chatKind == ChatKind.NORMAL) { "Subagent conversations are owned by their task" }
         chatMutex(history.id).withLock {
-            try {
+            database.withTransaction {
+                requireNormalConversation(history.id)
                 // 创建聊天实体
                 val folder = when {
                     history.folderId != null -> chatFolders.getFolder(history.folderId)
@@ -866,8 +871,6 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 if (variantEntities.isNotEmpty()) {
                     messageVariantDao.insertVariants(variantEntities)
                 }
-            } catch (e: Exception) {
-                throw e
             }
         }
     }
@@ -887,11 +890,13 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     /** 保留消息和绑定关系，仅切换会话在归档列表中的归属。 */
     suspend fun updateChatArchived(chatId: String, archived: Boolean) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock { chatDao.updateChatArchived(chatId, archived) }
     }
 
     /** 更新聊天锁定状态 */
     suspend fun updateChatLocked(chatId: String, locked: Boolean) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatLocked(chatId, locked)
@@ -904,6 +909,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     /** 更新聊天置顶状态 */
     suspend fun updateChatPinned(chatId: String, pinned: Boolean) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatPinned(chatId, pinned)
@@ -1045,6 +1051,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         beforeTimestamp: Long?,
         afterTimestamp: Long?,
     ): ChatMessage? {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 val beforeMessage =
@@ -1097,6 +1104,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     // 添加单条消息，并返回最终持久化的消息
     suspend fun addMessage(chatId: String, message: ChatMessage): ChatMessage {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 val persisted = persistMessageLocked(chatId, message)
@@ -1118,6 +1126,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             database.withTransaction {
                 updatedHistories.forEach { history ->
                     val original = requireNotNull(chatDao.getChatById(history.id))
+                    require(original.chatKind == ChatKind.NORMAL) { "Subagent conversations cannot be reordered" }
                     val folder = if (history.group == original.group) {
                         original.folderId?.let { chatFolders.getFolder(it) }
                     } else {
@@ -1142,7 +1151,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 }
             } else {
                 val ids = chatDao.getAllChatsDirectly()
-                    .filter { it.group == oldName && it.characterCardName == characterCardName }.map { it.id }
+                    .filter { it.chatKind == ChatKind.NORMAL && it.group == oldName && it.characterCardName == characterCardName }.map { it.id }
                 val folder = chatFolders.ensureLegacyRoot(newName, ChatFolderBinding(characterCardName, null))
                 chatFolders.assignChats(ids, folder.id)
             }
@@ -1155,15 +1164,18 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * @param characterCardName 角色卡名称，如果为null则删除所有同名分组
      */
     suspend fun deleteGroup(groupName: String, deleteChats: Boolean, characterCardName: String?) {
-        database.withTransaction {
-            val targets = chatDao.getAllChatsDirectly().filter {
-                it.group == groupName && (characterCardName == null || it.characterCardName == characterCardName)
-            }
-            targets.forEach {
-                if (deleteChats && !it.locked) chatDao.deleteChat(it.id)
-                else chatFolders.assignChats(listOf(it.id), null)
-            }
-            if (characterCardName == null) {
+        val targets = chatDao.getAllChatsDirectly().filter {
+            it.chatKind == ChatKind.NORMAL && it.group == groupName &&
+                (characterCardName == null || it.characterCardName == characterCardName)
+        }
+        for (target in targets) {
+            if (deleteChats && !target.locked) {
+                val deleted = deleteOrdinaryChat(target.id, allowCurrentChat = true)
+                if (deleted && currentChatIdFlow.first() == target.id) clearCurrentChatId()
+            } else chatFolders.assignChats(listOf(target.id), null)
+        }
+        if (characterCardName == null) {
+            database.withTransaction {
                 chatFolders.getFolders().filter { it.parentId == null && it.name == groupName }.forEach {
                     chatFolders.deleteKeepingContents(it.id)
                 }
@@ -1177,6 +1189,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * @param timestamp 消息时间戳
      */
     suspend fun deleteMessage(chatId: String, timestamp: Long) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 AppLogger.d(TAG, "正在从数据库删除消息. ChatId: $chatId, Timestamp: $timestamp")
@@ -1208,6 +1221,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         messageTimestamp: Long,
         variantIndex: Int,
     ) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 val baseMessage =
@@ -1317,6 +1331,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     // 更新现有消息
     suspend fun updateMessage(chatId: String, message: ChatMessage) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 // 找到相应的消息实体
@@ -1417,6 +1432,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     suspend fun setMessageFavorite(chatId: String, timestamp: Long, isFavorite: Boolean) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 val existingMessage =
@@ -1441,6 +1457,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         messageTimestamp: Long,
         message: ChatMessage,
     ): AddedMessageVariant {
+        requireNormalConversation(chatId)
         return chatMutex(chatId).withLock {
             val baseMessage =
                 chatContentDao.getMessageByTimestamp(chatId, messageTimestamp)
@@ -1482,6 +1499,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         messageTimestamp: Long,
         selectedVariantIndex: Int,
     ) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             chatContentDao.getMessageByTimestamp(chatId, messageTimestamp)
                 ?: throw IllegalArgumentException("Message $messageTimestamp does not exist in chat $chatId")
@@ -1505,6 +1523,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * ```
      */
     suspend fun deleteMessagesFrom(chatId: String, timestamp: Long) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 AppLogger.d(TAG, "正在从数据库删除消息. ChatId: $chatId, Timestamp >=: $timestamp")
@@ -1540,32 +1559,21 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * ```
      */
     suspend fun clearChatMessages(chatId: String) {
-        com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).deleteForChat(chatId)
         chatMutex(chatId).withLock {
-            try {
-                messageVariantDao.deleteAllVariantsForChat(chatId)
-                messageDao.deleteAllMessagesForChat(chatId)
-                A2uiStateStore.clearChat(context, chatId)
-                // 更新聊天元数据
-                chatDao.getChatById(chatId)?.let { chat ->
-                    chatDao.updateChatMetadata(
-                        chatId = chatId,
-                        title = chat.title,
-                        timestamp = System.currentTimeMillis(),
-                        inputTokens = 0,
-                        outputTokens = 0,
-                        currentWindowSize = 0
-                    )
+            requireNormalConversation(chatId)
+            SubagentCoordinator.getInstance(context).withChildrenRemoved(chatId) {
+                database.withTransaction {
+                    messageVariantDao.deleteAllVariantsForChat(chatId)
+                    messageDao.deleteAllMessagesForChat(chatId)
+                    chatDao.resetChatTokenUsage(chatId)
                 }
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "为聊天 $chatId 清除消息失败", e)
-                throw e
+                A2uiStateStore.clearChat(context, chatId)
             }
         }
     }
-
     // 更新聊天标题
     suspend fun updateChatTitle(chatId: String, title: String) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatTitle(chatId, title)
@@ -1578,6 +1586,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     // 更新聊天绑定的角色卡
     suspend fun updateChatCharacterCardName(chatId: String, characterCardName: String?) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatCharacterCardName(chatId, characterCardName)
@@ -1604,6 +1613,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         currentWindowSize: Long,
         usageBreakdown: TokenUsageBreakdown? = null,
     ) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             database.withTransaction {
                 val previous = chatDao.getChatById(chatId) ?: return@withTransaction
@@ -1623,6 +1633,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
     /** 仅保存上下文窗口，保留当前累计用量。 */
     suspend fun updateChatContextWindow(chatId: String, windowSize: Long) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             chatDao.updateChatContextWindow(chatId, windowSize.coerceAtLeast(0L))
         }
@@ -1634,6 +1645,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     suspend fun setCurrentChatId(chatId: String) {
+        requireNormalConversation(chatId)
         markChatUsed(chatId)
         context.currentChatIdDataStore.edit { preferences ->
             preferences[PreferencesKeys.CURRENT_CHAT_ID] = chatId
@@ -1648,6 +1660,16 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     // 检查聊天是否存在
+    /** 子会话只接受协调器的事务写入，普通聊天发送、编辑和开场白不能改写它。 */
+    suspend fun isSubagentConversation(chatId: String): Boolean = withContext(Dispatchers.IO) {
+        chatDao.getChatById(chatId)?.chatKind == ChatKind.SUBAGENT
+    }
+
+    suspend fun requireNormalConversation(chatId: String) = withContext(Dispatchers.IO) {
+        val chat = chatDao.getChatById(chatId)
+        check(chat == null || chat.chatKind == ChatKind.NORMAL) { "Use the parent task to manage this subagent conversation" }
+    }
+
     /** 任务生命周期不能把数据库读取失败当成聊天已删除。 */
     suspend fun chatExistsOrThrow(chatId: String): Boolean = withContext(Dispatchers.IO) {
         chatDao.getChatById(chatId) != null
@@ -1678,8 +1700,10 @@ class ChatHistoryManager private constructor(private val context: Context) {
         allowCurrentChat: Boolean = false,
     ): ChatDeletionResult? = withContext(Dispatchers.IO) {
         try {
+            val target = chatDao.getChatById(chatId)
+            if (target?.chatKind == ChatKind.SUBAGENT) return@withContext ChatDeletionResult.FAILED
             ChatDeletionPolicy.blockReason(
-                target = chatDao.getChatById(chatId),
+                target = target,
                 currentChatId = currentChatIdFlow.first(),
                 allowCurrentChat = allowCurrentChat,
             )
@@ -1692,30 +1716,24 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     // 删除聊天历史
-    suspend fun deleteChatHistory(chatId: String): Boolean {
+    suspend fun deleteChatHistory(chatId: String): Boolean = deleteOrdinaryChat(chatId, allowCurrentChat = false)
+
+    private suspend fun deleteOrdinaryChat(chatId: String, allowCurrentChat: Boolean): Boolean =
         chatMutex(chatId).withLock {
-            try {
-                val blocked = ChatDeletionPolicy.blockReason(
-                    target = chatDao.getChatById(chatId),
-                    currentChatId = currentChatIdFlow.first(),
-                )
-                if (blocked != null) {
-                    AppLogger.w(TAG, "拒绝删除会话：$chatId，原因：$blocked")
-                    return false
-                }
-                // 删除前先停止子执行，避免报告写回已经删除的父聊天。
-                com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).deleteForChat(chatId)
-                // 删除聊天实体（级联删除所有消息）
-                chatDao.deleteChat(chatId)
+            val target = chatDao.getChatById(chatId)
+            if (target?.chatKind == ChatKind.SUBAGENT) return@withLock false
+            val blocked = ChatDeletionPolicy.blockReason(target, currentChatIdFlow.first(), allowCurrentChat)
+            if (blocked != null) {
+                AppLogger.w(TAG, "拒绝删除会话：$chatId，原因：$blocked")
+                return@withLock false
+            }
+            SubagentCoordinator.getInstance(context).withChildrenRemoved(chatId) {
+                database.withTransaction { chatDao.deleteChat(chatId) }
                 chatDraftRepository.removeDraft(chatId)
                 A2uiStateStore.deleteChat(context, chatId)
-                return true
-            } catch (e: Exception) {
-                throw e
+                true
             }
         }
-    }
-
     // 创建新对话
     suspend fun createNewChat(
         group: String? = null,
@@ -1769,6 +1787,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     /** 更新聊天工作区 */
     suspend fun updateChatWorkspace(chatId: String, workspace: String?, workspaceEnv: String?) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatWorkspace(chatId, workspace, workspaceEnv)
@@ -1783,6 +1802,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatId: String,
         newWorkspaceName: String
     ): WorkspaceRenameResult {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             val trimmedName = newWorkspaceName.trim()
             if (trimmedName.isEmpty()) {
@@ -1847,6 +1867,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     // 更新聊天分组
     suspend fun updateChatGroup(chatId: String, group: String?) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 val folderId = group?.let { chatFolders.ensureLegacyRoot(it, ChatFolderBinding(null, null)).id }
@@ -1977,6 +1998,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         parentChatId: String,
         upToMessageTimestamp: Long? = null
     ): ChatHistory {
+        requireNormalConversation(parentChatId)
         return globalMutex.withLock {
             try {
                 // 获取父对话
@@ -1996,6 +2018,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                         workspace = parentChat.workspace,
                         workspaceEnv = parentChat.workspaceEnv,
                         parentChatId = parentChatId,
+                        chatKind = ChatKind.NORMAL,
                         characterCardName = parentChat.characterCardName,
                         characterGroupId = parentChat.characterGroupId,
                         locked = false,
@@ -3358,6 +3381,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
 
     // 更新聊天绑定的群组角色卡
     suspend fun updateChatCharacterGroupId(chatId: String, characterGroupId: String?) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatCharacterGroupId(chatId, characterGroupId)
@@ -3374,6 +3398,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         characterCardName: String?,
         characterGroupId: String?
     ) {
+        requireNormalConversation(chatId)
         chatMutex(chatId).withLock {
             try {
                 chatDao.updateChatCharacterBinding(chatId, characterCardName, characterGroupId)
@@ -3409,49 +3434,23 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * 批量删除绑定到缺失角色卡（或未绑定）的未锁定对话
      * @return 实际删除的对话数量
      */
-    suspend fun deleteChatsByCharacterCardBinding(sourceCharacterCardName: String?): Int {
-        return withContext(Dispatchers.IO) {
-            try {
-                val currentChatId = currentChatIdFlow.first()
-                val currentChat = currentChatId?.let { chatDao.getChatById(it) }
-
-                val deletedCount = if (sourceCharacterCardName == null) {
-                    chatDao.deleteUnlockedUnboundChats()
-                } else {
-                    chatDao.deleteUnlockedChatsByCharacterCardName(sourceCharacterCardName)
-                }
-
-                val currentChatShouldBeCleared =
-                    currentChat != null &&
-                        !currentChat.locked &&
-                        (
-                            if (sourceCharacterCardName == null) {
-                                currentChat.characterCardName == null && currentChat.characterGroupId == null
-                            } else {
-                                currentChat.characterCardName == sourceCharacterCardName
-                            }
-                        )
-
-                if (currentChatShouldBeCleared) {
-                    context.currentChatIdDataStore.edit { preferences ->
-                        preferences.remove(PreferencesKeys.CURRENT_CHAT_ID)
-                    }
-                }
-
-                clearDeletedChatDrafts()
-
-                AppLogger.d(
-                    TAG,
-                    "删除缺失角色卡残留对话: ${sourceCharacterCardName ?: "未绑定"}, 删除 $deletedCount 条"
-                )
-                deletedCount
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "删除缺失角色卡残留对话失败: ${sourceCharacterCardName ?: "未绑定"}", e)
-                throw e
+    suspend fun deleteChatsByCharacterCardBinding(sourceCharacterCardName: String?): Int = withContext(Dispatchers.IO) {
+        val targets = chatDao.getAllChatsDirectly().filter { chat ->
+            chat.chatKind == ChatKind.NORMAL && !chat.locked &&
+                (if (sourceCharacterCardName == null) chat.characterCardName == null && chat.characterGroupId == null
+                else chat.characterCardName == sourceCharacterCardName)
+        }
+        var deleted = 0
+        for (target in targets) {
+            if (deleteOrdinaryChat(target.id, allowCurrentChat = true)) {
+                deleted++
+                if (currentChatIdFlow.first() == target.id) clearCurrentChatId()
             }
         }
+        clearDeletedChatDrafts()
+        AppLogger.d(TAG, "删除角色卡残留对话：$deleted 条，关联子会话已停止并清理")
+        deleted
     }
-
     /**
      * 批量为特定聊天更新角色卡绑定
      * @return 受影响的对话数量
@@ -3460,6 +3459,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatIds: List<String>,
         targetCharacterCardName: String?
     ): Int {
+        chatIds.forEach { requireNormalConversation(it) }
         if (chatIds.isEmpty()) {
             return 0
         }
@@ -3481,6 +3481,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatIds: List<String>,
         targetCharacterGroupId: String?
     ): Int {
+        chatIds.forEach { requireNormalConversation(it) }
         if (chatIds.isEmpty()) {
             return 0
         }
@@ -3501,6 +3502,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
     suspend fun clearCharacterGroupBindingForChats(
         chatIds: List<String>
     ): Int {
+        chatIds.forEach { requireNormalConversation(it) }
         if (chatIds.isEmpty()) {
             return 0
         }
@@ -3522,6 +3524,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatIds: List<String>,
         groupName: String?
     ): Int {
+        chatIds.forEach { requireNormalConversation(it) }
         if (chatIds.isEmpty()) {
             return 0
         }

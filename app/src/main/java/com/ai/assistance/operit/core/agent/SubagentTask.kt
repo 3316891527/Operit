@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.core.agent
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import com.ai.assistance.operit.core.chat.message.ChatMessageTimestampAllocator
 import java.util.UUID
 
 @Serializable
@@ -38,6 +40,7 @@ data class SubagentReport(
 data class SubagentTask(
     val id: String = UUID.randomUUID().toString(),
     val parentChatId: String,
+    val childChatId: String = UUID.randomUUID().toString(),
     val parentToolCallId: String,
     val title: String,
     val goal: String,
@@ -50,17 +53,22 @@ data class SubagentTask(
     val executionId: String = UUID.randomUUID().toString(),
     val attempt: Int = 1,
     val status: SubagentStatus = SubagentStatus.QUEUED,
-    val messages: List<SubagentMessage> = emptyList(),
+    val requestTimestamp: Long = ChatMessageTimestampAllocator.next(),
+    val assistantTimestamp: Long = 0L,
+    val executionInputBase: Long = 0L,
+    val executionOutputBase: Long = 0L,
+    val pendingInputs: List<SubagentMessage> = emptyList(),
+    @Transient val messages: List<SubagentMessage> = emptyList(),
     val events: List<SubagentEvent> = emptyList(),
     val reports: List<SubagentReport> = emptyList(),
-    val currentOutput: String = "",
+    @Transient val currentOutput: String = "",
     val error: String = "",
     val archived: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val startedAt: Long = 0,
     val completedAt: Long = 0,
     val toolCount: Int = 0,
-    val schemaVersion: Int = 1,
+    val schemaVersion: Int = 2,
 )
 
 data class SubagentState(

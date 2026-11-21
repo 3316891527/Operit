@@ -27,12 +27,13 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import java.io.File
 import java.util.UUID
 
-private const val APP_DATABASE_VERSION = 29
+private const val APP_DATABASE_VERSION = 30
 
 /** 应用数据库，包含聊天表和消息表 */
 @Database(
     entities = [
         ChatEntity::class,
+        com.ai.assistance.operit.data.model.SubagentRunEntity::class,
         ChatFolder::class,
         MessageEntity::class,
         MessageVariantEntity::class,
@@ -47,6 +48,7 @@ private const val APP_DATABASE_VERSION = 29
 abstract class AppDatabase : RoomDatabase() {
     /** 获取聊天DAO */
     abstract fun chatDao(): ChatDao
+    abstract fun subagentRunDao(): com.ai.assistance.operit.data.dao.SubagentRunDao
     abstract fun chatFolderDao(): ChatFolderDao
 
     /** 获取消息DAO */
@@ -65,6 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         internal val MIGRATION_27_28 = com.ai.assistance.operit.data.chat.archive.ChatArchiveMigration
         internal val MIGRATION_28_29 = com.ai.assistance.operit.data.chat.usage.ChatTokenUsageMigration
+        internal val MIGRATION_29_30 = SubagentConversationMigration
 
         /** v26 → v27：新增消息翻译缓存，保留已有聊天及统计数据。 */
         internal val MIGRATION_26_27 =
@@ -708,7 +711,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_25_26,
                     MIGRATION_26_27,
                     MIGRATION_27_28,
-                    MIGRATION_28_29
+                    MIGRATION_28_29,
+                    MIGRATION_29_30
                 )
                 .build()
 

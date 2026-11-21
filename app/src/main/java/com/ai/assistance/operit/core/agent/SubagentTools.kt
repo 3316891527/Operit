@@ -74,6 +74,12 @@ Follow supplementary instructions at the next model boundary. End with a concise
                 buildJsonObject {
                     put("task", describe(task)); put("goal", task.goal); put("current_output", task.currentOutput.takeLast(24000))
                     putJsonArray("reports") { task.reports.forEach { add(buildJsonObject { put("execution_id", it.executionId); put("status", it.status.name); put("content", it.content); put("delivered", it.delivered) }) } }
+                    putJsonArray("recent_messages") {
+                        task.messages.takeLast(8).forEach { message -> add(buildJsonObject {
+                            put("role", message.role); put("content", message.content.takeLast(4000))
+                            put("timestamp", message.createdAt); put("pending", message.pending)
+                        }) }
+                    }
                     putJsonArray("recent_events") { task.events.takeLast(40).forEach { add(it.text) } }
                 }.toString()
             }
@@ -91,7 +97,7 @@ Follow supplementary instructions at the next model boundary. End with a concise
         ToolResult(tool.name, false, StringResultData(""), error = failure.message ?: failure.javaClass.simpleName)
     }
     private fun describe(task: SubagentTask) = buildJsonObject {
-        put("task_id", task.id); put("execution_id", task.executionId); put("title", task.title)
+        put("task_id", task.id); put("execution_id", task.executionId); put("child_chat_id", task.childChatId); put("title", task.title)
         put("status", task.status.name); put("attempt", task.attempt); put("preset", task.preset.name)
         put("model", task.model.modelName); put("archived", task.archived); put("tool_count", task.toolCount)
         put("error", task.error); put("latest_report", task.reports.lastOrNull()?.content.orEmpty())

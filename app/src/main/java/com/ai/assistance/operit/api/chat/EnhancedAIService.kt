@@ -1001,6 +1001,9 @@ class EnhancedAIService private constructor(context: Context) {
     ): Stream<String> {
         var message = VoiceMessageMarkup.toRequestContent(options.message)
         val chatId = options.chatId
+        if (chatId != null && !options.isDelegatedTask) {
+            com.ai.assistance.operit.data.repository.ChatHistoryManager.getInstance(context).requireNormalConversation(chatId)
+        }
         // 历史保留新语音的录音输入，由实际模型配置决定如何处理。
         val chatHistory = options.chatHistory.map { it.copy(content = VoiceMessageMarkup.toRequestContent(it.content)) }
         val workspacePath = options.workspacePath
