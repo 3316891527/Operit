@@ -114,4 +114,14 @@
     <string name="subagent_limits_depth">Maximum agent depth</string>
     <string name="subagent_limits_depth_hint">From 1 to 8 levels; 1 allows only direct root children, default 3</string>
     <string name="subagent_waiting_inbox">collaboration input</string>
+    <string name="subagent_tool_preparing">Preparing</string>
+    <string name="subagent_tool_no_result">No completed result</string>
+    <string name="subagent_tool_returned">Returned</string>
+    <string name="subagent_tool_call_label">Tool call</string>
+    <string name="subagent_tool_output">Output</string>
+    <string name="subagent_tool_parameters">Parameters</string>
+    <string name="subagent_tool_copy">Copy full content</string>
+    <string name="subagent_tool_empty_parameters">No parameters</string>
+    <string name="subagent_tool_waiting_output">Waiting for tool output</string>
+    <string name="subagent_tool_empty_output">The tool returned empty content</string>
 </resources>

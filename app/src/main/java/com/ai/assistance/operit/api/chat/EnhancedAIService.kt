@@ -2401,7 +2401,7 @@ class EnhancedAIService private constructor(context: Context) {
         )
 
         toolInvocations.forEach { invocation ->
-            onToolInvocation?.invoke(invocation.tool.name)
+            onToolInvocation?.invoke(resolveToolDisplayName(invocation.tool))
         }
 
         val toolBatchStatus = ToolBatchStatus(toolInvocations.map { resolveToolDisplayName(it.tool) })

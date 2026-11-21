@@ -1,7 +1,7 @@
 ---
 owner: https://github.com/3316891527/Operit
 branch: test/release-27-integration
-status: integrated-awaiting-ci
+status: preview-followup-awaiting-validation
 ---
 
 # 1.12.2+27 更新统一集成与验收
@@ -12,5 +12,6 @@ status: integrated-awaiting-ci
 
 1. [来源与合并记录](01-merge-sources.md)
 2. [统一验证与交付](02-validation.md)
+3. [子代理预览版验收跟进](../../fix/subagent-preview-window/index.md)
 
-状态：全部来源已合入，本地定点回归通过，完整 Android CI 与设备统一验收待确认。
+状态：全部来源已合入，首轮集成已交付预览验收；本轮继续修复子代理窗口、工具展示与报告收尾，单独记录新提交的回归和工作流，完整 Android CI 与设备验收待确认。

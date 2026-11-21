@@ -111,12 +111,13 @@ private fun TaskCard(task: SubagentTask, modifier: Modifier = Modifier, queuePos
 
 @Composable
 private fun TaskWindow(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    // 固定窗口框架，只由屏幕与输入法约束尺寸，流式正文不能再改变外层测量。
     val maxHeight = LocalConfiguration.current.screenHeightDp.dp * 0.82f
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.widthIn(max = 560.dp).fillMaxWidth(0.90f).heightIn(max = maxHeight).imePadding(), shape = RoundedCornerShape(18.dp)) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Surface(Modifier.widthIn(max = 560.dp).fillMaxWidth(0.90f).height(maxHeight).imePadding(), shape = RoundedCornerShape(18.dp)) {
+            Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, stringResource(R.string.common_close)) }
                 }
                 content()
@@ -152,7 +153,7 @@ private fun TaskManager(tasks: List<SubagentTask>, onDismiss: () -> Unit, onOpen
             }
         }.sortedByDescending { it.createdAt }
         if (visible.isEmpty()) Text(stringResource(R.string.subagent_no_matching_tasks), style = MaterialTheme.typography.bodySmall)
-        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(visible, key = { it.id }) { task -> TaskCard(task, Modifier.fillMaxWidth(), SubagentTree.queuePosition(tasks, task.id)) { onOpen(task.id) } }
         }
     }
@@ -177,10 +178,17 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
         }
     }
     TaskWindow(task.title, onDismiss = { if (!busy) onDismiss() }) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(statusName(task.status), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-            TextButton(onClick = { managing = true }, enabled = !busy) { Text(stringResource(R.string.subagent_tasks)) }
-            Text(stringResource(R.string.subagent_attempt, task.attempt), style = MaterialTheme.typography.labelMedium)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(task.path, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            SubagentStatusBadge(statusName(task.status), running = task.status == SubagentStatus.RUNNING,
+                completed = task.status == SubagentStatus.COMPLETED,
+                failed = task.status == SubagentStatus.FAILED || task.status == SubagentStatus.INTERRUPTED)
+            Text(stringResource(R.string.subagent_attempt, task.attempt), style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            IconButton(onClick = { managing = true }, enabled = !busy, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.AccountTree, stringResource(R.string.subagent_tasks), Modifier.size(18.dp))
+            }
         }
         val navigation = siblings.filter { !it.archived || it.id == task.id }
         if (navigation.size > 1) LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -191,7 +199,8 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
         val tabs = listOf(R.string.subagent_overview, R.string.subagent_process, R.string.subagent_conversation)
         TabRow(selectedTabIndex = tab) { tabs.forEachIndexed { index, label -> Tab(tab == index, onClick = { tab = index }, text = { Text(stringResource(label)) }) } }
         key(task.id, tab) {
-            Column(Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (tab == 2) SubagentConversation(task, Modifier.weight(1f).fillMaxWidth())
+            else Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 when (tab) {
                     0 -> {
                         DetailText(stringResource(R.string.subagent_tree_path), task.path, markdown = false)
@@ -225,26 +234,21 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
                                 DetailText(sender + " → " + recipient + " · " + stringResource(if (letter.consumed) R.string.subagent_read_message else R.string.subagent_pending_message), letter.content)
                             }
                         }
-                        task.events.forEach { event -> Text("• ${event.text}", style = MaterialTheme.typography.bodySmall) }
-                        if (task.currentOutput.isNotBlank()) DetailText(stringResource(R.string.subagent_status_running), task.currentOutput)
-                    }
-                    2 -> {
-                        Text(stringResource(R.string.subagent_child_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        task.messages.forEach { message ->
-                            val label = when (message.role) {
-                                "user" -> R.string.subagent_main_agent
-                                "summary" -> R.string.subagent_context_background
-                                "agent" -> R.string.subagent_agent_messages
-                                else -> R.string.subagent_helper
-                            }
-                            DetailText(stringResource(label), message.content)
-                            if (message.role == "user") Text(stringResource(if (message.pending) R.string.subagent_pending_message else R.string.subagent_read_message), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val toolLabels = remember(task.events, task.messages, task.currentOutput) {
+                            subagentToolEventLabels(task.events.mapNotNull { it.toolName },
+                                task.messages.filter { it.role == "assistant" }.map { it.content } + task.currentOutput)
                         }
-                        if (task.currentOutput.isNotBlank()) DetailText(stringResource(R.string.subagent_helper), task.currentOutput)
+                        var toolIndex = 0
+                        task.events.forEach { event ->
+                            val label = if (event.toolName == null) event.text else toolLabels[toolIndex++]
+                            Text("• $label", style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (task.currentOutput.isNotBlank()) DetailText(stringResource(R.string.subagent_status_running), task.currentOutput, tools = true, running = task.status.isActive)
                     }
                 }
             }
         }
+        HorizontalDivider()
         error?.let { Text(stringResource(R.string.subagent_action_failed, it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         if (!task.archived) {
             OutlinedTextField(text, { if (it.length <= 10000) text = it }, Modifier.fillMaxWidth(), maxLines = 4, label = { Text(stringResource(if (task.status.isActive) R.string.subagent_supplement else R.string.subagent_followup)) }, supportingText = { Text(stringResource(R.string.subagent_supplement_hint)) }, enabled = !busy)
@@ -267,13 +271,14 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
 }
 
 @Composable
-private fun DetailText(label: String, body: String, markdown: Boolean = true, enableDialogs: Boolean = true) {
+private fun DetailText(label: String, body: String, markdown: Boolean = true, enableDialogs: Boolean = true, tools: Boolean = false, running: Boolean = false) {
     // Markdown 入口不负责协议投影，先复用主聊天过滤器，原始消息继续留给保存与请求链路。
     val displayBody = remember(body) { protocolMetaDisplayText(body) }
     if (displayBody.isBlank()) return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        SelectionContainer {
+        if (tools) SubagentTranscriptContent(body, running)
+        else SelectionContainer {
             if (markdown) {
                 // 详情可能从时间线卡片打开，不能沿用外层消息的 Markdown 渲染片段。
                 CompositionLocalProvider(LocalMarkdownRenderFragment provides null) {

@@ -114,4 +114,14 @@
     <string name="subagent_limits_depth">最大代理深度</string>
     <string name="subagent_limits_depth_hint">1～8 层；1 表示只允许主代理直接派发，默认 3 层</string>
     <string name="subagent_waiting_inbox">协作消息</string>
+    <string name="subagent_tool_preparing">准备调用</string>
+    <string name="subagent_tool_no_result">无完成结果</string>
+    <string name="subagent_tool_returned">已返回</string>
+    <string name="subagent_tool_call_label">工具调用</string>
+    <string name="subagent_tool_output">输出</string>
+    <string name="subagent_tool_parameters">参数</string>
+    <string name="subagent_tool_copy">复制完整内容</string>
+    <string name="subagent_tool_empty_parameters">无参数</string>
+    <string name="subagent_tool_waiting_output">等待工具返回结果</string>
+    <string name="subagent_tool_empty_output">工具返回了空内容</string>
 </resources>

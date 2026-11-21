@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [子代理预览版窗口与工具展示修复](subagent-preview-window/index.md)
+
 - [超级管理员 Shell 独立执行与卡住调查](shell-command-isolation/index.md)
 - [聊天记录导入的消息级内存优化](chat-import-memory/index.md)
 - [上游小修复同步与输入框玻璃预览](upstream-small-fixes/index.md)
