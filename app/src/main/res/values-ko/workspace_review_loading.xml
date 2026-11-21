@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">큰 차이입니다. 구문 강조 없이 변경 사항을 보려면 불러오세요.</string>
+    <string name="workspace_changes_load_diff">차이 불러오기</string>
+    <string name="workspace_changes_hard_limit">표시 한도를 초과했습니다. 두 버전 합계 4,194,304자 또는 20,000줄, 한 줄은 131,072자까지입니다. 원본 파일을 열어 확인하세요.</string>
+    <string name="workspace_changes_long_lines_wrap">매우 긴 줄은 창 너비에 맞춰 줄바꿈됩니다.</string>
+    <string name="workspace_changes_record_summary">%1$s · 기록된 변경 요약</string>
+    <string name="workspace_changes_record_scope">관찰 중에는 터미널 및 외부 편집을 포함한 연결 디렉터리의 실제 변경도 저장합니다. 저장하지 않은 기록은 복구할 수 없습니다.</string>
+</resources>

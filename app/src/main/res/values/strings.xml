@@ -9468,7 +9468,7 @@
     <string name="workspace_changes_choose_base">选择比较分支</string>
     <string name="workspace_changes_load_failed">读取文件变更失败</string>
     <string name="workspace_changes_count">%1$d 个文件</string>
-    <string name="workspace_changes_empty_records">还没有记录到文件操作。成功的文件工具操作会保存在这里。</string>
+    <string name="workspace_changes_empty_records">还没有记录到文件变化。绑定工作区后，终端和外部修改也会保存在这里。</string>
     <string name="workspace_changes_empty_git">当前范围没有文件变更。</string>
     <string name="workspace_changes_choose_file">选择文件查看差异</string>
     <string name="workspace_changes_history_count">%1$s · %2$d 次操作</string>
@@ -9490,7 +9490,7 @@
     <string name="workspace_changes_git_environment">此文件环境不支持执行 Git，仍可查看操作记录。</string>
     <string name="workspace_changes_git_runtime">请先在离线资源中安装 Ubuntu，并在该环境安装 Git。</string>
     <string name="workspace_outputs_title">对话产出</string>
-    <string name="workspace_outputs_description">查看当前对话成功执行的文件操作，不受工作区绑定范围限制</string>
+    <string name="workspace_outputs_description">查看当前对话已保存的文件变化，包含文件工具记录及绑定目录的实际修改</string>
     <string name="workspace_outputs_scope">当前对话的文件操作，包含工作区外的文件</string>
     <string name="workspace_changes_flat_list">平铺列表</string>
     <string name="workspace_changes_filter">筛选文件…</string>

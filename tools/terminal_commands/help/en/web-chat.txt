@@ -1,0 +1,18 @@
+Operit HTTP / Web Chat / A2A service management
+
+Usage:
+  web-chat start-server [--port PORT] [--login]
+  web-chat stop-server
+  web-chat status
+  web-chat token show
+  web-chat token reset
+  web-chat examples [sync|async|health|intent]
+  web-chat --help
+  web-chat --version
+
+Notes:
+  Use in the Operit terminal. The saved port is used; the initial default is 8094.
+  start-server prints annotated URLs and the token; --login opens a browser and signs in.
+  token reset replaces the token; a normal start keeps the existing token.
+  examples prints request examples without sending requests. With no type, all examples are printed.
+  The command does not modify the clipboard.

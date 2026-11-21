@@ -9137,7 +9137,7 @@
     <string name="workspace_changes_choose_base">Alegeți ramura de comparație</string>
     <string name="workspace_changes_load_failed">Nu s-au putut încărca modificările</string>
     <string name="workspace_changes_count">%1$d fișiere</string>
-    <string name="workspace_changes_empty_records">Nu există încă operații înregistrate. Operațiile de fișiere reușite vor apărea aici.</string>
+    <string name="workspace_changes_empty_records">Nu există modificări înregistrate. Asociază un spațiu de lucru pentru a înregistra și editările din terminal sau externe.</string>
     <string name="workspace_changes_empty_git">Nu există modificări în acest domeniu.</string>
     <string name="workspace_changes_choose_file">Selectați un fișier pentru a vedea diferențele</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operații</string>
@@ -9159,7 +9159,7 @@
     <string name="workspace_changes_git_environment">Acest mediu nu poate rula Git. Istoricul operațiilor este disponibil.</string>
     <string name="workspace_changes_git_runtime">Instalați Ubuntu din Resurse offline, apoi instalați Git în acel mediu.</string>
     <string name="workspace_outputs_title">Rezultatele conversației</string>
-    <string name="workspace_outputs_description">Examinați operațiile reușite din această conversație, în toate locațiile</string>
+    <string name="workspace_outputs_description">Vezi modificările salvate ale conversației, inclusiv instrumentele de fișiere și modificările reale din directorul asociat</string>
     <string name="workspace_outputs_scope">Operațiile acestei conversații, inclusiv fișierele din afara spațiului de lucru</string>
     <string name="workspace_changes_last_turn">Ultima rundă</string>
     <string name="workspace_changes_turn_summary">%1$s · Rezumatul rundei</string>

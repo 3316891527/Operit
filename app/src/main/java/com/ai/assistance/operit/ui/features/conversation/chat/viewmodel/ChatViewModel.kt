@@ -50,7 +50,6 @@ import com.ai.assistance.operit.data.repository.MessageTranslationRepository
 import com.ai.assistance.operit.core.config.PromptFunctionType
 import com.ai.assistance.operit.core.tools.protocol.ToolParameter
 import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.LocalWebServer
 import com.ai.assistance.operit.ui.floating.FloatingMode
 import com.ai.assistance.operit.ui.permissions.PermissionLevel
 import com.ai.assistance.operit.ui.permissions.ToolPermissionSystem
@@ -609,9 +608,6 @@ class ChatViewModel(context: Context) : ViewModel() {
                     override fun setActiveDraftChat(chatId: String?) {
                         _replyToMessage.value = replyDrafts.switchTo(chatId, _replyToMessage.value)
                     }
-                    override fun updateWebServerForCurrentChat(chatId: String) {
-                        this@ChatViewModel.updateWebServerForCurrentChat(chatId)
-                    }
 
                     override fun resetAttachmentPanelState() {
                         this@ChatViewModel.resetAttachmentPanelState()
@@ -837,21 +833,6 @@ class ChatViewModel(context: Context) : ViewModel() {
         chatListMotion.newChatId.value?.let(chatListMotion::consumeIntro)
         chatHistoryDelegate.switchChat(chatId)
         chatRuntimeHolder.syncMainChatSelectionToFloating(chatId)
-
-        // 如果当前WebView正在显示，则更新工作区并触发刷新
-        if (_workspaceHubPage.value == WorkspaceHubPage.WORKSPACE) {
-            viewModelScope.launch {
-                try {
-                    prepareWorkspaceServerForCurrentChat(chatId)
-                    refreshWebView()
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "切换聊天后更新工作区服务失败", e)
-                    uiStateDelegate.showErrorMessage(
-                        context.getString(R.string.chat_update_workspace_server_failed, e.message ?: "")
-                    )
-                }
-            }
-        }
 
         if (_autoSwitchCharacterCard.value) {
             viewModelScope.launch {
@@ -2561,8 +2542,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         workspaceOpenJob = viewModelScope.launch {
             _isWorkspacePreparing.value = true
             try {
-                val chatId = awaitWorkspaceChatId()
-                prepareWorkspaceServerForCurrentChat(chatId)
+                awaitWorkspaceChatId()
                 currentCoroutineContext().ensureActive()
                 _workspaceEntryRequest.value = WorkspaceEntryRequest(
                     action = action,
@@ -2616,65 +2596,6 @@ class ChatViewModel(context: Context) : ViewModel() {
 
     fun showEmbeddedTerminalPage(page: EmbeddedTerminalPage) {
         _embeddedTerminalPage.value = page
-    }
-
-    private fun isWorkspaceServerEnabled(workspacePath: String, workspaceEnv: String?): Boolean {
-        if (workspaceEnv?.startsWith("repo:", ignoreCase = true) == true) {
-            return false
-        }
-        return WorkspaceConfigReader.readConfig(workspacePath).server.enabled
-    }
-
-    private suspend fun prepareWorkspaceServer(workspacePath: String, workspaceEnv: String?): Boolean {
-        return withContext(Dispatchers.IO) {
-            val webServer = LocalWebServer.getInstance(context, LocalWebServer.ServerType.WORKSPACE)
-            val serverEnabled = isWorkspaceServerEnabled(workspacePath, workspaceEnv)
-
-            if (!serverEnabled) {
-                if (webServer.isRunning()) {
-                    webServer.stop()
-                }
-                false
-            } else {
-                if (!webServer.isRunning()) {
-                    webServer.start()
-                }
-                webServer.updateChatWorkspace(workspacePath, workspaceEnv)
-                true
-            }
-        }
-    }
-
-    private suspend fun prepareWorkspaceServerForCurrentChat(chatId: String) {
-        val chat = chatHistories.value.find { it.id == chatId }
-        val workspacePath = chat?.workspace
-        val workspaceEnv = chat?.workspaceEnv
-
-        if (workspacePath == null) {
-            AppLogger.w(TAG, "Chat $chatId has no workspace bound. Web server not updated.")
-            return
-        }
-
-        if (prepareWorkspaceServer(workspacePath, workspaceEnv)) {
-            AppLogger.d(TAG, "Web服务器工作空间已更新为: $workspacePath env=$workspaceEnv for chat $chatId")
-        } else {
-            AppLogger.d(TAG, "工作区服务器已按配置禁用: $workspacePath env=$workspaceEnv for chat $chatId")
-        }
-    }
-
-
-    // 更新当前聊天ID的Web服务器工作空间
-    fun updateWebServerForCurrentChat(chatId: String) {
-        viewModelScope.launch {
-            try {
-                prepareWorkspaceServerForCurrentChat(chatId)
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "更新Web服务器工作空间失败", e)
-                uiStateDelegate.showErrorMessage(
-                    context.getString(R.string.chat_update_workspace_server_failed, e.message ?: "")
-                )
-            }
-        }
     }
 
     // 强制WebView刷新
@@ -2961,80 +2882,18 @@ class ChatViewModel(context: Context) : ViewModel() {
 
     /** 更新指定聊天的标题 */
     fun bindChatToWorkspace(chatId: String, workspace: String, workspaceEnv: String? = null) {
-        // 1. Persist the change
         chatHistoryDelegate.bindChatToWorkspace(chatId, workspace, workspaceEnv)
-
-        // 2. Update the web server with the new path and refresh
-        viewModelScope.launch {
-            try {
-                if (prepareWorkspaceServer(workspace, workspaceEnv)) {
-                    AppLogger.d(TAG, "Web server workspace updated to: $workspace env=$workspaceEnv for chat $chatId")
-                } else {
-                    AppLogger.d(TAG, "Workspace server disabled by config for: $workspace env=$workspaceEnv")
-                }
-
-                // 3. Trigger a refresh of the WebView
-                refreshWebView()
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to update web server workspace after binding", e)
-                uiStateDelegate.showErrorMessage(
-                    context.getString(R.string.chat_update_workspace_server_failed, e.message ?: "")
-                )
-            }
-        }
     }
 
-    /** 解绑聊天的工作区 */
+    /** 解绑仅更新目录归属，网页服务由显式服务命令管理。 */
     fun unbindChatFromWorkspace(chatId: String) {
-        // 1. Persist the change
         chatHistoryDelegate.unbindChatFromWorkspace(chatId)
-
-        // 2. Stop the web server or clear workspace
-        viewModelScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    val webServer = LocalWebServer.getInstance(context, LocalWebServer.ServerType.WORKSPACE)
-                    if (webServer.isRunning()) {
-                        webServer.stop()
-                    }
-                }
-                AppLogger.d(TAG, "Web server stopped after unbinding workspace for chat $chatId")
-
-                // 3. Trigger a refresh of the WebView
-                refreshWebView()
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to stop web server after unbinding", e)
-                uiStateDelegate.showErrorMessage(
-                    context.getString(R.string.chat_stop_workspace_server_failed, e.message ?: "")
-                )
-            }
-        }
     }
-
     suspend fun renameWorkspace(
         chatId: String,
         newWorkspaceName: String
     ): WorkspaceRenameResult {
         val result = chatHistoryDelegate.renameWorkspaceAndChat(chatId, newWorkspaceName)
-        runCatching {
-            if (prepareWorkspaceServer(result.workspacePath, result.workspaceEnv)) {
-                AppLogger.d(
-                    TAG,
-                    "Web server workspace renamed to: ${result.workspacePath} env=${result.workspaceEnv} for chat $chatId"
-                )
-            } else {
-                AppLogger.d(
-                    TAG,
-                    "Workspace server disabled by config after rename: ${result.workspacePath} env=${result.workspaceEnv}"
-                )
-            }
-            refreshWebView()
-        }.onFailure { e ->
-            AppLogger.e(TAG, "Failed to refresh workspace after rename", e)
-            uiStateDelegate.showErrorMessage(
-                context.getString(R.string.chat_update_workspace_server_failed, e.message ?: "")
-            )
-        }
         return result
     }
 

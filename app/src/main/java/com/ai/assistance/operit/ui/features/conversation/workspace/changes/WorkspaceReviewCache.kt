@@ -3,8 +3,13 @@ package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 /** 来源和快照版本共同确定缓存，文件切换不重新读取或分词。 */
 internal data class ReviewCacheKey(val file: ReviewFile, val recordId: String?)
 
-internal data class LoadedFileReview(val content: ReviewContent, val diff: PreparedReviewDiff?) {
-    init { require(content.isText == (diff != null)) }
+internal data class LoadedFileReview(
+    val content: ReviewContent, val diff: PreparedReviewDiff?, val load: ReviewDiffLoad = WorkspaceDiffPolicy.classify(content),
+    val snapshotKey: String? = if (content.isText) diff?.document?.snapshotKey
+        ?: reviewSnapshotKey(checkNotNull(content.before), checkNotNull(content.after)) else null,
+    val highlightComplete: Boolean = false,
+) {
+    init { require(diff == null || content.isText) }
     val characters: Int get() = (content.before?.length ?: 0) + (content.after?.length ?: 0)
 }
 
@@ -38,10 +43,18 @@ internal fun latestTurnRecords(records: List<FileChangeRecord>, userMessages: Li
     return records.filter { it.timestamp >= start && (end == null || it.timestamp < end) }
 }
 
-internal fun reviewDiffSupported(content: ReviewContent): Boolean {
-    if (!content.isText) return false
-    val before = checkNotNull(content.before)
-    val after = checkNotNull(content.after)
-    return before.count { it == '\n' } + after.count { it == '\n' } <= 20_000 &&
-        before.lineSequence().none { it.length > 8_192 } && after.lineSequence().none { it.length > 8_192 }
+internal fun reviewDiffSupported(content: ReviewContent): Boolean =
+    WorkspaceDiffPolicy.classify(content) != ReviewDiffLoad.BLOCKED
+
+/** 后台统计不提前计算需要用户主动加载的大型差异。 */
+internal fun reviewDiffAutomatic(content: ReviewContent): Boolean =
+    WorkspaceDiffPolicy.classify(content) == ReviewDiffLoad.AUTOMATIC
+
+/** 行差异可直接显示，高亮使用同一个行模型，避免等候 Markdown 等语法的初始化。 */
+internal fun prepareReviewLines(content: ReviewContent): PreparedReviewDiff {
+    val document = WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after))
+    val columns = document.rows.maxOfOrNull { line ->
+        line.text.sumOf { ch: Char -> if (ch == '\t') 4L else if (ch.code > 127) 2L else 1L }.toInt()
+    } ?: 0
+    return PreparedReviewDiff(document, null, null, columns)
 }

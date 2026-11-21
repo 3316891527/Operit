@@ -8545,7 +8545,7 @@
     <string name="workspace_changes_choose_base">Pilih cabang pembanding</string>
     <string name="workspace_changes_load_failed">Tidak dapat memuat perubahan berkas</string>
     <string name="workspace_changes_count">%1$d berkas</string>
-    <string name="workspace_changes_empty_records">Belum ada operasi berkas yang tercatat. Operasi alat berkas yang berhasil akan muncul di sini.</string>
+    <string name="workspace_changes_empty_records">Belum ada perubahan tercatat. Tautkan ruang kerja untuk merekam suntingan terminal dan eksternal.</string>
     <string name="workspace_changes_empty_git">Tidak ada perubahan berkas dalam cakupan ini.</string>
     <string name="workspace_changes_choose_file">Pilih berkas untuk meninjau perbedaannya</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operasi</string>
@@ -8567,7 +8567,7 @@
     <string name="workspace_changes_git_environment">Lingkungan berkas ini tidak dapat menjalankan Git. Riwayat operasi tetap tersedia.</string>
     <string name="workspace_changes_git_runtime">Pasang Ubuntu dari Sumber daya offline, lalu pasang Git di lingkungan tersebut.</string>
     <string name="workspace_outputs_title">Hasil percakapan</string>
-    <string name="workspace_outputs_description">Tinjau operasi berkas yang berhasil dari percakapan ini di semua lokasi</string>
+    <string name="workspace_outputs_description">Lihat perubahan tersimpan percakapan ini, termasuk alat berkas dan perubahan direktori tertaut</string>
     <string name="workspace_outputs_scope">Operasi berkas dari percakapan ini, termasuk berkas di luar ruang kerja</string>
     <string name="workspace_changes_last_turn">Giliran terakhir</string>
     <string name="workspace_changes_turn_summary">%1$s · Ringkasan giliran</string>

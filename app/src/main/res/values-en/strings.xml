@@ -9492,7 +9492,7 @@
     <string name="workspace_changes_choose_base">Choose comparison branch</string>
     <string name="workspace_changes_load_failed">Could not load file changes</string>
     <string name="workspace_changes_count">%1$d files</string>
-    <string name="workspace_changes_empty_records">No recorded file operations yet. Successful file tool operations will appear here.</string>
+    <string name="workspace_changes_empty_records">No file changes recorded yet. Bind a workspace to also record terminal and external edits.</string>
     <string name="workspace_changes_empty_git">No file changes in this scope.</string>
     <string name="workspace_changes_choose_file">Select a file to review its differences</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operations</string>
@@ -9514,7 +9514,7 @@
     <string name="workspace_changes_git_environment">This file environment cannot run Git. Operation history remains available.</string>
     <string name="workspace_changes_git_runtime">Install Ubuntu from Offline resources, then install Git in that environment.</string>
     <string name="workspace_outputs_title">Conversation outputs</string>
-    <string name="workspace_outputs_description">Review successful file operations from this conversation across all locations</string>
+    <string name="workspace_outputs_description">View saved changes for this conversation, including file tools and actual changes in the bound directory</string>
     <string name="workspace_outputs_scope">File operations from this conversation, including files outside the workspace</string>
     <string name="workspace_changes_flat_list">Flat list</string>
     <string name="workspace_changes_filter">Filter files…</string>

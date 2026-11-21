@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">归档来源</string>
     <string name="workspace_archive_packed_size">压缩大小</string>
     <string name="workspace_archive_encrypted">已加密</string>
-    <string name="workspace_archive_name_hint">扩展名由格式自动添加。</string>
+    <string name="workspace_archive_name_hint">已填写的后缀会保留；默认名称或与源文件同名时，自动补全所选格式的后缀。</string>
     <string name="workspace_archive_stage_target">检查目标</string>
     <string name="workspace_archive_stage_sources">读取来源</string>
     <string name="workspace_archive_stage_write">写入归档</string>

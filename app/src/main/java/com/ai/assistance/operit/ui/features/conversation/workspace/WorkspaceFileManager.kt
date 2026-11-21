@@ -100,18 +100,23 @@ data class DirectoryEntry(
 data class QuickPathEntry(
         val name: String,
         val path: String,
-        val icon: androidx.compose.ui.graphics.vector.ImageVector
+        val icon: androidx.compose.ui.graphics.vector.ImageVector,
+        val environment: String = "android"
 )
 
 /** 文件浏览器组件 - VSCode风格 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FileBrowser(
+internal fun FileBrowser(
         initialPath: String,
         environment: String? = null,
         onBindWorkspace: ((String, String?) -> Unit)? = null,
         onCancel: () -> Unit,
         showHeader: Boolean = true,
+        workspaceRoot: WorkspaceLocation? = null,
+        entrySequence: Long = 0,
+        onUnbindWorkspace: (() -> Unit)? = null,
+        onRenameWorkspace: (() -> Unit)? = null,
         onFileOpen: (OpenFileInfo) -> Unit
 ) {
     val context = LocalContext.current
@@ -244,12 +249,12 @@ fun FileBrowser(
 
     val linuxInstalled = rememberWorkspaceLinuxInstalled()
     // 入口只依据安装完成标记，浏览文件不创建终端会话。
-    val quickPaths = remember(linuxInstalled) {
+    val quickPaths = remember(linuxInstalled, workspaceRoot) {
         buildList {
             if (linuxInstalled) add(QuickPathEntry(
                 name = "Linux",
                 path = "/",
-                icon = Icons.Default.Terminal
+                icon = Icons.Default.Terminal, environment = "linux"
             ))
             add(QuickPathEntry(
                 name = "SDCard",
@@ -258,8 +263,8 @@ fun FileBrowser(
             ))
             add(QuickPathEntry(
                 name = "Workspace",
-                path = File(context.filesDir, "workspace").absolutePath,
-                icon = Icons.Default.Folder
+                path = workspaceRoot?.path ?: File(context.filesDir, "workspace").absolutePath,
+                icon = Icons.Default.Folder, environment = workspaceRoot?.environment ?: "android"
             ))
         }
     }
@@ -582,10 +587,13 @@ fun FileBrowser(
         }
     }
 
-    LaunchedEffect(initialPath, environment, linuxInstalled) {
-        // 首次进入使用浏览首页；编辑器返回时保留浏览位置，收藏不改变绑定工作区。
+    var handledEntry by rememberSaveable(initialPath, environment) { mutableLongStateOf(-1L) }
+    LaunchedEffect(initialPath, environment, linuxInstalled, workspaceRoot, entrySequence) {
+        // 项目入口回到真实根目录；自由浏览才应用首页，编辑器返回不重置导航。
+        val projectEntry = workspaceRoot != null && handledEntry != entrySequence
+        handledEntry = entrySequence
         val savedSettings = browserPreferences.settings.first()
-        val home = savedSettings.home.takeIf { applyHome }
+        val home = if (projectEntry) workspaceRoot else savedSettings.home.takeIf { applyHome && workspaceRoot == null }
         applyHome = false
         val pathToLoad = home?.path ?: currentPath
         val environmentToLoad = home?.environment ?: currentEnvironment
@@ -633,6 +641,12 @@ fun FileBrowser(
         WorkspaceBrowserMenuItem(stringResource(R.string.file_manager_new), Icons.Default.Add, !isLoading) { showCreateFileDialog = true }
         WorkspaceBrowserMenuItem(stringResource(R.string.workspace_multi_select), Icons.Default.CheckBox, !isLoading, selectionMode) {
             if (selectionMode) finishSelection() else selectionMode = true
+        }
+        if (onUnbindWorkspace != null) WorkspaceBrowserMenuItem(stringResource(R.string.unbind), Icons.Default.LinkOff, !isLoading) {
+            onUnbindWorkspace()
+        }
+        if (onRenameWorkspace != null) WorkspaceBrowserMenuItem(stringResource(R.string.workspace_rename_action), Icons.Default.DriveFileRenameOutline, !isLoading) {
+            onRenameWorkspace()
         }
         if (selectionMode) WorkspaceBrowserMenuItem(stringResource(R.string.select_all_current_list), Icons.Default.SelectAll, !isLoading) {
             selectedNames = visibleFiles.map { it.name }.toSet()
@@ -1006,23 +1020,9 @@ fun FileBrowser(
                 items(quickPaths) { quickPath ->
                     QuickPathChip(
                         entry = quickPath,
-                        isActive =
-                            if (quickPath.name == "Linux") {
-                                currentEnvironment == "linux" && currentPath.startsWith(quickPath.path)
-                            } else {
-                                currentLocation.environment == "android" && currentPath.startsWith(quickPath.path)
-                            },
-                        onClick = {
-                            if (quickPath.name == "Linux") {
-                                loadDirectory("/", "linux")
-                                return@QuickPathChip
-                            }
-
-                            val pathFile = File(quickPath.path)
-                            if (pathFile.exists() && pathFile.isDirectory) {
-                                loadDirectory(quickPath.path, null)
-                            }
-                        }
+                        isActive = currentLocation.environment == quickPath.environment &&
+                            (currentPath == quickPath.path || currentPath.startsWith(quickPath.path.trimEnd('/') + "/")),
+                        onClick = { loadDirectory(quickPath.path, quickPath.environment) }
                     )
                 }
 

@@ -8613,7 +8613,7 @@
     <string name="workspace_changes_choose_base">Elegir rama de comparación</string>
     <string name="workspace_changes_load_failed">No se pudieron cargar los cambios</string>
     <string name="workspace_changes_count">%1$d archivos</string>
-    <string name="workspace_changes_empty_records">Todavía no hay operaciones registradas. Las operaciones de archivos correctas aparecerán aquí.</string>
+    <string name="workspace_changes_empty_records">Aún no hay cambios registrados. Vincula un espacio de trabajo para registrar también los cambios del terminal y externos.</string>
     <string name="workspace_changes_empty_git">No hay cambios en este ámbito.</string>
     <string name="workspace_changes_choose_file">Selecciona un archivo para ver las diferencias</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operaciones</string>
@@ -8635,7 +8635,7 @@
     <string name="workspace_changes_git_environment">Este entorno no puede ejecutar Git. El historial sigue disponible.</string>
     <string name="workspace_changes_git_runtime">Instala Ubuntu desde Recursos sin conexión y después Git en ese entorno.</string>
     <string name="workspace_outputs_title">Resultados de la conversación</string>
-    <string name="workspace_outputs_description">Revisar las operaciones de esta conversación en cualquier ubicación</string>
+    <string name="workspace_outputs_description">Ver los cambios guardados de esta conversación, incluidas las herramientas de archivos y la carpeta vinculada</string>
     <string name="workspace_outputs_scope">Operaciones de esta conversación, incluidos archivos fuera del espacio de trabajo</string>
     <string name="workspace_changes_last_turn">Último turno</string>
     <string name="workspace_changes_turn_summary">%1$s · Resumen del turno</string>

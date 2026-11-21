@@ -61,6 +61,7 @@ object ToolExecutionManager {
         val a2uiRunId: String? = null,
         val publishA2ui: (suspend (String) -> Unit)? = null,
         val publishA2uiAfterToolResult: (suspend (String) -> Unit)? = null,
+        val invokingToolName: String? = null,
     )
 
     private data class ToolExecutionOutput(
@@ -737,6 +738,7 @@ object ToolExecutionManager {
         val displayToolName = resolveDisplayToolName(invocation.tool)
         val a2uiDocuments = mutableListOf<String>()
         val invocationRuntimeContext = runtimeContext.copy(
+            invokingToolName = displayToolName,
             publishA2uiAfterToolResult = { document -> a2uiDocuments.add(document) },
         )
         val result = withContext(toolRuntimeContextThreadLocal.asContextElement(invocationRuntimeContext)) {
@@ -759,10 +761,11 @@ object ToolExecutionManager {
 
                 toolHandler.notifyToolExecutionStarted(invocation.tool)
 
-                val finalResult = aggregateToolResults(
-                    displayToolName,
-                    executeToolSafely(invocation, executor, toolHandler)
-                )
+                val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(toolHandler.applicationContext)
+                val fileSource = monitor.beginTool(runtimeContext.callerChatId, displayToolName)
+                val finalResult = try {
+                    aggregateToolResults(displayToolName, executeToolSafely(invocation, executor, toolHandler))
+                } finally { monitor.endTool(fileSource) }
                 toolHandler.notifyToolExecutionResult(invocation.tool, finalResult)
                 return@withContext finalResult
             } finally {

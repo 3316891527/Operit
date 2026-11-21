@@ -8544,7 +8544,7 @@
     <string name="workspace_changes_choose_base">Pilih cabang perbandingan</string>
     <string name="workspace_changes_load_failed">Tidak dapat memuatkan perubahan fail</string>
     <string name="workspace_changes_count">%1$d fail</string>
-    <string name="workspace_changes_empty_records">Belum ada operasi fail direkodkan. Operasi alat fail yang berjaya akan muncul di sini.</string>
+    <string name="workspace_changes_empty_records">Belum ada perubahan direkodkan. Pautkan ruang kerja untuk merekodkan suntingan terminal dan luaran.</string>
     <string name="workspace_changes_empty_git">Tiada perubahan fail dalam skop ini.</string>
     <string name="workspace_changes_choose_file">Pilih fail untuk menyemak perbezaannya</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operasi</string>
@@ -8566,7 +8566,7 @@
     <string name="workspace_changes_git_environment">Persekitaran fail ini tidak boleh menjalankan Git. Sejarah operasi masih tersedia.</string>
     <string name="workspace_changes_git_runtime">Pasang Ubuntu daripada Sumber luar talian, kemudian pasang Git dalam persekitaran itu.</string>
     <string name="workspace_outputs_title">Hasil perbualan</string>
-    <string name="workspace_outputs_description">Semak operasi fail berjaya daripada perbualan ini di semua lokasi</string>
+    <string name="workspace_outputs_description">Lihat perubahan tersimpan perbualan ini, termasuk alat fail dan perubahan direktori yang dipautkan</string>
     <string name="workspace_outputs_scope">Operasi fail daripada perbualan ini, termasuk fail di luar ruang kerja</string>
     <string name="workspace_changes_last_turn">Giliran terakhir</string>
     <string name="workspace_changes_turn_summary">%1$s · Ringkasan giliran</string>

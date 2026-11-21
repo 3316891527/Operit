@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">Monitorizarea fișierelor a eșuat: %1$s. Istoricul salvat rămâne disponibil.</string>
+    <string name="workspace_changes_base_deleted">Ramura de comparație %1$s nu mai există. Selectează o ramură disponibilă din listă.</string>
+</resources>

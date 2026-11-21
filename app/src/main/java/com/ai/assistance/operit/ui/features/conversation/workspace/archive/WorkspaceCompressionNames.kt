@@ -23,6 +23,11 @@ internal fun workspaceCompressionBaseName(target: FileBrowserClipboardItem): Str
     return if (dot > 0) name.substring(0, dot) else name
 }
 
-/** 名称字段只负责主体，扩展名完全由所选格式决定。 */
-internal fun workspaceCompressionFileName(base: String, kind: WorkspaceArchiveKind): String =
-    base + "." + workspaceArchiveExtension(kind)
+/** 默认名及源文件原名补全格式后缀；用户改名时填写的后缀原样保留。 */
+internal fun workspaceCompressionFileName(name: String, kind: WorkspaceArchiveKind, source: FileBrowserClipboardItem): String {
+    val original = source.path.trimEnd('/').substringAfterLast('/')
+    val dot = name.lastIndexOf('.')
+    val hasExtension = dot > 0 && dot < name.lastIndex
+    val keepExtension = hasExtension && name != original && name != workspaceCompressionBaseName(source)
+    return if (keepExtension) name else name + "." + workspaceArchiveExtension(kind)
+}

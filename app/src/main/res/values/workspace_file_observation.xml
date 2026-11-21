@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">工作区文件观察失败：%1$s。已保存的历史仍可查看。</string>
+    <string name="workspace_changes_base_deleted">比较分支 %1$s 已不存在，请从列表选择有效分支。</string>
+</resources>

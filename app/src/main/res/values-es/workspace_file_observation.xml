@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">No se pudo supervisar los archivos: %1$s. El historial guardado sigue disponible.</string>
+    <string name="workspace_changes_base_deleted">La rama de comparación %1$s ya no existe. Selecciona una rama disponible de la lista.</string>
+</resources>

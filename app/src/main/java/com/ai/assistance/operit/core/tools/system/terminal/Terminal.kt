@@ -13,6 +13,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withTimeout
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
+import com.ai.assistance.operit.terminal.provider.type.TerminalType
+import com.ai.assistance.operit.terminal.provider.filesystem.LocalFileSystemProvider
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.TerminalFileJournal
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.TerminalChangeOrigin
 import java.util.UUID
 
 /**
@@ -20,7 +30,10 @@ import java.util.UUID
  * 提供应用程序级别的终端服务管理和访问
  */
 @RequiresApi(Build.VERSION_CODES.O)
-class Terminal internal constructor(private val terminalManager: TerminalManager) {
+class Terminal internal constructor(
+    private val terminalManager: TerminalManager,
+    private val fileJournal: TerminalFileJournal? = null,
+) {
 
     companion object {
         @Volatile
@@ -28,7 +41,7 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
 
         fun getInstance(context: Context): Terminal {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Terminal(TerminalManager.getInstance(context.applicationContext)).also { INSTANCE = it }
+                INSTANCE ?: Terminal(TerminalManager.getInstance(context.applicationContext), TerminalFileJournal.get(context)).also { INSTANCE = it }
             }
         }
 
@@ -58,7 +71,11 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
      * 销毁终端管理器
      */
     fun destroy() {
-        terminalManager.cleanup()
+        try {
+            terminalManager.cleanup()
+        } finally {
+            runBlocking(Dispatchers.IO) { fileJournal?.close() }
+        }
     }
 
     /**
@@ -83,6 +100,7 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
      */
     fun closeSession(sessionId: String) {
         terminalManager.closeSession(sessionId)
+        fileJournal?.closeSession(sessionId)
     }
 
     /**
@@ -96,11 +114,14 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
         executorKey: String = "default",
         timeoutMs: Long = 120000L
     ): HiddenExecResult {
-        return terminalManager.executeHiddenCommand(
-            command = command,
-            executorKey = executorKey,
-            timeoutMs = timeoutMs
-        )
+        val origin = executionOrigin(UUID.randomUUID().toString())
+        val local = terminalManager.getFileSystemProvider() is LocalFileSystemProvider
+        val observation = if (local) fileJournal?.begin(origin) else null
+        try {
+            return terminalManager.executeHiddenCommand(command, executorKey, timeoutMs)
+        } finally {
+            if (observation != null) fileJournal?.finish(observation)
+        }
     }
 
     /**
@@ -112,12 +133,56 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
         command: String,
         commandId: String = UUID.randomUUID().toString(),
         onCancellationOutcome: (com.ai.assistance.operit.terminal.command.CommandCancellationOutcome) -> Unit = {},
-    ): Flow<CommandExecutionEvent> = terminalCommandFlow(
-        events = commandEvents, sessionId = sessionId, commandId = commandId,
-        submit = { terminalManager.sendCommandToSession(sessionId, command, commandId) },
-        cancel = { terminalManager.cancelCommand(sessionId, commandId) },
-        onCancellationOutcome = onCancellationOutcome,
-    )
+    ): Flow<CommandExecutionEvent> = observedCommandFlow(sessionId, command, commandId, null, onCancellationOutcome)
+
+    internal fun timedCommandFlow(sessionId: String, command: String, timeoutMs: Long): Flow<CommandExecutionEvent> =
+        observedCommandFlow(sessionId, command, UUID.randomUUID().toString(), timeoutMs) {}
+
+    private fun observedCommandFlow(
+        sessionId: String, command: String, commandId: String, timeoutMs: Long?,
+        onCancellationOutcome: (com.ai.assistance.operit.terminal.command.CommandCancellationOutcome) -> Unit,
+    ): Flow<CommandExecutionEvent> {
+        // 在创建 Flow 时冻结调用者，托管任务换协程收集后仍保留原始工具身份。
+        val origin = executionOrigin(commandId)
+        return flow {
+            val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
+            val journal = fileJournal?.takeIf { session?.terminalType == TerminalType.LOCAL }
+            val prepareStarted = System.nanoTime()
+            if (journal != null) AppLogger.d(TAG, "终端命令 $commandId 开始观察准备，会话=$sessionId")
+            val observation = journal?.begin(origin, session?.currentDirectory)
+            val executionStarted = System.nanoTime()
+            var completion: CommandExecutionEvent? = null
+            val execute: suspend () -> Unit = {
+                terminalCommandFlow(
+                    events = commandEvents, sessionId = sessionId, commandId = commandId,
+                    submit = {
+                        if (observation != null) AppLogger.d(TAG, "终端命令 $commandId 提交，观察准备=${(executionStarted - prepareStarted) / 1_000_000}ms")
+                        terminalManager.sendCommandToSession(sessionId, command, commandId)
+                    },
+                    cancel = { terminalManager.cancelCommand(sessionId, commandId) },
+                    onCancellationOutcome = onCancellationOutcome,
+                ).collect { event ->
+                    if (event.isCompleted) completion = event else emit(event)
+                }
+            }
+            try {
+                // 只对命令从提交到退出计时。历史采集用时不能覆盖进程已经给出的退出码。
+                if (timeoutMs == null) execute() else withTimeout(timeoutMs) { execute() }
+            } finally {
+                if (journal != null && observation != null) {
+                    val finishStarted = System.nanoTime()
+                    AppLogger.d(TAG, "终端命令 $commandId 执行阶段结束，完成事件=${completion != null}，耗时=${(finishStarted - executionStarted) / 1_000_000}ms")
+                    journal.finish(observation)
+                }
+            }
+            completion?.let { emit(it) }
+        }
+    }
+
+    private fun executionOrigin(commandId: String): TerminalChangeOrigin {
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        return TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", commandId)
+    }
 
     suspend fun cancelCommand(sessionId: String, commandId: String) =
         terminalManager.cancelCommand(sessionId, commandId)
@@ -126,6 +191,12 @@ class Terminal internal constructor(private val terminalManager: TerminalManager
      * 发送输入到当前会话
      */
     fun sendInput(sessionId: String, input: String) {
+        val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        val origin = TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", null)
+        if (session?.terminalType == TerminalType.LOCAL && input.isNotEmpty()) runBlocking(Dispatchers.IO) {
+            fileJournal?.interactiveInput(sessionId, origin, session.currentDirectory)
+        }
         terminalManager.sendInput(input, sessionId)
     }
 
