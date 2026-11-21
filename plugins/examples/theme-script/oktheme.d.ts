@@ -102,6 +102,8 @@ export interface Surface {
     /** 仅用于消息，为现有最大宽度的比例。 */
     messageWidth?: number;
     textStyle?: Typography;
+    /** 仅用于 input；省略或 null 保留原生提示，空字符串隐藏占位符。 */
+    placeholder?: string | null;
 }
 /** 空状态字段继承该部件的默认值，透明度与默认透明度相乘。 */
 export interface SurfaceState {
