@@ -43,6 +43,7 @@ class SubagentCatalog(context: Context) {
             put("selection_policy", "Choose a preset and an allowed model independently. Use the supplied capability descriptions and limitations, not prior knowledge of model names. Never invent model quality, speed, price or capabilities. Explain missing configuration instead of selecting a model outside this pool.")
             put("auto_archive_completed_default", settings.autoArchiveCompleted)
             putJsonObject("runtime_limits") {
+                put("max_depth", settings.limits.maxDepth)
                 put("global_concurrency", settings.limits.maxRunning)
                 put("per_chat_concurrency", settings.limits.maxPerChat)
                 put("execution_timeout_minutes", settings.limits.executionTimeoutMinutes)

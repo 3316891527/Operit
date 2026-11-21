@@ -127,7 +127,7 @@ fun SubagentConfigurationContent(saveCoordinator: ModelConfigSaveCoordinator, on
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.subagent_limits_title), style = MaterialTheme.typography.titleSmall)
-                    Text(stringResource(R.string.subagent_limits_summary, settings.limits.maxRunning, settings.limits.maxPerChat, settings.limits.executionTimeoutMinutes), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.subagent_limits_summary, settings.limits.maxRunning, settings.limits.maxPerChat, settings.limits.executionTimeoutMinutes, settings.limits.maxDepth), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick = { editingLimits = true }, enabled = !writer.busy) { Text(stringResource(R.string.edit)) }
             }
@@ -178,19 +178,22 @@ private fun LimitsEditor(limits: SubagentLimits, writer: ConfigurationWriter, pr
     var global by remember(limits) { mutableStateOf(limits.maxRunning.toString()) }
     var perChat by remember(limits) { mutableStateOf(limits.maxPerChat.toString()) }
     var timeout by remember(limits) { mutableStateOf(limits.executionTimeoutMinutes.toString()) }
+    var depth by remember(limits) { mutableStateOf(limits.maxDepth.toString()) }
     var discarding by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
-    val dirty = global != limits.maxRunning.toString() || perChat != limits.maxPerChat.toString() || timeout != limits.executionTimeoutMinutes.toString()
+    val dirty = global != limits.maxRunning.toString() || perChat != limits.maxPerChat.toString() || timeout != limits.executionTimeoutMinutes.toString() || depth != limits.maxDepth.toString()
     val globalValue = global.toIntOrNull()
     val chatValue = perChat.toIntOrNull()
     val timeoutValue = timeout.toIntOrNull()
     val globalValid = globalValue != null && globalValue in 1..64
     val chatValid = chatValue != null && globalValue != null && chatValue in 1..globalValue
     val timeoutValid = timeoutValue != null && timeoutValue in 1..120
-    val valid = globalValid && chatValid && timeoutValid
+    val depthValue = depth.toIntOrNull()
+    val depthValid = depthValue != null && depthValue in 1..8
+    val valid = globalValid && chatValid && timeoutValid && depthValid
     fun value(): SubagentLimits {
         require(valid) { context.getString(R.string.subagent_limits_invalid) }
-        return SubagentLimits(requireNotNull(globalValue), requireNotNull(chatValue), requireNotNull(timeoutValue)).validate()
+        return SubagentLimits(requireNotNull(globalValue), requireNotNull(chatValue), requireNotNull(timeoutValue), requireNotNull(depthValue)).validate()
     }
     RegisterModelConfigSaveAction(saveCoordinator, "subagent-limits-draft") { _ ->
         if (!discarding && dirty) preferences.setLimits(value())
@@ -205,6 +208,8 @@ private fun LimitsEditor(limits: SubagentLimits, writer: ConfigurationWriter, pr
             label = { Text(stringResource(R.string.subagent_limits_per_chat)) }, supportingText = { Text(stringResource(R.string.subagent_limits_per_chat_hint)) }, isError = !chatValid, enabled = !writer.busy, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         OutlinedTextField(timeout, { if (it.length <= 3 && it.all(Char::isDigit)) timeout = it }, Modifier.fillMaxWidth(), singleLine = true,
             label = { Text(stringResource(R.string.subagent_limits_timeout)) }, supportingText = { Text(stringResource(R.string.subagent_limits_timeout_hint)) }, isError = !timeoutValid, enabled = !writer.busy, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        OutlinedTextField(depth, { if (it.length <= 1 && it.all(Char::isDigit)) depth = it }, Modifier.fillMaxWidth(), singleLine = true,
+            label = { Text(stringResource(R.string.subagent_limits_depth)) }, supportingText = { Text(stringResource(R.string.subagent_limits_depth_hint)) }, isError = !depthValid, enabled = !writer.busy, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         if (!valid) Text(stringResource(R.string.subagent_limits_invalid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         if (writer.failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {

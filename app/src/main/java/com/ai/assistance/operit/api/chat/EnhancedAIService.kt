@@ -1137,7 +1137,7 @@ class EnhancedAIService private constructor(context: Context) {
                         execContext.voiceInputJob = kotlin.coroutines.coroutineContext[Job]
                         if (!isExecutionContextActive(execContext)) throw CancellationException("Voice input cancelled")
                     }
-                    if (!isSubTask && functionType == FunctionType.CHAT && chatId != null && options.turnInputInbox != null) {
+                    if ((!isSubTask || options.isDelegatedTask) && functionType == FunctionType.CHAT && chatId != null && options.turnInputInbox != null) {
                         com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).attachParent(chatId, requireNotNull(options.turnInputInbox)) { execContext.subagentHistorySnapshot }
                         execContext.parentAttached = true
                     }

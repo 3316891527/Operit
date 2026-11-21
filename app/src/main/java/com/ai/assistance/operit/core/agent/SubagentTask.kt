@@ -6,9 +6,9 @@ import com.ai.assistance.operit.core.chat.message.ChatMessageTimestampAllocator
 import java.util.UUID
 
 @Serializable
-enum class SubagentStatus { QUEUED, RUNNING, COMPLETED, CANCELLED, FAILED, INTERRUPTED }
+enum class SubagentStatus { QUEUED, RUNNING, WAITING, COMPLETED, CANCELLED, FAILED, INTERRUPTED }
 
-val SubagentStatus.isActive: Boolean get() = this == SubagentStatus.QUEUED || this == SubagentStatus.RUNNING
+val SubagentStatus.isActive: Boolean get() = this == SubagentStatus.QUEUED || this == SubagentStatus.RUNNING || this == SubagentStatus.WAITING
 
 @Serializable
 data class SubagentMessage(
@@ -34,6 +34,19 @@ data class SubagentReport(
     val delivered: Boolean = false,
 ) {
     val marker: String get() = "[Subagent report $id]"
+}
+
+@Serializable
+data class SubagentLetter(
+    val id: String = UUID.randomUUID().toString(),
+    val invocationId: String,
+    val senderTaskId: String?,
+    val recipientTaskId: String?,
+    val content: String,
+    val createdAt: Long = System.currentTimeMillis(),
+    val consumed: Boolean = false,
+) {
+    val marker: String get() = "[Agent message $id]"
 }
 
 @Serializable
@@ -73,6 +86,14 @@ data class SubagentTask(
     val completedAt: Long = 0,
     val toolCount: Int = 0,
     val schemaVersion: Int = 2,
+    val rootChatId: String = parentChatId,
+    val parentTaskId: String? = null,
+    val agentName: String = id.take(8),
+    val path: String = "/$agentName",
+    val depth: Int = 1,
+    val letters: List<SubagentLetter> = emptyList(),
+    val waitingFor: List<String> = emptyList(),
+    val queuedAt: Long = createdAt,
 )
 
 data class SubagentState(
@@ -80,10 +101,3 @@ data class SubagentState(
     val loaded: Boolean = false,
     val error: String? = null,
 )
-
-internal fun subagentFinalReport(raw: String): String {
-    val sections = com.ai.assistance.operit.core.chat.protocol.MessageSectionCodec.parse(raw)
-    val lastTool = sections.indexOfLast { it is com.ai.assistance.operit.data.model.MessageSection.ToolCall || it is com.ai.assistance.operit.data.model.MessageSection.ToolResult }
-    return sections.drop(lastTool + 1).filterIsInstance<com.ai.assistance.operit.data.model.MessageSection.Text>()
-        .joinToString("") { it.content }.trim()
-}

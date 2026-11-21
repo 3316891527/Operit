@@ -20,6 +20,7 @@ class SubagentLimitsTest {
             SubagentLimits(0, 1, 20), SubagentLimits(65, 1, 20),
             SubagentLimits(6, 0, 20), SubagentLimits(6, 7, 20),
             SubagentLimits(6, 3, 0), SubagentLimits(6, 3, 121),
+            SubagentLimits(maxDepth = 0), SubagentLimits(maxDepth = 9),
         )) assertThrows(IllegalArgumentException::class.java) { invalid.validate() }
     }
 

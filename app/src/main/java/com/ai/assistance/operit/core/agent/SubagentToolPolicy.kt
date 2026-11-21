@@ -18,13 +18,13 @@ internal object SubagentToolPolicy {
         "create_model_config", "update_model_config", "delete_model_config", "set_function_model_config", "set_tool_permission_mode", "set_sandbox_package_enabled",
         "create_character_card", "update_character_card", "delete_character_card", "set_active_character_card", "clear_active_character_card", "import_character_card_from_tavern_json",
     )
-    fun isAllowedName(name: String): Boolean = name !in sharedTools && name !in SubagentTools.names &&
+    fun isAllowedName(name: String): Boolean = name !in sharedTools &&
         !name.startsWith("a2ui_") && !name.startsWith("browser_") && !name.startsWith("music_") &&
         !name.startsWith("automatic_ui_subagent:") && !name.startsWith("subagent:")
 
     fun denial(tool: AITool, delegatedTask: Boolean): ToolResult? {
         if (!delegatedTask || isAllowedName(tool.name)) return null
-        return ToolResult(tool.name, false, StringResultData(""), error = "This helper cannot use shared UI, change chat/model settings, or delegate work. Return the requirement to the main agent.")
+        return ToolResult(tool.name, false, StringResultData(""), error = "This helper cannot use shared UI, change chat/model settings, or operate outside the configured collaboration tree. Return the requirement to the main agent.")
     }
     fun guard(delegate: ToolExecutor): ToolExecutor = object : ToolExecutor {
         override fun validateParameters(tool: AITool) = delegate.validateParameters(tool)

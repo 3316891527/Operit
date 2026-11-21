@@ -11,7 +11,7 @@ class SubagentToolDefinitionsTest {
     fun bothLanguagesExposeExactlyTheSameProtocol() {
         val english = SubagentToolDefinitions.category(true)
         val chinese = SubagentToolDefinitions.category(false)
-        assertEquals(9, english.tools.size)
+        assertEquals(11, english.tools.size)
         assertEquals(english.tools.map { it.name }, chinese.tools.map { it.name })
         english.tools.zip(chinese.tools).forEach { (en, cn) ->
             assertNotEquals(en.description, cn.description)

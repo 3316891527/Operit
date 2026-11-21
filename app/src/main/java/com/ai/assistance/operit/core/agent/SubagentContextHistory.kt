@@ -2,35 +2,6 @@ package com.ai.assistance.operit.core.agent
 
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
 import com.ai.assistance.operit.core.chat.hooks.PromptTurnKind
-import java.util.Locale
-
-internal sealed interface SubagentFork {
-    data object None : SubagentFork
-    data object All : SubagentFork
-    data class LastTurns(val count: Int) : SubagentFork
-
-    val parameter: String
-        get() = when (this) {
-            None -> "none"
-            All -> "all"
-            is LastTurns -> count.toString()
-        }
-
-    companion object {
-        fun parse(value: String): SubagentFork {
-            val normalized = value.trim().lowercase(Locale.ROOT)
-            return when (normalized) {
-                "none" -> None
-                "all" -> All
-                else -> {
-                    val count = requireNotNull(normalized.toIntOrNull()) { "fork_turns must be none, all, or an integer from 1 to 64" }
-                    require(count in 1..64) { "fork_turns must be between 1 and 64 user turns" }
-                    LastTurns(count)
-                }
-            }
-        }
-    }
-}
 
 /** 父轮次只提供背景，工具身份、思考和中间执行内容不能进入新的子任务。 */
 internal object SubagentContextHistory {
@@ -56,7 +27,7 @@ internal object SubagentContextHistory {
 
     private fun isEvent(turn: PromptTurn): Boolean =
         turn.metadata[EVENT] == true || turn.metadata[INTERMEDIATE] == true ||
-            turn.content.startsWith("[Subagent report ")
+            turn.content.startsWith("[Subagent report ") || turn.content.startsWith("[Agent message ")
 
     fun select(history: List<PromptTurn>, fork: SubagentFork): List<PromptTurn> {
         if (fork == SubagentFork.None) return emptyList()

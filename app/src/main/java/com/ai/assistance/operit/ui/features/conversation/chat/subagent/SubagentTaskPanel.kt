@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 private fun statusName(status: SubagentStatus): String = stringResource(when (status) {
     SubagentStatus.QUEUED -> R.string.subagent_status_queued
     SubagentStatus.RUNNING -> R.string.subagent_status_running
+    SubagentStatus.WAITING -> R.string.subagent_status_waiting
     SubagentStatus.COMPLETED -> R.string.subagent_status_completed
     SubagentStatus.CANCELLED -> R.string.subagent_status_cancelled
     SubagentStatus.FAILED -> R.string.subagent_status_failed
@@ -53,7 +54,7 @@ fun SubagentTaskPanel(chatId: String?) {
     val context = LocalContext.current
     val coordinator = remember { SubagentCoordinator.getInstance(context) }
     val state by coordinator.state.collectAsState()
-    val tasks = state.tasks.filter { it.parentChatId == chatId }
+    val tasks = state.tasks.filter { it.rootChatId == chatId }
     var expanded by remember(chatId) { mutableStateOf(true) }
     var manager by remember(chatId) { mutableStateOf(false) }
     var selected by remember(chatId) { mutableStateOf<String?>(null) }
@@ -67,7 +68,7 @@ fun SubagentTaskPanel(chatId: String?) {
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.subagent_collaboration), style = MaterialTheme.typography.labelLarge)
-                    Text(stringResource(R.string.subagent_task_count, visible.count { it.status == SubagentStatus.RUNNING }, visible.count { it.status == SubagentStatus.QUEUED }, visible.sumOf { it.reports.size }), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.subagent_task_count, visible.count { it.status == SubagentStatus.RUNNING }, visible.count { it.status == SubagentStatus.QUEUED }, visible.count { it.status == SubagentStatus.WAITING }, visible.sumOf { it.reports.size }), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 TextButton(onClick = { manager = true }) { Text(stringResource(R.string.subagent_tasks)) }
                 IconButton(onClick = { expanded = !expanded }) {
@@ -76,7 +77,7 @@ fun SubagentTaskPanel(chatId: String?) {
             }
             state.error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             if (expanded && visible.isNotEmpty()) LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(bottom = 6.dp)) {
-                items(visible, key = { it.id }) { task -> TaskCard(task, Modifier.width(220.dp)) { selected = task.id } }
+                items(visible, key = { it.id }) { task -> TaskCard(task, Modifier.width(220.dp), SubagentTree.queuePosition(state.tasks, task.id)) { selected = task.id } }
             }
         }
     }
@@ -85,7 +86,7 @@ fun SubagentTaskPanel(chatId: String?) {
 }
 
 @Composable
-private fun TaskCard(task: SubagentTask, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun TaskCard(task: SubagentTask, modifier: Modifier = Modifier, queuePosition: Int = 0, onClick: () -> Unit) {
     Surface(onClick = onClick, modifier = modifier, shape = RoundedCornerShape(14.dp), border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -93,6 +94,8 @@ private fun TaskCard(task: SubagentTask, modifier: Modifier = Modifier, onClick:
                 Spacer(Modifier.width(6.dp))
                 Icon(Icons.Default.ChevronRight, null, Modifier.size(16.dp))
             }
+            Text(task.path, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            if (queuePosition > 0) Text(stringResource(R.string.subagent_queue_position, queuePosition), style = MaterialTheme.typography.labelSmall)
             Text(task.model.modelName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (task.status == SubagentStatus.RUNNING) CircularProgressIndicator(Modifier.size(12.dp), strokeWidth = 1.5.dp)
@@ -140,7 +143,7 @@ private fun TaskManager(tasks: List<SubagentTask>, onDismiss: () -> Unit, onOpen
             items(TaskFilter.entries) { entry -> FilterChip(filter == entry, { filter = entry }, label = { Text(stringResource(entry.label)) }) }
         }
         val visible = tasks.filter { task ->
-            (task.title.contains(query, true) || task.preset.name.contains(query, true)) && when (filter) {
+            (task.title.contains(query, true) || task.preset.name.contains(query, true) || task.path.contains(query, true)) && when (filter) {
                 TaskFilter.ALL -> !task.archived
                 TaskFilter.ACTIVE -> task.status.isActive && !task.archived
                 TaskFilter.COMPLETED -> task.status == SubagentStatus.COMPLETED && !task.archived
@@ -150,7 +153,7 @@ private fun TaskManager(tasks: List<SubagentTask>, onDismiss: () -> Unit, onOpen
         }.sortedByDescending { it.createdAt }
         if (visible.isEmpty()) Text(stringResource(R.string.subagent_no_matching_tasks), style = MaterialTheme.typography.bodySmall)
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(visible, key = { it.id }) { task -> TaskCard(task, Modifier.fillMaxWidth()) { onOpen(task.id) } }
+            items(visible, key = { it.id }) { task -> TaskCard(task, Modifier.fillMaxWidth(), SubagentTree.queuePosition(tasks, task.id)) { onOpen(task.id) } }
         }
     }
 }
@@ -191,6 +194,10 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
             Column(Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 when (tab) {
                     0 -> {
+                        DetailText(stringResource(R.string.subagent_tree_path), task.path, markdown = false)
+                        Text(stringResource(R.string.subagent_tree_depth, task.depth), style = MaterialTheme.typography.labelSmall)
+                        if (task.status == SubagentStatus.QUEUED) Text(stringResource(R.string.subagent_queue_position, SubagentTree.queuePosition(siblings, task.id)), style = MaterialTheme.typography.bodySmall)
+                        if (task.status == SubagentStatus.WAITING) Text(stringResource(R.string.subagent_waiting_targets, if (task.waitingFor.isEmpty()) stringResource(R.string.subagent_waiting_inbox) else task.waitingFor.mapNotNull { id -> siblings.find { it.id == id }?.path }.joinToString(", ")), style = MaterialTheme.typography.bodySmall)
                         DetailText(stringResource(R.string.subagent_task_goal), task.goal)
                         DetailText(stringResource(R.string.subagent_task_model), task.model.modelName, markdown = false)
                         DetailText(stringResource(R.string.subagent_task_preset), task.preset.name, markdown = false)
@@ -210,6 +217,14 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
                     }
                     1 -> {
                         Text(stringResource(R.string.subagent_metrics, task.toolCount, ((if (task.completedAt > 0) task.completedAt else System.currentTimeMillis()) - (if (task.startedAt > 0) task.startedAt else task.createdAt)).coerceAtLeast(0).div(1000).toInt()), style = MaterialTheme.typography.labelMedium)
+                        if (task.letters.isNotEmpty()) {
+                            Text(stringResource(R.string.subagent_agent_messages), style = MaterialTheme.typography.labelLarge)
+                            task.letters.forEach { letter ->
+                                val sender = letter.senderTaskId?.let { id -> siblings.find { it.id == id }?.path } ?: stringResource(R.string.subagent_main_agent)
+                                val recipient = letter.recipientTaskId?.let { id -> siblings.find { it.id == id }?.path } ?: stringResource(R.string.subagent_main_agent)
+                                DetailText(sender + " → " + recipient + " · " + stringResource(if (letter.consumed) R.string.subagent_read_message else R.string.subagent_pending_message), letter.content)
+                            }
+                        }
                         task.events.forEach { event -> Text("• ${event.text}", style = MaterialTheme.typography.bodySmall) }
                         if (task.currentOutput.isNotBlank()) DetailText(stringResource(R.string.subagent_status_running), task.currentOutput)
                     }
@@ -219,6 +234,7 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
                             val label = when (message.role) {
                                 "user" -> R.string.subagent_main_agent
                                 "summary" -> R.string.subagent_context_background
+                                "agent" -> R.string.subagent_agent_messages
                                 else -> R.string.subagent_helper
                             }
                             DetailText(stringResource(label), message.content)
@@ -234,19 +250,19 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
             OutlinedTextField(text, { if (it.length <= 10000) text = it }, Modifier.fillMaxWidth(), maxLines = 4, label = { Text(stringResource(if (task.status.isActive) R.string.subagent_supplement else R.string.subagent_followup)) }, supportingText = { Text(stringResource(R.string.subagent_supplement_hint)) }, enabled = !busy)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (task.status.isActive) TextButton(onClick = { confirmingStop = true }, enabled = !busy) { Text(stringResource(R.string.subagent_stop), color = MaterialTheme.colorScheme.error) }
-                else TextButton(onClick = { act { coordinator.archive(task.parentChatId, task.id, task.executionId, true); onDismiss() } }, enabled = !busy) { Text(stringResource(R.string.subagent_archive)) }
+                else TextButton(onClick = { act { coordinator.archive(task.rootChatId, task.id, task.executionId, true); onDismiss() } }, enabled = !busy) { Text(stringResource(R.string.subagent_archive)) }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { act {
-                    if (task.status.isActive) coordinator.supplement(task.parentChatId, task.id, task.executionId, text)
-                    else coordinator.followup(task.parentChatId, task.id, task.executionId, text)
+                    if (task.status.isActive) coordinator.supplement(task.rootChatId, task.id, task.executionId, text)
+                    else coordinator.followup(task.rootChatId, task.id, task.executionId, text)
                     text = ""
                 } }, enabled = !busy && text.isNotBlank()) { Text(stringResource(if (task.status.isActive) R.string.subagent_supplement else R.string.subagent_continue)) }
             }
-        } else TextButton(onClick = { act { coordinator.archive(task.parentChatId, task.id, task.executionId, false) } }, enabled = !busy) { Text(stringResource(R.string.subagent_restore)) }
+        } else TextButton(onClick = { act { coordinator.archive(task.rootChatId, task.id, task.executionId, false) } }, enabled = !busy) { Text(stringResource(R.string.subagent_restore)) }
     }
     if (managing) TaskManager(siblings, onDismiss = { managing = false }, onOpen = { id -> managing = false; onSelect(id) })
     if (confirmingStop) AlertDialog(onDismissRequest = { confirmingStop = false }, title = { Text(stringResource(R.string.subagent_stop)) }, text = { Text(stringResource(R.string.subagent_stop_confirm)) }, confirmButton = {
-        TextButton(onClick = { confirmingStop = false; act { coordinator.stop(task.parentChatId, task.id, task.executionId) } }) { Text(stringResource(R.string.subagent_stop)) }
+        TextButton(onClick = { confirmingStop = false; act { coordinator.stop(task.rootChatId, task.id, task.executionId) } }) { Text(stringResource(R.string.subagent_stop)) }
     }, dismissButton = { TextButton(onClick = { confirmingStop = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
@@ -278,13 +294,13 @@ fun SubagentReportMessage(content: String, enableDialogs: Boolean = true) {
     var open by remember(content) { mutableStateOf(false) }
     var selectedId by remember(content) { mutableStateOf<String?>(null) }
     if (task == null) {
-        Surface(shape = RoundedCornerShape(12.dp), tonalElevation = 1.dp) { Column(Modifier.padding(12.dp)) { DetailText(stringResource(R.string.subagent_report), content, enableDialogs = enableDialogs) } }
+        Surface(shape = RoundedCornerShape(12.dp), tonalElevation = 1.dp) { Column(Modifier.padding(12.dp)) { DetailText(stringResource(if (content.startsWith("[Agent message ")) R.string.subagent_agent_messages else R.string.subagent_report), content, enableDialogs = enableDialogs) } }
     } else {
         val report = requireNotNull(task.reports.find { content.startsWith(it.marker) })
         val card = task.copy(status = report.status, model = task.model.copy(modelName = report.modelName), reports = listOf(report), attempt = task.reports.indexOf(report) + 1)
         TaskCard(card, Modifier.fillMaxWidth().padding(vertical = 4.dp)) { if (enableDialogs) { selectedId = task.id; open = true } }
         if (open) state.tasks.find { it.id == selectedId }?.let { selected ->
-            TaskDetail(selected, state.tasks.filter { it.parentChatId == task.parentChatId }, coordinator, onSelect = { selectedId = it }, onDismiss = { open = false })
+            TaskDetail(selected, state.tasks.filter { it.rootChatId == task.rootChatId }, coordinator, onSelect = { selectedId = it }, onDismiss = { open = false })
         }
     }
 }

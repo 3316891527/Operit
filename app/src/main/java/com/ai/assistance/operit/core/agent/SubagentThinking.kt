@@ -4,11 +4,6 @@ import com.ai.assistance.operit.api.chat.model.ThinkingQualityControl
 import com.ai.assistance.operit.api.chat.model.ThinkingQualityMapping
 import com.ai.assistance.operit.api.chat.model.ThinkingQualityMappingRegistry
 import com.ai.assistance.operit.data.config.model.ModelConfigData
-import kotlinx.serialization.Serializable
-
-/** 思考选择属于单次执行，不能写回模型配置或主聊天的思考偏好。 */
-@Serializable
-data class SubagentThinking(val enabled: Boolean = false, val optionId: String = "")
 
 internal fun ModelConfigData.subagentThinkingMapping(modelName: String): ThinkingQualityMapping =
     ThinkingQualityMappingRegistry.resolve(apiProviderTypeId, modelName, apiEndpoint, thinkingConfigurations)

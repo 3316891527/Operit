@@ -75,6 +75,8 @@ import kotlinx.coroutines.yield
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
@@ -331,6 +333,42 @@ class ChatHistoryManager private constructor(private val context: Context) {
         return completeHistories
     }
 
+    /** 分条输出图内消息，避免把整棵树再编码成一个巨大的临时字符串。 */
+    private fun writeGraphArchiveChat(writer: JsonWriter, chat: OperitArchivedChat, progress: ChatExportProgressReporter) {
+        writer.beginObject()
+        val metadata = operitArchiveJson.encodeToJsonElement(chat.copy(messages = emptyList(), subagentGraph = null))
+        for ((name, value) in metadata.jsonObject) {
+            if (name != "messages" && name != "subagentGraph") writer.name(name).jsonValue(value.toString())
+        }
+        writer.name("messages").beginArray()
+        for (row in chat.messages) {
+            writer.beginObject()
+            writer.name("baseMessage")
+            writeJsonMessage(writer, row.baseMessage)
+            writer.name("variants").beginArray()
+            for (variant in row.variants) {
+                writer.jsonValue(operitArchiveJson.encodeToString(variant))
+                progress.add(MessageSectionCodec.render(variant.sections).length.toLong())
+            }
+            writer.endArray()
+            writer.endObject()
+            progress.add(row.baseMessage.content.length.toLong())
+        }
+        writer.endArray()
+        chat.subagentGraph?.let { graph ->
+            writer.name("subagentGraph").beginObject()
+            writer.name("version").value(graph.version)
+            writer.name("tasks").beginArray()
+            graph.tasks.forEach { writer.jsonValue(operitArchiveJson.encodeToString(it)) }
+            writer.endArray()
+            writer.name("chats").beginArray()
+            graph.chats.forEach { writeGraphArchiveChat(writer, it, progress) }
+            writer.endArray()
+            writer.endObject()
+        }
+        writer.endObject()
+    }
+
     private suspend fun exportOperitArchiveJsonStream(
         file: File,
         chatHistories: List<ChatHistory>,
@@ -356,6 +394,13 @@ class ChatHistoryManager private constructor(private val context: Context) {
             writer.name("chats").beginArray()
 
             for ((index, chatHistory) in chatHistories.withIndex()) {
+                val snapshot = com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).exportArchive(chatHistory.id)
+                if (snapshot != null) {
+                    writeGraphArchiveChat(writer, snapshot.copy(folderPath = folderAncestors(snapshot.folderId, foldersById)), progressReporter)
+                    writer.flush()
+                    yield()
+                    continue
+                }
                 writer.beginObject()
                 writer.name("id").value(chatHistory.id)
                 writer.name("title").value(chatHistory.title)
@@ -423,6 +468,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 writer.name("locked").value(chatHistory.locked)
                 writer.name("pinned").value(chatHistory.pinned)
                 writer.name("archived").value(chatHistory.archived)
+                writer.name("chatKind").value(chatHistory.chatKind)
+                writer.writeNullableString("usageBreakdownJson", chatHistory.usageBreakdownJson)
                 writer.endObject()
 
                 if ((index + 1) % 20 == 0 || index == chatHistories.lastIndex) {
@@ -473,6 +520,15 @@ class ChatHistoryManager private constructor(private val context: Context) {
         when (imported) {
             is StreamImportedChat.Archive -> {
                 val archivedChat = imported.chat
+                if (archivedChat.subagentGraph != null) {
+                    val coordinator = com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context)
+                    com.ai.assistance.operit.core.agent.SubagentGraphTransfer.validate(archivedChat)
+                    chatFolders.importFolders(archivedChat.folderPath) { it.describe(context) }
+                    val newId = coordinator.importGraph(archivedChat)
+                    existingIds.add(newId); counters.newCount++
+                    return
+                }
+                require(archivedChat.chatKind == com.ai.assistance.operit.data.model.ChatKind.NORMAL) { "A child conversation must be imported with its complete graph" }
                 chatFolders.importFolders(archivedChat.folderPath) { it.describe(context) }
                 if (archivedChat.folderId == null && archivedChat.group != null) {
                     chatFolders.ensureLegacyRoot(archivedChat.group, ChatFolderBinding(archivedChat.characterCardName, archivedChat.characterGroupId))
