@@ -5606,9 +5606,6 @@
     <string name="skill_error_scan_failed">Gagal memindai Skill: %1$s</string>
 
     <string name="global_display_resolution_scale">Skala Resolusi (Perkecil tangkapan layar sebelum dikirim)</string>
-    <string name="visit_web_wait_time_title">Waktu Tunggu Akses Halaman Web Visit Web</string>
-    <string name="visit_web_wait_time_description">Mengontrol durasi tunggu visit_web sebelum kembali otomatis setelah mengekstrak konten halaman. Setel ke 0 detik untuk kembali segera.</string>
-    <string name="visit_web_wait_time_value">%1$d detik</string>
     <string name="toolpkg_hook_timeout_title">Batas Waktu Hook ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Membatasi total waktu tunggu rantai Hook input chat, prompt, dan ringkasan ToolPkg pada jalur pengiriman. Saat batas waktu habis, Hook saat ini dilewati dan pemrosesan berlanjut. Nilai bawaan: 10 detik. Tidak memengaruhi pengambilalihan respons message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d detik</string>
@@ -7856,8 +7853,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Kualitas %1$d%% · resolusi %2$d%%</string>
     <string name="display_behavior_tools_plugins">Alat dan plugin</string>
     <string name="display_behavior_seconds_suffix">" dtk"</string>
-    <string name="display_behavior_web_wait">Waktu tunggu akses web</string>
-    <string name="display_behavior_web_wait_desc">Tunggu sebelum mengembalikan konten web yang diekstrak; 0 detik berarti langsung.</string>
     <string name="display_behavior_hook_timeout">Batas waktu Hook plugin prapemrosesan</string>
     <string name="display_behavior_hook_timeout_desc">Batas total waktu tunggu Hook input obrolan, prompt, dan ringkasan.</string>
     <string name="display_behavior_hook_hint">Lewati Hook yang melewati batas waktu lalu lanjutkan pemrosesan; pengambilalihan balasan oleh pemrosesan pesan tidak terpengaruh.</string>

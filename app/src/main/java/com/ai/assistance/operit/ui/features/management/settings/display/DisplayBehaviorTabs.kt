@@ -359,17 +359,6 @@ internal fun DisplayAutomationTab(
     val seconds = stringResource(R.string.display_behavior_seconds_suffix)
     DisplayCard(stringResource(R.string.display_behavior_tools_plugins), Icons.Default.Schedule) {
         DisplayRange(
-            stringResource(R.string.display_behavior_web_wait),
-            stringResource(R.string.display_behavior_web_wait_desc),
-            values[DisplayNumber.WEB_WAIT],
-            DisplayNumber.WEB_WAIT.range,
-            { "$it$seconds" },
-            Modifier.padding(horizontal = 17.dp),
-            onChange = { controller.set(DisplayNumber.WEB_WAIT, it) },
-            onFinish = controller::flushNumbers,
-        )
-        DisplayDivider()
-        DisplayRange(
             stringResource(R.string.display_behavior_hook_timeout),
             stringResource(R.string.display_behavior_hook_timeout_desc),
             values[DisplayNumber.HOOK_TIMEOUT],

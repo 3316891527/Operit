@@ -6436,9 +6436,6 @@
     <string name="global_display_image_format">Image Format</string>
     <string name="global_display_image_quality">Quality (JPG only)</string>
     <string name="global_display_resolution_scale">Resolution Scale (downscale before sending)</string>
-    <string name="visit_web_wait_time_title">Visit Web Wait Time</string>
-    <string name="visit_web_wait_time_description">Controls how long visit_web waits before returning after page content is extracted. Set to 0 seconds to return immediately.</string>
-    <string name="visit_web_wait_time_value">%1$d s</string>
     <string name="toolpkg_hook_timeout_title">ToolPkg Hook Timeout</string>
     <string name="toolpkg_hook_timeout_description">Limits the total wait time for ToolPkg chat-input, prompt, and summary hook chains on the send path. On timeout, the current hook is skipped and processing continues. Default: 10 seconds. Does not affect message-processing response takeover.</string>
     <string name="toolpkg_hook_timeout_value">%1$d s</string>
@@ -8821,8 +8818,6 @@
     <string name="display_behavior_screenshot_jpg_summary">%1$d%% quality · %2$d%% resolution</string>
     <string name="display_behavior_tools_plugins">Tools &amp; plugins</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Web access wait</string>
-    <string name="display_behavior_web_wait_desc">Wait before returning extracted web content; 0 seconds returns immediately.</string>
     <string name="display_behavior_hook_timeout">Preprocessing plugin hook timeout</string>
     <string name="display_behavior_hook_timeout_desc">Total wait limit for chat input, prompt, and summary hooks.</string>
     <string name="display_behavior_hook_hint">Skip a timed-out hook and continue processing; message-handling reply takeover is unaffected.</string>
@@ -9585,4 +9580,20 @@
     <string name="workspace_open_not_text">The current file is not readable text and cannot be opened in the text editor.</string>
     <string name="workspace_open_failed">Unable to open the file. Check the detailed cause below for path, connection or storage issues.</string>
     <string name="workspace_open_checking">Checking and reading the current file…</string>
+    <string name="webvisit_error_load_timeout">Page loading exceeded the limit set for this call. Check the network, proxy, or site availability. For a slow network, increase timeout_seconds or load_timeout_seconds.</string>
+    <string name="webvisit_error_read_timeout">Page inspection or extraction exceeded the limit set for this call. A later call may increase timeout_seconds or read_timeout_seconds.</string>
+    <string name="webvisit_error_total_timeout">The visit exceeded the overall limit set for this call. Check the network, proxy, or site availability. For a slow network, increase timeout_seconds on a later call.</string>
+    <string name="webvisit_error_network">The page connection failed. Check the network, proxy, or site availability.</string>
+    <string name="webvisit_error_http">The server returned an HTTP error. The page could not be read.</string>
+    <string name="webvisit_error_certificate">Certificate validation failed. The visit was stopped.</string>
+    <string name="webvisit_error_renderer">The page renderer exited. The visit failed.</string>
+    <string name="webvisit_error_empty">The page has no readable text, links, or requested images. It may be blank, unfinished, or restricting access.</string>
+    <string name="webvisit_error_invalid_content">The page extraction returned invalid data. The visit failed.</string>
+    <string name="webvisit_error_extraction">The page content could not be extracted. The visit failed.</string>
+    <string name="webvisit_error_display">The browser window could not be created. Check overlay permission and the system WebView.</string>
+    <string name="webvisit_status_reading">Reading page content...</string>
+    <string name="webvisit_error_invalid_argument">Invalid web visit timing parameters. Adjust the call according to the detailed reason.</string>
+    <string name="webvisit_error_access_blocked">The site, browser security check, or access policy explicitly denied access. The visit was ended early. Check access permissions, network, and proxy configuration; this alone does not prove network censorship.</string>
+    <string name="webvisit_error_cloudflare_challenge">A Cloudflare human or browser verification page was detected. The visit was ended early. This read-only tool does not handle verification; increasing the timeout alone will not resolve it.</string>
+    <string name="webvisit_error_cloudflare_blocked">An access-denied response served by Cloudflare or a Cloudflare block page was detected. The visit was ended early. Check site permissions and security policies.</string>
 </resources>

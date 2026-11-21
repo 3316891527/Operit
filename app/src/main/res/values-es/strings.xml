@@ -6050,9 +6050,6 @@
     <string name="global_display_image_format">Formato de imagen</string>
     <string name="global_display_image_quality">Calidad de imagen (solo afecta a JPG)</string>
     <string name="global_display_resolution_scale">Escala de resolución (reducir captura antes de enviar)</string>
-    <string name="visit_web_wait_time_title">Tiempo de espera de visita web</string>
-    <string name="visit_web_wait_time_description">Controla el tiempo de espera de visit_web antes de volver automáticamente después de extraer el contenido de la página. Si se establece en 0 segundos, volverá inmediatamente.</string>
-    <string name="visit_web_wait_time_value">%1$d segundos</string>
     <string name="toolpkg_hook_timeout_title">Tiempo de espera de Hook de ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Limita el tiempo total de espera de las cadenas de Hook de entrada de chat, prompt y resumen de ToolPkg en la ruta de envío. Al agotarse el tiempo, se omite el Hook actual y el procesamiento continúa. Predeterminado: 10 segundos. No afecta a la toma de control de respuestas de message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d segundos</string>
@@ -7924,8 +7921,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Calidad %1$d%% · resolución %2$d%%</string>
     <string name="display_behavior_tools_plugins">Herramientas y complementos</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Espera de acceso web</string>
-    <string name="display_behavior_web_wait_desc">Espera antes de devolver el contenido web extraído; 0 segundos lo devuelve de inmediato.</string>
     <string name="display_behavior_hook_timeout">Tiempo límite de hooks de preprocesamiento</string>
     <string name="display_behavior_hook_timeout_desc">Límite total de espera de los hooks de entrada, prompt y resumen.</string>
     <string name="display_behavior_hook_hint">Se omite el hook que agote el tiempo y se continúa el procesamiento; no afecta a la toma de control de respuestas del procesamiento de mensajes.</string>
