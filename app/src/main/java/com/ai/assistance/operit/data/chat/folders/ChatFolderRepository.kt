@@ -3,6 +3,7 @@ package com.ai.assistance.operit.data.chat.folders
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import com.ai.assistance.operit.data.model.ChatEntity
+import com.ai.assistance.operit.data.model.ChatKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -19,7 +20,7 @@ class ChatFolderRepository(private val database: AppDatabase) {
     val snapshots: Flow<ChatFolderSnapshot> = database.invalidationTracker.createFlow(
         "chat_folders", "chats", emitInitialState = true,
     ).map {
-        database.withTransaction { ChatFolderSnapshot(dao.getFolders(), chats.getAllChatsDirectly()) }
+        database.withTransaction { ChatFolderSnapshot(dao.getFolders(), chats.getAllChatsDirectly().filter { it.chatKind == ChatKind.NORMAL }) }
     }.flowOn(Dispatchers.IO)
 
     suspend fun rebindFolders(source: ChatFolderBinding, target: ChatFolderBinding) {
@@ -62,12 +63,14 @@ class ChatFolderRepository(private val database: AppDatabase) {
     }
 
     suspend fun assignChats(chatIds: List<String>, folderId: String?): Int = database.withTransaction {
+        requireNormalChats(chatIds)
         val name = if (folderId == null) null else getFolder(folderId).name
         chats.assignChatFolder(chatIds, folderId, name)
     }
 
     /** 批量移动在同一事务内完成；有对话被删除时整批回滚，避免只移动一部分。 */
     suspend fun moveSelectedChats(chatIds: List<String>, folderId: String?): Int = database.withTransaction {
+        requireNormalChats(chatIds)
         val ids = chatIds.distinct()
         require(ids.isNotEmpty()) { "未选择对话" }
         val name = folderId?.let { getFolder(it).name }
@@ -87,13 +90,15 @@ class ChatFolderRepository(private val database: AppDatabase) {
                 require(foldersById.containsKey(node.id))
                 require(canMoveFolder(node.id, request.parentId, foldersById)) { "不能移入自身或子文件夹" }
             }
-            is ChatFolderNode.Chat -> requireNotNull(chats.getChatById(node.id))
+            is ChatFolderNode.Chat -> requireNotNull(chats.getChatById(node.id)).also {
+                require(it.chatKind == ChatKind.NORMAL) { "Subagent conversations cannot be moved" }
+            }
         }
         val siblings = buildList {
             foldersById.values.filter { it.parentId == request.parentId }.forEach {
                 add(Sibling(ChatFolderNode.Folder(it.id), it.displayOrder))
             }
-            chats.getAllChatsDirectly().filter { it.folderId == request.parentId }.forEach {
+            chats.getAllChatsDirectly().filter { it.chatKind == ChatKind.NORMAL && it.folderId == request.parentId }.forEach {
                 add(Sibling(ChatFolderNode.Chat(it.id), it.displayOrder))
             }
         }.filter { it.node != request.node }.sortedWith(compareBy<Sibling> { it.order }.thenBy { if (it.node is ChatFolderNode.Folder) 0 else 1 }.thenBy { it.node.id })
@@ -148,7 +153,7 @@ class ChatFolderRepository(private val database: AppDatabase) {
 
     suspend fun exportFolders(chatIds: Set<String>): List<ChatFolder> {
         val allFolders = dao.getFolders()
-        val allChats = chats.getAllChatsDirectly()
+        val allChats = chats.getAllChatsDirectly().filter { it.chatKind == ChatKind.NORMAL }
         if (allChats.all { it.id in chatIds }) return allFolders
         val foldersById = allFolders.associateBy { it.id }
         val ids = allChats.filter { it.id in chatIds }.flatMap {
@@ -156,4 +161,10 @@ class ChatFolderRepository(private val database: AppDatabase) {
         }.toSet()
         return allFolders.filter { it.id in ids }
     }
+    private suspend fun requireNormalChats(ids: List<String>) {
+        ids.forEach { id ->
+            require(chats.getChatById(id)?.chatKind != ChatKind.SUBAGENT) { "Subagent conversations are managed with their parent task" }
+        }
+    }
+
 }

@@ -615,6 +615,7 @@ class MessageProcessingDelegate(
             try {
                 clearCurrentTurnToolInvocationCount(chatId)
                 AIMessageManager.cancelOperation(chatId)
+                com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).stopTree(chatId)
 
                 jobsToCancel.forEach { job -> job.cancel() }
                 jobsToCancel.forEach { job -> job.join() }
@@ -1401,10 +1402,13 @@ class MessageProcessingDelegate(
                                     )).forEach { addMessageToChat(chatId, it) }
                                     texts.forEach { input ->
                                         val inputMessage = ChatMessage(
-                                            sender = "user", content = input.text,
-                                            roleName = context.getString(R.string.message_role_user),
+                                            sender = if (input.agentPath?.let { it.startsWith("subagent/") || it.startsWith("agent_mail/") } == true) "agent" else "user", content = input.text,
+                                            roleName = context.getString(if (input.agentPath?.let { it.startsWith("subagent/") || it.startsWith("agent_mail/") } == true) R.string.subagent_helper else R.string.message_role_user),
                                         )
                                         addMessageToChat(chatId, inputMessage)
+                                        if (input.agentPath?.let { it.startsWith("subagent/") || it.startsWith("agent_mail/") } == true) {
+                                            com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).acknowledgeReport(requireNotNull(chatId), input)
+                                        }
                                         steering.inputInbox.acknowledge(input)
                                         input.saved(inputMessage.timestamp)
                                     }

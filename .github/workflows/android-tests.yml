@@ -2,6 +2,12 @@ name: Android Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      build_device_tests:
+        description: Build Android instrumentation APK for subagent lifecycle checks
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [main]
     paths:
@@ -199,6 +205,21 @@ jobs:
 
       - name: Run JVM unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+
+      - name: Build subagent device-test APK pair
+        if: github.event_name == 'workflow_dispatch' && inputs.build_device_tests
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
+
+      - name: Upload subagent device-test APK
+        if: github.event_name == 'workflow_dispatch' && inputs.build_device_tests && success()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: operit-subagent-device-tests-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload Android test reports
         if: always()

@@ -78,6 +78,7 @@ class TurnInputInbox {
 
     fun seal() = synchronized(lock) {
         open = false
+        revision.value += 1
     }
 
     fun sealForSummary() = synchronized(lock) {

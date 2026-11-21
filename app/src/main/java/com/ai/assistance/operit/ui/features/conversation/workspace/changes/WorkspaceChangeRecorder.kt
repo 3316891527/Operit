@@ -28,7 +28,10 @@ internal class WorkspaceChangeRecorder(
     override fun validateParameters(tool: AITool) = delegate.validateParameters(tool)
 
     override fun invoke(tool: AITool): ToolResult {
-        val chatId = ToolExecutionManager.currentToolRuntimeContext()?.callerChatId
+        val runtime = ToolExecutionManager.currentToolRuntimeContext()
+        val chatId = if (runtime?.delegatedTask == true) {
+            requireNotNull(com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.find { it.childChatId == runtime.callerChatId }).parentChatId
+        } else runtime?.callerChatId
         if (chatId.isNullOrBlank()) return delegate.invoke(tool)
         return runBlocking(Dispatchers.IO) {
             WorkspaceChangeStore.operationMutex.withLock {
@@ -41,7 +44,10 @@ internal class WorkspaceChangeRecorder(
     }
 
     override fun invokeAndStream(tool: AITool): Flow<ToolResult> = flow {
-        val chatId = ToolExecutionManager.currentToolRuntimeContext()?.callerChatId
+        val runtime = ToolExecutionManager.currentToolRuntimeContext()
+        val chatId = if (runtime?.delegatedTask == true) {
+            requireNotNull(com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.find { it.childChatId == runtime.callerChatId }).parentChatId
+        } else runtime?.callerChatId
         if (chatId.isNullOrBlank()) {
             delegate.invokeAndStream(tool).collect { emit(it) }
             return@flow

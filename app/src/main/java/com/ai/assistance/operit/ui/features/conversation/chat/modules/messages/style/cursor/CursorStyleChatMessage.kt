@@ -36,6 +36,7 @@ fun CursorStyleChatMessage(
         onEditSummary: ((ChatMessage) -> Unit)? = null,
 ) {
     when (message.sender) {
+        "agent" -> com.ai.assistance.operit.ui.features.conversation.chat.subagent.SubagentReportMessage(message.content, enableDialogs)
         "user" -> {
             UserMessageComposable(
                     message = message,

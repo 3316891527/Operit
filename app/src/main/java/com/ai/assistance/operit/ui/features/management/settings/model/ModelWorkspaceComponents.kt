@@ -30,7 +30,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ai.assistance.operit.R
 
 /** 页面状态和呈现单独收纳，业务编辑器继续使用原有配置与保存流程。 */
-enum class ModelWorkspaceTab { CONNECTION, PARAMETERS, SUMMARY, FUNCTIONS }
+enum class ModelWorkspaceTab { CONNECTION, PARAMETERS, SUMMARY, SUBAGENTS, FUNCTIONS }
 
 @Composable
 fun ModelWorkspaceTabs(selected: ModelWorkspaceTab, onSelect: (ModelWorkspaceTab) -> Unit) {
@@ -38,9 +38,11 @@ fun ModelWorkspaceTabs(selected: ModelWorkspaceTab, onSelect: (ModelWorkspaceTab
         R.string.model_workspace_connection,
         R.string.model_workspace_parameters,
         R.string.model_workspace_summary,
+        R.string.subagent_configuration_title,
         R.string.model_workspace_functions,
     )
-    TabRow(
+    ScrollableTabRow(
+        edgePadding = 0.dp,
         selectedTabIndex = selected.ordinal,
         containerColor = MaterialTheme.colorScheme.background,
         contentColor = MaterialTheme.colorScheme.primary,

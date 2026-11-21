@@ -59,6 +59,11 @@ object ToolExecutionManager {
         val toolExposureMode: ToolExposureMode = ToolExposureMode.FULL,
         val callerChatId: String? = null,
         val a2uiRunId: String? = null,
+        val invocationId: String? = null,
+        val delegatedTask: Boolean = false,
+        val workspacePath: String? = null,
+        val workspaceEnv: String? = null,
+        val memorySpaceId: String? = null,
         val publishA2ui: (suspend (String) -> Unit)? = null,
         val publishA2uiAfterToolResult: (suspend (String) -> Unit)? = null,
     )
@@ -527,6 +532,10 @@ object ToolExecutionManager {
         callerName: String? = null,
         callerChatId: String? = null,
         callerCardId: String? = null,
+        delegatedTask: Boolean = false,
+        workspacePath: String? = null,
+        workspaceEnv: String? = null,
+        memorySpaceId: String? = null,
         a2uiRunId: String? = null,
         onA2uiCard: (suspend (String) -> Unit)? = null,
         toolCallOffset: Int = 0,
@@ -584,13 +593,18 @@ object ToolExecutionManager {
                 toolExposureMode = toolExposureMode,
                 callerChatId = callerChatId,
                 a2uiRunId = a2uiRunId,
+                delegatedTask = delegatedTask,
+                workspacePath = workspacePath,
+                workspaceEnv = workspaceEnv,
+                memorySpaceId = memorySpaceId,
                 publishA2ui = publishA2ui,
             )
 
         // 1. 顶层工具暴露模式拦截
         val toolExposurePermittedInvocations = mutableListOf<IndexedValue<ToolInvocation>>()
         for ((index, invocation) in invocations.withIndex()) {
-            val deniedResult = buildToolExposureDeniedResult(context, invocation, toolExposureMode)
+            val deniedResult = com.ai.assistance.operit.core.agent.SubagentToolPolicy.denial(resolveToolTarget(invocation.tool).tool, delegatedTask)
+                ?: buildToolExposureDeniedResult(context, invocation, toolExposureMode)
             if (deniedResult == null) {
                 toolExposurePermittedInvocations.add(IndexedValue(index, invocation))
             } else {
@@ -688,7 +702,7 @@ object ToolExecutionManager {
                         invocation = invocation,
                         toolHandler = toolHandler,
                         packageManager = packageManager,
-                        runtimeContext = toolRuntimeContext
+                        runtimeContext = toolRuntimeContext.copy(invocationId = "$a2uiRunId:${toolCallOffset + index}")
                     )
                 completeResult(index, output.result, output.a2uiDocuments)
             }
@@ -702,7 +716,7 @@ object ToolExecutionManager {
                     invocation = invocation,
                     toolHandler = toolHandler,
                     packageManager = packageManager,
-                    runtimeContext = toolRuntimeContext
+                    runtimeContext = toolRuntimeContext.copy(invocationId = "$a2uiRunId:${toolCallOffset + index}")
                 )
             completeResult(index, output.result, output.a2uiDocuments)
         }
