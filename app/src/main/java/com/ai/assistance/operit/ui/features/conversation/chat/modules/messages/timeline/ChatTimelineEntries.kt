@@ -156,11 +156,10 @@ internal fun rememberChatTimelineEntries(
                     SideEffect { wasSplit = contentNeedsSplit }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
                     val groups = remember(nodes, grouper) { grouper.group(nodes, messageKey) }
-                    // 展开选择和 XML 子流均作为缓存输入，收起、追加及流结束时仍立即重建行。
+                    // 自动展开由整段消息的渲染模式驱动，XML 子流仅负责卡片内容。
                     val expansionSnapshot = overrides.toMap()
-                    val xmlStreamsSnapshot = state.xmlNodeStreams.toMap()
                     val rows = remember(
-                        split, groups, nodes, grouper, expansionSnapshot, xmlStreamsSnapshot, timingSnapshot,
+                        split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot,
                         showThinkingProcess, showStatusTags,
                     ) {
                         if (split && nodes.isNotEmpty()) {
@@ -169,7 +168,10 @@ internal fun rememberChatTimelineEntries(
                                 showThinkingProcess = showThinkingProcess,
                                 showStatusTags = showStatusTags,
                             ) { group ->
-                                grouper.describeGroup(group, nodes) { xmlStreamsSnapshot[it] }
+                                grouper.describeGroup(
+                                    group, nodes,
+                                    isMessageStreaming = mode == MarkdownRenderMode.STREAMING,
+                                )
                             }
                         } else {
                             emptyList()

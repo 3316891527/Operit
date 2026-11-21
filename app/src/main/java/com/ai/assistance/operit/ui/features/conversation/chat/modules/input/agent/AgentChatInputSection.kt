@@ -5,6 +5,7 @@ import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatProcessingStatusText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
 import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
@@ -801,7 +802,7 @@ internal fun AgentChatInputContent(
                 if (event != null && inputState.toolName.contains(event.toolName)) {
                     progressValue = event.progress
                     if (event.message.isNotBlank()) {
-                        message = event.message
+                        message = "$baseMessage · ${event.message}"
                     }
                 }
             }
@@ -898,10 +899,8 @@ internal fun AgentChatInputContent(
                                 .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = processingMessage,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        ChatProcessingStatusText(
+                            message = processingMessage,
                             modifier = Modifier.weight(1f),
                         )
                     }

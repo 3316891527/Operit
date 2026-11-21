@@ -83,6 +83,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -156,6 +157,8 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.d
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.navigation.ChatScrollNavigator
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -250,6 +253,7 @@ fun ChatArea(
     onMentionRoleFromAvatar: ((String) -> Unit)? = null, // 长按角色头像提及
     autoScrollToBottom: Boolean = true,
     onAutoScrollToBottomChange: ((Boolean) -> Unit)? = null,
+    scrollToBottomRequests: Flow<Unit>? = null,
     hasOlderDisplayHistory: Boolean = false,
     hasNewerDisplayHistory: Boolean = false,
     isLoadingDisplayWindow: Boolean = false,
@@ -393,12 +397,32 @@ fun ChatArea(
             showLoadingIndicator &&
             aiChatStyle == ChatStyle.BUBBLE &&
             lastMessage?.sender == "ai"
-    // 跟随只由新消息和流式正文推进，展开历史卡片不会触发跳到底部。
-    LaunchedEffect(currentChatId, autoScrollToBottom, messagesCount, hasNewerDisplayHistory, isLoadingDisplayWindow, lastMessageContentLength, lastMessage?.contentStream, lastRenderNodes?.size, lastRenderNodes?.lastOrNull()?.content?.length) {
-        if (autoScrollToBottom && hasNewerDisplayHistory && !isLoadingDisplayWindow && onShowLatestDisplayWindow != null) {
+    var scrollRequest by remember(currentChatId) { mutableLongStateOf(0L) }
+    LaunchedEffect(currentChatId, scrollToBottomRequests) {
+        scrollToBottomRequests?.collect { scrollRequest++ }
+    }
+    val tailIndex = timelineEntries.size + historyHeaderCount +
+        (if (hasNewerDisplayHistory) 1 else 0) + (if (showLoadingIndicator) 1 else 0)
+    // 流式通知、节点更新和输入栏高度只驱动这一处自动跟随，避免动画与立即滚动争用列表。
+    // 展开历史卡片不触发跳到底部；窗口正在重载或用户上翻时也不抢占位置。
+    LaunchedEffect(
+        currentChatId,
+        autoScrollToBottom,
+        scrollRequest,
+        messagesCount,
+        showLoadingIndicator,
+        hasNewerDisplayHistory,
+        isLoadingDisplayWindow,
+        bottomPadding,
+        lastMessageContentLength,
+        lastMessage?.contentStream,
+        lastRenderNodes?.size,
+        lastRenderNodes?.lastOrNull()?.content?.length,
+    ) {
+        if (!autoScrollToBottom || isLoadingDisplayWindow) return@LaunchedEffect
+        if (hasNewerDisplayHistory && onShowLatestDisplayWindow != null) {
             onShowLatestDisplayWindow.invoke()
-        } else if (autoScrollToBottom && messagesCount > 0) {
-            val tailIndex = timelineEntries.size + historyHeaderCount + (if (hasNewerDisplayHistory) 1 else 0) + (if (showLoadingIndicator) 1 else 0)
+        } else if (messagesCount > 0) {
             scrollState.scrollToItem(tailIndex)
         }
     }

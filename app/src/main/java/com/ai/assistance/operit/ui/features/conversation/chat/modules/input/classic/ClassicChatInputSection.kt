@@ -6,6 +6,7 @@ import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatProcessingStatusText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
 import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
 import com.ai.assistance.operit.ui.theme.script.themeScriptInputPlaceholder
@@ -511,7 +512,7 @@ internal fun ClassicChatInputContent(
                     if (event != null && inputState.toolName.contains(event.toolName)) {
                         progressValue = event.progress
                         if (event.message.isNotBlank()) {
-                            message = event.message
+                            message = "$baseMessage · ${event.message}"
                         }
                     }
                 }
@@ -543,13 +544,9 @@ internal fun ClassicChatInputContent(
                             ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color =
-                            MaterialTheme.colorScheme.onSurface
-                                .copy(alpha = 0.8f),
-                            modifier = Modifier.weight(1f)
+                        ChatProcessingStatusText(
+                            message = message,
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }

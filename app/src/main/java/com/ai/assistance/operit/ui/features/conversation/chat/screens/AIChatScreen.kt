@@ -12,7 +12,6 @@ import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
-import com.ai.assistance.operit.ui.features.conversation.chat.foundation.list.animateScrollToEnd
 import android.content.ClipboardManager
 import android.os.Build
 import android.provider.Settings
@@ -316,8 +315,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             )
         }
     }
-    // 收集滚动事件
-    val scrollToBottomEvent = actualViewModel.scrollToBottomEvent
     // 从ViewModel收集新的状态
     val isWorkspaceOpen by actualViewModel.isWorkspaceOpen.collectAsState()
     val isWorkspacePreparing by actualViewModel.isWorkspacePreparing.collectAsState()
@@ -445,29 +442,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val onAutoScrollToBottomChange = remember { { it: Boolean -> autoScrollToBottom = it } }
     val requestAutoScrollToBottom = remember { { autoScrollToBottom = true } }
     val imeBottomPx = WindowInsets.ime.getBottom(density)
-    val latestChatHistory by rememberUpdatedState(chatHistory)
-    val latestAutoScrollToBottom by rememberUpdatedState(autoScrollToBottom)
-    val latestHasNewerDisplayHistory by rememberUpdatedState(hasNewerDisplayHistory)
-    val latestIsLoadingDisplayWindow by rememberUpdatedState(isLoadingDisplayWindow)
-
-    // 处理来自ViewModel的滚动事件（流式输出时）
-    LaunchedEffect(Unit) {
-        scrollToBottomEvent.collect {
-            if (
-                latestAutoScrollToBottom &&
-                    !latestHasNewerDisplayHistory &&
-                    !latestIsLoadingDisplayWindow
-            ) {
-                try {
-                    if (latestChatHistory.isNotEmpty()) {
-                        scrollState.animateScrollToEnd()
-                    }
-                } catch (e: Exception) {
-                    // AppLogger.e("AIChatScreen", "自动滚动失败", e)
-                }
-            }
-        }
-    }
 
     // 移除原有的 snackbar 错误处理
     val snackbarHostState = remember { SnackbarHostState() }
