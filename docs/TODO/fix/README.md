@@ -9,6 +9,7 @@
 ## 计划索引
 
 - [超级管理员 Shell 独立执行与卡住调查](shell-command-isolation/index.md)
+- [聊天记录导入的消息级内存优化](chat-import-memory/index.md)
 
 - [正式构建的 Kotlin Gradle 脚本 Lint 崩溃](release-lint-kotlin-script/index.md)
 - [新建对话入场动画请求生命周期修复](new-chat-intro-lifecycle/index.md)

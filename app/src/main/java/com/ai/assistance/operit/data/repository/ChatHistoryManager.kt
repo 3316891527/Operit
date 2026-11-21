@@ -276,12 +276,6 @@ class ChatHistoryManager private constructor(private val context: Context) {
         var skippedCount: Int = 0,
     )
 
-    private sealed interface StreamImportedChat {
-        data class Archive(val chat: OperitArchivedChat) : StreamImportedChat
-
-        data class Legacy(val history: ChatHistory) : StreamImportedChat
-    }
-
     private fun hydrateMessages(
         messageEntities: List<MessageEntity>,
         variants: List<MessageVariantEntity>,
@@ -455,89 +449,64 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     private suspend fun consumeImportedChat(
-        imported: StreamImportedChat,
+        archivedChat: OperitArchivedChat,
         existingIds: MutableSet<String>,
         counters: ImportCounters,
         importedIndex: Int,
     ) {
-        when (imported) {
-            is StreamImportedChat.Archive -> {
-                val archivedChat = imported.chat
-                chatFolders.importFolders(archivedChat.folderPath) { it.describe(context) }
-                if (archivedChat.folderId == null && archivedChat.group != null) {
-                    chatFolders.ensureLegacyRoot(archivedChat.group, ChatFolderBinding(archivedChat.characterCardName, archivedChat.characterGroupId))
-                }
-                if (archivedChat.messages.isEmpty()) {
-                    counters.skippedCount++
-                    AppLogger.w(TAG, "流式导入跳过空归档会话: index=$importedIndex, chatId=${archivedChat.id}")
-                    return
-                }
+        chatFolders.importFolders(archivedChat.folderPath) { it.describe(context) }
+        if (archivedChat.folderId == null && archivedChat.group != null) {
+            chatFolders.ensureLegacyRoot(archivedChat.group, ChatFolderBinding(archivedChat.characterCardName, archivedChat.characterGroupId))
+        }
+        if (archivedChat.messages.isEmpty()) {
+            counters.skippedCount++
+            AppLogger.w(TAG, "流式导入跳过空归档会话: index=$importedIndex, chatId=${archivedChat.id}")
+            return
+        }
 
-                val existed = existingIds.contains(archivedChat.id)
-                if (existed) {
-                    counters.updatedCount++
-                } else {
-                    counters.newCount++
-                    existingIds.add(archivedChat.id)
-                }
+        val existed = existingIds.contains(archivedChat.id)
+        if (existed) {
+            counters.updatedCount++
+        } else {
+            counters.newCount++
+            existingIds.add(archivedChat.id)
+        }
 
-                saveArchivedChat(archivedChat)
+        saveArchivedChat(archivedChat)
 
-                if (importedIndex % 20 == 0) {
-                    AppLogger.d(
-                        TAG,
-                        "流式导入进度: index=$importedIndex, archive chatId=${archivedChat.id}, messages=${archivedChat.messages.size}, new=${counters.newCount}, updated=${counters.updatedCount}, skipped=${counters.skippedCount}",
-                    )
-                }
-            }
-
-            is StreamImportedChat.Legacy -> {
-                val chatHistory = imported.history
-                if (chatHistory.group != null) {
-                    chatFolders.ensureLegacyRoot(chatHistory.group, ChatFolderBinding(chatHistory.characterCardName, chatHistory.characterGroupId))
-                }
-                if (chatHistory.messages.isEmpty()) {
-                    counters.skippedCount++
-                    AppLogger.w(TAG, "流式导入跳过空会话: index=$importedIndex, chatId=${chatHistory.id}")
-                    return
-                }
-
-                val existed = existingIds.contains(chatHistory.id)
-                if (existed) {
-                    counters.updatedCount++
-                } else {
-                    counters.newCount++
-                    existingIds.add(chatHistory.id)
-                }
-
-                saveChatHistory(chatHistory)
-
-                if (importedIndex % 20 == 0) {
-                    AppLogger.d(
-                        TAG,
-                        "流式导入进度: index=$importedIndex, legacy chatId=${chatHistory.id}, messages=${chatHistory.messages.size}, new=${counters.newCount}, updated=${counters.updatedCount}, skipped=${counters.skippedCount}",
-                    )
-                }
-            }
+        if (importedIndex % 20 == 0) {
+            AppLogger.d(
+                TAG,
+                "流式导入进度: index=$importedIndex, archive chatId=${archivedChat.id}, messages=${archivedChat.messages.size}, new=${counters.newCount}, updated=${counters.updatedCount}, skipped=${counters.skippedCount}",
+            )
         }
     }
 
+    @OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
     private suspend fun importOperitChatHistoriesStream(
         inputStream: InputStream,
         existingIds: MutableSet<String>,
     ): ChatImportResult {
         val counters = ImportCounters()
+        var importedIndex = 0
         OperitChatArchiveReader(operitArchiveJson, context.cacheDir).read(
             InputStreamReader(inputStream, StandardCharsets.UTF_8),
             onFolders = { chatFolders.importFolders(it) { error -> error.describe(context) } },
             onChat = { staged ->
-                if (staged.messageCount == 0) counters.skippedCount++
-                else {
+                importedIndex++
+                if (staged.messageCount == 0) {
+                    chatFolders.importFolders(staged.metadata.folderPath) { it.describe(context) }
+                    if (staged.metadata.folderId == null && staged.metadata.group != null) {
+                        chatFolders.ensureLegacyRoot(staged.metadata.group, ChatFolderBinding(staged.metadata.characterCardName, staged.metadata.characterGroupId))
+                    }
+                    counters.skippedCount++
+                } else {
                     saveStagedChat(staged)
                     if (existingIds.add(staged.metadata.id)) counters.newCount++ else counters.updatedCount++
                 }
             },
         )
+        AppLogger.d(TAG, "消息级导入完成: total=$importedIndex, new=${counters.newCount}, updated=${counters.updatedCount}, skipped=${counters.skippedCount}")
         return ChatImportResult(counters.newCount, counters.updatedCount, counters.skippedCount)
     }
 
@@ -571,13 +540,14 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 }
                 staged.forEachMessage { index, archived ->
                     val message = archived.baseMessage
-                    validateArchivedMessageVariants(message, archived.variants)
+                    val variants = archived.variants.sortedBy { it.variantIndex }
+                    validateArchivedMessageVariants(message, variants)
                     if (history.lastUsedAt == 0L && message.sender == "user") lastUsed = maxOf(lastUsed, message.timestamp)
                     val saved = message.copy(
                         selectedVariantIndex = if (archived.variants.isEmpty()) 0 else message.selectedVariantIndex,
                         variantCount = archived.variants.size + 1,
                     )
-                    batch.add(MessageEntity.fromChatMessage(history.id, saved, index), archived.variants.map {
+                    batch.add(MessageEntity.fromChatMessage(history.id, saved, index), variants.map {
                         it.toEntity(history.id, message.timestamp)
                     })
                 }
@@ -585,7 +555,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
                 chatDao.markChatUsed(history.id, lastUsed)
             }
             // 文件系统副作用在数据库提交之后执行，失败导入不会清空旧会话的卡片状态。
-            A2uiStateStore.clearChat(context, history.id)
+            withContext(kotlinx.coroutines.NonCancellable) { A2uiStateStore.clearChat(context, history.id) }
         }
     }
 
@@ -2639,7 +2609,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
             val chat = currentChat ?: return
             importedIndex++
             consumeImportedChat(
-                imported = StreamImportedChat.Archive(chat.toArchivedChat()),
+                archivedChat = chat.toArchivedChat(),
                 existingIds = existingIds,
                 counters = counters,
                 importedIndex = importedIndex,
