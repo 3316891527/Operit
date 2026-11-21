@@ -87,6 +87,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.voiceMessageHoldGesture
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
@@ -1227,7 +1228,8 @@ internal fun AgentChatInputContent(
                                     else -> "composer.send"
                                 },
                                 modifier = Modifier
-                                    .size(36.dp),
+                                    .size(36.dp)
+                                    .voiceMessageHoldGesture(showVoiceRecordAction && sendButtonEnabled) { onRecordVoiceMessage?.invoke() },
                                 onClick = {
                                     when {
                                         showCancelAction -> onCancelMessage()
@@ -1235,7 +1237,7 @@ internal fun AgentChatInputContent(
                                             onQueueMessage()
                                             setShowAttachmentPanel(false)
                                         }
-                                        showVoiceRecordAction -> onRecordVoiceMessage?.invoke()
+                                        showVoiceRecordAction -> Unit
                                         canSendMessage -> {
                                             if (isOverTokenLimit) {
                                                 showTokenLimitDialog.value = true
@@ -1271,7 +1273,7 @@ internal fun AgentChatInputContent(
                                             showCancelAction -> context.getString(R.string.cancel)
                                             showQueueAction -> context.getString(R.string.chat_queue_add_message)
                                             canSendMessage -> context.getString(R.string.send)
-                                            showVoiceRecordAction -> context.getString(R.string.voice_message_record_title)
+                                            showVoiceRecordAction -> context.getString(R.string.voice_message_hold_to_record)
                                             else -> context.getString(R.string.send)
                                         },
                                     tint = actionButtonIconTint,
@@ -1545,7 +1547,8 @@ internal fun AgentChatInputContent(
                                         else -> "composer.send"
                                     },
                                     modifier = Modifier
-                                        .size(36.dp),
+                                        .size(36.dp)
+                                        .voiceMessageHoldGesture(showVoiceRecordAction && sendButtonEnabled) { onRecordVoiceMessage?.invoke() },
                                     onClick = {
                                         when {
                                             showCancelAction -> onCancelMessage()
@@ -1553,7 +1556,7 @@ internal fun AgentChatInputContent(
                                                 onQueueMessage()
                                                 setShowAttachmentPanel(false)
                                             }
-                                            showVoiceRecordAction -> onRecordVoiceMessage?.invoke()
+                                            showVoiceRecordAction -> Unit
                                             canSendMessage -> {
                                                 if (isOverTokenLimit) {
                                                     showTokenLimitDialog.value = true
@@ -1589,7 +1592,7 @@ internal fun AgentChatInputContent(
                                                 showCancelAction -> context.getString(R.string.cancel)
                                                 showQueueAction -> context.getString(R.string.chat_queue_add_message)
                                                 canSendMessage -> context.getString(R.string.send)
-                                                showVoiceRecordAction -> context.getString(R.string.voice_message_record_title)
+                                                showVoiceRecordAction -> context.getString(R.string.voice_message_hold_to_record)
                                                 else -> context.getString(R.string.send)
                                             },
                                         tint = actionButtonIconTint,

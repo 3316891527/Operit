@@ -9597,4 +9597,17 @@
     <string name="webvisit_error_cloudflare_challenge">A Cloudflare human or browser verification page was detected. The visit was ended early. This read-only tool does not handle verification; increasing the timeout alone will not resolve it.</string>
     <string name="webvisit_error_cloudflare_blocked">An access-denied response served by Cloudflare or a Cloudflare block page was detected. The visit was ended early. Check site permissions and security policies.</string>
     <string name="markdown_mermaid_render_failed">Could not render the Mermaid diagram. Check the syntax.</string>
+
+    <string name="voice_message_hold_to_record">Hold to record, release to send</string>
+    <string name="voice_message_release_send">Release to send</string>
+    <string name="voice_message_release_cancel">Release to cancel</string>
+    <string name="voice_message_release_transcribe">Release to transcribe</string>
+    <string name="voice_message_hold_slide_hint">Slide to either side to cancel or transcribe</string>
+    <string name="voice_message_transcribe">Transcribe</string>
+    <string name="voice_message_transcribing">Transcribing…</string>
+    <string name="voice_message_hold_limit">%1$d-second limit reached. Release to send</string>
+    <string name="voice_message_retry_transcribe">Retry transcription</string>
+    <string name="voice_message_finishing">Finishing recording…</string>
+    <string name="studio_background_blur_hint">Only the background is blurred; text and controls stay sharp.</string>
+    <string name="studio_background_blur_inherit_hint">Add a separate background fill or layer to adjust blur. Inherited backgrounds use the source setting.</string>
 </resources>

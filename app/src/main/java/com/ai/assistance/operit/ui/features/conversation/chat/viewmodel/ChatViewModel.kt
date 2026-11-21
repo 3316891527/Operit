@@ -4,6 +4,7 @@ import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
 
 import com.ai.assistance.operit.ui.common.markdown.ResponseProcessExpansionState
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageData
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageSendResult
 import com.ai.assistance.operit.core.chat.voice.VoiceInputMode
 import com.ai.assistance.operit.core.chat.voice.VoiceMessageMarkup
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
@@ -1647,7 +1648,7 @@ class ChatViewModel(context: Context) : ViewModel() {
         message: VoiceMessageData,
         originChatId: String,
         onPersisted: () -> Unit,
-    ): Boolean {
+    ): VoiceMessageSendResult {
         fun canSubmit(): Boolean {
             val state = currentChatInputProcessingState.value
             val processing = messageProcessingDelegate.isChatLoading(originChatId) ||
@@ -1657,7 +1658,7 @@ class ChatViewModel(context: Context) : ViewModel() {
                 (message.transcript.isNotBlank() || message.inputMode == VoiceInputMode.AUDIO) &&
                 java.io.File(message.attachment.filePath).isFile
         }
-        if (!canSubmit()) return false
+        if (!canSubmit()) return VoiceMessageSendResult.REJECTED
         hideMentionSuggestionPanel()
         return messageCoordinationDelegate.sendVoiceMessage(
             chatId = originChatId,

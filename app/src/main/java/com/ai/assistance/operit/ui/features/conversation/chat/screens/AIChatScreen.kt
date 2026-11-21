@@ -6,7 +6,16 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextBut
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceMessageSheet
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingOverlay
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingGestureController
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingInterruptionEffect
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingWindowEffect
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageSendResult
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.LocalVoiceRecordingGesture
+import com.ai.assistance.operit.core.chat.voice.VoiceHoldPhase
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
@@ -1354,23 +1363,52 @@ private fun ChatInputBottomBar(
         }
     }
 
+    val voiceGesture = remember { VoiceRecordingGestureController() }
     var voiceRecordingChatId by remember { mutableStateOf<String?>(null) }
     var prepareVoiceChat by remember { mutableStateOf(false) }
     val voiceKeyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val voiceInputBusy = isLoading || (inputState !is InputProcessingState.Idle &&
+        inputState !is InputProcessingState.Completed && inputState !is InputProcessingState.Error)
+    val voicePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        voiceGesture.reset()
+        if (granted) OKToast.info(context, context.getString(R.string.voice_message_hold_to_record)).show()
+        else OKToast.warning(context, context.getString(R.string.voice_message_permission)).show()
+    }
+    if (prepareVoiceChat) {
+        VoiceRecordingWindowEffect(active = true)
+        VoiceRecordingInterruptionEffect {
+            prepareVoiceChat = false
+            voiceGesture.reset()
+        }
+    }
+    LaunchedEffect(voiceGesture.state.phase) {
+        if (voiceRecordingChatId == null && (voiceGesture.state.phase == VoiceHoldPhase.RELEASED ||
+                voiceGesture.state.phase == VoiceHoldPhase.CANCELLED)) {
+            // 新会话尚未建立时松手也要结束手势，不能等待会话到达后自行开录。
+            prepareVoiceChat = false
+            voiceGesture.reset()
+        }
+    }
     LaunchedEffect(currentChatId) {
         if (prepareVoiceChat && !currentChatId.isNullOrBlank()) {
             prepareVoiceChat = false
-            if (canStartVoiceMessage(userMessage.text, attachments.size, isLoading, replyToMessage != null)) {
+            if (voiceGesture.state.phase == VoiceHoldPhase.HOLDING &&
+                canStartVoiceMessage(userMessage.text, attachments.size, voiceInputBusy, replyToMessage != null)) {
                 voiceRecordingChatId = currentChatId
-            }
-        } else if (voiceRecordingChatId != currentChatId) {
+            } else voiceGesture.reset()
+        } else if (voiceRecordingChatId != null && voiceRecordingChatId != currentChatId) {
             voiceRecordingChatId = null
+            voiceGesture.reset()
         }
     }
-    val recordVoiceMessage: () -> Unit = {
-        if (canStartVoiceMessage(userMessage.text, attachments.size,
-                isLoading || (inputState !is InputProcessingState.Idle && inputState !is InputProcessingState.Completed && inputState !is InputProcessingState.Error),
-                replyToMessage != null)) {
+    val recordVoiceMessage: () -> Unit = recording@{
+        if (voiceGesture.state.phase != VoiceHoldPhase.HOLDING) return@recording
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            voiceGesture.reset()
+            voicePermission.launch(Manifest.permission.RECORD_AUDIO)
+            return@recording
+        }
+        if (canStartVoiceMessage(userMessage.text, attachments.size, voiceInputBusy, replyToMessage != null)) {
             actualViewModel.resetAttachmentPanelState()
             focusManager.clearFocus()
             voiceKeyboardController?.hide()
@@ -1383,11 +1421,19 @@ private fun ChatInputBottomBar(
             } else {
                 voiceRecordingChatId = chatId
             }
-        }
+        } else voiceGesture.reset()
     }
     voiceRecordingChatId?.let { originChatId ->
-        key(originChatId) {
-            VoiceMessageSheet(onDismiss = { voiceRecordingChatId = null }, onSend = { message, onPersisted ->
+        val recordingId = voiceGesture.state.id
+        key(originChatId, recordingId) {
+            VoiceRecordingOverlay(gesture = voiceGesture,
+                onDismiss = {
+                    // 旧录音的异步完成回调不能关闭下一次录音。
+                    if (voiceGesture.state.id == recordingId && voiceRecordingChatId == originChatId) {
+                        voiceRecordingChatId = null
+                        voiceGesture.reset()
+                    }
+                }, onSend = { message, onPersisted ->
                 val decision = ChatInputHookRegistry.dispatchSubmitRequested(
                     buildChatInputHookContext(eventName = ChatInputEvents.SUBMIT_REQUESTED,
                         text = message.transcript, selectionStart = message.transcript.length,
@@ -1396,12 +1442,12 @@ private fun ChatInputBottomBar(
                 )
                 if (decision.action == ChatInputSubmitActions.BLOCK || decision.action == ChatInputSubmitActions.CONSUME) {
                     showChatInputHookMessage(decision.message)
-                    false
+                    VoiceMessageSendResult.REJECTED
                 } else {
                     showChatInputHookMessage(decision.noticeMessage)
                     val finalTranscript = decision.text ?: message.transcript
-                    val accepted = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
-                    if (accepted) {
+                    val result = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
+                    if (result == VoiceMessageSendResult.SENT) {
                         onRequestAutoScrollToBottom()
                         ChatInputHookRegistry.dispatchNotification(
                             buildChatInputHookContext(eventName = ChatInputEvents.SUBMITTED,
@@ -1409,15 +1455,24 @@ private fun ChatInputBottomBar(
                                 selectionEnd = finalTranscript.length, submitSource = "voice",
                                 chatId = originChatId, attachmentCount = 1)
                         )
-                    } else OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
-                    accepted
+                    } else if (result == VoiceMessageSendResult.REJECTED) {
+                        OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
+                    }
+                    result
                 }
+            }, onUseText = { transcript ->
+                if (currentChatId == originChatId && transcript.isNotBlank() &&
+                    canStartVoiceMessage(userMessage.text, attachments.size, voiceInputBusy, replyToMessage != null)) {
+                    commitUserMessageChange(TextFieldValue(transcript, TextRange(transcript.length)))
+                    true
+                } else false
             })
         }
     }
 
     if (inputStyle == UserPreferencesManager.INPUT_STYLE_AGENT) {
-        AgentChatInputSection(
+        CompositionLocalProvider(LocalVoiceRecordingGesture provides voiceGesture) {
+            AgentChatInputSection(
                 actualViewModel = actualViewModel,
                 userMessage = userMessage,
                 onUserMessageChange = { value -> handleUserMessageChange(value) },
@@ -1496,9 +1551,11 @@ private fun ChatInputBottomBar(
                 onEditPendingQueueMessage = ::editQueuedMessage,
                 onSteerPendingQueueMessage = ::steerPendingQueueMessage,
 
-        )
+            )
+        }
     } else {
-        ClassicChatInputSection(
+        CompositionLocalProvider(LocalVoiceRecordingGesture provides voiceGesture) {
+            ClassicChatInputSection(
                 actualViewModel = actualViewModel,
                 userMessage = userMessage,
                 onUserMessageChange = { value -> handleUserMessageChange(value) },
@@ -1548,7 +1605,8 @@ private fun ChatInputBottomBar(
                 onEditPendingQueueMessage = ::editQueuedMessage,
                 onSteerPendingQueueMessage = ::steerPendingQueueMessage,
 
-        )
+            )
+        }
     }
 }
 

@@ -9573,4 +9573,17 @@
     <string name="webvisit_error_cloudflare_challenge">检测到 Cloudflare 人机验证或浏览器验证页，已提前结束。此只读工具不处理验证，单纯延长超时不能解决。</string>
     <string name="webvisit_error_cloudflare_blocked">收到 Cloudflare 返回的访问拒绝响应或拦截页，已提前结束。请检查站点访问权限与安全策略。</string>
     <string name="markdown_mermaid_render_failed">Mermaid 图表渲染失败，请检查语法。</string>
+
+    <string name="voice_message_hold_to_record">按住录音，松手发送</string>
+    <string name="voice_message_release_send">松手发送</string>
+    <string name="voice_message_release_cancel">松手取消</string>
+    <string name="voice_message_release_transcribe">松手转文字</string>
+    <string name="voice_message_hold_slide_hint">滑向两侧可取消或转文字</string>
+    <string name="voice_message_transcribe">转文字</string>
+    <string name="voice_message_transcribing">正在转文字…</string>
+    <string name="voice_message_hold_limit">已录满 %1$d 秒，松手发送</string>
+    <string name="voice_message_retry_transcribe">重试转写</string>
+    <string name="voice_message_finishing">正在结束录音…</string>
+    <string name="studio_background_blur_hint">只模糊当前背景，文字和控件保持清晰。</string>
+    <string name="studio_background_blur_inherit_hint">添加独立背景填充或图层后可调整；跟随其他背景时沿用其模糊设置。</string>
 </resources>

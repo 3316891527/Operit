@@ -414,9 +414,9 @@ fun BubbleUserMessageComposable(
                                 contentPadding =
                                     PaddingValues(
                                         start = bubbleContentPaddingLeft.dp,
-                                        top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                        top = if (isHiddenPlaceholder) 0.dp else 12.dp,
                                         end = bubbleContentPaddingRight.dp,
-                                        bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                        bottom = if (isHiddenPlaceholder) 0.dp else 12.dp,
                                     ),
                             ) {
                                 ThemeScriptSurface("userMessage", messageDecorationOpacity, drawFill = true, originalShape = bubbleShape) {
@@ -495,7 +495,7 @@ fun BubbleUserMessageComposable(
                                                 voiceMessage.waveform, voiceMessage.transcript,
                                                 embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing,
                                                 modifier = Modifier.padding(start = bubbleContentPaddingLeft.dp, end = bubbleContentPaddingRight.dp,
-                                                    top = 6.dp, bottom = 6.dp))
+                                                    top = 12.dp, bottom = 12.dp))
                                         } else {
                                             Text(
                                                 text = textContent,
@@ -573,9 +573,9 @@ fun BubbleUserMessageComposable(
                                 contentPadding =
                                     PaddingValues(
                                         start = bubbleContentPaddingLeft.dp,
-                                        top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                        top = if (isHiddenPlaceholder) 0.dp else 12.dp,
                                         end = bubbleContentPaddingRight.dp,
-                                        bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 6.dp else 12.dp,
+                                        bottom = if (isHiddenPlaceholder) 0.dp else 12.dp,
                                     ),
                             ) {
                                 ThemeScriptSurface("userMessage", messageDecorationOpacity, drawFill = true, originalShape = bubbleShape) {
@@ -654,7 +654,7 @@ fun BubbleUserMessageComposable(
                                                 voiceMessage.waveform, voiceMessage.transcript,
                                                 embedded = true, contentColor = effectiveTextColor, missingState = voiceFileMissing,
                                                 modifier = Modifier.padding(start = bubbleContentPaddingLeft.dp, end = bubbleContentPaddingRight.dp,
-                                                    top = 6.dp, bottom = 6.dp))
+                                                    top = 12.dp, bottom = 12.dp))
                                         } else {
                                             Text(
                                                 text = textContent,

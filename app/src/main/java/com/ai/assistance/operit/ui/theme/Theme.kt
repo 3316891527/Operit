@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.theme
 
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingOverlayHost
 import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptHost
@@ -393,13 +394,13 @@ fun OperitTheme(content: @Composable () -> Unit) {
                                 renderedColors.surfaceContainerLowest.copy(alpha = 1f),
                         ),
                     typography = renderedTypography,
-                    content = content,
+                    content = { VoiceRecordingOverlayHost(content) },
                 )
             } else {
                 MaterialTheme(
                     colorScheme = renderedColors,
                     typography = renderedTypography,
-                    content = content,
+                    content = { VoiceRecordingOverlayHost(content) },
                 )
             }
         }

@@ -294,6 +294,7 @@ private fun StudioSurfaceAppearance(state: ThemeStudioState, onColor: (String, S
         if (target.id in setOf("userAvatar", "assistantAvatar")) StudioHint(stringResource(R.string.studio_avatar_fill_hint))
         StudioSlider(state, stringResource(R.string.studio_opacity), s.opacity, 0f..1f) { value -> state.updateSurface { it.copy(opacity = value) } }
     }
+    if (target.isBackground) StudioBackgroundBlurProperties(state)
     if (target.supports(StudioSurfaceControl.Shape)) StudioSection(stringResource(R.string.studio_shape_border)) {
         val shape = when { s.shape == null -> "inherit"; s.shape.type == "rounded" && s.shape.radius == 0f -> "rect"; else -> s.shape.type }
         StudioChoices(shape, listOf("inherit" to stringResource(R.string.studio_inherit), "rounded" to stringResource(R.string.studio_rounded), "rect" to stringResource(R.string.studio_square), "cut" to stringResource(R.string.studio_cut), "circle" to stringResource(R.string.studio_circle))) { value ->

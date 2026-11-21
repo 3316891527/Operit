@@ -92,6 +92,8 @@ export interface Surface {
     fillColor?: Color;
     /** Mutually exclusive with fillColor. */
     fillGradient?: Gradient;
+    /** 仅全局及页面背景使用，0..30 dp；零关闭，需要 Android 12 或更新版本。 */
+    backgroundBlur?: number;
     contentColor?: Color;
     strokeColor?: Color;
     strokeWidth?: number;

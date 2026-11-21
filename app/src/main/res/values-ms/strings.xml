@@ -8614,4 +8614,17 @@
     <string name="workspace_open_failed">Tidak dapat membuka fail. Semak butiran punca berkaitan laluan, sambungan atau storan di bawah.</string>
     <string name="workspace_open_checking">Menyemak dan membaca fail semasa…</string>
     <string name="markdown_mermaid_render_failed">Rajah Mermaid tidak dapat dipaparkan. Semak sintaksnya.</string>
+
+    <string name="voice_message_hold_to_record">Tekan dan tahan untuk merakam, lepaskan untuk menghantar</string>
+    <string name="voice_message_release_send">Lepaskan untuk menghantar</string>
+    <string name="voice_message_release_cancel">Lepaskan untuk membatalkan</string>
+    <string name="voice_message_release_transcribe">Lepaskan untuk transkripsi</string>
+    <string name="voice_message_hold_slide_hint">Leret ke sisi untuk membatalkan atau membuat transkripsi</string>
+    <string name="voice_message_transcribe">Transkripsi</string>
+    <string name="voice_message_transcribing">Sedang membuat transkripsi…</string>
+    <string name="voice_message_hold_limit">Had %1$d saat dicapai. Lepaskan untuk menghantar</string>
+    <string name="voice_message_retry_transcribe">Cuba semula transkripsi</string>
+    <string name="voice_message_finishing">Menamatkan rakaman…</string>
+    <string name="studio_background_blur_hint">Hanya latar belakang dikaburkan; teks dan kawalan kekal jelas.</string>
+    <string name="studio_background_blur_inherit_hint">Tambah isian atau lapisan latar belakang tersendiri untuk melaraskan kekaburan. Latar belakang yang diwarisi menggunakan tetapan sumber.</string>
 </resources>
