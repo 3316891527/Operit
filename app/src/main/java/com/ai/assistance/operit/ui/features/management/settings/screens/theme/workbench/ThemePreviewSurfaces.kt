@@ -380,6 +380,8 @@ internal fun ThemePreviewInput(values: ThemePreferenceValues) {
                         shape,
                         baseColor,
                         backgroundOpacity = rawOpacity,
+                        // 与经典、智能体输入框保持一致，预览也启用磨砂透镜。
+                        enableLens = true,
                         region = GlassRegion.INPUT,
                     ),
             shape = shape,

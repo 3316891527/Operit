@@ -78,13 +78,13 @@ class MarketInteractionController(
         _entryReactions.value = emptyMap()
     }
 
-    fun loadEntryComments(entryId: String, perPage: Int = 50) {
+    fun loadEntryComments(entryId: String) {
         val id = entryId.trim()
         if (id.isBlank()) return
         scope.launch {
             try {
                 _isLoadingComments.value = _isLoadingComments.value + id
-                val result = marketApiService.getComments(id).map { comments -> comments.take(perPage) }
+                val result = loadAllMarketCommentPages(id, marketApiService::getComments)
                 result.fold(
                     onSuccess = { comments ->
                         _entryComments.value = _entryComments.value.toMutableMap().also { it[id] = comments }
@@ -112,8 +112,7 @@ class MarketInteractionController(
         entryId: String,
         body: String,
         parentId: String? = null,
-        successBehavior: CommentPostSuccessBehavior = CommentPostSuccessBehavior.APPEND_TO_CACHE,
-        perPage: Int = 50
+        successBehavior: CommentPostSuccessBehavior = CommentPostSuccessBehavior.APPEND_TO_CACHE
     ) {
         val id = entryId.trim()
         if (id.isBlank()) return
@@ -130,7 +129,7 @@ class MarketInteractionController(
                                     it[id] = existing + newComment
                                 }
                             }
-                            CommentPostSuccessBehavior.RELOAD_FROM_SERVER -> loadEntryComments(id, perPage)
+                            CommentPostSuccessBehavior.RELOAD_FROM_SERVER -> loadEntryComments(id)
                         }
                         messages.commentPostSuccess?.let { OKToast.success(context, it, OKToast.LENGTH_SHORT).show() }
                         AppLogger.d(logTag, "Posted comment to entry $id")
