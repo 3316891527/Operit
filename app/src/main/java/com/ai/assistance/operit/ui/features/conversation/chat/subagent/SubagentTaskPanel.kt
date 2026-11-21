@@ -32,6 +32,7 @@ import com.ai.assistance.operit.ui.common.displays.MarkdownTextComposable
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownRenderFragment
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.agent.*
+import com.ai.assistance.operit.core.chat.protocol.protocolMetaDisplayText
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -98,7 +99,9 @@ private fun TaskCard(task: SubagentTask, modifier: Modifier = Modifier, onClick:
                 Text(statusName(task.status), style = MaterialTheme.typography.labelSmall, color = if (task.status == SubagentStatus.FAILED || task.status == SubagentStatus.INTERRUPTED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                 Text(stringResource(R.string.subagent_attempt, task.attempt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(task.reports.lastOrNull()?.content ?: task.events.lastOrNull()?.text.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+            val preview = task.reports.lastOrNull()?.content ?: task.events.lastOrNull()?.text.orEmpty()
+            val displayPreview = remember(preview) { protocolMetaDisplayText(preview) }
+            Text(displayPreview, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -249,15 +252,18 @@ private fun TaskDetail(task: SubagentTask, siblings: List<SubagentTask>, coordin
 
 @Composable
 private fun DetailText(label: String, body: String, markdown: Boolean = true, enableDialogs: Boolean = true) {
+    // Markdown 入口不负责协议投影，先复用主聊天过滤器，原始消息继续留给保存与请求链路。
+    val displayBody = remember(body) { protocolMetaDisplayText(body) }
+    if (displayBody.isBlank()) return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
         SelectionContainer {
             if (markdown) {
                 // 详情可能从时间线卡片打开，不能沿用外层消息的 Markdown 渲染片段。
                 CompositionLocalProvider(LocalMarkdownRenderFragment provides null) {
-                    MarkdownTextComposable(body, MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodySmall.fontSize, enableDialogs = enableDialogs)
+                    MarkdownTextComposable(displayBody, MaterialTheme.colorScheme.onSurface, fontSize = MaterialTheme.typography.bodySmall.fontSize, enableDialogs = enableDialogs)
                 }
-            } else Text(body, style = MaterialTheme.typography.bodySmall)
+            } else Text(displayBody, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
