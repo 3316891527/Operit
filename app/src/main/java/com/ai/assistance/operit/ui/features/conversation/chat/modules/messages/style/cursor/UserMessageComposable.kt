@@ -299,9 +299,9 @@ fun UserMessageComposable(
                     .themeScriptDecoration("userMessage", messageDecorationOpacity, drawFill = false, originalShape = RoundedCornerShape(8.dp))
                     .padding(
                         start = 16.dp,
-                        top = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
+                        top = if (isHiddenPlaceholder) 0.dp else 16.dp,
                         end = 16.dp,
-                        bottom = if (isHiddenPlaceholder) 0.dp else if (voiceMessage != null) 8.dp else 16.dp,
+                        bottom = if (isHiddenPlaceholder) 0.dp else 16.dp,
                     )) {
                     if (isHiddenPlaceholder) {
                         HiddenUserMessagePlaceholderContent(

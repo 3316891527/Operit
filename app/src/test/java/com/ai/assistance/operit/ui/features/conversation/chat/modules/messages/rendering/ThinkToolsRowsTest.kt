@@ -36,7 +36,7 @@ class ThinkToolsRowsTest {
         val groups = grouper.group(nodes, "test")
         val group = groups.single() as MarkdownGroupedItem.Group
         val rows = buildThinkToolsRows(groups, nodes, mapOf(group.stableKey to true)) {
-            grouper.describeGroup(it, nodes) { null }
+            grouper.describeGroup(it, nodes, isMessageStreaming = false)
         }
         assertEquals(201, rows.size)
         assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
@@ -57,7 +57,7 @@ class ThinkToolsRowsTest {
         val headers = groups.filterIsInstance<MarkdownGroupedItem.Group>()
         val overrides = headers.associate { it.stableKey to true }
         val rows = buildThinkToolsRows(groups, nodes, overrides) {
-            grouper.describeGroup(it, nodes) { null }
+            grouper.describeGroup(it, nodes, isMessageStreaming = false)
         }
         assertEquals(50, rows.filterIsInstance<ThinkToolsRow.Header>().size)
         assertEquals(nodes.indices.toList(), rows.filterIsInstance<ThinkToolsRow.Content>().map { it.index })
@@ -85,7 +85,7 @@ class ThinkToolsRowsTest {
             val groups = grouper.group(nodes, "test")
             return buildThinkToolsRows(groups, nodes, groups.filterIsInstance<MarkdownGroupedItem.Group>().associate {
                 it.stableKey to true
-            }) { grouper.describeGroup(it, nodes) { null } }
+            }) { grouper.describeGroup(it, nodes, isMessageStreaming = false) }
         }
         val before = rows(tools(12))
         val after = rows(tools(13))

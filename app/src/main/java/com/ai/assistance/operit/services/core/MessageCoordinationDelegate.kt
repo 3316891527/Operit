@@ -7,6 +7,7 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.core.chat.AIMessageManager
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageSendResult
 import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdown
 import com.ai.assistance.operit.core.chat.context.ContextWindowBreakdownEstimator
 import com.ai.assistance.operit.core.chat.hooks.PromptTurn
@@ -512,9 +513,10 @@ class MessageCoordinationDelegate(
         content: String,
         canSubmit: () -> Boolean,
         onPersisted: () -> Unit,
-    ): Boolean {
-        if (!canSubmit() || !pendingVoiceChats.add(chatId)) return false
+    ): VoiceMessageSendResult {
+        if (!canSubmit() || !pendingVoiceChats.add(chatId)) return VoiceMessageSendResult.REJECTED
         val persisted = kotlinx.coroutines.CompletableDeferred<Boolean>()
+        var configurationRejected = false
         var sendJob: Job? = null
         try {
             val activeSendJob = sendMessageInternal(
@@ -524,18 +526,20 @@ class MessageCoordinationDelegate(
                 messageTextOverride = content,
                 consumeComposerState = false,
                 canSubmitVoice = canSubmit,
+                onConfigurationRejected = { configurationRejected = true },
                 onUserMessagePersisted = {
                     onPersisted()
                     persisted.complete(true)
                 },
-            ) ?: return false
+            ) ?: return if (configurationRejected) VoiceMessageSendResult.CONFIGURATION_REJECTED
+                else VoiceMessageSendResult.REJECTED
             sendJob = activeSendJob
             val completion = activeSendJob.invokeOnCompletion { cause ->
                 if (cause != null) persisted.completeExceptionally(cause)
                 else persisted.complete(false)
             }
             try {
-                return persisted.await()
+                return if (persisted.await()) VoiceMessageSendResult.SENT else VoiceMessageSendResult.REJECTED
             } finally {
                 completion.dispose()
             }
@@ -543,7 +547,7 @@ class MessageCoordinationDelegate(
             throw error
         } catch (error: Exception) {
             reportSendFailure(error)
-            return false
+            return VoiceMessageSendResult.REJECTED
         } finally {
             // 面板取消时先结束尚未落库的任务，再允许会话清理录音文件。
             if (!persisted.isCompleted || persisted.isCancelled) {
@@ -832,6 +836,7 @@ class MessageCoordinationDelegate(
         consumeComposerState: Boolean = true,
         a2uiOwner: com.ai.assistance.operit.ui.common.a2ui.A2uiOwner? = null,
         canSubmitVoice: (() -> Boolean)? = null,
+        onConfigurationRejected: () -> Unit = {},
         canSubmitQueued: (() -> Boolean)? = null,
         onUserMessagePersisted: (() -> Unit)? = null,
     ): Job? {
@@ -909,7 +914,6 @@ class MessageCoordinationDelegate(
 
         if (!isBackgroundSend) {
             // 更新本地Web服务器的聊天ID
-            uiBridge.updateWebServerForCurrentChat(chatId)
         }
 
         // 获取当前附件列表
@@ -974,6 +978,8 @@ class MessageCoordinationDelegate(
         if (configurationError != null) {
             // 在消费草稿、附件和启动总结前返回，让配置修正后可以直接重发。
             OKToast.requestError(context, configurationError).show()
+            // 语音需要结束并清理录音，不保留已说明配置错误的发送重试界面。
+            onConfigurationRejected()
             return null
         }
         val chatContextSettings =

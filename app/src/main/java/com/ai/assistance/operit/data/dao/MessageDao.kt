@@ -27,7 +27,7 @@ interface MessageDao {
     ): List<ChatMessagePageMetadata>
 
     /** 获取消息总数 */
-    @Query("SELECT COUNT(*) FROM messages")
+    @Query("SELECT COUNT(*) FROM messages WHERE chatId IN (SELECT id FROM chats WHERE chatKind = 'NORMAL')")
     suspend fun getTotalMessageCount(): Int
 
     @Query(
@@ -253,7 +253,7 @@ interface MessageDao {
     )
 
     /** 查找包含特定关键词的聊天ID列表（不重复） */
-    @Query("SELECT DISTINCT chatId FROM messages WHERE searchText LIKE '%' || :query || '%' ESCAPE '\\' COLLATE NOCASE")
+    @Query("SELECT DISTINCT chatId FROM messages WHERE chatId IN (SELECT id FROM chats WHERE chatKind = 'NORMAL') AND searchText LIKE '%' || :query || '%' ESCAPE '\\' COLLATE NOCASE")
     suspend fun searchChatIdsByContent(query: String): List<String>
 
     /** 批量重命名消息中的角色名 */

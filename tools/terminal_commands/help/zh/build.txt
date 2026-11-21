@@ -1,0 +1,19 @@
+Operit HTML 应用构建
+
+  build html <项目目录> --target apk|exe --output <输出目录>
+
+选项：
+  --target apk|android|exe|windows  目标平台，默认 apk
+  --output PATH                   输出目录，默认 ./dist
+  --entry PATH                    项目内的入口，默认 index.html
+  --name NAME                     应用名称，默认项目目录名
+  --package ID                    Android 包名，默认 com.operit.webapp
+  --version-name VERSION          版本名称，默认 1.0
+  --version-code NUMBER           正整数版本号，默认 1
+  --icon PATH                     图标文件
+
+示例：
+  build html ./web --target apk --output ./dist
+  build html ./web --target exe --output ./dist --icon ./icon.png
+
+输出按阶段实时刷新。Windows 输出完整运行目录和 EXE，分发时须保留同目录的 DLL 和 data。已有同名产物会报错，不会覆盖。

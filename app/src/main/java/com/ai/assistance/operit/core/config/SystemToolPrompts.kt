@@ -6,6 +6,7 @@ import com.ai.assistance.operit.core.tools.prompt.SystemToolPromptCategory
 import com.ai.assistance.operit.core.tools.prompt.ToolPrompt
 import com.ai.assistance.operit.core.tools.prompt.ToolParameterSchema
 import com.ai.assistance.operit.core.tools.builtin.a2ui.A2uiToolDefinitions
+import com.ai.assistance.operit.core.tools.commands.PlatformCommandToolDefinitions
 
 /**
  * 系统工具提示词管理器
@@ -391,7 +392,7 @@ object SystemToolPrompts {
         tools = listOf(
             ToolPrompt(
                 name = "visit_web",
-                description = "Visit a webpage and extract information (including optional image links). Two modes: (1) Provide `url` to visit a new page. (2) Follow a link from a previous visit by providing `visit_key` + `link_number`. The returned text often includes a `Results:` section like `[1] ...`, `[2] ...` — those bracketed numbers are 1-based indices. Use that exact number as `link_number` (range: 1..links.length). If you need images, set `include_image_links=true` and the tool will return an `Images:` section with 1-based indices. IMPORTANT: do NOT use `link_number` to download images; instead use `download_file` with `visit_key` + `image_number`. IMPORTANT: this tool is for webpage browsing/extraction, not a replacement for raw HTTP GET/POST requests; if you use it where you actually need API responses or precise response bodies, it may return empty or incomplete content. NOTE: this tool is browsing-only/read-only and does not perform interactive actions such as login, click, fill, submit, or workflow automation.",
+                description = "Visit a webpage and extract information (including optional image links). Two modes: (1) Provide `url` to visit a new page. (2) Follow a link from a previous visit by providing `visit_key` + `link_number`. The returned text often includes a `Results:` section like `[1] ...`, `[2] ...` — those bracketed numbers are 1-based indices. Use that exact number as `link_number` (range: 1..links.length). If you need images, set `include_image_links=true` and the tool will return an `Images:` section with 1-based indices. IMPORTANT: do NOT use `link_number` to download images; instead use `download_file` with `visit_key` + `image_number`. IMPORTANT: this tool is for webpage browsing/extraction, not a replacement for raw HTTP GET/POST requests; if you use it where you actually need API responses or precise response bodies, it may return empty or incomplete content. NOTE: this tool is browsing-only/read-only and does not perform interactive actions such as login, click, fill, submit, or workflow automation. Use timeout_seconds for the whole visit (default 30s, including queue time); optional load_timeout_seconds/read_timeout_seconds set tighter stage limits and otherwise follow timeout_seconds. wait_seconds controls the lazy-content wait after page load (default 0). These values are per-call and have no fixed business maximum. For slow networks, retry with a longer timeout_seconds; do not retry Cloudflare challenges or explicit access blocks merely by increasing timeouts. Network/HTTP/certificate errors, Cloudflare challenges, access blocks, empty content, and cancellation return failures with reasons.",
                 parametersStructured = listOf(
                     ToolParameterSchema(name = "url", type = "string", description = "optional, webpage URL", required = false),
                     ToolParameterSchema(name = "visit_key", type = "string", description = "optional, string, the visitKey from a previous visit_web result", required = false),
@@ -399,7 +400,11 @@ object SystemToolPrompts {
                     ToolParameterSchema(name = "include_image_links", type = "boolean", description = "optional, boolean, when true include extracted image links in the result (imageLinks)", required = false),
                     ToolParameterSchema(name = "headers", type = "string", description = "optional HTTP headers as JSON object string, e.g. {\"Referer\":\"...\"}", required = false),
                     ToolParameterSchema(name = "user_agent_preset", type = "string", description = "optional, quick select user agent: desktop/android", required = false),
-                    ToolParameterSchema(name = "user_agent", type = "string", description = "optional, full custom user agent override", required = false)
+                    ToolParameterSchema(name = "user_agent", type = "string", description = "optional, full custom user agent override", required = false),
+                    ToolParameterSchema(name = "timeout_seconds", type = "integer", description = "optional, positive integer seconds, whole visit including queue; default 30. Increase for slow networks", required = false),
+                    ToolParameterSchema(name = "load_timeout_seconds", type = "integer", description = "optional, positive integer seconds, loading and redirects; defaults to timeout_seconds and must not exceed it", required = false),
+                    ToolParameterSchema(name = "read_timeout_seconds", type = "integer", description = "optional, positive integer seconds, page inspection/extraction; defaults to timeout_seconds and must not exceed it", required = false),
+                    ToolParameterSchema(name = "wait_seconds", type = "integer", description = "optional, seconds to wait for lazy content after loading; default 0, non-negative and less than timeout_seconds", required = false)
                 )
             )
         )
@@ -410,7 +415,7 @@ object SystemToolPrompts {
         tools = listOf(
             ToolPrompt(
                 name = "visit_web",
-                description = "访问网页并提取信息（可选包含图片链接）。有两种用法：1）提供 `url` 访问新页面。2）提供上一次 visit_web 返回的 `visit_key` + `link_number`，用来继续访问结果里的某个链接。返回文本通常会包含 `Results:` 段落，形如 `[1] ...`、`[2] ...` —— 中括号里的数字是从 1 开始的编号，请把该编号原样作为 `link_number`（范围：1..links.length），不要按 0 起始。若需要图片，请设置 `include_image_links=true`，工具会额外返回 `Images:` 段落以及从 1 开始的图片编号。重要：下载图片不要用 `link_number` 乱点页面链接；请使用 `download_file` 的 `visit_key` + `image_number` 按图片编号下载。重要：这个工具用于网页浏览/提取，不能替代原始 HTTP GET/POST 请求；如果你实际需要的是接口返回体或精确响应内容，用它时可能会得到空结果或不完整内容。注意：该工具仅支持浏览/读取操作，不执行登录、点击、填写、提交等交互自动化。",
+                description = "访问网页并提取信息（可选包含图片链接）。有两种用法：1）提供 `url` 访问新页面。2）提供上一次 visit_web 返回的 `visit_key` + `link_number`，用来继续访问结果里的某个链接。返回文本通常会包含 `Results:` 段落，形如 `[1] ...`、`[2] ...` —— 中括号里的数字是从 1 开始的编号，请把该编号原样作为 `link_number`（范围：1..links.length），不要按 0 起始。若需要图片，请设置 `include_image_links=true`，工具会额外返回 `Images:` 段落以及从 1 开始的图片编号。重要：下载图片不要用 `link_number` 乱点页面链接；请使用 `download_file` 的 `visit_key` + `image_number` 按图片编号下载。重要：这个工具用于网页浏览/提取，不能替代原始 HTTP GET/POST 请求；如果你实际需要的是接口返回体或精确响应内容，用它时可能会得到空结果或不完整内容。注意：该工具仅支持浏览/读取操作，不执行登录、点击、填写、提交等交互自动化。timeout_seconds 控制整次访问期限，默认 30 秒且包含排队；可选的 load_timeout_seconds/read_timeout_seconds 可设置更短的阶段期限，未指定时随整次期限变化。wait_seconds 控制加载完成后的懒加载等待，默认 0 秒。参数按次生效，无固定业务最大值；网络慢导致超时可在下次增大 timeout_seconds。Cloudflare 验证或明确访问拦截会提前失败，单纯延长超时不能解决这类错误。网络、HTTP、证书错误、空内容或取消也返回失败，请读取错误原因。",
                 parametersStructured = listOf(
                     ToolParameterSchema(name = "url", type = "string", description = "可选, 网页URL", required = false),
                     ToolParameterSchema(name = "visit_key", type = "string", description = "可选, 字符串, 上一次 visit_web 返回的 visitKey", required = false),
@@ -418,7 +423,11 @@ object SystemToolPrompts {
                     ToolParameterSchema(name = "include_image_links", type = "boolean", description = "可选, boolean, 为 true 时在结果中额外包含提取到的图片链接列表（imageLinks）", required = false),
                     ToolParameterSchema(name = "headers", type = "string", description = "可选：HTTP请求头，JSON对象字符串，例如{\"Referer\":\"...\"}", required = false),
                     ToolParameterSchema(name = "user_agent_preset", type = "string", description = "可选：UA预设，快速选择：desktop/android", required = false),
-                    ToolParameterSchema(name = "user_agent", type = "string", description = "可选：完整自定义UA（优先级高于预设）", required = false)
+                    ToolParameterSchema(name = "user_agent", type = "string", description = "可选：完整自定义UA（优先级高于预设）", required = false),
+                    ToolParameterSchema(name = "timeout_seconds", type = "integer", description = "可选，整次访问时限，单位秒，正整数，默认 30，包含排队；慢网络超时后可增大", required = false),
+                    ToolParameterSchema(name = "load_timeout_seconds", type = "integer", description = "可选，页面加载及重定向的时限，单位秒，正整数；默认跟随 timeout_seconds，不能超过整次时限", required = false),
+                    ToolParameterSchema(name = "read_timeout_seconds", type = "integer", description = "可选，页面检查与内容提取的时限，单位秒，正整数；默认跟随 timeout_seconds，不能超过整次时限", required = false),
+                    ToolParameterSchema(name = "wait_seconds", type = "integer", description = "可选，加载后等待懒加载内容的秒数，默认 0；非负整数且小于 timeout_seconds", required = false)
                 )
             )
         )
@@ -549,6 +558,7 @@ object SystemToolPrompts {
         return listOf(
             basicTools,
             A2uiToolDefinitions.category(useEnglish = true),
+            com.ai.assistance.operit.core.agent.SubagentTools.category(useEnglish = true),
             adjustedFileSystemTools,
             httpTools,
             memoryTools
@@ -572,7 +582,7 @@ object SystemToolPrompts {
             chatModelHasDirectAudio = chatModelHasDirectAudio,
             chatModelHasDirectVideo = chatModelHasDirectVideo,
             safBookmarkNames = safBookmarkNames
-        ) + internalToolCategoriesEn
+        ) + internalToolCategoriesEn + PlatformCommandToolDefinitions.category(useEnglish = true)
     }
     
     /**
@@ -634,6 +644,7 @@ object SystemToolPrompts {
         return listOf(
             basicToolsCn,
             A2uiToolDefinitions.category(useEnglish = false),
+            com.ai.assistance.operit.core.agent.SubagentTools.category(useEnglish = false),
             adjustedFileSystemTools,
             httpToolsCn,
             memoryToolsCn
@@ -657,7 +668,7 @@ object SystemToolPrompts {
             chatModelHasDirectAudio = chatModelHasDirectAudio,
             chatModelHasDirectVideo = chatModelHasDirectVideo,
             safBookmarkNames = safBookmarkNames
-        ) + internalToolCategoriesCn
+        ) + internalToolCategoriesCn + PlatformCommandToolDefinitions.category(useEnglish = false)
     }
 
     data class ManageableToolPrompt(

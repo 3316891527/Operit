@@ -5711,9 +5711,6 @@
     <string name="global_display_image_format">이미지 형식</string>
     <string name="global_display_image_quality">품질(JPG만 해당)</string>
     <string name="global_display_resolution_scale">해상도 배율(보내기 전 축소)</string>
-    <string name="visit_web_wait_time_title">웹 방문 대기 시간</string>
-    <string name="visit_web_wait_time_description">visit_web이 페이지 콘텐츠를 추출한 뒤 반환하기 전에 대기하는 시간을 설정합니다. 0초로 설정하면 즉시 반환합니다.</string>
-    <string name="visit_web_wait_time_value">%1$ds</string>
     <string name="toolpkg_hook_timeout_title">ToolPkg Hook 제한 시간</string>
     <string name="toolpkg_hook_timeout_description">전송 경로에서 ToolPkg 채팅 입력, 프롬프트 및 요약 Hook 체인의 총 대기 시간을 제한합니다. 제한 시간이 지나면 현재 Hook을 건너뛰고 처리를 계속합니다. 기본값은 10초입니다. message_processing 응답 인계에는 영향을 주지 않습니다.</string>
     <string name="toolpkg_hook_timeout_value">%1$d초</string>
@@ -7703,8 +7700,6 @@
     <string name="display_behavior_screenshot_jpg_summary">화질 %1$d%% · 해상도 %2$d%%</string>
     <string name="display_behavior_tools_plugins">도구 및 플러그인</string>
     <string name="display_behavior_seconds_suffix">" 초"</string>
-    <string name="display_behavior_web_wait">웹 접근 대기</string>
-    <string name="display_behavior_web_wait_desc">웹 내용을 추출한 후 반환하기까지 기다립니다. 0초면 즉시 반환합니다.</string>
     <string name="display_behavior_hook_timeout">전처리 플러그인 Hook 제한 시간</string>
     <string name="display_behavior_hook_timeout_desc">채팅 입력, Prompt, 요약 Hook의 총 대기 시간 상한입니다.</string>
     <string name="display_behavior_hook_hint">시간이 초과된 Hook은 건너뛰고 처리를 계속합니다. 메시지 처리의 답장 인계에는 영향을 주지 않습니다.</string>
@@ -8392,7 +8387,7 @@
     <string name="workspace_changes_choose_base">비교할 브랜치 선택</string>
     <string name="workspace_changes_load_failed">파일 변경을 불러오지 못했습니다</string>
     <string name="workspace_changes_count">파일 %1$d개</string>
-    <string name="workspace_changes_empty_records">기록된 파일 작업이 없습니다. 성공한 파일 도구 작업이 여기에 표시됩니다.</string>
+    <string name="workspace_changes_empty_records">아직 기록된 변경이 없습니다. 작업 공간을 연결하면 터미널 및 외부 편집도 기록됩니다.</string>
     <string name="workspace_changes_empty_git">현재 범위에 파일 변경이 없습니다.</string>
     <string name="workspace_changes_choose_file">차이를 보려면 파일을 선택하세요</string>
     <string name="workspace_changes_history_count">%1$s · 작업 %2$d회</string>
@@ -8414,7 +8409,7 @@
     <string name="workspace_changes_git_environment">이 파일 환경에서는 Git을 실행할 수 없습니다. 작업 기록은 볼 수 있습니다.</string>
     <string name="workspace_changes_git_runtime">오프라인 리소스에서 Ubuntu를 설치한 다음 해당 환경에 Git을 설치하세요.</string>
     <string name="workspace_outputs_title">대화 결과물</string>
-    <string name="workspace_outputs_description">위치에 관계없이 이 대화에서 성공한 파일 작업 검토</string>
+    <string name="workspace_outputs_description">파일 도구 기록과 연결 디렉터리의 실제 변경을 포함한 이 대화의 저장된 변경 보기</string>
     <string name="workspace_outputs_scope">작업 공간 외부 파일을 포함한 현재 대화의 파일 작업</string>
     <string name="workspace_changes_last_turn">이전 턴 변경</string>
     <string name="workspace_changes_turn_summary">%1$s · 턴 요약</string>
@@ -8466,4 +8461,18 @@
     <string name="workspace_open_not_text">현재 파일은 읽을 수 있는 텍스트가 아니므로 텍스트 편집기에서 열 수 없습니다.</string>
     <string name="workspace_open_failed">파일을 열 수 없습니다. 아래 원인을 확인하여 경로, 연결 또는 저장소 문제를 점검하세요.</string>
     <string name="workspace_open_checking">현재 파일을 확인하고 읽는 중…</string>
+    <string name="markdown_mermaid_render_failed">Mermaid 다이어그램을 렌더링할 수 없습니다. 구문을 확인하세요.</string>
+
+    <string name="voice_message_hold_to_record">길게 눌러 녹음하고 손을 떼면 전송</string>
+    <string name="voice_message_release_send">손을 떼면 전송</string>
+    <string name="voice_message_release_cancel">손을 떼면 취소</string>
+    <string name="voice_message_release_transcribe">손을 떼면 텍스트로 변환</string>
+    <string name="voice_message_hold_slide_hint">옆으로 밀어 취소하거나 텍스트로 변환</string>
+    <string name="voice_message_transcribe">텍스트로 변환</string>
+    <string name="voice_message_transcribing">텍스트로 변환 중…</string>
+    <string name="voice_message_hold_limit">%1$d초 제한에 도달했습니다. 손을 떼면 전송</string>
+    <string name="voice_message_retry_transcribe">텍스트 변환 재시도</string>
+    <string name="voice_message_finishing">녹음 마무리 중…</string>
+    <string name="studio_background_blur_hint">배경만 흐리게 처리하며 텍스트와 컨트롤은 선명하게 유지합니다.</string>
+    <string name="studio_background_blur_inherit_hint">독립적인 배경 채우기나 레이어를 추가하면 흐림을 조절할 수 있습니다. 상속된 배경은 원본 설정을 사용합니다.</string>
 </resources>

@@ -312,6 +312,7 @@ fun ChatScreenContent(
                     onMentionRoleFromAvatar = { roleName -> actualViewModel.insertRoleMention(roleName) },
                     autoScrollToBottom = autoScrollToBottom,
                     onAutoScrollToBottomChange = onAutoScrollToBottomChange,
+                    scrollToBottomRequests = actualViewModel.scrollToBottomEvent,
                     hasOlderDisplayHistory = hasOlderDisplayHistory,
                     hasNewerDisplayHistory = hasNewerDisplayHistory,
                     isLoadingDisplayWindow = isLoadingDisplayWindow,

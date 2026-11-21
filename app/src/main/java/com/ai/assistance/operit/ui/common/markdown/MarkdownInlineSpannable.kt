@@ -7,6 +7,10 @@ import android.graphics.drawable.Drawable
 import android.text.StaticLayout
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.text.style.BackgroundColorSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.SubscriptSpan
+import android.text.style.SuperscriptSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.MetricAffectingSpan
 import android.text.style.ReplacementSpan
@@ -325,12 +329,17 @@ internal fun resolveNestedInlineText(node: MarkdownNodeStable): String {
     return when (node.type) {
         MarkdownProcessorType.LINK -> extractLinkText(node.content)
         MarkdownProcessorType.UNDERLINE -> stripUnderlineDelimiters(node.content)
+        MarkdownProcessorType.ESCAPED_TEXT -> node.content.removePrefix("\\")
+        MarkdownProcessorType.HIGHLIGHT -> node.content.removeSurrounding("==")
+        MarkdownProcessorType.SUBSCRIPT -> node.content.removeSurrounding("~")
+        MarkdownProcessorType.SUPERSCRIPT -> node.content.removeSurrounding("^")
         MarkdownProcessorType.HTML_BREAK -> "\n"
         else -> node.content
     }
 }
 
 internal fun resolveNestedInlineChildren(node: MarkdownNodeStable): List<MarkdownNodeStable> {
+    if (node.type == MarkdownProcessorType.ESCAPED_TEXT) return emptyList()
     if (node.children.isNotEmpty()) {
         return node.children
     }
@@ -378,6 +387,7 @@ private fun appendInlineNode(
     val content = child.content
 
     when (child.type) {
+        MarkdownProcessorType.ESCAPED_TEXT -> builder.append(resolveNestedInlineText(child))
         MarkdownProcessorType.LINK -> {
             val linkUrl = extractLinkUrl(content)
             val linkText = extractLinkText(content)
@@ -415,7 +425,10 @@ private fun appendInlineNode(
         MarkdownProcessorType.BOLD,
         MarkdownProcessorType.ITALIC,
         MarkdownProcessorType.STRIKETHROUGH,
-        MarkdownProcessorType.UNDERLINE -> {
+        MarkdownProcessorType.UNDERLINE,
+        MarkdownProcessorType.HIGHLIGHT,
+        MarkdownProcessorType.SUBSCRIPT,
+        MarkdownProcessorType.SUPERSCRIPT -> {
             val nestedChildren = resolveNestedInlineChildren(child)
             val fallbackText = resolveNestedInlineText(child)
             val start = builder.length
@@ -470,6 +483,11 @@ private fun appendInlineNode(
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
 
+                    MarkdownProcessorType.HIGHLIGHT -> builder.setSpan(BackgroundColorSpan(primaryColor.copy(alpha = 0.25f).toArgb()), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    MarkdownProcessorType.SUBSCRIPT, MarkdownProcessorType.SUPERSCRIPT -> {
+                        builder.setSpan(RelativeSizeSpan(0.75f), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        builder.setSpan(if (child.type == MarkdownProcessorType.SUBSCRIPT) SubscriptSpan() else SuperscriptSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
                     else -> Unit
                 }
             }

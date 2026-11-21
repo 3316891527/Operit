@@ -38,6 +38,7 @@ class MCPStarter(private val context: Context) {
     private val starterDispatcher = Dispatchers.IO.limitedParallelism(6)
     private val starterScope = CoroutineScope(starterDispatcher + SupervisorJob())
     private val terminal = Terminal.getInstance(context)
+    // 只缓存成功探测；终端未就绪或临时失败不能阻断之后的独立启动请求。
     private var pnpmInstalled: Boolean? = null
 
     /** Plugin initialization status enum */
@@ -79,23 +80,24 @@ class MCPStarter(private val context: Context) {
 
     /** Check if pnpm is installed in terminal */
     private suspend fun isPnpmInstalled(): Boolean {
-        if (pnpmInstalled != null) return pnpmInstalled == true
+        if (pnpmInstalled == true) return true
 
         val sessionId = getOrCreateSharedSession()
         if (sessionId == null) {
-            pnpmInstalled = false
+            AppLogger.w(TAG, "Cannot check pnpm yet: shared terminal session is not ready")
             return false
         }
 
-        try {
+        return try {
             val result = terminal.executeCommand(sessionId, "command -v pnpm")
             val installed = result != null && result.contains("pnpm")
-            pnpmInstalled = installed
-            return installed
+            if (installed) {
+                pnpmInstalled = true
+            }
+            installed
         } catch (e: Exception) {
             AppLogger.e(TAG, "Error checking pnpm installation: ${e.message}")
-            pnpmInstalled = false
-            return false
+            false
         }
     }
 

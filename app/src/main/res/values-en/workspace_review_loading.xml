@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">This diff is large. Load it to view changes without syntax highlighting.</string>
+    <string name="workspace_changes_load_diff">Load diff</string>
+    <string name="workspace_changes_hard_limit">This diff exceeds the display limit: 4,194,304 characters or 20,000 lines across both versions, or 131,072 characters in one line. Open the original file to view it.</string>
+    <string name="workspace_changes_long_lines_wrap">Very long lines wrap to the window width.</string>
+    <string name="workspace_changes_record_summary">%1$s · Recorded changes summary</string>
+    <string name="workspace_changes_record_scope">Actual changes in the bound directory are also saved while observed, including terminal and external edits. Unsaved history cannot be recovered.</string>
+</resources>

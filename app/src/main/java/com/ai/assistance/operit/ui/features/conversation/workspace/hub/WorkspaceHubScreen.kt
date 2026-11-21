@@ -58,7 +58,6 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.WorkspaceScre
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceChangesScreen
 import com.ai.assistance.operit.ui.features.conversation.workspace.links.WorkspaceFileLink
 import com.ai.assistance.operit.ui.features.conversation.workspace.links.WorkspaceFileLinkHost
-import java.io.File
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,7 +77,6 @@ fun WorkspaceHubScreen(
     chatHistories: List<ChatHistory>,
     isVisible: Boolean,
     reserveChatControlsSpace: Boolean = false,
-    onExportClick: (File) -> Unit,
 ) {
     key(currentChat?.id) {
         WorkspaceFileLinkHost(actualViewModel, currentChat, Modifier.fillMaxSize()) {
@@ -88,7 +86,6 @@ fun WorkspaceHubScreen(
             chatHistories = chatHistories,
             isVisible = isVisible,
             reserveChatControlsSpace = reserveChatControlsSpace,
-            onExportClick = onExportClick,
         )
         }
     }
@@ -102,7 +99,6 @@ private fun WorkspaceHubContent(
     chatHistories: List<ChatHistory>,
     isVisible: Boolean,
     reserveChatControlsSpace: Boolean = false,
-    onExportClick: (File) -> Unit,
 ) {
     val requestedPage by actualViewModel.workspaceHubPage.collectAsState()
     val messages by actualViewModel.chatHistory.collectAsState()
@@ -269,20 +265,19 @@ private fun WorkspaceHubContent(
                     )
                 }
                 val workspaceVisible = isVisible && page == WorkspaceHubPage.WORKSPACE
-                // 工作区隐藏时保留编辑状态；未绑定工作区的选择器仅在当前页面组合。
+                // 临时浏览目录和文件也属于工作区会话，切到终端后继续保留编辑状态。
                 Layout(
                     modifier = if (workspaceVisible) Modifier.fillMaxSize() else {
                         Modifier.size(0.dp).clearAndSetSemantics {}
                     },
                     content = {
-                        if ((hasOpenedWorkspace && currentChat?.workspace != null) || workspaceVisible) {
+                        if (hasOpenedWorkspace || workspaceVisible) {
                             CompositionLocalProvider(LocalWorkspaceBrowserActive provides workspaceVisible) {
                                 WorkspaceScreen(
                                     actualViewModel = actualViewModel,
                                     currentChat = currentChat,
                                     isVisible = workspaceVisible,
                                     entryRequest = entryRequest,
-                                    onExportClick = onExportClick,
                                 )
                             }
                         }
@@ -354,7 +349,7 @@ private fun WorkspaceHubContent(
             confirmButton = { TextButton(onClick = {
                 terminalManager.closeSession(session.id)
                 sessionToClose = null
-                if (terminalManager.terminalState.value.sessions.none { !it.automation }) { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() }
+                if (page == WorkspaceHubPage.TERMINAL && terminalManager.terminalState.value.sessions.none { !it.automation }) { keyboard?.hide(); actualViewModel.showWorkspaceHubHome() }
             }) { Text(stringResource(R.string.close)) } },
             dismissButton = { TextButton(onClick = { sessionToClose = null }) { Text(stringResource(R.string.cancel)) } },
         )

@@ -2,13 +2,14 @@ package com.ai.assistance.operit.data.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 
 /** 聊天实体类，用于Room数据库存储聊天元数据 */
-@Entity(tableName = "chats")
+@Entity(tableName = "chats", indices = [Index(value = ["chatKind", "parentChatId"])])
 data class ChatEntity(
         @PrimaryKey val id: String = UUID.randomUUID().toString(),
         val title: String,
@@ -29,7 +30,8 @@ data class ChatEntity(
         @ColumnInfo(defaultValue = "0") val lastUsedAt: Long = 0L,
         val pinned: Boolean = false,
         @ColumnInfo(defaultValue = "0") val archived: Boolean = false,
-        @ColumnInfo(defaultValue = "NULL") val usageBreakdownJson: String? = null
+        @ColumnInfo(defaultValue = "NULL") val usageBreakdownJson: String? = null,
+        @ColumnInfo(defaultValue = "'NORMAL'") val chatKind: String = ChatKind.NORMAL
 ) {
     /** 转换为ChatHistory对象（供UI层使用） */
     fun toChatHistory(messages: List<ChatMessage>): ChatHistory {
@@ -56,6 +58,7 @@ data class ChatEntity(
                 workspace = workspace,
                 workspaceEnv = workspaceEnv,
                 parentChatId = parentChatId,
+                chatKind = chatKind,
                 characterCardName = characterCardName,
                 characterGroupId = characterGroupId,
                 locked = locked,
@@ -94,6 +97,7 @@ data class ChatEntity(
                     workspace = chatHistory.workspace,
                     workspaceEnv = chatHistory.workspaceEnv,
                     parentChatId = chatHistory.parentChatId,
+                    chatKind = chatHistory.chatKind,
                     characterCardName = chatHistory.characterCardName,
                     characterGroupId = chatHistory.characterGroupId,
                     locked = chatHistory.locked,

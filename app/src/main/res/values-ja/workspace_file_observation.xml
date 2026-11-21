@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">ファイルの監視に失敗しました：%1$s。保存済みの履歴は引き続き閲覧できます。</string>
+    <string name="workspace_changes_base_deleted">比較ブランチ %1$s は存在しません。一覧から有効なブランチを選んでください。</string>
+</resources>

@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">アーカイブ元</string>
     <string name="workspace_archive_packed_size">圧縮サイズ</string>
     <string name="workspace_archive_encrypted">暗号化済み</string>
-    <string name="workspace_archive_name_hint">拡張子は選択した形式に応じて自動追加されます。</string>
+    <string name="workspace_archive_name_hint">入力した拡張子は保持されます。初期名または元の名前には選択形式の拡張子が付きます。</string>
     <string name="workspace_archive_stage_target">保存先を確認</string>
     <string name="workspace_archive_stage_sources">元ファイルを読み込み</string>
     <string name="workspace_archive_stage_write">アーカイブを書き込み</string>

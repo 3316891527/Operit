@@ -5,25 +5,30 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.ADBResultData
 import com.ai.assistance.operit.core.tools.StringResultData
 import com.ai.assistance.operit.core.tools.system.shell.AndroidShellExecutor
-import com.ai.assistance.operit.core.tools.permissions.authorization.ShizukuAuthorizer
 import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.core.tools.protocol.ToolValidationResult
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
+import com.ai.assistance.operit.core.chat.tools.ToolExecutionManager
+import kotlin.coroutines.EmptyCoroutineContext
 
-/**
- * Tool for executing ADB commands directly. This provides direct access to ADB shell commands for
- * system operations. Note: This requires Shizuku service to be running with proper permissions.
- */
+/** 执行一次性 Android Shell 工具调用，沿用当前授权并保留取消信号。 */
 open class StandardShellToolExecutor(private val context: Context) {
 
     companion object {
-        private const val TAG = "ADBToolExecutor"
-        private const val DEFAULT_TIMEOUT = 15000L // 15 seconds
+        private const val TAG = "ShellToolExecutor"
+        private const val DEFAULT_TIMEOUT = 30_000L
     }
 
     fun invoke(tool: AITool): ToolResult {
-        // Validate parameters
+        // JS 原生桥接在独立线程调用同步入口，显式继承发起工具的取消任务。
+        val parent = ToolExecutionManager.currentToolRuntimeContext()?.cancellationJob
+        return runBlocking(parent ?: EmptyCoroutineContext) { invokeSuspend(tool) }
+    }
+
+    internal suspend fun invokeSuspend(tool: AITool): ToolResult {
+        // 先校验命令与期限，非法参数不能启动进程。
         val validationResult = validateParameters(tool)
         if (!validationResult.valid) {
             return ToolResult(
@@ -35,11 +40,10 @@ open class StandardShellToolExecutor(private val context: Context) {
         }
 
         val command = tool.parameters.find { it.name == "command" }?.value ?: ""
-        // Timeout parameter is kept for API compatibility but not used by AdbCommandExecutor
+        val timeoutMs = tool.parameters.find { it.name == "timeout_ms" }?.value?.toLongOrNull() ?: DEFAULT_TIMEOUT
 
         return try {
-            // Use AdbCommandExecutor to execute the command
-            val result = runBlocking { AndroidShellExecutor.executeShellCommand(command) }
+            val result = AndroidShellExecutor.executeToolShellCommand(command, timeoutMs)
 
             if (result.success) {
                 ToolResult(
@@ -53,7 +57,7 @@ open class StandardShellToolExecutor(private val context: Context) {
                                 )
                 )
             } else {
-                // Combine stdout and stderr for error reporting
+                // 失败时保留已产生的输出和执行错误。
                 val errorOutput =
                         if (result.stderr.isNotEmpty()) {
                             "${result.stderr.trim()}\n${result.stdout.trim()}"
@@ -66,25 +70,30 @@ open class StandardShellToolExecutor(private val context: Context) {
                         success = false,
                         result = StringResultData(""),
                         error =
-                                "ADB command execution failed (exit code: ${result.exitCode}): $errorOutput"
+                                "Android Shell command execution failed (exit code: ${result.exitCode}): $errorOutput"
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Error executing ADB command", e)
+            AppLogger.e(TAG, "Error executing Android Shell command", e)
             ToolResult(
                     toolName = tool.name,
                     success = false,
                     result = StringResultData(""),
-                    error = "ADB command execution failed: ${e.message}"
+                    error = "Android Shell command execution failed: ${e.message}"
             )
         }
     }
 
-    /** Validates the parameters for the ADB tool. */
+    /** 校验一次性 Shell 工具的参数。 */
     fun validateParameters(tool: AITool): ToolValidationResult {
         val command = tool.parameters.find { it.name == "command" }?.value
+        val timeout = tool.parameters.find { it.name == "timeout_ms" }?.value
 
         return when {
+            timeout != null && (timeout.toLongOrNull()?.let { it > 0 } != true) ->
+                ToolValidationResult(valid = false, errorMessage = "timeout_ms must be a positive integer")
             command.isNullOrBlank() -> {
                 ToolValidationResult(valid = false, errorMessage = "Command parameter is required")
             }

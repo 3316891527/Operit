@@ -89,16 +89,7 @@ internal fun extractMarkdownImageAlt(imageContent: String): String {
 }
 
 /** 从Markdown图片语法中提取URL */
-internal fun extractMarkdownImageUrl(imageContent: String): String {
-    val startParenthesis = imageContent.indexOf('(')
-    if (startParenthesis == -1) return ""
-
-    val endParenthesis = imageContent.indexOf(')', startParenthesis)
-    if (endParenthesis == -1) return ""
-
-    return imageContent.substring(startParenthesis + 1, endParenthesis).trim()
-}
-
+internal fun extractMarkdownImageUrl(imageContent: String): String = extractLinkUrl(imageContent)
 /** 判断是否为大图片 简单根据图片URL后缀来判断 */
 private fun isLargeImage(url: String): Boolean {
     // 通常视为"大图片"的文件格式
@@ -120,7 +111,7 @@ fun MarkdownImageRenderer(
     }
 
     val imageAlt = extractMarkdownImageAlt(imageMarkdown)
-    val imageUrl = extractMarkdownImageUrl(imageMarkdown)
+    val imageUrl = com.ai.assistance.operit.util.markdown.resolveMarkdownResource(extractMarkdownImageUrl(imageMarkdown), LocalMarkdownDocumentPath.current)
 
     if (imageUrl.isEmpty()) {
         return

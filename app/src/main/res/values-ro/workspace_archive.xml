@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">Arhivă sursă</string>
     <string name="workspace_archive_packed_size">Dimensiune comprimată</string>
     <string name="workspace_archive_encrypted">Criptat</string>
-    <string name="workspace_archive_name_hint">Formatul selectat adaugă automat extensia.</string>
+    <string name="workspace_archive_name_hint">Extensia introdusă se păstrează. Numele implicit sau original primește extensia formatului selectat.</string>
     <string name="workspace_archive_stage_target">Verifică destinația</string>
     <string name="workspace_archive_stage_sources">Citește sursele</string>
     <string name="workspace_archive_stage_write">Scrie arhiva</string>

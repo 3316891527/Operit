@@ -44,11 +44,23 @@ class WorkspaceReviewCacheTest {
         assertNotNull(cache[key("second")])
     }
 
-    @Test fun textContentCannotPublishWithoutThePreparedDiff() {
+    @Test fun markdownLinesAreReadyAndCacheableBeforeGrammarInitialization() {
+        val content = ReviewContent("# 演示\n", "# 演示\n终端追加\n", SnapshotKind.TEXT, SnapshotKind.TEXT)
+        val lines = prepareReviewLines(content)
+        assertEquals(1, lines.document.additions)
+        assertEquals("终端追加", lines.document.rows.last().text)
+        val entry = LoadedFileReview(content, lines)
+        val cache = WorkspaceReviewCache()
+        cache.put(key("notes.md"), entry)
+        assertSame(lines, cache[key("notes.md")]?.diff)
+        assertFalse(entry.highlightComplete)
+    }
+
+    @Test fun textCanBeDeferredWithoutBeingMisclassifiedAsBinary() {
         val content = ReviewContent("", "hello", SnapshotKind.ABSENT, SnapshotKind.TEXT)
-        try { LoadedFileReview(content, null); fail("文本尚未完成准备时不能作为可显示结果发布") } catch (_: IllegalArgumentException) { }
+        assertEquals(ReviewDiffLoad.AUTOMATIC, LoadedFileReview(content, null).load)
         assertFalse(ReviewContent(null, null, SnapshotKind.BINARY, SnapshotKind.BINARY).isText)
         assertTrue(reviewDiffSupported(content))
-        assertFalse(reviewDiffSupported(content.copy(after = "x".repeat(8193))))
+        assertTrue(reviewDiffSupported(content.copy(after = "x".repeat(8193))))
     }
 }

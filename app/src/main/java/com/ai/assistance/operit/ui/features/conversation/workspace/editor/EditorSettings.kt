@@ -59,7 +59,8 @@ data class EditorStatus(val canUndo: Boolean = false, val canRedo: Boolean = fal
 
 /** 会话保留文档、撤销栈及文件连接归属，切换文件后也不能在另一后端溯源。 */
 class EditorSession(text: String, internal val sourceBackend: String? = null) {
-    internal val document = EditorDocument(text)
+    // 文件首次打开从开头显示，已有会话继续保留阅读位置。
+    internal val document = EditorDocument(text).also { it.collapseSelection(0) }
     internal var scrollX = 0f
     internal var scrollY = 0f
     internal var scale = 1f

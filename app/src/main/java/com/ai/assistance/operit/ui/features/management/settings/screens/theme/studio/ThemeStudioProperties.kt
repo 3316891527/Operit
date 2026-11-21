@@ -254,6 +254,19 @@ private fun StudioTextProperties(state: ThemeStudioState, onColor: (String, Stri
 private fun StudioSurfaceProperties(state: ThemeStudioState, onColor: (String, String, String?) -> Unit, onFont: () -> Unit) {
     val target = state.target
     val message = target.id in setOf("userMessage", "assistantMessage")
+    if (target.id == "input") StudioSection(stringResource(R.string.studio_input_placeholder)) {
+        val placeholder = state.surface().placeholder
+        OutlinedTextField(
+            value = placeholder ?: stringResource(R.string.input_question_hint),
+            onValueChange = { value -> state.updateSurface { it.copy(placeholder = value) } },
+            modifier = Modifier.fillMaxWidth(),
+            supportingText = { StudioHint(stringResource(R.string.studio_input_placeholder_hint)) },
+        )
+        TextButton(
+            onClick = { state.updateSurface { it.copy(placeholder = null) } },
+            enabled = placeholder != null,
+        ) { Text(stringResource(R.string.studio_input_placeholder_reset)) }
+    }
     StudioPropertyGroup(state, "appearance", stringResource(if (message) R.string.studio_group_message_appearance else R.string.studio_group_component_appearance), stringResource(R.string.studio_group_appearance_hint)) {
         StudioSurfaceAppearance(state, onColor)
     }
@@ -281,6 +294,7 @@ private fun StudioSurfaceAppearance(state: ThemeStudioState, onColor: (String, S
         if (target.id in setOf("userAvatar", "assistantAvatar")) StudioHint(stringResource(R.string.studio_avatar_fill_hint))
         StudioSlider(state, stringResource(R.string.studio_opacity), s.opacity, 0f..1f) { value -> state.updateSurface { it.copy(opacity = value) } }
     }
+    if (target.isBackground) StudioBackgroundBlurProperties(state)
     if (target.supports(StudioSurfaceControl.Shape)) StudioSection(stringResource(R.string.studio_shape_border)) {
         val shape = when { s.shape == null -> "inherit"; s.shape.type == "rounded" && s.shape.radius == 0f -> "rect"; else -> s.shape.type }
         StudioChoices(shape, listOf("inherit" to stringResource(R.string.studio_inherit), "rounded" to stringResource(R.string.studio_rounded), "rect" to stringResource(R.string.studio_square), "cut" to stringResource(R.string.studio_cut), "circle" to stringResource(R.string.studio_circle))) { value ->

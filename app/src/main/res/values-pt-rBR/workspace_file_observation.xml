@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">Falha ao monitorar arquivos: %1$s. O histórico salvo continua disponível.</string>
+    <string name="workspace_changes_base_deleted">A branch de comparação %1$s não existe mais. Selecione uma branch disponível na lista.</string>
+</resources>

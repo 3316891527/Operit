@@ -6,13 +6,21 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextBut
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceMessageSheet
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingOverlay
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingGestureController
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingInterruptionEffect
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.VoiceRecordingWindowEffect
+import com.ai.assistance.operit.core.chat.voice.VoiceMessageSendResult
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.LocalVoiceRecordingGesture
+import com.ai.assistance.operit.core.chat.voice.VoiceHoldPhase
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import com.ai.assistance.operit.core.chat.voice.canStartVoiceMessage
 
 import com.ai.assistance.operit.ui.common.oktoast.OKToast
 
 import com.ai.assistance.operit.data.preferences.transparency.ThemeTransparencyPreferences
-import com.ai.assistance.operit.ui.features.conversation.chat.foundation.list.animateScrollToEnd
 import android.content.ClipboardManager
 import android.os.Build
 import android.provider.Settings
@@ -71,11 +79,6 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.comm
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.classic.ClassicChatSettingsBar
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.PendingQueueMessageItem
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.style.bubble.BubbleImageStyleConfig
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.AndroidExportDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.ExportCompleteDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.ExportPlatformDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.ExportProgressDialog
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.WindowsExportDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.mentions.MentionSuggestionPanelStyle
 import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubScreen
 import com.ai.assistance.operit.ui.features.conversation.workspace.hub.WorkspaceHubOverlay
@@ -110,8 +113,6 @@ import java.util.UUID
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.model.ChatStyle
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.memory.MemoryFolderSelectionDialog
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.imports.SharedIncomingContentHandler
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.exportAndroidApp
-import com.ai.assistance.operit.ui.features.conversation.chat.modules.export.exportWindowsApp
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.extractClipboardPastedText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.extractInsertedText
 import com.ai.assistance.operit.ui.theme.LocalIsThemePagePreview
@@ -323,8 +324,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
             )
         }
     }
-    // 收集滚动事件
-    val scrollToBottomEvent = actualViewModel.scrollToBottomEvent
     // 从ViewModel收集新的状态
     val isWorkspaceOpen by actualViewModel.isWorkspaceOpen.collectAsState()
     val isWorkspacePreparing by actualViewModel.isWorkspacePreparing.collectAsState()
@@ -452,29 +451,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
     val onAutoScrollToBottomChange = remember { { it: Boolean -> autoScrollToBottom = it } }
     val requestAutoScrollToBottom = remember { { autoScrollToBottom = true } }
     val imeBottomPx = WindowInsets.ime.getBottom(density)
-    val latestChatHistory by rememberUpdatedState(chatHistory)
-    val latestAutoScrollToBottom by rememberUpdatedState(autoScrollToBottom)
-    val latestHasNewerDisplayHistory by rememberUpdatedState(hasNewerDisplayHistory)
-    val latestIsLoadingDisplayWindow by rememberUpdatedState(isLoadingDisplayWindow)
-
-    // 处理来自ViewModel的滚动事件（流式输出时）
-    LaunchedEffect(Unit) {
-        scrollToBottomEvent.collect {
-            if (
-                latestAutoScrollToBottom &&
-                    !latestHasNewerDisplayHistory &&
-                    !latestIsLoadingDisplayWindow
-            ) {
-                try {
-                    if (latestChatHistory.isNotEmpty()) {
-                        scrollState.animateScrollToEnd()
-                    }
-                } catch (e: Exception) {
-                    // AppLogger.e("AIChatScreen", "自动滚动失败", e)
-                }
-            }
-        }
-    }
 
     // 移除原有的 snackbar 错误处理
     val snackbarHostState = remember { SnackbarHostState() }
@@ -558,19 +534,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
         }
     }
 
-
-    // 导出相关状态
-    var showExportPlatformDialog by remember { mutableStateOf(false) }
-    var showAndroidExportDialog by remember { mutableStateOf(false) }
-    var showWindowsExportDialog by remember { mutableStateOf(false) }
-    var showExportProgressDialog by remember { mutableStateOf(false) }
-    var showExportCompleteDialog by remember { mutableStateOf(false) }
-    var exportProgress by remember { mutableStateOf(0f) }
-    var exportStatus by remember { mutableStateOf("") }
-    var exportSuccess by remember { mutableStateOf(false) }
-    var exportFilePath by remember { mutableStateOf<String?>(null) }
-    var exportErrorMessage by remember { mutableStateOf<String?>(null) }
-    var webContentDir by remember { mutableStateOf<File?>(null) }
 
     var bottomBarHeightPx by remember { mutableStateOf(0) }
     val bottomBarHeightDp = with(density) { bottomBarHeightPx.toDp() }
@@ -746,7 +709,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                             }
                             .graphicsLayer { translationY = -inputBarTranslationYPx }
                 ) {
-                    ChatInputBottomBar(
+                    Column {
+                        com.ai.assistance.operit.ui.features.conversation.chat.subagent.SubagentTaskPanel(currentChatId)
+                        ChatInputBottomBar(
                             actualViewModel = actualViewModel,
                             inputStyle = inputStyle,
                             currentChatId = currentChatId,
@@ -788,7 +753,8 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                 showMemoryFolderDialog = true
                             },
                             onRequestAutoScrollToBottom = requestAutoScrollToBottom,
-                    )
+                        )
+                    }
                 }
 
             }
@@ -818,10 +784,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                     chatHistories = chatHistories,
                     isVisible = overlayVisible,
                     reserveChatControlsSpace = true,
-                    onExportClick = { workDir ->
-                        webContentDir = workDir
-                        showExportPlatformDialog = true
-                    },
                 )
             }
         }
@@ -859,123 +821,6 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                     }
                 }
             }
-        }
-
-        // 导出平台选择对话框
-        if (showExportPlatformDialog) {
-            ExportPlatformDialog(
-                    onDismiss = { showExportPlatformDialog = false },
-                    onSelectAndroid = {
-                        showExportPlatformDialog = false
-                        showAndroidExportDialog = true
-                    },
-                    onSelectWindows = {
-                        showExportPlatformDialog = false
-                        showWindowsExportDialog = true
-                    }
-            )
-        }
-
-        // Android导出设置对话框
-        if (showAndroidExportDialog && webContentDir != null) {
-            AndroidExportDialog(
-                    workDir = webContentDir!!,
-                    onDismiss = { showAndroidExportDialog = false },
-                    onExport = { packageName, appName, iconUri, versionName, versionCode ->
-                        showAndroidExportDialog = false
-                        showExportProgressDialog = true
-                        exportProgress = 0f
-                        exportStatus = context.getString(R.string.export_starting)
-
-                        // 启动导出过程
-                        coroutineScope.launch {
-                            exportAndroidApp(
-                                    context = context,
-                                    packageName = packageName,
-                                    appName = appName,
-                                    versionName = versionName,
-                                    versionCode = versionCode,
-                                    iconUri = iconUri,
-                                    webContentDir = webContentDir!!,
-                                    onProgress = { progress, status ->
-                                        exportProgress = progress
-                                        exportStatus = status
-                                    },
-                                    onComplete = { success, filePath, errorMessage ->
-                                        showExportProgressDialog = false
-                                        exportSuccess = success
-                                        exportFilePath = filePath
-                                        exportErrorMessage = errorMessage
-                                        showExportCompleteDialog = true
-                                    }
-                            )
-                        }
-                    }
-            )
-        }
-
-        // Windows导出设置对话框
-        if (showWindowsExportDialog && webContentDir != null) {
-            WindowsExportDialog(
-                    workDir = webContentDir!!,
-                    onDismiss = { showWindowsExportDialog = false },
-                    onExport = { appName, iconUri ->
-                        showWindowsExportDialog = false
-                        showExportProgressDialog = true
-                        exportProgress = 0f
-                        exportStatus = context.getString(R.string.export_starting)
-
-                        // 启动导出过程
-                        coroutineScope.launch {
-                            exportWindowsApp(
-                                    context = context,
-                                    appName = appName,
-                                    iconUri = iconUri,
-                                    webContentDir = webContentDir!!,
-                                    onProgress = { progress, status ->
-                                        exportProgress = progress
-                                        exportStatus = status
-                                    },
-                                    onComplete = { success, filePath, errorMessage ->
-                                        showExportProgressDialog = false
-                                        exportSuccess = success
-                                        exportFilePath = filePath
-                                        exportErrorMessage = errorMessage
-                                        showExportCompleteDialog = true
-                                    }
-                            )
-                        }
-                    }
-            )
-        }
-
-        // 导出进度对话框
-        if (showExportProgressDialog) {
-            ExportProgressDialog(
-                    progress = exportProgress,
-                    status = exportStatus,
-                    onCancel = {
-                        // TODO: 实现取消导出的逻辑
-                        showExportProgressDialog = false
-                    }
-            )
-        }
-
-        // 导出完成对话框
-        if (showExportCompleteDialog) {
-            ExportCompleteDialog(
-                    success = exportSuccess,
-                    filePath = exportFilePath,
-                    errorMessage = exportErrorMessage,
-                    onDismiss = { showExportCompleteDialog = false },
-                    onOpenFile = { path ->
-                        val tool = AITool(
-                            name = if (path.endsWith(".apk", ignoreCase = true)) "install_app" else "open_file",
-                            parameters = listOf(ToolParameter("path", path))
-                        )
-                        AIToolHandler.getInstance(context).executeTool(tool)
-                    }
-            )
         }
 
         if (!isThemePreview) com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.motion.NewChatIntro(
@@ -1521,23 +1366,52 @@ private fun ChatInputBottomBar(
         }
     }
 
+    val voiceGesture = remember { VoiceRecordingGestureController() }
     var voiceRecordingChatId by remember { mutableStateOf<String?>(null) }
     var prepareVoiceChat by remember { mutableStateOf(false) }
     val voiceKeyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val voiceInputBusy = isLoading || (inputState !is InputProcessingState.Idle &&
+        inputState !is InputProcessingState.Completed && inputState !is InputProcessingState.Error)
+    val voicePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        voiceGesture.reset()
+        if (granted) OKToast.info(context, context.getString(R.string.voice_message_hold_to_record)).show()
+        else OKToast.warning(context, context.getString(R.string.voice_message_permission)).show()
+    }
+    if (prepareVoiceChat) {
+        VoiceRecordingWindowEffect(active = true)
+        VoiceRecordingInterruptionEffect {
+            prepareVoiceChat = false
+            voiceGesture.reset()
+        }
+    }
+    LaunchedEffect(voiceGesture.state.phase) {
+        if (voiceRecordingChatId == null && (voiceGesture.state.phase == VoiceHoldPhase.RELEASED ||
+                voiceGesture.state.phase == VoiceHoldPhase.CANCELLED)) {
+            // 新会话尚未建立时松手也要结束手势，不能等待会话到达后自行开录。
+            prepareVoiceChat = false
+            voiceGesture.reset()
+        }
+    }
     LaunchedEffect(currentChatId) {
         if (prepareVoiceChat && !currentChatId.isNullOrBlank()) {
             prepareVoiceChat = false
-            if (canStartVoiceMessage(userMessage.text, attachments.size, isLoading, replyToMessage != null)) {
+            if (voiceGesture.state.phase == VoiceHoldPhase.HOLDING &&
+                canStartVoiceMessage(userMessage.text, attachments.size, voiceInputBusy, replyToMessage != null)) {
                 voiceRecordingChatId = currentChatId
-            }
-        } else if (voiceRecordingChatId != currentChatId) {
+            } else voiceGesture.reset()
+        } else if (voiceRecordingChatId != null && voiceRecordingChatId != currentChatId) {
             voiceRecordingChatId = null
+            voiceGesture.reset()
         }
     }
-    val recordVoiceMessage: () -> Unit = {
-        if (canStartVoiceMessage(userMessage.text, attachments.size,
-                isLoading || (inputState !is InputProcessingState.Idle && inputState !is InputProcessingState.Completed && inputState !is InputProcessingState.Error),
-                replyToMessage != null)) {
+    val recordVoiceMessage: () -> Unit = recording@{
+        if (voiceGesture.state.phase != VoiceHoldPhase.HOLDING) return@recording
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            voiceGesture.reset()
+            voicePermission.launch(Manifest.permission.RECORD_AUDIO)
+            return@recording
+        }
+        if (canStartVoiceMessage(userMessage.text, attachments.size, voiceInputBusy, replyToMessage != null)) {
             actualViewModel.resetAttachmentPanelState()
             focusManager.clearFocus()
             voiceKeyboardController?.hide()
@@ -1550,11 +1424,19 @@ private fun ChatInputBottomBar(
             } else {
                 voiceRecordingChatId = chatId
             }
-        }
+        } else voiceGesture.reset()
     }
     voiceRecordingChatId?.let { originChatId ->
-        key(originChatId) {
-            VoiceMessageSheet(onDismiss = { voiceRecordingChatId = null }, onSend = { message, onPersisted ->
+        val recordingId = voiceGesture.state.id
+        key(originChatId, recordingId) {
+            VoiceRecordingOverlay(gesture = voiceGesture,
+                onDismiss = {
+                    // 旧录音的异步完成回调不能关闭下一次录音。
+                    if (voiceGesture.state.id == recordingId && voiceRecordingChatId == originChatId) {
+                        voiceRecordingChatId = null
+                        voiceGesture.reset()
+                    }
+                }, onSend = { message, onPersisted ->
                 val decision = ChatInputHookRegistry.dispatchSubmitRequested(
                     buildChatInputHookContext(eventName = ChatInputEvents.SUBMIT_REQUESTED,
                         text = message.transcript, selectionStart = message.transcript.length,
@@ -1563,12 +1445,12 @@ private fun ChatInputBottomBar(
                 )
                 if (decision.action == ChatInputSubmitActions.BLOCK || decision.action == ChatInputSubmitActions.CONSUME) {
                     showChatInputHookMessage(decision.message)
-                    false
+                    VoiceMessageSendResult.REJECTED
                 } else {
                     showChatInputHookMessage(decision.noticeMessage)
                     val finalTranscript = decision.text ?: message.transcript
-                    val accepted = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
-                    if (accepted) {
+                    val result = actualViewModel.sendVoiceMessage(message.copy(transcript = finalTranscript), originChatId, onPersisted)
+                    if (result == VoiceMessageSendResult.SENT) {
                         onRequestAutoScrollToBottom()
                         ChatInputHookRegistry.dispatchNotification(
                             buildChatInputHookContext(eventName = ChatInputEvents.SUBMITTED,
@@ -1576,15 +1458,24 @@ private fun ChatInputBottomBar(
                                 selectionEnd = finalTranscript.length, submitSource = "voice",
                                 chatId = originChatId, attachmentCount = 1)
                         )
-                    } else OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
-                    accepted
+                    } else if (result == VoiceMessageSendResult.REJECTED) {
+                        OKToast.warning(context, context.getString(R.string.voice_message_standalone)).show()
+                    }
+                    result
                 }
+            }, onUseText = { transcript ->
+                if (currentChatId == originChatId && transcript.isNotBlank() &&
+                    canStartVoiceMessage(userMessage.text, attachments.size, voiceInputBusy, replyToMessage != null)) {
+                    commitUserMessageChange(TextFieldValue(transcript, TextRange(transcript.length)))
+                    true
+                } else false
             })
         }
     }
 
     if (inputStyle == UserPreferencesManager.INPUT_STYLE_AGENT) {
-        AgentChatInputSection(
+        CompositionLocalProvider(LocalVoiceRecordingGesture provides voiceGesture) {
+            AgentChatInputSection(
                 actualViewModel = actualViewModel,
                 userMessage = userMessage,
                 onUserMessageChange = { value -> handleUserMessageChange(value) },
@@ -1663,9 +1554,11 @@ private fun ChatInputBottomBar(
                 onEditPendingQueueMessage = ::editQueuedMessage,
                 onSteerPendingQueueMessage = ::steerPendingQueueMessage,
 
-        )
+            )
+        }
     } else {
-        ClassicChatInputSection(
+        CompositionLocalProvider(LocalVoiceRecordingGesture provides voiceGesture) {
+            ClassicChatInputSection(
                 actualViewModel = actualViewModel,
                 userMessage = userMessage,
                 onUserMessageChange = { value -> handleUserMessageChange(value) },
@@ -1715,7 +1608,8 @@ private fun ChatInputBottomBar(
                 onEditPendingQueueMessage = ::editQueuedMessage,
                 onSteerPendingQueueMessage = ::steerPendingQueueMessage,
 
-        )
+            )
+        }
     }
 }
 

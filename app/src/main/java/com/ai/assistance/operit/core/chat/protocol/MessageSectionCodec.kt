@@ -3,7 +3,6 @@ package com.ai.assistance.operit.core.chat.protocol
 import com.ai.assistance.operit.util.toolmarkup.ToolResultMarkup
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
-import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.data.model.MessageSection
 
 /**
@@ -19,7 +18,12 @@ object MessageSectionCodec {
         setOf(RegexOption.IGNORE_CASE)
     )
 
-    fun parse(content: String): List<MessageSection> {
+    fun parse(content: String): List<MessageSection> = parseContent(content, includeIncomplete = false)
+
+    /** 仅供流式界面投影；未闭合工具仍是工具片段，原始请求与持久化解析不变。 */
+    fun parseForDisplay(content: String): List<MessageSection> = parseContent(content, includeIncomplete = true)
+
+    private fun parseContent(content: String, includeIncomplete: Boolean): List<MessageSection> {
         if (content.isEmpty()) {
             return emptyList()
         }
@@ -33,12 +37,14 @@ object MessageSectionCodec {
             val tagName = match.groupValues[1]
             val blockEnd = findBlockEnd(content, match.range.first, tagName)
             if (blockEnd < 0) {
-                appendText(sections, content.substring(match.range.first))
+                val tail = content.substring(match.range.first)
+                if (includeIncomplete) sections.add(parseBlock(tagName, tail, complete = false, forDisplay = true))
+                else appendText(sections, tail)
                 cursor = content.length
                 break
             }
             val raw = content.substring(match.range.first, blockEnd)
-            sections.add(parseBlock(tagName, raw))
+            sections.add(parseBlock(tagName, raw, forDisplay = includeIncomplete))
             cursor = blockEnd
         }
         if (cursor < content.length) {
@@ -127,7 +133,7 @@ object MessageSectionCodec {
         return null
     }
 
-    private fun parseBlock(tagName: String, raw: String): MessageSection {
+    private fun parseBlock(tagName: String, raw: String, complete: Boolean = true, forDisplay: Boolean = false): MessageSection {
         val normalized = tagName.lowercase()
         return when {
             ThinkingMarkup.isThinkingTag(normalized) ->
@@ -135,37 +141,58 @@ object MessageSectionCodec {
             normalized == "search" -> MessageSection.Search(raw)
             normalized == "status" -> MessageSection.Status(raw)
             normalized == "meta" -> parseProtocol(raw)
-            ChatMarkupRegex.isToolResultTagName(normalized) -> parseToolResult(raw)
-            ChatMarkupRegex.isToolTagName(normalized) -> parseToolCall(raw)
+            ChatMarkupRegex.isToolResultTagName(normalized) -> parseToolResult(raw, complete, forDisplay)
+            ChatMarkupRegex.isToolTagName(normalized) -> parseToolCall(raw, complete, forDisplay)
             else -> MessageSection.Text(raw)
         }
     }
 
-    private fun parseToolCall(raw: String): MessageSection {
+    private fun parseToolCall(raw: String, complete: Boolean, forDisplay: Boolean): MessageSection {
         val name = ChatMarkupRegex.nameAttr.find(raw.substringBefore('>'))
             ?.groupValues
             ?.getOrNull(1)
             .orEmpty()
-        val body = extractBody(raw)
+        val body = if (complete) extractBody(raw) else raw.substringAfter('>', "")
         val params = linkedMapOf<String, String>()
         ChatMarkupRegex.toolParamPattern.findAll(body).forEach { match ->
-            params[match.groupValues[1]] = unescapeXml(match.groupValues[2].trim())
+            params[match.groupValues[1]] = unescapeXml(if (forDisplay) match.groupValues[2] else match.groupValues[2].trim())
+        }
+        if (!complete) {
+            // 参数正文正在生成时也可展示；不补闭合标签，不将展示投影写回原文。
+            val opening = Regex("""<param\s+name="([^"]+)">""").findAll(body).lastOrNull()
+            if (opening != null) {
+                val value = body.substring(opening.range.last + 1)
+                if (!value.contains("</param>")) params[opening.groupValues[1]] = unescapeXml(value)
+            }
         }
         return MessageSection.ToolCall(name = name, params = params, raw = raw)
     }
 
-    private fun parseToolResult(raw: String): MessageSection {
+    private fun parseToolResult(raw: String, complete: Boolean, forDisplay: Boolean): MessageSection {
         val opening = raw.substringBefore('>')
         val name = ChatMarkupRegex.nameAttr.find(opening)?.groupValues?.getOrNull(1).orEmpty()
         val status = ChatMarkupRegex.statusAttr.find(opening)?.groupValues?.getOrNull(1).orEmpty()
-        val body = extractBody(raw)
-        val content = ToolResultMarkup.contentFromBody(body)
+        val body = if (complete) extractBody(raw) else raw.substringAfter('>', "")
+        val content = if (complete) ToolResultMarkup.contentFromBody(body)
+            else incompleteResultContent(raw, body)
         return MessageSection.ToolResult(
             name = name,
             status = status,
-            content = content.trim(),
+            content = if (forDisplay) content else content.trim(),
             raw = raw,
         )
+    }
+
+    /** 去掉尚在到达的外层封装，正文中的同名标签示例仍保留。 */
+    private fun incompleteResultContent(raw: String, body: String): String {
+        if ("<content>".startsWith(body)) return ""
+        if (!body.startsWith("<content>")) return body
+        val content = body.removePrefix("<content>")
+        val end = content.lastIndexOf("</content>")
+        if (end < 0) return content
+        val tail = content.substring(end + "</content>".length)
+        val tagName = raw.substringAfter('<').substringBefore(' ').substringBefore('>')
+        return if ("</$tagName>".startsWith(tail)) content.substring(0, end) else content
     }
 
     private fun parseProtocol(raw: String): MessageSection {

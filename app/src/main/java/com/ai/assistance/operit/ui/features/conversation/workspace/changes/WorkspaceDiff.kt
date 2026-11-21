@@ -2,6 +2,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 
 import com.github.difflib.DiffUtils
+import com.github.difflib.algorithm.myers.MeyersDiffWithLinearSpace
 
 internal enum class DiffLineKind { CONTEXT, ADD, REMOVE }
 internal data class DiffRange(val start: Int, val end: Int)
@@ -9,9 +10,9 @@ internal data class ReviewDiffLine(
     val oldLine: Int?, val newLine: Int?, val text: String, val kind: DiffLineKind,
     val emphasis: DiffRange? = null,
 )
-internal data class ReviewDiffDocument(val rows: List<ReviewDiffLine>, val additions: Int, val deletions: Int, val newlineChanged: Boolean)
+internal data class ReviewDiffDocument(val rows: List<ReviewDiffLine>, val additions: Int, val deletions: Int, val newlineChanged: Boolean, val snapshotKey: String)
 internal sealed interface ReviewDiffItem {
-    data class Line(val left: ReviewDiffLine?, val right: ReviewDiffLine?) : ReviewDiffItem
+    data class Line(val left: ReviewDiffLine?, val right: ReviewDiffLine?, val offset: Int = 0, val end: Int = Int.MAX_VALUE) : ReviewDiffItem
     data class Gap(val start: Int, val count: Int) : ReviewDiffItem
     data class Hunk(val oldStart: Int, val oldCount: Int, val newStart: Int, val newCount: Int) : ReviewDiffItem
 }
@@ -21,7 +22,8 @@ internal object WorkspaceDiff {
     fun compare(before: String, after: String): ReviewDiffDocument {
         val old = lines(before)
         val next = lines(after)
-        val patch = DiffUtils.diff(old, next)
+        // 线性空间算法避免大量行全部变化时持有随编辑距离膨胀的搜索路径。
+        val patch = DiffUtils.diff(old, next, MeyersDiffWithLinearSpace<String>())
         val rows = mutableListOf<ReviewDiffLine>()
         var oldIndex = 0
         var newIndex = 0
@@ -31,20 +33,35 @@ internal object WorkspaceDiff {
             }
             val removed = delta.source.lines
             val added = delta.target.lines
-            removed.forEachIndexed { index, text ->
-                val emphasis = added.getOrNull(index)?.let { changedRanges(text, it).first }
-                rows += ReviewDiffLine(++oldIndex, null, text, DiffLineKind.REMOVE, emphasis)
-            }
-            added.forEachIndexed { index, text ->
-                val emphasis = removed.getOrNull(index)?.let { changedRanges(it, text).second }
-                rows += ReviewDiffLine(null, ++newIndex, text, DiffLineKind.ADD, emphasis)
-            }
+            removed.forEach { text -> rows += ReviewDiffLine(++oldIndex, null, text, DiffLineKind.REMOVE) }
+            added.forEach { text -> rows += ReviewDiffLine(null, ++newIndex, text, DiffLineKind.ADD) }
         }
         while (oldIndex < old.size) {
             rows += ReviewDiffLine(++oldIndex, ++newIndex, old[oldIndex - 1], DiffLineKind.CONTEXT)
         }
-        return ReviewDiffDocument(rows, rows.count { it.kind == DiffLineKind.ADD }, rows.count { it.kind == DiffLineKind.REMOVE },
-            before.endsWith('\n') != after.endsWith('\n'))
+        return ReviewDiffDocument(pairChanges(rows), rows.count { it.kind == DiffLineKind.ADD }, rows.count { it.kind == DiffLineKind.REMOVE },
+            before.endsWith('\n') != after.endsWith('\n'), reviewSnapshotKey(before, after))
+    }
+
+    /** 算法可分别返回相邻的新增与删除，按连续改动块配对后再计算行内强调。 */
+    private fun pairChanges(rows: List<ReviewDiffLine>): List<ReviewDiffLine> = buildList {
+        var index = 0
+        while (index < rows.size) {
+            if (rows[index].kind == DiffLineKind.CONTEXT) { add(rows[index++]); continue }
+            val removed = mutableListOf<ReviewDiffLine>()
+            val added = mutableListOf<ReviewDiffLine>()
+            while (index < rows.size && rows[index].kind != DiffLineKind.CONTEXT) {
+                val row = rows[index++]
+                if (row.kind == DiffLineKind.REMOVE) removed += row else added += row
+            }
+            val emphasis = (0 until maxOf(removed.size, added.size)).map { pair ->
+                val old = removed.getOrNull(pair)
+                val next = added.getOrNull(pair)
+                if (old != null && next != null) changedRanges(old.text, next.text) else null to null
+            }
+            removed.forEachIndexed { pair, row -> add(row.copy(emphasis = emphasis[pair].first)) }
+            added.forEachIndexed { pair, row -> add(row.copy(emphasis = emphasis[pair].second)) }
+        }
     }
 
     fun items(document: ReviewDiffDocument, split: Boolean, full: Boolean, expanded: Set<Int>): List<ReviewDiffItem> {
@@ -75,6 +92,31 @@ internal object WorkspaceDiff {
             repeat(maxOf(removed.size, added.size)) { pair -> output += ReviewDiffItem.Line(removed.getOrNull(pair), added.getOrNull(pair)) }
         }
         return withHeaders(output)
+    }
+
+    /** 长逻辑行拆成有限长度的可见单元，完整原文仍保存在行模型中。 */
+    fun slices(items: List<ReviewDiffItem>, maximumCharacters: Int = 2048): List<ReviewDiffItem> = buildList {
+        require(maximumCharacters >= 4)
+        for (item in items) {
+            if (item !is ReviewDiffItem.Line) { add(item); continue }
+            val length = maxOf(item.left?.text?.length ?: 0, item.right?.text?.length ?: 0)
+            if (length <= maximumCharacters) { add(item); continue }
+            var offset = 0
+            while (offset < length) {
+                val end = minOf(offset + maximumCharacters - 1, length)
+                add(item.copy(offset = offset, end = end))
+                offset = end
+            }
+        }
+    }
+
+    /** 两侧代理字符的位置可能不同，分别调整切片边界才能保留每侧完整原文。 */
+    fun sliceRange(text: String, offset: Int, end: Int): DiffRange {
+        var stop = minOf(end, text.length)
+        var start = minOf(offset, stop)
+        if (start < text.length && text[start].isLowSurrogate()) start--
+        if (stop < text.length && text[stop].isLowSurrogate()) stop--
+        return DiffRange(start.coerceAtLeast(0), stop.coerceAtLeast(0))
     }
 
     /** 导航按连续改动块定位，统一视图中的增删配对只算同一处改动。 */

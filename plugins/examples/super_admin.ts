@@ -223,8 +223,8 @@ METADATA
         {
             "name": "shell",
             "description": {
-                "zh": "通过Shizuku/Root权限直接在Android系统中执行Shell命令。运行环境：直接访问Android系统，具有系统级权限，适用于需要操作Android系统底层的场景（如pm、am等系统命令）。",
-                "en": "Execute shell commands directly on Android with Shizuku/Root. Environment: direct Android system access with system-level privileges, suitable for low-level commands such as pm/am."
+                "zh": "通过Shizuku/Root权限直接在Android系统中执行Shell命令。运行环境：直接访问Android系统，具有系统级权限，适用于需要操作Android系统底层的场景（如pm、am等系统命令）。一次性调用默认30秒，可用timeoutMs延长；Root调用独占进程，超时或取消仅清理本次进程组。输出合并并保留末尾256KiB；后台服务请自行重定向输入输出。",
+                "en": "Execute shell commands directly on Android with Shizuku/Root. Environment: direct Android system access with system-level privileges, suitable for low-level commands such as pm/am. One-shot calls default to 30s; set timeoutMs to extend. Root calls own an isolated process group, cleaned up on timeout or cancellation. Output is merged and limited to the last 256KiB; redirect daemon input/output explicitly."
             },
             "parameters": [
                 {
@@ -235,6 +235,15 @@ METADATA
                     },
                     "type": "string",
                     "required": true
+                },
+                {
+                    "name": "timeoutMs",
+                    "description": {
+                        "zh": "本次执行期限，正整数毫秒，默认30000。超时返回失败，不自动重试；可根据需要延长。",
+                        "en": "Execution deadline in positive integer milliseconds; defaults to 30000. Timeout fails without automatic retry; increase for longer commands."
+                    },
+                    "type": "number",
+                    "required": false
                 }
             ]
         }
@@ -460,7 +469,7 @@ const superAdmin = (function () {
      * 运行环境：直接访问Android系统，具有系统级权限
      * @param command - 要执行的Shell命令
      */
-    async function shell(params: { command: string }): Promise<any> {
+    async function shell(params: { command: string; timeoutMs?: number }): Promise<any> {
         try {
             if (!params.command) {
                 throw new Error("命令不能为空");
@@ -470,7 +479,7 @@ const superAdmin = (function () {
             console.log(`执行Shell命令: ${command}`);
 
             // 通过Shizuku/Root权限执行shell操作
-            const result = await Tools.System.shell(`${command}`);
+            const result = await Tools.System.shell(command, params.timeoutMs);
 
             return {
                 command: command,

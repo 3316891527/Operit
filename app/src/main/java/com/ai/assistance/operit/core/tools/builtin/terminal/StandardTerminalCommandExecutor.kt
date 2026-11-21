@@ -108,9 +108,12 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                     val command = requireNotNull(parameter("command")) { "command is required" }
                     require(command.isNotBlank()) { "command must not be blank" }
                     val timeoutMs = parameter("timeout_ms")?.toLong() ?: 1_800_000L
+                    val caller = com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.currentToolRuntimeContext()
                     taskRegistry.start(sessionId, command, timeoutMs,
                         collect = { commandId, onCancellation ->
-                            terminal.executeCommandFlow(sessionId, command, commandId, onCancellation)
+                            com.ai.assistance.operit.core.chat.tools.ToolExecutionManager.withToolRuntimeContext(caller) {
+                                terminal.executeCommandFlow(sessionId, command, commandId, onCancellation)
+                            }
                         },
                     ).also { createdId = it }
                 }
@@ -193,7 +196,7 @@ class StandardTerminalCommandExecutor(private val context: Context) {
                 )
             )
 
-            val outputFlow = terminal.executeCommandFlow(sessionId, command)
+            val outputFlow = terminal.timedCommandFlow(sessionId, command, timeout)
             val events = mutableListOf<String>()
             var completionOutput: String? = null
             var exitCode = 0
@@ -203,43 +206,41 @@ class StandardTerminalCommandExecutor(private val context: Context) {
             var receivedChars = 0
 
             try {
-                withTimeout(timeout) {
-                    outputFlow.collect { event ->
-                        if (event.isCompleted) {
-                            completionOutput = event.outputChunk
-                            // 完成事件携带真实退出码，普通执行和流式执行统一上报。
-                            exitCode = if (event.terminationReason != null) -1 else checkNotNull(event.exitCode) {
-                                context.getString(R.string.terminal_error_command_failed)
-                            }
-                            hasCompleted = true
-                            return@collect
+                outputFlow.collect { event ->
+                    if (event.isCompleted) {
+                        completionOutput = event.outputChunk
+                        // 完成事件携带真实退出码，普通执行和流式执行统一上报。
+                        exitCode = if (event.terminationReason != null) -1 else checkNotNull(event.exitCode) {
+                            context.getString(R.string.terminal_error_command_failed)
                         }
-
-                        val chunk = event.outputChunk
-                        if (chunk.isEmpty()) {
-                            return@collect
-                        }
-
-                        events.add(chunk)
-                        receivedChars += chunk.length
-                        emit(
-                            ToolResult(
-                                toolName = tool.name,
-                                success = true,
-                                result =
-                                    TerminalStreamEventData(
-                                        type = "chunk",
-                                        command = command,
-                                        sessionId = sessionId,
-                                        chunk = chunk,
-                                        chunkIndex = chunkIndex,
-                                        receivedChars = receivedChars
-                                    ),
-                                error = ""
-                            )
-                        )
-                        chunkIndex += 1
+                        hasCompleted = true
+                        return@collect
                     }
+
+                    val chunk = event.outputChunk
+                    if (chunk.isEmpty()) {
+                        return@collect
+                    }
+
+                    events.add(chunk)
+                    receivedChars += chunk.length
+                    emit(
+                        ToolResult(
+                            toolName = tool.name,
+                            success = true,
+                            result =
+                                TerminalStreamEventData(
+                                    type = "chunk",
+                                    command = command,
+                                    sessionId = sessionId,
+                                    chunk = chunk,
+                                    chunkIndex = chunkIndex,
+                                    receivedChars = receivedChars
+                                ),
+                            error = ""
+                        )
+                    )
+                    chunkIndex += 1
                 }
             } catch (e: TimeoutCancellationException) {
                 AppLogger.w(TAG, "Command execution timed out after ${timeout}ms")

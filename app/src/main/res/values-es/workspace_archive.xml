@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">Archivo de origen</string>
     <string name="workspace_archive_packed_size">Tamaño comprimido</string>
     <string name="workspace_archive_encrypted">Cifrado</string>
-    <string name="workspace_archive_name_hint">El formato seleccionado añade la extensión automáticamente.</string>
+    <string name="workspace_archive_name_hint">Se conserva la extensión escrita. Al nombre predeterminado o al original se añade la extensión del formato elegido.</string>
     <string name="workspace_archive_stage_target">Comprobar destino</string>
     <string name="workspace_archive_stage_sources">Leer archivos de origen</string>
     <string name="workspace_archive_stage_write">Escribir archivo comprimido</string>

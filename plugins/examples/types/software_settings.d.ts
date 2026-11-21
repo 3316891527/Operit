@@ -34,6 +34,11 @@ import {
  * Software settings operations namespace
  */
 export namespace SoftwareSettings {
+    /** 宿主命令结果为原始文本或结构化 JSON，失败通过 Promise 拒绝传播。 */
+    type CommandValue = string | number | boolean | null | CommandValue[] | { [key: string]: CommandValue };
+    /** 需要 Operit 1.12.2+27 或更新版本。空数组获取真实帮助，逐项保留参数。 */
+    function exec(args: string[]): Promise<CommandValue>;
+
     interface SpeechServicesUpdateOptions {
         tts_service_type?: 'SIMPLE_TTS' | 'HTTP_TTS' | 'OPENAI_WS_TTS' | 'SILICONFLOW_TTS' | 'MINIMAX_TTS' | 'MIMO_TTS' | 'DOUBAO_TTS' | 'OPENAI_TTS' | 'VITS_TTS';
         tts_url_template?: string;

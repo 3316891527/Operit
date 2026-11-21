@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
@@ -136,6 +137,8 @@ fun Modifier.themeScriptDecoration(
     // 最小高度和投影属于整条容器，拆块后不能给每一行再加一份。
     return this.heightIn(min = if (fragment.whole) surface.minHeight.dp else 0.dp)
         .alpha(opacity)
+        // 背景目标绘制在正文下面的独立容器中，整体模糊不影响文字和控件。
+        .then(if (surface.backgroundBlur > 0f) Modifier.blur(surface.backgroundBlur.dp) else Modifier)
         .then(if (!drawElevation || surface.elevation == null || !fragment.whole) Modifier else Modifier.shadow(surface.elevation.dp, shape, clip = false))
         .clip(shape)
         .then(pointer).onFocusChanged { focused = it.hasFocus }

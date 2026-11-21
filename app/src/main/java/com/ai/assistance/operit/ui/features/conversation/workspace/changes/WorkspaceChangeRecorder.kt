@@ -9,7 +9,6 @@ import com.ai.assistance.operit.core.tools.protocol.ToolResult
 import com.ai.assistance.operit.core.tools.runtime.ToolExecutor
 import com.ai.assistance.operit.util.logging.AppLogger
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -20,19 +19,22 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** 包装实际文件执行器，避免把代理结果、中间流或 UI 操作误认为对话产出。 */
+/** 保存文件工具的精确操作快照，绑定目录内与实际文件观察同步去重。 */
 internal class WorkspaceChangeRecorder(
     private val context: Context,
     private val delegate: ToolExecutor,
+    private val acknowledge: (List<FileChangeRecord>) -> Unit = TerminalFileJournal::acknowledgeExisting,
 ) : ToolExecutor {
     override fun validateParameters(tool: AITool) = delegate.validateParameters(tool)
 
     override fun invoke(tool: AITool): ToolResult {
-        val chatId = ToolExecutionManager.currentToolRuntimeContext()?.callerChatId
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        val chatId = caller?.workspaceChatId
         if (chatId.isNullOrBlank()) return delegate.invoke(tool)
+        val sourceName = caller?.invokingToolName ?: tool.name
         return runBlocking(Dispatchers.IO) {
             WorkspaceChangeStore.operationMutex.withLock {
-                val capture = begin(tool, chatId)
+                val capture = begin(tool, chatId, sourceName)
                 val result = delegate.invoke(tool)
                 finish(capture, result)
                 result
@@ -41,13 +43,15 @@ internal class WorkspaceChangeRecorder(
     }
 
     override fun invokeAndStream(tool: AITool): Flow<ToolResult> = flow {
-        val chatId = ToolExecutionManager.currentToolRuntimeContext()?.callerChatId
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        val chatId = caller?.workspaceChatId
         if (chatId.isNullOrBlank()) {
             delegate.invokeAndStream(tool).collect { emit(it) }
             return@flow
         }
+        val sourceName = caller?.invokingToolName ?: tool.name
         WorkspaceChangeStore.operationMutex.withLock {
-            val capture = withContext(Dispatchers.IO) { begin(tool, chatId) }
+            val capture = withContext(Dispatchers.IO) { begin(tool, chatId, sourceName) }
             var pending: ToolResult? = null
             var recorded = false
             try {
@@ -73,13 +77,13 @@ internal class WorkspaceChangeRecorder(
 
     private data class Capture(
         val chatId: String,
-        val tool: AITool,
+        val sourceName: String,
         val roots: List<ChangeLocation>,
         val before: Map<ChangeLocation, ChangeSnapshot>,
         val access: WorkspaceChangeAccess,
     )
 
-    private suspend fun begin(tool: AITool, chatId: String): Capture? = try {
+    private suspend fun begin(tool: AITool, chatId: String, sourceName: String): Capture? = try {
         val access = WorkspaceChangeAccess(context)
         val params = tool.parameters.associate { it.name to it.value }
         val environment = params["environment"]
@@ -89,7 +93,7 @@ internal class WorkspaceChangeRecorder(
             "zip_files", "unzip_files", "download_file" -> listOfNotNull(params["destination"]).map { access.location(it, environment) }
             else -> listOfNotNull(params["path"]).map { access.location(it, environment) }
         }.distinct()
-        Capture(chatId, tool, roots, captureTree(access, roots), access)
+        Capture(chatId, sourceName, roots, captureTree(access, roots), access)
     } catch (error: CancellationException) {
         throw error
     } catch (error: Exception) {
@@ -135,7 +139,7 @@ internal class WorkspaceChangeRecorder(
         try {
             val after = captureTree(capture.access, capture.roots)
             val operationId = UUID.randomUUID().toString()
-            val timestamp = lastTimestamp.updateAndGet { maxOf(System.currentTimeMillis(), it + 1) }
+            val timestamp = WorkspaceChangeStore.nextTimestamp()
             var remainingAfterBytes = 16L * 1024 * 1024 - after.values.filter { it.blob != null }.sumOf { it.size }
             val records = (capture.before.keys + after.keys).distinct().mapNotNull { location ->
                 // 某一侧未遍历到的路径重新读取，不能把截断扫描当作文件不存在。
@@ -151,16 +155,19 @@ internal class WorkspaceChangeRecorder(
                 }
                 if (before == next && before.kind != SnapshotKind.TOO_LARGE && before.kind != SnapshotKind.UNAVAILABLE) null
                 else FileChangeRecord(UUID.randomUUID().toString(), operationId, capture.chatId, timestamp,
-                    capture.tool.name, location, before, next)
+                    capture.sourceName, location, before, next)
             }
             val store = WorkspaceChangeStore.get(context)
-            store.save(records.map { record ->
+            val saved = records.map { record ->
                 val content = store.content(record)
-                if (reviewDiffSupported(content)) {
+                if (reviewDiffAutomatic(content)) {
                     val diff = WorkspaceDiff.compare(checkNotNull(content.before), checkNotNull(content.after))
                     record.copy(additions = diff.additions, deletions = diff.deletions)
                 } else record
-            })
+            }
+            store.save(saved)
+            WorkspaceFileMonitor.acknowledgeExisting(saved)
+            acknowledge(saved)
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
@@ -169,7 +176,6 @@ internal class WorkspaceChangeRecorder(
     }
 
     companion object {
-        private val lastTimestamp = AtomicLong()
         private val tools = setOf("apply_file", "create_file", "edit_file", "write_file", "write_file_binary",
             "move_file", "delete_file", "copy_file", "make_directory", "zip_files", "unzip_files", "download_file")
         fun wrap(context: Context, name: String, executor: ToolExecutor): ToolExecutor =

@@ -26,3 +26,11 @@ python3 tools/terminal_commands/verify_assets.py \
 Gradle 的 `verifyTerminalCommandAssets` 调用公共资源校验入口，Build 和 PR 工作流调用公共 APK 校验入口。每个组件继续验证自己的 ELF 架构、SHA-256、安装脚本、清单及许可要求；任何组件缺失、损坏或 APK 与生成目录不一致都会使汇总校验失败。
 
 Build、Android Tests 与 PR 检查都使用共享 action。共享目录、命令源码和 action 的变更均包含在相应工作流与 PR 检查范围内。
+
+## 命令帮助语言
+
+`apply_patch --help`、`web-chat --help`、`build --help` 和 `build html --help` 使用本目录 `help/zh/` 与 `help/en/` 的独立资源，编译时嵌入各命令。中文界面选择中文，其他界面统一英文。
+
+应用以原子写入维护 `files/terminal-commands/language`，会话初始化导出 `OPERIT_COMMAND_LANGUAGE_FILE`。每次显示帮助都读取此文件，因此已有会话也能读取新的应用语言。指定文件不可读时命令明确返回错误。独立运行且未指定语言文件时，可用 `OPERIT_COMMAND_LANGUAGE=zh` 或 `en` 选择帮助语言；未设置时使用英文。
+
+更新帮助或共享语言模块后，需要重新生成三个命令的资源，现有共享 CI action 会执行这一过程。语言选择不依赖固定为英文的终端 `LANG`。

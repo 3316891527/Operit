@@ -4,7 +4,6 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.changes.DiffL
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.ReviewContent
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.SnapshotKind
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceDiff
-import com.ai.assistance.operit.ui.features.conversation.workspace.changes.reviewDiffSupported
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
@@ -99,11 +98,23 @@ internal object WorkspaceGitBlameParser {
     }
 }
 
+internal const val BLAME_MAX_LINE_CHARACTERS = 8_192
+
+/** Blame 会直接准备行映射及提交差异，保留原有限额，不能随可手动加载的审阅页一起放宽。 */
+internal fun blameDiffSupported(content: ReviewContent): Boolean {
+    if (!content.isText) return false
+    val before = checkNotNull(content.before)
+    val after = checkNotNull(content.after)
+    return before.count { it == '\n' } + after.count { it == '\n' } <= 20_000 &&
+        before.lineSequence().none { it.length > BLAME_MAX_LINE_CHARACTERS } &&
+        after.lineSequence().none { it.length > BLAME_MAX_LINE_CHARACTERS }
+}
+
 /** 用当前编辑快照定位原有行，新增与修改行不会被误归给历史作者。 */
 internal fun blameLineMapping(before: String, current: String): Map<Int, Int> {
     val old = before.replace("\r\n", "\n")
     val next = current.replace("\r\n", "\n")
-    require(reviewDiffSupported(ReviewContent(old, next, SnapshotKind.TEXT, SnapshotKind.TEXT))) { "Blame text exceeds review limits" }
+    require(blameDiffSupported(ReviewContent(old, next, SnapshotKind.TEXT, SnapshotKind.TEXT))) { "Blame text exceeds review limits" }
     return WorkspaceDiff.compare(old, next).rows.filter { it.kind == DiffLineKind.CONTEXT }
         .associate { checkNotNull(it.newLine) to checkNotNull(it.oldLine) }
 }

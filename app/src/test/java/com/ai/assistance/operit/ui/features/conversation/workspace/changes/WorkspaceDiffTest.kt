@@ -63,6 +63,30 @@ class WorkspaceDiffTest {
         }
     }
 
+    @Test fun `pure deletion keeps removed rows in unified and split views`() {
+        val diff = WorkspaceDiff.compare("first\nsecond\n", "")
+        assertEquals(0, diff.additions)
+        assertEquals(2, diff.deletions)
+        for (split in listOf(false, true)) {
+            val rows = WorkspaceDiff.items(diff, split, false, emptySet()).filterIsInstance<ReviewDiffItem.Line>()
+            val removed = rows.map { if (split) checkNotNull(it.left) else checkNotNull(it.right) }
+            assertEquals(listOf("first", "second"), removed.map { it.text })
+            assertTrue(removed.all { it.kind == DiffLineKind.REMOVE && it.newLine == null })
+            if (split) assertTrue(rows.all { it.right == null })
+        }
+    }
+
+    @Test fun `replacement retains the removed and added sides of each changed line`() {
+        val diff = WorkspaceDiff.compare("keep\nold code\n", "keep\nnew code\n")
+        assertEquals(1, diff.additions)
+        assertEquals(1, diff.deletions)
+        val unified = WorkspaceDiff.items(diff, false, false, emptySet()).filterIsInstance<ReviewDiffItem.Line>()
+        assertEquals(listOf("old code"), unified.mapNotNull { it.right }.filter { it.kind == DiffLineKind.REMOVE }.map { it.text })
+        assertEquals(listOf("new code"), unified.mapNotNull { it.right }.filter { it.kind == DiffLineKind.ADD }.map { it.text })
+        val split = WorkspaceDiff.items(diff, true, false, emptySet()).filterIsInstance<ReviewDiffItem.Line>()
+        assertTrue(split.any { it.left?.text == "old code" && it.right?.text == "new code" })
+    }
+
     @Test fun `newline-only differences remain visible without fabricated added lines`() {
         val diff = WorkspaceDiff.compare("hello\n", "hello")
         assertTrue(diff.newlineChanged)
@@ -75,6 +99,31 @@ class WorkspaceDiffTest {
         val ranges = WorkspaceDiff.changedRanges("a😀z", "a😁z")
         assertEquals(DiffRange(1, 3), ranges.first)
         assertEquals(DiffRange(1, 3), ranges.second)
+    }
+
+    @Test fun longLinesAreSlicedWithoutLosingTextOrSplittingEmoji() {
+        val text = "a😀z".repeat(2000)
+        val slices = WorkspaceDiff.slices(WorkspaceDiff.items(WorkspaceDiff.compare("", text), false, true, emptySet()), 7)
+            .filterIsInstance<ReviewDiffItem.Line>()
+        assertEquals(text, slices.joinToString("") { WorkspaceDiff.sliceRange(text, it.offset, it.end).let { range -> text.substring(range.start, range.end) } })
+        assertTrue(slices.all { WorkspaceDiff.sliceRange(text, it.offset, it.end).let { range -> range.end - range.start <= 7 && !text[range.start].isLowSurrogate() } })
+    }
+
+    @Test fun splitLongLinesKeepBothSidesOnValidSurrogateBoundaries() {
+        val old = "😀a".repeat(1000)
+        val next = "x😀b".repeat(1000)
+        val slices = WorkspaceDiff.slices(WorkspaceDiff.items(WorkspaceDiff.compare(old, next), true, true, emptySet()), 7)
+            .filterIsInstance<ReviewDiffItem.Line>()
+        for (side in listOf(old to { line: ReviewDiffItem.Line -> line.left }, next to { line: ReviewDiffItem.Line -> line.right })) {
+            assertEquals(side.first, slices.joinToString("") {
+                val text = side.second(it)!!.text
+                val range = WorkspaceDiff.sliceRange(text, it.offset, it.end)
+                val start = range.start
+                val end = range.end
+                assertTrue(start == text.length || !text[start].isLowSurrogate())
+                text.substring(start, end)
+            })
+        }
     }
 
     @Test fun `binding scope respects path segments and environments`() {

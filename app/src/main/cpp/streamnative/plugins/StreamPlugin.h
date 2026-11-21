@@ -7,6 +7,7 @@ enum class PluginState {
     TRYING,
     PROCESSING,
     WAITFOR,
+    MATCHED,
 };
 
 class StreamPlugin {

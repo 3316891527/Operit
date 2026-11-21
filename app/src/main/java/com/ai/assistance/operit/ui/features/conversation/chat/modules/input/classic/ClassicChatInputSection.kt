@@ -6,8 +6,10 @@ import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatProcessingStatusText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
 import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+import com.ai.assistance.operit.ui.theme.script.themeScriptInputPlaceholder
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
@@ -55,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.voiceMessageHoldGesture
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
@@ -510,7 +513,7 @@ internal fun ClassicChatInputContent(
                     if (event != null && inputState.toolName.contains(event.toolName)) {
                         progressValue = event.progress
                         if (event.message.isNotBlank()) {
-                            message = event.message
+                            message = "$baseMessage · ${event.message}"
                         }
                     }
                 }
@@ -542,13 +545,9 @@ internal fun ClassicChatInputContent(
                             ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color =
-                            MaterialTheme.colorScheme.onSurface
-                                .copy(alpha = 0.8f),
-                            modifier = Modifier.weight(1f)
+                        ChatProcessingStatusText(
+                            message = message,
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -678,11 +677,13 @@ internal fun ClassicChatInputContent(
                                     if (userMessage.text.isEmpty()) {
                                         Text(
                                             text =
-                                                if (isWorkspaceOpen) {
-                                                    context.getString(R.string.input_question_with_workspace)
-                                                } else {
-                                                    context.getString(R.string.input_question_hint)
-                                                },
+                                                themeScriptInputPlaceholder(
+                                                    if (isWorkspaceOpen) {
+                                                        context.getString(R.string.input_question_with_workspace)
+                                                    } else {
+                                                        context.getString(R.string.input_question_hint)
+                                                    }
+                                                ),
                                             style = themeScriptTextStyle("input", modernTextStyle),
                                             color = themeScriptContentColor("input", MaterialTheme.colorScheme.onSurfaceVariant),
                                          textStroke = themeTextStroke("input", "composer"))
@@ -757,7 +758,8 @@ internal fun ClassicChatInputContent(
                         else -> "composer.send"
                     },
                     modifier = Modifier
-                        .size(36.dp),
+                        .size(36.dp)
+                        .voiceMessageHoldGesture(showVoiceRecordAction && sendButtonEnabled) { onRecordVoiceMessage?.invoke() },
                     onClick = {
                         when {
                             showCancelAction ->
@@ -767,7 +769,7 @@ internal fun ClassicChatInputContent(
                                 setShowAttachmentPanel(false)
                             }
 
-                            showVoiceRecordAction -> onRecordVoiceMessage?.invoke()
+                            showVoiceRecordAction -> Unit
 
                             canSendMessage -> {
                                 if (isOverTokenLimit) {
@@ -839,7 +841,7 @@ internal fun ClassicChatInputContent(
                             showCancelAction -> context.getString(R.string.cancel)
                             showQueueAction -> context.getString(R.string.chat_queue_add_message)
                             canSendMessage -> context.getString(R.string.send)
-                            showVoiceRecordAction -> context.getString(R.string.voice_message_record_title)
+                            showVoiceRecordAction -> context.getString(R.string.voice_message_hold_to_record)
                             else -> context.getString(R.string.send)
                         },
                         tint = iconTint,
