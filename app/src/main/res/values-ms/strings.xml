@@ -8613,4 +8613,5 @@
     <string name="workspace_open_not_text">Fail semasa bukan teks yang boleh dibaca dan tidak boleh dibuka dalam penyunting teks.</string>
     <string name="workspace_open_failed">Tidak dapat membuka fail. Semak butiran punca berkaitan laluan, sambungan atau storan di bawah.</string>
     <string name="workspace_open_checking">Menyemak dan membaca fail semasa…</string>
+    <string name="markdown_mermaid_render_failed">Rajah Mermaid tidak dapat dipaparkan. Semak sintaksnya.</string>
 </resources>

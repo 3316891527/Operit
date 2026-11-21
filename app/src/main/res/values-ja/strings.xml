@@ -8451,4 +8451,5 @@
     <string name="workspace_open_not_text">現在のファイルは読み取り可能なテキストではないため、テキストエディタで開けません。</string>
     <string name="workspace_open_failed">ファイルを開けません。以下の詳細を確認し、パス、接続、ストレージの問題を調べてください。</string>
     <string name="workspace_open_checking">現在のファイルを確認して読み取り中…</string>
+    <string name="markdown_mermaid_render_failed">Mermaid 図を描画できませんでした。構文を確認してください。</string>
 </resources>

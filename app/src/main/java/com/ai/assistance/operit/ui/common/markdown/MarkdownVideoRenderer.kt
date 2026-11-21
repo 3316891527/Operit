@@ -50,7 +50,7 @@ fun MarkdownVideoRenderer(
     }
 
     val videoAlt = extractMarkdownImageAlt(videoMarkdown)
-    val videoUrl = extractMarkdownImageUrl(videoMarkdown)
+    val videoUrl = com.ai.assistance.operit.util.markdown.resolveMarkdownResource(extractMarkdownImageUrl(videoMarkdown), LocalMarkdownDocumentPath.current)
     if (videoUrl.isBlank() || !isLikelyVideoUrl(videoUrl)) {
         return
     }

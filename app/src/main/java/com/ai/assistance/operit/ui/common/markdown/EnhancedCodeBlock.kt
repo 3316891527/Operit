@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.PlayArrow
@@ -27,6 +28,7 @@ import androidx.compose.ui.semantics.semantics
 import com.ai.assistance.operit.R
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -58,7 +60,12 @@ private enum class CodeBlockPreviewType {
  * 8. Mermaid图表支持
  */
 @Composable
-fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = Modifier) {
+fun EnhancedCodeBlock(
+    code: String,
+    language: String = "",
+    modifier: Modifier = Modifier,
+    closed: Boolean = true,
+) {
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     var showCopiedToast by remember { mutableStateOf(false) }
@@ -72,8 +79,9 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
     // 检测是否为HTML代码
     val isHtml = language.equals("html", ignoreCase = true) || language.equals("htm", ignoreCase = true)
 
-    // Mermaid渲染状态
-    var showRenderedMermaid by remember { mutableStateOf(false) }
+    // 等到围栏闭合再默认绘图，避免流式生成中的半截源码触发解析错误。
+    val canRenderMermaid = closed && code.isNotBlank()
+    var showRenderedMermaid by remember(language) { mutableStateOf(true) }
 
     // HTML预览状态
     var showRenderedHtml by remember { mutableStateOf(false) }
@@ -86,7 +94,8 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
         (configuration.screenHeightDp.dp * 0.5f).coerceIn(240.dp, 560.dp)
     }
 
-    val isPreviewMode = (isMermaid && showRenderedMermaid) || (isHtml && showRenderedHtml)
+    val isMermaidPreview = isMermaid && canRenderMermaid && showRenderedMermaid
+    val isPreviewMode = isMermaidPreview || (isHtml && showRenderedHtml)
 
     // 处理复制事件
     val handleCopy: () -> Unit = {
@@ -116,8 +125,8 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
     // 缓存已计算过的行，避免重复创建
     val lineCache = remember { mutableMapOf<String, AnnotatedString>() }
     val highlightedLines =
-        remember(codeLines, language, preferStreamingBody) {
-            if (preferStreamingBody) {
+        remember(codeLines, language, preferStreamingBody, isPreviewMode) {
+            if (preferStreamingBody || isPreviewMode) {
                 emptyList()
             } else {
                 codeLines.map { line ->
@@ -151,18 +160,17 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
                     .fillMaxWidth()
                     .background(toolbarBackground)
                     .padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 语言标记（如果有）
-                if (language.isNotEmpty()) {
-                    Text(
-                        text = language,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFAAAAAA),
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
+                // 标签为空也占据剩余宽度，让操作始终靠右；长标签不能挤掉按钮。
+                Text(
+                    text = language,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFAAAAAA),
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
 
                 // 工具栏按钮
                 Row(
@@ -174,16 +182,16 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
                         IconButton(
                             onClick = handleToggleMermaid,
                             modifier = Modifier.size(28.dp),
-                            enabled = !preferStreamingBody,
+                            enabled = canRenderMermaid,
                         ) {
                             Icon(
-                                imageVector = Icons.Default.PlayArrow,
+                                imageVector = if (isMermaidPreview) Icons.Default.Code else Icons.Default.PlayArrow,
                                 contentDescription =
-                                    if (showRenderedMermaid) stringResource(R.string.common_show_code) else stringResource(R.string.common_render_mermaid),
+                                    if (isMermaidPreview) stringResource(R.string.common_show_code) else stringResource(R.string.common_render_mermaid),
                                 tint =
-                                    if (preferStreamingBody)
+                                    if (!canRenderMermaid)
                                         Color(0xFF666666)
-                                    else if (showRenderedMermaid)
+                                    else if (isMermaidPreview)
                                         MaterialTheme.colorScheme.primary
                                     else Color(0xFFAAAAAA),
                                 modifier = Modifier.size(16.dp)
@@ -217,7 +225,7 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
                             onClick = {
                                 fullscreenPreviewType =
                                     when {
-                                        isMermaid && showRenderedMermaid -> CodeBlockPreviewType.MERMAID
+                                        isMermaidPreview -> CodeBlockPreviewType.MERMAID
                                         isHtml && showRenderedHtml -> CodeBlockPreviewType.HTML
                                         else -> null
                                     }
@@ -264,7 +272,7 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
             }
 
             // 代码内容
-            if (isMermaid && showRenderedMermaid) {
+            if (isMermaidPreview) {
                 // 渲染Mermaid图表
                 MermaidRenderer(code = code, modifier = Modifier
                     .fillMaxWidth()
@@ -336,346 +344,6 @@ fun EnhancedCodeBlock(code: String, language: String = "", modifier: Modifier = 
             }
         }
     }
-}
-
-/** Mermaid图表渲染组件 */
-@Composable
-fun MermaidRenderer(code: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-
-    // 创建HTML模板
-    val htmlContent =
-        remember(code) {
-            """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>Mermaid Diagram</title>
-            <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
-            <style>
-                body { 
-                    background-color: #1E1E1E; 
-                    margin: 0; 
-                    padding: 16px;
-                    touch-action: pan-x pan-y;
-                    overflow: auto;
-                    -webkit-overflow-scrolling: touch;
-                    height: 100vh;
-                }
-                #diagram-wrapper {
-                    display: block;
-                    margin: 0 auto;
-                }
-                #diagram { 
-                    display: inline-block;
-                    touch-action: manipulation;
-                }
-                .mermaid { 
-                    font-family: 'Courier New', Courier, monospace;
-                    font-size: 14px;
-                }
-                
-                /* 添加自定义缩放控件 */
-                .zoom-controls {
-                    position: fixed;
-                    bottom: 10px;
-                    right: 10px;
-                    display: flex;
-                    flex-direction: column;
-                    background-color: rgba(30, 30, 30, 0.7);
-                    border-radius: 4px;
-                    padding: 4px;
-                }
-                .zoom-btn {
-                    background: #383838;
-                    color: #AAA;
-                    border: none;
-                    width: 28px;
-                    height: 28px;
-                    margin: 2px;
-                    font-size: 18px;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .zoom-btn:hover {
-                    background: #505050;
-                    color: #FFF;
-                }
-            </style>
-        </head>
-        <body>
-            <div id="diagram-wrapper">
-                <div id="diagram">
-                    <pre class="mermaid">
-                        ${code.trim()}
-                    </pre>
-                </div>
-            </div>
-            <div class="zoom-controls">
-                <button class="zoom-btn" onclick="zoomIn()">+</button>
-                <button class="zoom-btn" onclick="zoomOut()">-</button>
-                <button class="zoom-btn" onclick="resetZoom()">↺</button>
-            </div>
-            <script>
-                mermaid.initialize({
-                    startOnLoad: true,
-                    theme: 'dark',
-                    securityLevel: 'loose',
-                    flowchart: { htmlLabels: true }
-                });
-                
-                // 自定义缩放功能
-                let scale = 1.0;
-                const wrapper = document.getElementById('diagram-wrapper');
-                const diagram = document.getElementById('diagram');
-                const scroller = document.scrollingElement || document.documentElement;
-                let baseWidth = 0;
-                let baseHeight = 0;
-                
-                function zoomIn() {
-                    scale = Math.min(scale + 0.2, 3.0);
-                    applyZoom();
-                }
-                
-                function zoomOut() {
-                    scale = Math.max(scale - 0.2, 0.5);
-                    applyZoom();
-                }
-                
-                function resetZoom() {
-                    scale = 1.0;
-                    applyZoom();
-                }
-                
-                function applyZoom() {
-                    if (!baseWidth || !baseHeight) {
-                        baseWidth = diagram.scrollWidth || diagram.getBoundingClientRect().width;
-                        baseHeight = diagram.scrollHeight || diagram.getBoundingClientRect().height;
-                    }
-                    wrapper.style.width = (baseWidth * scale) + 'px';
-                    wrapper.style.height = (baseHeight * scale) + 'px';
-                    diagram.style.transform = 'scale(' + scale + ')';
-                    diagram.style.transformOrigin = '0 0';
-                }
-
-                function captureBaseSize() {
-                    baseWidth = 0;
-                    baseHeight = 0;
-                    wrapper.style.width = '';
-                    wrapper.style.height = '';
-                    diagram.style.transform = '';
-                    diagram.style.transformOrigin = '';
-
-                    let tries = 0;
-                    function tick() {
-                        const w = diagram.scrollWidth;
-                        const h = diagram.scrollHeight;
-                        if (w > 0 && h > 0) {
-                            baseWidth = w;
-                            baseHeight = h;
-                            applyZoom();
-                            return;
-                        }
-                        tries++;
-                        if (tries < 60) {
-                            requestAnimationFrame(tick);
-                        } else {
-                            baseWidth = diagram.getBoundingClientRect().width;
-                            baseHeight = diagram.getBoundingClientRect().height;
-                            applyZoom();
-                        }
-                    }
-                    requestAnimationFrame(tick);
-                }
-
-                window.addEventListener('load', function() {
-                    setTimeout(captureBaseSize, 0);
-                });
-                
-                // 添加触摸拖动支持
-                let isDragging = false;
-                let startX, startY, scrollLeft, scrollTop;
-                
-                document.addEventListener('mousedown', function(e) {
-                    if (e.target.closest('.zoom-controls')) return;
-                    
-                    isDragging = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    scrollLeft = scroller.scrollLeft;
-                    scrollTop = scroller.scrollTop;
-                });
-                
-                document.addEventListener('mousemove', function(e) {
-                    if (!isDragging) return;
-                    e.preventDefault();
-                    
-                    const x = e.clientX;
-                    const y = e.clientY;
-                    const moveX = (x - startX);
-                    const moveY = (y - startY);
-                    
-                    scroller.scrollTo(scrollLeft - moveX, scrollTop - moveY);
-                });
-                
-                document.addEventListener('mouseup', function() {
-                    isDragging = false;
-                });
-                
-                // 触摸支持
-                document.addEventListener('touchstart', function(e) {
-                    if (e.target.closest('.zoom-controls')) return;
-                    if (e.touches.length === 1) {
-                        isDragging = true;
-                        startX = e.touches[0].clientX;
-                        startY = e.touches[0].clientY;
-                        scrollLeft = scroller.scrollLeft;
-                        scrollTop = scroller.scrollTop;
-                    }
-                }, {passive: false});
-                
-                document.addEventListener('touchmove', function(e) {
-                    if (!isDragging) return;
-                    
-                    if (e.touches.length === 1) {
-                        const x = e.touches[0].clientX;
-                        const y = e.touches[0].clientY;
-                        const moveX = (x - startX);
-                        const moveY = (y - startY);
-                        
-                        scroller.scrollTo(scrollLeft - moveX, scrollTop - moveY);
-                    }
-                }, {passive: false});
-                
-                document.addEventListener('touchend', function() {
-                    isDragging = false;
-                });
-                
-                // 双指捏合缩放支持
-                let initialDistance = 0;
-                let initialScale = 1.0;
-                
-                document.addEventListener('touchstart', function(e) {
-                    if (e.touches.length === 2) {
-                        initialDistance = Math.hypot(
-                            e.touches[0].pageX - e.touches[1].pageX,
-                            e.touches[0].pageY - e.touches[1].pageY
-                        );
-                        initialScale = scale;
-                    }
-                }, {passive: false});
-                
-                document.addEventListener('touchmove', function(e) {
-                    if (e.touches.length === 2) {
-                        e.preventDefault(); // 防止默认缩放
-                        
-                        const distance = Math.hypot(
-                            e.touches[0].pageX - e.touches[1].pageX,
-                            e.touches[0].pageY - e.touches[1].pageY
-                        );
-                        
-                        const delta = distance / initialDistance;
-                        scale = Math.min(Math.max(initialScale * delta, 0.5), 3.0);
-                        applyZoom();
-                    }
-                }, {passive: false});
-            </script>
-        </body>
-        </html>
-        """.trimIndent()
-        }
-
-    // 记住WebView实例以便重用
-    val webView = remember {
-        WebView(context).apply {
-            // 基本设置
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true // 允许DOM存储
-            settings.loadWithOverviewMode = true
-            settings.useWideViewPort = true
-
-            // 禁用WebView内置缩放：Mermaid 使用页面内自定义缩放/拖拽，避免出现二级缩放
-            settings.setSupportZoom(false)
-            settings.builtInZoomControls = false
-            settings.displayZoomControls = false
-
-            // 设置混合内容模式
-            settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-
-            // 设置WebViewClient来拦截事件
-            webViewClient =
-                object : android.webkit.WebViewClient() {
-                    override fun shouldOverrideUrlLoading(
-                        view: android.webkit.WebView,
-                        url: String
-                    ): Boolean {
-                        // 拦截所有URL导航，保持在当前WebView内
-                        return true
-                    }
-
-                    override fun onPageFinished(view: android.webkit.WebView, url: String) {
-                        super.onPageFinished(view, url)
-                        // 页面加载完成后，可以在这里执行JavaScript
-                        view.evaluateJavascript(
-                            """
-                        // 防止长按文本选择
-                        document.body.style.webkitUserSelect = 'none';
-                        document.body.style.userSelect = 'none';
-                    """.trimIndent(),
-                            null
-                        )
-                    }
-                }
-
-            // 处理触摸事件
-            setOnTouchListener { v, event ->
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> v.parent.requestDisallowInterceptTouchEvent(true)
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> v.parent.requestDisallowInterceptTouchEvent(false)
-                }
-                false
-            }
-
-            // 设置背景颜色
-            setBackgroundColor(android.graphics.Color.parseColor("#1E1E1E"))
-        }
-    }
-
-    DisposableEffect(webView) {
-        onDispose {
-            try {
-                webView.stopLoading()
-                webView.loadUrl("about:blank")
-                webView.clearHistory()
-                webView.removeAllViews()
-                webView.destroy()
-            } catch (_: Throwable) {
-            }
-        }
-    }
-
-    // 每次代码变化时更新内容
-    LaunchedEffect(htmlContent) {
-        webView.loadDataWithBaseURL(
-            "https://mermaid.js.org/",
-            htmlContent,
-            "text/html",
-            "UTF-8",
-            null
-        )
-    }
-
-    // 渲染WebView
-    val nestedScrollInterop = rememberNestedScrollInteropConnection()
-    AndroidView(
-        factory = { webView },
-        modifier = modifier.nestedScroll(nestedScrollInterop)
-    )
 }
 
 @Composable

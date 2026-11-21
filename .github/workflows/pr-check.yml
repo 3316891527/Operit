@@ -588,7 +588,7 @@ jobs:
           set -euo pipefail
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Run Android JVM tests
+      - name: Run JVM tests and compile selected instrumentation sources
         env:
           INSTRUMENTATION_REQUIRED: ${{ needs.fast.outputs.android_instrumentation }}
         shell: bash

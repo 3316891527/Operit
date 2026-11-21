@@ -17,6 +17,42 @@ class WorkspaceEditorInitialLineTest {
     val compose = createComposeRule()
 
     @Test
+    fun openingALongFileStartsAtTheFirstCharacter() {
+        val original = (1..744).joinToString("\n") { "line-$it" }
+        val session = EditorSession(original)
+        assertEquals(0, session.document.selectionStart)
+        assertEquals(0, session.document.selectionEnd)
+        var editor: NativeCodeEditor? = null
+        compose.setContent {
+            MaterialTheme {
+                CodeEditor(code = original, language = "text", fileKey = "android:/long.md", fileName = "long.md",
+                    session = session, editorRef = { editor = it })
+            }
+        }
+        compose.runOnIdle {
+            assertTrue(editor!!.getChildAt(0).onCreateInputConnection(EditorInfo())!!.commitText("FIRST-", 1))
+            assertEquals("FIRST-" + original, session.document.textString())
+        }
+    }
+
+    @Test
+    fun switchingSessionsPreservesTheExistingCaret() {
+        val first = EditorSession("first\nsecond\nthird")
+        val second = EditorSession("other")
+        val selected = mutableStateOf(first)
+        compose.setContent {
+            MaterialTheme {
+                CodeEditor(code = selected.value.document.textString(), language = "text",
+                    fileKey = if (selected.value === first) "first.txt" else "second.txt",
+                    fileName = "file.txt", session = selected.value)
+            }
+        }
+        compose.runOnIdle { first.document.collapseSelection(6); selected.value = second }
+        compose.runOnIdle { selected.value = first }
+        compose.runOnIdle { assertEquals(6, first.document.selectionEnd) }
+    }
+
+    @Test
     fun differentFilesWithTheSameInitialLineBothPositionTheCaret() {
         val fileKey = mutableStateOf("android:/first.txt")
         val original = (1..24).joinToString("\n") { "line-$it" }

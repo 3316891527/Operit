@@ -9596,4 +9596,5 @@
     <string name="webvisit_error_access_blocked">The site, browser security check, or access policy explicitly denied access. The visit was ended early. Check access permissions, network, and proxy configuration; this alone does not prove network censorship.</string>
     <string name="webvisit_error_cloudflare_challenge">A Cloudflare human or browser verification page was detected. The visit was ended early. This read-only tool does not handle verification; increasing the timeout alone will not resolve it.</string>
     <string name="webvisit_error_cloudflare_blocked">An access-denied response served by Cloudflare or a Cloudflare block page was detected. The visit was ended early. Check site permissions and security policies.</string>
+    <string name="markdown_mermaid_render_failed">Could not render the Mermaid diagram. Check the syntax.</string>
 </resources>

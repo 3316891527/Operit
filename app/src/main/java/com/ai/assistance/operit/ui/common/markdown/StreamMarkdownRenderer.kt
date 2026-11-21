@@ -65,6 +65,10 @@ import com.ai.assistance.operit.ui.common.displays.LatexCache
 import com.ai.assistance.operit.util.markdown.MarkdownNode
 import com.ai.assistance.operit.util.markdown.MarkdownNodeStable
 import com.ai.assistance.operit.util.markdown.MarkdownProcessorType
+import com.ai.assistance.operit.util.markdown.MarkdownDestination
+import com.ai.assistance.operit.util.markdown.MarkdownDocumentSyntax
+import com.ai.assistance.operit.util.markdown.MarkdownSourceKind
+import com.ai.assistance.operit.ui.common.markdown.links.openMarkdownLink
 import com.ai.assistance.operit.util.markdown.SmartString
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.StreamInterceptor
@@ -538,7 +542,10 @@ fun StreamMarkdownRenderer(
                     tempBlockType != MarkdownProcessorType.CODE_BLOCK &&
                         tempBlockType != MarkdownProcessorType.BLOCK_LATEX &&
                         tempBlockType != MarkdownProcessorType.TABLE &&
-                        tempBlockType != MarkdownProcessorType.XML_BLOCK
+                        tempBlockType != MarkdownProcessorType.XML_BLOCK &&
+                tempBlockType != MarkdownProcessorType.BLOCK_QUOTE &&
+                tempBlockType != MarkdownProcessorType.ORDERED_LIST &&
+                tempBlockType != MarkdownProcessorType.UNORDERED_LIST
 
                 val rollbackContinuesCurrentBlock =
                     blockGroup.continuesPrevious &&
@@ -781,6 +788,28 @@ private object MarkdownNodeCache {
  * 静态渲染入口与其他需要完整 AST 的场景（如复制为纯文本）复用同一套解析语法。
  */
 internal suspend fun parseMarkdownToNodes(content: String): List<MarkdownNode> {
+    val document = MarkdownDocumentSyntax.prepare(content)
+    val nodes = mutableListOf<MarkdownNode>()
+    for (block in MarkdownDocumentSyntax.blocks(document.body) + document.footnotes) {
+        if (block.kind == MarkdownSourceKind.NATIVE) {
+            nodes.addAll(parseNativeMarkdownToNodes(block.content))
+        } else {
+            val type = when (block.kind) {
+                MarkdownSourceKind.QUOTE -> MarkdownProcessorType.BLOCK_QUOTE
+                MarkdownSourceKind.ORDERED_ITEM -> MarkdownProcessorType.ORDERED_LIST
+                MarkdownSourceKind.UNORDERED_ITEM -> MarkdownProcessorType.UNORDERED_LIST
+                MarkdownSourceKind.DEFINITION -> MarkdownProcessorType.DEFINITION_LIST
+                MarkdownSourceKind.HTML -> MarkdownProcessorType.HTML_BLOCK
+                MarkdownSourceKind.FOOTNOTE -> MarkdownProcessorType.FOOTNOTE
+                MarkdownSourceKind.NATIVE -> error("Native blocks are parsed above")
+            }
+            nodes += MarkdownNode(type, initialContent = block.content)
+        }
+    }
+    return nodes
+}
+
+private suspend fun parseNativeMarkdownToNodes(content: String): List<MarkdownNode> {
     val parsedNodes = mutableListOf<MarkdownNode>()
     var pendingHtmlBreakCount = 0
     stream { emit(content) }.nativeMarkdownSplitByBlock().collect { blockGroup ->
@@ -813,7 +842,10 @@ internal suspend fun parseMarkdownToNodes(content: String): List<MarkdownNode> {
             tempBlockType != MarkdownProcessorType.CODE_BLOCK &&
                 tempBlockType != MarkdownProcessorType.BLOCK_LATEX &&
                 tempBlockType != MarkdownProcessorType.TABLE &&
-                tempBlockType != MarkdownProcessorType.XML_BLOCK
+                tempBlockType != MarkdownProcessorType.XML_BLOCK &&
+                tempBlockType != MarkdownProcessorType.BLOCK_QUOTE &&
+                tempBlockType != MarkdownProcessorType.ORDERED_LIST &&
+                tempBlockType != MarkdownProcessorType.UNORDERED_LIST
 
         val mergeWithPrevious =
             pendingHtmlBreakCount > 0 &&
@@ -1026,7 +1058,7 @@ fun StreamMarkdownRenderer(
                 areRenderNodesSynchronized(nodes, renderNodes) &&
                 streamParsingCompleted
 
-        if (shouldReuseExistingNodes) {
+        if (shouldReuseExistingNodes && !MarkdownDocumentSyntax.needsDocumentPass(content)) {
             // 从流式渲染切到静态渲染时，避免沿用已结束的 XML 子流导致子节点渲染异常
             xmlNodeStreams.clear()
             // 内容一致且已有节点，跳过解析
@@ -1174,7 +1206,15 @@ internal fun UnifiedMarkdownCanvas(
     responseDurationMs: Long = 0L,
 ) {
     val outline = LocalMarkdownOutline.current
-    val headings = if (outline == null) emptyList() else remember(nodes.toList()) { markdownHeadings(nodes) }
+    val headings = remember(nodes.toList()) { markdownHeadings(nodes) }
+    val anchors = LocalMarkdownAnchorRegistry.current ?: remember(rendererId) { MarkdownAnchorRegistry() }
+    val anchorNames = remember(nodes.toList(), headings) { markdownAnchorNames(nodes, headings) }
+    val linkScope = rememberCoroutineScope()
+    val linkContext = LocalContext.current
+    val handleLink: (String) -> Unit = { url ->
+        if (url.startsWith('#')) linkScope.launch { anchors.reveal(url.drop(1)) }
+        else if (onLinkClick != null) onLinkClick(url) else openMarkdownLink(linkContext, url)
+    }
     SideEffect { outline?.updateHeadings(headings) }
     val headingIndices = remember(headings) { headings.map { it.nodeIndex }.toSet() }
     val lastRenderableIndex = run {
@@ -1211,7 +1251,7 @@ internal fun UnifiedMarkdownCanvas(
         responseProcessItemVisible(end, processEnd, processExpanded)
     }
     // 只观察当前文档的顶层节点，嵌套渲染器不会覆盖目录。
-    CompositionLocalProvider(LocalMarkdownOutline provides null) {
+    CompositionLocalProvider(LocalMarkdownOutline provides null, LocalMarkdownAnchorRegistry provides anchors) {
     nodeGrouper.RenderScope(nodes) {
     Column(modifier = modifier) {
         if (processEnd >= 0 && processId != null) {
@@ -1236,15 +1276,16 @@ internal fun UnifiedMarkdownCanvas(
                             isVisible = nodeAnimationStates[nodeKey] ?: true,
                             textColor = textColor,
                             fontSize = fontSize,
-                            onLinkClick = onLinkClick,
+                            onLinkClick = handleLink,
                             xmlRenderer = xmlRenderer,
                             xmlStream = xmlStreamsByIndex[index],
                             enableDialogs = enableDialogs,
                             fillMaxWidth = fillMaxWidth,
                             isLastNode = index == lastRenderableIndex,
-                            modifier = if (outline != null && index in headingIndices) Modifier.onGloballyPositioned {
-                                outline.updateOffset(index, it.positionInParent().y.roundToInt())
-                            } else Modifier,
+                            modifier = markdownAnchorModifier(anchors, anchorNames[index].orEmpty()).then(
+                                if (outline != null && index in headingIndices) Modifier.onGloballyPositioned {
+                                    outline.updateOffset(index, it.positionInParent().y.roundToInt())
+                                } else Modifier),
                         )
                     }
                 }
@@ -1261,7 +1302,7 @@ internal fun UnifiedMarkdownCanvas(
                             isLastNode = item.endIndexInclusive == lastRenderableIndex,
                             modifier = if (fillMaxWidth) Modifier.fillMaxWidth() else Modifier,
                             textColor = textColor,
-                            onLinkClick = onLinkClick,
+                            onLinkClick = handleLink,
                             xmlRenderer = xmlRenderer,
                             xmlStreamResolver = { idx -> xmlStreamsByIndex[idx] },
                             fillMaxWidth = fillMaxWidth,
@@ -1390,14 +1431,8 @@ internal fun extractLinkText(linkContent: String): String {
 
 /** 从链接Markdown中提取链接URL 例如：从 [链接文本](https://example.com) 中提取 "https://example.com" */
 internal fun extractLinkUrl(linkContent: String): String {
-    val startParenthesis = linkContent.indexOf('(')
-    val endParenthesis = linkContent.indexOf(')')
-    val result =
-            if (startParenthesis != -1 && endParenthesis != -1 && startParenthesis < endParenthesis
-            ) {
-                linkContent.substring(startParenthesis + 1, endParenthesis)
-            } else {
-                ""
-            }
-    return result
+    val start = linkContent.indexOf("](")
+    val end = linkContent.lastIndexOf(')')
+    if (start < 0 || end < start + 2) return ""
+    return MarkdownDestination.parse(linkContent.substring(start + 2, end))?.url.orEmpty()
 }

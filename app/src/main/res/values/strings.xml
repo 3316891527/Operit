@@ -9572,4 +9572,5 @@
     <string name="webvisit_error_access_blocked">站点、浏览器安全检查或访问策略明确拒绝了访问，已提前结束。请检查访问权限、网络与代理配置；不能仅凭此确定是否被网络封锁。</string>
     <string name="webvisit_error_cloudflare_challenge">检测到 Cloudflare 人机验证或浏览器验证页，已提前结束。此只读工具不处理验证，单纯延长超时不能解决。</string>
     <string name="webvisit_error_cloudflare_blocked">收到 Cloudflare 返回的访问拒绝响应或拦截页，已提前结束。请检查站点访问权限与安全策略。</string>
+    <string name="markdown_mermaid_render_failed">Mermaid 图表渲染失败，请检查语法。</string>
 </resources>

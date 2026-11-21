@@ -9206,4 +9206,5 @@
     <string name="workspace_open_not_text">Fișierul curent nu este text lizibil și nu poate fi deschis în editorul de text.</string>
     <string name="workspace_open_failed">Nu se poate deschide fișierul. Verifică detaliile de mai jos despre cale, conexiune sau stocare.</string>
     <string name="workspace_open_checking">Se verifică și se citește fișierul curent…</string>
+    <string name="markdown_mermaid_render_failed">Diagrama Mermaid nu a putut fi redată. Verifică sintaxa.</string>
 </resources>
