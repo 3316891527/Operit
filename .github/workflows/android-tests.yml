@@ -83,7 +83,7 @@ jobs:
           node-version: '22'
 
       - name: Run Code Runner regression tests
-        run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/workspace_change_context.test.cjs ci/test/web_visit_blocking.test.cjs
+        run: node --test ci/test/code_runner.test.cjs ci/test/test_openai_draw_optional_frames.cjs ci/test/shell_command_bridge.test.cjs ci/test/workspace_change_context.test.cjs ci/test/web_visit_blocking.test.cjs
 
   tests:
     name: Android JVM tests

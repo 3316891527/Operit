@@ -880,7 +880,11 @@ fun getJsToolsDefinition(): String {
                         }
                     }
                 },
-                shell: (command) => toolCall("execute_shell", { command }),
+                shell: (command, timeoutMs) => {
+                    const params = { command };
+                    if (timeoutMs !== undefined) params.timeout_ms = String(timeoutMs);
+                    return toolCall("execute_shell", params);
+                },
                 terminal: __operitCreateTerminalTools(toolCall),
                 music: {
                     play: (options) => {

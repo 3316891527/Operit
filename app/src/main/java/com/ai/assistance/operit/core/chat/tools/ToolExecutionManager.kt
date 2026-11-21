@@ -59,6 +59,7 @@ object ToolExecutionManager {
         val toolExposureMode: ToolExposureMode = ToolExposureMode.FULL,
         val callerChatId: String? = null,
         val a2uiRunId: String? = null,
+        val cancellationJob: kotlinx.coroutines.Job? = null,
         val publishA2ui: (suspend (String) -> Unit)? = null,
         val publishA2uiAfterToolResult: (suspend (String) -> Unit)? = null,
         val invokingToolName: String? = null,
@@ -739,6 +740,7 @@ object ToolExecutionManager {
         val a2uiDocuments = mutableListOf<String>()
         val invocationRuntimeContext = runtimeContext.copy(
             invokingToolName = displayToolName,
+            cancellationJob = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job],
             publishA2uiAfterToolResult = { document -> a2uiDocuments.add(document) },
         )
         val result = withContext(toolRuntimeContextThreadLocal.asContextElement(invocationRuntimeContext)) {
