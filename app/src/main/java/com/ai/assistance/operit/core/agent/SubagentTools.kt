@@ -23,8 +23,8 @@ internal object SubagentTools {
 Subagent collaboration:
 You may delegate independent bounded work to helpers. The user stays in the main conversation; decide delegation yourself without asking them to create or switch agents. Keep the main chat model unchanged.
 Use subagent_catalog to inspect the current prompt presets and allowed models. Choose a prompt preset and model independently using the provided purposes, capability descriptions, limitations and configured modality flags. Model names alone are not evidence of capability, speed, price or quality. An empty pool means delegation is unavailable; explain the required configuration.
-Use spawn_task with a complete brief, expected deliverable, relevant context and resource ownership. Children receive only this brief and their own history. Coordinate disjoint file ownership; shared workspace files are not isolated copies. Children cannot spawn more helpers or operate shared device UI. Keep work involving the active device UI in the main conversation.
-Continue useful main work while helpers run. Reports arrive automatically before this turn finishes; integrate and verify them. Use list_tasks/inspect_task for observation, supplement_task for a running task, followup_task for another execution, and stop_task for cancellation. Mutating existing tasks requires the exact execution_id returned by observation. wait_task waits at most 30 seconds; do not poll repeatedly. Do not claim completion without the reports or conceal a failed helper.
+Use spawn_task with a complete brief, expected deliverable, relevant context and resource ownership. Explicitly choose enable_thinking for each new task based on difficulty. If the model advertises thinking levels, select an exact thinking_option_id from the catalog; use less effort for simple work and more for hard work according to the supplied level labels, never guess supported IDs. followup_task can choose new thinking settings for the next execution without changing any global model setting. Children receive only this brief and their own history. Coordinate disjoint file ownership; shared workspace files are not isolated copies. Children cannot spawn more helpers or operate shared device UI. Keep work involving the active device UI in the main conversation.
+Continue useful main work while helpers run. Reports arrive automatically before this turn finishes; integrate and verify them. Use list_tasks/inspect_task for observation, supplement_task for a running task, followup_task for another execution, and stop_task for cancellation. Mutating existing tasks requires the exact execution_id returned by observation. wait_task waits at most 30 seconds; do not poll repeatedly. Do not claim completion without the reports or conceal a failed helper. Successful tasks follow the global auto-archive setting unless auto_archive is explicitly set for that execution. archive_task can archive or restore finished tasks without deleting their reports or child conversations. Restore an archived task with archived=false before calling followup_task.
 """
     const val CHILD_INSTRUCTIONS = """
 You are a delegated helper. Work only on the assigned task using this brief and your task history. Do not spawn agents, change the main conversation or use shared device UI. Inherit the caller's role-card tool access and normal tool permission checks. Tools and workspace may have external effects; coordinate only the resources assigned to you. Do not assume filesystem isolation or repeat actions from an interrupted attempt without inspecting existing work.
@@ -34,17 +34,23 @@ Follow supplementary instructions at the next model boundary. End with a concise
         ToolParameterSchema(name = name, type = type, description = description, required = required)
     private val identity = listOf(parameter("task_id", "Task ID from spawn_task/list_tasks."))
     private val execution = identity + parameter("execution_id", "Exact current execution ID; stale operations are rejected.")
+    private val thinking = listOf(
+        parameter("enable_thinking", "Choose true/false for this execution using the model thinking_control and thinking_required from subagent_catalog.", type = "boolean"),
+        parameter("thinking_option_id", "When thinking_control=levels and enabled, supply an exact ID from thinking_options. Omit for disabled thinking or toggle-only models.", false),
+        parameter("auto_archive", "Archive after successful completion. Omit to use the global setting; failures remain visible.", false, "boolean"),
+    )
     // 第二个位置参数是分类说明，工具列表必须明确传给 tools。
     fun category() = SystemToolPromptCategory(categoryName = "Subagent collaboration", tools = listOf(
         ToolPrompt("subagent_catalog", "Read enabled prompt presets and the allowed model pool with capability descriptions. Configure these in model settings.", parametersStructured = emptyList()),
         ToolPrompt("spawn_task", "Delegate independent work and return immediately with task and execution IDs. The parent chat and resource context come from the runtime.", parametersStructured = listOf(
             parameter("title", "Short task title, 1–120 characters."), parameter("goal", "Self-contained task brief, relevant context, expected report and assigned resources; 1–20000 characters."),
-            parameter("preset_id", "Enabled prompt preset ID from subagent_catalog."), parameter("model_id", "Allowed model ID from subagent_catalog."))),
+            parameter("preset_id", "Enabled prompt preset ID from subagent_catalog."), parameter("model_id", "Allowed model ID from subagent_catalog.")) + thinking),
         ToolPrompt("list_tasks", "List this main conversation's tasks and current execution IDs.", parametersStructured = emptyList()),
         ToolPrompt("inspect_task", "Read this conversation's task report, progress and recent history.", parametersStructured = identity),
         ToolPrompt("supplement_task", "Queue additional instructions for the current active execution, without restarting it.", parametersStructured = execution + parameter("text", "Supplementary instructions, 1–10000 characters.")),
-        ToolPrompt("followup_task", "Start another execution of a finished task, retaining its own history. This is not a retry of external effects.", parametersStructured = execution + listOf(parameter("text", "Self-contained follow-up, 1–20000 characters."), parameter("model_id", "Explicit pool model for this execution; omit to use the same pool entry.", false))),
+        ToolPrompt("followup_task", "Start another execution of a finished task, retaining its own history. This is not a retry of external effects.", parametersStructured = execution + listOf(parameter("text", "Self-contained follow-up, 1–20000 characters."), parameter("model_id", "Explicit pool model for this execution; omit to use the same pool entry.", false)) + thinking.map { it.copy(required = false) }),
         ToolPrompt("stop_task", "Stop only the specified current execution, preserving the task record.", parametersStructured = execution),
+        ToolPrompt("archive_task", "Archive or restore an idle task while retaining its reports and child conversation. Active tasks must be stopped first.", parametersStructured = execution + parameter("archived", "true to archive, false to restore.", type = "boolean")),
         ToolPrompt("wait_task", "Wait once for the specified execution, up to 30 seconds; results are also returned automatically to the main turn.", parametersStructured = execution + parameter("timeout_ms", "Integer from 0 to 30000.", type = "integer")),
     ))
     val names: Set<String> get() = category().tools.map { it.name }.toSet()
@@ -66,10 +72,11 @@ Follow supplementary instructions at the next model boundary. End with a concise
         require(parameters.size == tool.parameters.size) { "Duplicate parameters" }
         require(parameters.keys.all { key -> definition.parametersStructured.orEmpty().any { it.name == key } }) { "Unexpected parameters" }
         fun required(name: String): String = requireNotNull(parameters[name]) { "Missing parameter: $name" }
+        fun optionalBoolean(name: String): Boolean? = parameters[name]?.toBooleanStrict()
         val result = when (tool.name) {
             "subagent_catalog" -> SubagentCatalog(context).describe()
             "list_tasks" -> buildJsonArray { coordinator.list(chatId).forEach { add(describe(it)) } }.toString()
-            "spawn_task" -> describe(coordinator.spawn(chatId, requireNotNull(runtime.invocationId), required("title"), required("goal"), required("preset_id"), required("model_id"), runtime.workspacePath, runtime.workspaceEnv, runtime.callerCardId, runtime.memorySpaceId)).toString()
+            "spawn_task" -> describe(coordinator.spawn(chatId, requireNotNull(runtime.invocationId), required("title"), required("goal"), required("preset_id"), required("model_id"), runtime.workspacePath, runtime.workspaceEnv, runtime.callerCardId, runtime.memorySpaceId, required("enable_thinking").toBooleanStrict(), parameters["thinking_option_id"], optionalBoolean("auto_archive"))).toString()
             "inspect_task" -> {
                 val task = requireNotNull(coordinator.list(chatId).find { it.id == required("task_id") }) { "Task does not belong to this conversation" }
                 buildJsonObject {
@@ -85,7 +92,8 @@ Follow supplementary instructions at the next model boundary. End with a concise
                 }.toString()
             }
             "supplement_task" -> describe(coordinator.supplement(chatId, required("task_id"), required("execution_id"), required("text"))).toString()
-            "followup_task" -> describe(coordinator.followup(chatId, required("task_id"), required("execution_id"), required("text"), parameters["model_id"])).toString()
+            "followup_task" -> describe(coordinator.followup(chatId, required("task_id"), required("execution_id"), required("text"), parameters["model_id"], optionalBoolean("enable_thinking"), parameters["thinking_option_id"], optionalBoolean("auto_archive"))).toString()
+            "archive_task" -> describe(coordinator.archive(chatId, required("task_id"), required("execution_id"), required("archived").toBooleanStrict())).toString()
             "stop_task" -> describe(coordinator.stop(chatId, required("task_id"), required("execution_id"))).toString()
             "wait_task" -> describe(coordinator.waitFor(chatId, required("task_id"), required("execution_id"), required("timeout_ms").toLong())).toString()
             else -> error("Unknown subagent operation")
@@ -101,6 +109,8 @@ Follow supplementary instructions at the next model boundary. End with a concise
         put("task_id", task.id); put("execution_id", task.executionId); put("child_chat_id", task.childChatId); put("title", task.title)
         put("status", task.status.name); put("attempt", task.attempt); put("preset", task.preset.name)
         put("model", task.model.modelName); put("archived", task.archived); put("tool_count", task.toolCount)
+        put("enable_thinking", task.thinking.enabled); put("thinking_option_id", task.thinking.optionId)
+        put("auto_archive", task.autoArchiveOnCompletion)
         put("error", task.error); put("latest_report", task.reports.lastOrNull()?.content.orEmpty())
     }
 }

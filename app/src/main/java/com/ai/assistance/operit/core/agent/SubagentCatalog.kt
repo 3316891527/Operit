@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.core.agent
 
 import android.content.Context
+import com.ai.assistance.operit.api.chat.model.ThinkingQualityControl
 import com.ai.assistance.operit.data.config.model.ModelConfigData
 import com.ai.assistance.operit.data.config.model.getModelList
 import com.ai.assistance.operit.data.preferences.ModelConfigManager
@@ -39,6 +40,7 @@ class SubagentCatalog(context: Context) {
         }
         val body = buildJsonObject {
             put("selection_policy", "Choose a preset and an allowed model independently. Use the supplied capability descriptions and limitations, not prior knowledge of model names. Never invent model quality, speed, price or capabilities. Explain missing configuration instead of selecting a model outside this pool.")
+            put("auto_archive_completed_default", settings.autoArchiveCompleted)
             putJsonArray("presets") {
                 settings.presets.filter { it.enabled }.forEach { preset ->
                     add(buildJsonObject { put("id", preset.id); put("name", preset.name); put("purpose", preset.description) })
@@ -54,6 +56,18 @@ class SubagentCatalog(context: Context) {
                         put("configured_direct_audio", config.enableDirectAudioProcessing)
                         put("configured_direct_video", config.enableDirectVideoProcessing)
                         put("native_tool_call_enabled", config.enableToolCall)
+                        val thinking = config.subagentThinkingMapping(entry.modelName)
+                        put("thinking_control", when (thinking.control) {
+                            ThinkingQualityControl.LEVELS -> "levels"
+                            ThinkingQualityControl.TOGGLE_ONLY -> "toggle"
+                            ThinkingQualityControl.UNSUPPORTED -> "unavailable"
+                        })
+                        put("thinking_required", thinking.reasoningRequired)
+                        putJsonArray("thinking_options") {
+                            thinking.options.forEach { option -> add(buildJsonObject {
+                                put("id", option.id); put("label", option.displayLabel)
+                            }) }
+                        }
                     })
                 }
             }

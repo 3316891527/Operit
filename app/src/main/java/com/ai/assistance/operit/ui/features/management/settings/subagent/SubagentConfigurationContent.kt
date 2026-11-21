@@ -7,7 +7,6 @@ import com.ai.assistance.operit.ui.theme.script.ThemeScriptTextButton as TextBut
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIconButton as IconButton
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptAlertDialog as AlertDialog
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -109,6 +108,17 @@ fun SubagentConfigurationContent(saveCoordinator: ModelConfigSaveCoordinator, on
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.subagent_model_pool_count, settings.models.count { it.enabled }))
         }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.subagent_auto_archive_completed), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.subagent_auto_archive_completed_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Switch(
+                checked = settings.autoArchiveCompleted,
+                onCheckedChange = { enabled -> writer.save({ preferences.setAutoArchiveCompleted(enabled) }) },
+                enabled = !writer.busy,
+            )
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.subagent_prompt_presets), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
             TextButton(onClick = { adding = true }, enabled = !writer.busy) {
@@ -195,7 +205,7 @@ fun SubagentModelPoolContent(saveCoordinator: ModelConfigSaveCoordinator) {
             val profile = selection.allConfigs.find { it.id == entry.configId }
             val available = profile != null && entry.modelName in getModelList(profile.modelName)
             Surface(shape = RoundedCornerShape(14.dp), border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(entry.modelName, style = MaterialTheme.typography.titleSmall)
@@ -220,20 +230,9 @@ fun SubagentModelPoolContent(saveCoordinator: ModelConfigSaveCoordinator) {
         if (writer.failed) Text(stringResource(R.string.save_failed), color = MaterialTheme.colorScheme.error)
     }
     if (adding) {
-        ModelWorkspaceDialog(title = stringResource(R.string.subagent_choose_models), onDismiss = { adding = false }) {
-            selection.allConfigs.forEach { profile ->
-                getModelList(profile.modelName).forEach { modelName ->
-                    val existing = settings.models.find { it.configId == profile.id && it.modelName == modelName }
-                    Row(Modifier.fillMaxWidth().clickable {
-                        editing = existing ?: SubagentModel(configId = profile.id, modelName = modelName, capabilities = "")
-                        adding = false
-                    }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = existing != null, onCheckedChange = null)
-                        Column(Modifier.weight(1f)) { Text(modelName); Text(profile.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        Icon(Icons.Default.ChevronRight, null)
-                    }
-                }
-            }
+        SubagentModelPicker(selection, settings, onDismiss = { adding = false }) { entry ->
+            editing = entry
+            adding = false
         }
     }
     editing?.let { entry ->

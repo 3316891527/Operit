@@ -82,4 +82,11 @@
     <string name="subagent_execution_completed">Task completed; the report is ready to return.</string>
     <string name="subagent_discard_draft">Discard changes</string>
     <string name="subagent_discard_draft_hint">Close and discard the changes that have not been saved?</string>
+    <string name="subagent_models_search">Search profiles or models</string>
+    <string name="subagent_no_models_in_group">No matching models in the current group</string>
+    <string name="subagent_models_selected_count">%1$d of %2$d models selected</string>
+    <string name="subagent_auto_archive_completed">Archive completed tasks automatically</string>
+    <string name="subagent_auto_archive_completed_hint">Applies to new and continued executions. Successful tasks leave the tray while reports and conversations are retained. Failed, stopped, and interrupted tasks stay visible.</string>
+    <string name="subagent_filter_completed">Completed</string>
+    <string name="subagent_no_matching_tasks">No tasks match this filter</string>
 </resources>

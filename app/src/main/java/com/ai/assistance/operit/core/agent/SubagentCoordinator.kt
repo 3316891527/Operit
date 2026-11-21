@@ -98,7 +98,10 @@ class SubagentCoordinator private constructor(private val context: Context) {
         usage: TokenUsageBreakdown? = null, windowSize: Long? = null) {
         val previous = requireNotNull(state.value.tasks.find { it.id == task.id }) { "Task no longer exists" }
         try {
-            withContext(NonCancellable) { publish(store.save(task, previous.executionId, messages, usage, windowSize)) }
+            // 自动归档只发生在本轮首次成功结束时；恢复历史不会再次触发归档。
+            val next = if (previous.status.isActive && task.status == SubagentStatus.COMPLETED && task.autoArchiveOnCompletion)
+                task.copy(archived = true) else task
+            withContext(NonCancellable) { publish(store.save(next, previous.executionId, messages, usage, windowSize)) }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (failure: Exception) {
@@ -110,14 +113,18 @@ class SubagentCoordinator private constructor(private val context: Context) {
     suspend fun spawn(
         chatId: String, parentToolCallId: String, title: String, goal: String, presetId: String, modelId: String,
         workspacePath: String?, workspaceEnv: String?, roleCardId: String?, memorySpaceId: String?,
+        enableThinking: Boolean, thinkingOptionId: String? = null, autoArchive: Boolean? = null,
     ): SubagentTask = withContext(Dispatchers.IO) {
         ready.await()
         require(!isChild(chatId)) { "Subagents cannot create further subagents" }
         require(title.isNotBlank() && title.length <= 120 && goal.isNotBlank() && goal.length <= 20000) { "Supply a concise title and a self-contained task brief" }
         require(parentToolCallId.isNotBlank()) { "Missing trusted tool invocation identity" }
         require(history.chatExistsOrThrow(chatId)) { "Parent conversation no longer exists" }
-        val preset = requireNotNull(preferences.configuration.first().presets.find { it.id == presetId && it.enabled }) { "This prompt preset is not enabled" }
-        val model = catalog.resolve(modelId).entry
+        val settings = preferences.configuration.first()
+        val preset = requireNotNull(settings.presets.find { it.id == presetId && it.enabled }) { "This prompt preset is not enabled" }
+        val resolved = catalog.resolve(modelId)
+        val model = resolved.entry
+        val thinking = resolved.config.subagentThinkingMapping(model.modelName).selectSubagentThinking(enableThinking, thinkingOptionId)
         mutex.withLock {
             state.value.tasks.find { it.parentChatId == chatId && it.parentToolCallId == parentToolCallId }?.let { return@withLock it }
             require(state.value.error == null) { "Subagent storage is unavailable" }
@@ -126,7 +133,8 @@ class SubagentCoordinator private constructor(private val context: Context) {
             require(state.value.tasks.size < 4096) { "Task storage limit reached; remove historical conversations before delegating more" }
             require(state.value.tasks.count { it.status.isActive } < 128) { "Subagent queue is full" }
             val task = SubagentTask(parentChatId = chatId, parentToolCallId = parentToolCallId, title = title.trim(), goal = goal.trim(), preset = preset, model = model,
-                workspacePath = workspacePath, workspaceEnv = workspaceEnv, roleCardId = roleCardId, memorySpaceId = memorySpaceId)
+                workspacePath = workspacePath, workspaceEnv = workspaceEnv, roleCardId = roleCardId, memorySpaceId = memorySpaceId,
+                thinking = thinking, autoArchiveOnCompletion = autoArchive ?: settings.autoArchiveCompleted)
             val queued = task.copy(events = listOf(SubagentEvent(context.getString(R.string.subagent_waiting_slot))))
             withContext(NonCancellable) { publish(store.create(queued)); schedule() }; owned(chatId, task.id)
         }
@@ -222,6 +230,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
                 require(history.chatExistsOrThrow(initial.parentChatId)) { "Parent conversation was deleted" }
                 val resolved = catalog.resolve(initial.model.id)
                 require(resolved.entry.configId == initial.model.configId && resolved.entry.modelName == initial.model.modelName) { "The selected model reference changed before execution" }
+                resolved.config.subagentThinkingMapping(initial.model.modelName).selectSubagentThinking(initial.thinking.enabled, initial.thinking.optionId)
                 provider = resolved.config.apiProviderTypeId
                 val task = mutex.withLock {
                     val current = owned(initial.parentChatId, initial.id)
@@ -241,6 +250,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
                     message = request.content, chatHistory = prior, chatId = task.childChatId,
                     workspacePath = task.workspacePath, workspaceEnv = task.workspaceEnv, roleCardId = task.roleCardId,
                     chatModelConfigIdOverride = task.model.configId, chatModelNameOverride = task.model.modelName,
+                    enableThinking = task.thinking.enabled, thinkingOptionIdOverride = task.thinking.optionId,
                     memorySpaceIdOverride = task.memorySpaceId, enableMemoryAutoUpdate = false, isSubTask = true, isDelegatedTask = true,
                     customSystemPromptTemplate = task.preset.systemPrompt + "\n\n" + SubagentTools.CHILD_INSTRUCTIONS,
                     maxTokens = (resolved.config.contextLength * 1000).toInt(), tokenUsageThreshold = resolved.config.summaryTokenThreshold.toDouble(),
@@ -356,10 +366,18 @@ class SubagentCoordinator private constructor(private val context: Context) {
         }
     }
 
-    suspend fun followup(chatId: String, id: String, expectedExecutionId: String, text: String, modelId: String? = null): SubagentTask = withContext(Dispatchers.IO) {
+    suspend fun followup(chatId: String, id: String, expectedExecutionId: String, text: String, modelId: String? = null,
+        enableThinking: Boolean? = null, thinkingOptionId: String? = null, autoArchive: Boolean? = null): SubagentTask = withContext(Dispatchers.IO) {
         ready.await(); require(text.isNotBlank() && text.length <= 20000) { "Supply a self-contained follow-up instruction" }
         val original = mutex.withLock { owned(chatId, id) }
-        val selected = catalog.resolve(modelId ?: original.model.id).entry
+        val resolved = catalog.resolve(modelId ?: original.model.id)
+        val selected = resolved.entry
+        require(thinkingOptionId == null || enableThinking != null) { "Specify enable_thinking when changing the thinking option" }
+        require(selected.id == original.model.id || enableThinking != null) { "Choose thinking settings explicitly when changing the model" }
+        val thinking = if (enableThinking == null) original.thinking else
+            resolved.config.subagentThinkingMapping(selected.modelName).selectSubagentThinking(enableThinking, thinkingOptionId)
+        resolved.config.subagentThinkingMapping(selected.modelName).selectSubagentThinking(thinking.enabled, thinking.optionId)
+        val settings = preferences.configuration.first()
         mutex.withLock {
             val task = owned(chatId, id)
             require(task.executionId == expectedExecutionId && !task.status.isActive && !jobs.containsKey(id) && chatId !in stopping && !task.archived) { "This execution changed or is still stopping; refresh the task before continuing" }
@@ -369,6 +387,7 @@ class SubagentCoordinator private constructor(private val context: Context) {
             val execution = UUID.randomUUID().toString()
             val next = task.copy(executionId = execution, attempt = task.attempt + 1, status = SubagentStatus.QUEUED, model = selected,
                 goal = text.trim(), error = "", startedAt = 0, completedAt = 0,
+                thinking = thinking, autoArchiveOnCompletion = autoArchive ?: settings.autoArchiveCompleted,
                 requestTimestamp = ChatMessageTimestampAllocator.next(), assistantTimestamp = 0,
                 events = task.events + SubagentEvent(context.getString(R.string.subagent_confirm_continue)))
             write(next, listOf(ChatMessage(sender = "user", content = next.goal, timestamp = next.requestTimestamp))); schedule(); owned(chatId, id)
@@ -423,11 +442,21 @@ class SubagentCoordinator private constructor(private val context: Context) {
         }
     }
 
-    suspend fun archive(chatId: String, id: String, archived: Boolean) = withContext(Dispatchers.IO) {
-        ready.await(); mutex.withLock {
+    suspend fun archive(chatId: String, id: String, expectedExecutionId: String, archived: Boolean): SubagentTask = withContext(Dispatchers.IO) {
+        ready.await()
+        val job = mutex.withLock {
             val task = owned(chatId, id)
-            require(!task.status.isActive && !jobs.containsKey(id)) { "Stop this execution before archiving" }
+            require(task.executionId == expectedExecutionId) { "This task has a newer execution; refresh before archiving" }
+            require(!task.status.isActive && chatId !in stopping) { "Stop this execution before archiving" }
+            jobs[id]
+        }
+        // 报告先于服务释放到达父代理，等待清理结束后允许立即归档。
+        job?.join()
+        mutex.withLock {
+            val task = owned(chatId, id)
+            require(task.executionId == expectedExecutionId && !task.status.isActive && !jobs.containsKey(id) && chatId !in stopping) { "The execution changed while archiving" }
             write(task.copy(archived = archived))
+            owned(chatId, id)
         }
     }
 

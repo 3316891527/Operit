@@ -51,6 +51,8 @@ data class SubagentTask(
     val roleCardId: String? = null,
     val memorySpaceId: String? = null,
     val executionId: String = UUID.randomUUID().toString(),
+    val thinking: SubagentThinking = SubagentThinking(),
+    val autoArchiveOnCompletion: Boolean = false,
     val attempt: Int = 1,
     val status: SubagentStatus = SubagentStatus.QUEUED,
     val requestTimestamp: Long = ChatMessageTimestampAllocator.next(),

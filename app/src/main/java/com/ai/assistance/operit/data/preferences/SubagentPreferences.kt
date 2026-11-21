@@ -86,6 +86,12 @@ class SubagentPreferences(context: Context) {
         }
     }
 
+    suspend fun setAutoArchiveCompleted(enabled: Boolean) {
+        store.edit { preferences ->
+            preferences[key] = json.encodeToString(read(preferences).copy(autoArchiveCompleted = enabled))
+        }
+    }
+
     suspend fun clearModels() {
         store.edit { preferences ->
             preferences[key] = json.encodeToString(read(preferences).copy(models = emptyList()))

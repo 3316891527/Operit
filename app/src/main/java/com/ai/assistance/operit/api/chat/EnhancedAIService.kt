@@ -1,5 +1,7 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.core.agent.selectSubagentThinking
+import com.ai.assistance.operit.core.agent.subagentThinkingMapping
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
 import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
@@ -378,6 +380,7 @@ class EnhancedAIService private constructor(context: Context) {
         var chatModelConfigIdOverride: String? = null,
         var chatModelIndexOverride: Int? = null,
         var chatModelNameOverride: String? = null,
+        var thinkingOptionIdOverride: String? = null,
         var memorySpaceIdOverride: String? = null,
         var stream: Boolean = true,
         var disableWarning: Boolean = false,
@@ -469,6 +472,7 @@ class EnhancedAIService private constructor(context: Context) {
         val turnInputInbox: TurnInputInbox? = null,
         val onTurnInput: (suspend (List<TurnInputInbox.Input>, ToolExecutionBoundarySnapshot) -> String)? = null,
         val pinnedModelName: String? = null,
+        val thinkingOptionIdOverride: String? = null,
         val delegatedTask: Boolean = false,
         val callerChatId: String? = null,
         val workspacePath: String? = null,
@@ -1086,6 +1090,7 @@ class EnhancedAIService private constructor(context: Context) {
                     turnInputInbox = options.turnInputInbox,
                     onTurnInput = options.onTurnInput,
                     pinnedModelName = options.chatModelNameOverride,
+                    thinkingOptionIdOverride = options.thinkingOptionIdOverride,
                     delegatedTask = options.isDelegatedTask,
                     callerChatId = chatId,
                     workspacePath = workspacePath,
@@ -1143,6 +1148,11 @@ class EnhancedAIService private constructor(context: Context) {
                             chatModelConfigIdOverride,
                             chatModelIndexOverride
                         )
+                    if (execContext.delegatedTask) {
+                        // 取得租约后再校验一次，配置在排队期间变化时不能静默换成别的思考档位。
+                        modelSnapshot.config.subagentThinkingMapping(requireNotNull(execContext.pinnedModelName))
+                            .selectSubagentThinking(enableThinking, execContext.thinkingOptionIdOverride)
+                    }
                     stream = requestedStream && modelSnapshot.config.enableStreamOutput
                     // 这里使用已绑定角色卡和模型索引的实际配置快照，不读取全局默认聊天模型代替。
                     message = voiceAudioRequest.format(message, modelSnapshot.config.enableDirectAudioProcessing)
@@ -1317,6 +1327,7 @@ class EnhancedAIService private constructor(context: Context) {
                                         chatHistory = voiceRequestHistory,
                                         modelParameters = modelParameters,
                                         enableThinking = enableThinking,
+                                        thinkingOptionId = execContext.thinkingOptionIdOverride,
                                         stream = stream,
                                         availableTools = availableTools,
                                         onTokensUpdated = { input, cachedInput, output ->
@@ -2699,6 +2710,7 @@ class EnhancedAIService private constructor(context: Context) {
                                     chatHistory = currentChatHistory,
                                     modelParameters = modelParameters,
                                     enableThinking = enableThinking,
+                                    thinkingOptionId = context.thinkingOptionIdOverride,
                                     stream = stream,
                                     availableTools = availableTools,
                                     onTokensUpdated = { input, cachedInput, output ->

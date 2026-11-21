@@ -27,6 +27,7 @@ data class SubagentModel(
 data class SubagentConfiguration(
     val presets: List<SubagentPreset> = emptyList(),
     val models: List<SubagentModel> = emptyList(),
+    val autoArchiveCompleted: Boolean = true,
 )
 
 internal fun SubagentPreset.validate() {
