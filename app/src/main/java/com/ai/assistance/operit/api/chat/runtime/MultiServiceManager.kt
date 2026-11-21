@@ -167,6 +167,21 @@ class MultiServiceManager(
         )
     }
 
+    /** 子代理按名称取得独占租约；配置、参数和模型在本次执行中保持一致。 */
+    suspend fun acquireServiceForNamedModel(configId: String, modelName: String): ServiceLease {
+        ensureInitialized()
+        val config = modelConfigManager.requireModelConfig(configId)
+        val modelIndex = com.ai.assistance.operit.data.config.model.getModelList(config.modelName).indexOf(modelName)
+        require(modelIndex >= 0) { "The selected model no longer exists in this profile" }
+        val parameters = modelConfigManager.getModelParametersForSnapshot(config)
+        return serviceMutex.withLock {
+            val service = createServiceFromConfig(config, modelIndex)
+            val managed = ManagedService(service, config, modelIndex, activeLeases = 1, retired = true)
+            retiredServices.add(managed)
+            ServiceLease({ releaseLease(managed) }, service, config, parameters)
+        }
+    }
+
     private suspend fun getOrCreateServiceForFunctionLocked(functionType: FunctionType): ManagedService {
         // 每次取用都核对持久化配置，不能要求所有配置写入入口记得手动刷新缓存。
         val configMapping = functionalConfigManager.getConfigMappingForFunction(functionType)
@@ -309,6 +324,11 @@ class MultiServiceManager(
     /** 刷新所有服务实例 当全局设置更改时调用此方法 */
     suspend fun refreshAllServices() {
         ensureInitialized()
+        releaseAllServices()
+    }
+
+    /** 关闭专用实例时只释放已经存在的资源，不为清理操作创建新服务。 */
+    suspend fun releaseAllServices() {
         serviceMutex.withLock {
             val services = mutableSetOf<ManagedService>()
             services.addAll(serviceInstances.values)

@@ -1540,6 +1540,7 @@ class ChatHistoryManager private constructor(private val context: Context) {
      * ```
      */
     suspend fun clearChatMessages(chatId: String) {
+        com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).deleteForChat(chatId)
         chatMutex(chatId).withLock {
             try {
                 messageVariantDao.deleteAllVariantsForChat(chatId)
@@ -1647,6 +1648,16 @@ class ChatHistoryManager private constructor(private val context: Context) {
     }
 
     // 检查聊天是否存在
+    /** 任务生命周期不能把数据库读取失败当成聊天已删除。 */
+    suspend fun chatExistsOrThrow(chatId: String): Boolean = withContext(Dispatchers.IO) {
+        chatDao.getChatById(chatId) != null
+    }
+
+    /** 报告去重要求实际读取成功，禁止把读取失败当成空历史。 */
+    suspend fun loadChatMessagesOrThrow(chatId: String): List<ChatMessage> = withContext(Dispatchers.IO) {
+        hydrateMessages(chatId, chatContentDao.getMessagesForChat(chatId))
+    }
+
     suspend fun chatExists(chatId: String): Boolean {
         return kotlinx.coroutines.withContext(Dispatchers.IO) {
             try {
@@ -1692,6 +1703,8 @@ class ChatHistoryManager private constructor(private val context: Context) {
                     AppLogger.w(TAG, "拒绝删除会话：$chatId，原因：$blocked")
                     return false
                 }
+                // 删除前先停止子执行，避免报告写回已经删除的父聊天。
+                com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).deleteForChat(chatId)
                 // 删除聊天实体（级联删除所有消息）
                 chatDao.deleteChat(chatId)
                 chatDraftRepository.removeDraft(chatId)

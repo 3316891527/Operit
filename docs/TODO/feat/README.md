@@ -5,6 +5,8 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+
+- [主代理自动委派与子代理协作](subagent-collaboration/index.md)
 - [聊天耗时单位进位](chat-duration-units/index.md) · `chat-duration-units`
 
 - [终端内置 apply_patch 命令](terminal-apply-patch/index.md)

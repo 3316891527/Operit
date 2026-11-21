@@ -741,6 +741,16 @@ class ModelConfigManager(
     }
 
     // 获取指定ID的配置的非Flow版本
+    /** 委派模型只接受实际存在且可解码的配置，不生成默认配置。 */
+    suspend fun requireModelConfig(configId: String): ModelConfigData {
+        val preferences = configDataStore.data.first()
+        require(configId in readConfigListFromPrefs(preferences)) { "Model profile was deleted" }
+        val raw = requireNotNull(preferences[stringPreferencesKey("config_$configId")]) { "Model profile data is missing" }
+        val config = normalizeConfig(json.decodeFromString<ModelConfigData>(RetiredProviderMigration.rewriteConfig(raw)))
+        require(config.id == configId) { "Model profile identity does not match" }
+        return config
+    }
+
     suspend fun getModelConfig(configId: String): ModelConfigData? {
         return loadConfigFromDataStore(configId)
     }
@@ -1367,7 +1377,11 @@ class ModelConfigManager(
      * @return 模型参数列表
      */
     suspend fun getModelParametersForConfig(configId: String): List<ModelParameter<*>> {
-        val config = getModelConfigFlow(configId).first()
+        return getModelParametersForSnapshot(getModelConfigFlow(configId).first())
+    }
+
+    /** 从同一份配置生成参数，避免执行期间配置变更造成服务与参数不一致。 */
+    fun getModelParametersForSnapshot(config: ModelConfigData): List<ModelParameter<*>> {
         val parameters = mutableListOf<ModelParameter<*>>()
 
         // 映射标准参数
@@ -1495,6 +1509,7 @@ class ModelConfigManager(
                 }
             } catch (e: Exception) {
                 AppLogger.e("ModelConfigManager", "Failed to parse or convert custom parameters", e)
+                throw e
             }
         }
 
