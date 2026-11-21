@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.api.chat
 
+import com.ai.assistance.operit.core.agent.SubagentContextHistory
+import com.ai.assistance.operit.core.agent.selectSubagentThinking
+import com.ai.assistance.operit.core.agent.subagentThinkingMapping
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
 import com.ai.assistance.operit.core.chat.context.TokenUsageBreakdown
 import com.ai.assistance.operit.core.chat.voice.VoiceAnalysis
@@ -361,6 +364,7 @@ class EnhancedAIService private constructor(context: Context) {
         var onTokenLimitExceeded: (suspend () -> Unit)? = null,
         var customSystemPromptTemplate: String? = null,
         var isSubTask: Boolean = false,
+        var isDelegatedTask: Boolean = false,
         var characterName: String? = null,
         var avatarUri: String? = null,
         var roleCardId: String? = null,
@@ -376,6 +380,8 @@ class EnhancedAIService private constructor(context: Context) {
         var notifyReplyOverride: Boolean? = null,
         var chatModelConfigIdOverride: String? = null,
         var chatModelIndexOverride: Int? = null,
+        var chatModelNameOverride: String? = null,
+        var thinkingOptionIdOverride: String? = null,
         var memorySpaceIdOverride: String? = null,
         var stream: Boolean = true,
         var disableWarning: Boolean = false,
@@ -459,6 +465,8 @@ class EnhancedAIService private constructor(context: Context) {
         val roundManager: ConversationRoundManager = ConversationRoundManager(),
         val isConversationActive: AtomicBoolean = AtomicBoolean(true),
         val conversationHistory: MutableList<PromptTurn>,
+        // 在模型请求边界发布不可变背景，工具并行派发时不直接读取正在修改的列表。
+        @Volatile var subagentHistorySnapshot: List<PromptTurn> = emptyList(),
         val eventChannel: MutableSharedStream<TextStreamEvent>,
         val permissionSession: PermissionCapabilitySession,
         val onToolTiming: suspend (ToolCallExecution) -> Unit,
@@ -466,6 +474,14 @@ class EnhancedAIService private constructor(context: Context) {
         val onToolExecutionBoundary: (suspend (ToolExecutionBoundarySnapshot) -> Unit)? = null,
         val turnInputInbox: TurnInputInbox? = null,
         val onTurnInput: (suspend (List<TurnInputInbox.Input>, ToolExecutionBoundarySnapshot) -> String)? = null,
+        val pinnedModelName: String? = null,
+        val thinkingOptionIdOverride: String? = null,
+        val delegatedTask: Boolean = false,
+        val callerChatId: String? = null,
+        val workspacePath: String? = null,
+        val workspaceEnv: String? = null,
+        val memorySpaceId: String? = null,
+        var parentAttached: Boolean = false,
         var modelExecutionSnapshot: ModelExecutionSnapshot? = null,
         @Volatile var voiceInputJob: Job? = null,
         // 按实际输出计数，为后续工具轮次平移修订坐标。
@@ -520,7 +536,10 @@ class EnhancedAIService private constructor(context: Context) {
         ensureInitialized()
         val overrideConfigId = chatModelConfigIdOverride?.takeIf { it.isNotBlank() }
         val lease =
-            if (functionType == FunctionType.CHAT && overrideConfigId != null) {
+            if (context.pinnedModelName != null) {
+                require(functionType == FunctionType.CHAT && overrideConfigId != null) { "A named model requires an explicit chat profile" }
+                multiServiceManager.acquireServiceForNamedModel(overrideConfigId, context.pinnedModelName)
+            } else if (functionType == FunctionType.CHAT && overrideConfigId != null) {
                 multiServiceManager.acquireServiceForConfig(
                     configId = overrideConfigId,
                     modelIndex = (chatModelIndexOverride ?: 0).coerceAtLeast(0)
@@ -917,9 +936,7 @@ class EnhancedAIService private constructor(context: Context) {
                 originalCurrentMessage = message,
                 finalizedCurrentMessage = finalProcessedInput
             ).mergeAdjacentTurns { previous, current ->
-                previous.kind == PromptTurnKind.USER &&
-                    current.kind == PromptTurnKind.USER &&
-                    previous.toolName == current.toolName
+                SubagentContextHistory.canMergeUserTurns(previous, current)
             }
 
         val voiceEstimate = VoiceAudioRequest(context, multiServiceManager) { _, _ -> }
@@ -989,6 +1006,9 @@ class EnhancedAIService private constructor(context: Context) {
     ): Stream<String> {
         var message = VoiceMessageMarkup.toRequestContent(options.message)
         val chatId = options.chatId
+        if (chatId != null && !options.isDelegatedTask) {
+            com.ai.assistance.operit.data.repository.ChatHistoryManager.getInstance(context).requireNormalConversation(chatId)
+        }
         // 历史保留新语音的录音输入，由实际模型配置决定如何处理。
         val chatHistory = options.chatHistory.map { it.copy(content = VoiceMessageMarkup.toRequestContent(it.content)) }
         val workspacePath = options.workspacePath
@@ -1070,6 +1090,13 @@ class EnhancedAIService private constructor(context: Context) {
                     onToolExecutionBoundary = options.onToolExecutionBoundary,
                     turnInputInbox = options.turnInputInbox,
                     onTurnInput = options.onTurnInput,
+                    pinnedModelName = options.chatModelNameOverride,
+                    thinkingOptionIdOverride = options.thinkingOptionIdOverride,
+                    delegatedTask = options.isDelegatedTask,
+                    callerChatId = chatId,
+                    workspacePath = workspacePath,
+                    workspaceEnv = workspaceEnv,
+                    memorySpaceId = memorySpaceIdOverride ?: preferencesManager.activeMemorySpaceIdFlow.first(),
                 )
             registerExecutionContext(execContext)
             val outerCollector = this
@@ -1080,6 +1107,7 @@ class EnhancedAIService private constructor(context: Context) {
                         outerCollector.emit(value)
                     }
                 }
+            var delegatedForegroundStarted = false
             var hadFatalError = false
             // 完成处理位于 finally，流式状态需由本次消息共享，并在取得配置快照后更新。
             var stream = requestedStream
@@ -1088,8 +1116,9 @@ class EnhancedAIService private constructor(context: Context) {
                 // 确保所有操作都在IO线程上执行
                 withContext(Dispatchers.IO) {
                     // 仅当会话首次启动时开启服务，并更新前台通知为“运行中”
-                    if (!isSubTask) {
+                    if (!isSubTask || options.isDelegatedTask) {
                         startAiService(characterName, avatarUri)
+                        delegatedForegroundStarted = options.isDelegatedTask
                     }
 
                     // Update state to show we're processing
@@ -1108,6 +1137,10 @@ class EnhancedAIService private constructor(context: Context) {
                         execContext.voiceInputJob = kotlin.coroutines.coroutineContext[Job]
                         if (!isExecutionContextActive(execContext)) throw CancellationException("Voice input cancelled")
                     }
+                    if ((!isSubTask || options.isDelegatedTask) && functionType == FunctionType.CHAT && chatId != null && options.turnInputInbox != null) {
+                        com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).attachParent(chatId, requireNotNull(options.turnInputInbox)) { execContext.subagentHistorySnapshot }
+                        execContext.parentAttached = true
+                    }
                     val startTime = messageTimingNow()
                     val modelSnapshot =
                         getModelExecutionSnapshot(
@@ -1116,6 +1149,11 @@ class EnhancedAIService private constructor(context: Context) {
                             chatModelConfigIdOverride,
                             chatModelIndexOverride
                         )
+                    if (execContext.delegatedTask) {
+                        // 取得租约后再校验一次，配置在排队期间变化时不能静默换成别的思考档位。
+                        modelSnapshot.config.subagentThinkingMapping(requireNotNull(execContext.pinnedModelName))
+                            .selectSubagentThinking(enableThinking, execContext.thinkingOptionIdOverride)
+                    }
                     stream = requestedStream && modelSnapshot.config.enableStreamOutput
                     // 这里使用已绑定角色卡和模型索引的实际配置快照，不读取全局默认聊天模型代替。
                     message = voiceAudioRequest.format(message, modelSnapshot.config.enableDirectAudioProcessing)
@@ -1150,6 +1188,15 @@ class EnhancedAIService private constructor(context: Context) {
                     // 关键修复：用准备好的历史记录（包含了系统提示）去同步更新内部的 conversationHistory 状态
                     execContext.conversationHistory.clear()
                     execContext.conversationHistory.addAll(preparedHistory)
+                    if (execContext.parentAttached) {
+                        val policy = com.ai.assistance.operit.core.agent.SubagentTools.PARENT_INSTRUCTIONS + "\n" +
+                            com.ai.assistance.operit.core.agent.SubagentCatalog(context).describe()
+                        val index = execContext.conversationHistory.indexOfFirst { it.kind == PromptTurnKind.SYSTEM }
+                        check(index >= 0) { "Missing system prompt for subagent delegation" }
+                        val prompt = execContext.conversationHistory[index]
+                        execContext.conversationHistory[index] = prompt.copy(content = prompt.content + "\n\n" + policy)
+                    }
+
 
                     // Update UI state to connecting
                     if (!isSubTask) {
@@ -1235,14 +1282,13 @@ class EnhancedAIService private constructor(context: Context) {
                             finalizedCurrentMessage = finalProcessedInput,
                             historyOnly = options.historyOnly,
                         ).mergeAdjacentTurns { previous, current ->
-                            previous.kind == PromptTurnKind.USER &&
-                                current.kind == PromptTurnKind.USER &&
-                                previous.toolName == current.toolName
+                            SubagentContextHistory.canMergeUserTurns(previous, current)
                         }.map { turn ->
                             turn.copy(content = voiceAudioRequest.format(turn.content, modelSnapshot.config.enableDirectAudioProcessing))
                         }
                     execContext.conversationHistory.clear()
                     execContext.conversationHistory.addAll(requestHistory)
+                    execContext.subagentHistorySnapshot = requestHistory.toList()
                     AppLogger.d(
                         TAG,
                         "sendMessage requestHistory turns=${requestHistory.size} original=${ChatTrace.describe(message)} finalized=${ChatTrace.describe(finalProcessedInput)} lastUser=${ChatTrace.describe(requestHistory.lastOrNull { it.kind == PromptTurnKind.USER }?.content.orEmpty())}"
@@ -1281,6 +1327,7 @@ class EnhancedAIService private constructor(context: Context) {
                                         chatHistory = voiceRequestHistory,
                                         modelParameters = modelParameters,
                                         enableThinking = enableThinking,
+                                        thinkingOptionId = execContext.thinkingOptionIdOverride,
                                         stream = stream,
                                         availableTools = availableTools,
                                         onTokensUpdated = { input, cachedInput, output ->
@@ -1296,6 +1343,7 @@ class EnhancedAIService private constructor(context: Context) {
                             onHistoryResolved = { textHistory ->
                                 execContext.conversationHistory.clear()
                                 execContext.conversationHistory.addAll(textHistory)
+                                execContext.subagentHistorySnapshot = textHistory.toList()
                                 estimatePreparedRequestWindow(serviceForFunction, textHistory, availableTools, publishEstimate = true)
                             },
                         )
@@ -1440,8 +1488,16 @@ class EnhancedAIService private constructor(context: Context) {
                 } finally {
                     unregisterExecutionContext(execContext)
                     withContext(NonCancellable + Dispatchers.IO) {
-                        voiceAudioRequest.close()
-                        releaseModelExecutionSnapshot(execContext)
+                        try {
+                            try { voiceAudioRequest.close() } finally {
+                                if (execContext.parentAttached && chatId != null) {
+                                    com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).detachParent(chatId, requireNotNull(execContext.turnInputInbox).turnId)
+                                }
+                            }
+                        } finally {
+                            try { releaseModelExecutionSnapshot(execContext) }
+                            finally { if (delegatedForegroundStarted) stopAiService(characterName, avatarUri) }
+                        }
                     }
                 }
             }
@@ -1871,6 +1927,10 @@ class EnhancedAIService private constructor(context: Context) {
         suspend fun finishTurn() {
             // Finish and input acceptance share one lock, so input arriving at EOF either
             // continues this turn or is rejected for the caller to keep queued.
+            if (context.parentAttached && chatId != null) {
+                com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(this@EnhancedAIService.context)
+                    .awaitChildren(chatId, requireNotNull(context.turnInputInbox))
+            }
             if (context.turnInputInbox?.finishIfEmpty() == false) {
                 processToolResults(
                     results = emptyList(), context = context, functionType = functionType,
@@ -2033,7 +2093,8 @@ class EnhancedAIService private constructor(context: Context) {
                 context.conversationHistory.add(
                     PromptTurn(
                         kind = PromptTurnKind.ASSISTANT,
-                        content = CardTranscript.forModel(context.roundManager.getCurrentRoundContent())
+                        content = CardTranscript.forModel(context.roundManager.getCurrentRoundContent()),
+                        metadata = if (extractedToolInvocations.isNotEmpty()) mapOf(SubagentContextHistory.INTERMEDIATE to true) else emptyMap(),
                     )
                 )
             } catch (e: Exception) {
@@ -2350,7 +2411,7 @@ class EnhancedAIService private constructor(context: Context) {
             }
         }
 
-        val processToolJob = toolProcessingScope.launch {
+        val processToolJob = toolProcessingScope.async {
             val modelSnapshot = getModelExecutionSnapshot(
                 context,
                 functionType,
@@ -2370,6 +2431,10 @@ class EnhancedAIService private constructor(context: Context) {
                 callerName = characterName,
                 callerChatId = chatId,
                 callerCardId = roleCardId,
+                delegatedTask = context.delegatedTask,
+                workspacePath = context.workspacePath,
+                workspaceEnv = context.workspaceEnv,
+                memorySpaceId = context.memorySpaceId,
                 a2uiRunId = context.a2uiRunId,
                 onA2uiCard = { document ->
                     // 等待工具返回前投递表单；显示正文和持久化正文必须保留同一份卡片。
@@ -2444,8 +2509,11 @@ class EnhancedAIService private constructor(context: Context) {
         toolExecutionJobs[invocationId] = processToolJob
 
         try {
-            processToolJob.join()
+            processToolJob.await()
         } finally {
+            // 独立工具作用域必须随本次调用结束，避免子任务停止后工具继续改动资源。
+            processToolJob.cancel()
+            withContext(NonCancellable) { processToolJob.join() }
             toolExecutionJobs.remove(invocationId)
         }
     }
@@ -2550,6 +2618,7 @@ class EnhancedAIService private constructor(context: Context) {
                 turnInputs.forEach { input ->
                     val inputTurn = PromptTurn(
                         kind = PromptTurnKind.USER, content = input.text,
+                        metadata = if (input.agentPath != null) mapOf(SubagentContextHistory.EVENT to true) else emptyMap(),
                     )
                     context.conversationHistory.add(inputTurn)
                 }
@@ -2561,6 +2630,7 @@ class EnhancedAIService private constructor(context: Context) {
             conversationService.normalizeConversationHistoryForModel(context.conversationHistory)
         context.conversationHistory.clear()
         context.conversationHistory.addAll(normalizedChatHistory)
+        context.subagentHistorySnapshot = normalizedChatHistory.toList()
 
         // Get current conversation history is now just the normalized context history
         val currentChatHistory = context.conversationHistory
@@ -2654,6 +2724,7 @@ class EnhancedAIService private constructor(context: Context) {
                                     chatHistory = currentChatHistory,
                                     modelParameters = modelParameters,
                                     enableThinking = enableThinking,
+                                    thinkingOptionId = context.thinkingOptionIdOverride,
                                     stream = stream,
                                     availableTools = availableTools,
                                     onTokensUpdated = { input, cachedInput, output ->
@@ -3144,7 +3215,18 @@ class EnhancedAIService private constructor(context: Context) {
         return deserializePromptHookToolPrompts(hookContext.availableTools)
     }
 
-    /** Cancel the current conversation */
+    /** 专用子任务实例在租约归还后释放，不能递减主聊天的前台服务计数。 */
+    suspend fun releaseSubagentInstance(chatId: String) {
+        try {
+            invalidateAllExecutionContexts("subagentReleased")
+            cancelAllToolExecutions()
+            val initialization = initScope.coroutineContext[Job]
+            initialization?.cancel()
+            initialization?.join()
+            multiServiceManager.releaseAllServices()
+        } finally { CHAT_INSTANCES.remove(chatId, this) }
+    }
+
     fun cancelConversation() {
         invalidateAllExecutionContexts("cancelConversation")
 
@@ -3317,7 +3399,9 @@ class EnhancedAIService private constructor(context: Context) {
             }
 
             val hookedTools = applyToolPromptComposeHooksToAvailableTools(
-                availableTools = selectedTools,
+                availableTools = if (com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).isChild(chatId)) {
+                    selectedTools.filter { com.ai.assistance.operit.core.agent.SubagentToolPolicy.isAllowedName(it.name) }
+                } else selectedTools,
                 chatId = chatId,
                 functionType = functionType,
                 promptFunctionType = promptFunctionType,

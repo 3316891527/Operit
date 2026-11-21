@@ -709,7 +709,9 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                             }
                             .graphicsLayer { translationY = -inputBarTranslationYPx }
                 ) {
-                    ChatInputBottomBar(
+                    Column {
+                        com.ai.assistance.operit.ui.features.conversation.chat.subagent.SubagentTaskPanel(currentChatId)
+                        ChatInputBottomBar(
                             actualViewModel = actualViewModel,
                             inputStyle = inputStyle,
                             currentChatId = currentChatId,
@@ -751,7 +753,8 @@ val actualViewModel: ChatViewModel = viewModel ?: viewModel { ChatViewModel(cont
                                 showMemoryFolderDialog = true
                             },
                             onRequestAutoScrollToBottom = requestAutoScrollToBottom,
-                    )
+                        )
+                    }
                 }
 
             }

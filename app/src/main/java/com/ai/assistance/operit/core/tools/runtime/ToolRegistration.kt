@@ -46,6 +46,7 @@ import com.ai.assistance.operit.core.tools.StringResultData
  */
 fun registerAllTools(handler: AIToolHandler, context: Context) {
     com.ai.assistance.operit.core.tools.builtin.a2ui.A2uiTools.register(handler, context)
+    com.ai.assistance.operit.core.agent.SubagentTools.register(handler, context)
 
 
     // Helper function to wrap UI tool execution with visibility changes

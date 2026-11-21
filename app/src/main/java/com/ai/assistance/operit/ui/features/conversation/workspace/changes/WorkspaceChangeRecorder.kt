@@ -29,9 +29,9 @@ internal class WorkspaceChangeRecorder(
 
     override fun invoke(tool: AITool): ToolResult {
         val caller = ToolExecutionManager.currentToolRuntimeContext()
-        val chatId = caller?.callerChatId
+        val chatId = caller?.workspaceChatId
         if (chatId.isNullOrBlank()) return delegate.invoke(tool)
-        val sourceName = caller.invokingToolName ?: tool.name
+        val sourceName = caller?.invokingToolName ?: tool.name
         return runBlocking(Dispatchers.IO) {
             WorkspaceChangeStore.operationMutex.withLock {
                 val capture = begin(tool, chatId, sourceName)
@@ -44,12 +44,12 @@ internal class WorkspaceChangeRecorder(
 
     override fun invokeAndStream(tool: AITool): Flow<ToolResult> = flow {
         val caller = ToolExecutionManager.currentToolRuntimeContext()
-        val chatId = caller?.callerChatId
+        val chatId = caller?.workspaceChatId
         if (chatId.isNullOrBlank()) {
             delegate.invokeAndStream(tool).collect { emit(it) }
             return@flow
         }
-        val sourceName = caller.invokingToolName ?: tool.name
+        val sourceName = caller?.invokingToolName ?: tool.name
         WorkspaceChangeStore.operationMutex.withLock {
             val capture = withContext(Dispatchers.IO) { begin(tool, chatId, sourceName) }
             var pending: ToolResult? = null

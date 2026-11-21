@@ -181,7 +181,7 @@ class Terminal internal constructor(
 
     private fun executionOrigin(commandId: String): TerminalChangeOrigin {
         val caller = ToolExecutionManager.currentToolRuntimeContext()
-        return TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", commandId)
+        return TerminalChangeOrigin(caller?.workspaceChatId.orEmpty(), caller?.invokingToolName ?: "terminal", commandId)
     }
 
     suspend fun cancelCommand(sessionId: String, commandId: String) =
@@ -193,7 +193,7 @@ class Terminal internal constructor(
     fun sendInput(sessionId: String, input: String) {
         val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
         val caller = ToolExecutionManager.currentToolRuntimeContext()
-        val origin = TerminalChangeOrigin(caller?.callerChatId.orEmpty(), caller?.invokingToolName ?: "terminal", null)
+        val origin = TerminalChangeOrigin(caller?.workspaceChatId.orEmpty(), caller?.invokingToolName ?: "terminal", null)
         if (session?.terminalType == TerminalType.LOCAL && input.isNotEmpty()) runBlocking(Dispatchers.IO) {
             fileJournal?.interactiveInput(sessionId, origin, session.currentDirectory)
         }

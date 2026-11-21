@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 
 /** 列表只调整排列，绑定与测试继续使用原功能编辑器。 */
 @Composable
-fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConfigSaveCoordinator) {
+fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConfigSaveCoordinator, onOpenSubagentModels: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val functionalManager = remember { FunctionalConfigManager(context) }
@@ -87,6 +87,8 @@ fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConf
         (!onlyCurrent || mapping?.configId == currentConfigId) &&
             (query.isBlank() || (names.getValue(function) + " " + config?.name.orEmpty() + " " + boundModel).contains(query, ignoreCase = true))
     }
+    val poolName = stringResource(R.string.subagent_model_pool)
+    val showPool = query.isBlank() || poolName.contains(query, ignoreCase = true) || stringResource(R.string.subagent_model_pool_row_hint).contains(query, ignoreCase = true)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.model_workspace_function_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -132,7 +134,19 @@ fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConf
                 }
             }
         }
-        Text(stringResource(R.string.model_workspace_function_count, visibleFunctions.size, FunctionType.values().size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (showPool) {
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))) {
+                Row(Modifier.fillMaxWidth().clickable(onClick = onOpenSubagentModels).heightIn(min = 76.dp).padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Default.AccountTree, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(poolName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.subagent_model_pool_row_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        Text(stringResource(R.string.model_workspace_function_count, visibleFunctions.size + if (showPool) 1 else 0, FunctionType.values().size + 1), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         TextButton(onClick = { showReset = true }, modifier = Modifier.align(Alignment.End)) {
             Text(stringResource(R.string.reset_all_functions_to_default))
         }
@@ -149,6 +163,7 @@ fun ModelFunctionAssignments(currentConfigId: String, saveCoordinator: ModelConf
                 TextButton(onClick = {
                     updateAssignment {
                         functionalManager.resetAllFunctionConfigs()
+                        com.ai.assistance.operit.data.preferences.SubagentPreferences(context).clearModels()
                         EnhancedAIService.refreshAllServices(context)
                         showReset = false
                     }
