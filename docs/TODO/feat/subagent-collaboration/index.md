@@ -30,6 +30,7 @@ status: implemented
 3. [交付与尚待验收的项目](03-delivery.md)
 4. [完整子会话的数据层](04-child-conversations.md)
 5. [首轮体验修正](05-first-round-feedback.md)
+6. [集成迁移测试修正](06-integrated-migration-tests.md)
 
 已接入独立模型租约、自动派发工具、父轮次等待汇总、Room 子会话与运行事务持久化、主聊天任务托盘与详情，以及取消和清空删除联动。用户手动新建运行任务和主／子代理身份切换均未加入。
 
