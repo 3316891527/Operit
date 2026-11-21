@@ -129,4 +129,28 @@ class SubagentGraphTransferTest {
         assertEquals(imported.id, imported.letters.single().recipientTaskId)
         assertFalse(imported.letters.single().consumed)
     }
+
+    @Test fun streamedGraphArchiveRetainsRootMessagesAndNestedHistory() = kotlinx.coroutines.runBlocking {
+        val directory = kotlin.io.path.createTempDirectory("operit-integrated-graph").toFile()
+        try {
+            val parent = treeTask("parent", status = SubagentStatus.COMPLETED)
+            val child = treeTask("child", parent, status = SubagentStatus.COMPLETED)
+            val original = graph(listOf(parent, child))
+            val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
+            val payload = json.encodeToString(com.ai.assistance.operit.data.chat.archive.OperitChatArchive(chats = listOf(original)))
+            var decoded: OperitArchivedChat? = null
+            com.ai.assistance.operit.data.chat.archive.OperitChatArchiveReader(json, directory).read(
+                java.io.StringReader(payload), {}, { staged ->
+                    assertTrue(staged.metadata.messages.isEmpty())
+                    assertNotNull(staged.metadata.subagentGraph)
+                    decoded = staged.readGraph()
+                },
+            )
+            val imported = SubagentGraphTransfer.remap(requireNotNull(decoded), "中断")
+            assertEquals(original.messages, requireNotNull(decoded).messages)
+            assertEquals(2, requireNotNull(imported.subagentGraph).tasks.size)
+            assertEquals(child.goal, requireNotNull(imported.subagentGraph).chats.last().messages.single().baseMessage.content)
+            assertTrue(directory.listFiles().orEmpty().isEmpty())
+        } finally { directory.deleteRecursively() }
+    }
 }
