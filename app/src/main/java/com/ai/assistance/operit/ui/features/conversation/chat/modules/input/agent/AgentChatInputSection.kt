@@ -5,9 +5,11 @@ import com.ai.assistance.operit.core.chat.attachment.ImageAttachmentEditTarget
 import com.ai.assistance.operit.ui.theme.script.text.themeTextStroke
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptActionButton
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatInputRuntime
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.ChatProcessingStatusText
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.input.common.rememberChatInputRuntime
 import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 import com.ai.assistance.operit.ui.theme.script.themeScriptTextStyle
+import com.ai.assistance.operit.ui.theme.script.themeScriptInputPlaceholder
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptIcon
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptPopupPanel
 import com.ai.assistance.operit.ui.theme.script.ThemeScriptPopupHost
@@ -85,6 +87,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.voice.voiceMessageHoldGesture
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
@@ -800,7 +803,7 @@ internal fun AgentChatInputContent(
                 if (event != null && inputState.toolName.contains(event.toolName)) {
                     progressValue = event.progress
                     if (event.message.isNotBlank()) {
-                        message = event.message
+                        message = "$baseMessage · ${event.message}"
                     }
                 }
             }
@@ -897,10 +900,8 @@ internal fun AgentChatInputContent(
                                 .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = processingMessage,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        ChatProcessingStatusText(
+                            message = processingMessage,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -1010,11 +1011,13 @@ internal fun AgentChatInputContent(
                         visualTransformation = mentionVisualTransformation,
                         placeholder = {
                             Text(
-                                if (isWorkspaceOpen) {
-                                    context.getString(R.string.input_question_with_workspace)
-                                } else {
-                                    context.getString(R.string.input_question_hint)
-                                },
+                                themeScriptInputPlaceholder(
+                                    if (isWorkspaceOpen) {
+                                        context.getString(R.string.input_question_with_workspace)
+                                    } else {
+                                        context.getString(R.string.input_question_hint)
+                                    }
+                                ),
                                 style = themeScriptTextStyle("input", inputTextStyle),
                                 color = themeScriptContentColor("input", MaterialTheme.colorScheme.onSurfaceVariant),
                              textStroke = themeTextStroke("input", "composer"))
@@ -1225,7 +1228,8 @@ internal fun AgentChatInputContent(
                                     else -> "composer.send"
                                 },
                                 modifier = Modifier
-                                    .size(36.dp),
+                                    .size(36.dp)
+                                    .voiceMessageHoldGesture(showVoiceRecordAction && sendButtonEnabled) { onRecordVoiceMessage?.invoke() },
                                 onClick = {
                                     when {
                                         showCancelAction -> onCancelMessage()
@@ -1233,7 +1237,7 @@ internal fun AgentChatInputContent(
                                             onQueueMessage()
                                             setShowAttachmentPanel(false)
                                         }
-                                        showVoiceRecordAction -> onRecordVoiceMessage?.invoke()
+                                        showVoiceRecordAction -> Unit
                                         canSendMessage -> {
                                             if (isOverTokenLimit) {
                                                 showTokenLimitDialog.value = true
@@ -1269,7 +1273,7 @@ internal fun AgentChatInputContent(
                                             showCancelAction -> context.getString(R.string.cancel)
                                             showQueueAction -> context.getString(R.string.chat_queue_add_message)
                                             canSendMessage -> context.getString(R.string.send)
-                                            showVoiceRecordAction -> context.getString(R.string.voice_message_record_title)
+                                            showVoiceRecordAction -> context.getString(R.string.voice_message_hold_to_record)
                                             else -> context.getString(R.string.send)
                                         },
                                     tint = actionButtonIconTint,
@@ -1326,11 +1330,13 @@ internal fun AgentChatInputContent(
                             visualTransformation = mentionVisualTransformation,
                             placeholder = {
                                 Text(
-                                    if (isWorkspaceOpen) {
-                                        context.getString(R.string.input_question_with_workspace)
-                                    } else {
-                                        context.getString(R.string.input_question_hint)
-                                    },
+                                    themeScriptInputPlaceholder(
+                                        if (isWorkspaceOpen) {
+                                            context.getString(R.string.input_question_with_workspace)
+                                        } else {
+                                            context.getString(R.string.input_question_hint)
+                                        }
+                                    ),
                                     style = themeScriptTextStyle("input", inputTextStyle),
                                     color = themeScriptContentColor("input", MaterialTheme.colorScheme.onSurfaceVariant),
                                  textStroke = themeTextStroke("input", "composer"))
@@ -1541,7 +1547,8 @@ internal fun AgentChatInputContent(
                                         else -> "composer.send"
                                     },
                                     modifier = Modifier
-                                        .size(36.dp),
+                                        .size(36.dp)
+                                        .voiceMessageHoldGesture(showVoiceRecordAction && sendButtonEnabled) { onRecordVoiceMessage?.invoke() },
                                     onClick = {
                                         when {
                                             showCancelAction -> onCancelMessage()
@@ -1549,7 +1556,7 @@ internal fun AgentChatInputContent(
                                                 onQueueMessage()
                                                 setShowAttachmentPanel(false)
                                             }
-                                            showVoiceRecordAction -> onRecordVoiceMessage?.invoke()
+                                            showVoiceRecordAction -> Unit
                                             canSendMessage -> {
                                                 if (isOverTokenLimit) {
                                                     showTokenLimitDialog.value = true
@@ -1585,7 +1592,7 @@ internal fun AgentChatInputContent(
                                                 showCancelAction -> context.getString(R.string.cancel)
                                                 showQueueAction -> context.getString(R.string.chat_queue_add_message)
                                                 canSendMessage -> context.getString(R.string.send)
-                                                showVoiceRecordAction -> context.getString(R.string.voice_message_record_title)
+                                                showVoiceRecordAction -> context.getString(R.string.voice_message_hold_to_record)
                                                 else -> context.getString(R.string.send)
                                             },
                                         tint = actionButtonIconTint,

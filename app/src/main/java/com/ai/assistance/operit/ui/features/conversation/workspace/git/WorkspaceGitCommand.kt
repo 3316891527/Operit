@@ -39,6 +39,33 @@ internal class WorkspaceGitCommand(
         return framed(command)
     }
 
+    /** NUL 分隔保留空白和换行文件名；失败不返回部分目录清单。 */
+    suspend fun fileInventory(): Map<String, String> {
+        val root = quoteGitArgument(directory)
+        val result = framed("""cd -- $root && find . -name .git -prune -o \( -type f -o -type l \) -printf '%P\0%y:%s:%T@\0'""")
+        check(result.exitCode == 0) { result.error }
+        val fields = result.bytes.toString(Charsets.UTF_8).split('\u0000').dropLast(1)
+        require(fields.size % 2 == 0) { "Invalid workspace inventory" }
+        return fields.chunked(2).associate { it[0] to it[1] }
+    }
+
+    /** 原始字节最多读取上限加一，远端链接也只记录目标文本。 */
+    suspend fun workspaceFileBytes(path: String): ByteArray {
+        val target = quoteGitArgument(path)
+        val result = framed("""
+            if [ -L $target ]; then
+                readlink -n -- $target
+            elif [ -f $target ]; then
+                head -c 2097153 -- $target
+            else
+                printf '%s' 'Workspace file is no longer readable' >&2
+                false
+            fi
+        """.trimIndent())
+        check(result.exitCode == 0) { result.error }
+        return result.bytes
+    }
+
     suspend fun workingFile(path: String): Pair<String?, SnapshotKind> {
         val target = quoteGitArgument(path)
         val result = framed("""

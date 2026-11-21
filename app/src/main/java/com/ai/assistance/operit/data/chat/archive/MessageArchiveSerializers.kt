@@ -7,9 +7,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import com.ai.assistance.operit.core.chat.message.ChatMessageTimestampAllocator
@@ -19,20 +19,17 @@ import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.model.ChatMessageDisplayMode
 import com.ai.assistance.operit.data.model.MessageSection
 
-/** 新备份只有 sections；版本 2 和旧聊天数组的 content 在入口一次转换。 */
-private fun decodeSectionsObject(decoder: JsonDecoder): JsonObject {
+/** 消息片段只解码一次，元数据独立解码，避免片段对象重新编码后再次创建。 */
+private data class DecodedArchiveMessage(val fields: JsonObject, val sections: List<MessageSection>)
+
+private fun decodeSectionsObject(decoder: JsonDecoder): DecodedArchiveMessage {
     val fields = decoder.decodeJsonElement().jsonObject.toMutableMap()
-    val oldContent = fields.remove("content")
-    fields["sections"] = if (fields.containsKey("sections")) {
-        decoder.json.encodeToJsonElement(
-            MessageSectionStorage.decodeLegacySections(fields.getValue("sections"))
-        )
-    } else {
-        decoder.json.encodeToJsonElement(
-            MessageSectionStorage.decodeLegacy(oldContent?.jsonPrimitive?.content.orEmpty())
-        )
-    }
-    return JsonObject(fields)
+    val content = fields.remove("content")
+    val sections = fields.remove("sections")
+    val decoded = if (sections != null) MessageSectionStorage.decodeLegacySections(sections)
+        else MessageSectionStorage.decodeLegacy(content?.jsonPrimitive?.content.orEmpty())
+    fields["sections"] = JsonArray(emptyList())
+    return DecodedArchiveMessage(JsonObject(fields), decoded)
 }
 
 @kotlinx.serialization.SerialName("com.ai.assistance.operit.data.model.StoredChatMessage")
@@ -85,13 +82,12 @@ object ChatMessageSerializer : KSerializer<ChatMessage> {
     override fun deserialize(decoder: Decoder): ChatMessage {
         val jsonDecoder = decoder as? JsonDecoder
             ?: throw SerializationException("Message sections require JSON")
-        val stored = jsonDecoder.json.decodeFromJsonElement(
-            StoredChatMessage.serializer(), decodeSectionsObject(jsonDecoder)
-        )
+        val decoded = decodeSectionsObject(jsonDecoder)
+        val stored = jsonDecoder.json.decodeFromJsonElement(StoredChatMessage.serializer(), decoded.fields)
         return ChatMessage(
-            content = MessageSectionCodec.render(stored.sections),
+            content = MessageSectionCodec.render(decoded.sections),
             sender = stored.sender,
-            sections = stored.sections,
+            sections = decoded.sections,
             timestamp = stored.timestamp,
             roleName = stored.roleName,
             selectedVariantIndex = stored.selectedVariantIndex,
@@ -151,12 +147,11 @@ object ArchivedMessageVariantSerializer : KSerializer<OperitArchivedMessageVaria
     override fun deserialize(decoder: Decoder): OperitArchivedMessageVariant {
         val jsonDecoder = decoder as? JsonDecoder
             ?: throw SerializationException("Message sections require JSON")
-        val stored = jsonDecoder.json.decodeFromJsonElement(
-            StoredMessageVariant.serializer(), decodeSectionsObject(jsonDecoder)
-        )
+        val decoded = decodeSectionsObject(jsonDecoder)
+        val stored = jsonDecoder.json.decodeFromJsonElement(StoredMessageVariant.serializer(), decoded.fields)
         return OperitArchivedMessageVariant(
             variantIndex = stored.variantIndex,
-            sections = stored.sections,
+            sections = decoded.sections,
             roleName = stored.roleName,
             provider = stored.provider,
             modelName = stored.modelName,

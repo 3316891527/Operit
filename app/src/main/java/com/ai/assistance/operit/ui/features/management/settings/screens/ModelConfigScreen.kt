@@ -100,6 +100,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.ai.assistance.operit.ui.features.management.settings.model.ModelFunctionAssignments
 import com.ai.assistance.operit.ui.features.management.settings.model.ModelWorkspaceChoiceDialog
 import com.ai.assistance.operit.ui.features.management.settings.model.ModelWorkspaceSection
+import com.ai.assistance.operit.ui.features.management.settings.model.ModelWorkspaceDialog
 import com.ai.assistance.operit.ui.features.management.settings.model.ModelWorkspaceTab
 import com.ai.assistance.operit.ui.features.management.settings.model.ModelWorkspaceTabs
 import com.ai.assistance.operit.ui.features.management.settings.model.resolveWorkspaceConfig
@@ -196,10 +197,13 @@ fun ModelConfigScreen(
     val parameterListState = rememberLazyListState()
     val summaryListState = rememberLazyListState()
     val functionListState = rememberLazyListState()
+    val subagentListState = rememberLazyListState()
+    var showSubagentModels by remember { mutableStateOf(false) }
     val listState = when (workspaceTab) {
         ModelWorkspaceTab.CONNECTION -> connectionListState
         ModelWorkspaceTab.PARAMETERS -> parameterListState
         ModelWorkspaceTab.SUMMARY -> summaryListState
+        ModelWorkspaceTab.SUBAGENTS -> subagentListState
         ModelWorkspaceTab.FUNCTIONS -> functionListState
     }
     var savingSelection by remember { mutableStateOf(false) }
@@ -655,7 +659,11 @@ fun ModelConfigScreen(
                 key(selectedConfigId, workspaceTab) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (workspaceTab == ModelWorkspaceTab.FUNCTIONS) {
-                            ModelFunctionAssignments(currentConfigId = selectedConfigId, saveCoordinator = saveCoordinator)
+                            ModelFunctionAssignments(currentConfigId = selectedConfigId, saveCoordinator = saveCoordinator, onOpenSubagentModels = { showSubagentModels = true })
+                        } else if (workspaceTab == ModelWorkspaceTab.SUBAGENTS) {
+                            com.ai.assistance.operit.ui.features.management.settings.subagent.SubagentConfigurationContent(saveCoordinator) {
+                                afterSaving { workspaceTab = ModelWorkspaceTab.FUNCTIONS; showSubagentModels = true }
+                            }
                         } else {
                             selectedConfig.value?.takeIf { it.id == selectedConfigId }?.let { config ->
                                 when (workspaceTab) {
@@ -688,7 +696,7 @@ fun ModelConfigScreen(
                                         saveCoordinator = saveCoordinator,
                                         showNotification = ::showNotification,
                                     )
-                                    ModelWorkspaceTab.FUNCTIONS -> Unit
+                                    ModelWorkspaceTab.FUNCTIONS, ModelWorkspaceTab.SUBAGENTS -> Unit
                                 }
                             }
                         }
@@ -697,6 +705,11 @@ fun ModelConfigScreen(
             }
         }
 
+        if (showSubagentModels) {
+            ModelWorkspaceDialog(title = stringResource(R.string.subagent_model_pool), onDismiss = { afterSaving { showSubagentModels = false } }) {
+                com.ai.assistance.operit.ui.features.management.settings.subagent.SubagentModelPoolContent(saveCoordinator)
+            }
+        }
         ModelWorkspaceMenu(expanded = showMoreActions, onDismissRequest = { showMoreActions = false }) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.model_workspace_config_preview)) },

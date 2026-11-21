@@ -59,8 +59,17 @@ object ToolExecutionManager {
         val toolExposureMode: ToolExposureMode = ToolExposureMode.FULL,
         val callerChatId: String? = null,
         val a2uiRunId: String? = null,
+        val cancellationJob: kotlinx.coroutines.Job? = null,
+        val invocationId: String? = null,
+        val delegatedTask: Boolean = false,
+        val workspacePath: String? = null,
+        val workspaceEnv: String? = null,
+        val memorySpaceId: String? = null,
         val publishA2ui: (suspend (String) -> Unit)? = null,
         val publishA2uiAfterToolResult: (suspend (String) -> Unit)? = null,
+        val invokingToolName: String? = null,
+        val callerName: String? = null,
+        val workspaceChatId: String? = callerChatId,
     )
 
     private data class ToolExecutionOutput(
@@ -527,6 +536,10 @@ object ToolExecutionManager {
         callerName: String? = null,
         callerChatId: String? = null,
         callerCardId: String? = null,
+        delegatedTask: Boolean = false,
+        workspacePath: String? = null,
+        workspaceEnv: String? = null,
+        memorySpaceId: String? = null,
         a2uiRunId: String? = null,
         onA2uiCard: (suspend (String) -> Unit)? = null,
         toolCallOffset: Int = 0,
@@ -581,16 +594,26 @@ object ToolExecutionManager {
         val toolRuntimeContext =
             ToolRuntimeContext(
                 callerCardId = callerCardId,
+                callerName = callerName,
                 toolExposureMode = toolExposureMode,
                 callerChatId = callerChatId,
+                // 工具身份仍属于真实子会话，文件变化统一归到用户可见的根聊天。
+                workspaceChatId = if (delegatedTask) requireNotNull(
+                    com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.singleOrNull { it.childChatId == callerChatId }
+                ) { "Missing delegated task ownership" }.rootChatId else callerChatId,
                 a2uiRunId = a2uiRunId,
+                delegatedTask = delegatedTask,
+                workspacePath = workspacePath,
+                workspaceEnv = workspaceEnv,
+                memorySpaceId = memorySpaceId,
                 publishA2ui = publishA2ui,
             )
 
         // 1. 顶层工具暴露模式拦截
         val toolExposurePermittedInvocations = mutableListOf<IndexedValue<ToolInvocation>>()
         for ((index, invocation) in invocations.withIndex()) {
-            val deniedResult = buildToolExposureDeniedResult(context, invocation, toolExposureMode)
+            val deniedResult = com.ai.assistance.operit.core.agent.SubagentToolPolicy.denial(resolveToolTarget(invocation.tool).tool, delegatedTask)
+                ?: buildToolExposureDeniedResult(context, invocation, toolExposureMode)
             if (deniedResult == null) {
                 toolExposurePermittedInvocations.add(IndexedValue(index, invocation))
             } else {
@@ -688,7 +711,7 @@ object ToolExecutionManager {
                         invocation = invocation,
                         toolHandler = toolHandler,
                         packageManager = packageManager,
-                        runtimeContext = toolRuntimeContext
+                        runtimeContext = toolRuntimeContext.copy(invocationId = "$a2uiRunId:${toolCallOffset + index}")
                     )
                 completeResult(index, output.result, output.a2uiDocuments)
             }
@@ -702,7 +725,7 @@ object ToolExecutionManager {
                     invocation = invocation,
                     toolHandler = toolHandler,
                     packageManager = packageManager,
-                    runtimeContext = toolRuntimeContext
+                    runtimeContext = toolRuntimeContext.copy(invocationId = "$a2uiRunId:${toolCallOffset + index}")
                 )
             completeResult(index, output.result, output.a2uiDocuments)
         }
@@ -737,6 +760,8 @@ object ToolExecutionManager {
         val displayToolName = resolveDisplayToolName(invocation.tool)
         val a2uiDocuments = mutableListOf<String>()
         val invocationRuntimeContext = runtimeContext.copy(
+            invokingToolName = displayToolName,
+            cancellationJob = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job],
             publishA2uiAfterToolResult = { document -> a2uiDocuments.add(document) },
         )
         val result = withContext(toolRuntimeContextThreadLocal.asContextElement(invocationRuntimeContext)) {
@@ -759,10 +784,11 @@ object ToolExecutionManager {
 
                 toolHandler.notifyToolExecutionStarted(invocation.tool)
 
-                val finalResult = aggregateToolResults(
-                    displayToolName,
-                    executeToolSafely(invocation, executor, toolHandler)
-                )
+                val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(toolHandler.applicationContext)
+                val fileSource = monitor.beginTool(runtimeContext.workspaceChatId, displayToolName)
+                val finalResult = try {
+                    aggregateToolResults(displayToolName, executeToolSafely(invocation, executor, toolHandler))
+                } finally { monitor.endTool(fileSource) }
                 toolHandler.notifyToolExecutionResult(invocation.tool, finalResult)
                 return@withContext finalResult
             } finally {

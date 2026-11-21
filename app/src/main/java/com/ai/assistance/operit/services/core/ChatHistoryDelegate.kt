@@ -662,6 +662,7 @@ class ChatHistoryDelegate(
     }
 
     private suspend fun syncOpeningStatementIfNoUserMessage(chatId: String) {
+        if (chatHistoryManager.isSubagentConversation(chatId)) return
         AppLogger.d(TAG, "开始同步开场白，聊天ID: $chatId")
 
         historyUpdateMutex.withLock {

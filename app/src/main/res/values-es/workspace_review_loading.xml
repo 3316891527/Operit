@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">Esta diferencia es grande. Cárgala para ver los cambios sin resaltado de sintaxis.</string>
+    <string name="workspace_changes_load_diff">Cargar diferencias</string>
+    <string name="workspace_changes_hard_limit">Esta diferencia supera el límite: 4.194.304 caracteres o 20.000 líneas entre ambas versiones, o 131.072 caracteres por línea. Abre el archivo original para verlo.</string>
+    <string name="workspace_changes_long_lines_wrap">Las líneas muy largas se ajustan al ancho de la ventana.</string>
+    <string name="workspace_changes_record_summary">%1$s · Resumen de cambios registrados</string>
+    <string name="workspace_changes_record_scope">Durante la supervisión también se guardan los cambios reales de la carpeta vinculada, incluidos los del terminal y editores externos. No se puede recuperar el historial no guardado.</string>
+</resources>

@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat.context
 
+import com.ai.assistance.operit.core.agent.SubagentContextHistory
 import com.ai.assistance.operit.util.stream.MutableSharedStream
 import com.ai.assistance.operit.util.stream.collectWithRevisionRelay
 import com.ai.assistance.operit.util.media.ImagePoolManager
@@ -695,7 +696,7 @@ class ConversationService(
                     val xmlTags = splitXmlTag(content)
                     if (xmlTags.isNotEmpty()) {
                         // Process the message with tool results
-                        processChatMessageWithTools(content, xmlTags, preparedHistory, index, effectiveChatHistory.size)
+                        processChatMessageWithTools(content, xmlTags, preparedHistory, index, effectiveChatHistory.size, message.metadata)
                     } else {
                         // Add the message as is
                         preparedHistory.add(message.copy(content = content))
@@ -771,14 +772,16 @@ class ConversationService(
             xmlTags: List<List<String>>,
             conversationHistory: MutableList<PromptTurn>,
             messageIndex: Int,
-            totalMessages: Int
+            totalMessages: Int,
+            sourceMetadata: Map<String, Any?> = emptyMap(),
     ) {
         if (xmlTags.isEmpty()) {
             // 如果没有XML标签，直接添加为AI消息
             conversationHistory.add(
                 PromptTurn(
                     kind = PromptTurnKind.ASSISTANT,
-                    content = content
+                    content = content,
+                    metadata = sourceMetadata,
                 )
             )
             return
@@ -881,7 +884,7 @@ class ConversationService(
         }
 
         // 将合并后的消息添加到对话历史
-        conversationHistory.addAll(mergedSegments)
+        conversationHistory.addAll(SubagentContextHistory.restoreSplitAssistantMetadata(mergedSegments, sourceMetadata))
     }
 
     /** Data class for search-replace operations, used for JSON deserialization. */

@@ -27,7 +27,7 @@
     <string name="workspace_archive_source">Sumber arkib</string>
     <string name="workspace_archive_packed_size">Saiz termampat</string>
     <string name="workspace_archive_encrypted">Disulitkan</string>
-    <string name="workspace_archive_name_hint">Format yang dipilih menambah sambungan secara automatik.</string>
+    <string name="workspace_archive_name_hint">Sambungan yang ditaip dikekalkan. Nama lalai atau nama sumber asal mendapat sambungan format yang dipilih.</string>
     <string name="workspace_archive_stage_target">Semak destinasi</string>
     <string name="workspace_archive_stage_sources">Baca sumber</string>
     <string name="workspace_archive_stage_write">Tulis arkib</string>

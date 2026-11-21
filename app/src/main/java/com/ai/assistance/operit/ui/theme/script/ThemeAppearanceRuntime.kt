@@ -181,6 +181,11 @@ internal fun baseThemeSurface(id: String): ThemeScriptSurface? {
 internal fun themeSurface(id: String): ThemeScriptSurface? =
     LocalThemeAnimatedSurfaces.current[id] ?: baseThemeSurface(id)?.let { resolvedThemeSurface(id, it) }
 
+/** 仅未声明时使用原生提示；空字符串是用户明确选择的无占位符。 */
+@Composable
+fun themeScriptInputPlaceholder(original: String): String =
+    themeSurface("input")?.placeholder ?: original
+
 @Composable
 fun themeScriptShape(id: String, original: Shape): Shape {
     val fragment = LocalThemeSurfaceFragments.current.getOrDefault(id, ThemeSurfaceFragment.Whole)

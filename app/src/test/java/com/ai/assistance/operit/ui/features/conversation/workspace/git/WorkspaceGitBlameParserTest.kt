@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.git
 
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.ReviewContent
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.SnapshotKind
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.reviewDiffSupported
 import java.io.File
 import org.junit.Assert.*
 import org.junit.Rule
@@ -81,6 +84,31 @@ class WorkspaceGitBlameParserTest {
         assertThrows(IllegalArgumentException::class.java) { blameLineMapping("\n".repeat(20001), "") }
     }
 
+    @Test fun `blame line bounds remain independent of review loading bounds`() {
+        val boundary = "x".repeat(8192)
+        assertEquals(mapOf(1 to 1), blameLineMapping(boundary, boundary))
+        val longer = boundary + "x"
+        for ((before, after) in listOf(longer to "small", "small" to longer)) {
+            val content = ReviewContent(before, after, SnapshotKind.TEXT, SnapshotKind.TEXT)
+            assertTrue(reviewDiffSupported(content))
+            assertFalse(blameDiffSupported(content))
+            assertThrows(IllegalArgumentException::class.java) { blameLineMapping(before, after) }
+        }
+    }
+    @Test fun `blame newline budget includes both snapshots at the exact boundary`() {
+        val before = "\n".repeat(10_000)
+        val after = "\n".repeat(10_000)
+        assertTrue(blameDiffSupported(ReviewContent(before, after, SnapshotKind.TEXT, SnapshotKind.TEXT)))
+        assertFalse(blameDiffSupported(ReviewContent(before, after + "\n", SnapshotKind.TEXT, SnapshotKind.TEXT)))
+        assertFalse(blameDiffSupported(ReviewContent(before + "\n", after, SnapshotKind.TEXT, SnapshotKind.TEXT)))
+    }
+    @Test fun `blame accepts absent text sides and rejects binary snapshots`() {
+        val added = ReviewContent("", "short", SnapshotKind.ABSENT, SnapshotKind.TEXT)
+        val deleted = ReviewContent("short", "", SnapshotKind.TEXT, SnapshotKind.ABSENT)
+        assertTrue(blameDiffSupported(added))
+        assertTrue(blameDiffSupported(deleted))
+        assertFalse(blameDiffSupported(added.copy(after = null, afterKind = SnapshotKind.BINARY)))
+    }
     @Test fun `porcelain accepts SHA256 and zero hash without fabricating an author`() {
         val sha256 = "f".repeat(64)
         val parsed = WorkspaceGitBlameParser.parse(record(hash = sha256, extra = "boundary\nprevious $parent old.kt\n"))

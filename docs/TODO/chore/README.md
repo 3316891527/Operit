@@ -7,6 +7,8 @@
 [返回 TODO 总览](../README.md)
 
 ## 计划索引
+
+- [1.12.2+27 正式发行](release-plus27/index.md)
 - [插件开发材料归组](plugin-source-layout/index.md) · `plugin-source-layout`
 - [根目录普通文件归组](root-file-layout/index.md) · `root-file-layout`
 - [支持模块与 Web Chat 归组](module-source-layout/index.md) · `module-source-layout`

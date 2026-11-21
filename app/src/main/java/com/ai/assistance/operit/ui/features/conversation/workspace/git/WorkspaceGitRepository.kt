@@ -7,8 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
-internal data class GitReference(val name: String, val commit: String, val upstream: String?)
-internal data class GitReview(val files: List<ReviewFile>, val references: List<GitReference>, val currentBranch: String?, val upstream: String?)
+internal data class GitReview(val files: List<ReviewFile>, val references: List<GitReference>, val currentBranch: String?, val upstream: String?, val missingBase: String? = null)
 
 /** Git 查询只读，目录筛选始终以当前绑定范围为准。 */
 internal class WorkspaceGitRepository(private val context: Context, private val directory: String, environment: String?) {
@@ -19,23 +18,25 @@ internal class WorkspaceGitRepository(private val context: Context, private val 
         withCommands { command ->
             val root = command.text("rev-parse", "--show-toplevel").removeSuffix("\n")
             val prefix = command.text("rev-parse", "--show-prefix").removeSuffix("\n")
-            val inventory = command.text("for-each-ref", "--format=%(refname)%00%(objectname)%00%(HEAD)%00%(upstream)", "refs/heads", "refs/remotes")
-            var currentBranch: String? = null
-            var upstream: String? = null
-            val refs = inventory.lineSequence().filter { it.isNotEmpty() }.map { line ->
-                val parts = line.split('\u0000')
-                require(parts.size == 4) { "Invalid Git ref inventory" }
-                if (parts[2] == "*") {
-                    currentBranch = parts[0]
-                    upstream = parts[3].takeIf { it.isNotEmpty() }
+            val inventory = parseReviewReferences(command.text("for-each-ref", "--format=%(refname)%00%(objectname)%00%(HEAD)%00%(upstream)%00%(committerdate:unix)%00%(symref)", "refs/heads", "refs/remotes"))
+            val currentBranch = inventory.currentBranch
+            val upstream = inventory.upstream
+            val cachedRefs = inventory.references
+            val remoteHeads = if (branchComparison) {
+                command.text("remote").lineSequence().filter { it.isNotEmpty() }.associateWith { remote ->
+                    parseRemoteReviewHeads(command.text("ls-remote", "--heads", "--", remote))
                 }
-                GitReference(parts[0], parts[1], parts[3].takeIf { it.isNotEmpty() })
-            }.toList()
+            } else emptyMap()
+            val refs = if (branchComparison) visibleReviewReferences(cachedRefs, remoteHeads)
+                else cachedRefs.sortedWith(compareByDescending<GitReference> { it.updatedAt }.thenBy { it.name })
             val headResult = command.run(listOf("rev-parse", "--verify", "-q", "HEAD"))
             require(headResult.exitCode == 0 || headResult.exitCode == 1) { headResult.error }
             val unborn = headResult.exitCode == 1
             val head = if (unborn) null else headResult.bytes.toString(Charsets.UTF_8).trimEnd('\n')
             if (branchComparison && baseReference == null) return@withCommands GitReview(emptyList(), refs, currentBranch, upstream)
+            if (branchComparison && refs.none { it.name == baseReference }) {
+                return@withCommands GitReview(emptyList(), refs, currentBranch, upstream, missingBase = baseReference)
+            }
             val base = if (branchComparison) {
                 check(!unborn) { context.getString(R.string.workspace_changes_unborn) }
                 val requested = checkNotNull(baseReference)
@@ -60,7 +61,7 @@ internal class WorkspaceGitRepository(private val context: Context, private val 
                 val uncatalogued = if (entry.untracked || unborn) command.workingFile(location.path).let { (text, kind) ->
                     ReviewContent("", text, SnapshotKind.ABSENT, kind)
                 } else null
-                val newCounts = uncatalogued?.takeIf { reviewDiffSupported(it) }?.let {
+                val newCounts = uncatalogued?.takeIf { reviewDiffAutomatic(it) }?.let {
                     WorkspaceDiff.compare("", checkNotNull(it.after))
                 }
                 val retained = uncatalogued?.takeIf { cachedCharacters + (it.after?.length ?: 0) <= 1024 * 1024 }?.also {

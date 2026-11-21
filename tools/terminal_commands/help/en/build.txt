@@ -1,0 +1,20 @@
+Operit HTML application build
+
+  build html <PROJECT_DIRECTORY> --target apk|exe --output <OUTPUT_DIRECTORY>
+
+Options:
+  --target apk|android|exe|windows  Target platform; default: apk
+  --output PATH                   Output directory; default: ./dist
+  --entry PATH                    Project entry; default: index.html
+  --name NAME                     App name; default: project directory name
+  --package ID                    Android package; default: com.operit.webapp
+  --version-name VERSION          Version name; default: 1.0
+  --version-code NUMBER           Positive version code; default: 1
+  --icon PATH                     Icon file
+
+Examples:
+  build html ./web --target apk --output ./dist
+  build html ./web --target exe --output ./dist --icon ./icon.png
+
+Progress updates stream by stage. Windows output includes the full application directory and EXE.
+Keep its DLL and data files together when distributing. Existing artifacts cause an error and are not overwritten.

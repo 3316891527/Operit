@@ -87,6 +87,8 @@ class MemoryQueryToolExecutor(private val context: Context) : ToolExecutor {
     }
 
     private suspend fun resolveActiveProfileId(tool: AITool): String {
+        val runtime = ToolExecutionManager.currentToolRuntimeContext()
+        if (runtime?.delegatedTask == true) return requireNotNull(runtime.memorySpaceId) { "Missing delegated memory-space snapshot" }
         return resolveRoleCardProfileId(resolveCallerCardId(tool))
             ?: resolveActiveMemorySpaceId()
     }

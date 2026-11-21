@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.api.chat.model
 
 import android.content.Context
+import com.ai.assistance.operit.data.config.model.ApiProviderType
 import com.ai.assistance.operit.data.config.model.ModelConfigData
 import com.ai.assistance.operit.core.tools.prompt.ToolParameterSchema
 import com.ai.assistance.operit.core.tools.prompt.ToolPrompt
@@ -119,6 +120,8 @@ object ModelConfigConnectionTester {
         try {
             val parameters = modelConfigManager.getModelParametersForConfig(configForTest.id)
             val testThinking = resolveConnectionTestThinking(configForTest, testedModelName)
+            // Codex 后端只接受流式请求，普通对话、工具调用与媒体探测统一使用此模式。
+            val probeStream = configForTest.apiProviderType == ApiProviderType.OPENAI_CODEX
 
             suspend fun collectResponse(history: List<PromptTurn>): String {
                 val buffer = StringBuilder()
@@ -128,7 +131,7 @@ object ModelConfigConnectionTester {
                     modelParameters = parameters,
                     enableThinking = testThinking.enableThinking,
                     thinkingOptionId = testThinking.thinkingOptionId,
-                    stream = false,
+                    stream = probeStream,
                     enableRetry = false,
                     recordTokenUsage = false,
                 ).collect { chunk -> buffer.append(chunk) }
@@ -185,7 +188,7 @@ object ModelConfigConnectionTester {
                             modelParameters = parameters,
                             enableThinking = testThinking.enableThinking,
                             thinkingOptionId = testThinking.thinkingOptionId,
-                            stream = false,
+                            stream = probeStream,
                             availableTools = availableTools,
                             enableRetry = false,
                             recordTokenUsage = false,

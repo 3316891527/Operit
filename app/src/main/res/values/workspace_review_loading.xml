@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">此差异较大，点击后加载。大型差异不启用语法高亮。</string>
+    <string name="workspace_changes_load_diff">加载差异</string>
+    <string name="workspace_changes_hard_limit">此差异超过显示上限：两侧合计 4,194,304 字符或 20,000 行，单行最多 131,072 字符。请打开原文件查看。</string>
+    <string name="workspace_changes_long_lines_wrap">超长行已按窗口宽度自动换行。</string>
+    <string name="workspace_changes_record_summary">%1$s · 已记录变更汇总</string>
+    <string name="workspace_changes_record_scope">绑定目录在观察期间的实际文件变化也会保存，覆盖终端和外部修改；无法补回从未保存的历史。</string>
+</resources>

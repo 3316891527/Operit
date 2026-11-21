@@ -59,7 +59,13 @@ private fun buildExecutionPreludeSource(): String {
         var reportDetailedError = function() { return __operitInvokeCallRuntime('reportDetailedError', arguments); };
         var ToolPkg = globalThis.ToolPkg;
         var toolCall = __operit_call_runtime.toolCall;
-        var Tools = Object.assign({}, globalThis.Tools, { Files: globalThis.__operitCreateFileTools(toolCall) });
+        var systemTools = Object.assign({}, globalThis.Tools.System, {
+            terminal: globalThis.__operitCreateTerminalTools(toolCall)
+        });
+        var Tools = Object.assign({}, globalThis.Tools, {
+            Files: globalThis.__operitCreateFileTools(toolCall),
+            System: systemTools
+        });
         var Java = globalThis.Java;
         var Android = globalThis.Android;
         var Intent = globalThis.Intent;

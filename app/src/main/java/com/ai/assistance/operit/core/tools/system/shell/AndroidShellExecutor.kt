@@ -43,6 +43,24 @@ class AndroidShellExecutor {
             return CommandResult(result.success, result.stdout, result.stderr, result.exitCode)
         }
 
+        /** 工具的一次性调用与内部长期进程分开，Root 命令不进入共享队列。 */
+        internal suspend fun executeToolShellCommand(command: String, timeoutMs: Long): CommandResult {
+            val ctx = context ?: return CommandResult(false, "", "Context not initialized")
+            val executor = try {
+                resolveExecutor(ctx, ShellIdentity.DEFAULT)
+            } catch (e: IllegalStateException) {
+                return CommandResult(false, "", e.message.orEmpty())
+            }
+            val result = if (executor is RootShellExecutor) {
+                executor.executeIsolatedCommand(command, timeoutMs)
+            } else {
+                kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
+                    executor.executeCommand(command, ShellIdentity.DEFAULT)
+                } ?: return CommandResult(false, "", "Shell command timed out after $timeoutMs ms")
+            }
+            return CommandResult(result.success, result.stdout, result.stderr, result.exitCode)
+        }
+
         suspend fun startShellProcess(command: String): ShellProcess {
             val ctx = context ?: error("Context not initialized")
             val preferredExecutor = resolveExecutor(ctx, ShellIdentity.DEFAULT)

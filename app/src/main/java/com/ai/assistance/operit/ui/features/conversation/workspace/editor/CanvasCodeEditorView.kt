@@ -6,6 +6,8 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highli
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightRendering
 
 import android.animation.ValueAnimator
+import com.ai.assistance.operit.R
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -36,8 +38,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.OverScroller
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.graphics.toArgb
-import com.ai.assistance.operit.R
-import com.ai.assistance.operit.ui.common.oktoast.OKToast
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion.CompletionItem
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.completion.CompletionProvider
@@ -496,8 +496,9 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         if (abs(viewportBottomPaddingPx - resolvedPadding) < 0.5f) {
             return
         }
+        val followCursor = shouldFollowCursorOnViewportChange(width, height)
         viewportBottomPaddingPx = resolvedPadding
-        ensureCursorVisible()
+        if (followCursor) ensureCursorVisible()
         requestRender()
     }
 
@@ -656,9 +657,10 @@ class CanvasCodeEditorView @JvmOverloads constructor(
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        val followCursor = shouldFollowCursorOnViewportChange(oldw, oldh)
         super.onSizeChanged(w, h, oldw, oldh)
         clampScrollOffsets()
-        ensureCursorVisible()
+        if (followCursor) ensureCursorVisible()
         requestRender()
     }
 
@@ -1783,6 +1785,21 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         return Point(x.roundToInt(), y.roundToInt())
     }
 
+    /** 面板和键盘动画不能抢走滚动位置，仅保持变化前已可见的编辑光标。 */
+    private fun shouldFollowCursorOnViewportChange(viewportWidth: Int, viewportHeight: Int): Boolean {
+        if (!hasFocus() || !scroller.isFinished || hasMovedBeyondTouchSlop || isScaling ||
+            viewportWidth <= 0 || viewportHeight <= 0) return false
+        // 尺寸回调时 View 已使用新宽高，旧快照仍能准确判断换行前的光标位置。
+        val layout = visualSnapshot
+        val point = offsetToPoint(document.selectionEnd, layout)
+        val lineTop = verticalPaddingPx + layout.rowForOffset(document.selectionEnd) * metrics.lineHeight - scrollOffsetY
+        val bottomLimit = viewportHeight - verticalPaddingPx - viewportBottomPaddingPx
+        // 滚动偏移会忽略不足半像素的变化，边缘可见性使用相同容差。
+        val tolerance = 0.5f
+        return lineTop >= verticalPaddingPx - tolerance && lineTop + metrics.lineHeight <= bottomLimit + tolerance &&
+            point.x >= textRegionLeft() - tolerance && point.x <= viewportWidth - horizontalPaddingPx + tolerance
+    }
+
     private fun ensureCursorVisible() {
         val line = visualLayout().rowForOffset(document.selectionEnd)
         val point = offsetToPoint(document.selectionEnd)
@@ -1909,23 +1926,26 @@ class CanvasCodeEditorView @JvmOverloads constructor(
         }
     }
 
-    private fun copySelectionToClipboard() {
-        if (!document.hasSelection()) {
-            return
-        }
+    private fun copySelectionToClipboard(showFeedback: Boolean = true): Boolean {
+        if (!document.hasSelection()) return false
+        val clipboard = clipboardManager ?: return false
         val start = min(document.selectionStart, document.selectionEnd)
         val end = max(document.selectionStart, document.selectionEnd)
         val selectedText = document.text().subSequence(start, end).toString()
-        clipboardManager?.setPrimaryClip(ClipData.newPlainText("Code", selectedText))
+        clipboard.setPrimaryClip(ClipData.newPlainText("Code", selectedText))
+        if (showFeedback) OKToast.success(context, R.string.file_op_copy_success, OKToast.LENGTH_SHORT).show()
+        return true
     }
 
     private fun cutSelectionToClipboard() {
         if (readOnly || !document.hasSelection()) {
             return
         }
-        copySelectionToClipboard()
+        // 剪贴板写入成功后再删除选区，只提示最终的剪切操作。
+        if (!copySelectionToClipboard(showFeedback = false)) return
         document.replaceSelection("", recordHistory = true)
         onDocumentMutated()
+        OKToast.success(context, R.string.file_op_cut_success, OKToast.LENGTH_SHORT).show()
     }
 
     private fun pasteFromClipboard() {

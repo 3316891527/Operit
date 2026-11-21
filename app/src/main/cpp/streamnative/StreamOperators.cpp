@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "plugins/StreamMarkdownPlugin.h"
+#include "plugins/StreamMarkdownExtensionPlugin.h"
 #include "plugins/StreamXmlPlugin.h"
 
 namespace streamnative {
@@ -32,6 +33,10 @@ constexpr int MD_INLINE_LATEX = 16;
 constexpr int MD_PLAIN_TEXT = 17;
 // Dedicated HTML break classification, matched before XML handling.
 constexpr int MD_HTML_BREAK = 18;
+constexpr int MD_ESCAPED_TEXT = 19;
+constexpr int MD_HIGHLIGHT = 20;
+constexpr int MD_SUBSCRIPT = 21;
+constexpr int MD_SUPERSCRIPT = 22;
 
 // Segment type used only as a boundary marker between groups.
 // Kotlin side must treat this as "close current group" and not map it to MarkdownProcessorType.
@@ -238,7 +243,7 @@ public:
             evaluationEmitMask_.push_back(emitMask);
 
             for (int pi = 0; pi < static_cast<int>(plugins_.size()); pi++) {
-                if (plugins_[pi].plugin->state() == PluginState::PROCESSING) {
+                if (plugins_[pi].plugin->state() == PluginState::PROCESSING || plugins_[pi].plugin->state() == PluginState::MATCHED) {
                     successful = pi;
                     break;
                 }
@@ -277,6 +282,14 @@ public:
                 evaluationEmitMask_.clear();
                 evalStartGlobal_ = -1;
 
+                // 完整的短词元在本次确认后立即结束，不能吞掉后一个字符。
+                if (activePlugin_->state() == PluginState::MATCHED) {
+                    activePlugin_->reset();
+                    if (activeTag_ != MD_PLAIN_TEXT) emitBreak(out, globalIndex + 1, runTag, runStart, runEnd);
+                    activePlugin_ = nullptr;
+                    activeTag_ = MD_PLAIN_TEXT;
+                    activeIndex_ = -1;
+                }
                 // Reset other plugins
                 for (int pi = 0; pi < static_cast<int>(plugins_.size()); pi++) {
                     if (pi != successful) {
@@ -381,16 +394,18 @@ MarkdownSession* createMarkdownBlockSession() {
     // 块级先保护代码范围，保留反引号供下一阶段生成行内代码节点。
     plugins.push_back({std::make_unique<StreamMarkdownHeaderPlugin>(true), MD_HEADER});
     plugins.push_back({std::make_unique<StreamMarkdownFencedCodeBlockPlugin>(true), MD_CODE_BLOCK});
-    plugins.push_back({std::make_unique<StreamMarkdownBlockQuotePlugin>(false), MD_BLOCK_QUOTE});
-    plugins.push_back({std::make_unique<StreamMarkdownOrderedListPlugin>(true), MD_ORDERED_LIST});
-    plugins.push_back({std::make_unique<StreamMarkdownUnorderedListPlugin>(false), MD_UNORDERED_LIST});
+    plugins.push_back({std::make_unique<StreamMarkdownBlockQuotePlugin>(true), MD_BLOCK_QUOTE});
+    plugins.push_back({std::make_unique<StreamMarkdownListItemPlugin>(true), MD_ORDERED_LIST});
+    plugins.push_back({std::make_unique<StreamMarkdownListItemPlugin>(false), MD_UNORDERED_LIST});
     plugins.push_back({std::make_unique<StreamMarkdownHorizontalRulePlugin>(true), MD_HORIZONTAL_RULE});
     plugins.push_back({std::make_unique<StreamMarkdownBlockLaTeXPlugin>(false), MD_BLOCK_LATEX});
     // Keep delimiters for \[...\] to avoid swallowing '\' in failed end-matcher branches.
     // Delimiters are removed later by extractLatexContent().
     plugins.push_back({std::make_unique<StreamMarkdownBlockBracketLaTeXPlugin>(true), MD_BLOCK_LATEX});
     plugins.push_back({std::make_unique<StreamMarkdownTablePlugin>(true), MD_TABLE});
-    plugins.push_back({std::make_unique<StreamMarkdownImagePlugin>(true), MD_IMAGE});
+    // 转义的 HTML 起始符仍属于正文，不进入 XML 词元。
+    plugins.push_back({std::make_unique<StreamMarkdownEscapePlugin>(), MD_PLAIN_TEXT});
+    plugins.push_back({std::make_unique<StreamMarkdownTargetPlugin>(true), MD_IMAGE});
     plugins.push_back({std::make_unique<StreamMarkdownInlineCodePlugin>(true, true), MD_PLAIN_TEXT});
     plugins.push_back({std::make_unique<StreamXmlPlugin>(true), MD_XML_BLOCK});
     return new MarkdownSession(std::move(plugins));
@@ -399,17 +414,21 @@ MarkdownSession* createMarkdownBlockSession() {
 MarkdownSession* createMarkdownInlineSession() {
     std::vector<PluginEntry> plugins;
     plugins.reserve(16);
-    // Order must match NestedMarkdownProcessor.getInlinePlugins()
+    // 数学括号优先于转义，转义优先于强调标记。
+    plugins.push_back({std::make_unique<StreamMarkdownInlineParenLaTeXPlugin>(true), MD_INLINE_LATEX});
+    plugins.push_back({std::make_unique<StreamMarkdownEscapePlugin>(), MD_ESCAPED_TEXT});
     plugins.push_back({std::make_unique<StreamMarkdownBoldPlugin>(false), MD_BOLD});
     plugins.push_back({std::make_unique<StreamMarkdownItalicPlugin>(false), MD_ITALIC});
     plugins.push_back({std::make_unique<StreamMarkdownInlineCodePlugin>(false), MD_INLINE_CODE});
-    plugins.push_back({std::make_unique<StreamMarkdownLinkPlugin>(), MD_LINK});
+    plugins.push_back({std::make_unique<StreamMarkdownTargetPlugin>(false), MD_LINK});
     plugins.push_back({std::make_unique<StreamMarkdownStrikethroughPlugin>(false), MD_STRIKETHROUGH});
     plugins.push_back({std::make_unique<StreamMarkdownUnderlinePlugin>(true), MD_UNDERLINE});
     plugins.push_back({std::make_unique<StreamMarkdownInlineLaTeXPlugin>(false), MD_INLINE_LATEX});
     // Keep delimiters for \(...\) to avoid swallowing '\' in failed end-matcher branches.
     // Delimiters are removed later by extractLatexContent().
-    plugins.push_back({std::make_unique<StreamMarkdownInlineParenLaTeXPlugin>(true), MD_INLINE_LATEX});
+    plugins.push_back({std::make_unique<StreamMarkdownDelimitedPlugin>(u'=', 2), MD_HIGHLIGHT});
+    plugins.push_back({std::make_unique<StreamMarkdownDelimitedPlugin>(u'~', 1), MD_SUBSCRIPT});
+    plugins.push_back({std::make_unique<StreamMarkdownDelimitedPlugin>(u'^', 1), MD_SUPERSCRIPT});
     return new MarkdownSession(std::move(plugins));
 }
 

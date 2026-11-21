@@ -13,7 +13,6 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.svg.isWorkspa
 import android.annotation.SuppressLint
 import android.net.Uri
 import com.ai.assistance.operit.util.logging.AppLogger
-import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -24,12 +23,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -45,14 +40,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
 import androidx.compose.ui.zIndex
 import com.ai.assistance.operit.R
@@ -66,15 +58,10 @@ import com.ai.assistance.operit.core.tools.protocol.AITool
 import com.ai.assistance.operit.data.model.ChatHistory
 import com.ai.assistance.operit.core.tools.protocol.ToolParameter
 import com.ai.assistance.operit.ui.common.rememberLocal
-import com.ai.assistance.operit.ui.features.conversation.chat.foundation.layout.rememberCompactDialogMetrics
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview.AudioAttachmentPlayer
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachments.preview.VideoAttachmentPlayer
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.LocalWebServer
 import com.ai.assistance.operit.ui.features.conversation.chat.viewmodel.ChatViewModel
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WorkspaceHtmlPreview
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.installWorkspaceTouchInterceptor
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.releaseWorkspaceWebView
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WebViewHandler
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.CodeEditor
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.*
 import com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceBrowserPreferences
@@ -106,7 +93,6 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.links.findWor
 import com.ai.assistance.operit.ui.features.conversation.workspace.markdown.WorkspaceMarkdownPreview
 import com.ai.assistance.operit.ui.features.conversation.workspace.search.activeSearchMatchAfterUpdate
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WorkspaceImagePreview
-import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WorkspacePreviewRefreshBus
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.WorkspaceReadOnlyDocumentPreview
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.isAudio
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.isHtml
@@ -118,30 +104,7 @@ import com.ai.assistance.operit.ui.features.conversation.workspace.preview.isVid
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.rememberWorkspacePreviewFileState
 import com.ai.assistance.operit.ui.features.conversation.workspace.preview.workspacePreviewUriFromFile
 
-private fun isLocalPreviewUrl(url: String): Boolean {
-    if (url.isBlank()) return false
-    return runCatching {
-        val uri = Uri.parse(url)
-        val host = uri.host?.lowercase()
-        (uri.scheme == "http" || uri.scheme == "https") &&
-            (host == "localhost" || host == "127.0.0.1")
-    }.getOrDefault(false)
-}
-
-private fun previewWebViewOptions(url: String): WebViewHandler.WebViewOptions {
-    if (!isLocalPreviewUrl(url)) {
-        return WebViewHandler.WebViewOptions()
-    }
-    return WebViewHandler.WebViewOptions(
-        preferDesktopSite = false,
-        enableWorkspaceCorsProxy = false,
-        supportZoom = false,
-        useWideViewPort = false,
-        loadWithOverviewMode = false
-    )
-}
-
-/** VSCode风格的工作区管理器组件 集成了WebView预览和文件管理功能 */
+/** 工作区文件与编辑会话，项目入口不启动网页服务。 */
 @SuppressLint("ClickableViewAccessibility")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -152,124 +115,22 @@ fun WorkspaceManager(
         workspaceEnv: String? = null,
         isVisible: Boolean,
         entryRequest: WorkspaceEntryRequest = WorkspaceEntryRequest(),
-        onExportClick: (workDir: File) -> Unit,
         initialFile: OpenFileInfo? = null,
         onReturnToBrowser: (() -> Unit)? = null
 ) {
     val standalone = onReturnToBrowser != null
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val webViewRefreshCounter by actualViewModel.webViewRefreshCounter.collectAsState()
-    val workspaceCommandExecutionState by actualViewModel.workspaceCommandExecutionState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val toolHandler = remember { AIToolHandler.getInstance(context) }
-    val workspaceServer = remember(context) {
-        LocalWebServer.getInstance(context, LocalWebServer.ServerType.WORKSPACE)
-    }
-    
     val isSafEnv = remember(workspaceEnv) { workspaceEnv?.startsWith("repo:", ignoreCase = true) == true }
-
-    // 读取工作区配置：在重新进入预览界面时从磁盘刷新
-    var workspaceConfig by remember(workspacePath, workspaceEnv) {
-        mutableStateOf(if (isSafEnv || standalone) WorkspaceConfig() else WorkspaceConfigReader.readConfig(workspacePath))
-    }
-
-    LaunchedEffect(isVisible, workspacePath, workspaceEnv) {
-        if (isVisible && !isSafEnv && !standalone) {
-            workspaceConfig = WorkspaceConfigReader.readConfig(workspacePath)
-        }
-    }
-
-    LaunchedEffect(isVisible, workspacePath, workspaceEnv, workspaceServer, workspaceConfig.server.enabled) {
-        if (!isVisible || standalone) return@LaunchedEffect
-
-        runCatching {
-            withContext(Dispatchers.IO) {
-                if (workspaceConfig.server.enabled) {
-                    if (!workspaceServer.isRunning()) {
-                        workspaceServer.start()
-                    }
-                    workspaceServer.updateChatWorkspace(workspacePath, workspaceEnv)
-                } else if (workspaceServer.isRunning()) {
-                    workspaceServer.stop()
-                }
-            }
-        }.onFailure { error ->
-            AppLogger.e("WorkspaceManager", "Failed to prepare workspace preview server", error)
-        }
-    }
 
     fun withWorkspaceEnvParams(base: List<ToolParameter>): List<ToolParameter> {
         if (workspaceEnv.isNullOrBlank()) return base
         return base + ToolParameter("environment", workspaceEnv)
     }
 
-    // 将 webViewHandler 和 webView 实例提升到 remember 中，使其在重组中保持稳定
-    val webViewHandler =
-            remember(context) {
-                WebViewHandler(context).apply {
-                    onFileChooserRequest = { intent, callback ->
-                        actualViewModel.startFileChooserForResult(intent) { resultCode, data ->
-                            callback(resultCode, data)
-                        }
-                    }
-                }
-            }
-    var workspaceWebView by remember { mutableStateOf<WebView?>(null) }
-    var lastLoadedWorkspacePreviewUrl by remember(workspacePath, workspaceEnv) {
-        mutableStateOf<String?>(null)
-    }
-    val workspacePreviewUrl = workspaceConfig.preview.url.ifEmpty { "http://localhost:8093" }
-    val workspacePreviewOptions = remember(workspacePreviewUrl) { previewWebViewOptions(workspacePreviewUrl) }
-
-    var canWebViewGoBack by remember { mutableStateOf(false) }
-    var canWebViewGoForward by remember { mutableStateOf(false) }
-    var showCommandBrowserPreview by remember(workspacePath, workspaceEnv, workspaceConfig.preview.url) {
-        mutableStateOf(false)
-    }
-    var commandPreviewWebView by remember { mutableStateOf<WebView?>(null) }
-    var lastLoadedCommandPreviewUrl by remember(workspacePath, workspaceEnv, workspaceConfig.preview.url) {
-        mutableStateOf<String?>(null)
-    }
-    var lastHandledWebViewRefreshCounter by remember(workspacePath, workspaceEnv) {
-        mutableIntStateOf(webViewRefreshCounter)
-    }
-    var canCommandPreviewGoBack by remember { mutableStateOf(false) }
-    var canCommandPreviewGoForward by remember { mutableStateOf(false) }
-    val commandPreviewUrl = workspaceConfig.preview.url
-    val commandPreviewOptions = remember(commandPreviewUrl) { previewWebViewOptions(commandPreviewUrl) }
-
-    LaunchedEffect(webViewHandler) {
-        webViewHandler.onCanGoBackChanged = { canGoBack ->
-            canWebViewGoBack = canGoBack
-        }
-        webViewHandler.onCanGoForwardChanged = { canGoForward ->
-            canWebViewGoForward = canGoForward
-        }
-    }
-
-    val commandPreviewHandler =
-        remember(context) {
-            WebViewHandler(context).apply {
-                onFileChooserRequest = { intent, callback ->
-                    actualViewModel.startFileChooserForResult(intent) { resultCode, data ->
-                        callback(resultCode, data)
-                    }
-                }
-            }
-        }
-
-    LaunchedEffect(commandPreviewHandler) {
-        commandPreviewHandler.onCanGoBackChanged = { canGoBack ->
-            canCommandPreviewGoBack = canGoBack
-        }
-        commandPreviewHandler.onCanGoForwardChanged = { canGoForward ->
-            canCommandPreviewGoForward = canGoForward
-        }
-    }
-
     // 文件管理和标签状态 - 使用内存态，避免编辑大文件时频繁持久化整份内容
-    var showWorkspaceMenu by remember { mutableStateOf(false) }
     var openFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(initialFile?.let { listOf(it) } ?: emptyList()) }
     var currentFileIndex by remember(workspacePath, workspaceEnv) { mutableStateOf(if (initialFile == null) -2 else 0) }
     var handledEntrySequence by remember(workspacePath, workspaceEnv) {
@@ -288,33 +149,6 @@ fun WorkspaceManager(
     var markdownNavigationJob by remember { mutableStateOf<Job?>(null) }
     LaunchedEffect(workspacePath, workspaceEnv) { markdownNavigationJob?.cancel() }
     var unsavedFiles by remember(workspacePath, workspaceEnv) { mutableStateOf(emptySet<String>()) }
-    val isBrowserPreviewVisible =
-        isVisible && currentFileIndex == -1 && workspaceConfig.preview.type == "browser"
-    val isCommandPreviewVisible =
-        isVisible &&
-            currentFileIndex == -1 &&
-            workspaceConfig.preview.type != "browser" &&
-            showCommandBrowserPreview &&
-            commandPreviewUrl.isNotEmpty()
-    val activePreviewWebView =
-        when {
-            isBrowserPreviewVisible -> workspaceWebView
-            isCommandPreviewVisible -> commandPreviewWebView
-            else -> null
-        }
-    val activePreviewCanGoBack =
-        when {
-            isBrowserPreviewVisible -> canWebViewGoBack
-            isCommandPreviewVisible -> canCommandPreviewGoBack
-            else -> false
-        }
-    val activePreviewCanGoForward =
-        when {
-            isBrowserPreviewVisible -> canWebViewGoForward
-            isCommandPreviewVisible -> canCommandPreviewGoForward
-            else -> false
-        }
-    
     val navigation = LocalWorkspaceHeader.current
     val headerOwner = remember { Any() }
     val editorSessions = remember(workspacePath, workspaceEnv) { mutableMapOf<String, EditorSession>() }
@@ -330,6 +164,7 @@ fun WorkspaceManager(
     val editorPreferences = remember(context) { WorkspaceBrowserPreferences(context) }
     val persistedEditorSettings by editorPreferences.settings.collectAsState(initial = WorkspaceBrowserSettings())
     val editorSettings = persistedEditorSettings.editor.copy(wordWrap = persistedEditorSettings.wordWrap)
+    var editorSettingsOpen by remember(workspacePath, workspaceEnv) { mutableStateOf(false) }
     val currentPreviewFile = openFiles.getOrNull(currentFileIndex)
     var markdownOutlineVisible by remember(currentPreviewFile?.key) { mutableStateOf(false) }
     var htmlFindVisible by remember(currentPreviewFile?.key) { mutableStateOf(false) }
@@ -441,29 +276,6 @@ fun WorkspaceManager(
         if (searchVisible && matches.isNotEmpty() && (changedQuery || pending != null)) searchNavigationRequest++
     }
 
-    // 监听WebView刷新计数器变化并触发刷新
-    LaunchedEffect(
-        webViewRefreshCounter,
-        isBrowserPreviewVisible,
-        isCommandPreviewVisible,
-        workspaceWebView,
-        commandPreviewWebView
-    ) {
-        if (webViewRefreshCounter <= lastHandledWebViewRefreshCounter) {
-            return@LaunchedEffect
-        }
-
-        lastHandledWebViewRefreshCounter = webViewRefreshCounter
-        AppLogger.d("WorkspaceManager", "WebView refresh triggered, counter: $webViewRefreshCounter")
-
-        // 仅处理新的刷新事件，避免重新进入页面时把旧计数误判成一次刷新。
-        kotlinx.coroutines.delay(100)
-        when {
-            isBrowserPreviewVisible -> workspaceWebView?.reload()
-            isCommandPreviewVisible -> commandPreviewWebView?.reload()
-        }
-    }
-
     // 回到前台或切换文件后比较真实磁盘内容，读取失败不伪装成删除。
     LaunchedEffect(isVisible, editorFile?.key, resumeRevision, editorSettings.detectExternalChanges, saving) {
         val file = editorFile
@@ -479,41 +291,6 @@ fun WorkspaceManager(
     }
 
 
-    LaunchedEffect(
-        isVisible,
-        isSafEnv,
-        workspacePath,
-        workspaceEnv,
-        workspaceConfig.preview.type,
-        currentFileIndex,
-        workspaceWebView
-    ) {
-        if (!isVisible || isSafEnv) {
-            return@LaunchedEffect
-        }
-
-        WorkspacePreviewRefreshBus.events.collect { event ->
-            val isSameWorkspace = event.workspacePath == workspacePath
-            val isSameEnvironment =
-                event.workspaceEnv?.trim().orEmpty().equals(
-                    workspaceEnv?.trim().orEmpty(),
-                    ignoreCase = true
-                )
-            val shouldRefreshBrowserPreview =
-                currentFileIndex == -1 && workspaceConfig.preview.type == "browser"
-
-            if (!isSameWorkspace || !isSameEnvironment || !shouldRefreshBrowserPreview) {
-                return@collect
-            }
-
-            AppLogger.d(
-                "WorkspaceManager",
-                "Workspace preview refresh requested by ${event.source}: ${event.affectedPaths.joinToString()}"
-            )
-            workspaceWebView?.reload()
-        }
-    }
-    
     // 保存文件函数
     fun saveFile(fileInfo: OpenFileInfo, afterSave: (() -> Unit)? = null) {
         if (fileInfo.isReadOnlyPreview || saving) return
@@ -831,16 +608,6 @@ fun WorkspaceManager(
                             onClose = null,
                             onClick = { currentFileIndex = -2 }
                         )
-                        // 临时打开文件不初始化项目预览和绑定状态。
-                        if (!standalone && currentFileIndex < 0) VSCodeTab(
-                                title = stringResource(R.string.workspace_preview),
-                                icon = Icons.Default.Visibility,
-                                isActive = currentFileIndex == -1,
-                                isUnsaved = false,
-                                onClose = null,
-                                onClick = { currentFileIndex = -1 }
-                        )
-
                         // 打开的文件标签
                         openFiles.forEachIndexed { index, fileInfo ->
                             VSCodeTab(
@@ -854,50 +621,6 @@ fun WorkspaceManager(
                         }
     }
     val headerActions: @Composable RowScope.() -> Unit = {
-                    if (!standalone && currentFileIndex < 0) Box {
-                        IconButton(onClick = { showWorkspaceMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more))
-                        }
-                        DropdownMenu(
-                            expanded = showWorkspaceMenu,
-                            onDismissRequest = { showWorkspaceMenu = false }
-                        ) {
-                            if (workspaceConfig.export.enabled && !isSafEnv) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.export)) },
-                                    leadingIcon = { Icon(Icons.Default.Upload, contentDescription = null) },
-                                    onClick = {
-                                        showWorkspaceMenu = false
-                                        onExportClick(File(workspacePath))
-                                    }
-                                )
-                            }
-                            if (canRenameWorkspace) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.workspace_rename_action)) },
-                                    leadingIcon = { Icon(Icons.Default.DriveFileRenameOutline, contentDescription = null) },
-                                    onClick = {
-                                        showWorkspaceMenu = false
-                                        if (unsavedFiles.isNotEmpty()) {
-                                            OKToast.info(context, context.getString(R.string.workspace_rename_save_first)).show()
-                                        } else {
-                                            renameWorkspaceInput = File(workspacePath).name
-                                            renameWorkspaceError = null
-                                            showRenameWorkspaceDialog = true
-                                        }
-                                    }
-                                )
-                            }
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.unbind)) },
-                                leadingIcon = { Icon(Icons.Default.LinkOff, contentDescription = null) },
-                                onClick = {
-                                    showWorkspaceMenu = false
-                                    showUnbindConfirmDialog = true
-                                }
-                            )
-                        }
-                    }
                     // 动态操作区域
                     val currentFile = openFiles.getOrNull(currentFileIndex)
                     val currentTextFile = currentFile?.takeUnless { it.isReadOnlyPreview || filePreviewStates[it.key] == true }
@@ -905,7 +628,7 @@ fun WorkspaceManager(
                         key(currentTextFile.key) {
                             EditorToolbar(editorSession, activeEditor, editorSettings, ::changeEditorSettings,
                                 currentTextFile.key in unsavedFiles, saving, { saveFile(currentTextFile) },
-                                { openEditorSearch() }, { saveAsRequested = true }, { reloadRequested = true }, { closeFile(currentFileIndex) },
+                                { openEditorSearch() }, { saveAsRequested = true }, { reloadRequested = true }, { closeFile(currentFileIndex) }, { editorSettingsOpen = true },
                                 path = currentTextFile.path, environment = currentTextFile.environment)
                         }
                     }
@@ -927,75 +650,22 @@ fun WorkspaceManager(
                                     contentDescription = "Toggle Preview"
                             )
                         }
-                    } else if (isBrowserPreviewVisible || isCommandPreviewVisible) {
-                        IconButton(
-                            onClick = { activePreviewWebView?.goBack() },
-                            enabled = activePreviewCanGoBack,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.ChevronLeft,
-                                contentDescription = stringResource(R.string.web_session_back),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { activePreviewWebView?.goForward() },
-                            enabled = activePreviewCanGoForward,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.ChevronRight,
-                                contentDescription = stringResource(R.string.web_session_forward),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { activePreviewWebView?.reload() },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = stringResource(R.string.web_session_refresh),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        if (isCommandPreviewVisible) {
-                            IconButton(
-                                onClick = { showCommandBrowserPreview = false },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.workspace_close_preview),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
                     }
     }
     if (navigation != null) {
         SideEffect { navigation.register(headerOwner, headerTabs, headerActions, currentFileIndex != -2) { currentFileIndex = -2 } }
         DisposableEffect(navigation) { onDispose { navigation.unregister(headerOwner) } }
     }
+    if (editorSettingsOpen) EditorSettingsScreen(editorSettings, ::changeEditorSettings) { editorSettingsOpen = false }
     // 不透明底色与主题前景色一起提供，避免编辑按钮沿用外层聊天颜色。
     Surface(
         modifier = Modifier.fillMaxSize().imePadding(),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 1f),
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
-        BackHandler(enabled = currentFileIndex != -2 && !activePreviewCanGoBack) {
+        BackHandler(enabled = currentFileIndex != -2) {
             if (standalone && currentFileIndex in openFiles.indices) closeFile(currentFileIndex)
             else currentFileIndex = -2
-        }
-        BackHandler(enabled = activePreviewCanGoBack) {
-            if (activePreviewCanGoBack) {
-                try {
-                    activePreviewWebView?.goBack()
-                } catch (e: Exception) {
-                    AppLogger.e("WorkspaceManager", "Failed to navigate WebView back", e)
-                }
-            }
         }
 
         BackHandler(enabled = searchVisible && searchableFile != null) { closeEditorSearch() }
@@ -1016,121 +686,28 @@ fun WorkspaceManager(
                                     .background(MaterialTheme.colorScheme.surface) // 添加背景色防止闪烁
             ) {
                 when {
-                    // 文件浏览是绑定工作区后的默认页面，项目预览通过顶部“预览”标签进入。
+                    // 项目入口显式使用绑定根目录，普通浏览首页不覆盖项目位置。
                     currentFileIndex == -2 -> browserStateHolder.SaveableStateProvider("files") {
                         FileBrowser(
                             initialPath = workspacePath,
                             environment = workspaceEnv,
+                            workspaceRoot = if (standalone) null else com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceLocation(workspacePath,
+                                com.ai.assistance.operit.ui.features.conversation.workspace.browser.workspaceEnvironment(workspaceEnv)),
+                            entrySequence = entryRequest.sequence,
+                            onUnbindWorkspace = if (standalone) null else ({ showUnbindConfirmDialog = true }),
+                            onRenameWorkspace = if (standalone || !canRenameWorkspace) null else ({
+                                if (unsavedFiles.isNotEmpty()) {
+                                    OKToast.info(context, context.getString(R.string.workspace_rename_save_first)).show()
+                                } else {
+                                    renameWorkspaceInput = File(workspacePath).name
+                                    renameWorkspaceError = null
+                                    showRenameWorkspaceDialog = true
+                                }
+                            }),
                             onCancel = {},
                             showHeader = false,
                             onFileOpen = { fileInfo -> openFile(fileInfo) }
                         )
-                    }
-                    // 显示WebView预览（仅当preview类型为browser时）
-                    currentFileIndex == -1 && workspaceConfig.preview.type == "browser" -> {
-                        key(workspacePath, workspaceEnv) {
-                            AndroidView(
-                                    factory = { androidContext ->
-                                        WebView(androidContext).apply {
-                                            installWorkspaceTouchInterceptor()
-                                            webViewHandler.configureWebView(
-                                                this,
-                                                WebViewHandler.WebViewMode.WORKSPACE,
-                                                "workspace_preview_webview",
-                                                workspacePreviewOptions
-                                            )
-                                            loadUrl(workspacePreviewUrl)
-                                            workspaceWebView = this
-                                            webViewHandler.currentWebView = this
-                                            lastLoadedWorkspacePreviewUrl = workspacePreviewUrl
-                                        }
-                                    },
-                                    update = { view ->
-                                        workspaceWebView = view
-                                        webViewHandler.currentWebView = view
-                                        if (lastLoadedWorkspacePreviewUrl != workspacePreviewUrl) {
-                                            view.loadUrl(workspacePreviewUrl)
-                                            lastLoadedWorkspacePreviewUrl = workspacePreviewUrl
-                                        }
-                                    },
-                                    onRelease = { view ->
-                                        if (workspaceWebView === view) {
-                                            workspaceWebView = null
-                                        }
-                                        if (webViewHandler.currentWebView === view) {
-                                            webViewHandler.currentWebView = null
-                                        }
-                                        canWebViewGoBack = false
-                                        canWebViewGoForward = false
-                                        lastLoadedWorkspacePreviewUrl = null
-                                        view.releaseWorkspaceWebView()
-                                    },
-                                    modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
-                    // 显示命令按钮界面（当preview类型不是browser时）
-                    currentFileIndex == -1 && workspaceConfig.preview.type != "browser" -> {
-                        if (isCommandPreviewVisible) {
-                            key(workspacePath, workspaceEnv, commandPreviewUrl) {
-                                AndroidView(
-                                    factory = { androidContext ->
-                                        WebView(androidContext).apply {
-                                            installWorkspaceTouchInterceptor()
-                                            commandPreviewHandler.configureWebView(
-                                                this,
-                                                WebViewHandler.WebViewMode.WORKSPACE,
-                                                "workspace_preview_${workspacePath.hashCode()}",
-                                                commandPreviewOptions
-                                            )
-                                            loadUrl(commandPreviewUrl)
-                                            commandPreviewWebView = this
-                                            commandPreviewHandler.currentWebView = this
-                                            lastLoadedCommandPreviewUrl = commandPreviewUrl
-                                        }
-                                    },
-                                    update = { webView ->
-                                        commandPreviewWebView = webView
-                                        commandPreviewHandler.currentWebView = webView
-                                        if (lastLoadedCommandPreviewUrl != commandPreviewUrl) {
-                                            webView.loadUrl(commandPreviewUrl)
-                                            lastLoadedCommandPreviewUrl = commandPreviewUrl
-                                        }
-                                        webView.requestFocus()
-                                    },
-                                    onRelease = { webView ->
-                                        if (commandPreviewWebView === webView) {
-                                            commandPreviewWebView = null
-                                        }
-                                        if (commandPreviewHandler.currentWebView === webView) {
-                                            commandPreviewHandler.currentWebView = null
-                                        }
-                                        canCommandPreviewGoBack = false
-                                        canCommandPreviewGoForward = false
-                                        lastLoadedCommandPreviewUrl = null
-                                        webView.releaseWorkspaceWebView()
-                                    },
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        } else {
-                            CommandButtonsView(
-                                config = workspaceConfig,
-                                workspacePath = workspacePath,
-                                onCommandExecute = { command ->
-                                    // 在专属会话中执行命令
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                        actualViewModel.executeCommandInWorkspace(command, workspacePath)
-                                    } else {
-                                        // 对于旧版本Android，显示不支持提示
-                                        AppLogger.w("WorkspaceManager", "Terminal features require Android 8.0+")
-                                    }
-                                },
-                                onOpenBrowserPreview = {
-                                    showCommandBrowserPreview = true
-                                }
-                            )
-                        }
                     }
                     // 显示打开的文件
                     currentFileIndex in openFiles.indices -> {
@@ -1254,7 +831,8 @@ fun WorkspaceManager(
                                     fileInfo = fileInfo,
                                     searchVisible = htmlFindVisible,
                                     onCloseSearch = { htmlFindVisible = false },
-                                    onFileChooserRequest = webViewHandler.onFileChooserRequest,
+                                    // 文件预览直接使用对话选择器，避免依赖已移除的项目预览处理器。
+                                    onFileChooserRequest = actualViewModel::startFileChooserForResult,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -1449,195 +1027,6 @@ fun WorkspaceManager(
             }
         }
 
-        val commandDialogState = workspaceCommandExecutionState
-        if (isVisible && !standalone && commandDialogState != null &&
-            commandDialogState.workspacePath == workspacePath &&
-            commandDialogState.isVisible
-        ) {
-            WorkspaceCommandExecutionDialog(
-                state = commandDialogState,
-                onClose = { actualViewModel.dismissWorkspaceCommandExecutionDialog(workspacePath) },
-                onCancel = {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        actualViewModel.cancelWorkspaceCommandExecution()
-                    }
-                },
-                onCopyOutput = { output ->
-                    clipboardManager.setText(AnnotatedString(output))
-                    OKToast.success(context, context.getString(R.string.copied_to_clipboard)).show()
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun WorkspaceCommandExecutionDialog(
-    state: WorkspaceCommandExecutionState,
-    onClose: () -> Unit,
-    onCancel: () -> Unit,
-    onCopyOutput: (String) -> Unit
-) {
-    val listState = rememberLazyListState()
-    val outputText = remember(state.outputEntries) {
-        state.outputEntries.joinToString(separator = "\n")
-    }
-
-    LaunchedEffect(state.outputEntries.size) {
-        if (state.outputEntries.isNotEmpty()) {
-            listState.animateScrollToItem(state.outputEntries.lastIndex)
-        }
-    }
-
-    val dialogMetrics = rememberCompactDialogMetrics()
-    val outerPadding = if (dialogMetrics.isCompact) 8.dp else 20.dp
-    val contentPadding = if (dialogMetrics.isCompact) 16.dp else 20.dp
-    val outputMinHeight = if (dialogMetrics.isCompact) 96.dp else 180.dp
-    val outputMaxHeight = if (dialogMetrics.isCompact) 220.dp else 360.dp
-    val surfaceModifier =
-        Modifier
-            .fillMaxWidth()
-            .padding(outerPadding)
-            .let { base ->
-                if (dialogMetrics.isCompact) {
-                    base.heightIn(max = dialogMetrics.maxHeight - outerPadding * 2)
-                } else {
-                    base
-                }
-            }
-
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
-    ) {
-        Surface(
-            modifier = surfaceModifier,
-            shape = RoundedCornerShape(20.dp),
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(contentPadding),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = state.commandLabel,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = state.commandText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = stringResource(
-                        if (!state.isRunning) {
-                            R.string.workspace_command_finished
-                        } else if (state.isCancelling) {
-                            R.string.workspace_command_cancelling
-                        } else {
-                            R.string.workspace_command_running
-                        }
-                    ),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (state.isRunning) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-                Surface(
-                    modifier =
-                        if (dialogMetrics.isCompact) {
-                            Modifier
-                                .fillMaxWidth()
-                                .weight(1f, fill = false)
-                                .heightIn(min = outputMinHeight, max = outputMaxHeight)
-                        } else {
-                            Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = outputMinHeight, max = outputMaxHeight)
-                        },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                ) {
-                    if (state.outputEntries.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    if (state.isRunning) {
-                                        R.string.workspace_command_waiting_output
-                                    } else {
-                                        R.string.workspace_command_no_output
-                                    }
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else {
-                        SelectionContainer {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                itemsIndexed(
-                                    items = state.outputEntries,
-                                    key = { index, _ -> index }
-                                ) { _, line ->
-                                    Text(
-                                        text = line.ifEmpty { " " },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontFamily = FontFamily.Monospace
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    if (state.isRunning) {
-                        TextButton(onClick = onClose) {
-                            Text(stringResource(R.string.workspace_command_hide))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(
-                            onClick = onCancel,
-                            enabled = !state.isCancelling
-                        ) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                    } else {
-                        TextButton(
-                            onClick = { onCopyOutput(outputText) },
-                            enabled = state.outputEntries.isNotEmpty()
-                        ) {
-                            Text(stringResource(R.string.copy_result))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = onClose) {
-                            Text(stringResource(R.string.confirm))
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -1656,152 +1045,4 @@ fun VSCodeTab(
     LaunchedEffect(isActive) { if (isActive) { withFrameNanos { }; reveal.bringIntoView() } }
     WorkspaceNavigationTab(title = title, selected = isActive, onClick = onClick,
         modifier = Modifier.bringIntoViewRequester(reveal), icon = icon, unsaved = isUnsaved, onClose = onClose)
-}
-
-/**
- * 命令按钮视图组件
- * 用于非 browser 类型的预览界面，显示 config.json 中定义的命令按钮
- */
-@Composable
-fun CommandButtonsView(
-    config: WorkspaceConfig,
-    workspacePath: String,
-    onCommandExecute: (CommandConfig) -> Unit,
-    onOpenBrowserPreview: () -> Unit
-) {
-    val context = LocalContext.current
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Terminal,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        
-        Text(
-            text = config.title ?: "${config.projectType.uppercase()} ${stringResource(R.string.workspace_project_suffix)}",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        if (config.description != null) {
-            Text(
-                text = config.description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        } else {
-            Text(
-                text = stringResource(R.string.workspace_click_buttons_below),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 浏览器预览按钮（可选）
-        if (config.preview.showPreviewButton && config.preview.url.isNotEmpty()) {
-            Button(
-                onClick = onOpenBrowserPreview,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Visibility,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = config.preview.previewButtonLabel,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-        
-        // 显示命令按钮
-        if (config.commands.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            ) {
-                Text(
-                    text = stringResource(R.string.workspace_no_commands_configured),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(32.dp)
-                )
-            }
-        } else {
-            config.commands.forEach { command ->
-                Button(
-                    onClick = { onCommandExecute(command) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = command.label,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 项目信息卡片
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = stringResource(R.string.workspace_path_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = workspacePath,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-    }
 }

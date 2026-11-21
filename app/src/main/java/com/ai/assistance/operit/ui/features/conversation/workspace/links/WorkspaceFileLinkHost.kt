@@ -158,7 +158,6 @@ internal fun WorkspaceFileLinkDialog(
                     workspacePath = openedDirectory ?: File(openedFile.path).parent.orEmpty(),
                     workspaceEnv = openedFile.environment,
                     isVisible = true,
-                    onExportClick = {},
                     initialFile = openedFile,
                     onReturnToBrowser = { if (openedDirectory != null) file = null else onDismiss() },
                     )

@@ -29,7 +29,7 @@ runs:
           tools/native_apply_patch/target
           tools/web_chat_cli/target
           tools/html_build_cli/target
-        key: terminal-commands-gnu-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/native_apply_patch/**/Cargo.toml', 'tools/native_apply_patch/Cargo.lock', 'tools/terminal_commands/rust-toolchain.toml', 'tools/native_apply_patch/**/*.rs', 'tools/web_chat_cli/Cargo.toml', 'tools/web_chat_cli/Cargo.lock', 'tools/web_chat_cli/**/*.rs', 'tools/html_build_cli/Cargo.toml', 'tools/html_build_cli/Cargo.lock', 'tools/html_build_cli/**/*.rs') }}
+        key: terminal-commands-gnu-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/native_apply_patch/**/Cargo.toml', 'tools/native_apply_patch/Cargo.lock', 'tools/terminal_commands/rust-toolchain.toml', 'tools/terminal_commands/**/*.rs', 'tools/terminal_commands/help/**', 'tools/native_apply_patch/**/*.rs', 'tools/web_chat_cli/Cargo.toml', 'tools/web_chat_cli/Cargo.lock', 'tools/web_chat_cli/**/*.rs', 'tools/html_build_cli/Cargo.toml', 'tools/html_build_cli/Cargo.lock', 'tools/html_build_cli/**/*.rs') }}
 
     - name: Build Ubuntu ARM64 terminal commands
       shell: bash

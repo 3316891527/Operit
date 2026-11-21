@@ -164,18 +164,24 @@ class ChatServiceCore(
         }
 
         coroutineScope.launch {
-            combine(
-                chatHistoryDelegate.currentChatId,
-                chatHistoryDelegate.chatHistories
-            ) { chatId, histories ->
-                histories.firstOrNull { it.id == chatId }
-            }.collect { chat ->
-                workspaceChangeTracker.updateOwner(
-                    ownerId = workspaceTrackerOwnerId,
-                    chatId = chat?.id,
-                    workspacePath = chat?.workspace,
-                    workspaceEnv = chat?.workspaceEnv
-                )
+            val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(context)
+            try {
+                combine(
+                    chatHistoryDelegate.currentChatId,
+                    chatHistoryDelegate.chatHistories
+                ) { chatId, histories ->
+                    histories.firstOrNull { it.id == chatId }
+                }.collect { chat ->
+                    monitor.updateOwner(workspaceTrackerOwnerId, chat?.id, chat?.workspace, chat?.workspaceEnv)
+                    workspaceChangeTracker.updateOwner(
+                        ownerId = workspaceTrackerOwnerId,
+                        chatId = chat?.id,
+                        workspacePath = chat?.workspace,
+                        workspaceEnv = chat?.workspaceEnv
+                    )
+                }
+            } finally {
+                monitor.clearOwner(workspaceTrackerOwnerId)
             }
         }
 

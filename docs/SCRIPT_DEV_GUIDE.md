@@ -6,6 +6,8 @@
 
 脚本主要使用 **TypeScript** 编写，以利用其强大的类型系统，但也可以使用原生 JavaScript (ES6+)。
 
+从 Operit 1.12.2+27 起，内置平台编辑器使用 `operit_editor({ args: [...] })`，脚本也可调用 `Tools.SoftwareSettings.exec(args)`。参数、实际帮助和升级要求见 [平台编辑器命令](OPERIT_EDITOR_COMMANDS.md)；其他既有软件设置 SDK 方法继续保留。
+
 ## 2. 先确定开发场景
 
 不要把“开发插件”和“修改 Operit 主仓”混为一件事。两者使用不同的目录、资料和调试路径。

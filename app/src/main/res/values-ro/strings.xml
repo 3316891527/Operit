@@ -6573,9 +6573,6 @@
     <string name="global_display_image_format">Formate de imagine</string>
     <string name="global_display_image_quality">Calitatea imaginii (numai pentru JPG (intră în vigoare)</string>
     <string name="global_display_resolution_scale">Redimensionarea rezoluției (micșorarea capturii de ecran înainte de trimitere)</string>
-    <string name="visit_web_wait_time_title">Visit Web Timpul de așteptare pentru accesarea paginii web</string>
-    <string name="visit_web_wait_time_description">Control visit_web Durata de așteptare înainte de revenirea automată după extragerea conținutului paginii. Setați la 0 Secunda se va întoarce imediat.</string>
-    <string name="visit_web_wait_time_value">%1$d secundă</string>
     <string name="toolpkg_hook_timeout_title">Expirare Hook ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Limitează timpul total de așteptare al lanțurilor Hook ToolPkg pentru intrarea de chat, prompt și rezumat pe traseul de trimitere. La expirare, Hook-ul curent este omis, iar procesarea continuă. Valoare implicită: 10 secunde. Nu afectează preluarea răspunsului message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d secunde</string>
@@ -8448,8 +8445,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Calitate %1$d%% · rezoluție %2$d%%</string>
     <string name="display_behavior_tools_plugins">Instrumente și extensii</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Așteptare acces web</string>
-    <string name="display_behavior_web_wait_desc">Așteaptă înainte de a returna conținutul web extras; 0 secunde înseamnă imediat.</string>
     <string name="display_behavior_hook_timeout">Limită de timp pentru hook-uri de preprocesare</string>
     <string name="display_behavior_hook_timeout_desc">Limita totală de așteptare pentru hook-urile de intrare, prompt și rezumat.</string>
     <string name="display_behavior_hook_hint">Hook-ul expirat este omis și procesarea continuă; preluarea răspunsului de către procesarea mesajelor nu este afectată.</string>
@@ -9137,7 +9132,7 @@
     <string name="workspace_changes_choose_base">Alegeți ramura de comparație</string>
     <string name="workspace_changes_load_failed">Nu s-au putut încărca modificările</string>
     <string name="workspace_changes_count">%1$d fișiere</string>
-    <string name="workspace_changes_empty_records">Nu există încă operații înregistrate. Operațiile de fișiere reușite vor apărea aici.</string>
+    <string name="workspace_changes_empty_records">Nu există modificări înregistrate. Asociază un spațiu de lucru pentru a înregistra și editările din terminal sau externe.</string>
     <string name="workspace_changes_empty_git">Nu există modificări în acest domeniu.</string>
     <string name="workspace_changes_choose_file">Selectați un fișier pentru a vedea diferențele</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operații</string>
@@ -9159,7 +9154,7 @@
     <string name="workspace_changes_git_environment">Acest mediu nu poate rula Git. Istoricul operațiilor este disponibil.</string>
     <string name="workspace_changes_git_runtime">Instalați Ubuntu din Resurse offline, apoi instalați Git în acel mediu.</string>
     <string name="workspace_outputs_title">Rezultatele conversației</string>
-    <string name="workspace_outputs_description">Examinați operațiile reușite din această conversație, în toate locațiile</string>
+    <string name="workspace_outputs_description">Vezi modificările salvate ale conversației, inclusiv instrumentele de fișiere și modificările reale din directorul asociat</string>
     <string name="workspace_outputs_scope">Operațiile acestei conversații, inclusiv fișierele din afara spațiului de lucru</string>
     <string name="workspace_changes_last_turn">Ultima rundă</string>
     <string name="workspace_changes_turn_summary">%1$s · Rezumatul rundei</string>
@@ -9211,4 +9206,18 @@
     <string name="workspace_open_not_text">Fișierul curent nu este text lizibil și nu poate fi deschis în editorul de text.</string>
     <string name="workspace_open_failed">Nu se poate deschide fișierul. Verifică detaliile de mai jos despre cale, conexiune sau stocare.</string>
     <string name="workspace_open_checking">Se verifică și se citește fișierul curent…</string>
+    <string name="markdown_mermaid_render_failed">Diagrama Mermaid nu a putut fi redată. Verifică sintaxa.</string>
+
+    <string name="voice_message_hold_to_record">Ține apăsat pentru a înregistra, eliberează pentru a trimite</string>
+    <string name="voice_message_release_send">Eliberează pentru a trimite</string>
+    <string name="voice_message_release_cancel">Eliberează pentru a anula</string>
+    <string name="voice_message_release_transcribe">Eliberează pentru transcriere</string>
+    <string name="voice_message_hold_slide_hint">Glisează în lateral pentru anulare sau transcriere</string>
+    <string name="voice_message_transcribe">Transcriere</string>
+    <string name="voice_message_transcribing">Se transcrie…</string>
+    <string name="voice_message_hold_limit">Limita de %1$d secunde a fost atinsă. Eliberează pentru a trimite</string>
+    <string name="voice_message_retry_transcribe">Reîncearcă transcrierea</string>
+    <string name="voice_message_finishing">Se finalizează înregistrarea…</string>
+    <string name="studio_background_blur_hint">Doar fundalul este estompat; textul și controalele rămân clare.</string>
+    <string name="studio_background_blur_inherit_hint">Adaugă o umplere sau un strat de fundal separat pentru a regla estomparea. Fundalurile moștenite folosesc setarea sursei.</string>
 </resources>

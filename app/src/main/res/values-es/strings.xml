@@ -6050,9 +6050,6 @@
     <string name="global_display_image_format">Formato de imagen</string>
     <string name="global_display_image_quality">Calidad de imagen (solo afecta a JPG)</string>
     <string name="global_display_resolution_scale">Escala de resolución (reducir captura antes de enviar)</string>
-    <string name="visit_web_wait_time_title">Tiempo de espera de visita web</string>
-    <string name="visit_web_wait_time_description">Controla el tiempo de espera de visit_web antes de volver automáticamente después de extraer el contenido de la página. Si se establece en 0 segundos, volverá inmediatamente.</string>
-    <string name="visit_web_wait_time_value">%1$d segundos</string>
     <string name="toolpkg_hook_timeout_title">Tiempo de espera de Hook de ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Limita el tiempo total de espera de las cadenas de Hook de entrada de chat, prompt y resumen de ToolPkg en la ruta de envío. Al agotarse el tiempo, se omite el Hook actual y el procesamiento continúa. Predeterminado: 10 segundos. No afecta a la toma de control de respuestas de message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d segundos</string>
@@ -7924,8 +7921,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Calidad %1$d%% · resolución %2$d%%</string>
     <string name="display_behavior_tools_plugins">Herramientas y complementos</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Espera de acceso web</string>
-    <string name="display_behavior_web_wait_desc">Espera antes de devolver el contenido web extraído; 0 segundos lo devuelve de inmediato.</string>
     <string name="display_behavior_hook_timeout">Tiempo límite de hooks de preprocesamiento</string>
     <string name="display_behavior_hook_timeout_desc">Límite total de espera de los hooks de entrada, prompt y resumen.</string>
     <string name="display_behavior_hook_hint">Se omite el hook que agote el tiempo y se continúa el procesamiento; no afecta a la toma de control de respuestas del procesamiento de mensajes.</string>
@@ -8613,7 +8608,7 @@
     <string name="workspace_changes_choose_base">Elegir rama de comparación</string>
     <string name="workspace_changes_load_failed">No se pudieron cargar los cambios</string>
     <string name="workspace_changes_count">%1$d archivos</string>
-    <string name="workspace_changes_empty_records">Todavía no hay operaciones registradas. Las operaciones de archivos correctas aparecerán aquí.</string>
+    <string name="workspace_changes_empty_records">Aún no hay cambios registrados. Vincula un espacio de trabajo para registrar también los cambios del terminal y externos.</string>
     <string name="workspace_changes_empty_git">No hay cambios en este ámbito.</string>
     <string name="workspace_changes_choose_file">Selecciona un archivo para ver las diferencias</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operaciones</string>
@@ -8635,7 +8630,7 @@
     <string name="workspace_changes_git_environment">Este entorno no puede ejecutar Git. El historial sigue disponible.</string>
     <string name="workspace_changes_git_runtime">Instala Ubuntu desde Recursos sin conexión y después Git en ese entorno.</string>
     <string name="workspace_outputs_title">Resultados de la conversación</string>
-    <string name="workspace_outputs_description">Revisar las operaciones de esta conversación en cualquier ubicación</string>
+    <string name="workspace_outputs_description">Ver los cambios guardados de esta conversación, incluidas las herramientas de archivos y la carpeta vinculada</string>
     <string name="workspace_outputs_scope">Operaciones de esta conversación, incluidos archivos fuera del espacio de trabajo</string>
     <string name="workspace_changes_last_turn">Último turno</string>
     <string name="workspace_changes_turn_summary">%1$s · Resumen del turno</string>
@@ -8687,4 +8682,18 @@
     <string name="workspace_open_not_text">El archivo actual no es texto legible y no se puede abrir en el editor de texto.</string>
     <string name="workspace_open_failed">No se puede abrir el archivo. Revisa el motivo detallado de ruta, conexión o almacenamiento.</string>
     <string name="workspace_open_checking">Comprobando y leyendo el archivo actual…</string>
+    <string name="markdown_mermaid_render_failed">No se pudo renderizar el diagrama Mermaid. Comprueba la sintaxis.</string>
+
+    <string name="voice_message_hold_to_record">Mantén pulsado para grabar; suelta para enviar</string>
+    <string name="voice_message_release_send">Suelta para enviar</string>
+    <string name="voice_message_release_cancel">Suelta para cancelar</string>
+    <string name="voice_message_release_transcribe">Suelta para transcribir</string>
+    <string name="voice_message_hold_slide_hint">Desliza hacia los lados para cancelar o transcribir</string>
+    <string name="voice_message_transcribe">Transcribir</string>
+    <string name="voice_message_transcribing">Transcribiendo…</string>
+    <string name="voice_message_hold_limit">Límite de %1$d segundos alcanzado. Suelta para enviar</string>
+    <string name="voice_message_retry_transcribe">Reintentar transcripción</string>
+    <string name="voice_message_finishing">Finalizando grabación…</string>
+    <string name="studio_background_blur_hint">Solo se desenfoca el fondo; el texto y los controles permanecen nítidos.</string>
+    <string name="studio_background_blur_inherit_hint">Añade un relleno o una capa de fondo independiente para ajustar el desenfoque. Los fondos heredados usan el ajuste de origen.</string>
 </resources>

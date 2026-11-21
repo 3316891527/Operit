@@ -35,6 +35,7 @@ internal fun WorkspaceCompressionDialog(
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf(workspaceCompressionBaseName(targets.first())) }
     var format by remember { mutableStateOf(WorkspaceArchiveKind.ZIP) }
+    val outputName = workspaceCompressionFileName(name, format, targets.first())
     var destination by remember { mutableStateOf(initial) }
     var password by remember { mutableStateOf("") }
     var level by remember { mutableIntStateOf(1) }
@@ -50,7 +51,7 @@ internal fun WorkspaceCompressionDialog(
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), singleLine = true,
                     label = { Text(stringResource(R.string.workspace_archive_name)) },
-                    suffix = { Text("." + workspaceArchiveExtension(format)) },
+                    suffix = if (outputName != name) { { Text(outputName.removePrefix(name)) } } else null,
                     supportingText = { Text(stringResource(R.string.workspace_archive_name_hint)) },
                     isError = !isValidWorkspaceEntryName(name))
                 Text(stringResource(R.string.workspace_archive_format), style = MaterialTheme.typography.labelLarge)
@@ -80,7 +81,7 @@ internal fun WorkspaceCompressionDialog(
                 busy = true
                 job = scope.launch {
                     try {
-                        val fileName = workspaceCompressionFileName(name, format)
+                        val fileName = outputName
                         store.create(targets, destination, fileName, format, if (format == WorkspaceArchiveKind.ZIP) password else "", level)
                         onComplete()
                     } catch (cancel: CancellationException) { throw cancel } catch (failure: Exception) { AppLogger.e("WorkspaceArchive", "创建归档失败", failure); error = failure.localizedMessage ?: failure.javaClass.simpleName } finally { busy = false; job = null }

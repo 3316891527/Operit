@@ -261,7 +261,8 @@ internal class WebSessionBrowserHost(
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                 installViewTreeOwners(this, lifecycleOwner)
                 setContent {
-                    Content()
+                    // 显式使用浏览器宿主，避免解析到 ComposeView.Content() 后递归执行内容。
+                    this@WebSessionBrowserHost.Content()
                 }
             }
 

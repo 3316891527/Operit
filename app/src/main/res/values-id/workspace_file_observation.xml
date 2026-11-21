@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_observation_error">Pemantauan berkas gagal: %1$s. Riwayat tersimpan tetap tersedia.</string>
+    <string name="workspace_changes_base_deleted">Cabang pembanding %1$s sudah tidak ada. Pilih cabang yang tersedia dari daftar.</string>
+</resources>

@@ -338,15 +338,15 @@ internal class EditorDocument(initialText: String = "") {
                 clearHistory()
             }
             clearComposingRegion()
-            collapseSelection(newText.length)
+            collapseSelection(0)
             return
         }
         replaceRangeInternal(
             start = 0,
             end = buffer.length,
             replacement = newText,
-            afterSelectionStart = newText.length,
-            afterSelectionEnd = newText.length,
+            afterSelectionStart = 0,
+            afterSelectionEnd = 0,
             recordHistory = false
         )
         if (clearHistory) {

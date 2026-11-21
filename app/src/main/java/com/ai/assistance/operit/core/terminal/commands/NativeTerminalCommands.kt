@@ -10,7 +10,21 @@ object NativeTerminalCommands {
     private const val ASSET_ROOT = "terminal_commands"
     private const val COMMAND_DIRECTORY = "/usr/local/bin"
 
+    @Synchronized
+    fun updateLanguage(context: Context, language: String = com.ai.assistance.operit.util.android.LocaleUtils.getCurrentLanguage(context)): File {
+        val file = File(context.filesDir, "terminal-commands/language")
+        check(file.parentFile?.mkdirs() == true || file.parentFile?.isDirectory == true)
+        val atomic = android.util.AtomicFile(file)
+        val stream = atomic.startWrite()
+        try {
+            stream.write((if (language.substringBefore('-').equals("zh", true)) "zh" else "en").toByteArray(Charsets.UTF_8))
+            atomic.finishWrite(stream)
+        } catch (error: Exception) { atomic.failWrite(stream); throw error }
+        return file
+    }
+
     fun sessionInitializer(context: Context): String {
+        val languageFile = updateLanguage(context)
         val manifest = context.assets.open("$ASSET_ROOT/manifest.json").bufferedReader(Charsets.UTF_8).use {
             JSONObject(it.readText())
         }
@@ -65,7 +79,7 @@ object NativeTerminalCommands {
         }
         val buildSocket = HtmlBuildCommandServer.ensureStarted(context)
         val buildInstall = "bash ${quote(buildScript.absolutePath)} ${quote(buildExecutable.absolutePath)} ${quote(buildBinary.getString("sha256"))} ${quote(COMMAND_DIRECTORY)} ${quote(buildSocket)}"
-        return "$patchInstall && $webInstall && $buildInstall"
+        return "export OPERIT_COMMAND_LANGUAGE_FILE=${quote(languageFile.absolutePath)} && $patchInstall && $webInstall && $buildInstall"
     }
 
     private fun quote(value: String): String = "'" + value.replace("'", "'\"'\"'") + "'"

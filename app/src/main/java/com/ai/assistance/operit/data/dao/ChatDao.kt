@@ -1,8 +1,7 @@
 package com.ai.assistance.operit.data.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
+import androidx.room.Upsert
 import androidx.room.Query
 import com.ai.assistance.operit.data.model.ChatEntity
 import com.ai.assistance.operit.data.model.CharacterCardChatStats
@@ -13,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ChatDao {
     /** 获取所有聊天，按显示顺序排列 */
-    @Query("SELECT * FROM chats ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' ORDER BY pinned DESC, displayOrder ASC")
     fun getAllChats(): Flow<List<ChatEntity>>
 
     /** 排序与组织调整不修改最近使用时间。 */
@@ -30,7 +29,7 @@ interface ChatDao {
     suspend fun markChatUsed(chatId: String, timestamp: Long)
 
     /** 获取聊天总数 */
-    @Query("SELECT COUNT(*) FROM chats")
+    @Query("SELECT COUNT(*) FROM chats WHERE chatKind = 'NORMAL'")
     suspend fun getTotalChatCount(): Int
 
     /** 获取所有聊天（挂起函数版本） */
@@ -42,7 +41,7 @@ interface ChatDao {
     suspend fun getChatById(chatId: String): ChatEntity?
 
     /** 插入或更新聊天 */
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertChat(chat: ChatEntity)
+    @Upsert suspend fun insertChat(chat: ChatEntity)
 
     /** 删除聊天 */
     @Query("DELETE FROM chats WHERE id = :chatId") suspend fun deleteChat(chatId: String)
@@ -78,6 +77,10 @@ interface ChatDao {
         chatId: String, inputTokens: Long, outputTokens: Long, currentWindowSize: Long,
         usageBreakdownJson: String, timestamp: Long = System.currentTimeMillis(),
     )
+
+    /** 清空会话时一起移除旧明细，不能把上次运行的分类带入新会话。 */
+    @Query("UPDATE chats SET inputTokens = 0, outputTokens = 0, currentWindowSize = 0, usageBreakdownJson = NULL, updatedAt = :timestamp WHERE id = :chatId")
+    suspend fun resetChatTokenUsage(chatId: String, timestamp: Long = System.currentTimeMillis())
 
     /** 刷新窗口时不修改累计用量。 */
     @Query("UPDATE chats SET updatedAt = :timestamp, currentWindowSize = :currentWindowSize WHERE id = :chatId")
@@ -139,44 +142,37 @@ interface ChatDao {
     suspend fun updateChatPinned(chatId: String, pinned: Boolean, timestamp: Long = System.currentTimeMillis())
 
     /** 根据parentChatId获取所有分支对话 */
-    @Query("SELECT * FROM chats WHERE parentChatId = :parentChatId ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND parentChatId = :parentChatId ORDER BY pinned DESC, displayOrder ASC")
     suspend fun getBranchesByParentId(parentChatId: String): List<ChatEntity>
 
     /** 根据parentChatId获取所有分支对话（Flow版本） */
-    @Query("SELECT * FROM chats WHERE parentChatId = :parentChatId ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND parentChatId = :parentChatId ORDER BY pinned DESC, displayOrder ASC")
     fun getBranchesByParentIdFlow(parentChatId: String): Flow<List<ChatEntity>>
 
     /** 获取所有没有父对话的对话（即主对话） */
-    @Query("SELECT * FROM chats WHERE parentChatId IS NULL ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND parentChatId IS NULL ORDER BY pinned DESC, displayOrder ASC")
     suspend fun getMainChats(): List<ChatEntity>
 
     /** 获取所有没有父对话的对话（Flow版本） */
-    @Query("SELECT * FROM chats WHERE parentChatId IS NULL ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND parentChatId IS NULL ORDER BY pinned DESC, displayOrder ASC")
     fun getMainChatsFlow(): Flow<List<ChatEntity>>
 
     /** 根据角色卡名称过滤聊天（非默认角色卡：只显示该角色卡名称的对话） */
-    @Query("SELECT * FROM chats WHERE characterCardName = :characterCardName AND characterGroupId IS NULL ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND characterCardName = :characterCardName AND characterGroupId IS NULL ORDER BY pinned DESC, displayOrder ASC")
     fun getChatsByCharacterCard(characterCardName: String): Flow<List<ChatEntity>>
 
     /** 根据群组ID过滤聊天 */
-    @Query("SELECT * FROM chats WHERE characterGroupId = :characterGroupId ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND characterGroupId = :characterGroupId ORDER BY pinned DESC, displayOrder ASC")
     fun getChatsByCharacterGroupId(characterGroupId: String): Flow<List<ChatEntity>>
 
     /** 根据角色卡名称过滤聊天（默认角色卡：显示该角色卡名称的对话 + 所有characterCardName为null的对话） */
-    @Query("SELECT * FROM chats WHERE characterCardName = :characterCardName OR (characterCardName IS NULL AND characterGroupId IS NULL) ORDER BY pinned DESC, displayOrder ASC")
+    @Query("SELECT * FROM chats WHERE chatKind = 'NORMAL' AND (characterCardName = :characterCardName OR (characterCardName IS NULL AND characterGroupId IS NULL)) ORDER BY pinned DESC, displayOrder ASC")
     fun getChatsByCharacterCardOrNull(characterCardName: String): Flow<List<ChatEntity>>
 
     /** 批量清理绑定特定角色卡名称的对话（将characterCardName设为null） */
     @Query("UPDATE chats SET characterCardName = NULL, updatedAt = :timestamp WHERE characterCardName = :characterCardName")
     suspend fun clearCharacterCardBinding(characterCardName: String, timestamp: Long = System.currentTimeMillis())
 
-    /** 批量删除绑定特定角色卡名称的未锁定对话 */
-    @Query("DELETE FROM chats WHERE characterCardName = :characterCardName AND locked = 0")
-    suspend fun deleteUnlockedChatsByCharacterCardName(characterCardName: String): Int
-
-    /** 批量删除未绑定角色卡的未锁定对话 */
-    @Query("DELETE FROM chats WHERE characterCardName IS NULL AND characterGroupId IS NULL AND locked = 0")
-    suspend fun deleteUnlockedUnboundChats(): Int
 
     /** 批量重命名角色卡绑定 */
     @Query("UPDATE chats SET characterCardName = :newName, updatedAt = :timestamp WHERE characterCardName = :oldName")
@@ -251,7 +247,7 @@ interface ChatDao {
             FROM messages
             GROUP BY chatId
         ) mc ON c.id = mc.chatId
-        WHERE c.characterGroupId IS NULL
+        WHERE c.chatKind = 'NORMAL' AND c.characterGroupId IS NULL
         GROUP BY c.characterCardName
         """
     )
@@ -270,7 +266,7 @@ interface ChatDao {
             FROM messages
             GROUP BY chatId
         ) mc ON c.id = mc.chatId
-        WHERE c.characterCardName IS NULL
+        WHERE c.chatKind = 'NORMAL' AND c.characterCardName IS NULL
         GROUP BY c.characterGroupId
         """
     )

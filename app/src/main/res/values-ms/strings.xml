@@ -5733,9 +5733,6 @@
     <string name="global_display_image_format">Format imej</string>
     <string name="global_display_image_quality">Kualiti imej (hanya untuk JPG)</string>
     <string name="global_display_resolution_scale">Skala resolusi (kecilkan tangkapan skrin sebelum hantar)</string>
-    <string name="visit_web_wait_time_title">Masa tunggu lawatan web Visit Web</string>
-    <string name="visit_web_wait_time_description">Kawal tempoh tunggu visit_web sebelum kembali automatik selepas ekstrak kandungan halaman. Tetapkan 0 saat untuk kembali serta-merta.</string>
-    <string name="visit_web_wait_time_value">%1$d saat</string>
     <string name="toolpkg_hook_timeout_title">Had Masa Hook ToolPkg</string>
     <string name="toolpkg_hook_timeout_description">Mengehadkan jumlah masa menunggu rantaian Hook input sembang, gesaan dan ringkasan ToolPkg pada laluan penghantaran. Apabila tamat masa, Hook semasa dilangkau dan pemprosesan diteruskan. Lalai: 10 saat. Tidak menjejaskan pengambilalihan respons message_processing.</string>
     <string name="toolpkg_hook_timeout_value">%1$d saat</string>
@@ -7855,8 +7852,6 @@
     <string name="display_behavior_screenshot_jpg_summary">Kualiti %1$d%% · resolusi %2$d%%</string>
     <string name="display_behavior_tools_plugins">Alat dan pemalam</string>
     <string name="display_behavior_seconds_suffix">" s"</string>
-    <string name="display_behavior_web_wait">Masa tunggu akses web</string>
-    <string name="display_behavior_web_wait_desc">Tunggu sebelum memulangkan kandungan web yang diekstrak; 0 saat bermakna serta-merta.</string>
     <string name="display_behavior_hook_timeout">Had masa Hook pemalam prapemprosesan</string>
     <string name="display_behavior_hook_timeout_desc">Had jumlah masa tunggu Hook input sembang, prompt dan ringkasan.</string>
     <string name="display_behavior_hook_hint">Langkau Hook yang tamat masa dan teruskan pemprosesan; pengambilalihan balasan oleh pemprosesan mesej tidak terjejas.</string>
@@ -8544,7 +8539,7 @@
     <string name="workspace_changes_choose_base">Pilih cabang perbandingan</string>
     <string name="workspace_changes_load_failed">Tidak dapat memuatkan perubahan fail</string>
     <string name="workspace_changes_count">%1$d fail</string>
-    <string name="workspace_changes_empty_records">Belum ada operasi fail direkodkan. Operasi alat fail yang berjaya akan muncul di sini.</string>
+    <string name="workspace_changes_empty_records">Belum ada perubahan direkodkan. Pautkan ruang kerja untuk merekodkan suntingan terminal dan luaran.</string>
     <string name="workspace_changes_empty_git">Tiada perubahan fail dalam skop ini.</string>
     <string name="workspace_changes_choose_file">Pilih fail untuk menyemak perbezaannya</string>
     <string name="workspace_changes_history_count">%1$s · %2$d operasi</string>
@@ -8566,7 +8561,7 @@
     <string name="workspace_changes_git_environment">Persekitaran fail ini tidak boleh menjalankan Git. Sejarah operasi masih tersedia.</string>
     <string name="workspace_changes_git_runtime">Pasang Ubuntu daripada Sumber luar talian, kemudian pasang Git dalam persekitaran itu.</string>
     <string name="workspace_outputs_title">Hasil perbualan</string>
-    <string name="workspace_outputs_description">Semak operasi fail berjaya daripada perbualan ini di semua lokasi</string>
+    <string name="workspace_outputs_description">Lihat perubahan tersimpan perbualan ini, termasuk alat fail dan perubahan direktori yang dipautkan</string>
     <string name="workspace_outputs_scope">Operasi fail daripada perbualan ini, termasuk fail di luar ruang kerja</string>
     <string name="workspace_changes_last_turn">Giliran terakhir</string>
     <string name="workspace_changes_turn_summary">%1$s · Ringkasan giliran</string>
@@ -8618,4 +8613,18 @@
     <string name="workspace_open_not_text">Fail semasa bukan teks yang boleh dibaca dan tidak boleh dibuka dalam penyunting teks.</string>
     <string name="workspace_open_failed">Tidak dapat membuka fail. Semak butiran punca berkaitan laluan, sambungan atau storan di bawah.</string>
     <string name="workspace_open_checking">Menyemak dan membaca fail semasa…</string>
+    <string name="markdown_mermaid_render_failed">Rajah Mermaid tidak dapat dipaparkan. Semak sintaksnya.</string>
+
+    <string name="voice_message_hold_to_record">Tekan dan tahan untuk merakam, lepaskan untuk menghantar</string>
+    <string name="voice_message_release_send">Lepaskan untuk menghantar</string>
+    <string name="voice_message_release_cancel">Lepaskan untuk membatalkan</string>
+    <string name="voice_message_release_transcribe">Lepaskan untuk transkripsi</string>
+    <string name="voice_message_hold_slide_hint">Leret ke sisi untuk membatalkan atau membuat transkripsi</string>
+    <string name="voice_message_transcribe">Transkripsi</string>
+    <string name="voice_message_transcribing">Sedang membuat transkripsi…</string>
+    <string name="voice_message_hold_limit">Had %1$d saat dicapai. Lepaskan untuk menghantar</string>
+    <string name="voice_message_retry_transcribe">Cuba semula transkripsi</string>
+    <string name="voice_message_finishing">Menamatkan rakaman…</string>
+    <string name="studio_background_blur_hint">Hanya latar belakang dikaburkan; teks dan kawalan kekal jelas.</string>
+    <string name="studio_background_blur_inherit_hint">Tambah isian atau lapisan latar belakang tersendiri untuk melaraskan kekaburan. Latar belakang yang diwarisi menggunakan tetapan sumber.</string>
 </resources>

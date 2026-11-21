@@ -29,5 +29,6 @@ data class ChatHistory(
     val lastUsedAt: Long = 0L,
     val pinned: Boolean = false,
     val archived: Boolean = false,
-    val usageBreakdownJson: String? = null
+    val usageBreakdownJson: String? = null,
+    val chatKind: String = ChatKind.NORMAL
 )

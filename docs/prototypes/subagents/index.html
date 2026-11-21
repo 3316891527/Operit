@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Operit · 子代理交互原型</title>
+<style>
+/* 独立原型沿用中性深色；浅色使用现有页面底色。 */
+:root{--bg:#161616;--sidebar:#121212;--surface:#1e1e1e;--raised:#252525;--hover:#2c2c2c;--line:#ffffff13;--line-strong:#ffffff24;--text:#eeeef0;--muted:#a3a3a9;--quiet:#74747c;--accent:#a9d5fa;--accent-bg:#a9d5fa12;--green:#a9d9bd;--green-bg:#a9d9bd13;--purple:#c5b3ef;--purple-bg:#c5b3ef14;--amber:#e6c18d;--amber-bg:#e6c18d14;--red:#edaaa4;--red-bg:#edaaa414;--shadow:0 24px 90px #0007;--radius:16px;--font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",sans-serif;font-family:var(--font);font-size:14px;color-scheme:dark}
+:root[data-theme=light]{--bg:#f7f9ff;--sidebar:#eef1f7;--surface:#fff;--raised:#f0f3f9;--hover:#e8edf5;--line:#17233512;--line-strong:#17233526;--text:#24272f;--muted:#626977;--quiet:#848b97;--accent:#316287;--accent-bg:#3162870c;--green:#397253;--green-bg:#3972530b;--purple:#7855a6;--purple-bg:#7855a60d;--amber:#94672d;--amber-bg:#94672d0d;--red:#ab5047;--red-bg:#ab50470c;--shadow:0 24px 90px #29375020;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;overflow:hidden}button,input,textarea,select{font:inherit}button{cursor:pointer;color:inherit}button:disabled{cursor:default;opacity:.4}button,input,textarea,select{outline:none}button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}input:focus,textarea:focus,select:focus{border-color:var(--accent)!important}button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}svg.icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex:none}svg.sm{width:16px;height:16px}svg.xs{width:14px;height:14px}[hidden]{display:none!important}.sprites{position:absolute;width:0;height:0;overflow:hidden}p,h1,h2,h3,h4{margin:0}button.plain{border:0;background:none;padding:0}button.icon-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:38px;height:38px;border:1px solid transparent;background:none;border-radius:11px;color:var(--muted)}button.icon-button:hover{background:var(--hover);color:var(--text)}button.btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:11px;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 15px;font-weight:500;line-height:1.45}button.btn:hover{background:var(--hover)}button.btn.primary{background:var(--accent);border-color:var(--accent);color:#172b3c}button.btn.primary:hover{filter:brightness(1.06)}[data-theme=light] button.btn.primary{color:#fff}button.btn.soft{border-color:transparent;background:var(--accent-bg);color:var(--accent)}button.btn.danger{color:var(--red);border-color:var(--red-bg);background:var(--red-bg)}button.btn.small{min-height:34px;padding:7px 11px;font-size:12px}.text-button{border:0;background:none;color:var(--accent);padding:8px 0;display:inline-flex;align-items:center;gap:6px}.muted{color:var(--muted)}.quiet{color:var(--quiet)}.small{font-size:12px}.eyebrow{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--quiet);font-weight:600}.row{display:flex;align-items:center;gap:10px}.spread{justify-content:space-between}.fill{flex:1;min-width:0}.divider{height:1px;background:var(--line);margin:20px 0}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:7px;font-size:11px;padding:3px 8px;white-space:nowrap;background:var(--raised);color:var(--muted)}.pill.demo{font-size:10px;letter-spacing:.6px;border:1px solid var(--line-strong);background:none}.dot{display:inline-block;flex:none;width:6px;height:6px;background:currentColor;border-radius:50%}.live-dot{box-shadow:0 0 0 4px var(--accent-bg);animation:breathe 2.4s ease-in-out infinite}.status{color:var(--muted);font-size:11px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.status.running{color:var(--accent)}.status.completed{color:var(--green)}.status.queued{color:var(--purple)}.status.interrupted{color:var(--amber)}.status.failed{color:var(--red)}.status.cancelled{color:var(--quiet)}.badge{width:34px;height:34px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;flex:none;background:var(--accent-bg);color:var(--accent)}.badge.research{background:var(--purple-bg);color:var(--purple)}.badge.design{background:var(--accent-bg);color:var(--accent)}.badge.review{background:var(--green-bg);color:var(--green)}.badge.master{background:var(--text);color:var(--bg);border-radius:50%;width:29px;height:29px}.badge.large{width:43px;height:43px;border-radius:14px}.badge.tiny{width:27px;height:27px;border-radius:8px}.badge.tiny svg{width:15px;height:15px}.avatar-stack{display:flex;padding-left:5px}.avatar-stack .badge{margin-left:-5px;border:2px solid var(--bg);width:27px;height:27px}.avatar-stack svg{width:13px;height:13px}
+.app{height:100dvh;display:grid;grid-template-columns:222px minmax(0,1fr)}.sidebar{background:var(--sidebar);border-right:1px solid var(--line);padding:27px 16px 18px;display:flex;flex-direction:column;min-height:0}.brand{display:flex;align-items:center;gap:11px;padding:0 12px 30px;font-size:21px;letter-spacing:.3px;font-weight:630}.brand-mark{width:28px;height:28px;color:var(--accent)}.brand-mark svg{width:28px;height:28px}.nav-list{display:flex;flex-direction:column;gap:5px}.nav-item{border:0;background:none;border-radius:10px;min-height:43px;padding:10px 13px;display:flex;align-items:center;gap:11px;color:var(--muted);text-align:left;width:100%;font-size:13px}.nav-item:hover{background:var(--hover);color:var(--text)}.nav-item.active{background:var(--raised);color:var(--text)}.nav-item.active svg{color:var(--accent)}.nav-count{margin-left:auto;font-size:10px;background:var(--accent-bg);color:var(--accent);border-radius:5px;padding:0 6px;line-height:20px}.sidebar-section{margin-top:31px;padding:0 12px}.sidebar-section .eyebrow{margin-bottom:14px}.history-item{border:0;background:none;text-align:left;color:var(--muted);font-size:12px;padding:5px 0;line-height:1.8;display:flex;align-items:center;gap:8px}.history-item .dot{width:4px;height:4px;color:var(--quiet)}.sidebar-bottom{margin-top:auto}.tour-card{margin:20px 4px 15px;padding:15px;background:var(--surface);border:1px solid var(--line);border-radius:13px}.tour-card p{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.85}.tour-card .text-button{font-size:11px;padding-bottom:0}.sidebar-bottom .profile{padding:15px 10px 0;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}.profile-avatar{background:var(--raised);border:1px solid var(--line);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;font-size:11px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 354px;min-width:0;min-height:0}.center{display:flex;flex-direction:column;min-width:0;min-height:0}.topbar{height:76px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 30px;border-bottom:1px solid var(--line);gap:12px}.topbar h1{font-size:15px;line-height:1.5;font-weight:570}.topbar .crumb{font-size:10px;color:var(--quiet);letter-spacing:.2px;margin-top:3px}.top-actions{display:flex;gap:3px;align-items:center}.mobile-menu{display:none!important}.mobile-agent-label{display:none}.content-area{overflow:auto;overscroll-behavior:contain;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}.conversation{max-width:780px;margin:0 auto;padding:29px 38px 32px}.date-label{text-align:center;font-size:10px;color:var(--quiet);letter-spacing:1px;margin-bottom:27px}.user-message{max-width:87%;margin-left:auto;background:var(--raised);border:1px solid var(--line);padding:15px 19px;border-radius:17px 17px 4px 17px;line-height:1.85;font-size:13px}.assistant-head{display:flex;gap:10px;align-items:center;margin:29px 0 13px}.assistant-head strong{font-size:12px;font-weight:600}.assistant-head .small{font-size:10px;color:var(--quiet)}.assistant-body{padding-left:39px;font-size:13px;line-height:1.95}.assistant-body>p{margin-bottom:15px}.plan-list{margin:20px 0 18px;border-left:1px solid var(--line-strong);padding-left:20px;display:flex;flex-direction:column;gap:18px}.plan-item{display:flex;align-items:flex-start;gap:12px}.plan-item h3{font-size:12px;font-weight:550;margin-bottom:3px}.plan-item p{font-size:11px;color:var(--muted);line-height:1.85}.plan-item .badge{width:29px;height:29px;border-radius:9px}.plan-item .badge svg{width:17px;height:17px}.plan-launch{margin-top:22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.plan-launch .quiet{font-size:10px}.agent-group{margin:21px 0;border:1px solid var(--line-strong);border-radius:14px;overflow:hidden;background:var(--surface)}.group-header{padding:12px 15px;display:flex;align-items:center;justify-content:space-between;background:var(--raised);border-bottom:1px solid var(--line);gap:10px}.group-header strong{font-size:11px;font-weight:550}.group-header span.small{font-size:10px}.group-collapse{border:0;background:none;color:var(--muted);padding:0;width:26px;height:26px;display:grid;place-items:center}.group-collapse svg{transition:transform .2s}.agent-event{width:100%;background:none;border:0;text-align:left;display:flex;gap:11px;align-items:flex-start;padding:15px;border-bottom:1px solid var(--line);position:relative}.agent-event:last-child{border-bottom:0}.agent-event:hover{background:var(--hover)}.agent-event .badge{margin-top:1px;width:29px;height:29px;border-radius:9px}.agent-event .badge svg{width:16px;height:16px}.agent-event .event-title{font-size:12px;font-weight:500;margin-bottom:4px;line-height:1.6}.agent-event .event-meta{font-size:10px;color:var(--quiet);display:flex;gap:7px;align-items:center;flex-wrap:wrap}.agent-event .event-activity{font-size:11px;color:var(--muted);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agent-event .arrow{color:var(--quiet);margin-top:4px}.event-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.progress-line{height:2px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:10px}.progress-line span{height:100%;display:block;background:var(--accent);transition:width .5s ease;opacity:.65}.agent-event.completed .progress-line span{background:var(--green)}.agent-event.interrupted .progress-line span{background:var(--amber)}.agent-event.failed .progress-line span{background:var(--red)}.task-event-note{font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;margin:15px 0}.task-event-note svg{margin-top:3px;color:var(--accent)}.callout{padding:13px 15px;border-radius:11px;border:1px solid var(--line);background:var(--accent-bg);font-size:12px;line-height:1.9;margin:18px 0}.callout.warning{background:var(--amber-bg);color:var(--amber)}.callout.success{background:var(--green-bg)}.callout p+p{margin-top:7px}.summary-answer{border-top:1px solid var(--line);padding-top:18px;margin-top:20px}.summary-answer h3{font-size:14px;margin-bottom:9px}.summary-answer ul{padding-left:18px;margin:9px 0 18px}.summary-answer li{padding:3px 0;color:var(--muted)}.artifact{display:flex;align-items:center;gap:11px;padding:13px 15px;border:1px solid var(--line-strong);background:var(--surface);border-radius:12px;text-align:left;width:100%;margin:16px 0}.artifact .badge{border-radius:9px}.artifact strong{font-size:12px;display:block}.artifact small{font-size:10px;color:var(--quiet)}.artifact .icon:last-child{color:var(--quiet)}.reply-block{margin-top:19px;padding-top:17px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.reply-block .user-followup{color:var(--text);font-size:12px;margin:8px 0}.composer-area{flex:none;max-width:780px;width:100%;margin:auto;padding:0 38px 19px}.activity-strip{display:flex;align-items:center;gap:10px;padding:10px 3px 12px;font-size:11px;color:var(--muted)}.activity-strip .text-button{padding:0;font-size:10px}.activity-strip .control{margin-left:auto;display:flex;gap:2px}.activity-strip .icon-button{width:29px;height:29px}.activity-strip .icon{width:16px;height:16px}.composer{border:1px solid var(--line-strong);border-radius:15px;padding:12px 13px 10px;background:var(--surface);transition:border-color .2s}.composer:focus-within{border-color:var(--quiet)}.composer textarea{width:100%;resize:none;background:none;color:var(--text);border:0;padding:0 3px;line-height:1.7;min-height:26px;max-height:90px;font-size:12px;display:block}.composer textarea::placeholder{color:var(--quiet)}.composer-bottom{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}.model-label{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)}.send-button{width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:9px;background:var(--accent);color:#172b3c}[data-theme=light] .send-button{color:white}.send-button .icon{width:17px;height:17px}.composer-help{text-align:center;font-size:9px;color:var(--quiet);margin-top:10px;letter-spacing:.15px}.demo-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;gap:8px;font-size:10px;color:var(--quiet)}.demo-footer button{font-size:10px;color:var(--muted);border:0;background:none;padding:0;display:flex;align-items:center;gap:4px}.demo-footer .icon{width:12px;height:12px}
+/* 宽屏并列展示详情，手机把同一内容收进底部面板。 */
+.inspector{border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--bg);min-width:0}.inspector-header{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 23px;border-bottom:1px solid var(--line);flex:none}.inspector-header h2{font-size:12px;font-weight:550}.inspector-content{overflow:auto;padding:25px 23px;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}.overview-title{font-size:23px;font-weight:500;line-height:1.6;letter-spacing:-.7px;margin:12px 0}.overview-desc{font-size:12px;color:var(--muted);line-height:2}.orbit-visual{height:150px;margin:27px 0 20px;display:flex;align-items:center;justify-content:center;position:relative}.orbit-ring{width:132px;height:132px;border:1px solid var(--line-strong);border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}.orbit-ring:before{content:"";position:absolute;width:85px;height:85px;border:1px dashed var(--line);border-radius:50%}.orbit-ring .badge{position:absolute;z-index:1;border:3px solid var(--bg)}.orbit-ring .master{position:static;z-index:2;width:38px;height:38px}.orbit-ring .research{top:-6px;left:15px}.orbit-ring .design{right:-15px;top:47px}.orbit-ring .review{bottom:-3px;left:10px}.overview-stats{display:grid;grid-template-columns:repeat(3,1fr);margin:25px 0;border-bottom:1px solid var(--line);padding-bottom:23px;gap:7px}.overview-stats strong{font-size:23px;line-height:1.5;font-weight:450;display:block}.overview-stats small{font-size:10px;color:var(--quiet)}.how-step{display:flex;gap:12px;margin:20px 0;font-size:11px}.how-step>span{width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line-strong);border-radius:7px;color:var(--quiet);font-size:10px;flex:none}.how-step strong{font-weight:500;display:block;margin-bottom:4px}.how-step p{color:var(--muted);font-size:11px;line-height:1.9}.reference-note{border-top:1px solid var(--line);padding-top:18px;margin-top:27px;color:var(--quiet);font-size:10px;line-height:2}.reference-note strong{font-size:10px;color:var(--muted);display:block;font-weight:500}.detail-identity{display:flex;align-items:center;gap:13px;margin-bottom:20px}.detail-identity h3{font-size:15px;font-weight:550;margin-bottom:5px}.detail-identity .muted{font-size:10px}.detail-title{font-size:19px;letter-spacing:-.3px;font-weight:500;line-height:1.7;margin-bottom:14px}.task-switcher{display:block;margin:0 0 16px}.task-switcher select{width:100%;background:var(--surface);border:1px solid var(--line-strong);border-radius:9px;color:var(--muted);padding:9px 10px;font-size:11px;min-width:0;text-overflow:ellipsis}.detail-status-line{display:flex;align-items:center;justify-content:space-between;margin:16px 0 23px}.tabs{display:flex;gap:20px;border-bottom:1px solid var(--line);margin-bottom:23px}.tab{border:0;border-bottom:2px solid transparent;background:none;font-size:11px;padding:0 1px 12px;color:var(--muted)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}.section-label{font-size:10px;color:var(--quiet);margin:20px 0 9px;letter-spacing:.5px}.detail-prose{font-size:12px;color:var(--muted);line-height:2}.detail-prose p+p{margin-top:9px}.detail-prose ul{padding-left:17px;margin:10px 0}.detail-prose li{margin:7px 0}.detail-metrics{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:11px;margin:19px 0;padding:12px 9px}.detail-metrics div{text-align:center;border-right:1px solid var(--line)}.detail-metrics div:last-child{border:0}.detail-metrics strong{font-size:15px;font-weight:500;display:block}.detail-metrics small{font-size:9px;color:var(--quiet)}.task-info{display:grid;grid-template-columns:60px minmax(0,1fr);font-size:10px;row-gap:10px;margin:20px 0;color:var(--muted)}.task-info dt{color:var(--quiet)}.task-info dd{margin:0;word-break:break-word}.detail-actions{display:flex;gap:8px;margin:20px 0 0;flex-wrap:wrap}.detail-actions .btn{font-size:11px;min-height:36px;flex:1;white-space:nowrap}.steer-form{padding:13px;background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;margin-top:18px}.steer-form label{display:block;font-size:11px;margin-bottom:8px}.steer-form textarea{width:100%;background:var(--bg);border:1px solid var(--line-strong);border-radius:8px;color:var(--text);padding:9px;resize:vertical;min-height:75px;font-size:11px;line-height:1.8}.steer-form .row{margin-top:8px}.steer-form small{font-size:9px;color:var(--quiet)}.timeline{margin-top:4px}.timeline-item{display:flex;gap:11px;padding-bottom:21px;position:relative}.timeline-item:before{position:absolute;content:"";width:1px;background:var(--line-strong);left:10px;top:23px;bottom:0}.timeline-item:last-child:before{display:none}.timeline-mark{z-index:1;width:22px;height:22px;display:grid;place-items:center;background:var(--raised);border-radius:6px;color:var(--muted);flex:none}.timeline-mark .icon{width:12px;height:12px}.timeline-item.live .timeline-mark{color:var(--accent);background:var(--accent-bg)}.timeline-copy{flex:1;min-width:0}.timeline-copy h4{font-size:11px;font-weight:500;line-height:1.8}.timeline-copy p{font-size:10px;color:var(--muted);line-height:1.9;margin-top:3px;word-break:break-word}.timeline-copy .time{font-size:9px;color:var(--quiet);margin-top:5px;display:block}.child-context{padding:10px 12px;background:var(--raised);border-radius:9px;font-size:10px;color:var(--muted);line-height:1.9;margin-bottom:19px}.child-message{margin:16px 0;font-size:11px;line-height:2}.child-message .speaker{font-size:10px;color:var(--quiet);margin-bottom:6px;display:flex;align-items:center;gap:6px}.child-message.coordinator .message-body{padding:11px 13px;background:var(--raised);border-radius:10px}.child-message.agent .message-body{color:var(--muted)}.child-message.note{color:var(--quiet);border-top:1px solid var(--line);padding-top:12px;font-size:10px}.received-tag{font-size:9px;color:var(--green);display:inline-flex;align-items:center;gap:3px;margin-left:7px}.empty-mini{padding:20px 0;text-align:center;font-size:11px;color:var(--quiet);line-height:2}.inspector-handle{display:none}.scrim{display:none}
+.page-content{padding:32px 36px 45px;max-width:1000px;margin:auto}.page-heading{display:flex;align-items:flex-start;gap:15px;justify-content:space-between;margin-bottom:28px}.page-heading h2{font-size:23px;font-weight:500;letter-spacing:-.5px;margin-bottom:7px}.page-heading p{font-size:11px;color:var(--muted);line-height:1.9}.page-heading .btn{font-size:11px}.manager-stats{display:flex;gap:26px;padding:20px 0 26px;margin-bottom:25px;border-bottom:1px solid var(--line)}.manager-stats strong{font-size:26px;font-weight:450;display:block}.manager-stats small{color:var(--quiet);font-size:10px}.kind-tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-bottom:20px}.kind-tabs button{padding:0 0 12px;background:none;border:0;border-bottom:2px solid transparent;font-size:12px;color:var(--muted)}.kind-tabs button.active{color:var(--text);border-color:var(--accent)}.manager-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:20px}.search-wrap{border:1px solid var(--line-strong);border-radius:10px;display:flex;align-items:center;padding:0 11px;flex:1;min-width:0;background:var(--surface);color:var(--quiet)}.search-wrap input{width:100%;min-width:0;height:38px;border:0;background:none;padding-left:8px;color:var(--text);font-size:11px}.filter-select{border:1px solid var(--line-strong);border-radius:10px;padding:9px;background:var(--surface);color:var(--muted);font-size:10px;max-width:126px}.manager-list{border:1px solid var(--line-strong);border-radius:13px;overflow:hidden;background:var(--surface)}.manager-list .agent-event{padding:18px 16px}.manager-row-actions{display:flex;justify-content:flex-end;padding:0 15px 12px;border-bottom:1px solid var(--line);gap:10px}.manager-row-actions .text-button{font-size:10px;padding:0}.manager-row-actions:last-child{border-bottom:0}.empty-state{text-align:center;padding:49px 14px;border:1px dashed var(--line-strong);border-radius:13px}.empty-state>.icon{width:29px;height:29px;color:var(--quiet);margin-bottom:10px}.empty-state h3{font-size:13px;font-weight:500;margin-bottom:7px}.empty-state p{font-size:11px;color:var(--muted);line-height:1.9}.empty-state .btn{margin-top:18px}.profiles-list{display:flex;flex-direction:column;gap:13px}.profile-card{border:1px solid var(--line-strong);background:var(--surface);padding:19px;border-radius:14px;display:flex;gap:14px}.profile-card h3{font-size:13px;font-weight:550;margin-bottom:5px}.profile-card p{font-size:11px;color:var(--muted);line-height:1.9;margin-bottom:13px}.profile-card .pill{font-size:9px}.profile-card .text-button{font-size:11px;padding:0}.profile-edit{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:15px}.role-tools{display:flex;gap:5px;flex-wrap:wrap}.role-tools span{font-size:9px;color:var(--quiet)}.hint-card{margin-top:25px;border-top:1px solid var(--line);padding-top:20px;font-size:11px;color:var(--muted);line-height:2}
+/* 原生 dialog 提供键盘焦点约束，详情面板单独管理手机焦点。 */
+dialog{padding:0;border:1px solid var(--line-strong);border-radius:19px;max-width:min(490px,calc(100vw - 30px));width:490px;max-height:88dvh;overflow:auto;color:var(--text);background:var(--bg);box-shadow:var(--shadow)}dialog::backdrop{background:#0008;backdrop-filter:blur(5px)}.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 23px 0}.modal-header h2{font-size:16px;font-weight:550}.modal-body{padding:18px 23px 24px}.modal-body p{font-size:12px;color:var(--muted);line-height:2}.modal-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:23px}.field{margin-bottom:17px}.field label{font-size:11px;display:block;margin-bottom:7px;color:var(--muted)}.field input,.field textarea,.field select{width:100%;padding:10px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--text);font-size:12px}.field textarea{min-height:90px;resize:vertical;line-height:1.8}.field small{font-size:10px;color:var(--quiet);display:block;margin-top:6px}.form-error{color:var(--red);font-size:11px;min-height:17px}.choice-list{display:flex;flex-direction:column;gap:10px;margin-top:16px}.choice-button{padding:15px;border:1px solid var(--line-strong);background:var(--surface);color:var(--text);border-radius:11px;text-align:left;display:flex;gap:13px;align-items:center}.choice-button:hover{background:var(--hover)}.choice-button strong{font-size:12px;display:block;margin-bottom:3px;font-weight:500}.choice-button small{font-size:10px;color:var(--muted)}.guide-heading{font-size:26px;font-weight:450;letter-spacing:-.7px;line-height:1.7;margin:5px 0 10px}.guide-intro{font-size:12px;color:var(--muted);line-height:2}.guide-step{display:flex;gap:14px;margin:24px 0}.guide-step .badge{width:31px;height:31px}.guide-step h3{font-size:12px;font-weight:550;margin-bottom:5px}.guide-step p{font-size:11px}.toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,15px);max-width:calc(100vw - 32px);border:1px solid var(--line-strong);background:var(--raised);color:var(--text);box-shadow:var(--shadow);border-radius:11px;padding:11px 17px;font-size:12px;opacity:0;z-index:50;transition:opacity .2s,transform .2s;pointer-events:none;text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.loading-dots{display:inline-flex;gap:3px;margin-left:5px}.loading-dots i{width:3px;height:3px;border-radius:50%;background:var(--accent);animation:breathe 1.5s infinite}.loading-dots i:nth-child(2){animation-delay:.2s}.loading-dots i:nth-child(3){animation-delay:.4s}@keyframes breathe{0%,100%{opacity:.4}50%{opacity:1}}
+@media(min-width:1450px){.workspace{grid-template-columns:minmax(0,1fr) 390px}.inspector-content{padding:30px}.topbar{padding:0 38px}.app{grid-template-columns:244px minmax(0,1fr)}}
+@media(max-width:1190px){.app{grid-template-columns:190px minmax(0,1fr)}.workspace{grid-template-columns:minmax(0,1fr)}.inspector{display:none}.inspector.open{display:flex;position:fixed;z-index:25;right:0;top:0;bottom:0;width:390px;max-width:95vw;box-shadow:var(--shadow)}.scrim.show{display:block;position:fixed;inset:0;background:#0008;z-index:24;backdrop-filter:blur(3px)}.conversation{max-width:790px}.composer-area{max-width:790px}.sidebar{padding-left:12px;padding-right:12px}.page-content{max-width:790px}.inspector .inspector-header{height:65px}}
+@media(max-width:720px){.app{display:block;height:100dvh}.sidebar{display:none}.sidebar.open{display:flex;position:fixed;left:0;top:0;bottom:0;width:258px;z-index:35;box-shadow:var(--shadow);padding-top:calc(25px + env(safe-area-inset-top))}.workspace{height:100%}.topbar{height:calc(69px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 14px 0;gap:8px}.topbar .title-group{flex:1;min-width:0}.topbar h1{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.topbar .crumb{font-size:9px;margin-top:1px}.mobile-menu{display:inline-flex!important;margin-left:-5px}.top-actions{gap:0}.top-actions .icon-button{width:33px;height:35px}.top-actions .pill.demo{margin-right:4px;font-size:9px;padding:2px 5px}.conversation{padding:24px 18px 20px}.date-label{font-size:9px;margin-bottom:23px}.user-message{font-size:12px;padding:13px 15px;max-width:91%}.assistant-head{margin-top:26px;margin-bottom:13px}.assistant-body{padding-left:0;font-size:12px;line-height:1.95}.assistant-body>p{padding-left:0}.plan-list{margin-left:3px;padding-left:15px;gap:16px}.plan-item h3{font-size:12px}.plan-item p{font-size:11px}.plan-launch{margin-top:23px}.plan-launch>.btn{flex:1;min-height:43px}.plan-launch>.quiet{width:100%;text-align:center;font-size:10px}.agent-group{margin-top:19px}.agent-event{padding:14px 12px;gap:10px}.event-top{gap:5px}.agent-event .event-title{font-size:12px}.agent-event .event-activity{font-size:10px}.agent-event .event-meta{font-size:9px;gap:5px}.group-header{padding:11px 12px}.group-header strong{font-size:10px}.group-header span.small{font-size:9px}.composer-area{padding:0 15px calc(10px + env(safe-area-inset-bottom))}.composer textarea{font-size:12px}.composer{padding:12px 11px 9px;border-radius:14px}.composer-bottom{margin-top:9px}.composer-help{font-size:8px;margin-top:8px}.activity-strip{padding:8px 2px 10px;font-size:10px;gap:8px}.activity-strip .control{gap:0}.activity-strip .text-button{font-size:9px}.demo-footer{padding-top:8px;font-size:9px}.inspector.open{top:auto;left:0;right:0;bottom:0;width:100%;max-width:none;height:92dvh;border-left:0;border-top:1px solid var(--line-strong);border-radius:23px 23px 0 0;overflow:hidden;z-index:26;box-shadow:var(--shadow);padding-bottom:env(safe-area-inset-bottom)}.inspector-handle{display:block;flex:none;height:19px;position:relative;touch-action:pan-x}.inspector-handle:before{content:"";position:absolute;width:35px;height:4px;left:calc(50% - 17px);top:8px;border-radius:5px;background:var(--line-strong)}.inspector .inspector-header{height:45px;padding:0 20px}.inspector-content{padding:20px 22px 30px}.detail-title{font-size:18px}.detail-identity{margin-bottom:16px}.detail-metrics{margin-top:15px}.detail-prose{font-size:12px}.tabs{gap:29px;margin-bottom:20px}.tab{font-size:12px}.page-content{padding:28px 19px 32px}.page-heading{margin-bottom:21px;gap:12px}.page-heading h2{font-size:22px}.page-heading p{font-size:10px}.page-heading>.btn{font-size:10px;padding:8px 10px}.manager-stats{gap:30px;padding-top:12px}.manager-stats strong{font-size:25px}.manager-toolbar{gap:7px}.filter-select{padding:10px 7px;font-size:10px;max-width:106px}.profile-card{padding:16px 14px;gap:11px}.profile-edit{align-items:flex-start}.profile-edit .pill{max-width:150px;white-space:normal}.profile-card .badge.large{width:36px;height:36px;border-radius:11px}.toast{bottom:calc(22px + env(safe-area-inset-bottom));font-size:11px;white-space:normal;width:max-content;max-width:calc(100vw - 30px)}dialog{border-radius:18px;max-height:87dvh}.modal-header{padding:18px 19px 0}.modal-body{padding:17px 19px 22px}.summary-answer{font-size:12px}.how-step p{font-size:11px}.profile-card h3{font-size:12px}}
+@media(max-width:370px){.topbar{padding-left:10px;padding-right:10px}.top-actions .icon-button{width:30px}.conversation{padding-left:14px;padding-right:14px}.event-top{flex-wrap:wrap}.event-top .status{font-size:10px}.agent-event .event-title{font-size:11px}.composer-area{padding-left:12px;padding-right:12px}.activity-strip .avatar-stack{display:none}.profile-edit{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<svg class="sprites" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="11" ry="5.8" transform="rotate(-40 12 12)"/><circle cx="20" cy="5.8" r="1.6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2v-10a9 9 0 0 1 18 0Z"/><path d="M7 10h8M7 14h5"/></symbol>
+<symbol id="i-agents" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="6" rx="2"/><rect x="2" y="16" width="8" height="6" rx="2"/><rect x="14" y="16" width="8" height="6" rx="2"/><path d="M12 8v4M6 16v-4h12v4"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+<symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 9h18M9 9v12"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V4m-6 6 6-6 6 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8Z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 4v16M16 4v16"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
+<symbol id="i-next" viewBox="0 0 24 24"><path d="m5 4 11 8-11 8ZM19 4v16"/></symbol>
+<symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 9M3 4v6h6"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h12M4 18h16"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 13A9 9 0 0 1 11 3a9 9 0 1 0 10 10Z"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 8a3 3 0 1 1 5 2c-2 1-2 2-2 3M12 17h.01"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M20 4H4v12h4l4 4v-4h8Z"/><path d="M8 9h8M8 12h5"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3ZM20 2v4m-2-2h4"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z"/><path d="M12 9v5m0 3h.01"/></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><path d="M4 8h16v13H4Z"/><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M9 12h6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--bg)"/><circle cx="16" cy="12" r="2" fill="var(--bg)"/><circle cx="8" cy="18" r="2" fill="var(--bg)"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+<symbol id="i-tool" viewBox="0 0 24 24"><path d="m14 6 4 4 4-4a6 6 0 0 1-8 8l-7 7-4-4 7-7a6 6 0 0 1 8-8Z"/></symbol>
+</defs></svg>
+<div class="app" id="app">
+<aside class="sidebar" id="sidebar" aria-label="主导航">
+<div class="brand"><span class="brand-mark"><svg class="icon"><use href="#i-orbit"/></svg></span>Operit<span class="pill demo">LAB</span></div>
+<nav class="nav-list">
+<button class="nav-item active" data-action="navigate" data-page="chat"><svg class="icon"><use href="#i-chat"/></svg>聊天<span class="fill"></span></button>
+<button class="nav-item" data-action="navigate" data-page="tasks"><svg class="icon"><use href="#i-agents"/></svg>子代理任务<span class="nav-count" id="navCount">3</span></button>
+<button class="nav-item" data-action="navigate" data-page="profiles"><svg class="icon"><use href="#i-settings"/></svg>角色与模型</button>
+</nav>
+<div class="sidebar-section"><div class="eyebrow">当前聊天</div><button class="history-item" data-action="navigate" data-page="chat"><span class="dot"></span>为 Operit 设计子代理</button></div>
+<div class="sidebar-bottom"><div class="tour-card"><div class="row"><svg class="icon sm"><use href="#i-spark"/></svg><strong class="small">第一次使用子代理？</strong></div><p>从一条任务开始，看看主代理与子代理如何协作。</p><button class="text-button" data-action="guide">一分钟了解交互<svg class="icon xs"><use href="#i-arrow"/></svg></button></div><div class="profile"><div class="profile-avatar">你</div><div class="fill"><div class="small">我的工作空间</div><div class="quiet" style="font-size:9px">本地交互原型</div></div><button class="icon-button" data-action="theme" aria-label="切换深浅主题"><svg class="icon sm"><use href="#i-sun"/></svg></button></div></div>
+</aside>
+<div class="workspace">
+<main class="center" id="center">
+<header class="topbar"><button class="icon-button mobile-menu" data-action="menu" aria-label="打开导航"><svg class="icon"><use href="#i-menu"/></svg></button><div class="title-group"><h1 id="pageTitle">为 Operit 设计子代理</h1><div class="crumb" id="pageCrumb">工作空间 / 协作调研</div></div><div class="top-actions"><span class="pill demo" title="所有数据和操作均为前端演示">演示</span><button class="icon-button" data-action="navigate" data-page="tasks" aria-label="查看子代理任务"><svg class="icon"><use href="#i-agents"/></svg></button><button class="icon-button" data-action="theme" aria-label="切换深浅主题" id="themeToggle"><svg class="icon"><use href="#i-sun"/></svg></button><button class="icon-button" data-action="guide" aria-label="查看原型使用说明"><svg class="icon"><use href="#i-help"/></svg></button></div></header>
+<div class="content-area" id="contentArea"><div id="pageBody"></div></div>
+<div class="composer-area" id="composerArea"><div id="activityStrip"></div><form class="composer" id="mainComposer"><label class="sr-only" for="mainInput">给主代理补充要求</label><textarea id="mainInput" rows="1" placeholder="继续和主代理说说你的想法…" maxlength="1500"></textarea><div class="composer-bottom"><span class="model-label"><svg class="icon xs"><use href="#i-spark"/></svg>当前聊天模型<span class="quiet">· 主代理</span></span><button class="send-button" type="submit" aria-label="发送给主代理"><svg class="icon"><use href="#i-up"/></svg></button></div></form><div class="demo-footer"><span>交互原型 · 无真实模型调用</span><button data-action="controls"><svg class="icon"><use href="#i-settings"/></svg>演示控制</button><button data-action="reset"><svg class="icon"><use href="#i-restart"/></svg>重置</button></div></div>
+</main>
+<aside class="inspector" id="inspector" aria-label="协作详情"><div class="inspector-handle" id="sheetHandle"></div><header class="inspector-header"><h2 id="inspectorTitle">协作概览</h2><button class="icon-button" data-action="close-detail" aria-label="关闭详情"><svg class="icon sm"><use href="#i-close"/></svg></button></header><div class="inspector-content" id="inspectorContent"></div></aside>
+</div></div>
+<div class="scrim" id="scrim" data-action="dismiss-overlay" aria-hidden="true"></div>
+<dialog id="modal" aria-labelledby="modalTitle"><div class="modal-header"><h2 id="modalTitle"></h2><button class="icon-button" data-action="close-modal" aria-label="关闭对话框"><svg class="icon sm"><use href="#i-close"/></svg></button></div><div class="modal-body" id="modalBody"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div><div class="sr-only" id="announcer" aria-live="polite"></div>
+<script>
+'use strict';
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = value => String(value).replace(/[&<>"']/g, char => String.fromCharCode(38) + ({'&':'amp','<':'lt','>':'gt','"':'quot',"'":'#39'}[char]) + ';');
+  const icon = (name, size = '') => `<svg class="icon ${size}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+  const button = (action, label, extra = '', kind = '', glyph = '') => `<button type="button" class="btn ${kind}" data-action="${action}" ${extra}>${glyph ? icon(glyph, 'sm') : ''}${label}</button>`;
+  const roleDefaults = {
+    research:{name:'资料研究员',icon:'search',description:'阅读源码和资料，找出有依据的结论。适合把大量探索过程留在独立上下文里。',model:'继承主模型',tools:['文件阅读','网页检索','代码分析']},
+    design:{name:'交互分析师',icon:'layout',description:'梳理页面层级与操作路径，把实现细节转成用户能理解的体验。',model:'继承主模型',tools:['文件阅读','页面分析']},
+    review:{name:'实现审阅员',icon:'shield',description:'核对状态、边界和实现风险，列出首版需要验证的关键行为。',model:'继承主模型',tools:['文件阅读','代码分析']}
+  };
+  const plans = [
+    {id:'research',role:'research',title:'对比子代理的核心设计',description:'阅读 OpenMinis 与 OpenCode，整理上下文、调度和结果回传。',goal:'对比 OpenMinis 与 OpenCode 的子代理设计，说明任务如何创建、上下文怎样隔离、结果如何回传。返回结论和可追溯的源码位置。',sources:'OpenMinis / OpenCode',stages:[['定位委派入口','搜索源码','工具契约与独立子会话'],['核对上下文隔离','阅读文件','父任务简报与子会话历史'],['追踪结果回传','分析调用链','结束记录、待投递结果与父会话'],['整理对比报告','汇总证据','保留结论，交回必要证据']],report:['两者都让子代理拥有独立会话，探索过程不需要全部进入主聊天。','OpenMinis 注重移动端排队、途中补充与中断恢复。','这份 OpenCode 的后台结果先记录，再送入父会话，值得借鉴。']},
+    {id:'design',role:'design',title:'梳理手机上的交互路径',description:'重点看 OperitRy：主聊天卡片、任务详情和子会话之间怎样切换。',goal:'阅读 OperitRy 的子代理界面，整理主聊天事件卡、结果详情、子会话导航和任务管理的关系，提出适合手机的呈现方式。',sources:'OperitRy / OpenMinis',stages:[['查找聊天入口','阅读组件','主聊天中的紧凑事件卡'],['分析详情层级','查看布局','先看结果，再进入子会话'],['梳理任务管理','阅读组件','任务筛选与代理切换'],['检查移动端体验','分析布局','底部面板、返回与上下文保留'],['形成交互建议','整理方案','轻量卡片与按需展开']],report:['主聊天保留紧凑任务卡，点开后先看到状态与结果。','详细工具过程放进子会话，避免把主聊天刷满。','手机使用底部面板，宽屏可并列展示；返回时保留主聊天位置。']},
+    {id:'review',role:'review',title:'检查首版实现的关键边界',description:'核对停止、结果送达和恢复，给出一份可执行的验收清单。',goal:'依据已读设计，列出 Operit 首版子代理最需要验证的行为：并发、取消、消息归属、应用中断与共享资源。不要改代码。',sources:'Operit / 调研结论',stages:[['核对生命周期','分析状态','运行身份、终态与单项停止'],['检查结果投递','分析流程','执行完成与结果已消费分开'],['整理首版验收点','生成清单','中断恢复、权限与资源归属']],report:['每次执行有独立身份，旧停止操作不能误停恢复后的新执行。','一个子任务被停止时，其它任务和主聊天应继续。','结果送达与主代理汇总分开；进程中断后应保留历史并如实标记。']}
+  ];
+  const clone = value => JSON.parse(JSON.stringify(value));
+  let roles = clone(roleDefaults);
+  let state;
+  let timer = null;
+  let toastTimer = null;
+  let modalOpener = null;
+  let detailOpener = null;
+  let nextTask = 1;
+  let composing = false;
+  let renderPending = false;
+  const labels = {ready:'待分派',queued:'排队中',running:'运行中',completed:'已完成',cancelled:'已停止',failed:'执行失败',interrupted:'已中断'};
+  const live = task => ['running','queued'].includes(task.status);
+  const terminal = task => ['completed','cancelled','failed','interrupted'].includes(task.status);
+  const reportKey = task => `${task.id}:${task.attempt}`;
+  const badge = (role, size = '') => `<span class="badge ${role} ${size}">${icon(roles[role].icon)}</span>`;
+  const status = task => `<span class="status ${task.status}"><span class="dot ${task.status === 'running' && state.playing ? 'live-dot' : ''}"></span>${labels[task.status]}</span>`;
+  const time = seconds => seconds < 60 ? `${seconds}s` : `${Math.floor(seconds/60)}m ${seconds%60}s`;
+  const modelOptions = ['继承主模型','轻量模型 · 演示','高能力模型 · 演示'];
+
+  function makeTask(plan) {
+    return {...clone(plan),status:'ready',step:0,elapsed:0,model:roles[plan.role].model,attempt:1,events:[],messages:[{role:'coordinator',text:plan.goal}],pending:[],report:null,delivery:'none',archived:false,error:'',lastStage:-1};
+  }
+  function reset() {
+    stopTimer();
+    const theme = state ? state.theme : 'dark';
+    state = {page:'chat',theme,started:false,playing:false,batchSuspended:false,clock:0,tasks:plans.map(makeTask),selected:null,tab:'overview',panelOpen:false,navOpen:false,groupCollapsed:false,kind:'delegated',filter:'all',query:'',steerOpen:false,steerDraft:'',summaryIds:[],summaryReports:[],mainReplies:[],mainNotes:[]};
+    $('mainInput').value = '';
+    closeModal();
+    render();
+    $('contentArea').scrollTop = 0;
+  }
+  function toast(text) {
+    clearTimeout(toastTimer);
+    $('toast').textContent = text;
+    $('toast').classList.add('show');
+    toastTimer = setTimeout(() => $('toast').classList.remove('show'), 3200);
+  }
+  function announce(text) { $('announcer').textContent = text; }
+  function log(task, title, detail, kind = 'tool') {
+    task.events.push({title,detail,kind,at:state.clock});
+  }
+  function stopTimer() { if(timer !== null) clearInterval(timer); timer = null; }
+  function runTimer() {
+    stopTimer();
+    if(state.playing && !state.batchSuspended && state.tasks.some(live)) timer = setInterval(() => tick(), 1700);
+  }
+  function fillSlots() {
+    if(state.batchSuspended) return;
+    let available = 2 - state.tasks.filter(task => task.status === 'running').length;
+    for(const task of state.tasks) {
+      if(available <= 0) break;
+      if(task.status !== 'queued') continue;
+      task.status = 'running';
+      log(task,task.step ? '继续执行' : '开始执行','已取得执行名额，使用独立子会话。','start');
+      available -= 1;
+    }
+  }
+  function start(autoplay = true) {
+    if(!state.started) {
+      state.started = true;
+      state.tasks.forEach(task => {
+        if(task.status === 'ready') {
+          task.model = roles[task.role].model;
+          task.status = 'queued';
+          log(task,'主代理已分派任务',task.goal,'message');
+          state.mainNotes.forEach(text => queueNote(task,text));
+        }
+      });
+      fillSlots();
+      announce('已开始协作：两个子代理运行，一个任务排队。');
+    }
+    state.playing = autoplay;
+    runTimer();
+    render();
+  }
+  function queueNote(task, text) {
+    const message = {role:'coordinator',text,delivery:'pending'};
+    task.messages.push(message);
+    task.pending.push(message);
+    log(task,'补充指令已排队',text,'message');
+  }
+  function finish(task) {
+    task.status = 'completed';
+    task.report = task.custom || task.followup ? ['这是一份前端演示报告，用来体验任务完成和结果回传。',`本次任务：${task.goal}`,'正式接入后，这里会展示子代理实际产生的结论、证据和产物。'] : clone(plans.find(plan => plan.id === task.id).report);
+    task.delivery = 'delivered';
+    log(task,'任务完成，结果已送回','最终报告已进入主代理的结果记录。','complete');
+    task.messages.push({role:'agent',text:task.report.join('\n'),final:true});
+    announce(`${roles[task.role].name}已完成，结果已送回主代理。`);
+  }
+  function tick(redraw = true) {
+    if(!state.started) start(false);
+    if(state.batchSuspended) return;
+    state.clock += 3;
+    const running = state.tasks.filter(task => task.status === 'running');
+    for(const task of running) {
+      task.elapsed += 3;
+      // 补充只在下一轮读取，不改写正在进行的工具操作。
+      for(const message of task.pending) {
+        message.delivery = 'delivered';
+        log(task,'已读取补充指令',message.text,'message');
+        task.messages.push({role:'agent',text:`收到，我会把“${message.text}”纳入本次任务的检查重点。`});
+      }
+      task.pending = [];
+      task.step += 1;
+      const stageIndex = Math.min(Math.floor((task.step - 1)/2),task.stages.length - 1);
+      if(stageIndex !== task.lastStage) {
+        task.lastStage = stageIndex;
+        const stage = task.stages[stageIndex];
+        log(task,stage[0],`${stage[1]} · ${stage[2]}`);
+      }
+      if(task.step >= task.stages.length*2) finish(task);
+    }
+    fillSlots();
+    if(!state.tasks.some(live)) { state.playing = false; stopTimer(); }
+    if(redraw) render();
+  }
+  function taskById(id) { return state.tasks.find(task => task.id === id); }
+  function stageText(task) {
+    if(task.status === 'ready') return task.description;
+    if(task.status === 'queued') return '等待空闲名额，将自动开始';
+    if(task.status === 'completed') return task.delivery === 'consumed' ? '主代理已采用本次报告' : '结果已送回，等待主代理汇总';
+    if(task.status === 'interrupted') return '执行记录已保留，可以继续此任务';
+    if(task.status === 'cancelled') return '已停止这一项，其它任务不受影响';
+    if(task.status === 'failed') return task.error;
+    return task.lastStage < 0 ? '正在准备独立子会话' : task.stages[task.lastStage][0];
+  }
+  function taskRow(task, context = 'chat') {
+    const role = roles[task.role];
+    const tools = task.events.filter(event => event.kind === 'tool').length;
+    const progress = task.status === 'completed' ? 100 : Math.round(task.step/(task.stages.length*2)*100);
+    return `<button class="agent-event ${task.status}" id="task-${context}-${task.id}" data-action="open-task" data-task="${task.id}" aria-label="查看${esc(task.title)}详情">${badge(task.role)}<span class="fill"><span class="event-top"><span class="event-title">${esc(task.title)}</span>${status(task)}</span><span class="event-meta">${esc(role.name)}<span>·</span>${esc(task.model)}${task.status !== 'ready' ? `<span>·</span>${time(task.elapsed)}${tools ? `<span>·</span>${tools} 次工具` : ''}` : ''}</span><span class="event-activity" style="display:block">${esc(stageText(task))}</span>${task.status !== 'ready' && task.status !== 'queued' ? `<span class="progress-line" style="display:block"><span style="width:${progress}%"></span></span>` : ''}</span>${icon('arrow','xs arrow')}</button>`;
+  }
+  function renderChat() {
+    const tasks = state.tasks.filter(task => !task.archived);
+    const running = state.tasks.filter(task => task.status === 'running').length;
+    const queued = state.tasks.filter(task => task.status === 'queued').length;
+    const complete = state.tasks.filter(task => task.status === 'completed');
+    const newResults = complete.filter(task => !state.summaryIds.includes(reportKey(task)));
+    const pendingIssues = state.tasks.filter(task => ['failed','interrupted'].includes(task.status));
+    const plan = `<p>我会先把调研拆成三个独立任务。它们分别阅读、梳理和核对，我负责把结论整理成一份适合 Operit 的方案。</p><div class="plan-list">${state.tasks.map(task => `<div class="plan-item">${badge(task.role)}<div><h3>${esc(task.title)}</h3><p>${esc(task.description)}</p></div></div>`).join('')}</div><div class="plan-launch">${button('start','开始协作演示','','primary','play')}<span class="quiet">演示数据 · 同时运行 2 项，其余排队</span></div>`;
+    let progress = '';
+    if(state.started) {
+      const groupTitle = state.tasks.some(live) ? `${running} 项运行${queued ? `，${queued} 项排队` : ''}` : `${complete.length} 份报告已返回`;
+      progress = `<p>任务已经分派。你可以继续和我交流，也可以点开任意一张卡片，看看它正在做什么。</p><div class="agent-group"><div class="group-header"><span class="row">${icon('agents','sm')}<strong>子代理协作</strong><span class="small muted">${groupTitle}</span></span><button class="group-collapse" data-action="collapse" aria-expanded="${!state.groupCollapsed}" aria-label="${state.groupCollapsed ? '展开' : '收起'}子代理任务">${icon(state.groupCollapsed ? 'arrow' : 'down','xs')}</button></div>${state.groupCollapsed ? `<div style="padding:12px 15px;font-size:10px;color:var(--muted)">过程已收起，任务继续执行。${button('navigate','管理任务','data-page="tasks"','small soft')}</div>` : tasks.map(task => taskRow(task)).join('')}</div>`;
+      if(pendingIssues.length) progress += `<div class="callout warning">${icon('alert','xs')} ${pendingIssues.length} 项任务需要处理。已有记录会保留，点开卡片可以查看原因并继续。</div>`;
+      if(newResults.length) progress += `<div class="callout success"><div class="row">${icon('check','sm')}<strong style="font-size:12px">${newResults.length} 份新报告已送回</strong></div><p>子代理的结果已经准备好。由主代理统一整理后，再给你一份完整答复。</p><div style="margin-top:10px">${button('summarize',state.tasks.some(live) ? '先汇总已有结果' : '让主代理汇总','','small soft','spark')}</div></div>`;
+      if(!state.tasks.some(live) && !complete.length) progress += `<div class="callout">目前没有已完成的报告。你可以继续被停止或中断的任务，再让主代理整理结果。</div>`;
+      if(state.summaryIds.length) progress += summaryHtml();
+    }
+    return `<div class="conversation"><div class="date-label">今天 · 交互预演</div><div class="user-message">对比 OpenMinis、OperitRy 和 OpenCode 的子代理设计，给我一份适合 Operit 的方案。</div><div class="assistant-head"><span class="badge master">${icon('orbit','sm')}</span><strong>Operit</strong><span class="small">主代理</span>${state.started && state.tasks.some(live) ? '<span class="loading-dots" aria-label="协作进行中"><i></i><i></i><i></i></span>' : ''}</div><div class="assistant-body">${state.started ? progress : plan}${state.mainReplies.map(message => `<div class="reply-block"><div class="quiet" style="font-size:10px">你的补充</div><div class="user-followup">${esc(message.text)}</div><p>${esc(message.reply)}</p></div>`).join('')}</div></div>`;
+  }
+  function summaryHtml() {
+    const done = state.summaryReports;
+    const incomplete = state.tasks.filter(task => !state.summaryIds.includes(reportKey(task)));
+    return `<div class="summary-answer"><div class="row" style="margin-bottom:13px"><span class="pill">${icon('check','xs')}主代理已汇总 ${done.length} 份报告</span></div><h3>先让分工清晰，再把结果收回来。</h3><p>综合子代理返回的材料，首版可以围绕三层交互展开：</p><ul><li><strong>主聊天：</strong>看任务与结论，过程用紧凑卡片呈现。</li><li><strong>任务详情：</strong>看状态、报告与执行记录，按需补充或停止。</li><li><strong>子会话：</strong>保留独立上下文，继续处理同一项工作。</li></ul>${incomplete.length ? `<p class="quiet" style="font-size:11px">还有 ${incomplete.length} 项任务未包含在本次汇总中；后续报告到达后可以再次汇总。</p>` : '<p>底层再补上可靠回传、按项停止和中断恢复，交互就能形成一个完整闭环。</p>'}<button class="artifact" data-action="report"><span class="badge">${icon('file')}</span><span class="fill"><strong>Operit 子代理 · 交互方案</strong><small>演示报告 · ${done.length} 份报告 · 可下载 Markdown</small></span>${icon('arrow','sm')}</button><span class="quiet" style="font-size:10px">以上为前端预设演示内容，帮助体验协作与汇总方式。</span></div>`;
+  }
+  function managerHtml() {
+    const counts = {running:state.tasks.filter(task => task.status === 'running').length,queued:state.tasks.filter(task => task.status === 'queued').length,completed:state.tasks.filter(task => task.status === 'completed').length};
+    const query = state.query.toLocaleLowerCase();
+    const tasks = state.tasks.filter(task => {
+      if(state.filter === 'archived') { if(!task.archived) return false; }
+      else if(task.archived) return false;
+      if(state.filter === 'active' && !live(task)) return false;
+      if(state.filter === 'completed' && task.status !== 'completed') return false;
+      if(state.filter === 'attention' && !['failed','interrupted','cancelled'].includes(task.status)) return false;
+      return `${task.title} ${roles[task.role].name} ${task.goal}`.toLocaleLowerCase().includes(query);
+    });
+    return `<div class="page-content"><div class="page-heading"><div><h2>子代理任务</h2><p>主聊天负责方向，这里查看每一项委派的进展。</p></div>${button('new-task','新任务','','small','plus')}</div><div class="manager-stats"><div><strong>${counts.running}</strong><small>正在运行</small></div><div><strong>${counts.queued}</strong><small>等待名额</small></div><div><strong>${counts.completed}</strong><small>已完成</small></div></div><div class="kind-tabs"><button data-action="kind" data-kind="delegated" class="${state.kind === 'delegated' ? 'active' : ''}">本次委派 <span class="quiet small">${state.tasks.length}</span></button><button data-action="kind" data-kind="system" class="${state.kind === 'system' ? 'active' : ''}">系统后台</button></div>${state.kind === 'system' ? `<div class="empty-state">${icon('settings')}<h3>还没有系统后台任务</h3><p>记忆整理等自动任务会放在这里，<br>与本次聊天委派的子代理分开。</p></div>` : `<div class="manager-toolbar"><label class="search-wrap">${icon('search','sm')}<span class="sr-only">搜索子代理任务</span><input id="taskSearch" type="search" placeholder="搜索任务或角色" value="${esc(state.query)}" maxlength="120"></label><label><span class="sr-only">按任务状态筛选</span><select id="taskFilter" class="filter-select">${[['all','全部状态'],['active','进行中'],['completed','已完成'],['attention','需处理'],['archived','已归档']].map(([value,label]) => `<option value="${value}" ${state.filter === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label></div>${tasks.length ? `<div class="manager-list">${tasks.map(task => `${taskRow(task,'manager')}${terminal(task) ? `<div class="manager-row-actions"><button class="text-button" data-action="archive" data-task="${task.id}">${icon(task.archived ? 'restart' : 'archive','xs')}${task.archived ? '恢复到列表' : '归档记录'}</button></div>` : ''}`).join('')}</div>` : `<div class="empty-state">${icon('search')}<h3>没有匹配的任务</h3><p>${state.query ? '换个关键词，或者查看全部状态。' : '这个分类里暂时没有记录。'}</p>${button('clear-filter','查看全部','','small')}</div>`}`}<div class="hint-card">任务卡与主聊天中的记录相互关联。点开一项可查看报告和子会话；停止某一项不会停止其它子代理。</div></div>`;
+  }
+  function profilesHtml() {
+    return `<div class="page-content"><div class="page-heading"><div><h2>角色与模型</h2><p>为不同工作准备合适的指令和工具。主代理会按任务选择角色。</p></div></div><div class="profiles-list">${Object.entries(roles).map(([id,role]) => `<article class="profile-card">${badge(id,'large')}<div class="fill"><h3>${esc(role.name)}</h3><p>${esc(role.description)}</p><div class="role-tools">${role.tools.map(tool => `<span class="pill">${esc(tool)}</span>`).join('')}</div><div class="profile-edit"><span class="pill">${icon('spark','xs')}${esc(role.model)}</span><button class="text-button" data-action="edit-role" data-role="${id}">调整角色${icon('arrow','xs')}</button></div></div></article>`).join('')}</div><div class="hint-card">“继承主模型”会沿用当前聊天的模型。这里的模型选项仅用于演示；修改应用于之后分派的任务，已经分派的任务保留原配置。</div></div>`;
+  }
+  function overviewHtml() {
+    const running = state.tasks.filter(task => task.status === 'running').length;
+    const complete = state.tasks.filter(task => task.status === 'completed').length;
+    return `<div class="eyebrow">AGENT COLLABORATION</div><h2 class="overview-title">把独立的工作，<br>交给合适的帮手。</h2><p class="overview-desc">你仍然只和主代理交流。子代理各自执行任务，再把结果送回这里。</p><div class="orbit-visual"><div class="orbit-ring">${badge('research')}${badge('design')}${badge('review')}<span class="badge master">${icon('orbit')}</span></div></div><div class="overview-stats"><div><strong>${state.tasks.length}</strong><small>独立任务</small></div><div><strong>${running}</strong><small>正在运行</small></div><div><strong>${complete}</strong><small>报告返回</small></div></div><div class="how-step"><span>1</span><div><strong>向主代理说明目标</strong><p>它负责拆解任务、分派角色和保持整体方向。</p></div></div><div class="how-step"><span>2</span><div><strong>按需看看过程</strong><p>点开任务卡查看详情，也能补充要求或停止某一项。</p></div></div><div class="how-step"><span>3</span><div><strong>收回一份完整结论</strong><p>子代理交回报告，主代理负责核对和汇总。</p></div></div><div class="reference-note"><strong>交互参考 · OperitRy</strong>紧凑事件卡 → 状态与结果详情 → 子会话<br>此页为独立 HTML 原型，全部使用演示数据。</div>`;
+  }
+  function detailHtml(task) {
+    const tools = task.events.filter(event => event.kind === 'tool').length;
+    let body = '';
+    if(state.tab === 'overview') {
+      body = `<div class="section-label">任务目标</div><p class="detail-prose">${esc(task.goal)}</p><div class="detail-metrics"><div><strong>${time(task.elapsed)}</strong><small>演示用时</small></div><div><strong>${tools}</strong><small>累计工具调用</small></div><div><strong>${Math.ceil(task.step/2)}</strong><small>执行轮次</small></div></div><dl class="task-info"><dt>模型</dt><dd>${esc(task.model)}</dd><dt>材料</dt><dd>${esc(task.sources)}</dd><dt>上下文</dt><dd>独立子会话 · 包含任务所需背景</dd><dt>执行</dt><dd>第 ${task.attempt} 次执行</dd></dl><div class="section-label">${task.report ? '返回的报告' : '当前进展'}</div>${task.report ? `<div class="detail-prose"><ul>${task.report.map(line => `<li>${esc(line)}</li>`).join('')}</ul></div><span class="received-tag">${icon('check','xs')}${task.delivery === 'consumed' ? '主代理已汇总' : '结果已送回主代理'}</span>` : `<div class="callout ${['failed','interrupted'].includes(task.status) ? 'warning' : ''}">${esc(stageText(task))}${task.error ? `<p>${esc(task.error)}</p>` : ''}</div>`}`;
+    } else if(state.tab === 'process') {
+      body = task.events.length ? `<div class="timeline">${task.events.map((event,index) => `<div class="timeline-item ${index === task.events.length-1 && task.status === 'running' ? 'live' : ''}"><span class="timeline-mark">${icon(event.kind === 'message' ? 'message' : event.kind === 'complete' ? 'check' : event.kind === 'error' ? 'alert' : event.kind === 'start' ? 'play' : 'tool','xs')}</span><div class="timeline-copy"><h4>${esc(event.title)}</h4><p>${esc(event.detail)}</p><span class="time">演示时间 ${time(event.at)}</span></div></div>`).join('')}</div>` : '<div class="empty-mini">任务尚未开始。<br>开始协作后，这里会显示执行过程。</div>';
+    } else {
+      body = `<div class="child-context">${icon('agents','xs')} 这是${esc(roles[task.role].name)}的独立子会话。这里的补充仅发给这一项任务。</div>${task.messages.map(message => `<div class="child-message ${message.role === 'coordinator' ? 'coordinator' : 'agent'}"><div class="speaker">${icon(message.role === 'coordinator' ? 'message' : roles[task.role].icon,'xs')}${message.role === 'coordinator' ? '主代理 / 任务补充' : esc(roles[task.role].name)}${message.delivery ? `<span class="${message.delivery === 'delivered' ? 'received-tag' : 'quiet'}">${message.delivery === 'pending' ? '等待下一轮读取' : message.delivery === 'missed' ? '本轮未送达' : '已读取'}</span>` : ''}</div><div class="message-body">${esc(message.text).replaceAll('\n','<br>')}</div></div>`).join('')}${task.status === 'running' ? `<div class="child-message note">${icon('tool','xs')} ${esc(stageText(task))}。工具完成后将进入下一轮。</div>` : ''}`;
+    }
+    const actions = task.status === 'ready' ? button('start','开始协作','','primary','play') : live(task) ? `${button('steer-open','补充指令',`data-task="${task.id}"`,'soft','message')}${button('stop','停止这一项',`data-task="${task.id}"`,'danger','stop')}` : `${button('resume',task.status === 'completed' ? '继续此任务' : '继续执行',`data-task="${task.id}"`,'soft','play')}${task.report ? button('summarize','交给主代理汇总','','','spark') : ''}`;
+    const steer = state.steerOpen && live(task) ? `<form id="steerForm" class="steer-form"><label for="steerInput">给${esc(roles[task.role].name)}补充要求</label><textarea id="steerInput" maxlength="1000" placeholder="例如：重点看看手机上怎样返回主聊天。">${esc(state.steerDraft)}</textarea><div class="row spread"><small>在下一轮读取，保留已有工作</small><button type="submit" class="btn primary small">${icon('up','xs')}发送</button></div></form>` : '';
+    return `<div class="detail-identity">${badge(task.role,'large')}<div><h3>${esc(roles[task.role].name)}</h3><span class="muted">子代理 · 当前聊天</span></div></div><h2 class="detail-title">${esc(task.title)}</h2><label class="task-switcher"><span class="sr-only">切换子代理任务</span><select id="taskSwitcher">${state.tasks.filter(item => !item.archived || item.id === task.id).map(item => `<option value="${item.id}" ${item.id === task.id ? 'selected' : ''}>${esc(item.title)} · ${labels[item.status]}</option>`).join('')}</select></label><div class="detail-status-line">${status(task)}<span class="quiet" style="font-size:10px">${task.status === 'running' && !state.playing ? '演示已暂停' : '进度与用量均为演示数据'}</span></div><div class="tabs" role="tablist" aria-label="子代理详情">${[['overview','概览与结果'],['process','执行过程'],['conversation','子会话']].map(([id,label]) => `<button class="tab ${state.tab === id ? 'active' : ''}" role="tab" aria-selected="${state.tab === id}" data-action="detail-tab" data-tab="${id}">${label}</button>`).join('')}</div><div role="tabpanel">${body}</div><div class="detail-actions">${actions}</div>${state.tab !== 'conversation' ? `<button class="text-button" style="font-size:11px;margin-top:10px" data-action="detail-tab" data-tab="conversation">查看子会话${icon('arrow','xs')}</button>` : ''}${steer}`;
+  }
+
+  function preserveFocus() {
+    const el = document.activeElement;
+    if(!el || el === document.body) return null;
+    const scope = el.closest('#inspector,#pageBody,#activityStrip,#sidebar,#center,#modal');
+    return {element:el,id:el.id,scope:scope && scope.id,action:el.dataset.action,data:{...el.dataset},start:typeof el.selectionStart === 'number' ? el.selectionStart : null,end:typeof el.selectionEnd === 'number' ? el.selectionEnd : null};
+  }
+  function restoreFocus(saved) {
+    if(!saved) return;
+    let el = null;
+    if(saved.element.isConnected) el = saved.element;
+    else if(saved.id) el = $(saved.id);
+    else if(saved.action && saved.scope) el = [...$(saved.scope).querySelectorAll('[data-action]')].find(item => Object.entries(saved.data).every(([key,value]) => item.dataset[key] === value));
+    if(!el || el.closest('[inert]') || el.offsetParent === null) return;
+    el.focus({preventScroll:true});
+    if(saved.start !== null && ['textarea','text','search'].includes(el.type)) el.setSelectionRange(saved.start,saved.end);
+  }
+  function overlayMode() { return window.matchMedia('(max-width:1190px)').matches; }
+  function syncOverlay() {
+    const modalPanel = state.panelOpen && overlayMode();
+    $('center').inert = modalPanel || state.navOpen;
+    $('sidebar').inert = modalPanel;
+    $('inspector').inert = state.navOpen;
+    if(state.navOpen) { $('sidebar').setAttribute('role','dialog'); $('sidebar').setAttribute('aria-modal','true'); }
+    else { $('sidebar').removeAttribute('role'); $('sidebar').removeAttribute('aria-modal'); }
+    $('inspector').classList.toggle('open',state.panelOpen);
+    $('sidebar').classList.toggle('open',state.navOpen);
+    $('scrim').classList.toggle('show',modalPanel || state.navOpen);
+    if(modalPanel) { $('inspector').setAttribute('role','dialog'); $('inspector').setAttribute('aria-modal','true'); }
+    else { $('inspector').setAttribute('role','complementary'); $('inspector').removeAttribute('aria-modal'); }
+  }
+  function render() {
+    // 中文输入尚未提交时保留输入节点，计时推进延后重绘。
+    if(composing) { renderPending = true; return; }
+    const focused = preserveFocus();
+    const content = $('contentArea');
+    const previousScroll = content.scrollTop;
+    const atBottom = content.scrollHeight - content.clientHeight - previousScroll < 50;
+    const detailScroll = $('inspectorContent').scrollTop;
+    $('pageBody').innerHTML = state.page === 'chat' ? renderChat() : state.page === 'tasks' ? managerHtml() : profilesHtml();
+    $('composerArea').hidden = state.page !== 'chat';
+    $('pageTitle').textContent = state.page === 'chat' ? '为 Operit 设计子代理' : state.page === 'tasks' ? '子代理任务' : '角色与模型';
+    $('pageCrumb').textContent = state.page === 'chat' ? '工作空间 / 协作调研' : '工作空间 / 当前聊天';
+    document.querySelectorAll('.nav-item').forEach(el => {
+      const selected = el.dataset.page === state.page;
+      el.classList.toggle('active',selected);
+      if(selected) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current');
+    });
+    $('navCount').textContent = state.started ? state.tasks.filter(live).length : state.tasks.length;
+    const task = state.selected ? taskById(state.selected) : null;
+    $('inspectorTitle').textContent = task ? '子代理详情' : '协作概览';
+    $('inspectorContent').innerHTML = task ? detailHtml(task) : overviewHtml();
+    const active = state.tasks.filter(live).length;
+    const complete = state.tasks.filter(task => task.status === 'completed').length;
+    const issue = state.tasks.filter(task => ['interrupted','failed'].includes(task.status)).length;
+    const stripText = !state.started ? `${Object.keys(roles).length} 个角色，协作处理同一目标` : state.batchSuspended ? '演示中断 · 记录已保留' : active ? `${active} 项任务进行中${state.playing ? '' : ' · 演示已暂停'}` : issue ? `${issue} 项需处理 · ${complete} 份报告已返回` : `${complete} 份报告已返回`;
+    $('activityStrip').innerHTML = `<div class="activity-strip"><span class="avatar-stack">${badge('research','tiny')}${badge('design','tiny')}${badge('review','tiny')}</span><span class="fill">${stripText}</span><button class="text-button" data-action="navigate" data-page="tasks">查看全部${icon('arrow','xs')}</button>${state.started && active ? `<div class="control"><button class="icon-button" data-action="toggle-play" aria-label="${state.playing ? '暂停演示' : '继续演示'}" ${state.batchSuspended ? 'disabled' : ''}>${icon(state.playing ? 'pause' : 'play','sm')}</button><button class="icon-button" data-action="next" aria-label="推进一步" ${state.batchSuspended ? 'disabled' : ''}>${icon('next','sm')}</button></div>` : ''}</div>`;
+    document.documentElement.dataset.theme = state.theme;
+    document.querySelectorAll('[data-action="theme"]').forEach(el => {
+      el.innerHTML = icon(state.theme === 'dark' ? 'sun' : 'moon','sm');
+      el.setAttribute('aria-label',state.theme === 'dark' ? '切换到浅色主题' : '切换到深色主题');
+    });
+    syncOverlay();
+    content.scrollTop = state.page === 'chat' && atBottom ? content.scrollHeight : previousScroll;
+    $('inspectorContent').scrollTop = detailScroll;
+    restoreFocus(focused);
+    if(state.panelOpen && overlayMode() && !$('modal').open && !$('inspector').contains(document.activeElement)) $('inspector').querySelector('[data-action="close-detail"]').focus({preventScroll:true});
+  }
+  function navigate(page) {
+    if(!['chat','tasks','profiles'].includes(page)) return;
+    state.page = page;
+    state.navOpen = false;
+    state.panelOpen = false;
+    state.selected = null;
+    state.steerOpen = false;
+    render();
+    $('contentArea').scrollTop = 0;
+  }
+  function openTask(id, fromPanel = false) {
+    if(!taskById(id)) return;
+    if(!fromPanel) detailOpener = preserveFocus();
+    state.selected = id;
+    state.panelOpen = true;
+    state.tab = 'overview';
+    state.steerOpen = false;
+    state.steerDraft = '';
+    render();
+    $('inspectorContent').scrollTop = 0;
+    if(overlayMode()) $('inspector').querySelector('[data-action="close-detail"]').focus({preventScroll:true});
+  }
+  function closeDetail() {
+    const modalPanel = state.panelOpen && overlayMode();
+    state.panelOpen = false;
+    state.selected = null;
+    state.steerOpen = false;
+    render();
+    if(modalPanel) restoreFocus(detailOpener);
+  }
+  function showModal(title, body) {
+    modalOpener = preserveFocus();
+    $('modalTitle').textContent = title;
+    $('modalBody').innerHTML = body;
+    if(!$('modal').open) $('modal').showModal();
+    const input = $('modal').querySelector('input,textarea,select');
+    if(input) input.focus();
+  }
+  function closeModal() {
+    if($('modal').open) $('modal').close();
+  }
+  function guide() {
+    showModal('子代理，怎样和你一起工作？',`<div class="eyebrow">A QUICK WALKTHROUGH</div><div class="guide-heading">一个目标，<br>可以有几个帮手。</div><p class="guide-intro">你仍然和主代理聊天。它把独立工作交出去，再把各自的发现整理回来。</p><div class="guide-step">${badge('research')}<div><h3>先试试分派任务</h3><p>点击“开始协作演示”，观察运行和排队。你不需要亲自调度每个角色。</p></div></div><div class="guide-step">${badge('design')}<div><h3>点开一张任务卡</h3><p>看状态、执行过程和子会话。给某一项补充要求，或只停止那一项。</p></div></div><div class="guide-step">${badge('review')}<div><h3>把报告交回主代理</h3><p>完成后点击“让主代理汇总”，体验从分工回到一份完整答复。</p></div></div><p class="quiet" style="font-size:10px">全部操作是前端演示，不会调用模型、执行工具或产生费用。刷新会重置演示记录。</p><div class="modal-footer">${button('close-modal','先自己看看')}${button('guide-start',state.started ? '回到聊天' : '开始体验','','primary','play')}</div>`);
+  }
+  function controls() {
+    showModal('演示控制',`<p>可以暂停慢慢查看，也可以推进一步。下面的异常只改变演示数据。</p><div class="choice-list"><button class="choice-button" data-action="control-toggle">${icon(state.playing ? 'pause' : 'play')}<span><strong>${state.playing ? '暂停演示进度' : state.started ? '继续自动演示' : '开始协作演示'}</strong><small>暂停后仍可以查看详情和补充指令</small></span></button><button class="choice-button" data-action="control-next">${icon('next')}<span><strong>推进一步</strong><small>前进一步，观察状态和消息如何变化</small></span></button><button class="choice-button" data-action="complete-demo">${icon('check')}<span><strong>完成所有待执行任务</strong><small>依次完成运行和排队任务，查看报告与汇总</small></span></button><button class="choice-button" data-action="interrupt-demo">${icon('restart')}<span><strong>模拟应用中断</strong><small>保留记录，再从任务详情继续执行</small></span></button><button class="choice-button" data-action="fail-demo">${icon('alert')}<span><strong>模拟单个任务失败</strong><small>观察失败原因，其它任务继续执行</small></span></button></div><div class="modal-footer">${button('close-modal','关闭')}</div>`);
+  }
+  function stopTask(id) {
+    const task = taskById(id);
+    if(!task || !live(task)) { toast('这次执行已经结束，未停止其它任务。'); closeModal(); return; }
+    task.status = 'cancelled';
+    task.pending.forEach(message => { message.delivery = 'missed'; });
+    task.pending = [];
+    log(task,'这一项已被停止','保留已有记录，其它子代理继续执行。','error');
+    fillSlots();
+    if(!state.tasks.some(live)) { state.playing = false; stopTimer(); }
+    closeModal();
+    render();
+    toast('已停止这一项，其它任务不受影响。');
+  }
+  function resumeTask(id, followup = '') {
+    const task = taskById(id);
+    if(!task || !terminal(task)) { closeModal(); toast('这项任务目前不能继续。'); return; }
+    const completed = task.status === 'completed';
+    if(completed) {
+      task.step = 0;
+      task.lastStage = -1;
+      task.elapsed = 0;
+      task.report = null;
+      task.delivery = 'none';
+      // 历史汇总持有报告快照，后续执行不会改写已经交付的结论。
+      task.followup = true;
+      task.stages = [['理解后续任务','阅读任务','确认新目标与已有上下文'],['继续独立工作','分析材料','沿用当前子会话的历史'],['返回补充报告','整理结果','将本次结论送回主代理']];
+      task.messages.push({role:'coordinator',text:followup});
+      task.goal = followup;
+    }
+    task.status = 'queued';
+    task.attempt += 1;
+    task.error = '';
+    task.archived = false;
+    state.batchSuspended = false;
+    log(task,completed ? '收到后续任务' : '恢复任务','沿用已有子会话，以新的执行身份继续。','message');
+    fillSlots();
+    closeModal();
+    state.playing = true;
+    runTimer();
+    render();
+    toast(completed ? '已在同一子会话中开始后续工作。' : '已保留记录并继续执行。');
+  }
+  function summarize() {
+    const complete = state.tasks.filter(task => task.status === 'completed');
+    if(!complete.length) { toast('还没有已完成的报告，可以先推进演示。'); return; }
+    for(const task of complete) {
+      const key = reportKey(task);
+      if(state.summaryIds.includes(key)) continue;
+      state.summaryIds.push(key);
+      state.summaryReports.push({taskId:task.id,attempt:task.attempt,title:task.title,report:clone(task.report)});
+    }
+    complete.forEach(task => { task.delivery = 'consumed'; });
+    closeModal();
+    state.page = 'chat';
+    state.selected = null;
+    state.panelOpen = false;
+    render();
+    $('contentArea').scrollTop = $('contentArea').scrollHeight;
+    announce('主代理已把返回的报告整理成一份方案。');
+  }
+  function interruptDemo() {
+    if(!state.started) start(false);
+    if(!state.tasks.some(task => task.status === 'running')) { closeModal(); toast('当前没有运行中的任务。'); return; }
+    stopTimer();
+    state.playing = false;
+    state.batchSuspended = true;
+    let count = 0;
+    state.tasks.filter(task => task.status === 'running').forEach(task => {
+      task.status = 'interrupted';
+      task.error = '演示：应用进程中断，历史和任务身份已保留。';
+      log(task,'应用中断，执行已结束','可以从现有子会话继续，不把中断显示成完成。','error');
+      count += 1;
+    });
+    closeModal();
+    render();
+    toast(count ? `已模拟 ${count} 项任务中断，点开任务可继续。` : '当前没有运行中的任务。');
+  }
+  function failDemo() {
+    if(!state.started) start(false);
+    const task = state.tasks.find(item => item.status === 'running');
+    if(!task) { closeModal(); toast('当前没有运行中的任务。'); return; }
+    task.status = 'failed';
+    task.error = '演示：模型请求未能完成。本次没有最终报告，已有记录保留。';
+    task.pending.forEach(message => { message.delivery = 'missed'; });
+    task.pending = [];
+    log(task,'模型请求失败',task.error,'error');
+    fillSlots();
+    closeModal();
+    render();
+    toast('已模拟单项失败，可以查看原因后继续。');
+  }
+  function editRole(id) {
+    const role = roles[id];
+    if(!role) return;
+    showModal('调整角色',`<form id="roleForm" data-role="${id}"><div class="field"><label for="roleName">角色名称</label><input id="roleName" name="name" value="${esc(role.name)}" maxlength="24" required></div><div class="field"><label for="roleDescription">适合做什么</label><textarea id="roleDescription" name="description" maxlength="500" required>${esc(role.description)}</textarea></div><div class="field"><label for="roleModel">使用模型</label><select id="roleModel" name="model">${modelOptions.map(model => `<option ${model === role.model ? 'selected' : ''}>${esc(model)}</option>`).join('')}</select><small>演示选项。实际模型从 Operit 已配置的模型中选择。</small></div><p style="font-size:10px">保存只影响之后分派的任务；已经分派的任务继续使用原有配置。</p><div class="form-error" id="roleError" role="alert"></div><div class="modal-footer">${button('close-modal','取消')}<button class="btn primary" type="submit">保存角色</button></div></form>`);
+  }
+  function newTask() {
+    showModal('交给子代理一项任务',`<form id="newTaskForm"><div class="field"><label for="newTaskTitle">任务名称</label><input id="newTaskTitle" name="title" maxlength="60" placeholder="例如：整理首版验收清单" required></div><div class="field"><label for="newTaskGoal">任务说明</label><textarea id="newTaskGoal" name="goal" maxlength="1000" placeholder="告诉它目标、约束，以及希望返回什么。" required></textarea></div><div class="field"><label for="newTaskRole">选择角色</label><select id="newTaskRole" name="role">${Object.entries(roles).map(([id,role]) => `<option value="${id}">${esc(role.name)} · ${esc(role.model)}</option>`).join('')}</select></div><p style="font-size:10px">这会新增一项演示任务，达到同时运行上限时自动排队。</p><div class="form-error" id="newTaskError" role="alert"></div><div class="modal-footer">${button('close-modal','取消')}<button class="btn primary" type="submit">${icon('plus','sm')}分派任务</button></div></form>`);
+  }
+  function reportText() {
+    const tasks = state.summaryReports;
+    return '# Operit 子代理交互方案 · 演示\n\n这是 HTML 原型生成的预设演示报告，不是真实模型执行结果。\n\n' + tasks.map(task => `## ${task.title} · 第 ${task.attempt} 次执行\n\n${task.report.map(line => '- ' + line).join('\n')}`).join('\n\n') + '\n\n## 交互建议\n\n主聊天保留紧凑任务卡，详情展示状态与结果，子会话保留独立过程。结果回传后由主代理统一整理。\n';
+  }
+  function showReport() {
+    if(!state.summaryIds.length) { toast('请先让主代理汇总返回的报告。'); return; }
+    showModal('Operit 子代理 · 交互方案',`<span class="pill">${icon('file','xs')}前端演示报告</span><div class="detail-prose" style="margin-top:17px"><p>主聊天保留方向和最终结论，子代理各自处理独立任务。</p><ul><li>卡片：角色、当前动作、真实状态与结果入口。</li><li>详情：任务、进度、报告、补充与单项停止。</li><li>子会话：独立过程和后续工作。</li></ul><p>结果送回后，再由主代理核对、去重和整理。中断和失败保留具体原因，不混成完成。</p></div><div class="modal-footer">${button('close-modal','关闭')}${button('download','下载 Markdown','','primary','download')}</div>`);
+  }
+  function sendSteer() {
+    const task = taskById(state.selected);
+    const text = state.steerDraft.trim();
+    if(!text) { toast('先写一句想补充的要求。'); return; }
+    if(!task || !live(task)) { toast('任务已经结束，可以使用“继续此任务”。'); return; }
+    queueNote(task,text);
+    state.steerDraft = '';
+    state.steerOpen = false;
+    state.tab = 'conversation';
+    render();
+    $('inspectorContent').scrollTop = $('inspectorContent').scrollHeight;
+    toast('补充已排队，将在下一轮读取。');
+  }
+  // 单一事件入口使页面重绘不会重复注册监听器。
+  document.addEventListener('click',event => {
+    const target = event.target.closest('[data-action]');
+    if(!target || target.disabled) return;
+    const action = target.dataset.action;
+    const id = target.dataset.task;
+    if(action === 'navigate') navigate(target.dataset.page);
+    else if(action === 'start') start(true);
+    else if(action === 'open-task') openTask(id);
+    else if(action === 'close-detail') closeDetail();
+    else if(action === 'theme') { state.theme = state.theme === 'dark' ? 'light' : 'dark'; render(); }
+    else if(action === 'menu') { state.navOpen = !state.navOpen; syncOverlay(); if(state.navOpen) $('sidebar').querySelector('button').focus(); }
+    else if(action === 'dismiss-overlay') { if(state.navOpen) { state.navOpen = false; syncOverlay(); $('center').querySelector('[data-action="menu"]').focus(); } else closeDetail(); }
+    else if(action === 'guide') guide();
+    else if(action === 'guide-start') { closeModal(); navigate('chat'); if(!state.started) start(true); }
+    else if(action === 'close-modal') closeModal();
+    else if(action === 'controls') controls();
+    else if(action === 'toggle-play' || action === 'control-toggle') { closeModal(); if(!state.started) start(true); else if(state.batchSuspended) toast('先从中断的任务里选择“继续执行”。'); else { state.playing = !state.playing; runTimer(); render(); } }
+    else if(action === 'next' || action === 'control-next') { closeModal(); state.playing = false; stopTimer(); tick(); }
+    else if(action === 'complete-demo') { closeModal(); if(!state.started) start(false); state.playing = false; stopTimer(); if(state.batchSuspended) toast('请先恢复中断的任务。'); else { for(let step=0;step<200 && state.tasks.some(live);step++) tick(false); render(); toast('待执行任务已依次完成，可以让主代理汇总。'); } }
+    else if(action === 'interrupt-demo') interruptDemo();
+    else if(action === 'fail-demo') failDemo();
+    else if(action === 'collapse') { state.groupCollapsed = !state.groupCollapsed; render(); }
+    else if(action === 'detail-tab') { state.tab = target.dataset.tab; state.steerOpen = false; render(); $('inspectorContent').scrollTop = 0; }
+    else if(action === 'steer-open') { state.steerOpen = true; render(); $('steerInput').focus(); $('steerInput').scrollIntoView({block:'nearest'}); }
+    else if(action === 'stop') {
+      const task = taskById(id);
+      if(task && live(task)) showModal('停止这一项任务？',`<p>停止“${esc(task.title)}”的当前执行，保留已有记录。其它子代理和主聊天继续工作。</p><div class="modal-footer">${button('close-modal','继续运行')}${button('confirm-stop','停止这一项',`data-task="${id}"`,'danger','stop')}</div>`);
+    }
+    else if(action === 'confirm-stop') stopTask(id);
+    else if(action === 'resume') {
+      const task = taskById(id);
+      if(!task) return;
+      if(task.status === 'completed') showModal('继续同一个子代理',`<form id="followupForm" data-task="${id}"><p>保留原来的子会话，交给它下一项具体工作。</p><div class="field" style="margin-top:15px"><label for="followupInput">后续任务</label><textarea id="followupInput" maxlength="1000" required placeholder="例如：把刚才的发现整理成五条验收要点。"></textarea></div><div class="modal-footer">${button('close-modal','取消')}<button type="submit" class="btn primary">开始后续工作</button></div></form>`);
+      else resumeTask(id);
+    }
+    else if(action === 'summarize') summarize();
+    else if(action === 'kind') { state.kind = target.dataset.kind; render(); }
+    else if(action === 'clear-filter') { state.filter = 'all'; state.query = ''; render(); }
+    else if(action === 'archive') { const task = taskById(id); if(task && terminal(task)) { task.archived = !task.archived; render(); toast(task.archived ? '已归档，记录仍可在“已归档”中找到。' : '已恢复到任务列表。'); } }
+    else if(action === 'edit-role') editRole(target.dataset.role);
+    else if(action === 'new-task') newTask();
+    else if(action === 'report') showReport();
+    else if(action === 'download') {
+      const url = URL.createObjectURL(new Blob([reportText()],{type:'text/markdown;charset=utf-8'}));
+      const link = document.createElement('a'); link.href = url; link.download = 'Operit子代理-演示方案.md'; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),2000); toast('已生成演示报告。');
+    }
+    else if(action === 'reset') showModal('重新开始演示？',`<p>清空本页的演示任务和补充记录，回到分派前。角色设置和当前主题保留。</p><div class="modal-footer">${button('close-modal','取消')}${button('confirm-reset','重新开始','','primary','restart')}</div>`);
+    else if(action === 'confirm-reset') { reset(); toast('已回到分派前，可以重新体验。'); }
+  });
+  document.addEventListener('input',event => {
+    if(event.target.id === 'steerInput') state.steerDraft = event.target.value;
+    else if(event.target.id === 'taskSearch') { state.query = event.target.value; if(!event.isComposing) render(); }
+    else if(event.target.id === 'mainInput') { event.target.style.height = 'auto'; event.target.style.height = Math.min(event.target.scrollHeight,90) + 'px'; }
+  });
+  document.addEventListener('compositionstart',() => { composing = true; });
+  document.addEventListener('compositionend',() => { composing = false; if(renderPending) { renderPending = false; render(); } });
+  document.addEventListener('change',event => {
+    if(event.target.id === 'taskSwitcher') openTask(event.target.value,true);
+    if(event.target.id === 'taskFilter') { state.filter = event.target.value; render(); }
+  });
+  document.addEventListener('submit',event => {
+    event.preventDefault();
+    if(event.target.id === 'mainComposer') {
+      const text = $('mainInput').value.trim();
+      if(!text) return;
+      $('mainInput').value = ''; $('mainInput').style.height = 'auto';
+      if(text.includes('汇总') && state.tasks.some(task => task.status === 'completed')) { summarize(); return; }
+      state.mainNotes.push(text);
+      const receivers = state.tasks.filter(live);
+      receivers.forEach(task => queueNote(task,text));
+      state.mainReplies.push({text,reply:receivers.length ? `收到。我已把这条要求交给 ${receivers.length} 项进行中的任务，子代理会在下一轮读取。` : state.started ? '收到。报告和任务记录会保留；你可以点开某个子代理，继续交给它后续工作。' : '收到。这条要求会随任务一起交给子代理。准备好后点击“开始协作演示”。'});
+      render(); $('contentArea').scrollTop = $('contentArea').scrollHeight;
+    }
+    else if(event.target.id === 'steerForm') sendSteer();
+    else if(event.target.id === 'roleForm') {
+      const name = $('roleName').value.trim(), description = $('roleDescription').value.trim();
+      if(!name || !description) { $('roleError').textContent = '角色名称和用途都需要填写。'; return; }
+      const role = roles[event.target.dataset.role]; role.name = name; role.description = description; role.model = $('roleModel').value;
+      closeModal(); render(); toast('角色已保存，对之后分派的任务生效。');
+    }
+    else if(event.target.id === 'newTaskForm') {
+      const title = $('newTaskTitle').value.trim(), goal = $('newTaskGoal').value.trim(), role = $('newTaskRole').value;
+      if(!title || !goal) { $('newTaskError').textContent = '请填写任务名称和说明。'; return; }
+      if(state.tasks.length >= 30) { $('newTaskError').textContent = '本次演示最多保留 30 项任务，请先重置。'; return; }
+      if(!state.started) start(false);
+      const task = makeTask({id:`custom-${nextTask++}`,role,title,description:goal,goal,sources:'用户补充的演示任务',custom:true,stages:[['理解任务范围','阅读任务','确认目标与交付物'],['整理任务材料','分析材料','独立完成这一项工作'],['形成最终报告','整理结果','将报告送回主代理']]});
+      task.status = 'queued'; state.tasks.push(task); log(task,'收到新任务',goal,'message'); fillSlots();
+      closeModal(); state.playing = !state.batchSuspended; runTimer(); state.page = 'tasks'; state.kind = 'delegated'; state.filter = 'all'; state.query = ''; render(); toast(task.status === 'running' ? '新任务已经开始。' : '新任务已排队。');
+    }
+    else if(event.target.id === 'followupForm') {
+      const text = $('followupInput').value.trim();
+      if(text) resumeTask(event.target.dataset.task,text);
+    }
+  });
+  document.addEventListener('keydown',event => {
+    if(event.key === 'Escape' && !$('modal').open) {
+      if(state.navOpen) { state.navOpen = false; syncOverlay(); $('center').querySelector('[data-action="menu"]').focus(); }
+      else if(state.panelOpen) closeDetail();
+    }
+    if(event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.target.id === 'mainInput') { event.preventDefault(); $('mainComposer').requestSubmit(); }
+    if(event.key === 'Enter' && !event.isComposing && (event.ctrlKey || event.metaKey) && event.target.id === 'steerInput') { event.preventDefault(); sendSteer(); }
+    if(event.key !== 'Tab' || $('modal').open) return;
+    const scope = state.navOpen ? $('sidebar') : state.panelOpen && overlayMode() ? $('inspector') : null;
+    if(!scope) return;
+    const items = [...scope.querySelectorAll('button,input,textarea,select,[tabindex="0"]')].filter(el => !el.disabled && el.offsetParent !== null);
+    if(!items.length) return;
+    if(event.shiftKey && document.activeElement === items[0]) { event.preventDefault(); items.at(-1).focus(); }
+    else if(!event.shiftKey && document.activeElement === items.at(-1)) { event.preventDefault(); items[0].focus(); }
+  });
+  $('modal').addEventListener('close',() => { restoreFocus(modalOpener); });
+  $('modal').addEventListener('click',event => { if(event.target === $('modal')) { const bounds = $('modal').getBoundingClientRect(); if(event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeModal(); } });
+  let touchStart = null;
+  $('sheetHandle').addEventListener('touchstart',event => { touchStart = event.touches[0].clientY; },{passive:true});
+  $('sheetHandle').addEventListener('touchend',event => { if(touchStart !== null && event.changedTouches[0].clientY - touchStart > 60) closeDetail(); touchStart = null; },{passive:true});
+  window.addEventListener('resize',() => { if(!window.matchMedia('(max-width:720px)').matches) state.navOpen = false; syncOverlay(); });
+  reset();
+})();
+</script>
+</body>
+</html>

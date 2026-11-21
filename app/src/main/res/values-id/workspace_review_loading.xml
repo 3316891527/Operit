@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workspace_changes_load_on_demand">Perbedaan ini besar. Muat untuk melihat perubahan tanpa penyorotan sintaks.</string>
+    <string name="workspace_changes_load_diff">Muat perbedaan</string>
+    <string name="workspace_changes_hard_limit">Perbedaan melewati batas: total 4.194.304 karakter atau 20.000 baris pada kedua versi, atau 131.072 karakter dalam satu baris. Buka berkas asli untuk melihatnya.</string>
+    <string name="workspace_changes_long_lines_wrap">Baris yang sangat panjang dibungkus sesuai lebar jendela.</string>
+    <string name="workspace_changes_record_summary">%1$s · Ringkasan perubahan tercatat</string>
+    <string name="workspace_changes_record_scope">Perubahan nyata pada direktori tertaut juga disimpan saat dipantau, termasuk suntingan terminal dan eksternal. Riwayat yang belum disimpan tidak dapat dipulihkan.</string>
+</resources>

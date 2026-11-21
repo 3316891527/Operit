@@ -91,7 +91,11 @@ internal fun StudioNativeInput(state: ThemeStudioState) {
     val snapshot = LocalThemePreferenceSnapshot.current
     val values = snapshot.values
     val runtime = rememberStudioChatInputRuntime()
-    val text = TextFieldValue(if (state.target.id in setOf("composer.stop", "composer.microphone")) "" else stringResource(R.string.studio_preview_input))
+    // 编辑输入区域时展示真实占位符，避免固定样例文字遮住变化。
+    val text = TextFieldValue(
+        if (state.target.id in setOf("input", "composer.stop", "composer.microphone")) ""
+        else stringResource(R.string.studio_preview_input)
+    )
     val processing = state.target.id in setOf("composer.stop", "composer.queue")
     if (values.requiredString("input_style") == "agent") {
         AgentChatInputContent(

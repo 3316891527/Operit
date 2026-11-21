@@ -36,6 +36,10 @@ data class ThemeScriptSurface(
     val size: Float? = null,
     val messageWidth: Float = 1f,
     val textStyle: ThemeAppearanceText = ThemeAppearanceText(),
+    // null 使用原生提示，空字符串明确隐藏；未设置时不增加导出字段。
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val placeholder: String? = null,
     val states: Map<String, ThemeAppearanceState> = emptyMap(),
     val opacity: Float = 1f,
     // 零偏移不写入导出结果，未使用此扩展的主题保持原有字段集合。
@@ -48,6 +52,10 @@ data class ThemeScriptSurface(
     @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val ripple: ThemeRipple? = null,
+    // 全局及页面背景独立合成；零值不改变已有主题的导出字段。
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val backgroundBlur: Float = 0f,
 )
 
 /** 弹起菜单的位置偏移，单位 dp；只提供上、下、左三个物理方向。 */

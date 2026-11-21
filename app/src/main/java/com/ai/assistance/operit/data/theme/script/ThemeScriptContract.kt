@@ -7,6 +7,7 @@ object ThemeScriptContract {
     const val API_VERSION = 1
     const val MAX_JSON_DEPTH = 16
     const val MAX_BLUR_DP = 8f
+    const val MAX_BACKGROUND_BLUR_DP = 30f
     const val MAX_POPUP_OFFSET_DP = 256f
     const val MAX_SOURCE_BYTES = 65536
     const val MAX_RESULT_BYTES = 131072
@@ -130,6 +131,7 @@ object ThemeScriptContract {
         result.textStyles.values.forEach { validateText(it, manifest) }
         require(result.surfaces.values.sumOf { it.layers.size } <= 128) { "Theme script declares too many layers" }
         result.surfaces.forEach { (id, surface) ->
+            require(id == "input" || surface.placeholder == null) { "Placeholder belongs to the chat input" }
             surface.transition?.let {
                 require(id in interactiveSurfaceIds) { "State transitions require an interactive surface" }
                 require(it.durationMillis in 0..1000) { "State transition duration must be 0..1000 ms" }
@@ -142,6 +144,8 @@ object ThemeScriptContract {
             surface.fillGradient?.let { validateGradient(it) }
             require(surface.fillGradient == null || surface.fillColor == null) { "Choose a surface color or gradient" }
             require(surface.opacity.isFinite() && surface.opacity in 0f..1f) { "Invalid surface opacity" }
+            require(surface.backgroundBlur.isFinite() && surface.backgroundBlur in 0f..MAX_BACKGROUND_BLUR_DP) { "Invalid background blur" }
+            require(surface.backgroundBlur == 0f || id == "background" || id in ThemeStyleTargets.pageIds) { "Background blur requires a global or page background" }
             require(surface.states.keys.all { it in setOf("pressed", "focused", "selected", "disabled", "error") }) { "Unknown surface state" }
             surface.states.values.forEach { state ->
                 require(listOfNotNull(state.fillColor, state.contentColor, state.strokeColor).all(color::matches)) { "Invalid state color" }

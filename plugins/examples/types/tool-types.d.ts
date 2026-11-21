@@ -31,6 +31,8 @@ import {
  * Maps tool names to their result data types
  */
 export interface ToolResultMap {
+    // 平台命令通过宿主执行器返回原始业务数据。
+    'execute_cli_command': import('./software_settings').SoftwareSettings.CommandValue;
     // File operations
     'list_files': DirectoryListingData;
     'read_file': FileContentData;
