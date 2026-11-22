@@ -157,3 +157,5 @@
 - [工作区交互与聊天导入内存优化](workspace-review-and-chat-import/index.md)
 - [终端文件变化采集与来源](terminal-file-observation/index.md)
 - [子代理最终报告补写与产出保留](subagent-final-report-recovery/index.md)
+
+- [终端观察基线内存优化](terminal-baseline-memory/index.md)

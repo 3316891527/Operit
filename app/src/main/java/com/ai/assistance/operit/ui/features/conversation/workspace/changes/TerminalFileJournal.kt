@@ -27,20 +27,12 @@ internal class TerminalFileJournal internal constructor(
     private val preparationDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val commandPreparationWaitMs: Long = 50,
 ) {
-    private data class PendingChange(val origin: TerminalChangeOrigin?, val createdInPlace: Boolean = false)
-
-    private class State(val root: TerminalObservationRoot, val key: String) {
-        var baseline = TerminalObservationBaseline()
+    private class State(val root: TerminalObservationRoot, val key: String, val index: TerminalObservationIndex) {
         var initialized = false
         var setupFailure: Exception? = null
         var observer: DepthLimitedFileObserver? = null
-        val pending = linkedMapOf<String, PendingChange>()
-        // 冷启动期间已核对的路径覆盖后台扫描结果，包括已经删除的路径。
-        val startupPaths = linkedSetOf<String>()
-        var needsSave = false
         @Volatile var excludedRoots: List<File> = emptyList()
     }
-    private data class BaselineWrite(val state: State, val baseline: TerminalObservationBaseline)
 
     internal class Execution(val origin: TerminalChangeOrigin) {
         val operationId: String = UUID.randomUUID().toString()
@@ -71,7 +63,6 @@ internal class TerminalFileJournal internal constructor(
     private val executions = ConcurrentHashMap<String, Execution>()
     private val interactive = ConcurrentHashMap<String, TerminalChangeOrigin>()
     private val signals = Channel<Unit>(Channel.CONFLATED)
-    private val persistSignals = Channel<Unit>(Channel.CONFLATED)
     private val failures = MutableStateFlow<Map<String, String>>(emptyMap())
     val errors = failures.asStateFlow()
 
@@ -82,16 +73,7 @@ internal class TerminalFileJournal internal constructor(
                 WorkspaceChangeStore.operationMutex.withLock { inspectPending() }
             }
         }
-        scope.launch {
-            for (signal in persistSignals) {
-                delay(150)
-                val writes = WorkspaceChangeStore.operationMutex.withLock { takeBaselineWrites() }
-                val failed = writeBaselines(writes)
-                if (failed.isNotEmpty()) WorkspaceChangeStore.operationMutex.withLock {
-                    failed.forEach { it.needsSave = true }
-                }
-            }
-        }
+
     }
 
     suspend fun begin(origin: TerminalChangeOrigin, workingDirectory: String? = null): Execution {
@@ -133,7 +115,7 @@ internal class TerminalFileJournal internal constructor(
                 prepareBaselinesInBackground()
                 val error = states.values.firstNotNullOfOrNull { it.setupFailure }
                 val unreadable = states.values.asSequence().flatMap { state ->
-                    state.baseline.unreadable.asSequence().map { File(state.root.file, it).path }
+                    state.index.unreadableSample().asSequence().map { File(state.root.file, it).path }
                 }.take(3).toList()
                 if (error != null) report(chatId, error)
                 else if (unreadable.isNotEmpty()) report(chatId, IOException("Cannot observe: " + unreadable.joinToString()))
@@ -188,11 +170,7 @@ internal class TerminalFileJournal internal constructor(
             val file = File(state.root.file, path)
             if (path.isEmpty() || excluded(state, file)) continue
             if (watchParent && !state.initialized) file.parentFile?.let { state.observer?.watchDirectory(it) }
-            synchronized(state) {
-                // 已有明确来源的通知保留归属，空来源的通知也参与本次实际内容对比。
-                val pending = state.pending[path]
-                if (pending?.origin == null) state.pending[path] = PendingChange(origin, pending?.createdInPlace == true)
-            }
+            state.index.enqueue(path, TerminalPendingChange(origin), onlyWhenUnowned = true)
         }
     }
 
@@ -213,13 +191,7 @@ internal class TerminalFileJournal internal constructor(
                 .maxByOrNull { it.root.file.path.length } ?: continue
             if (state.observer == null || excluded(state, file)) continue
             val path = state.root.file.toPath().relativize(file.toPath()).toString().replace(File.separatorChar, '/')
-            val next = state.baseline.files.toMutableMap()
-            when (record.after.kind) {
-                SnapshotKind.ABSENT -> next.keys.removeAll { it == path || it.startsWith("$path/") }
-                SnapshotKind.DIRECTORY -> Unit
-                else -> next[path] = TerminalObservedFile("", record.after)
-            }
-            updateBaseline(state, state.baseline.copy(files = next), setOf(path))
+            state.index.acknowledge(path, record.after, initializing = !state.initialized)
         }
     }
 
@@ -228,9 +200,7 @@ internal class TerminalFileJournal internal constructor(
         if (file.parentFile?.let { state.observer?.isWatchingDirectory(it) } == true) return@any true
         // 终端已有父目录事件时，会在事件批次中采集整棵新子树。
         val path = file.absolutePath.removePrefix(state.root.file.path).trimStart('/')
-        synchronized(state) {
-            anyObservationAncestor(path) { state.pending[it]?.origin != null }
-        }
+        state.index.hasOwnedPendingAncestor(path)
     }
 
     private fun source(): TerminalChangeOrigin? = terminalChangeOrigin(
@@ -243,7 +213,7 @@ internal class TerminalFileJournal internal constructor(
         for (root in roots) {
             val key = MessageDigest.getInstance("SHA-256").digest((root.location.key + "\u0000" + root.file.path)
                 .toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
-            states.getOrPut(key) { State(root, key) }
+            states.getOrPut(key) { State(root, key, store.terminalIndex(key)) }
         }
         for (state in states.values) {
             state.excludedRoots = states.values.filter { it !== state && it.root.file.path != state.root.file.path &&
@@ -269,13 +239,13 @@ internal class TerminalFileJournal internal constructor(
             discoverDescendantsOnEvent = false,
             onChange = { event ->
                 val origin = source()
-                synchronized(state) {
-                    val previous = state.pending[event.relativePath]
-                    val previousOrigin = previous?.origin
-                    val mergedOrigin = if (previousOrigin != null && origin != null) previousOrigin.merge(origin) else origin ?: previousOrigin
-                    state.pending[event.relativePath] = PendingChange(mergedOrigin, previous?.createdInPlace ?: event.createdInPlace)
+                if (!closed) try {
+                    state.index.enqueue(event.relativePath, TerminalPendingChange(origin, event.createdInPlace))
+                    signals.trySend(Unit)
+                } catch (error: Exception) {
+                    AppLogger.e("TerminalFileJournal", "终端文件事件入队失败", error)
+                    if (origin != null) report(origin.chatId, error)
                 }
-                signals.trySend(Unit)
             })
         state.observer = observer
         // 这里只注册固定数量的目录，递归注册和基线读取由准备任务负责。
@@ -311,46 +281,29 @@ internal class TerminalFileJournal internal constructor(
         val coroutineContext = currentCoroutineContext()
         val started = System.nanoTime()
         try {
-            val saved = store.terminalBaseline(state.key) ?: TerminalObservationBaseline()
-            val scanned = scanTerminalFiles(state.root.file, saved,
-                excluded = { excluded(state, it) }, onDirectory = { observer.watchDirectory(it) },
-                checkCancelled = { coroutineContext.ensureActive() }, snapshotBytes = { snapshotBytes(it, state.key) })
-            // 先处理扫描期间已到达的事件，防止初次扫描读到写入后的内容并覆盖原快照。
-            awaitEvents()
-            WorkspaceChangeStore.operationMutex.withLock {
-                if (closed) return@withLock
-                inspectPending(state)
-                val baseline = if (state.startupPaths.isEmpty()) scanned else {
-                    val touched = state.startupPaths
-                    val files = scanned.files.toMutableMap()
-                    files.keys.removeAll { anyObservationAncestor(it, touched::contains) }
-                    files.putAll(state.baseline.files)
-                    val unreadable = scanned.unreadable.filterNot { anyObservationAncestor(it, touched::contains) }
-                    TerminalObservationBaseline(files, (unreadable + state.baseline.unreadable).toSet())
+            store.importTerminalBaseline(state.key) { coroutineContext.ensureActive() }
+            state.index.beginScan().use { scan ->
+                scanTerminalFiles(state.root.file, state.index, scan,
+                    excluded = { excluded(state, it) }, onDirectory = { observer.watchDirectory(it) },
+                    checkCancelled = { coroutineContext.ensureActive() }, snapshotBytes = { snapshotBytes(it, scan) })
+                // 已处理的启动事件在磁盘 touched 表中覆盖全盘扫描，包括已删除的子树。
+                awaitEvents()
+                WorkspaceChangeStore.operationMutex.withLock {
+                    if (closed) return@withLock
+                    while (state.index.hasPending()) {
+                        if (!inspectPending(state) { coroutineContext.ensureActive() }) throw IOException("Cannot publish baseline with uncaptured terminal events")
+                    }
+                    scan.commit(completeInitialization = true)
+                    state.initialized = true
+                    state.setupFailure = null
                 }
-                state.initialized = true
-                state.startupPaths.clear()
-                state.setupFailure = null
-                updateBaseline(state, baseline)
             }
-            AppLogger.d("TerminalFileJournal", "终端观察初始化 ${state.root.location.path} 条目=${scanned.files.size} 耗时=${(System.nanoTime() - started) / 1_000_000}ms")
+            AppLogger.d("TerminalFileJournal", "终端观察初始化 "+state.root.location.path+" 条目="+state.index.count()+" 耗时="+(System.nanoTime()-started)/1_000_000+"ms")
         } catch (error: Exception) {
             coroutineContext.ensureActive()
             WorkspaceChangeStore.operationMutex.withLock { state.setupFailure = error }
-            AppLogger.e("TerminalFileJournal", "终端观察初始化失败 ${state.root.location.path}", error)
-        } finally {
-            store.releasePreparingTerminalBlobs(state.key)
-        }
-    }
-
-    private fun updateBaseline(state: State, baseline: TerminalObservationBaseline, paths: Set<String> = emptySet()) {
-        if (!state.initialized) state.startupPaths.addAll(paths)
-        if (baseline === state.baseline) return
-        state.baseline = baseline
-        store.pinTerminalBaseline(state.key, baseline)
-        if (state.initialized) {
-            state.needsSave = true
-            persistSignals.trySend(Unit)
+            AppLogger.e("TerminalFileJournal", "终端观察初始化失败 "+state.root.location.path, error)
+            source()?.let { report(it.chatId, error) }
         }
     }
 
@@ -358,65 +311,75 @@ internal class TerminalFileJournal internal constructor(
         observedStates.forEach { inspectPending(it, checkCancelled) }
     }
 
-    private fun inspectPending(state: State, checkCancelled: () -> Unit = {}) {
+    private fun inspectPending(state: State, checkCancelled: () -> Unit = {}): Boolean {
         checkCancelled()
-        val pending = synchronized(state) { state.pending.toMap().also { state.pending.clear() } }
-        if (pending.isEmpty()) return
+        var pending: Map<String, TerminalPendingChange> = emptyMap()
         try {
-            val previous = state.baseline
+            pending = state.index.takePending()
+            if (state.index.hasPending()) signals.trySend(Unit)
+            if (pending.isEmpty()) return true
             val observer = checkNotNull(state.observer)
-            val next = scanTerminalFiles(state.root.file, previous, pending.keys,
-                excluded = { excluded(state, it) }, onDirectory = { observer.watchDirectory(it) },
-                checkCancelled = checkCancelled, snapshotBytes = { snapshotBytes(it) })
-            val grouped = linkedMapOf<TerminalChangeOrigin, MutableList<FileChangeRecord>>()
-            if (pending.values.any { it.origin != null }) {
-                val candidates = if (pending.keys.all { it in previous.files && it in next.files }) pending.keys else
-                    (previous.files.keys.asSequence() + next.files.keys.asSequence())
-                        .filter { anyObservationAncestor(it, pending::containsKey) }.toSet()
-                for (path in candidates) {
-                    checkCancelled()
-                    if (excluded(state, File(state.root.file, path))) continue
-                    var closest: PendingChange? = null
-                    var createdInPlace = false
-                    anyObservationAncestor(path) { ancestor ->
-                        val event = pending[ancestor] ?: return@anyObservationAncestor false
-                        if (closest == null) closest = event
-                        createdInPlace = createdInPlace || event.createdInPlace
-                        createdInPlace
+            state.index.beginScan(pending.keys).use { scan ->
+                scanTerminalFiles(state.root.file, state.index, scan, pending.keys,
+                    excluded = { excluded(state, it) }, onDirectory = { observer.watchDirectory(it) },
+                    checkCancelled = checkCancelled, snapshotBytes = { snapshotBytes(it, scan) })
+                if (pending.values.any { it.origin != null }) {
+                    var afterPath: String? = null
+                    while (true) {
+                        checkCancelled()
+                        val page = scan.differences(afterPath)
+                        if (page.isEmpty()) break
+                        val grouped = linkedMapOf<TerminalChangeOrigin, MutableList<FileChangeRecord>>()
+                        for (difference in page) {
+                            val path = difference.path
+                            if (excluded(state, File(state.root.file, path))) continue
+                            val queuedAncestors = state.index.pendingAncestors(path)
+                            var closest: TerminalPendingChange? = null
+                            var createdInPlace = false
+                            anyObservationAncestor(path) { ancestor ->
+                                val event = pending[ancestor] ?: queuedAncestors[ancestor] ?: return@anyObservationAncestor false
+                                if (closest == null) closest = event
+                                createdInPlace = createdInPlace || event.createdInPlace
+                                createdInPlace
+                            }
+                            val origin = closest?.origin ?: continue
+                            val previous = difference.beforeSnapshot
+                            val after = difference.afterSnapshot
+                            if (previous == after &&
+                                (after.kind !in setOf(SnapshotKind.TOO_LARGE, SnapshotKind.UNAVAILABLE) ||
+                                    difference.before?.stamp == difference.after?.stamp)) continue
+                            val before = if (!state.initialized && !createdInPlace && previous.kind == SnapshotKind.ABSENT &&
+                                !state.index.hasTouchedAncestor(path)) {
+                                ChangeSnapshot(SnapshotKind.UNAVAILABLE, detail = "Observation baseline was not ready")
+                            } else previous
+                            val location = state.root.location.copy(path = changePath(state.root.location.path + "/" + path))
+                            val record = FileChangeRecord(UUID.randomUUID().toString(), origin.executionId ?: UUID.randomUUID().toString(),
+                                origin.chatId, WorkspaceChangeStore.nextTimestamp(), origin.toolName, location,
+                                before, after, executionId = origin.executionId, sourceKind = "terminal",
+                                subagentExecutionId = origin.subagentExecutionId)
+                            grouped.getOrPut(origin) { mutableListOf() }.add(record)
+                        }
+                        for ((origin, changes) in grouped) save(origin, changes)
+                        afterPath = page.last().path
                     }
-                    val origin = closest?.origin ?: continue
-                    val previousSnapshot = previous.snapshot(path)
-                    val after = next.snapshot(path)
-                    if (previousSnapshot == after &&
-                        (after.kind !in setOf(SnapshotKind.TOO_LARGE, SnapshotKind.UNAVAILABLE) ||
-                            previous.files[path]?.stamp == next.files[path]?.stamp)) continue
-                    // 冷启动尚未读过的原文件没有可靠快照。明确的 CREATE 仍可记录为新建。
-                    val before = if (!state.initialized && !createdInPlace && previousSnapshot.kind == SnapshotKind.ABSENT &&
-                        !anyObservationAncestor(path, state.startupPaths::contains)) {
-                        ChangeSnapshot(SnapshotKind.UNAVAILABLE, detail = "Observation baseline was not ready")
-                    } else previousSnapshot
-                    val location = state.root.location.copy(path = changePath(state.root.location.path + "/" + path))
-                    val record = FileChangeRecord(UUID.randomUUID().toString(), origin.executionId ?: UUID.randomUUID().toString(),
-                        origin.chatId, WorkspaceChangeStore.nextTimestamp(), origin.toolName, location,
-                        before, after, executionId = origin.executionId, sourceKind = "terminal",
-                        subagentExecutionId = origin.subagentExecutionId)
-                    grouped.getOrPut(origin) { mutableListOf() }.add(record)
                 }
+                checkCancelled()
+                scan.commit(touch = !state.initialized)
             }
-            checkCancelled()
-            for ((origin, changes) in grouped) save(origin, changes)
-            updateBaseline(state, next, pending.keys)
-            if (next.unreadable.isNotEmpty()) {
+            val unreadable = state.index.unreadableSample()
+            if (unreadable.isNotEmpty()) {
                 val origin = terminalChangeOrigin(pending.values.mapNotNull { it.origin })
-                if (origin != null) report(origin.chatId, IOException("Cannot observe: " + next.unreadable.take(3).joinToString()))
+                if (origin != null) report(origin.chatId, IOException("Cannot observe: " + unreadable.joinToString()))
             }
+            return true
         } catch (error: Exception) {
-            synchronized(state) { pending.forEach { (path, change) -> state.pending.putIfAbsent(path, change) } }
-            if (error is CancellationException) {
-                signals.trySend(Unit)
-                throw error
-            }
-            pending.values.mapNotNull { it.origin?.chatId }.distinct().forEach { report(it, error) }
+            try { pending.forEach { (path, change) -> state.index.enqueue(path, change, older = true) } }
+            catch (restoreError: Exception) { error.addSuppressed(restoreError) }
+            if (error is CancellationException) { signals.trySend(Unit); throw error }
+            val chats = pending.values.mapNotNull { it.origin?.chatId }.distinct()
+            if (chats.isEmpty()) AppLogger.e("TerminalFileJournal", "终端文件事件采集失败", error)
+            chats.forEach { report(it, error) }
+            return false
         }
     }
 
@@ -451,30 +414,10 @@ internal class TerminalFileJournal internal constructor(
         } else record
     }
 
-    private fun snapshotBytes(bytes: ByteArray, preparingKey: String? = null): ChangeSnapshot = when {
+    private fun snapshotBytes(bytes: ByteArray, scan: TerminalObservationIndex.Scan): ChangeSnapshot = when {
         bytes.size > CHANGE_SNAPSHOT_LIMIT -> ChangeSnapshot(SnapshotKind.TOO_LARGE, bytes.size.toLong())
-        decodeChangeText(bytes) == null -> ChangeSnapshot(SnapshotKind.BINARY, bytes.size.toLong(), store.putBlob(bytes, preparingKey))
-        else -> ChangeSnapshot(SnapshotKind.TEXT, bytes.size.toLong(), store.putBlob(bytes, preparingKey))
-    }
-
-    /** 锁内只取清单引用，序列化和磁盘 I/O 不占用终端采集锁。 */
-    private fun takeBaselineWrites(): List<BaselineWrite> = states.values.filter { it.needsSave }.map { state ->
-        state.needsSave = false
-        store.pinWritingTerminalBaseline(state.key, state.baseline)
-        BaselineWrite(state, state.baseline)
-    }
-
-    private fun writeBaselines(writes: List<BaselineWrite>): List<State> = buildList {
-        for ((state, baseline) in writes) {
-            try {
-                store.saveTerminalBaseline(state.key, baseline)
-            } catch (error: Exception) {
-                add(state)
-                AppLogger.e("TerminalFileJournal", "终端观察基线写入失败 ${state.root.location.path}", error)
-            } finally {
-                store.pinWritingTerminalBaseline(state.key, null)
-            }
-        }
+        decodeChangeText(bytes) == null -> ChangeSnapshot(SnapshotKind.BINARY, bytes.size.toLong(), store.putBlob(bytes, scan))
+        else -> ChangeSnapshot(SnapshotKind.TEXT, bytes.size.toLong(), store.putBlob(bytes, scan))
     }
 
     private fun excluded(state: State, file: File): Boolean {
@@ -503,19 +446,15 @@ internal class TerminalFileJournal internal constructor(
     internal suspend fun close(): Unit = withContext(NonCancellable + Dispatchers.IO) {
         WorkspaceChangeStore.operationMutex.withLock { closed = true }
         scope.coroutineContext.job.cancelAndJoin()
-        val writes = WorkspaceChangeStore.operationMutex.withLock {
-            val baselines = takeBaselineWrites()
-            states.values.forEach { it.observer?.stop() }
+        WorkspaceChangeStore.operationMutex.withLock {
+            states.values.forEach { it.observer?.stop(); store.releaseTerminalIndex(it.key) }
             states.clear()
             observedStates = emptyList()
             executions.clear()
             interactive.clear()
             signals.close()
-            persistSignals.close()
             if (barrier.isInitialized()) barrier.value.close()
-            baselines
         }
-        writeBaselines(writes)
         if (instance === this@TerminalFileJournal) instance = null
     }
 

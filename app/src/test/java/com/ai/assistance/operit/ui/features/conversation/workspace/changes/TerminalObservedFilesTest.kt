@@ -13,7 +13,7 @@ class TerminalObservedFilesTest {
     private fun snapshot(bytes: ByteArray) = ChangeSnapshot(SnapshotKind.TEXT, bytes.size.toLong(),
         MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) })
     private fun scan(root: File, before: TerminalObservationBaseline = TerminalObservationBaseline(), paths: Set<String>? = null) =
-        scanTerminalFiles(root, before, paths, snapshotBytes = ::snapshot)
+        memoryScanTerminalFiles(root, before, paths, snapshotBytes = ::snapshot)
 
     @Test fun creationModificationAndDeletionNeedNoWorkspaceBinding() {
         val root = temporary.newFolder()
@@ -47,7 +47,7 @@ class TerminalObservedFilesTest {
         val initial = scan(root)
         File(root, "one").writeText("updated")
         var reads = 0
-        val next = scanTerminalFiles(root, initial, setOf("one"), snapshotBytes = { reads++; snapshot(it) })
+        val next = memoryScanTerminalFiles(root, initial, setOf("one"), snapshotBytes = { reads++; snapshot(it) })
         assertEquals(1, reads)
         assertEquals(initial.snapshot("two"), next.snapshot("two"))
     }
@@ -58,7 +58,7 @@ class TerminalObservedFilesTest {
         File(root, "tmp/operit-edit-demo/message.txt").writeText("first")
         File(root, ".git/objects").mkdirs()
         val watched = mutableListOf<String>()
-        val initial = scanTerminalFiles(root, TerminalObservationBaseline(),
+        val initial = memoryScanTerminalFiles(root, TerminalObservationBaseline(),
             onDirectory = { watched += it.relativeTo(root).invariantSeparatorsPath }, snapshotBytes = ::snapshot)
         assertEquals(listOf("", "tmp", "tmp/operit-edit-demo"), watched)
         assertEquals(snapshot("first".toByteArray()), initial.snapshot("tmp/operit-edit-demo/message.txt"))
@@ -102,14 +102,14 @@ class TerminalObservedFilesTest {
         val own = File(root, "journal").apply { mkdir() }
         File(own, "self").writeText("journal")
         File(root, ".env").writeText("visible hidden file")
-        val next = scanTerminalFiles(root, TerminalObservationBaseline(), excluded = { it.toPath().startsWith(own.toPath()) }, snapshotBytes = ::snapshot)
+        val next = memoryScanTerminalFiles(root, TerminalObservationBaseline(), excluded = { it.toPath().startsWith(own.toPath()) }, snapshotBytes = ::snapshot)
         assertEquals(setOf(".env"), next.files.keys)
     }
 
     @Test fun exhaustedBudgetDoesNotInventEmptyBeforeContent() {
         val root = temporary.newFolder()
         File(root, "existing").writeText("existing")
-        val initial = scanTerminalFiles(root, TerminalObservationBaseline(), byteBudget = 0, snapshotBytes = ::snapshot)
+        val initial = memoryScanTerminalFiles(root, TerminalObservationBaseline(), byteBudget = 0, snapshotBytes = ::snapshot)
         assertEquals(SnapshotKind.UNAVAILABLE, initial.snapshot("existing").kind)
         assertNull(initial.snapshot("existing").blob)
         assertEquals(SnapshotKind.ABSENT, initial.snapshot("never-existed").kind)
@@ -120,7 +120,7 @@ class TerminalObservedFilesTest {
         File(root, "file").writeText("old")
         val initial = scan(root)
         File(root, "file").writeText("new")
-        val next = scanTerminalFiles(root, initial, setOf("file"), snapshotBytes = { error("injected read failure") })
+        val next = memoryScanTerminalFiles(root, initial, setOf("file"), snapshotBytes = { error("injected read failure") })
         assertEquals(initial.snapshot("file"), next.snapshot("file"))
         assertEquals(setOf("file"), next.unreadable)
     }

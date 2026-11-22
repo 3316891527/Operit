@@ -8,16 +8,6 @@ import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.attribute.BasicFileAttributes
-import kotlinx.serialization.Serializable
-
-@Serializable
-internal data class TerminalObservedFile(val stamp: String, val snapshot: ChangeSnapshot)
-
-@Serializable
-internal data class TerminalObservationBaseline(
-    val files: Map<String, TerminalObservedFile> = emptyMap(),
-    val unreadable: Set<String> = emptySet(),
-)
 
 /** 从具体路径向上查找命中项，避免逐个比较批量事件中的所有路径。 */
 internal inline fun anyObservationAncestor(path: String, matches: (String) -> Boolean): Boolean {
@@ -33,26 +23,22 @@ internal inline fun anyObservationAncestor(path: String, matches: (String) -> Bo
 /** 首次扫描建立基线，后续只替换收到事件的子树；不可读目录保留旧基线。 */
 internal fun scanTerminalFiles(
     root: File,
-    before: TerminalObservationBaseline,
+    before: TerminalObservationReader,
+    target: TerminalObservationWriter,
     paths: Set<String>? = null,
     excluded: (File) -> Boolean = { false },
     byteBudget: Long = 64L * 1024 * 1024,
     onDirectory: (File) -> Unit = {},
     checkCancelled: () -> Unit = {},
     snapshotBytes: (ByteArray) -> ChangeSnapshot,
-): TerminalObservationBaseline {
+) {
     val rootPath = root.toPath().toAbsolutePath().normalize()
-    val result = if (paths == null) linkedMapOf() else before.files.toMutableMap()
-    val unreadable = if (paths == null) linkedSetOf() else before.unreadable.toMutableSet()
     var remaining = byteBudget
     fun relative(path: Path) = rootPath.relativize(path).toString().replace(File.separatorChar, '/')
-    fun contains(parent: String, child: String) = parent.isEmpty() || parent == child || child.startsWith("$parent/")
     fun unknown(path: Path) {
         val name = relative(path)
-        unreadable += name
-        val previous = before.files[name]
-        if (previous != null) result[name] = previous
-        else before.files.filterKeys { contains(name, it) }.forEach { (key, value) -> result[key] = value }
+        target.unreadable(name)
+        target.preserveSubtree(name)
     }
     fun read(path: Path, attrs: BasicFileAttributes): ChangeSnapshot = when {
         attrs.isSymbolicLink -> snapshotBytes(Files.readSymbolicLink(path).toString().toByteArray(Charsets.UTF_8))
@@ -88,15 +74,16 @@ internal fun scanTerminalFiles(
             checkCancelled()
             if (excluded(file.toFile()) || relative(file).split('/').any { it == ".git" }) return FileVisitResult.CONTINUE
             val name = relative(file)
-            val previous = before.files[name]
+            val previous = before.file(name)
             val stamp = terminalFileStamp(attrs)
             // 事件路径即使长度和时间戳相同也重读，覆盖保留时间戳的写入。
             val oldUnchanged = paths == null && previous?.stamp == stamp && previous.snapshot.kind != SnapshotKind.UNAVAILABLE
             try {
-                result[name] = TerminalObservedFile(stamp, if (oldUnchanged) checkNotNull(previous).snapshot else read(file, attrs))
+                target.put(name, TerminalObservedFile(stamp, if (oldUnchanged) checkNotNull(previous).snapshot else read(file, attrs)))
             } catch (error: Exception) {
+                checkCancelled()
                 unknown(file)
-                if (previous == null) result[name] = TerminalObservedFile(stamp, ChangeSnapshot(SnapshotKind.UNAVAILABLE, attrs.size(), detail = error.message))
+                if (previous == null) target.put(name, TerminalObservedFile(stamp, ChangeSnapshot(SnapshotKind.UNAVAILABLE, attrs.size(), detail = error.message)))
             }
             return FileVisitResult.CONTINUE
         }
@@ -107,18 +94,7 @@ internal fun scanTerminalFiles(
             return FileVisitResult.CONTINUE
         }
     }
-    val selected = paths?.sortedBy { it.length }?.fold(linkedSetOf<String>()) { kept, path ->
-        require(!path.startsWith('/') && path.split('/').none { it == ".." }) { "Invalid observation path" }
-        if (!anyObservationAncestor(path, kept::contains)) kept += path
-        kept
-    } ?: setOf("")
-    if (paths != null) {
-        // 先按批次丢弃旧条目，一次批量增删无需为每个名字重新扫描整个键集。
-        val subtreeRoots = selected.filterNotTo(mutableSetOf()) { it in before.files }
-        if (subtreeRoots.isNotEmpty()) result.keys.removeAll { anyObservationAncestor(it, subtreeRoots::contains) }
-        for (name in selected) result.remove(name)
-        unreadable.removeAll { anyObservationAncestor(it, selected::contains) }
-    }
+    val selected = selectedObservationPaths(paths)
     for (name in selected) {
         checkCancelled()
         val path = rootPath.resolve(name).normalize()
@@ -134,14 +110,19 @@ internal fun scanTerminalFiles(
         if (Files.notExists(path, NOFOLLOW_LINKS)) continue
         try { Files.walkFileTree(path, visitor) } catch (error: java.io.IOException) { unknown(path) }
     }
-    if (paths != null && result == before.files && unreadable == before.unreadable) return before
-    return TerminalObservationBaseline(result, unreadable)
 }
 
 private fun terminalFileStamp(attrs: BasicFileAttributes): String =
     "${attrs.lastModifiedTime()}:${attrs.size()}:${attrs.fileKey()}"
 
-internal fun TerminalObservationBaseline.snapshot(path: String): ChangeSnapshot = files[path]?.snapshot
-    ?: if (unreadable.any { it.isEmpty() || path == it || path.startsWith("$it/") })
-        ChangeSnapshot(SnapshotKind.UNAVAILABLE, detail = "Previous observation could not read this path")
-    else ChangeSnapshot(SnapshotKind.ABSENT)
+
+internal fun selectedObservationPaths(paths: Set<String>?): List<String> {
+    if (paths == null) return listOf("")
+    require(paths.isNotEmpty()) { "No observation paths" }
+    val selected = linkedSetOf<String>()
+    for (path in paths.sortedBy { it.length }) {
+        require(!path.startsWith('/') && !path.contains('\u0000') && path.split('/').none { it == ".." || it == "." }) { "Invalid observation path" }
+        if (!anyObservationAncestor(path, selected::contains)) selected += path
+    }
+    return selected.toList()
+}
