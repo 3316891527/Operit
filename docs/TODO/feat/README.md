@@ -6,6 +6,8 @@
 
 ## 计划索引
 
+- [终端工具输出精简](terminal-output-compression/index.md)
+
 - [Markdown 代码块与离线图表预览](markdown-mermaid-preview/index.md)
 - [聊天语音、主题背景与编辑器滚动集成验收](chat-theme-editor-polish/index.md)
 - [子代理交互 HTML 原型](subagent-interaction-prototype/index.md)
