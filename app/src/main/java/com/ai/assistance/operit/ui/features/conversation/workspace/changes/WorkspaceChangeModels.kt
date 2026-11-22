@@ -55,6 +55,7 @@ internal data class FileChangeRecord(
     val deletions: Int? = null,
     val executionId: String? = null,
     val sourceKind: String? = null,
+    val subagentExecutionId: String? = null,
 )
 
 internal enum class ChangeReviewSource { OPERATIONS, WORKING_TREE, BRANCH, LAST_TURN }

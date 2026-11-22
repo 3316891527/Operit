@@ -23,3 +23,21 @@ internal fun ThinkingQualityMapping.selectSubagentThinking(enabled: Boolean, opt
     }
     return SubagentThinking(enabled = true, optionId = selected)
 }
+
+/** 报告收尾只调整当前请求；自定义且无法比较的必选思考档保留原选择。 */
+internal fun ThinkingQualityMapping.subagentReportThinking(current: SubagentThinking): SubagentThinking {
+    if (!reasoningRequired) return selectSubagentThinking(false, null)
+    if (control != ThinkingQualityControl.LEVELS) return selectSubagentThinking(true, null)
+    val selected = requireNotNull(optionFor(current.optionId)) { "The report thinking option is no longer configured" }
+    val efforts = listOf("none", "minimal", "low", "medium", "high", "xhigh", "max")
+    fun rank(option: com.ai.assistance.operit.api.chat.model.ThinkingQualityOption): Int? = when (val value = option.wireValue) {
+        is com.ai.assistance.operit.api.chat.model.ThinkingQualityWireValue.Text -> efforts.indexOf(value.value).takeIf { it >= 0 }
+        is com.ai.assistance.operit.api.chat.model.ThinkingQualityWireValue.Number -> value.value
+        else -> null
+    }
+    val currentRank = rank(selected) ?: return selectSubagentThinking(true, current.optionId)
+    val brief = options.filter { it.wireValue::class == selected.wireValue::class }
+        .mapNotNull { option -> rank(option)?.takeIf { it <= currentRank }?.let { option to it } }
+        .minByOrNull { it.second }?.first ?: selected
+    return selectSubagentThinking(true, brief.id)
+}

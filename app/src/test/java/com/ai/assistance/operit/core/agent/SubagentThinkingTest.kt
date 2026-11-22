@@ -111,6 +111,40 @@ class SubagentThinkingTest {
         assertTrue(json.decodeFromString<SubagentConfiguration>("""{"presets":[],"models":[]}""").autoArchiveCompleted)
     }
 
+    @Test
+    fun reportRequestDisablesOptionalThinkingWithoutChangingTheTaskSetting() {
+        val original = SubagentThinking(true, "deep")
+        assertEquals(SubagentThinking(), levels().subagentReportThinking(original))
+        assertEquals(SubagentThinking(true, "deep"), original)
+    }
+
+    @Test
+    fun requiredThinkingUsesAnAdvertisedBriefLevel() {
+        val mapping = levels().copy(reasoningRequired = true)
+        assertEquals(SubagentThinking(true, "brief"), mapping.subagentReportThinking(SubagentThinking(true, "deep")))
+        assertEquals(SubagentThinking(true, ""), ThinkingQualityMapping.toggleOnly("thinking", reasoningRequired = true)
+            .subagentReportThinking(SubagentThinking(true, "")))
+    }
+
+    @Test
+    fun unknownCustomRequiredEffortIsPreservedRatherThanGuessingAnId() {
+        val mapping = levels().copy(reasoningRequired = true, options = levels().options.map { option ->
+            option.copy(wireValue = com.ai.assistance.operit.api.chat.model.ThinkingQualityWireValue.Text("custom-${option.id}"))
+        })
+        assertEquals(SubagentThinking(true, "deep"), mapping.subagentReportThinking(SubagentThinking(true, "deep")))
+    }
+
+    @Test
+    fun legacySnapshotsDefaultToNormalWorkAndNoMissingReportFlag() {
+        val json = Json { encodeDefaults = true }
+        val original = task()
+        val legacy = JsonObject(json.parseToJsonElement(json.encodeToString(original)).jsonObject
+            .filterKeys { it != "reportOnly" && it != "reportMissing" })
+        val restored = json.decodeFromString<SubagentTask>(legacy.toString())
+        assertFalse(restored.reportOnly)
+        assertFalse(restored.reportMissing)
+    }
+
     private fun task() = SubagentTask(
         parentChatId = "parent",
         parentToolCallId = "invocation",

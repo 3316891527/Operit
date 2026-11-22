@@ -5,9 +5,12 @@ internal data class TerminalChangeOrigin(
     val chatId: String,
     val toolName: String,
     val executionId: String?,
+    val subagentExecutionId: String? = null,
 ) {
     fun merge(other: TerminalChangeOrigin): TerminalChangeOrigin = if (this == other) this else TerminalChangeOrigin(
         chatId.takeIf { it == other.chatId }.orEmpty(), "terminal", null,
+        // 多个命令可以属于同一子代理执行；混合来源时不得认领其他执行的产出。
+        subagentExecutionId.takeIf { chatId == other.chatId && it == other.subagentExecutionId },
     )
 }
 

@@ -47,6 +47,8 @@ class SubagentCatalog(context: Context) {
                 put("global_concurrency", settings.limits.maxRunning)
                 put("per_chat_concurrency", settings.limits.maxPerChat)
                 put("execution_timeout_minutes", settings.limits.executionTimeoutMinutes)
+                put("report_window_max_seconds", 120)
+                put("report_retry_attempts", SUBAGENT_REPORT_ATTEMPTS)
             }
             put("fork_turns", "none (default), all, or the most recent 1–64 real user turns")
             put("inherited_context_max_characters", SubagentContextHistory.MAX_CHARACTERS)
