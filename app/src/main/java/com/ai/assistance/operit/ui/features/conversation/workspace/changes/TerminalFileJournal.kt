@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.changes
 
 import android.content.Context
+import android.os.Environment
 import com.ai.assistance.operit.terminal.provider.filesystem.PRootMountMapping
 import com.ai.assistance.operit.ui.features.conversation.workspace.process.DepthLimitedFileObserver
 import com.ai.assistance.operit.util.logging.AppLogger
@@ -51,7 +52,14 @@ internal class TerminalFileJournal internal constructor(
         File(OperitPaths.downloadsDir(), "Operit/packageLogs"),
         File(context.applicationInfo.dataDir, "databases"), File(context.applicationInfo.dataDir, "shared_prefs"),
         File(context.applicationInfo.dataDir, "code_cache"), File(context.applicationInfo.dataDir, "no_backup"),
-    ).map { it.canonicalFile }
+        // Android 共享存储的应用数据目录不允许普通文件监听，直接排除整棵子树。
+        File(Environment.getExternalStorageDirectory(), "Android/data"),
+    ).map { it.canonicalFile } + run {
+        val ubuntu = File(context.filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu").canonicalFile
+        // 宿主侧的挂载占位目录不能代表共享存储；真实挂载源已独立观察。
+        // 保留占位路径，不解析末段软链接，避免把真实共享存储根一并排除。
+        listOf("sdcard", "storage/emulated/0").map { File(ubuntu, it) }
+    }
     private val barrier = lazy { FileObservationBarrier(File(context.cacheDir, "terminal-file-events")) }
     private suspend fun awaitEvents() = barrier.value.await()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

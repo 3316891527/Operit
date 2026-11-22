@@ -102,7 +102,8 @@ internal fun scanTerminalFiles(
         }
 
         override fun visitFileFailed(file: Path, error: java.io.IOException): FileVisitResult {
-            unknown(file)
+            // 不可读目录可能在进入 preVisitDirectory 前失败，失败分支也须遵守排除规则。
+            if (!excluded(file.toFile())) unknown(file)
             return FileVisitResult.CONTINUE
         }
     }
