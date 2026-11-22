@@ -47,6 +47,8 @@ status: implemented-ci-pending
 
 新增思考策略和旧任务快照兼容回归交给 Android Tests。完整 Android 编译、运行中的服务取消以及真实模型在报告窗口内返回正文，仍需 Debug Build、CI 和设备验收。取得工作流启动信息后停止查询进度。
 
+首次 Android Tests 在 `compileDebugKotlin` 阶段报告 `ToolExecutionManager.kt` 的 `isActive` 无法解析，尚未执行 JVM 测试。该属性是 `core.agent` 包中定义的 `SubagentStatus` 扩展，跨包调用必须显式导入。本次补齐 `com.ai.assistance.operit.core.agent.isActive` 导入，保留原有活跃状态判断。此前的 PSI 语法检查和独立核心回归不包含此文件的 Android 编译，不能作为跨包引用解析通过的依据；修正后重新派发 Debug Build 和 Android Tests，最终结论以新提交的 CI 为准。
+
 ## 设备验收
 
 - 用高思考档派发一个有明确文件产出的短任务，核对正常报告没有额外模型请求

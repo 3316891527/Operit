@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat.tools
 
+import com.ai.assistance.operit.core.agent.isActive
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
 import com.ai.assistance.operit.ui.common.a2ui.CardFences
 import android.content.Context
