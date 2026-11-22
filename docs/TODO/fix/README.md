@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [快照导入后重绑主题脚本](snapshot-theme-script-paths/index.md)
+
 - [子代理预览版窗口与工具展示修复](subagent-preview-window/index.md)
 
 - [超级管理员 Shell 独立执行与卡住调查](shell-command-isolation/index.md)
