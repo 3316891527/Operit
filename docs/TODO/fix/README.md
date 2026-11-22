@@ -8,6 +8,7 @@
 
 ## 计划索引
 
+- [总结后子代理消息恢复导致长会话 OOM](subagent-summary-message-loop/index.md)
 - [子代理预览版窗口与工具展示修复](subagent-preview-window/index.md)
 
 - [超级管理员 Shell 独立执行与卡住调查](shell-command-isolation/index.md)

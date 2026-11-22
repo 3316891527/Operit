@@ -762,10 +762,13 @@ class SubagentCoordinator private constructor(private val context: Context) {
     /** 先检查父聊天里的稳定报告标记，处理持久化交接后进程中断的重复投递。 */
     suspend fun attachParent(chatId: String, inbox: TurnInputInbox, historySnapshot: () -> List<PromptTurn>) = withContext(Dispatchers.IO) {
         ready.await()
-        val pending = state.value.tasks.filter { it.parentChatId == chatId }.flatMap { it.reports }.filterNot { it.delivered }
-        val pendingMail = mutex.withLock { mailbox(chatId) }
-        val persisted = if (pending.isEmpty() && pendingMail.isEmpty()) emptySet() else history.loadChatMessagesOrThrow(chatId)
-            .filter { it.sender == "agent" }.map { it.content.lineSequence().first() }.toSet()
+        val pendingMarkers = mutex.withLock {
+            state.value.tasks.filter { it.parentChatId == chatId }
+                .flatMap { it.reports }.filterNot { it.delivered }.map { it.marker }
+                .plus(mailbox(chatId).map { it.second.marker }).toSet()
+        }
+        val persisted = history.loadPersistedAgentMarkersOrThrow(chatId, pendingMarkers)
+
         mutex.withLock {
             require(!blocked(chatId)) { "The conversation is being stopped or deleted" }
             parents[chatId] = inbox
