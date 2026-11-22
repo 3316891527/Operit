@@ -24,6 +24,8 @@ internal object RawSnapshotMediaRestore {
         "custom_font_path",
         "bubble_user_custom_font_path",
         "bubble_ai_custom_font_path",
+        // 已有快照中的脚本包随 files 归档，但旧版没有在清单里登记脚本引用。
+        "custom_theme_script_uri",
     )
 
     data class Result(
