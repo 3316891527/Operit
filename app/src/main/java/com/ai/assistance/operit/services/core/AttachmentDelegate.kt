@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import android.webkit.MimeTypeMap
+import com.ai.assistance.operit.util.files.KnownTextFiles
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -290,7 +291,8 @@ class AttachmentDelegate(private val context: Context, private val toolHandler: 
 
                     val resolvedUri = sourceUri
                     val resolvedFileName = fileName
-                    val resolvedMimeType = mimeType
+                    // 文本格式按显示名称识别，SAF 提供的通用 MIME 不应阻断文本预览。
+                    val resolvedMimeType = KnownTextFiles.mimeType(fileName.orEmpty()) ?: mimeType
                     if (resolvedUri == null || resolvedFileName.isNullOrBlank() || resolvedMimeType.isNullOrBlank()) {
                         OKToast.warning(context, context.getString(R.string.attachment_cannot_attach, filePath)).show()
                         return@withAttachmentDraft
@@ -964,6 +966,7 @@ $foldersText
 
     /** Get MIME type from file path */
     private fun getMimeTypeFromPath(filePath: String): String? {
+        KnownTextFiles.mimeType(filePath)?.let { return it }
         val extension = filePath.substringAfterLast('.', "").lowercase()
         if (extension.isBlank()) return null
         return when (extension) {
