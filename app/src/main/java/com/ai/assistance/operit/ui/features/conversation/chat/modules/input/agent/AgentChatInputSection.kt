@@ -1764,12 +1764,7 @@ internal fun AgentModelSelectorPopup(
             thinkingConfigurations = currentConfig?.thinkingConfigurations.orEmpty(),
         )
     }
-    LaunchedEffect(thinkingQualityMapping, thinkingOptionId) {
-        val firstOption = thinkingQualityMapping?.options?.firstOrNull()
-        if (firstOption != null && thinkingQualityMapping?.optionFor(thinkingOptionId) == null) {
-            onThinkingOptionIdChange(firstOption.id)
-        }
-    }
+    // 模型列表展示不写入思考偏好，避免加载中的绑定配置被自动写入首档。
 
     ThemeScriptPopupHost(embedded = embedded, onDismiss = onDismiss) {
         Box(
