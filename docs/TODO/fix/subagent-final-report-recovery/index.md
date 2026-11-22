@@ -49,6 +49,10 @@ status: implemented-ci-pending
 
 首次 Android Tests 在 `compileDebugKotlin` 阶段报告 `ToolExecutionManager.kt` 的 `isActive` 无法解析，尚未执行 JVM 测试。该属性是 `core.agent` 包中定义的 `SubagentStatus` 扩展，跨包调用必须显式导入。本次补齐 `com.ai.assistance.operit.core.agent.isActive` 导入，保留原有活跃状态判断。此前的 PSI 语法检查和独立核心回归不包含此文件的 Android 编译，不能作为跨包引用解析通过的依据；修正后重新派发 Debug Build 和 Android Tests，最终结论以新提交的 CI 为准。
 
+Android Tests #749 已通过 Kotlin 编译并执行 4041 项测试，其中五项产出归属测试失败、十五项跳过。完整 HTML 报告显示，五项均在路径归一化调用 `PRootMountMapping.currentUserId()` 时触发 `android.os.Process.myUid()` 未模拟异常，而非断言不符。`SubagentReportArtifactsTest` 现于每项测试前通过 Mockito 固定进程 UID，测试后关闭静态模拟，保留真实挂载映射、产出筛选和全部断言。此前独立回归替换了平台挂载实现，未覆盖此系统 API 边界；完整测试结果继续以修正提交的 Android Tests 为准。
+
+针对此边界的本地对照验证使用终端子模块固定提交 `62dbf46a0c1af5255eb22f0c48ca215974ab1a10` 中完整且未修改的 `FileSystemProvider.kt`、实际产出与路径源码及 Mockito 5.2.0。Android 进程原生方法转换为 JVM 中明确抛异常的测试桩，保留未模拟时的失败行为。原版五项全部复现 `Process.myUid()` 异常，修正版五项全部通过；此结果不代表完整 Android Gradle 构建或全量 4041 项测试已通过。
+
 ## 设备验收
 
 - 用高思考档派发一个有明确文件产出的短任务，核对正常报告没有额外模型请求
