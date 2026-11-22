@@ -6,6 +6,8 @@
 
 ## 计划索引
 
+- [1.12.2+28 开放 PR 组合验证](release-28-integration/index.md)
+
 - [Android CI 缓存与 ARM64 构建优化](android_ci_cache_optimization_20260815/index.md) · `android_ci_cache_optimization_20260815`
 - [APK V3 签名轮换](apk_v3_signing_rotation/index.md) · `apk_v3_signing_rotation`
 - [CI Android Lint](ci_remove_android_lint_20260729/index.md) · `ci_remove_android_lint_20260729`
