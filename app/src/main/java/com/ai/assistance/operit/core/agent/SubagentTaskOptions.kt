@@ -34,3 +34,8 @@ internal sealed interface SubagentFork {
         }
     }
 }
+
+/** 每次派发独立校验期限，省略时继续使用全局配置。 */
+internal fun subagentExecutionTimeout(requested: Int?, configured: Int): Int = (requested ?: configured).also {
+    require(it in 1..120) { "execution_timeout_minutes must be an integer from 1 to 120" }
+}

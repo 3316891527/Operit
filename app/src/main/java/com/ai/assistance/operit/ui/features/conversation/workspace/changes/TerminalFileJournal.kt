@@ -390,7 +390,8 @@ internal class TerminalFileJournal internal constructor(
                     val location = state.root.location.copy(path = changePath(state.root.location.path + "/" + path))
                     val record = FileChangeRecord(UUID.randomUUID().toString(), origin.executionId ?: UUID.randomUUID().toString(),
                         origin.chatId, WorkspaceChangeStore.nextTimestamp(), origin.toolName, location,
-                        before, after, executionId = origin.executionId, sourceKind = "terminal")
+                        before, after, executionId = origin.executionId, sourceKind = "terminal",
+                        subagentExecutionId = origin.subagentExecutionId)
                     grouped.getOrPut(origin) { mutableListOf() }.add(record)
                 }
             }

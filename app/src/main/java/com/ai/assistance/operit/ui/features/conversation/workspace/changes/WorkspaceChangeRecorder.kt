@@ -34,7 +34,7 @@ internal class WorkspaceChangeRecorder(
         val sourceName = caller?.invokingToolName ?: tool.name
         return runBlocking(Dispatchers.IO) {
             WorkspaceChangeStore.operationMutex.withLock {
-                val capture = begin(tool, chatId, sourceName)
+                val capture = begin(tool, chatId, sourceName, caller?.subagentExecutionId)
                 val result = delegate.invoke(tool)
                 finish(capture, result)
                 result
@@ -51,7 +51,7 @@ internal class WorkspaceChangeRecorder(
         }
         val sourceName = caller?.invokingToolName ?: tool.name
         WorkspaceChangeStore.operationMutex.withLock {
-            val capture = withContext(Dispatchers.IO) { begin(tool, chatId, sourceName) }
+            val capture = withContext(Dispatchers.IO) { begin(tool, chatId, sourceName, caller?.subagentExecutionId) }
             var pending: ToolResult? = null
             var recorded = false
             try {
@@ -81,9 +81,10 @@ internal class WorkspaceChangeRecorder(
         val roots: List<ChangeLocation>,
         val before: Map<ChangeLocation, ChangeSnapshot>,
         val access: WorkspaceChangeAccess,
+        val subagentExecutionId: String?,
     )
 
-    private suspend fun begin(tool: AITool, chatId: String, sourceName: String): Capture? = try {
+    private suspend fun begin(tool: AITool, chatId: String, sourceName: String, subagentExecutionId: String?): Capture? = try {
         val access = WorkspaceChangeAccess(context)
         val params = tool.parameters.associate { it.name to it.value }
         val environment = params["environment"]
@@ -93,7 +94,7 @@ internal class WorkspaceChangeRecorder(
             "zip_files", "unzip_files", "download_file" -> listOfNotNull(params["destination"]).map { access.location(it, environment) }
             else -> listOfNotNull(params["path"]).map { access.location(it, environment) }
         }.distinct()
-        Capture(chatId, sourceName, roots, captureTree(access, roots), access)
+        Capture(chatId, sourceName, roots, captureTree(access, roots), access, subagentExecutionId)
     } catch (error: CancellationException) {
         throw error
     } catch (error: Exception) {
@@ -155,7 +156,7 @@ internal class WorkspaceChangeRecorder(
                 }
                 if (before == next && before.kind != SnapshotKind.TOO_LARGE && before.kind != SnapshotKind.UNAVAILABLE) null
                 else FileChangeRecord(UUID.randomUUID().toString(), operationId, capture.chatId, timestamp,
-                    capture.sourceName, location, before, next)
+                    capture.sourceName, location, before, next, subagentExecutionId = capture.subagentExecutionId)
             }
             val store = WorkspaceChangeStore.get(context)
             val saved = records.map { record ->

@@ -124,4 +124,7 @@
     <string name="subagent_tool_empty_parameters">无参数</string>
     <string name="subagent_tool_waiting_output">等待工具返回结果</string>
     <string name="subagent_tool_empty_output">工具返回了空内容</string>
+    <string name="subagent_report_recovery">正在补写报告（第 %1$d/%2$d 次），本阶段不再调用工具。</string>
+    <string name="subagent_preserved_artifacts">本次执行记录到的文件产出（不代表任务已完成或验证通过）：</string>
+    <string name="subagent_artifacts_unavailable">文件产出证据读取失败，请检查执行历史与应用日志。</string>
 </resources>

@@ -70,6 +70,7 @@ object ToolExecutionManager {
         val invokingToolName: String? = null,
         val callerName: String? = null,
         val workspaceChatId: String? = callerChatId,
+        val subagentExecutionId: String? = null,
     )
 
     private data class ToolExecutionOutput(
@@ -591,6 +592,12 @@ object ToolExecutionManager {
             // Waiting forms must be emitted before their tool suspends for a user submission.
             publishA2uiCard(document)
         }
+        // 子代理身份在工具派发时绑定，文件记录沿真实执行传递，不能由根聊天或时间戳推断。
+        val delegatedOwner = if (delegatedTask) requireNotNull(
+            com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.singleOrNull {
+                it.childChatId == callerChatId && it.status.isActive
+            }
+        ) { "Missing active delegated task ownership" } else null
         val toolRuntimeContext =
             ToolRuntimeContext(
                 callerCardId = callerCardId,
@@ -598,9 +605,8 @@ object ToolExecutionManager {
                 toolExposureMode = toolExposureMode,
                 callerChatId = callerChatId,
                 // 工具身份仍属于真实子会话，文件变化统一归到用户可见的根聊天。
-                workspaceChatId = if (delegatedTask) requireNotNull(
-                    com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.singleOrNull { it.childChatId == callerChatId }
-                ) { "Missing delegated task ownership" }.rootChatId else callerChatId,
+                workspaceChatId = if (delegatedTask) requireNotNull(delegatedOwner).rootChatId else callerChatId,
+                subagentExecutionId = delegatedOwner?.executionId,
                 a2uiRunId = a2uiRunId,
                 delegatedTask = delegatedTask,
                 workspacePath = workspacePath,
