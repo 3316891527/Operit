@@ -6268,6 +6268,8 @@
     <string name="headers_preset_cmcc_gateway">模拟中国移动网关</string>
     <string name="headers_preset_us_la">模拟美国洛杉矶 (需配合)</string>
     <string name="thinking_config_invalid_json">思考配置无效</string>
+    <string name="thinking_option_not_supported">当前模型配置不支持这个思考档位，请重新选择。</string>
+    <string name="thinking_option_update_failed">无法更新思考档位，请稍后重试。</string>
 
     <!-- Context Summary Settings Screen -->
     <string name="context_validation_failed">验证失败</string>
