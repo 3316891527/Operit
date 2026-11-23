@@ -61,15 +61,29 @@ class WaifuRenderableSnapshotTest {
     }
 
     @Test
-    fun internalXmlIsFilteredAfterItsNativeBlockCloses() {
-        val content = "<tool>private</tool>after。"
-        val xmlEnd = content.indexOf("after")
-        val events = intArrayOf(
-            MarkdownProcessorType.XML_BLOCK.ordinal, 0, xmlEnd,
-            -1, 0, 0,
-            MarkdownProcessorType.PLAIN_TEXT.ordinal, xmlEnd, content.length,
-        )
-        assertEquals("after。", WaifuMessageProcessor.buildRenderableSnapshot(content, true, events))
+    fun processXmlIsPreservedAndControlXmlIsFiltered() {
+        for (tag in listOf("think", "thinking", "tool", "tool_result", "status")) {
+            val content = "<$tag>过程内容</$tag>after。"
+            val xmlEnd = content.indexOf("after")
+            val events = intArrayOf(
+                MarkdownProcessorType.XML_BLOCK.ordinal, 0, xmlEnd,
+                -1, 0, 0,
+                MarkdownProcessorType.PLAIN_TEXT.ordinal, xmlEnd, content.length,
+            )
+            val expected = if (tag == "status") "after。" else content
+            assertEquals(expected, WaifuMessageProcessor.buildRenderableSnapshot(content, true, events))
+            val openContent = "<$tag>生成中的过程"
+            val openEvents = intArrayOf(MarkdownProcessorType.XML_BLOCK.ordinal, 0, openContent.length)
+            assertEquals("", WaifuMessageProcessor.buildRenderableSnapshot(openContent, false, openEvents))
+            assertEquals(
+                if (tag == "status") "" else openContent,
+                WaifuMessageProcessor.buildRenderableSnapshot(openContent, false, openEvents, includeOpenXmlPreview = true),
+            )
+            assertEquals(
+                if (tag == "status") "" else openContent,
+                WaifuMessageProcessor.buildRenderableSnapshot(openContent, true, openEvents),
+            )
+        }
     }
 
     @Test
