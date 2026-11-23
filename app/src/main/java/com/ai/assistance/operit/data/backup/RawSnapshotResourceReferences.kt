@@ -6,6 +6,7 @@ import com.ai.assistance.operit.data.preferences.CharacterCardManager
 import com.ai.assistance.operit.data.preferences.CharacterGroupCardManager
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import com.ai.assistance.operit.data.preferences.ThemePreferenceSnapshot
+import com.ai.assistance.operit.data.preferences.ThemePreferenceValues
 import com.ai.assistance.operit.data.preferences.UserPreferencesManager
 import kotlinx.coroutines.flow.first
 import java.io.File
@@ -25,6 +26,7 @@ enum class RawSnapshotResourceKind {
     FONT_MAIN,
     FONT_USER,
     FONT_AI,
+    THEME_SCRIPT,
 }
 
 data class RawSnapshotResourceReference(
@@ -151,6 +153,13 @@ class DefaultRawSnapshotResourceReferenceProvider(
         addReference(references, owner, RawSnapshotResourceKind.FONT_MAIN, snapshot.customFontPath)
         addReference(references, owner, RawSnapshotResourceKind.FONT_USER, snapshot.bubbleUserCustomFontPath)
         addReference(references, owner, RawSnapshotResourceKind.FONT_AI, snapshot.bubbleAiCustomFontPath)
+        // 脚本包包含源码和素材，登记原始位置后才能在跨包恢复时重绑角色主题。
+        addReference(
+            references,
+            owner,
+            RawSnapshotResourceKind.THEME_SCRIPT,
+            snapshot.values.string(ThemePreferenceValues.SCRIPT_URI_KEY),
+        )
     }
 
     private fun addReference(
@@ -228,6 +237,7 @@ object RawSnapshotResourceLayout {
             RawSnapshotResourceKind.FONT_MAIN -> "font_main"
             RawSnapshotResourceKind.FONT_USER -> "font_user"
             RawSnapshotResourceKind.FONT_AI -> "font_ai"
+            RawSnapshotResourceKind.THEME_SCRIPT -> "theme_script"
         }
         val ownerSegment = when (reference.ownerType) {
             RawSnapshotResourceOwnerType.GLOBAL -> null

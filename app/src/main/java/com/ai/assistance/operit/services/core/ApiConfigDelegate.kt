@@ -1,6 +1,8 @@
 package com.ai.assistance.operit.services.core
 
 import android.content.Context
+import com.ai.assistance.operit.ui.common.oktoast.OKToast
+import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.api.chat.EnhancedAIService
 import com.ai.assistance.operit.data.character.ActivePrompt
@@ -591,15 +593,33 @@ class ApiConfigDelegate(
     }
 
     fun updateThinkingOptionId(optionId: String) {
-        configScope.launch {
-            modelConfigManager.updateThinkingOptionId(effectiveChatConfigId.value, optionId)
-            val enhancedAiService =
-                withContext(Dispatchers.IO) {
-                    EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
-                    EnhancedAIService.getInstance(context)
+        configScope.launchThinkingOptionUpdate(
+            // 事件排队后角色卡或模型可能切换，保存目标必须在派发时固定。
+            configId = effectiveChatConfigTarget.value.configId,
+            optionId = optionId,
+            save = { configId, requestedOptionId ->
+                modelConfigManager.updateThinkingOptionId(configId, requestedOptionId)
+            },
+            onSaved = {
+                val enhancedAiService =
+                    withContext(Dispatchers.IO) {
+                        EnhancedAIService.refreshServiceForFunction(context, FunctionType.CHAT)
+                        EnhancedAIService.getInstance(context)
+                    }
+                withContext(Dispatchers.Main) { onConfigChanged(enhancedAiService) }
+            },
+            onFailure = { error ->
+                // 不支持的选择仍由事务拒绝；处理异常不能替换档位或清空配置。
+                AppLogger.e(TAG, "更新思考档位失败", error)
+                withContext(Dispatchers.Main) {
+                    if (error is IllegalArgumentException) {
+                        OKToast.warning(context, R.string.thinking_option_not_supported, OKToast.LENGTH_LONG).show()
+                    } else {
+                        OKToast.error(context, R.string.thinking_option_update_failed, OKToast.LENGTH_LONG).show()
+                    }
                 }
-            withContext(Dispatchers.Main) { onConfigChanged(enhancedAiService) }
-        }
+            },
+        )
     }
 
     /** 切换记忆自动更新 */

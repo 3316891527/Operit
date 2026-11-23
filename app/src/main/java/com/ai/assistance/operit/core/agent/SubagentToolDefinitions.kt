@@ -28,14 +28,22 @@ internal object SubagentToolDefinitions {
                     parameter("model_id", "Allowed model ID from subagent_catalog.", "subagent_catalog 返回的可用模型 ID。"),
                     parameter("agent_name", "Optional sibling-unique name: 1–48 ASCII letters/digits/underscores/hyphens. Paths are returned by list_tasks.", "可选的同级唯一名称：1～48 个英文字母、数字、下划线或连字符；完整路径由 list_tasks 返回。", false),
                     parameter("fork_turns", "Parent background: none, all available context, or the most recent 1–64 user turns. Excludes system prompts, tools and reasoning; at most 200000 characters. Omit to keep independent context.", "主对话背景范围：none、all（当前可用的全部上下文），或最近 1～64 个用户轮次。排除系统提示、工具和思考内容，最多 200000 字符；不填则保持独立上下文。", false, default = "none"),
-                ) + thinking),
+                ) + thinking + parameter("execution_timeout_minutes", "Execution deadline in minutes, 1–120. Omit to use the global setting. Includes the reserved report window.", "本次执行期限，1～120 分钟；不填使用全局设置，包含预留的报告时间。", false, "integer")),
                 ToolPrompt("list_tasks", text("List the current root tree, paths, statuses and execution IDs.", "列出当前根会话树的任务、路径、状态和执行 ID。"), parametersStructured = emptyList()),
                 ToolPrompt("inspect_task", text("Read this conversation's task report, progress and recent history.", "查看当前对话中某个子任务的报告、进度和近期历史。"), parametersStructured = identity),
                 ToolPrompt("supplement_task", text("Queue instructions for the current active execution without restarting it.", "为当前活动执行追加要求，在下一轮读取，保留已有工作。"), parametersStructured = execution + parameter("text", "Supplementary instructions, 1–10000 characters.", "补充要求，1～10000 个字符。")),
                 ToolPrompt("followup_task", text("Start another execution of a finished task, retaining its history and inherited context. Restore archived tasks first.", "沿用已结束任务的历史和继承背景开始新执行；已归档任务需先恢复。"), parametersStructured = execution + listOf(
                     parameter("text", "Self-contained follow-up, 1–20000 characters.", "完整后续要求，1～20000 个字符。"),
                     parameter("model_id", "Explicit pool model for this execution; omit to use the same pool entry.", "本次明确使用的模型池条目；不填则沿用原条目。", false),
-                ) + thinking.map { it.copy(required = false) }),
+                ) + thinking.map { item ->
+                    if (item.name == "enable_thinking") item.copy(required = false, description = text(
+                        "Omit both thinking fields to retain previous settings. If thinking_option_id is supplied, explicitly set enable_thinking=true even for the same level.",
+                        "同时省略两个思考字段时沿用原设置；只要传 thinking_option_id，即使档位不变，也须显式传 enable_thinking=true。"))
+                    else item.copy(required = false)
+                } + listOf(
+                    parameter("execution_timeout_minutes", "Execution deadline in minutes, 1–120; omit to use the global setting.", "本次执行期限，1～120 分钟；不填使用全局设置。", false, "integer"),
+                    parameter("report_only", "true writes a report from existing evidence with tools disabled and brief thinking. Defaults to true after a missing-report failure. Set false to resume normal work.", "true 只基于已有证据补报告，禁用工具并减少思考。上次因缺报告失败时默认 true；设 false 可恢复正常工作。", false, "boolean"),
+                )),
                 ToolPrompt("stop_task", text("Stop the specified execution and its entire descendant subtree, preserving records. Root or ancestor control is required.", "停止指定执行和整棵下级子树，保留记录；仅根代理或祖先可控制。"), parametersStructured = execution),
                 ToolPrompt("archive_task", text("Archive or restore an idle subtree while retaining reports and conversations. Root or ancestor control is required; stop all active descendants first.", "归档或恢复已空闲的整棵子树，保留报告与子会话；仅根代理或祖先可控制，需先停止全部活动下级。"), parametersStructured = execution + parameter("archived", "true to archive, false to restore.", "true 表示归档，false 表示恢复。", type = "boolean")),
                 ToolPrompt("send_agent_message", text("Persist a direct message to an agent in the same root tree. Optionally wake an idle unarchived helper.", "向同一根会话树内的代理发送持久消息，可明确唤醒空闲且未归档的帮手。"), parametersStructured = listOf(

@@ -216,7 +216,7 @@ class OrderedToolResultsTest {
         )
         assertFalse(finalResult.success)
         assertEquals(message, finalResult.error)
-        assertEquals(terminal.toString().trim(), finalResult.result.toString())
+        assertSame(terminal, finalResult.result)
         val emitted = mutableListOf<String>()
         val ordered = OrderedToolResults(1) { emitted.add(it) }
         ordered.complete(0, finalResult)

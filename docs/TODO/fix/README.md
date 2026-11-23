@@ -8,6 +8,10 @@
 
 ## 计划索引
 
+- [不支持的思考档位保存导致崩溃](thinking-option-crash/index.md)
+- [快照导入后重绑主题脚本](snapshot-theme-script-paths/index.md)
+- [总结后子代理消息恢复导致长会话 OOM](subagent-summary-message-loop/index.md)
+
 - [子代理预览版窗口与工具展示修复](subagent-preview-window/index.md)
 
 - [超级管理员 Shell 独立执行与卡住调查](shell-command-isolation/index.md)
@@ -152,3 +156,6 @@
 - [内置浏览器浮窗内容递归](browser-overlay-content-recursion/index.md)
 - [工作区交互与聊天导入内存优化](workspace-review-and-chat-import/index.md)
 - [终端文件变化采集与来源](terminal-file-observation/index.md)
+- [子代理最终报告补写与产出保留](subagent-final-report-recovery/index.md)
+
+- [终端观察基线内存优化](terminal-baseline-memory/index.md)

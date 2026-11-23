@@ -124,4 +124,7 @@
     <string name="subagent_tool_empty_parameters">No parameters</string>
     <string name="subagent_tool_waiting_output">Waiting for tool output</string>
     <string name="subagent_tool_empty_output">The tool returned empty content</string>
+    <string name="subagent_report_recovery">Writing the final report (attempt %1$d/%2$d); tools are disabled for this phase.</string>
+    <string name="subagent_preserved_artifacts">File outputs recorded during this execution (not proof of task completion or successful verification):</string>
+    <string name="subagent_artifacts_unavailable">File output evidence could not be read. Inspect the execution history and application logs.</string>
 </resources>

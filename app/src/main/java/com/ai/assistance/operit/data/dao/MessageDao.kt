@@ -12,6 +12,23 @@ import com.ai.assistance.operit.data.model.MessageEntity
 /** 消息DAO接口，定义对消息表的数据访问方法 */
 @Dao
 interface MessageDao {
+    /** 投递恢复只读取待确认的首行标记，避免把长历史正文和协议负载搬进内存。 */
+    @Query(
+        """
+        SELECT DISTINCT marker FROM (
+            SELECT SUBSTR(
+                searchText,
+                1,
+                INSTR(REPLACE(searchText, CHAR(13), CHAR(10)) || CHAR(10), CHAR(10)) - 1
+            ) AS marker
+            FROM messages
+            WHERE chatId = :chatId AND sender = 'agent'
+        )
+        WHERE marker IN (:markers)
+        """
+    )
+    suspend fun getPersistedAgentMessageMarkers(chatId: String, markers: List<String>): List<String>
+
     /** 先确定页面范围，避免为丢弃的页外消息读取并解码 sections。 */
     @Query(
         "SELECT sender, timestamp FROM messages WHERE chatId = :chatId" +
@@ -260,3 +277,11 @@ interface MessageDao {
     @Query("UPDATE messages SET roleName = :newName WHERE roleName = :oldName")
     suspend fun renameRoleName(oldName: String, newName: String): Int
 }
+
+/** 空集合不访问数据库；分批绑定让旧版 SQLite 也能恢复大量待处理消息。 */
+internal suspend fun MessageDao.findPersistedAgentMessageMarkers(
+    chatId: String,
+    markers: Set<String>,
+): Set<String> = markers.chunked(900).flatMap { batch ->
+    getPersistedAgentMessageMarkers(chatId, batch)
+}.toSet()

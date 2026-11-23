@@ -365,6 +365,7 @@ class EnhancedAIService private constructor(context: Context) {
         var customSystemPromptTemplate: String? = null,
         var isSubTask: Boolean = false,
         var isDelegatedTask: Boolean = false,
+        var subagentReportOnly: Boolean = false,
         var characterName: String? = null,
         var avatarUri: String? = null,
         var roleCardId: String? = null,
@@ -477,6 +478,8 @@ class EnhancedAIService private constructor(context: Context) {
         val pinnedModelName: String? = null,
         val thinkingOptionIdOverride: String? = null,
         val delegatedTask: Boolean = false,
+        val subagentReportOnly: Boolean = false,
+        var pureThinkingContinuations: Int = 0,
         val callerChatId: String? = null,
         val workspacePath: String? = null,
         val workspaceEnv: String? = null,
@@ -1004,6 +1007,7 @@ class EnhancedAIService private constructor(context: Context) {
     suspend fun sendMessage(
         options: SendMessageOptions
     ): Stream<String> {
+        require(!options.subagentReportOnly || options.isDelegatedTask) { "Report-only mode is restricted to delegated executions" }
         var message = VoiceMessageMarkup.toRequestContent(options.message)
         val chatId = options.chatId
         if (chatId != null && !options.isDelegatedTask) {
@@ -1093,6 +1097,7 @@ class EnhancedAIService private constructor(context: Context) {
                     pinnedModelName = options.chatModelNameOverride,
                     thinkingOptionIdOverride = options.thinkingOptionIdOverride,
                     delegatedTask = options.isDelegatedTask,
+                    subagentReportOnly = options.subagentReportOnly,
                     callerChatId = chatId,
                     workspacePath = workspacePath,
                     workspaceEnv = workspaceEnv,
@@ -1180,7 +1185,8 @@ class EnhancedAIService private constructor(context: Context) {
                                     isSubTask,
                                     functionType,
                                     modelSnapshot.config,
-                                    memorySpaceIdOverride
+                                    memorySpaceIdOverride,
+                                    allowTools = !execContext.subagentReportOnly
                             )
                     val tAfterPrepareHistory = messageTimingNow()
                     AppLogger.d(TAG, "sendMessage本地耗时: prepareConversationHistory=${tAfterPrepareHistory - startTime}ms")
@@ -1224,7 +1230,7 @@ class EnhancedAIService private constructor(context: Context) {
                     currentRequestCachedInputTokenCount = 0L
 
                     // 获取工具列表（如果启用Tool Call）
-                    val availableTools = getAvailableToolsForFunction(
+                    val availableTools = if (execContext.subagentReportOnly) emptyList() else getAvailableToolsForFunction(
                         functionType = functionType,
                         chatId = chatId,
                         promptFunctionType = promptFunctionType,
@@ -2011,11 +2017,12 @@ class EnhancedAIService private constructor(context: Context) {
             // 否则 DeepSeek 无法回传 reasoning_content，未闭合的 tool_calls 也会被冲掉。
             val contentWithoutThinking = ChatUtils.removeThinkingContent(content)
             if (contentWithoutThinking.isEmpty()) {
-                if (disableWarning) {
-                    AppLogger.w(TAG, "检测到纯思考输出，disableWarning=true，直接结束本轮而不注入警告")
+                if (disableWarning || (context.delegatedTask && context.pureThinkingContinuations >= 1)) {
+                    AppLogger.w(TAG, "纯思考输出停止续写，交由调用方处理最终报告")
                     finishTurn()
                     return
                 }
+                context.pureThinkingContinuations++
                 continueAfterPureThinkingOutput(
                     context = context,
                     functionType = functionType,
@@ -2159,6 +2166,13 @@ class EnhancedAIService private constructor(context: Context) {
                 return
             }
 
+            // 报告阶段同时阻断原生工具转换后的 XML，不能只隐藏请求中的工具定义。
+            if (context.subagentReportOnly && extractedToolInvocations.isNotEmpty()) {
+                AppLogger.w(TAG, "子代理报告阶段拒绝工具调用")
+                finishTurn()
+                return
+            }
+
             // Main flow: Detect and process tool invocations
             if (extractedToolInvocations.isNotEmpty()) {
                 logMessageTiming(
@@ -2200,6 +2214,9 @@ class EnhancedAIService private constructor(context: Context) {
                 stage = "enhanced.processStreamCompletion.complete",
                 startTimeMs = startTime
             )
+        } catch (cancelled: CancellationException) {
+            // 工作阶段截止或用户停止后，不能吞掉取消再开始新的采样。
+            throw cancelled
         } catch (e: Exception) {
             // Catch any exceptions in the processing flow
             AppLogger.e(TAG, "处理流完成时发生错误", e)
@@ -2383,6 +2400,7 @@ class EnhancedAIService private constructor(context: Context) {
         toolResultOverrideMessage: String? = null,
         disableWarning: Boolean = false
     ) {
+        check(!context.subagentReportOnly) { "Tool execution is disabled during subagent report generation" }
         val toolOutputCountingCollector = object : StreamCollector<String> {
             override suspend fun emit(value: String) {
                 context.roundManager.appendChunk(value)
@@ -2663,7 +2681,7 @@ class EnhancedAIService private constructor(context: Context) {
         val serviceForFunction = modelSnapshot.service
         
         // 获取工具列表（如果启用Tool Call）- 提前获取，以便在token计算中使用
-        val availableTools = getAvailableToolsForFunction(
+        val availableTools = if (context.subagentReportOnly) emptyList() else getAvailableToolsForFunction(
             functionType = functionType,
             chatId = chatId,
             promptFunctionType = promptFunctionType,
@@ -3065,7 +3083,8 @@ class EnhancedAIService private constructor(context: Context) {
             dispatchSystemPromptComposeHooks: (PromptHookContext) -> PromptHookContext =
                 PromptHookRegistry::dispatchSystemPromptComposeHooks,
             dispatchToolPromptComposeHooks: (PromptHookContext) -> PromptHookContext =
-                PromptHookRegistry::dispatchToolPromptComposeHooks
+                PromptHookRegistry::dispatchToolPromptComposeHooks,
+            allowTools: Boolean = true
     ): List<PromptTurn> {
         // Check if backend image recognition service is configured (for intent-based vision)
         // For subtasks, always disable backend image recognition (only support OCR)
@@ -3108,7 +3127,8 @@ class EnhancedAIService private constructor(context: Context) {
                 memorySpaceIdOverride,
                 dispatchHistoryHooks,
                 dispatchSystemPromptComposeHooks,
-                dispatchToolPromptComposeHooks
+                dispatchToolPromptComposeHooks,
+                allowTools = allowTools
         )
     }
 

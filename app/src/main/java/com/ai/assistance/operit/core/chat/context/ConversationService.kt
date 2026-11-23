@@ -532,7 +532,8 @@ class ConversationService(
             memorySpaceIdOverride: String? = null,
             dispatchHistoryHooks: (PromptHookContext) -> PromptHookContext = PromptHookRegistry::dispatchPromptHistoryHooks,
             dispatchSystemPromptComposeHooks: (PromptHookContext) -> PromptHookContext = PromptHookRegistry::dispatchSystemPromptComposeHooks,
-            dispatchToolPromptComposeHooks: (PromptHookContext) -> PromptHookContext = PromptHookRegistry::dispatchToolPromptComposeHooks
+            dispatchToolPromptComposeHooks: (PromptHookContext) -> PromptHookContext = PromptHookRegistry::dispatchToolPromptComposeHooks,
+            allowTools: Boolean = true
     ): List<PromptTurn> {
         val activePromptMetadata = buildActivePromptHookMetadata(context, chatId, roleCardId)
         val beforeContext =
@@ -601,7 +602,7 @@ class ConversationService(
                 val finalCustomSystemPromptTemplate = customSystemPromptTemplate ?: apiPreferences.customSystemPromptTemplateFlow.first()
 
                 // 获取工具启用状态
-                val enableTools = apiPreferences.enableToolsFlow.first()
+                val enableTools = allowTools && apiPreferences.enableToolsFlow.first()
                 val disableUserPreferenceDescription =
                         apiPreferences.disableUserPreferenceDescriptionFlow.first()
                 val toolPromptVisibility = runCatching {
