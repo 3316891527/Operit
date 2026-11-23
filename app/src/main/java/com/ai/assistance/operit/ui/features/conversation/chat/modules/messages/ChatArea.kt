@@ -297,15 +297,7 @@ fun ChatArea(
     val showMessageTimestamp = themeSnapshot.showMessageTimestamp
     val waifuPreferences = remember(context) { WaifuPreferences.getInstance(context) }
     val waifuEnabled by waifuPreferences.enableWaifuModeFlow.collectAsState(initial = false)
-    // Apply the same visibility to timeline preparation and both message styles so
-    // previously stored thinking sections also stay hidden without rewriting history.
-    val messageThemeSnapshot = remember(themeSnapshot, waifuEnabled) {
-        if (waifuEnabled) {
-            themeSnapshot.copy(values = themeSnapshot.values.withBoolean("show_thinking_process", false))
-        } else {
-            themeSnapshot
-        }
-    }
+    // Waifu 与普通模式共用思考展示设置，时间线和两种消息样式保持一致。
     var pendingJumpToMessageTimestamp by remember(currentChatId) { mutableStateOf<Long?>(null) }
     val lastMessage = chatHistory.lastOrNull()
     val displayPreferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
@@ -313,7 +305,7 @@ fun ChatArea(
     val timelineEntries = rememberChatTimelineEntries(
         messages = chatHistory,
         chatId = currentChatId,
-        showThinkingProcess = messageThemeSnapshot.showThinkingProcess,
+        showThinkingProcess = themeSnapshot.showThinkingProcess,
         showStatusTags = themeSnapshot.showStatusTags,
         toolCollapseMode = toolCollapseMode,
     )
@@ -464,7 +456,7 @@ fun ChatArea(
                 val showGenerationMetadata = showWaifuGenerationMetadata(chatHistory, actualIndex, waifuEnabled)
                 val shouldHide = shouldHideLastAiMessage && actualIndex == messagesCount - 1 && message.sender == "ai"
 
-                CompositionLocalProvider(LocalThemePreferenceSnapshot provides messageThemeSnapshot) {
+                CompositionLocalProvider(LocalThemePreferenceSnapshot provides themeSnapshot) {
                     MessageItem(
                         index = actualIndex,
                         currentChatId = currentChatId,
