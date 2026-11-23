@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.core.chat.tools
 
 import com.ai.assistance.operit.core.tools.protocol.ToolResult
+import com.ai.assistance.operit.core.tools.ToolResultData
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.ai.assistance.operit.core.chat.protocol.ConversationMarkupManager
@@ -24,13 +25,21 @@ internal class OrderedToolResults(
     private val afterResult = arrayOfNulls<List<String>>(count)
     private var next = 0
 
-    suspend fun complete(index: Int, result: ToolResult, afterResult: List<String> = emptyList()) {
+    suspend fun complete(
+        index: Int,
+        result: ToolResult,
+        afterResult: List<String> = emptyList(),
+        presentation: ToolResultData? = null,
+    ) {
         mutex.withLock {
             check(results[index] == null) { "Tool result already completed at index $index" }
             results[index] = result
             this.afterResult[index] = afterResult
             // Generate the random XML tag and bound the payload once, for both consumers.
-            markup[index] = ConversationMarkupManager.formatToolResultForMessage(result)
+            // 原始结果仍交给调用方，只有同一份聊天 XML 使用压缩投影。
+            markup[index] = ConversationMarkupManager.formatToolResultForMessage(
+                result.copy(result = presentation ?: result.result),
+            )
             while (next < results.size && results[next] != null) {
                 publish(checkNotNull(markup[next]))
                 this.afterResult[next].orEmpty().forEach { (publishAfterResult ?: publish)(it) }

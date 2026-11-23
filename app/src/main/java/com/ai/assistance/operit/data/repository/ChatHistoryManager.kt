@@ -20,6 +20,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.ai.assistance.operit.R
 import com.ai.assistance.operit.data.backup.OperitBackupDirs
 import com.ai.assistance.operit.data.db.AppDatabase
+import com.ai.assistance.operit.data.dao.findPersistedAgentMessageMarkers
 import com.ai.assistance.operit.data.model.ChatEntity
 import com.ai.assistance.operit.data.model.ChatKind
 import com.ai.assistance.operit.core.agent.SubagentCoordinator
@@ -1679,10 +1680,11 @@ class ChatHistoryManager private constructor(private val context: Context) {
         chatDao.getChatById(chatId) != null
     }
 
-    /** 报告去重要求实际读取成功，禁止把读取失败当成空历史。 */
-    suspend fun loadChatMessagesOrThrow(chatId: String): List<ChatMessage> = withContext(Dispatchers.IO) {
-        hydrateMessages(chatId, chatContentDao.getMessagesForChat(chatId))
-    }
+    /** 投递恢复只确认待处理标记；数据库错误必须传播，不能按未投递重复发送。 */
+    suspend fun loadPersistedAgentMarkersOrThrow(chatId: String, markers: Set<String>): Set<String> =
+        withContext(Dispatchers.IO) {
+            messageDao.findPersistedAgentMessageMarkers(chatId, markers)
+        }
 
     suspend fun chatExists(chatId: String): Boolean {
         return kotlinx.coroutines.withContext(Dispatchers.IO) {

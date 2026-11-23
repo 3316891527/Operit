@@ -311,8 +311,8 @@ internal fun ClassicChatSettingsContent(
     val currentModelName =
         currentConfig?.let { config ->
             val validIndex = getValidModelIndex(config.modelName, effectiveCurrentConfigMapping.modelIndex)
-            getModelByIndex(config.modelName, validIndex).ifEmpty { stringResource(R.string.not_selected) }
-        } ?: stringResource(R.string.not_selected)
+            getModelByIndex(config.modelName, validIndex)
+        }.orEmpty()
     var thinkingQualityMapping by remember(
         currentConfig?.id,
         currentConfig?.apiProviderTypeId,
@@ -334,12 +334,8 @@ internal fun ClassicChatSettingsContent(
             thinkingConfigurations = currentConfig?.thinkingConfigurations.orEmpty(),
         )
     }
-    LaunchedEffect(thinkingQualityMapping, thinkingOptionId) {
-        val firstOption = thinkingQualityMapping?.options?.firstOrNull()
-        if (firstOption != null && thinkingQualityMapping?.optionFor(thinkingOptionId) == null) {
-            onThinkingOptionIdChange(firstOption.id)
-        }
-    }
+    // 滑块只在交互时保存；读取配置时写回默认档位会与角色卡绑定加载发生竞态。
+
     val toolPermissionText =
         when (if (enableTools) permissionLevel else PermissionLevel.FORBID) {
             PermissionLevel.FORBID -> stringResource(R.string.agent_menu_permission_disabled)
@@ -639,7 +635,7 @@ internal fun ClassicChatSettingsContent(
 
                             ClassicSettingsFoldSection(
                                 title = stringResource(R.string.model),
-                                value = currentModelName,
+                                value = currentModelName.ifEmpty { stringResource(R.string.not_selected) },
                                 valueThemeTarget = "chat.modelName",
                                 icon = Icons.Outlined.DataObject,
                                 expanded = showModelSection,

@@ -6,6 +6,7 @@ import com.ai.assistance.operit.core.tools.builtin.ToolGetter
 import android.webkit.MimeTypeMap
 import java.io.File
 import java.util.Locale
+import com.ai.assistance.operit.util.files.KnownTextFiles
 import com.ai.assistance.operit.ui.features.conversation.workspace.OpenFileInfo
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.textmate.TextMateCatalog
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.highlight.EditorHighlightConfiguration
@@ -45,19 +46,12 @@ internal fun workspaceMimeTypeForContent(
 }
 
 internal fun workspaceMimeTypeForPath(path: String): String {
-    val extension = path.substringAfterLast('.', "").lowercase(Locale.ROOT)
+    KnownTextFiles.mimeType(path)?.let { return it }
+    val extension = path.substringAfterLast('/').substringAfterLast('.', "").lowercase(Locale.ROOT)
     if (extension.isBlank()) return "application/octet-stream"
     return when (extension) {
-        "html", "htm" -> "text/html"
-        "css" -> "text/css"
-        "js", "mjs", "cjs" -> "application/javascript"
-        "json" -> "application/json"
-        "txt", "md", "log", "tsx" -> "text/plain"
         "ts" -> "video/mp2t"
 
-        "xml" -> "application/xml"
-        "csv" -> "text/csv"
-        "yaml", "yml" -> "application/yaml"
         "png" -> "image/png"
         "jpg", "jpeg" -> "image/jpeg"
         "gif" -> "image/gif"

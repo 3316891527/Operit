@@ -8056,6 +8056,8 @@
     <string name="market_toolpkg_api_incompatible_title">Cannot Install: ToolPkg API Not Supported</string>
     <string name="market_toolpkg_api_incompatible_message">This plugin declares ToolPkg API %1$s. This device supports %2$s, so this plugin cannot be installed.</string>
     <string name="thinking_config_invalid_json">Invalid Thinking Configuration</string>
+    <string name="thinking_option_not_supported">This thinking level is unavailable for the current model configuration. Please choose another level.</string>
+    <string name="thinking_option_update_failed">Unable to update the thinking level. Please try again later.</string>
     <string name="data_recovery_include_logs">Include logs in snapshot</string>
     <string name="data_recovery_include_logs_description">Logs help diagnose failures but may contain sensitive information. This only changes the export and does not delete device logs.</string>
 

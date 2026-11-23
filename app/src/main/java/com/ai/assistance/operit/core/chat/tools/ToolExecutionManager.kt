@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.core.chat.tools
 
+import com.ai.assistance.operit.core.agent.isActive
 import com.ai.assistance.operit.core.chat.tools.timing.ToolCallExecution
 import com.ai.assistance.operit.ui.common.a2ui.CardFences
 import android.content.Context
@@ -7,7 +8,8 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.tools.runtime.AIToolHandler
 import com.ai.assistance.operit.core.tools.runtime.AIToolHookDecision
-import com.ai.assistance.operit.core.chat.protocol.toolFailurePayload
+import com.ai.assistance.operit.core.tools.ToolResultData
+import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.util.logging.ChatTrace
 
 import com.ai.assistance.operit.core.tools.StringResultData
@@ -70,11 +72,13 @@ object ToolExecutionManager {
         val invokingToolName: String? = null,
         val callerName: String? = null,
         val workspaceChatId: String? = callerChatId,
+        val subagentExecutionId: String? = null,
     )
 
     private data class ToolExecutionOutput(
         val result: ToolResult,
         val a2uiDocuments: List<String>,
+        val presentation: ToolResultData? = null,
     )
 
     private data class ResolvedToolTarget(
@@ -566,9 +570,12 @@ object ToolExecutionManager {
             publishAfterResult = ::publishA2uiCard,
             publish = ::publishMarkup,
         )
-        suspend fun completeResult(index: Int, result: ToolResult, a2uiDocuments: List<String> = emptyList()) {
+        suspend fun completeResult(
+            index: Int, result: ToolResult, a2uiDocuments: List<String> = emptyList(),
+            presentation: ToolResultData? = null,
+        ) {
             timing.completed(index)
-            orderedResults.complete(index, result, a2uiDocuments)
+            orderedResults.complete(index, result, a2uiDocuments, presentation)
         }
         // 默认工具注册现在可能在启动阶段被延后；这里确保在真正执行工具前已完成注册
         // registerDefaultTools() 是幂等且线程安全的，可安全重复调用
@@ -591,6 +598,12 @@ object ToolExecutionManager {
             // Waiting forms must be emitted before their tool suspends for a user submission.
             publishA2uiCard(document)
         }
+        // 子代理身份在工具派发时绑定，文件记录沿真实执行传递，不能由根聊天或时间戳推断。
+        val delegatedOwner = if (delegatedTask) requireNotNull(
+            com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.singleOrNull {
+                it.childChatId == callerChatId && it.status.isActive
+            }
+        ) { "Missing active delegated task ownership" } else null
         val toolRuntimeContext =
             ToolRuntimeContext(
                 callerCardId = callerCardId,
@@ -598,9 +611,8 @@ object ToolExecutionManager {
                 toolExposureMode = toolExposureMode,
                 callerChatId = callerChatId,
                 // 工具身份仍属于真实子会话，文件变化统一归到用户可见的根聊天。
-                workspaceChatId = if (delegatedTask) requireNotNull(
-                    com.ai.assistance.operit.core.agent.SubagentCoordinator.getInstance(context).state.value.tasks.singleOrNull { it.childChatId == callerChatId }
-                ) { "Missing delegated task ownership" }.rootChatId else callerChatId,
+                workspaceChatId = if (delegatedTask) requireNotNull(delegatedOwner).rootChatId else callerChatId,
+                subagentExecutionId = delegatedOwner?.executionId,
                 a2uiRunId = a2uiRunId,
                 delegatedTask = delegatedTask,
                 workspacePath = workspacePath,
@@ -713,7 +725,7 @@ object ToolExecutionManager {
                         packageManager = packageManager,
                         runtimeContext = toolRuntimeContext.copy(invocationId = "$a2uiRunId:${toolCallOffset + index}")
                     )
-                completeResult(index, output.result, output.a2uiDocuments)
+                completeResult(index, output.result, output.a2uiDocuments, output.presentation)
             }
         }
 
@@ -727,7 +739,7 @@ object ToolExecutionManager {
                     packageManager = packageManager,
                     runtimeContext = toolRuntimeContext.copy(invocationId = "$a2uiRunId:${toolCallOffset + index}")
                 )
-            completeResult(index, output.result, output.a2uiDocuments)
+            completeResult(index, output.result, output.a2uiDocuments, output.presentation)
         }
 
         // 等待所有并行任务完成
@@ -795,43 +807,22 @@ object ToolExecutionManager {
                 toolHandler.notifyToolExecutionFinished(invocation.tool)
             }
         }
-        return ToolExecutionOutput(result, a2uiDocuments.toList())
+        val presentation = withContext(Dispatchers.IO) {
+            TerminalOutputPresentation {
+                OperitPaths.cleanOnExitInternalDir(toolHandler.applicationContext)
+            }.present(result)
+        }
+        return ToolExecutionOutput(result, a2uiDocuments.toList(), presentation)
     }
 
-    /** Keep the existing aggregation semantics, but publish this result to both history paths. */
+    /** 聚合保持原始结果类型，展示投影在聚合之后单独生成。 */
     internal suspend fun aggregateToolResults(
         displayToolName: String,
         source: Flow<ToolResult>
     ): ToolResult {
-        val collectedResults = mutableListOf<ToolResult>()
-        source.collect { collectedResults.add(it) }
-        if (collectedResults.isEmpty()) {
-            return ToolResult(
-                toolName = displayToolName,
-                success = false,
-                result = StringResultData(""),
-                error = "The tool execution returned no results."
-            )
-        }
-        val lastResult = collectedResults.last()
-        // 在类型信息尚未丢失时归并失败：来源和说明进入 error，独立输出进入 result。
-        val failures = collectedResults.map { if (it.success) null else toolFailurePayload(it) }
-        val combinedResultString = collectedResults.mapIndexed { index, res ->
-            val failure = failures[index]
-            when {
-                res.success -> res.result.toString().trim()
-                index == collectedResults.lastIndex && !failure?.message.isNullOrBlank() -> checkNotNull(failure).output
-                else -> "Step error: ${checkNotNull(failure).render().ifBlank { "Unknown error" }}"
-            }
-        }.filter { it.isNotEmpty() }.joinToString("\n")
-        val finalFailure = failures.last()
-        val finalError = if (finalFailure != null && finalFailure.message.isNotBlank()) finalFailure.message else lastResult.error
-        return ToolResult(
-            toolName = displayToolName,
-            success = lastResult.success,
-            result = StringResultData(combinedResultString),
-            error = finalError,
-        )
+        val collected = mutableListOf<ToolResult>()
+        source.collect { collected.add(it) }
+        return aggregateToolResultValues(displayToolName, collected)
     }
 
     /**

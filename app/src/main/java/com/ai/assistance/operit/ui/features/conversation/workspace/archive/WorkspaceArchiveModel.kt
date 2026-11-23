@@ -1,6 +1,7 @@
 package com.ai.assistance.operit.ui.features.conversation.workspace.archive
 
 import java.util.Locale
+import com.ai.assistance.operit.util.files.KnownTextFiles
 import com.ai.assistance.operit.ui.features.conversation.workspace.editor.textmate.TextMateCatalog
 import com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceBrowserSettings
 import com.ai.assistance.operit.ui.features.conversation.workspace.browser.WorkspaceLocation
@@ -11,9 +12,6 @@ internal enum class WorkspaceFileRoute { ARCHIVE, TEXT, PREVIEW, SYSTEM }
 
 private val zipContainers = setOf("zip", "jar", "apk", "war", "ear", "xapk", "apks", "apkm", "toolpkg",
     "aab", "ipa", "whl", "vsix", "epub", "cbz", "nupkg")
-// 编程语言关联统一来自高亮目录，只单独保留没有语法定义的普通文本格式。
-private val plainTextExtensions = setOf("txt", "text", "conf", "config", "gitignore", "gitattributes",
-    "editorconfig", "lock", "srt", "vtt")
 
 /** 长后缀先匹配；容器别名共用 ZIP 能力，文档扩展名仍走文档预览。 */
 internal fun workspaceArchiveKind(path: String): WorkspaceArchiveKind? {
@@ -44,7 +42,7 @@ internal fun workspaceFileRoute(path: String, mimeType: String = ""): WorkspaceF
             "mp3", "wav", "m4a", "aac", "ogg", "opus", "flac", "mp4", "mkv", "webm", "avi", "mov", "3gp", "pdf", "doc", "docx", "xls", "xlsx")) {
         return WorkspaceFileRoute.PREVIEW
     }
-    if (extension in plainTextExtensions || TextMateCatalog.detectLanguage(name) != "text" ||
+    if (KnownTextFiles.mimeType(name) != null || extension == "lock" || TextMateCatalog.detectLanguage(name) != "text" ||
         mime.startsWith("text/") ||
         mime in setOf("application/json", "application/xml", "application/javascript", "application/yaml")) {
         return WorkspaceFileRoute.TEXT

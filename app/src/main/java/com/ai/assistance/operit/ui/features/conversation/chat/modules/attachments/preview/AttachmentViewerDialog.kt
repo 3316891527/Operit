@@ -62,6 +62,8 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.attachment
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.layout.compactDialogHeightWhenShort
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.layout.rememberCompactDialogMetrics
 import com.ai.assistance.operit.util.logging.AppLogger
+import com.ai.assistance.operit.util.files.KnownTextFiles
+import com.ai.assistance.operit.util.files.FileUtils
 import com.ai.assistance.operit.util.media.ImageBitmapLimiter
 import com.ai.assistance.operit.util.media.MediaBase64Limiter
 import com.ai.assistance.operit.util.media.MediaPoolManager
@@ -92,10 +94,13 @@ fun AttachmentViewerDialog(
     val dialogMetrics = rememberCompactDialogMetrics()
     val mediaMaxHeight = if (dialogMetrics.isCompactHeight) 220.dp else 500.dp
 
-    val isImage = attachment.mimeType.startsWith("image/")
-    val isAudio = attachment.mimeType.startsWith("audio/")
-    val isVideo = attachment.mimeType.startsWith("video/")
-    val isTextLike = isTextLikeMimeType(attachment.mimeType)
+    // 已保存附件也按文件名识别，避免旧记录的通用 MIME 继续跳过文本预览。
+    val knownTextMimeType = KnownTextFiles.mimeType(attachment.filename)
+    val mimeType = knownTextMimeType ?: attachment.mimeType
+    val isImage = mimeType.startsWith("image/")
+    val isAudio = mimeType.startsWith("audio/")
+    val isVideo = mimeType.startsWith("video/")
+    val isTextLike = knownTextMimeType != null || isTextLikeMimeType(mimeType)
 
     val mediaPoolId = remember(attachment.id) {
         attachment.id.takeIf { it.startsWith("media_pool:") }?.removePrefix("media_pool:")
@@ -185,7 +190,7 @@ fun AttachmentViewerDialog(
         }
     }
 
-    val textContentState = produceState<String?>(initialValue = attachment.content.takeIf { it.isNotBlank() }, key1 = attachment.id, key2 = attachment.content, key3 = attachment.mimeType to file) {
+    val textContentState = produceState<String?>(initialValue = attachment.content.takeIf { it.isNotBlank() }, key1 = attachment.id, key2 = attachment.content, key3 = mimeType to file) {
         if (value != null) return@produceState
         if (!isTextLike) return@produceState
         val f = file ?: return@produceState
@@ -197,7 +202,8 @@ fun AttachmentViewerDialog(
 
         value = try {
             withContext(Dispatchers.IO) {
-                f.readText()
+                // 扩展名只决定打开方式，实际内容仍须通过文本采样，防止把二进制改名后读成文本。
+                if (f.inputStream().use { FileUtils.isTextLike(it) }) f.readText(Charsets.UTF_8) else null
             }
         } catch (e: Exception) {
             AppLogger.e("AttachmentViewerDialog", "Failed to read text attachment: ${attachment.id}", e)
@@ -376,7 +382,7 @@ fun AttachmentViewerDialog(
                     ) {
                         Button(
                             onClick = {
-                                openFile(context, file, attachment.mimeType, attachment.filename)
+                                openFile(context, file, mimeType, attachment.filename)
                             }
                         ) {
                             Text(stringResource(R.string.open_file))

@@ -68,6 +68,8 @@ data class SubagentTask(
     val autoArchiveOnCompletion: Boolean = false,
     val forkTurns: String = "none",
     val executionTimeoutMinutes: Int = 20,
+    val reportOnly: Boolean = false,
+    val reportMissing: Boolean = false,
     val attempt: Int = 1,
     val status: SubagentStatus = SubagentStatus.QUEUED,
     val requestTimestamp: Long = ChatMessageTimestampAllocator.next(),

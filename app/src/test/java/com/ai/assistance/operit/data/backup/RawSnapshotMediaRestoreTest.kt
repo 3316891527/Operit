@@ -86,6 +86,85 @@ class RawSnapshotMediaRestoreTest {
     }
 
     @Test
+    fun themeScriptSnapshot_rebindsSharedBundleForEveryThemeScopeAcrossPackages() {
+        val workDir = temporaryFolder.newFolder("theme-snapshot")
+        val filesDir = temporaryFolder.newFolder("com.ai.assistance.operit.debug", "files")
+        val bundleName = "theme_script_123e4567-e89b-12d3-a456-426614174000.zip"
+        val sourcePackage = "com.ai.assistance.operit.clone"
+        val originalUri = "file:///data/user/10/$sourcePackage/files/$bundleName"
+        val bundle = saveResource(workDir, "files/$bundleName")
+        val keys = listOf(
+            "custom_theme_script_uri",
+            "character_card_theme_default_character_custom_theme_script_uri",
+            "character_card_theme_card_custom_theme_script_uri",
+            "character_group_theme_group_custom_theme_script_uri",
+        )
+        val original = preferences(*keys.map { it to originalUri }.toTypedArray())
+        savePreferences(workDir, original)
+
+        val result = RawSnapshotMediaRestore.collectPlans(
+            workDir, sourcePackage, filesDir, null, emptyList(), emptySet()
+        )
+        val rewritten = RawSnapshotMediaRestore.rewritePreferences(
+            original, result.plans.associate { it.originalUri to it.destinationUri }
+        )
+        val restored = PreferenceMap.parseFrom(rewritten).preferencesMap
+
+        assertEquals(0, result.skippedCount)
+        val plan = result.plans.single()
+        assertEquals(bundle, plan.snapshotFile)
+        assertEquals(File(filesDir, bundleName), plan.destination)
+        assertEquals("file://${plan.destination.path}", plan.destinationUri)
+        assertTrue(plan.restoredWithPayload)
+        keys.forEach { key -> assertEquals(plan.destinationUri, restored.getValue(key).string) }
+        assertEquals("resource", bundle.readText())
+        assertFalse(plan.destination.exists())
+    }
+
+    @Test
+    fun themeScriptSnapshot_missingBundleKeepsItsReferenceUnchanged() {
+        val workDir = temporaryFolder.newFolder("missing-theme")
+        val filesDir = temporaryFolder.newFolder("install")
+        val original = preferences(
+            "character_card_theme_card_custom_theme_script_uri" to
+                "file://$sourceFiles/theme_script_missing.zip"
+        )
+        savePreferences(workDir, original)
+
+        val result = collect(workDir, filesDir)
+
+        assertEquals(1, result.skippedCount)
+        assertTrue(result.plans.isEmpty())
+        assertArrayEquals(original, RawSnapshotMediaRestore.rewritePreferences(original, emptyMap()))
+    }
+
+    @Test
+    fun themeScriptSnapshot_rejectsTraversalForeignPackagesAndNonLocalUris() {
+        val workDir = temporaryFolder.newFolder("invalid-theme")
+        val filesDir = temporaryFolder.newFolder("install")
+        val bundleName = "theme_script_bundle.zip"
+        saveResource(workDir, "files/$bundleName")
+        val uris = listOf(
+            "file://$sourceFiles/%2E%2E/$bundleName",
+            "file:///data/user/0/com.example.other/files/$bundleName",
+            "file://remote$sourceFiles/$bundleName",
+            "file://$sourceFiles/$bundleName?query=1",
+            "file://$sourceFiles/$bundleName#fragment",
+        )
+        val original = preferences(*uris.mapIndexed { index, uri ->
+            "character_card_theme_card_${index}_custom_theme_script_uri" to uri
+        }.toTypedArray())
+        savePreferences(workDir, original)
+
+        val result = collect(workDir, filesDir)
+
+        assertTrue(result.plans.isEmpty())
+        assertEquals(1, result.skippedCount)
+        assertArrayEquals(original, RawSnapshotMediaRestore.rewritePreferences(original, emptyMap()))
+        assertFalse(File(filesDir, bundleName).exists())
+    }
+
+    @Test
     fun releaseSnapshot_supportsDataDataPathsAndStandaloneDatastoreDirectory() {
         val workDir = temporaryFolder.newFolder("snapshot")
         val filesDir = temporaryFolder.newFolder("install")

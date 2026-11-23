@@ -131,6 +131,8 @@ internal object ThinkingQualityMappingRegistry {
         apiEndpoint: String,
         thinkingConfigurations: String = ""
     ): ThinkingQualityMapping {
+        // 空模型表示尚未完成配置，通用规则不能替它生成可保存的思考档位。
+        if (modelName.isBlank()) return ThinkingQualityMapping.unsupported()
         return resolve(providerTypeId, modelName, apiEndpoint, thinkingConfigurations)
     }
 
