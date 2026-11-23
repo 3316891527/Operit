@@ -50,6 +50,7 @@ object WaifuMessageProcessor {
         Regex("""(?<![\\$])\$(?![\s$])[^$\r\n]+?(?<!\s)\$(?![\d$])|\\\([\s\S]*?\\\)""")
     private val ORDERED_LIST_DOT_REGEX =
         Regex("""(?m)(?<![\p{L}\p{N}_])(\d+)\.(?=[ \t]|$)""")
+    private val PROCESS_XML_TAGS = setOf("think", "thinking", "tool", "tool_result")
     private val XML_TOKEN_REGEX = Regex(
         """<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|</?([A-Za-z][A-Za-z0-9_]*)(?=\s|/?>)(?:[^<>"']|"[^"]*"|'[^']*')*>"""
     )
@@ -70,7 +71,7 @@ object WaifuMessageProcessor {
     ) {
         private val emittedSegments = mutableListOf<String>()
 
-        /** 首句尚未稳定时提供可渲染正文，隐藏的 XML 仍由相同清理器过滤。 */
+        /** 首句尚未稳定时提供可渲染内容，思考和工具过程保留完整的 XML 边界。 */
         fun collectFirstSegmentPreview(content: String): String? {
             if (emittedSegments.isNotEmpty()) return null
             return splitMessageBySentencesInternal(
@@ -327,10 +328,10 @@ object WaifuMessageProcessor {
         },
         typingDelayMs = { length, first -> calculateTypingDelayMs(length, charDelayMs, first) },
         firstSegmentPreview = { content ->
-            // 首句继续即时预览；代码、公式和 XML 仍先经过相同的可见块过滤。
+            // 生成中的过程块可即时预览，闭合后由原有消息存储更新为完整内容。
             val nativeSession = NativeMarkdownSplitter.createBlockSession()
             val renderable = try {
-                buildRenderableSnapshot(content, false, nativeSession.push(content))
+                buildRenderableSnapshot(content, false, nativeSession.push(content), includeOpenXmlPreview = true)
             } finally {
                 nativeSession.destroy()
             }
@@ -342,6 +343,7 @@ object WaifuMessageProcessor {
         content: String,
         final: Boolean,
         nativeSegments: IntArray,
+        includeOpenXmlPreview: Boolean = false,
     ): String {
         val renderable = StringBuilder()
         val block = StringBuilder()
@@ -383,7 +385,10 @@ object WaifuMessageProcessor {
                 else -> renderable.append(piece)
             }
         }
-        if (final) closeBlock()
+        if (final || (includeOpenXmlPreview && activeType == MarkdownProcessorType.XML_BLOCK &&
+                shouldPreserveXmlBlockForWaifu(block.toString()))) {
+            closeBlock()
+        }
         return renderable.toString()
     }
 
@@ -531,10 +536,9 @@ object WaifuMessageProcessor {
                 continue
             }
 
-            val contentWithoutThinking = ChatUtils.removeThinkingContent(segment.content)
-            if (contentWithoutThinking.isBlank()) continue
+            if (segment.content.isBlank()) continue
 
-            val separatedContent = separateEmotionAndText(contentWithoutThinking)
+            val separatedContent = separateEmotionAndText(segment.content)
 
             for (item in separatedContent) {
                 // 如果这个item是表情包（包含![开头的），直接添加
@@ -1005,20 +1009,19 @@ object WaifuMessageProcessor {
             return segment.content.trim('\n', '\r').isNotBlank()
         }
 
-        val contentWithoutThinking = ChatUtils.removeThinkingContent(segment.content)
-        if (contentWithoutThinking.isBlank()) {
+        if (segment.content.isBlank()) {
             return false
         }
 
-        return separateEmotionAndText(contentWithoutThinking).any { item ->
+        return separateEmotionAndText(segment.content).any { item ->
             item.startsWith("![") || cleanContentForWaifuDisplay(item).isNotBlank()
         }
     }
 
     fun buildRenderableContentForWaifu(content: String): String =
-        buildContentForWaifu(content, preservePluginXml = true)
+        buildContentForWaifu(content, preserveRenderableXml = true)
 
-    private fun buildContentForWaifu(content: String, preservePluginXml: Boolean): String {
+    private fun buildContentForWaifu(content: String, preserveRenderableXml: Boolean): String {
         if (content.isBlank()) return ""
         val builder = StringBuilder(content.length)
         var cursor = 0
@@ -1032,11 +1035,13 @@ object WaifuMessageProcessor {
             }
             val blockEnd = findXmlBlockEnd(content, match.range.first)
             val tagName = ChatMarkupRegex.normalizeToolLikeTagName(rawTagName) ?: rawTagName
-            if (preservePluginXml && blockEnd != null && isRenderablePluginXmlTag(tagName)) {
-                builder.append(content, match.range.first, blockEnd)
+            val blockLimit = blockEnd ?: content.length
+            if (preserveRenderableXml && isRenderableXmlTagForWaifu(tagName) &&
+                (blockEnd != null || tagName in PROCESS_XML_TAGS)) {
+                builder.append(content, match.range.first, blockLimit)
             }
-            // 未闭合 XML 仍属于该块，不能把内部内容当作普通回复输出。
-            cursor = blockEnd ?: content.length
+            // 未闭合过程块仍保留 XML 边界，避免把内部内容拆成普通正文。
+            cursor = blockLimit
         }
         builder.append(content, cursor, content.length)
         return builder.toString()
@@ -1076,7 +1081,7 @@ object WaifuMessageProcessor {
         val sanitizedContent =
             ChatUtils.removeThinkingContent(
                 ChatUtils.stripGeminiThoughtSignatureMeta(
-                    buildContentForWaifu(content, preservePluginXml = false)
+                    buildContentForWaifu(content, preserveRenderableXml = false)
                 )
             )
 
@@ -1123,24 +1128,16 @@ object WaifuMessageProcessor {
 
 
 
-    /** 展示保留 Markdown 和已注册插件 XML；TTS 与通知仍使用纯文本清理。 */
+    /** 展示保留 Markdown、思考、工具过程和插件 XML；朗读与通知使用纯文本清理。 */
     fun cleanContentForWaifuDisplay(content: String): String {
         val sanitizedContent =
-            ChatUtils.removeThinkingContent(
-                ChatUtils.stripGeminiThoughtSignatureMeta(
-                    buildRenderableContentForWaifu(content)
-                )
-            )
+            ChatUtils.stripGeminiThoughtSignatureMeta(buildRenderableContentForWaifu(content))
 
         return sanitizedContent
             .replace(FENCED_CODE_BLOCK_REGEX, " ")
             .replace(UNCLOSED_FENCED_CODE_BLOCK_REGEX, " ")
             .replace(ChatMarkupRegex.statusTag, "")
             .replace(ChatMarkupRegex.statusSelfClosingTag, "")
-            .replace(ChatMarkupRegex.toolTag, "")
-            .replace(ChatMarkupRegex.toolSelfClosingTag, "")
-            .replace(ChatMarkupRegex.toolResultTag, "")
-            .replace(ChatMarkupRegex.toolResultSelfClosingTag, "")
             .let(::removeUnsupportedXmlTags)
             .trim()
     }
@@ -1161,14 +1158,16 @@ object WaifuMessageProcessor {
         val trimmed = rawContent.trim()
         val rawTagName = ChatMarkupRegex.extractOpeningTagName(trimmed) ?: return false
         val tagName = ChatMarkupRegex.normalizeToolLikeTagName(rawTagName) ?: rawTagName
-        if (!isRenderablePluginXmlTag(tagName)) {
+        if (!isRenderableXmlTagForWaifu(tagName)) {
             return false
         }
-        return findXmlBlockEnd(trimmed, 0) == trimmed.length
+        val blockEnd = findXmlBlockEnd(trimmed, 0)
+        return blockEnd == trimmed.length || (blockEnd == null && tagName in PROCESS_XML_TAGS)
     }
 
-    private fun isRenderablePluginXmlTag(tagName: String): Boolean {
+    private fun isRenderableXmlTagForWaifu(tagName: String): Boolean {
         val normalizedTagName = tagName.trim()
+        if (normalizedTagName in PROCESS_XML_TAGS) return true
         if (normalizedTagName.isBlank() || isInternalWaifuXmlTag(normalizedTagName)) {
             return false
         }
@@ -1176,7 +1175,7 @@ object WaifuMessageProcessor {
     }
 
     private fun isInternalWaifuXmlTag(tagName: String): Boolean = tagName in setOf(
-        "think", "thinking", "tool", "tool_result", "status", "search", "meta",
+        "status", "search", "meta",
         "emotion", "memory", "attachment", "workspace_attachment", "proxy_sender",
         "reply_to", "content", "error", "param",
     )
@@ -1189,11 +1188,15 @@ object WaifuMessageProcessor {
         ChatMarkupRegex.anyXmlTag.findAll(content).forEach { match ->
             val rawTagName = ChatMarkupRegex.extractOpeningTagName(match.value) ?: return@forEach
             val tagName = ChatMarkupRegex.normalizeToolLikeTagName(rawTagName) ?: rawTagName
-            if (!isRenderablePluginXmlTag(tagName)) {
+            if (!isRenderableXmlTagForWaifu(tagName)) {
                 return@forEach
             }
-            val blockEnd = findXmlBlockEnd(content, match.range.first) ?: return@forEach
-            preservedRanges += match.range.first until blockEnd
+            val blockEnd = findXmlBlockEnd(content, match.range.first)
+            if (blockEnd != null) {
+                preservedRanges += match.range.first until blockEnd
+            } else if (tagName in PROCESS_XML_TAGS) {
+                preservedRanges += match.range.first until content.length
+            }
         }
 
         val builder = StringBuilder(content.length)

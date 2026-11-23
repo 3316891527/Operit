@@ -20,7 +20,7 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class WaifuReplyOnlyStreamTest {
+class WaifuProcessStreamTest {
     private var systemLog = true
     private var fileLog = true
 
@@ -38,71 +38,78 @@ class WaifuReplyOnlyStreamTest {
         AppLogger.enableFileLogging = fileLog
     }
 
-    private fun TestScope.replyUpdates(source: Stream<String>) = streamWaifuUpdates(
+    private fun TestScope.processUpdates(source: Stream<String>) = streamWaifuUpdates(
         sourceStream = source,
         splitSnapshot = { content, final ->
-            // 验证真实思考过滤与流式队列；测试文本仅用句号分句，避免依赖 Android JNI 库。
+            // 验证过程内容保留和流式队列；测试文本按句号分句，避免依赖 Android JNI 库。
             WaifuMessageProcessor.buildRenderableContentForWaifu(content)
                 .split(Regex("(?<=。)"))
                 .filter { it.isNotBlank() && (final || it.endsWith("。")) }
         },
         typingDelayMs = { _, first -> if (first) 0L else 500L },
         nowMillis = { testScheduler.currentTime },
+        firstSegmentPreview = { content ->
+            WaifuMessageProcessor.buildRenderableContentForWaifu(content).takeIf { it.isNotBlank() }
+        },
     )
 
     @Test
-    fun thinkingCreatesNoBubbleAndOnlyReplySentencesAreSpoken() = runTest {
+    fun thinkingPreviewIsRevisedIntoTheCompletedProcessAndReply() = runTest {
         val messages = mutableListOf<String>()
-        val spoken = mutableListOf<Pair<String, Boolean>>()
+        val published = mutableListOf<Pair<String, Boolean>>()
         val resume = CompletableDeferred<Unit>()
         val store = WaifuSegmentMessageStore(
             messages = messages,
             createMessage = { it },
-            appendMessage = { message, interrupt -> spoken += message to interrupt },
+            reviseMessage = { _, content -> content },
+            appendMessage = { message, interrupt -> published += message to interrupt },
             removeMessages = {},
         )
         val source = stream {
-            emit("<think>不应展示或朗读的思考")
+            emit("<think>需要展示的思考")
             resume.await()
             emit("</think>第一句。第二句。")
         }
-        val job = launch { replyUpdates(source).collect { store.apply(it) } }
+        val job = launch { processUpdates(source).collect { store.apply(it) } }
         runCurrent()
-        assertTrue(messages.isEmpty())
-        assertTrue(spoken.isEmpty())
+        assertEquals(listOf("<think>需要展示的思考"), messages)
+        assertTrue(published.isEmpty())
 
         resume.complete(Unit)
         runCurrent()
-        assertEquals(listOf("第一句。"), messages)
-        assertEquals(listOf("第一句。" to true), spoken)
+        val first = "<think>需要展示的思考</think>第一句。"
+        assertEquals(listOf(first), messages)
+        assertEquals(listOf(first to true), published)
         advanceUntilIdle()
         job.join()
-        assertEquals(listOf("第一句。", "第二句。"), messages)
-        assertEquals(listOf("第一句。" to true, "第二句。" to false), spoken)
+        assertEquals(listOf(first, "第二句。"), messages)
+        assertEquals(listOf(first to true, "第二句。" to false), published)
     }
 
     @Test
-    fun completedThinkingOnlyResponsesCreateNoUpdates() = runTest {
-        for (tag in listOf("think", "thinking")) {
+    fun completedProcessOnlyResponsesKeepTheirContent() = runTest {
+        for (tag in listOf("think", "thinking", "tool", "tool_result")) {
             val received = mutableListOf<WaifuSegmentUpdate>()
-            replyUpdates(streamOf("<$tag>仅有内部思考</$tag>")).collect { received += it }
-            assertTrue(received.isEmpty())
+            val content = "<$tag>过程内容</$tag>"
+            processUpdates(streamOf(content)).collect { received += it }
+            assertEquals(WaifuSegmentUpdate.Append(content), received.last())
         }
     }
 
     @Test
-    fun cancellingAnOpenThinkingResponseLeavesNoBubble() = runTest {
+    fun cancellingAnOpenThinkingResponseKeepsItsPreview() = runTest {
         val received = mutableListOf<WaifuSegmentUpdate>()
         val source = stream {
             emit("<think>尚未结束的思考")
             awaitCancellation()
         }
-        val job = launch { replyUpdates(source).collect { received += it } }
+        val job = launch { processUpdates(source).collect { received += it } }
         runCurrent()
-        assertTrue(received.isEmpty())
+        val expected = listOf(WaifuSegmentUpdate.Preview("<think>尚未结束的思考"))
+        assertEquals(expected, received)
         job.cancelAndJoin()
         advanceUntilIdle()
         assertTrue(job.isCancelled)
-        assertTrue(received.isEmpty())
+        assertEquals(expected, received)
     }
 }

@@ -46,12 +46,17 @@ class WaifuMessageProcessorReviewTest {
     }
 
     @Test
-    fun displayCleaner_removesInternalXmlEvenWhenRegistered() {
+    fun displayCleaner_preservesProcessXmlAndFiltersControlTags() {
         registerPluginXmlTag("status")
-        registerPluginXmlTag("think")
-        val content = "正文。<status type=\"completion\"/><think>内部思考</think><note>未注册内容</note>结尾。"
-
-        assertEquals("正文。结尾。", WaifuMessageProcessor.cleanContentForWaifuDisplay(content))
+        for (tag in listOf("think", "thinking", "tool", "tool_result")) {
+            val process = "<$tag>过程内容</$tag>"
+            val content = "正文。<status type=\"completion\"/>${process}<note>未注册内容</note>结尾。"
+            assertEquals("正文。${process}结尾。", WaifuMessageProcessor.cleanContentForWaifuDisplay(content))
+            assertEquals("正文。结尾。", WaifuMessageProcessor.cleanContentForWaifu(content))
+            val openProcess = "<$tag>生成中的过程"
+            assertEquals(openProcess, WaifuMessageProcessor.cleanContentForWaifuDisplay(openProcess))
+            assertTrue(WaifuMessageProcessor.shouldPreserveXmlBlockForWaifu(openProcess))
+        }
     }
 
     @Test
