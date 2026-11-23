@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.util
+package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color

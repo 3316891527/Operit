@@ -114,6 +114,9 @@ import com.ai.assistance.operit.R
 import com.ai.assistance.operit.core.chat.reference.AiReference
 import com.ai.assistance.operit.data.model.ChatMessage
 import com.ai.assistance.operit.data.preferences.WaifuPreferences
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessMessage
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuReplyAvatarRow
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.MessageGenerationDetails
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.formatMessageCompletionTime
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.details.hasDisplayableMessageTimestamp
@@ -308,6 +311,7 @@ fun ChatArea(
         showThinkingProcess = themeSnapshot.showThinkingProcess,
         showStatusTags = themeSnapshot.showStatusTags,
         toolCollapseMode = toolCollapseMode,
+        waifuEnabled = waifuEnabled,
     )
     val historyHeaderCount = if (hasOlderDisplayHistory) 1 else 0
     val itemMessageIndices = List(historyHeaderCount) { -1 } + timelineEntries.map { it.messageIndex }
@@ -461,6 +465,7 @@ fun ChatArea(
                         index = actualIndex,
                         currentChatId = currentChatId,
                         message = message,
+                        waifuEnabled = waifuEnabled,
                         enableDialogs = enableDialogs,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
@@ -612,6 +617,7 @@ private fun MessageItem(
     index: Int,
     currentChatId: String,
     message: ChatMessage,
+    waifuEnabled: Boolean,
     enableDialogs: Boolean,
     userMessageColor: Color,
     aiMessageColor: Color,
@@ -662,6 +668,9 @@ private fun MessageItem(
     bubbleAiContentPaddingLeft: Float = 12f,
     bubbleAiContentPaddingRight: Float = 12f,
 ) {
+    val isWaifuProcess = waifuEnabled && message.sender == "ai" && remember(message.content) {
+        WaifuMessageProcessor.isProcessOnlyMessage(message.content)
+    }
     var showContextMenu by remember { mutableStateOf(false) }
     var showMessageInfoDialog by remember { mutableStateOf(false) }
     var showHiddenUserMessageDialog by remember { mutableStateOf(false) }
@@ -744,36 +753,44 @@ private fun MessageItem(
             LocalMarkdownRenderFragment provides messageSlice?.fragment,
         ) {
         Column {
-            when (chatStyle) {
+            if (isWaifuProcess) {
+                WaifuProcessMessage(message = message, textColor = aiTextColor, enableDialogs = enableDialogs)
+            } else when (chatStyle) {
                 ChatStyle.CURSOR -> {
-                    CursorStyleChatMessage(
+                    WaifuReplyAvatarRow(
+                        enabled = waifuEnabled && message.sender == "ai",
                         message = message,
-                        userMessageColor = userMessageColor,
-                        userMessageLiquidGlassEnabled = cursorUserBubbleLiquidGlass,
-                        userMessageWaterGlassEnabled = cursorUserBubbleWaterGlass,
-                        aiMessageColor = aiMessageColor,
-                        userTextColor = userTextColor,
-                        aiTextColor = aiTextColor,
-                        systemMessageColor = systemMessageColor,
-                        systemTextColor = systemTextColor,
-                        thinkingBackgroundColor = thinkingBackgroundColor,
-                        thinkingTextColor = thinkingTextColor,
-                        supportToolMarkup = true,
-                        initialThinkingExpanded = false,
-                        onDeleteMessage = onDeleteMessage,
-                        index = index,
-                        enableDialogs = enableDialogs,
-                        onEditSummary = { summaryMessage ->
-                            onSelectMessageToEdit?.invoke(index, summaryMessage, "summary")
-                        }
-                    )
+                        onAvatarLongPress = onMentionRoleFromAvatar,
+                    ) {
+                        CursorStyleChatMessage(
+                            message = message,
+                            userMessageColor = userMessageColor,
+                            userMessageLiquidGlassEnabled = cursorUserBubbleLiquidGlass,
+                            userMessageWaterGlassEnabled = cursorUserBubbleWaterGlass,
+                            aiMessageColor = aiMessageColor,
+                            userTextColor = userTextColor,
+                            aiTextColor = aiTextColor,
+                            systemMessageColor = systemMessageColor,
+                            systemTextColor = systemTextColor,
+                            thinkingBackgroundColor = thinkingBackgroundColor,
+                            thinkingTextColor = thinkingTextColor,
+                            supportToolMarkup = true,
+                            initialThinkingExpanded = false,
+                            onDeleteMessage = onDeleteMessage,
+                            index = index,
+                            enableDialogs = enableDialogs,
+                            onEditSummary = { summaryMessage ->
+                                onSelectMessageToEdit?.invoke(index, summaryMessage, "summary")
+                            }
+                        )
+                    }
                 }
-
                 ChatStyle.BUBBLE -> {
                     BubbleStyleChatMessage(
                         message = message,
                         userMessageColor = userMessageColor,
                         aiMessageColor = aiMessageColor,
+                        forceShowAiAvatar = waifuEnabled,
                         userTextColor = userTextColor,
                         aiTextColor = aiTextColor,
                         systemMessageColor = systemMessageColor,

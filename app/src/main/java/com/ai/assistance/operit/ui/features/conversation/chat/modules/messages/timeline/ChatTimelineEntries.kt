@@ -7,6 +7,7 @@ import com.ai.assistance.operit.ui.common.markdown.responseProcessItemVisible
 import com.ai.assistance.operit.ui.common.markdown.completedProcessEnd
 import com.ai.assistance.operit.data.preferences.DisplayPreferencesManager
 import androidx.compose.ui.platform.LocalContext
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import androidx.compose.runtime.collectAsState
 import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardStateStore
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.rememberMessageToolExecutions
@@ -105,6 +106,7 @@ internal fun rememberChatTimelineEntries(
     showThinkingProcess: Boolean,
     showStatusTags: Boolean,
     toolCollapseMode: ToolCollapseMode,
+    waifuEnabled: Boolean = false,
 ): List<ChatTimelineEntry> {
     val context = LocalContext.current
     val preferences = remember(context) { DisplayPreferencesManager.getInstance(context) }
@@ -119,12 +121,19 @@ internal fun rememberChatTimelineEntries(
                 if (message.sender != "ai") {
                     add(remember(messageKey, index) { listOf(ChatTimelineEntry(messageKey, index)) })
                 } else {
+                    val isWaifuProcess = waifuEnabled && remember(message.content) {
+                        WaifuMessageProcessor.isProcessOnlyMessage(message.content)
+                    }
                     val state = remember { StreamMarkdownRendererState() }
                     val appearance = remember { ChatMessageAppearance() }
                     val cardValues = rememberSaveable(saver = CardValueSaver) { mutableStateMapOf<String, Any?>() }
                     val overrides = rememberSaveable(saver = ExpansionSaver) { mutableStateMapOf<String, Boolean>() }
-                    val grouper = remember(showThinkingProcess, toolCollapseMode) {
-                        ThinkToolsXmlNodeGrouper(showThinkingProcess, toolCollapseMode = toolCollapseMode).also { it.expansionOverrides = overrides }
+                    val grouper = remember(showThinkingProcess, toolCollapseMode, isWaifuProcess) {
+                        ThinkToolsXmlNodeGrouper(
+                            showThinkingProcess,
+                            toolCollapseMode = toolCollapseMode,
+                            groupProcessNodes = !isWaifuProcess,
+                        ).also { it.expansionOverrides = overrides }
                     }
                     val timingSnapshot = rememberMessageToolExecutions(message)
                     grouper.executionTimings = timingSnapshot
@@ -138,7 +147,8 @@ internal fun rememberChatTimelineEntries(
                         StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
-                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess, stream != null)
+                    // Waifu 已按正文边界形成过程段，不再叠加普通消息的整体折叠标题。
+                    val boundary = completedProcessEnd(nodes, collapseCompletedProcess && !isWaifuProcess, stream != null)
                     val processEnd = if (boundary >= 0 && nodes.take(boundary + 1).any {
                         isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags)
                     }) boundary else -1

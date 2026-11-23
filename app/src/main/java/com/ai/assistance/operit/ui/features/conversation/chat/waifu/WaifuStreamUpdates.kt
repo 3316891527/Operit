@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.util
+package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
@@ -23,6 +23,7 @@ internal sealed interface WaifuSegmentUpdate {
     data class Append(val content: String) : WaifuSegmentUpdate
     data class Retain(val count: Int) : WaifuSegmentUpdate
     data class Preview(val content: String) : WaifuSegmentUpdate
+    data class Revise(val index: Int, val content: String) : WaifuSegmentUpdate
 }
 
 private data class WaifuPendingSnapshot(val segments: List<String>, val preview: String?)
@@ -35,6 +36,7 @@ internal fun streamWaifuUpdates(
     typingDelayMs: (segmentLength: Int, first: Boolean) -> Long,
     nowMillis: () -> Long = { System.nanoTime() / 1_000_000L },
     firstSegmentPreview: ((String) -> String?)? = null,
+    isProcessSegment: (String) -> Boolean = { false },
 ): Stream<WaifuSegmentUpdate> = stream {
     coroutineScope {
         val snapshots = Channel<WaifuPendingSnapshot>(Channel.CONFLATED)
@@ -109,19 +111,34 @@ internal fun streamWaifuUpdates(
 
         fun scheduleNext() {
             val next = target.getOrNull(displayed.size)
+            val processWaiting = target.drop(displayed.size).any(isProcessSegment)
             if (next != pending) {
                 pending = next
                 dueAt = if (next == null) 0L else
-                    nowMillis() + typingDelayMs(next.length, displayed.isEmpty())
+                    nowMillis() + if (processWaiting) 0L else typingDelayMs(next.length, displayed.isEmpty())
+            } else if (processWaiting) {
+                // 过程到达时先送出前面的正文，避免工具活动被打字等待遮住。
+                dueAt = nowMillis()
             }
         }
 
         suspend fun accept(snapshot: WaifuPendingSnapshot, allowPreview: Boolean = true) {
             val segments = snapshot.segments
             var common = 0
-            while (common < displayed.size && common < segments.size &&
-                displayed[common] == segments[common]
-            ) {
+            while (common < displayed.size && common < segments.size) {
+                val previous = displayed[common]
+                val current = segments[common]
+                if (previous != current) {
+                    // 连续增长或重试截短的过程仍占据同一位置，保留消息和卡片展开身份。
+                    if (isProcessSegment(previous) && isProcessSegment(current) &&
+                        (current.startsWith(previous) || previous.startsWith(current))
+                    ) {
+                        displayed[common] = current
+                        emit(WaifuSegmentUpdate.Revise(common, current))
+                    } else {
+                        break
+                    }
+                }
                 common++
             }
             if (common < displayed.size) {
@@ -223,6 +240,11 @@ internal fun streamWaifuUpdates(
                         currentSnapshot(sourceCompleted)
                     }
                     accept(finalSnapshot, allowPreview = false)
+                    // 上游可能在同一调度轮中失败或取消，过程仍要落到持久消息中。
+                    val lastProcessIndex = target.indexOfLast(isProcessSegment)
+                    while (displayed.size <= lastProcessIndex) {
+                        appendNext()
+                    }
                 }
             }
         }
@@ -236,6 +258,7 @@ internal class WaifuSegmentMessageStore<T>(
     private val removeMessages: suspend (List<T>) -> Unit,
     private val reviseMessage: ((T, String) -> T)? = null,
     private val publishPreview: suspend (T) -> Unit = {},
+    private val publishRevision: suspend (T) -> Unit = {},
 ) {
     private var interruptNextSpeech = false
     private var hasPreview = false
@@ -266,6 +289,12 @@ internal class WaifuSegmentMessageStore<T>(
                 }
                 hasPreview = true
                 publishPreview(message)
+            }
+            is WaifuSegmentUpdate.Revise -> {
+                require(update.index in messages.indices)
+                val message = checkNotNull(reviseMessage)(messages[update.index], update.content)
+                messages[update.index] = message
+                publishRevision(message)
             }
             is WaifuSegmentUpdate.Retain -> {
                 require(update.count in 0..messages.size)

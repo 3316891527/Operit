@@ -110,6 +110,7 @@ fun BubbleAiMessageComposable(
     heightMemory: ChatMessageHeightMemory? = null,
     enableDialogs: Boolean = true,
     onAvatarLongPressMention: ((String) -> Unit)? = null,
+    forceShowAvatar: Boolean = false,
 ) {
     val slice = LocalChatMessageSlice.current
     val themedTextColor = themeScriptContentColor("assistantMessage", textColor)
@@ -122,7 +123,7 @@ fun BubbleAiMessageComposable(
         .float(ThemeTransparencyPreferences.BUBBLE_AI)?.coerceIn(0f, 1f)
     val messageDecorationOpacity = backgroundOpacity ?: backgroundColor.alpha
     val effectiveBackgroundColor = themeScriptFill("assistantMessage", backgroundColor, messageDecorationOpacity)
-    val bubbleShowAvatar = themeSnapshot.bubbleShowAvatar
+    val bubbleShowAvatar = forceShowAvatar || themeSnapshot.bubbleShowAvatar
     val bubbleWideLayoutEnabled = themeSnapshot.bubbleWideLayoutEnabled
     val showThinkingProcess = themeSnapshot.showThinkingProcess
     val showStatusTags = themeSnapshot.showStatusTags

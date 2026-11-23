@@ -44,6 +44,7 @@ fun BubbleStyleChatMessage(
     enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
     onRoleAvatarLongPress: ((String) -> Unit)? = null,
     onEditSummary: ((ChatMessage) -> Unit)? = null,
+    forceShowAiAvatar: Boolean = false,
 ) {
     when (message.sender) {
         "agent" -> com.ai.assistance.operit.ui.features.conversation.chat.subagent.SubagentReportMessage(message.content, enableDialogs)
@@ -80,6 +81,7 @@ fun BubbleStyleChatMessage(
                 heightMemory = heightMemory,
                 enableDialogs = enableDialogs,
                 onAvatarLongPressMention = onRoleAvatarLongPress,
+                forceShowAvatar = forceShowAiAvatar,
             )
         }
         "summary" -> {

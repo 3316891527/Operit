@@ -44,7 +44,7 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.util.logging.ChatTrace
 
-import com.ai.assistance.operit.util.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import com.ai.assistance.operit.util.stream.SharedStream
 import com.ai.assistance.operit.util.stream.collectRevisionAppliedText
 import java.time.ZoneId

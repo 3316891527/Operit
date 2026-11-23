@@ -7,7 +7,7 @@ function getTtsCleanerInstance() {
 }
 
 function getWaifuMessageProcessorInstance() {
-  return Java.type('com.ai.assistance.operit.util.WaifuMessageProcessor').INSTANCE;
+  return Java.type('com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor').INSTANCE;
 }
 
 function makeJavaStringList(items) {
