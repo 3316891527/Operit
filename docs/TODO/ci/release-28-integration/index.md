@@ -25,6 +25,8 @@ status: prepared
 
 ## 验证与交付
 
+[组合候选自动验证](01-candidate-ci.md)为专用组合分支增加推送入口；Build 执行 `assembleDebug`，Android Tests 同时构建设备测试 APK 对。PR 为 [#245](https://github.com/3316891527/Operit/pull/245)，工作流以实际推送后的准确 head SHA 登记。
+
 - 顺序合并固定 PR 提交，记录并处理实际冲突，不追加无关业务改动
 - 确认最终提交包含全部七个来源，差异无冲突标记且通过空白与编码检查
 - 对同一最终提交启动 assembleDebug 和 Android Tests，构建设备测试 APK

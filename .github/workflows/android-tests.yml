@@ -9,7 +9,8 @@ on:
         default: false
         type: boolean
   push:
-    branches: [main]
+    # 专用组合候选与主分支使用相同的回归入口。
+    branches: [main, ci/release-28-integration]
     paths:
       - .github/workflows/android-tests.yml
       - .gitmodules
@@ -244,11 +245,11 @@ jobs:
         run: ./gradlew :app:compileDebugAndroidTestKotlin :app:compileDebugAndroidTestJavaWithJavac --stacktrace --no-daemon
 
       - name: Build subagent device-test APK pair
-        if: github.event_name == 'workflow_dispatch' && inputs.build_device_tests
+        if: (github.event_name == 'workflow_dispatch' && inputs.build_device_tests) || (github.event_name == 'push' && github.ref == 'refs/heads/ci/release-28-integration')
         run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
 
       - name: Upload subagent device-test APK
-        if: github.event_name == 'workflow_dispatch' && inputs.build_device_tests && success()
+        if: success() && ((github.event_name == 'workflow_dispatch' && inputs.build_device_tests) || (github.event_name == 'push' && github.ref == 'refs/heads/ci/release-28-integration'))
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: operit-subagent-device-tests-${{ github.run_number }}

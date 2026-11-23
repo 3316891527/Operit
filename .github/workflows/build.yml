@@ -46,7 +46,8 @@ on:
         default: ''
         type: string
   push:
-    branches: [main]
+    # 专用组合候选推送后立即构建，确保构建产物对应当前候选提交。
+    branches: [main, ci/release-28-integration]
     paths:
       - .github/workflows/build.yml
       - .gitmodules
