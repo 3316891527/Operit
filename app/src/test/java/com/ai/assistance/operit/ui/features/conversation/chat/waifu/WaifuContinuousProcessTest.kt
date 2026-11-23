@@ -1,5 +1,6 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
+import com.ai.assistance.operit.util.assertPropagatedException
 import com.ai.assistance.operit.util.stream.MutableSharedStream
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.TextStreamEvent
@@ -235,7 +236,8 @@ class WaifuContinuousProcessTest {
         release.complete(Unit)
         advanceUntilIdle()
         job.join()
-        assertTrue(caught === failure)
+        // 协程堆栈恢复可能复制异常，沿因果链校验原始失败才能兼容 CI 的 JVM 断言配置。
+        assertPropagatedException(failure, checkNotNull(caught))
         assertEquals(listOf(WaifuSegmentUpdate.Append("<think>已生成的过程")), received)
     }
 
@@ -249,7 +251,7 @@ class WaifuContinuousProcessTest {
             throw failure
         }
         try { updates(source).collect { received += it } } catch (error: IOException) { caught = error }
-        assertTrue(caught === failure)
+        assertPropagatedException(failure, checkNotNull(caught))
         assertEquals(listOf(WaifuSegmentUpdate.Append("<think>已经生成")), received)
     }
 
