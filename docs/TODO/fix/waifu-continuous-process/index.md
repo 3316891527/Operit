@@ -19,4 +19,4 @@ Waifu 之前将每个受保护的 XML block 直接变成消息，连续工具调
 
 ## 实施与验证
 
-参见 [实施记录](01-implementation.md)。实现完成后创建面向 dev 的 PR，并启动该提交的 Debug Build 与 Android Tests，登记启动结果后停止查询工作流进度。
+参见 [实施记录](01-implementation.md) 和 [过程区层级与实机布局修正](02-ui-hierarchy.md)。实现完成后创建面向 dev 的 PR，并启动该提交的 Debug Build 与 Android Tests，登记启动结果后停止查询工作流进度。

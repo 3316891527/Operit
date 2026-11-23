@@ -54,6 +54,12 @@ import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.r
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsRow
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.ThinkToolsXmlNodeGrouper
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.buildThinkToolsRows
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.buildWaifuProcessRows
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessHeader
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessToolCard
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuProcessRail
+import com.ai.assistance.operit.ui.common.markdown.lazy.LocalMarkdownCardNodeIndex
+import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.tooltiming.LocalToolTimingIndex
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.isVisibleChatMarkdownNode
 import com.ai.assistance.operit.ui.features.conversation.chat.modules.messages.rendering.thinkToolsGroupTitle
 import com.ai.assistance.operit.ui.features.conversation.chat.foundation.stream.rememberRevisableTextStream
@@ -147,7 +153,7 @@ internal fun rememberChatTimelineEntries(
                         StreamMarkdownRenderer(sections = sections, state = state, renderContent = false)
                     }
                     val nodes = state.renderNodes.toList()
-                    // Waifu 已按正文边界形成过程段，不再叠加普通消息的整体折叠标题。
+                    // Waifu 使用专用过程入口，不叠加普通消息的整段回复折叠标题。
                     val boundary = completedProcessEnd(nodes, collapseCompletedProcess && !isWaifuProcess, stream != null)
                     val processEnd = if (boundary >= 0 && nodes.take(boundary + 1).any {
                         isVisibleChatMarkdownNode(it, showThinkingProcess, showStatusTags)
@@ -162,7 +168,7 @@ internal fun rememberChatTimelineEntries(
                     val cardStore = remember(nodeKeys, cardValues) { MarkdownCardStateStore(nodeKeys, cardValues) }
                     var wasSplit by remember { mutableStateOf(false) }
                     val contentNeedsSplit = wasSplit || shouldSplitChatMessage(visibleNodes)
-                    val split = contentNeedsSplit || processEnd >= 0
+                    val split = contentNeedsSplit || processEnd >= 0 || isWaifuProcess
                     SideEffect { wasSplit = contentNeedsSplit }
                     val mode = if (stream == null) MarkdownRenderMode.STATIC else MarkdownRenderMode.STREAMING
                     val groups = remember(nodes, grouper) { grouper.group(nodes, messageKey) }
@@ -170,9 +176,11 @@ internal fun rememberChatTimelineEntries(
                     val expansionSnapshot = overrides.toMap()
                     val rows = remember(
                         split, groups, nodes, grouper, mode, expansionSnapshot, timingSnapshot,
-                        showThinkingProcess, showStatusTags,
+                        showThinkingProcess, showStatusTags, isWaifuProcess,
                     ) {
-                        if (split && nodes.isNotEmpty()) {
+                        if (isWaifuProcess) {
+                            buildWaifuProcessRows(nodes, expansionSnapshot["waifu-process"] ?: true, showThinkingProcess)
+                        } else if (split && nodes.isNotEmpty()) {
                             buildThinkToolsRows(
                                 groups, nodes, expansionSnapshot,
                                 showThinkingProcess = showThinkingProcess,
@@ -196,6 +204,8 @@ internal fun rememberChatTimelineEntries(
                             val end = when (row) {
                                 is ThinkToolsRow.Header -> row.info.group.endIndexInclusive
                                 is ThinkToolsRow.Content -> row.index
+                                is ThinkToolsRow.WaifuHeader -> nodes.lastIndex
+                                is ThinkToolsRow.WaifuTool -> row.call.resultIndex ?: row.call.index
                             }
                             responseProcessItemVisible(end, processEnd, processExpanded)
                         }
@@ -314,8 +324,28 @@ private class ChatMarkdownFragment(
                             onClick = { grouper.expansionOverrides[item.info.group.stableKey] = !item.expanded },
                         )
                     }
+                    is ThinkToolsRow.WaifuHeader -> WaifuProcessHeader(
+                        thoughtCount = item.thoughtCount,
+                        toolCount = item.toolCount,
+                        timing = LocalToolTimingIndex.current.group(0, nodes.lastIndex),
+                        expanded = item.expanded,
+                        textColor = textColor,
+                        onToggle = { grouper.expansionOverrides[item.key] = !item.expanded },
+                    )
+                    is ThinkToolsRow.WaifuTool -> {
+                        CompositionLocalProvider(
+                            LocalInsideToolGroup provides true,
+                            LocalMarkdownCardNodeIndex provides item.call.index,
+                        ) {
+                            Box(Modifier.fillMaxWidth().waifuProcessRail(textColor)) {
+                                WaifuProcessToolCard(item.call, nodes, textColor, enableDialogs, state.rendererId + "/waifu/" + item.key)
+                            }
+                        }
+                    }
                     is ThinkToolsRow.Content -> {
-                        Box(Modifier.fillMaxWidth().padding(start = if (item.inGroup) 24.dp else 0.dp)) {
+                        val indentation = if (item.waifuProcess) Modifier.waifuProcessRail(textColor)
+                            else Modifier.padding(start = if (item.inGroup) 24.dp else 0.dp)
+                        Box(Modifier.fillMaxWidth().then(indentation)) {
                             // 已出现的块离屏后重新进入时不重播淡入，避免快速滑动时闪烁。
                             CompositionLocalProvider(LocalInsideToolGroup provides item.inGroup) {
                             AnimatedNode(

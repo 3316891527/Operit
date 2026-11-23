@@ -1,5 +1,8 @@
 package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -49,11 +54,19 @@ internal fun WaifuProcessToolRow(
     textColor: Color,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
+    summary: String = "",
+    body: (@Composable () -> Unit)? = null,
 ) {
     var expanded by rememberMarkdownCardValue("waifu-tool-expanded", false)
     val expansionDescription = stringResource(if (expanded) R.string.common_collapse else R.string.common_expand)
     val statusColor = if (isError) MaterialTheme.colorScheme.error else textColor.copy(alpha = 0.6f)
-    Column(modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+    val shape = RoundedCornerShape(10.dp)
+    Column(
+        modifier.fillMaxWidth().padding(vertical = 3.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f), shape)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f), shape)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth()
                 .semantics { stateDescription = expansionDescription }
@@ -62,11 +75,12 @@ internal fun WaifuProcessToolRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(Icons.Default.Build, contentDescription = null, tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Build, contentDescription = null, tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(14.dp))
             Text(
                 text = name,
                 color = textColor.copy(alpha = 0.85f),
                 style = MaterialTheme.typography.labelMedium,
+                fontFamily = FontFamily.Monospace,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -77,16 +91,23 @@ internal fun WaifuProcessToolRow(
                 style = MaterialTheme.typography.labelSmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(0.65f, fill = false),
+                modifier = Modifier.widthIn(max = 104.dp),
             )
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = expansionDescription,
                 tint = textColor.copy(alpha = 0.55f),
-                modifier = Modifier.size(16.dp).rotate(if (expanded) 90f else 0f),
+                modifier = Modifier.size(14.dp).rotate(if (expanded) 90f else 0f),
             )
         }
-        if (expanded) {
+        if (summary.isNotEmpty()) {
+            Text(summary, color = textColor.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 20.dp, top = 2.dp))
+        }
+        if (expanded && body != null) {
+            Column(Modifier.fillMaxWidth().padding(top = 6.dp)) { body() }
+        }
+        if (expanded && body == null) {
             val clipboard = LocalClipboardManager.current
             Column(Modifier.fillMaxWidth().padding(start = 22.dp, top = 2.dp, bottom = 6.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
