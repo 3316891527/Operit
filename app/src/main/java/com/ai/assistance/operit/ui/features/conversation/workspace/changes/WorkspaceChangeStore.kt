@@ -42,6 +42,7 @@ internal class WorkspaceChangeStore(
     private val terminalObservations = File(root, "terminal-observations")
     // 工作区清单和旧终端清单迁移各自串行，终端基线本体由磁盘索引持有。
     private val baselineIo = Any()
+    private val workspaceBaselineImports = Mutex()
     private val terminalBaselineIo = Any()
     private val terminalIndexes = linkedMapOf<String, TerminalObservationIndex>()
     private val workspaceIndexes = linkedMapOf<String, TerminalObservationIndex>()
@@ -51,6 +52,16 @@ internal class WorkspaceChangeStore(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Pair<Int, Int>>): Boolean = size > 512
     }
     val revision = revisionState.asStateFlow()
+    // 租约只保留单次有界快照的哈希，清理历史不能删除尚未发布的 before/after。
+    private val snapshotLeases = mutableSetOf<SnapshotLease>()
+    inner class SnapshotLease internal constructor() : java.io.Closeable {
+        internal val hashes = mutableSetOf<String>()
+        override fun close() = synchronized(this@WorkspaceChangeStore) { snapshotLeases.remove(this); Unit }
+    }
+
+    @Synchronized
+    fun openSnapshotLease(): SnapshotLease = SnapshotLease().also { snapshotLeases += it }
+
     private var historyIndex: WorkspaceHistoryIndex? = null
     private var operationsImported = false
 
@@ -65,18 +76,8 @@ internal class WorkspaceChangeStore(
         maintenance.launch {
             for (request in compactRequests) {
                 val cancellation = coroutineContext
-                try { blobStore.compact(checkCancelled = { cancellation.ensureActive() }) }
-                catch (cancelled: CancellationException) { throw cancelled }
-                catch (error: Exception) { AppLogger.e("WorkspaceChanges", "回收快照卷空间失败，已提交索引保留", error) }
+                try { blobStore.compact(checkCancelled = { cancellation.ensureActive() }) } catch (cancelled: CancellationException) { throw cancelled } catch (error: Exception) { AppLogger.e("WorkspaceChanges", "回收快照卷空间失败，已提交索引保留", error) }
             }
-        }
-        // 首次使用按对象迁移旧内容，不在界面线程扫描或持有完整对象清单。
-        maintenance.launch {
-            val cancellation = coroutineContext
-            try {
-                blobStore.migrateLegacy(checkCancelled = { cancellation.ensureActive() }, onBatch = { Thread.yield() })
-            } catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { AppLogger.e("WorkspaceChanges", "迁移历史快照失败，未迁移的原文件保留", error) }
         }
     }
 
@@ -86,9 +87,13 @@ internal class WorkspaceChangeStore(
         if (chatId.isBlank()) emptyList() else withHistory { it.trackedPage(chatId, offset) }
 
     @Synchronized
-    fun putBlob(bytes: ByteArray, terminalScan: TerminalObservationIndex.Scan? = null): String {
+    fun putBlob(bytes: ByteArray, terminalScan: TerminalObservationIndex.Scan? = null, lease: SnapshotLease? = null): String {
         val hash = blobStore.put(bytes, batched = true)
         terminalScan?.pinBlob(hash)
+        if (lease != null) {
+            check(lease in snapshotLeases) { "Snapshot lease is closed" }
+            lease.hashes += hash
+        }
         return hash
     }
 
@@ -153,7 +158,6 @@ internal class WorkspaceChangeStore(
     fun releaseTerminalIndex(key: String) { terminalIndexes.remove(key)?.close() }
 
     /** 迁移成功后才移除旧清单；异常保留源文件并由日志层报告。 */
-    @Synchronized
     fun importTerminalBaseline(key: String, checkCancelled: () -> Unit) {
         val index = terminalIndex(key)
         synchronized(terminalBaselineIo) {
@@ -176,28 +180,36 @@ internal class WorkspaceChangeStore(
     fun workspaceIndex(key: String): TerminalObservationIndex {
         require(Regex("[0-9a-f]{64}").matches(key))
         return workspaceIndexes.getOrPut(key) {
-            val index = TerminalObservationIndex(openDatabase(File(observations, "$key.sqlite"), false), beforeStageCommit = ::flushBlobs)
-            try {
-                val legacy = File(observations, "$key.json")
-                if (!index.legacyImported()) {
-                    if (legacy.exists()) index.beginScan().use { scan ->
-                        com.google.gson.stream.JsonReader(legacy.bufferedReader(Charsets.UTF_8)).use { reader ->
-                            reader.beginObject()
-                            while (reader.hasNext()) {
-                                val path = reader.nextName()
-                                val observed = json.decodeFromString<ObservedWorkspaceFile>(com.google.gson.JsonParser.parseReader(reader).toString())
-                                scan.put(path, TerminalObservedFile(observed.stamp, observed.snapshot))
-                            }
-                            reader.endObject()
-                            check(reader.peek() == com.google.gson.stream.JsonToken.END_DOCUMENT)
-                        }
-                        scan.commit(completeInitialization = true, imported = true)
-                    } else index.markLegacyImported()
-                }
-                if (legacy.exists()) java.nio.file.Files.delete(legacy.toPath())
-                index
-            } catch (error: Exception) { index.close(); throw error }
+            TerminalObservationIndex(openDatabase(File(observations, "$key.sqlite"), false), beforeStageCommit = ::flushBlobs)
         }
+    }
+
+    /** 只导入本次绑定的旧基线，流式读取不占用 Store 或文件操作锁。 */
+    suspend fun importWorkspaceBaseline(key: String, checkCancelled: () -> Unit) = workspaceBaselineImports.withLock {
+        val index = workspaceIndex(key)
+        val legacy = File(observations, "$key.json")
+        if (!index.legacyImported()) {
+            if (legacy.exists()) index.beginScan().use { scan ->
+                com.google.gson.stream.JsonReader(legacy.bufferedReader(Charsets.UTF_8)).use { reader ->
+                    reader.beginObject()
+                    while (reader.hasNext()) {
+                        checkCancelled()
+                        val path = reader.nextName()
+                        val observed = json.decodeFromString<ObservedWorkspaceFile>(com.google.gson.JsonParser.parseReader(reader).toString())
+                        scan.put(path, TerminalObservedFile(observed.stamp, observed.snapshot))
+                    }
+                    reader.endObject()
+                    check(reader.peek() == com.google.gson.stream.JsonToken.END_DOCUMENT)
+                }
+                scan.flush()
+                operationMutex.withLock {
+                    checkCancelled()
+                    scan.commit(completeInitialization = true, imported = true)
+                }
+            } else index.markLegacyImported()
+        }
+        checkCancelled()
+        if (legacy.exists()) java.nio.file.Files.delete(legacy.toPath())
     }
 
     @Synchronized
@@ -315,32 +327,36 @@ internal class WorkspaceChangeStore(
         }.sortedBy { it.displayPath }
 
     /** 删除在操作锁内按页推进，候选哈希集合不随全部历史增长。 */
-    suspend fun removeRecords(ids: Set<String>): Int = operationMutex.withLock {
-        withContext(Dispatchers.IO) { synchronized(this@WorkspaceChangeStore) {
-            var removed = 0
-            for (page in ids.asSequence().chunked(WorkspaceHistoryIndex.PAGE_SIZE)) {
-                val records = withHistory { history -> page.mapNotNull(history::record) }
-                removed += removePage(records)
+    suspend fun removeRecords(ids: Set<String>): Int = withContext(Dispatchers.IO) {
+        var removed = 0
+        for (page in ids.asSequence().chunked(WorkspaceHistoryIndex.PAGE_SIZE)) {
+            coroutineContext.ensureActive()
+            operationMutex.withLock {
+                synchronized(this@WorkspaceChangeStore) {
+                    val records = withHistory { history -> page.mapNotNull(history::record) }
+                    removed += removePage(records)
+                }
             }
-            removed
-        } }
+            kotlinx.coroutines.yield()
+        }
+        removed
     }
 
-    suspend fun removeFileRecords(removal: WorkspaceRecordRemoval): Int = operationMutex.withLock {
-        if (removal.count == 0) return@withLock 0
-        withContext(Dispatchers.IO) {
-            var removed = 0
-            while (true) {
-                coroutineContext.ensureActive()
-                val count = synchronized(this@WorkspaceChangeStore) {
+    suspend fun removeFileRecords(removal: WorkspaceRecordRemoval): Int = withContext(Dispatchers.IO) {
+        var removed = 0
+        while (removed < removal.count) {
+            coroutineContext.ensureActive()
+            val count = operationMutex.withLock {
+                synchronized(this@WorkspaceChangeStore) {
                     val page = withHistory { it.recordsPage(removal.query) }
                     removePage(page)
                 }
-                if (count == 0) break
-                removed += count
             }
-            removed
+            if (count == 0) break
+            removed += count
+            kotlinx.coroutines.yield()
         }
+        removed
     }
 
     @Synchronized
@@ -361,6 +377,7 @@ internal class WorkspaceChangeStore(
         statistics.clear()
         revisionState.update { it + 1 }
         val retained = withHistory { it.referenced(possible) }.toMutableSet()
+        snapshotLeases.forEach { lease -> retained += lease.hashes.intersect(possible) }
         synchronized(baselineIo) {
             if (observations.exists()) java.nio.file.Files.newDirectoryStream(observations.toPath(), "*.json").use { files ->
                 for (file in files) com.google.gson.stream.JsonReader(java.nio.file.Files.newBufferedReader(file, Charsets.UTF_8)).use { reader ->

@@ -52,6 +52,9 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
             database.execute("DELETE FROM unreadable WHERE generation<>0")
             database.execute("DELETE FROM preparing")
             database.execute("DELETE FROM touched")
+            // 精确写入覆盖仍在途的扫描，路径存入磁盘，不能随全盘扫描常驻内存。
+            database.execute("CREATE TABLE IF NOT EXISTS scan_overrides (generation INTEGER NOT NULL,path TEXT NOT NULL COLLATE BINARY,PRIMARY KEY(generation,path)) WITHOUT ROWID")
+            database.execute("DELETE FROM scan_overrides")
         }
     }
 
@@ -130,6 +133,15 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
         return Scan(id, selected, paths == null)
     }
 
+    /** 写入开始与收尾均使在途扫描失效，失败或取消也不能发布半写内容。 */
+    @Synchronized
+    fun invalidate(paths: List<String>) {
+        if (paths.isEmpty() || scans.isEmpty()) return
+        database.transaction {
+            for (id in scans) for (path in paths) database.execute("INSERT OR IGNORE INTO scan_overrides(generation,path) VALUES(?,?)", listOf(id, path))
+        }
+    }
+
     @Synchronized
     fun count(): Long = database.query("SELECT count(*) FROM files WHERE generation=0").use { it.next(); it.long(0) }
 
@@ -155,7 +167,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
         if (snapshot.kind == SnapshotKind.DIRECTORY) return
         beginScan(setOf(path)).use { scan ->
             if (snapshot.kind != SnapshotKind.ABSENT) scan.put(path, TerminalObservedFile("", snapshot))
-            scan.commit(touch = initializing)
+            scan.commit(touch = initializing, protectOtherScans = true)
         }
     }
 
@@ -184,7 +196,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
         fun flush() {
             // 内容锁必须在基线锁外取得，清理路径按同一顺序核对引用。
             val captured = synchronized(this@TerminalObservationIndex) { pendingPins[id]?.toSet().orEmpty() }
-            beforeStageCommit(captured)
+            if (captured.isNotEmpty()) beforeStageCommit(captured)
             synchronized(this@TerminalObservationIndex) {
                 val pins = pendingPins[id].orEmpty()
                 if (buffer.isEmpty() && pins.isEmpty()) return
@@ -223,6 +235,23 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
             }
         }
 
+        fun exclude(paths: List<String>) = synchronized(this@TerminalObservationIndex) {
+            check(!ended)
+            if (paths.isNotEmpty()) database.transaction {
+                for (path in paths) database.execute("INSERT OR IGNORE INTO scan_overrides(generation,path) VALUES(?,?)", listOf(id, path))
+            }
+        }
+
+        /** 发布一页前在操作锁内复查，不能保存扫描期间已被精确写入覆盖的旧结果。 */
+        fun isCurrent(path: String): Boolean = synchronized(this@TerminalObservationIndex) {
+            check(!ended)
+            database.query("SELECT 1 FROM scan_overrides WHERE generation=? AND path IN (" + ancestors(path).joinToString(",") { "?" } + ") LIMIT 1",
+                listOf(id.toString()) + ancestors(path)).use { !it.next() }
+        }
+
+        private fun notOverridden(column: String): String =
+            "NOT EXISTS(SELECT 1 FROM scan_overrides o WHERE o.generation=$id AND (o.path='' OR o.path=$column OR ($column>=o.path||'/' AND $column<o.path||'0')))"
+
         /** 每页最多固定数量的差异；查询游标关闭后再交给日志层保存，避免锁顺序反转。 */
         fun differences(afterPath: String? = null): List<Difference> {
             flush()
@@ -233,7 +262,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
                     listOfNotNull(afterPath) + PAGE_SIZE.toString() + id.toString()
                 database.query(
                     "SELECT p.path,b.stamp,b.kind,b.size,b.blob,b.detail,n.stamp,n.kind,n.size,n.blob,n.detail FROM " +
-                        "(SELECT path FROM files WHERE generation=?$boundary UNION SELECT path FROM files WHERE generation=0 AND ${scope.first}$boundary ORDER BY path LIMIT ?) p " +
+                        "(SELECT path FROM files f WHERE generation=?$boundary AND ${notOverridden("f.path")} UNION SELECT path FROM files f WHERE generation=0 AND ${scope.first}$boundary AND ${notOverridden("f.path")} ORDER BY path LIMIT ?) p " +
                         "LEFT JOIN files b ON b.generation=0 AND b.path=p.path LEFT JOIN files n ON n.generation=? AND n.path=p.path " +
                         "ORDER BY p.path COLLATE BINARY", arguments,
                 ).use { rows -> buildList {
@@ -250,25 +279,31 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
             }
         }
 
-        fun commit(touch: Boolean = false, completeInitialization: Boolean = false, imported: Boolean = false) {
+        fun commit(touch: Boolean = false, completeInitialization: Boolean = false, imported: Boolean = false, protectOtherScans: Boolean = false) {
             flush()
             synchronized(this@TerminalObservationIndex) {
                 check(!ended)
                 val scope = scope("path", paths)
                 val untouched = "NOT EXISTS(SELECT 1 FROM touched t WHERE t.path='' OR t.path=f.path OR (f.path>=t.path||'/' AND f.path<t.path||'0'))"
                 database.transaction {
+                    if (protectOtherScans || touch) for (other in scans) {
+                        if (other == id) continue
+                        for (path in paths) database.execute("INSERT OR IGNORE INTO scan_overrides(generation,path) VALUES(?,?)", listOf(other, path))
+                    }
                     for (table in listOf("files", "unreadable")) {
                         if (full) {
-                            database.execute("DELETE FROM $table WHERE generation=0 AND path IN (SELECT f.path FROM $table f WHERE f.generation=0 AND $untouched)")
+                            database.execute("DELETE FROM $table WHERE generation=0 AND path IN (SELECT f.path FROM $table f WHERE f.generation=0 AND $untouched AND ${notOverridden("f.path")})")
                             val columns = if (table == "files") "path,$COLUMNS" else "path"
-                            database.execute("INSERT OR REPLACE INTO $table SELECT 0,$columns FROM $table f WHERE generation=? AND $untouched", listOf(id))
+                            database.execute("INSERT OR REPLACE INTO $table SELECT 0,$columns FROM $table f WHERE generation=? AND $untouched AND ${notOverridden("f.path")}", listOf(id))
                         } else {
-                            database.execute("DELETE FROM $table WHERE generation=0 AND ${scope.first}", scope.second)
+                            database.execute("DELETE FROM $table WHERE generation=0 AND ${scope.first} AND ${notOverridden("$table.path")}", scope.second)
                             val columns = if (table == "files") "path,$COLUMNS" else "path"
-                            database.execute("INSERT OR REPLACE INTO $table SELECT 0,$columns FROM $table WHERE generation=?", listOf(id))
+                            database.execute("INSERT OR REPLACE INTO $table SELECT 0,$columns FROM $table f WHERE generation=? AND ${notOverridden("f.path")}", listOf(id))
                         }
                     }
-                    if (touch) for (path in paths) database.execute("INSERT OR IGNORE INTO touched(path) VALUES(?)", listOf(path))
+                    if (touch) {
+                        for (path in paths) database.execute("INSERT OR IGNORE INTO touched(path) VALUES(?)", listOf(path))
+                    }
                     if (completeInitialization) {
                         database.execute("DELETE FROM touched")
                         database.execute("INSERT OR REPLACE INTO metadata(name,value) VALUES('initialized','1')")
@@ -285,8 +320,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
         override fun close() = synchronized(this@TerminalObservationIndex) {
             if (!ended) {
                 buffer.clear()
-                try { database.transaction { removeStage() } }
-                finally { scans -= id; ended = true }
+                try { database.transaction { removeStage() } } finally { scans -= id; ended = true }
             }
         }
 
@@ -295,6 +329,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
             database.execute("DELETE FROM files WHERE generation=?", listOf(id))
             database.execute("DELETE FROM unreadable WHERE generation=?", listOf(id))
             database.execute("DELETE FROM preparing WHERE generation=?", listOf(id))
+            database.execute("DELETE FROM scan_overrides WHERE generation=?", listOf(id))
         }
     }
 

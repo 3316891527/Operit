@@ -115,8 +115,9 @@ class Terminal internal constructor(
         timeoutMs: Long = 120000L
     ): HiddenExecResult {
         val origin = executionOrigin(UUID.randomUUID().toString())
-        val local = terminalManager.getFileSystemProvider() is LocalFileSystemProvider
-        val observation = if (local) fileJournal?.begin(origin) else null
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        val local = !caller?.workspacePath.isNullOrBlank() && terminalManager.getFileSystemProvider() is LocalFileSystemProvider
+        val observation = if (local) fileJournal?.begin(origin, caller?.workspacePath, caller?.workspaceEnv) else null
         try {
             return terminalManager.executeHiddenCommand(command, executorKey, timeoutMs)
         } finally {
@@ -144,12 +145,15 @@ class Terminal internal constructor(
     ): Flow<CommandExecutionEvent> {
         // 在创建 Flow 时冻结调用者，托管任务换协程收集后仍保留原始工具身份。
         val origin = executionOrigin(commandId)
+        val caller = ToolExecutionManager.currentToolRuntimeContext()
+        val workspacePath = caller?.workspacePath
+        val workspaceEnv = caller?.workspaceEnv
         return flow {
             val session = terminalState.value.sessions.firstOrNull { it.id == sessionId }
-            val journal = fileJournal?.takeIf { session?.terminalType == TerminalType.LOCAL }
+            val journal = fileJournal?.takeIf { !workspacePath.isNullOrBlank() && session?.terminalType == TerminalType.LOCAL }
             val prepareStarted = System.nanoTime()
             if (journal != null) AppLogger.d(TAG, "终端命令 $commandId 开始观察准备，会话=$sessionId")
-            val observation = journal?.begin(origin, session?.currentDirectory)
+            val observation = journal?.begin(origin, workspacePath, workspaceEnv)
             val executionStarted = System.nanoTime()
             var completion: CommandExecutionEvent? = null
             val execute: suspend () -> Unit = {
@@ -196,8 +200,8 @@ class Terminal internal constructor(
         val caller = ToolExecutionManager.currentToolRuntimeContext()
         val origin = TerminalChangeOrigin(caller?.workspaceChatId.orEmpty(), caller?.invokingToolName ?: "terminal", null,
             subagentExecutionId = caller?.subagentExecutionId)
-        if (session?.terminalType == TerminalType.LOCAL && input.isNotEmpty()) runBlocking(Dispatchers.IO) {
-            fileJournal?.interactiveInput(sessionId, origin, session.currentDirectory)
+        if (session?.terminalType == TerminalType.LOCAL && input.isNotEmpty()) {
+            fileJournal?.interactiveInput(sessionId, origin, caller?.workspacePath, caller?.workspaceEnv)
         }
         terminalManager.sendInput(input, sessionId)
     }

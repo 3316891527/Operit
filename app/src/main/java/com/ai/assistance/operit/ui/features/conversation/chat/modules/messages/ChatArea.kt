@@ -767,6 +767,7 @@ private fun MessageItem(
             enabled = waifuEnabled && message.sender == "ai",
             message = message,
             joinedToPrevious = waifuJoinedToPrevious,
+            processOnly = isWaifuProcess,
             onAvatarLongPress = onMentionRoleFromAvatar,
         ) {
         Column {
