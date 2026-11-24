@@ -311,6 +311,11 @@ jobs:
           chmod +x ./gradlew
           ./gradlew "$gradle_task" --stacktrace --no-daemon
 
+      # 正式发布前先通过同份源码的回归与仪器测试编译，避免紧急包绕过验证。
+      - name: Verify release regressions
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+        run: ./gradlew :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:compileDebugAndroidTestJavaWithJavac --stacktrace --no-daemon
+
       - name: Verify packaged terminal command
         if: github.event_name == 'push' || inputs.gradle_task != ':app:bundleRelease'
         run: |

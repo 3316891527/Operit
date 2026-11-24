@@ -165,3 +165,5 @@
 
 - [终端观察基线内存优化](terminal-baseline-memory/index.md)
 - [大任务操作历史的增量存储与有界提交](workspace-history-memory/index.md)
+
+- [解除文件监控对工具与目录浏览的阻塞](monitor-tool-blocking/index.md)
