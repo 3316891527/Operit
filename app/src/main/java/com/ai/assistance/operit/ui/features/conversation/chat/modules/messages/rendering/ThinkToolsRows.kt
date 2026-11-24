@@ -47,6 +47,11 @@ internal fun buildWaifuProcessRows(
     val process = waifuProcessItems(nodes, showThinkingProcess)
     if (process.items.isEmpty()) return emptyList()
     val nodeKeys = markdownNodeIdentityKeys(nodes)
+    // 单独一个思考自身已经带原文预览和折叠入口，外层总标题会造成重复嵌套。
+    if (process.thoughtCount == 1 && process.items.size == 1) {
+        val item = process.items.single()
+        return listOf(ThinkToolsRow.Content(item.index, false, nodeKeys[item.index]))
+    }
     return buildList {
         add(ThinkToolsRow.WaifuHeader(process.toolCount, process.thoughtCount, expanded))
         if (expanded) process.items.forEach { item ->

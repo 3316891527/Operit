@@ -4,7 +4,8 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assistant
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.style.TextOverflow
+import com.ai.assistance.operit.ui.theme.script.text.ThemeText as Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -35,12 +41,16 @@ import com.ai.assistance.operit.ui.theme.script.themeScriptDecoration
 import com.ai.assistance.operit.ui.theme.script.themeScriptShape
 import kotlinx.coroutines.flow.flowOf
 
-/** 命令框式正文也按消息展示头像，懒加载的后续片段沿用同一缩进。 */
+internal data class WaifuMessageLayout(val joinedToPrevious: Boolean)
+internal val LocalWaifuMessageLayout = staticCompositionLocalOf<WaifuMessageLayout?> { null }
+
+/** 两种聊天样式共用头像和角色标题，连续过程与紧接正文只占一列头像。 */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun WaifuReplyAvatarRow(
     enabled: Boolean,
     message: ChatMessage,
+    joinedToPrevious: Boolean = false,
     onAvatarLongPress: ((String) -> Unit)?,
     content: @Composable () -> Unit,
 ) {
@@ -49,12 +59,13 @@ internal fun WaifuReplyAvatarRow(
         return
     }
     val slice = LocalChatMessageSlice.current
+    val showHeader = slice?.first != false && !joinedToPrevious
     val theme = LocalThemePreferenceSnapshot.current
     val context = LocalContext.current
     val preferences = remember(context) { UserPreferencesManager.getInstance(context) }
     val characterCards = remember(context) { CharacterCardManager.getInstance(context) }
-    val avatarUri by produceState(theme.customAiAvatarUri, message.roleName, theme.customAiAvatarUri, slice?.appearance, slice?.first) {
-        if (slice?.first == false) return@produceState
+    val avatarUri by produceState(theme.customAiAvatarUri, message.roleName, theme.customAiAvatarUri, slice?.appearance, showHeader) {
+        if (!showHeader) return@produceState
         val appearance = slice?.appearance
         val cacheKey = message.roleName to theme.customAiAvatarUri
         val cachedFlow = appearance?.avatarFlows?.get(cacheKey)
@@ -73,7 +84,7 @@ internal fun WaifuReplyAvatarRow(
     }
     val avatarSize = themeScriptAvatarSize("assistantAvatar", 32.dp)
     Row(Modifier.fillMaxWidth()) {
-        if (slice?.first != false) {
+        if (showHeader) {
             val avatarModifier = Modifier.padding(top = 2.dp).size(avatarSize)
                 .clip(themeScriptShape("assistantAvatar", avatarShape))
                 .themeScriptDecoration("assistantAvatar", originalShape = avatarShape)
@@ -90,6 +101,30 @@ internal fun WaifuReplyAvatarRow(
         } else {
             Spacer(Modifier.size(avatarSize))
         }
-        Box(Modifier.weight(1f)) { content() }
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            if (showHeader) {
+                val title = buildString {
+                    if (theme.showRoleName && message.roleName.isNotBlank()) append(message.roleName)
+                    if (theme.showModelName && message.modelName.isNotBlank()) {
+                        if (isNotEmpty()) append(" | ")
+                        append(message.modelName)
+                    }
+                    if (theme.showModelProvider && message.provider.isNotBlank()) {
+                        if (isNotEmpty()) append(if (theme.showModelName && message.modelName.isNotBlank()) " by " else " | ")
+                        append(message.provider)
+                    }
+                }
+                if (title.isNotEmpty()) Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+            CompositionLocalProvider(LocalWaifuMessageLayout provides WaifuMessageLayout(joinedToPrevious)) { content() }
+        }
     }
 }

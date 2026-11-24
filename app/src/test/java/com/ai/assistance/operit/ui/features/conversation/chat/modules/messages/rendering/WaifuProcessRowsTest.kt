@@ -45,6 +45,32 @@ class WaifuProcessRowsTest {
     }
 
     @Test
+    fun aSingleThoughtUsesOnlyItsOwnPreviewAndExpansionControl() {
+        val nodes = listOf(xml("<think>原文</think>"))
+        val open = buildWaifuProcessRows(nodes, true, true)
+        val closed = buildWaifuProcessRows(nodes, false, true)
+        assertEquals(1, open.size)
+        assertTrue(open.single() is ThinkToolsRow.Content)
+        assertEquals(open, closed)
+        assertTrue(open.none { it is ThinkToolsRow.WaifuHeader })
+    }
+
+    @Test
+    fun addingAToolPreservesTheThoughtsCardIdentity() {
+        val thought = xml("<think>原文</think>")
+        val before = buildWaifuProcessRows(listOf(thought), true, true).filterIsInstance<ThinkToolsRow.Content>().single()
+        val after = buildWaifuProcessRows(listOf(thought, call()), true, true).filterIsInstance<ThinkToolsRow.Content>().single()
+        assertEquals(before.key, after.key)
+        assertEquals(before.index, after.index)
+    }
+
+    @Test
+    fun multipleThoughtsKeepTheOverallProcessHeader() {
+        val rows = buildWaifuProcessRows(listOf(xml("<think>一</think>"), xml("<think>二</think>")), false, true)
+        assertEquals(listOf(ThinkToolsRow.WaifuHeader(0, 2, false)), rows)
+    }
+
+    @Test
     fun innerThinkingUsesTheSameProcessIndentationAsTools() {
         val rows = buildWaifuProcessRows(listOf(xml("<think>原文</think>"), call(), result()), true, true)
         val thought = rows.filterIsInstance<ThinkToolsRow.Content>().single()

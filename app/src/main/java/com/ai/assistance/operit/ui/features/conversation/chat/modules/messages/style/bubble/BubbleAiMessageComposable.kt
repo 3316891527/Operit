@@ -113,6 +113,7 @@ fun BubbleAiMessageComposable(
     forceShowAvatar: Boolean = false,
 ) {
     val slice = LocalChatMessageSlice.current
+    val waifuLayout = com.ai.assistance.operit.ui.features.conversation.chat.waifu.LocalWaifuMessageLayout.current
     val themedTextColor = themeScriptContentColor("assistantMessage", textColor)
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager.getInstance(context) }
@@ -123,8 +124,8 @@ fun BubbleAiMessageComposable(
         .float(ThemeTransparencyPreferences.BUBBLE_AI)?.coerceIn(0f, 1f)
     val messageDecorationOpacity = backgroundOpacity ?: backgroundColor.alpha
     val effectiveBackgroundColor = themeScriptFill("assistantMessage", backgroundColor, messageDecorationOpacity)
-    val bubbleShowAvatar = forceShowAvatar || themeSnapshot.bubbleShowAvatar
-    val bubbleWideLayoutEnabled = themeSnapshot.bubbleWideLayoutEnabled
+    val bubbleShowAvatar = waifuLayout == null && (forceShowAvatar || themeSnapshot.bubbleShowAvatar)
+    val bubbleWideLayoutEnabled = waifuLayout == null && themeSnapshot.bubbleWideLayoutEnabled
     val showThinkingProcess = themeSnapshot.showThinkingProcess
     val showStatusTags = themeSnapshot.showStatusTags
     val effectiveShowThinkingProcess = if (forceShowThinkingProcess) true else showThinkingProcess
@@ -135,9 +136,9 @@ fun BubbleAiMessageComposable(
     val bubbleAiSystemFontName = themeSnapshot.bubbleAiSystemFontName
     val bubbleAiCustomFontPath = themeSnapshot.bubbleAiCustomFontPath
 
-    val showModelProvider = themeSnapshot.showModelProvider
-    val showModelName = themeSnapshot.showModelName
-    val showRoleName = themeSnapshot.showRoleName
+    val showModelProvider = waifuLayout == null && themeSnapshot.showModelProvider
+    val showModelName = waifuLayout == null && themeSnapshot.showModelName
+    val showRoleName = waifuLayout == null && themeSnapshot.showRoleName
     val collapseCompletedProcess by displayPreferencesManager.collapseCompletedProcess.collectAsState(initial = true)
     val toolCollapseMode by displayPreferencesManager.toolCollapseMode.collectAsState(initial = ToolCollapseMode.ALL)
 
@@ -314,8 +315,8 @@ fun BubbleAiMessageComposable(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = if (bubbleShowAvatar) 0.dp else 8.dp,
-                    top = if (slice?.first != false) 4.dp else 0.dp,
+                    start = if (bubbleShowAvatar || waifuLayout != null) 0.dp else 8.dp,
+                    top = if (slice?.shellFirst != false) 4.dp else 0.dp,
                     end = 0.dp,
                     bottom = if (slice?.last != false) 4.dp else 0.dp,
                 )
@@ -391,10 +392,10 @@ fun BubbleAiMessageComposable(
                     val bubbleShape =
                         if (bubbleRoundedCornersEnabled) {
                             RoundedCornerShape(
-                                topStart = if (slice?.first != false) 4.dp else 0.dp,
-                                topEnd = if (slice?.first != false) 20.dp else 0.dp,
-                                bottomEnd = if (slice?.last != false) 20.dp else 0.dp,
-                                bottomStart = if (slice?.last != false) 20.dp else 0.dp,
+                                topStart = if (slice?.shellFirst != false) 4.dp else 0.dp,
+                                topEnd = if (slice?.shellFirst != false) 20.dp else 0.dp,
+                                bottomEnd = if (slice?.shellLast != false) 20.dp else 0.dp,
+                                bottomStart = if (slice?.shellLast != false) 20.dp else 0.dp,
                             )
                         } else {
                             RoundedCornerShape(0.dp)
@@ -421,9 +422,9 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.first != false) 12.dp else 0.dp,
+                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
-                                            bottom = if (slice?.last != false) 12.dp else 0.dp,
+                                            bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
                                     state = rendererState,
                                     fillMaxWidth = shouldUseExpandedBubbleLayout,
@@ -442,9 +443,9 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.first != false) 12.dp else 0.dp,
+                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
-                                            bottom = if (slice?.last != false) 12.dp else 0.dp,
+                                            bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
                                     state = rendererState,
                                     fillMaxWidth = shouldUseExpandedBubbleLayout,
@@ -508,7 +509,7 @@ fun BubbleAiMessageComposable(
     } else {
     Row(
         modifier = Modifier
-            .padding(top = if (slice?.first != false) 4.dp else 0.dp, bottom = if (slice?.last != false) 4.dp else 0.dp)
+            .padding(top = if (waifuLayout == null && slice?.first != false) 4.dp else 0.dp, bottom = if (slice?.last != false) 4.dp else 0.dp)
             .then(sizeTrackingModifier)
             .alpha(alpha)
             .offset(y = offsetY.dp),
@@ -556,7 +557,7 @@ fun BubbleAiMessageComposable(
         Column(
             modifier = Modifier
                 .padding(
-                    start = if (bubbleShowAvatar) 0.dp else 8.dp,
+                    start = if (bubbleShowAvatar || waifuLayout != null) 0.dp else 8.dp,
                     end = 0.dp
                 )
                 .weight(1f, fill = false)
@@ -595,7 +596,7 @@ fun BubbleAiMessageComposable(
             }
 
             BoxWithConstraints {
-                val maxBubbleWidth = themeScriptMessageWidth("assistantMessage", maxWidth) * 0.85f
+                val maxBubbleWidth = themeScriptMessageWidth("assistantMessage", maxWidth) * if (waifuLayout != null) 1f else 0.85f
                 if (imageUrl != null) {
                     AsyncImage(
                         model = Uri.parse(imageUrl),
@@ -611,10 +612,10 @@ fun BubbleAiMessageComposable(
                     val bubbleShape =
                         if (bubbleRoundedCornersEnabled) {
                             RoundedCornerShape(
-                                topStart = if (slice?.first != false) 4.dp else 0.dp,
-                                topEnd = if (slice?.first != false) 20.dp else 0.dp,
-                                bottomEnd = if (slice?.last != false) 20.dp else 0.dp,
-                                bottomStart = if (slice?.last != false) 20.dp else 0.dp,
+                                topStart = if (slice?.shellFirst != false) 4.dp else 0.dp,
+                                topEnd = if (slice?.shellFirst != false) 20.dp else 0.dp,
+                                bottomEnd = if (slice?.shellLast != false) 20.dp else 0.dp,
+                                bottomStart = if (slice?.shellLast != false) 20.dp else 0.dp,
                             )
                         } else {
                             RoundedCornerShape(0.dp)
@@ -643,9 +644,9 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.first != false) 12.dp else 0.dp,
+                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
-                                            bottom = if (slice?.last != false) 12.dp else 0.dp,
+                                            bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
                                     state = rendererState,
                                     fillMaxWidth = shouldUseExpandedBubbleLayout,
@@ -666,9 +667,9 @@ fun BubbleAiMessageComposable(
                                     modifier =
                                         Modifier.padding(
                                             start = bubbleContentPaddingLeft.dp,
-                                            top = if (slice?.first != false) 12.dp else 0.dp,
+                                            top = if (slice?.shellFirst != false) { if (waifuLayout?.joinedToPrevious == true) 4.dp else 12.dp } else 0.dp,
                                             end = bubbleContentPaddingRight.dp,
-                                            bottom = if (slice?.last != false) 12.dp else 0.dp,
+                                            bottom = if (slice?.shellLast != false) 12.dp else 0.dp,
                                     ),
                                     state = rendererState,
                                     fillMaxWidth = shouldUseExpandedBubbleLayout,

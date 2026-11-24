@@ -87,6 +87,7 @@ internal data class ReviewContent(
     val beforeKind: SnapshotKind,
     val afterKind: SnapshotKind,
     val detail: String? = null,
+    val snapshotsCleared: Boolean = false,
 ) {
     val isText: Boolean get() = beforeKind in textKinds && afterKind in textKinds
     private val textKinds get() = setOf(SnapshotKind.TEXT, SnapshotKind.ABSENT)

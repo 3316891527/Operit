@@ -22,6 +22,7 @@ import kotlinx.serialization.json.Json
 internal class WorkspaceChangeStore(context: Context) {
     private val root = File(context.filesDir, "workspace_changes/v1")
     private val objects = File(root, "objects")
+    private val snapshotReader = WorkspaceSnapshotReader(objects)
     private val operations = File(root, "operations")
     private val observations = File(root, "observations")
     private val terminalObservations = File(root, "terminal-observations")
@@ -168,21 +169,12 @@ internal class WorkspaceChangeStore(context: Context) {
         return content(records.first().before, records.last().after)
     }
 
-    private fun content(before: ChangeSnapshot, after: ChangeSnapshot): ReviewContent = ReviewContent(
-        before = text(before), after = text(after), beforeKind = before.kind, afterKind = after.kind,
-        detail = listOfNotNull(before.detail, after.detail).distinct().joinToString("\n").takeIf { it.isNotEmpty() },
-    )
-
-    private fun text(snapshot: ChangeSnapshot): String? = when (snapshot.kind) {
-        SnapshotKind.ABSENT -> ""
-        SnapshotKind.TEXT -> File(objects, checkNotNull(snapshot.blob)).readText(Charsets.UTF_8)
-        else -> null
-    }
+    private fun content(before: ChangeSnapshot, after: ChangeSnapshot): ReviewContent = snapshotReader.content(before, after)
 
     @Synchronized
     fun reviewFiles(
         records: List<FileChangeRecord>, directory: ChangeLocation? = null, aggregate: Boolean = false,
-    ): List<ReviewFile> = records.groupBy { it.location.historyLocation().key }.map { (key, unsorted) ->
+    ): List<ReviewFile> = snapshotReader.readableRecords(records).groupBy { it.location.historyLocation().key }.map { (key, unsorted) ->
             val history = unsorted.sortedWith(compareBy<FileChangeRecord> { it.timestamp }.thenBy { it.id })
             val latest = history.last()
             val first = if (aggregate) history.first() else latest
