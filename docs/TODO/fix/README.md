@@ -8,6 +8,8 @@
 
 ## 计划索引
 
+- [工作区文件列表的大文件大小显示](workspace-file-size-units/index.md)
+
 - [总结完成后的自动续聊交接](summary-auto-continuation/index.md)
 
 - [Waifu 连续过程分段与无气泡展示](waifu-continuous-process/index.md)
