@@ -796,11 +796,9 @@ object ToolExecutionManager {
 
                 toolHandler.notifyToolExecutionStarted(invocation.tool)
 
-                val monitor = com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceFileMonitor.get(toolHandler.applicationContext)
-                val fileSource = monitor.beginTool(runtimeContext.workspaceChatId, displayToolName)
-                val finalResult = try {
-                    aggregateToolResults(displayToolName, executeToolSafely(invocation, executor, toolHandler))
-                } finally { monitor.endTool(fileSource) }
+                // 目录浏览和只读工具必须直接执行，文件观察由事件驱动，不能在工具边界等待全盘检查。
+                // 写入快照仍由 WorkspaceChangeRecorder 和终端日志各自保存。
+                val finalResult = aggregateToolResults(displayToolName, executeToolSafely(invocation, executor, toolHandler))
                 toolHandler.notifyToolExecutionResult(invocation.tool, finalResult)
                 return@withContext finalResult
             } finally {

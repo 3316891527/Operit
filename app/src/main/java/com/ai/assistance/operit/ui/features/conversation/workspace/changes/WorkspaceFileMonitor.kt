@@ -31,11 +31,9 @@ internal class WorkspaceFileMonitor internal constructor(
         var observer: DepthLimitedFileObserver? = null
         @Volatile var restartObserver = false
     }
-    internal data class ToolScope(val id: String, val chatId: String?, val name: String, val command: Boolean)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val states = linkedMapOf<String, State>()
     private val owners = linkedMapOf<String, String>()
-    private val sources = linkedMapOf<String, ToolScope>()
     private val changes = Channel<Unit>(Channel.CONFLATED)
     private val store = WorkspaceChangeStore.get(context)
     private val historyRoot = File(context.filesDir, "workspace_changes").canonicalPath
@@ -48,7 +46,7 @@ internal class WorkspaceFileMonitor internal constructor(
                 delay(150)
                 WorkspaceChangeStore.operationMutex.withLock {
                     states.values.toList().filter { it.index.hasPending() }
-                        .forEach { inspect(it, source(it)) }
+                        .forEach { inspect(it, source()) }
                 }
             }
         }
@@ -60,7 +58,7 @@ internal class WorkspaceFileMonitor internal constructor(
                     states.values.toList().filter {
                         it.local == null || !it.initialized || it.observer == null ||
                             System.currentTimeMillis() - it.lastScan >= 10_000
-                    }.forEach { inspect(it, source(it)) }
+                    }.forEach { inspect(it, source()) }
                 }
             }
         }
@@ -91,26 +89,6 @@ internal class WorkspaceFileMonitor internal constructor(
 
     suspend fun clearOwner(ownerId: String) = withContext(NonCancellable) { updateOwner(ownerId, null, null, null) }
 
-    suspend fun beginTool(chatId: String?, name: String, command: Boolean = false): ToolScope = withContext(Dispatchers.IO) {
-        WorkspaceChangeStore.operationMutex.withLock {
-            states.values.filter { chatId == null || it.binding.chatId == chatId }
-                .forEach { inspect(it, source(it)) }
-            ToolScope(UUID.randomUUID().toString(), chatId, name, command).also { synchronized(sources) { sources[it.id] = it } }
-        }
-    }
-
-    suspend fun endTool(tool: ToolScope) = withContext(NonCancellable + Dispatchers.IO) {
-        WorkspaceChangeStore.operationMutex.withLock {
-            try {
-                states.values.filter { tool.chatId == null || it.binding.chatId == tool.chatId }
-                    .forEach { inspect(it, source(it)) }
-            } finally {
-                synchronized(sources) { sources.remove(tool.id) }
-                releaseUnusedStates()
-            }
-        }
-    }
-
     /** 文件工具已经固化的同份快照同步进观察基线，避免随后通知重复记录。调用方持有操作锁。 */
     fun acknowledge(records: List<FileChangeRecord>) {
         for (state in states.values) {
@@ -124,11 +102,9 @@ internal class WorkspaceFileMonitor internal constructor(
     }
 
     private suspend fun releaseUnusedStates() {
-        val active = synchronized(sources) { sources.values.toList() }
-        val unused = states.values.filter { state -> state.key !in owners.values &&
-            active.none { it.chatId == null || it.chatId == state.binding.chatId } }
+        val unused = states.values.filter { it.key !in owners.values }
         for (state in unused) {
-            inspect(state, source(state))
+            inspect(state, source())
             state.observer?.stop()
             states.remove(state.key)
             store.releaseWorkspaceIndex(state.key)
@@ -136,16 +112,12 @@ internal class WorkspaceFileMonitor internal constructor(
         }
     }
 
-    private fun source(state: State): String {
-        val tools = synchronized(sources) {
-            val active = sources.values.filter { it.chatId == null || it.chatId == state.binding.chatId }
-            val commands = active.filter { it.command }
-            (if (commands.isEmpty()) active else commands).map { it.name }
-        }
+    private fun source(): String {
+        // 已保存的文件工具和终端操作保留精确来源；其余事件按真实文件系统变化记录。
         val manual = TerminalManager.getInstance(context).terminalState.value.sessions.any {
             !it.automation && it.currentExecutingCommand?.isExecuting == true
         }
-        return observedChangeSource(tools, manual)
+        return observedChangeSource(emptyList(), manual)
     }
 
     private fun ensureObserver(state: State) {
@@ -160,7 +132,7 @@ internal class WorkspaceFileMonitor internal constructor(
             shouldIgnore = { path, _ -> !observedWorkspacePath(path) || isHistoryStorage(File(root, path)) },
             onChange = { event ->
                 if (event.relativePath.isEmpty()) state.restartObserver = true
-                val origin = source(state)
+                val origin = source()
                 val owned = terminalOwns(File(root, event.relativePath))
                 try {
                     state.index.enqueue(event.relativePath, TerminalPendingChange(
@@ -300,7 +272,6 @@ internal class WorkspaceFileMonitor internal constructor(
             states.values.forEach { it.observer?.stop(); store.releaseWorkspaceIndex(it.key) }
             states.clear()
             owners.clear()
-            synchronized(sources) { sources.clear() }
             changes.close()
             scope.cancel()
             if (instance === this@WorkspaceFileMonitor) instance = null
