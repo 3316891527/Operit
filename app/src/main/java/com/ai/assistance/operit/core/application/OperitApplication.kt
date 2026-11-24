@@ -54,7 +54,7 @@ import com.ai.assistance.operit.util.files.OperitPaths
 import com.ai.assistance.operit.data.skill.SkillRepoZipPoolManager
 import com.ai.assistance.operit.data.serialization.SerializationSetup
 import com.ai.assistance.operit.util.text.TextSegmenter
-import com.ai.assistance.operit.util.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import com.ai.assistance.operit.core.tools.agent.ShowerController
 import com.ai.assistance.operit.ui.common.displays.VirtualDisplayOverlay
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader

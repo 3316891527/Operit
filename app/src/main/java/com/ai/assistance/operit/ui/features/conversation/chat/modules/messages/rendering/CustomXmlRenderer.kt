@@ -65,6 +65,9 @@ import com.ai.assistance.operit.util.logging.AppLogger
 import com.ai.assistance.operit.core.chat.context.ChatUtils
 import com.ai.assistance.operit.core.chat.protocol.ChatMarkupRegex
 import com.ai.assistance.operit.core.chat.protocol.ThinkingMarkup
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessContent
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuProcessToolRow
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.waifuThinkingPreview
 import com.ai.assistance.operit.util.stream.Stream
 import com.ai.assistance.operit.util.stream.stream
 import java.io.StringReader
@@ -80,7 +83,8 @@ class CustomXmlRenderer(
     private val initialThinkingExpanded: Boolean = false,
     private val allowExpandedThinkingFullHeight: Boolean = false,
     private val enableDialogs: Boolean = true,  // 新增参数：是否启用弹窗功能，默认启用
-    private val fallback: XmlContentRenderer = DefaultXmlRenderer()
+    private val fallback: XmlContentRenderer = DefaultXmlRenderer(),
+    private val waifuProcessMode: Boolean = false,
 ) : XmlContentRenderer {
     // 定义渲染器能够处理的内置标签集合
     private val builtInTags =
@@ -96,6 +100,7 @@ class CustomXmlRenderer(
     private data class ToolResultRenderState(
         val toolName: String,
         val isSuccess: Boolean,
+        val status: String,
         val resultContent: String,
     )
 
@@ -174,6 +179,15 @@ class CustomXmlRenderer(
             return
         }
         val resolvedTagName = tagName
+        if (waifuProcessMode && resolvedTagName in WaifuProcessContent.tags) {
+            // 连续过程的内置标签始终使用无外壳组件，插件不会替换该展示入口。
+            when (resolvedTagName) {
+                "think", "thinking" -> renderThinkContent(trimmedContent, modifier, textColor, xmlStream)
+                "tool" -> renderToolRequest(trimmedContent, modifier, textColor, xmlStream)
+                "tool_result" -> renderToolResult(trimmedContent, modifier, textColor)
+            }
+            return
+        }
 
         // 优先分发到已注册的 XML 渲染插件（例如 deepsearch 的 <plan>）
         val pluginHandled =
@@ -316,7 +330,16 @@ class CustomXmlRenderer(
     @Composable
     private fun renderSearchContent(content: String, modifier: Modifier, textColor: Color) {
         val renderState = remember(content) { parseSearchRenderState(content) }
-
+        if (waifuProcessMode) {
+            WaifuProcessToolRow(
+                name = listOf("search", renderState.provider, renderState.action).filter { it.isNotBlank() }.joinToString(" · "),
+                status = renderState.status,
+                details = renderState.bodyText,
+                textColor = textColor,
+                modifier = modifier,
+            )
+            return
+        }
         if (renderState.isStructured) {
             if (renderState.sources.isNotEmpty() || renderState.queries.isNotEmpty()) {
                 StructuredSearchBody(renderState, textColor, modifier)
@@ -755,6 +778,11 @@ class CustomXmlRenderer(
             }
 
         var expanded by rememberMarkdownCardValue("think-expanded", initialThinkingExpanded)
+        val collapsedPreview = remember(content, waifuProcessMode, expanded) {
+            if (waifuProcessMode && !expanded) waifuThinkingPreview(content) else ""
+        }
+        val thinkingTitle = stringResource(R.string.thinking_process)
+        val thinkingHeader = if (collapsedPreview.isEmpty()) thinkingTitle else "$thinkingTitle · $collapsedPreview"
         var userExpansionOverride by rememberMarkdownCardValue<Boolean?>("think-user-override", null)
         var thinkBodyFullHeight by
             rememberMarkdownCardValue("think-full-height", allowExpandedThinkingFullHeight && initialThinkingExpanded)
@@ -881,7 +909,7 @@ class CustomXmlRenderer(
                     )
 
                 CanvasExpandableHeaderRow(
-                    title = stringResource(id = R.string.thinking_process),
+                    title = thinkingHeader,
                     semanticDescription =
                         if (expanded) stringResource(R.string.common_collapse) else stringResource(R.string.common_expand),
                     expanded = expanded,
@@ -1092,7 +1120,7 @@ class CustomXmlRenderer(
         textColor: Color,
         xmlStream: Stream<String>?
     ) {
-        val paramTokenEstimate = rememberToolParamTokenEstimate(content, xmlStream)
+        val paramTokenEstimate = if (waifuProcessMode) 0L else rememberToolParamTokenEstimate(content, xmlStream)
         // 已完成卡片在其他块更新时复用解析结果，避免反复扫描长参数或结果。
         val renderState =
             remember(content) {
@@ -1114,6 +1142,16 @@ class CustomXmlRenderer(
         // 独立渲染可能没有节点索引，此时不关联其他工具的耗时。
         val nodeIndex = LocalMarkdownCardNodeIndex.current
         val timing = if (nodeIndex != null) LocalToolTimingIndex.current.tool(nodeIndex) else null
+        if (waifuProcessMode) {
+            WaifuProcessToolRow(
+                name = renderState.rawToolName,
+                status = if (timing != null) toolTimingTitle(timing) else stringResource(R.string.tool_call_block),
+                details = renderState.paramText,
+                textColor = textColor,
+                modifier = modifier,
+            )
+            return
+        }
         Column(modifier = modifier.fillMaxWidth()) {
             if (!LocalInsideToolGroup.current && timing != null) {
                 Text(
@@ -1277,11 +1315,24 @@ class CustomXmlRenderer(
                 ToolResultRenderState(
                     toolName = toolName,
                     isSuccess = status.lowercase() == "success",
+                    status = status,
                     resultContent = resultContent,
                 )
             }
         val toolName = renderState.toolName.ifBlank { stringResource(R.string.unknown_tool) }
-
+        if (waifuProcessMode) {
+            val isClosed = remember(content) { ToolResultMarkup.isCompleteBlock(content) }
+            WaifuProcessToolRow(
+                name = toolName,
+                status = if (!isClosed) stringResource(R.string.tool_result_block)
+                    else if (renderState.isSuccess) stringResource(R.string.success) else renderState.status,
+                details = renderState.resultContent,
+                textColor = _textColor,
+                modifier = modifier,
+                isError = isClosed && !renderState.isSuccess,
+            )
+            return
+        }
         // 检查结果是否为 file-diff
         if ((toolName == "apply_file" || toolName == "create_file" || toolName == "edit_file") &&
             renderState.isSuccess &&

@@ -7,7 +7,7 @@ import com.ai.assistance.operit.api.speech.tts.prefetch.PrefetchingTtsService
 import com.ai.assistance.operit.api.speech.tts.prefetch.TtsSubmissionOrder
 import com.ai.assistance.operit.core.speech.text.TtsCleaner
 import com.ai.assistance.operit.data.preferences.SpeechServiceProfilesPreferences
-import com.ai.assistance.operit.util.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
 import com.ai.assistance.operit.util.logging.AppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

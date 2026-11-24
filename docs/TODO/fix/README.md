@@ -8,6 +8,7 @@
 
 ## 计划索引
 
+- [Waifu 连续过程分段与无气泡展示](waifu-continuous-process/index.md)
 - [不支持的思考档位保存导致崩溃](thinking-option-crash/index.md)
 - [快照导入后重绑主题脚本](snapshot-theme-script-paths/index.md)
 - [总结后子代理消息恢复导致长会话 OOM](subagent-summary-message-loop/index.md)
