@@ -120,9 +120,11 @@ class TerminalFileJournalAndroidTest {
                 }
             } else reopened.complete(Unit)
         })
+        val journal = TerminalFileJournal { monitor }
         try {
             monitor.updateOwner("owner", "chat", workspace.path, "android")
             withTimeout(5_000) { entered.await() }
+            val stale = checkNotNull(journal.begin(TerminalChangeOrigin("chat", "terminal", UUID.randomUUID().toString()), workspace.path, "android"))
             val clear = launch { monitor.clearOwner("owner") }
             withTimeout(5_000) { closing.await() }
             val rebind = launch { monitor.updateOwner("owner", "chat", workspace.path, "android") }
@@ -131,8 +133,11 @@ class TerminalFileJournalAndroidTest {
             release.complete(Unit)
             withTimeout(5_000) { clear.join(); rebind.join(); reopened.await() }
             withTimeout(5_000) { monitor.reconcile(WorkspaceRecordingScope("chat", workspace.path, "android")) }
+            val completedScans = scans
+            withTimeout(5_000) { journal.finish(stale).join() }
+            assertEquals(completedScans, scans)
             assertTrue(monitor.errors.value.isEmpty())
             assertTrue(monitor.hasBinding(WorkspaceRecordingScope("chat", workspace.path, "android")))
-        } finally { release.complete(Unit); monitor.close(); store.close(); directory.deleteRecursively() }
+        } finally { release.complete(Unit); journal.close(); monitor.close(); store.close(); directory.deleteRecursively() }
     }
 }

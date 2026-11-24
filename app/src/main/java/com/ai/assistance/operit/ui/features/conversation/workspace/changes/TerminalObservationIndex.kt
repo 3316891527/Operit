@@ -189,6 +189,8 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
 
         override fun put(path: String, file: TerminalObservedFile) {
             check(!ended)
+            // 复用快照和旧基线导入也必须登记引用，确保缓存行发布前完成内容同步。
+            file.snapshot.blob?.let { pinBlob(it) }
             buffer += path to file
             if (buffer.size >= PAGE_SIZE) flush()
         }

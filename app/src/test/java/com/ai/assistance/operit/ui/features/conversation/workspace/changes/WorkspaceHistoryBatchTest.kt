@@ -110,16 +110,66 @@ class WorkspaceHistoryBatchTest {
     @Test fun baselineCannotPublishBeforeContentSyncAndInitializationFlagSurvivesReopen() {
         val file = File(temporary.root, "baseline.sqlite")
         var reject = true
-        TerminalObservationIndex(JdbcTerminalIndexDatabase(file), beforeStageCommit = { if (reject) error("content not durable") }).use { index ->
+        val hash = "a".repeat(64)
+        val synced = mutableListOf<Set<String>>()
+        TerminalObservationIndex(JdbcTerminalIndexDatabase(file), beforeStageCommit = {
+            synced += it
+            if (reject) error("content not durable")
+        }).use { index ->
             index.beginScan().use { scan ->
-                scan.put("a", TerminalObservedFile("stamp", ChangeSnapshot(SnapshotKind.TEXT, blob = "a".repeat(64))))
+                scan.put("a", TerminalObservedFile("stamp", ChangeSnapshot(SnapshotKind.TEXT, blob = hash)))
+                assertTrue(index.containsBlob(hash))
                 assertThrows(IllegalStateException::class.java) { scan.commit(completeInitialization = true) }
+                assertEquals(listOf(setOf(hash)), synced)
                 assertNull(index.file("a"))
+                assertFalse(index.initialized())
                 reject = false
                 scan.commit(completeInitialization = true)
+                assertEquals(listOf(setOf(hash), setOf(hash)), synced)
             }
         }
-        TerminalObservationIndex(JdbcTerminalIndexDatabase(file)).use { index -> assertTrue(index.initialized()); assertNotNull(index.file("a")) }
+        TerminalObservationIndex(JdbcTerminalIndexDatabase(file)).use { index ->
+            assertTrue(index.initialized())
+            assertEquals(hash, index.file("a")?.snapshot?.blob)
+        }
+    }
+
+    @Test fun bufferedRowsProtectTheirBlobsAcrossPageFlushesAndCancellation() {
+        val synced = mutableListOf<Set<String>>()
+        val hashes = (0..TerminalObservationIndex.PAGE_SIZE).map { (it + 1).toString(16).padStart(64, '0') }
+        TerminalObservationIndex(JdbcTerminalIndexDatabase(File(temporary.root, "pages.sqlite")), beforeStageCommit = { synced += it }).use { index ->
+            index.beginScan().use { scan ->
+                hashes.forEachIndexed { position, hash ->
+                    scan.put("file-$position", TerminalObservedFile("stamp", ChangeSnapshot(SnapshotKind.TEXT, blob = hash)))
+                    assertTrue(index.containsBlob(hash))
+                }
+                assertEquals(listOf(hashes.take(TerminalObservationIndex.PAGE_SIZE).toSet()), synced)
+                scan.flush()
+                scan.flush()
+                assertEquals(listOf(hashes.dropLast(1).toSet(), setOf(hashes.last())), synced)
+                assertEquals(0L, index.count())
+            }
+            hashes.forEach { assertFalse(index.containsBlob(it)) }
+            assertEquals(0L, index.count())
+        }
+    }
+
+    @Test fun emptyAndMetadataOnlyScansDoNotAcquireTheContentBarrier() {
+        var synchronizations = 0
+        val snapshot = ChangeSnapshot(SnapshotKind.TOO_LARGE, size = 20_000_000L)
+        TerminalObservationIndex(JdbcTerminalIndexDatabase(File(temporary.root, "metadata.sqlite")), beforeStageCommit = { synchronizations++ }).use { index ->
+            index.beginScan().use { scan ->
+                scan.flush()
+                scan.commit(completeInitialization = true)
+            }
+            index.beginScan(setOf("large")).use { scan ->
+                scan.put("large", TerminalObservedFile("stamp", snapshot))
+                scan.commit()
+            }
+            assertEquals(0, synchronizations)
+            assertTrue(index.initialized())
+            assertEquals(snapshot, index.file("large")?.snapshot)
+        }
     }
 
     @Test fun contentSyncCallbackDoesNotHoldTheBaselineLock() {
@@ -131,7 +181,7 @@ class WorkspaceHistoryBatchTest {
         })
         val scan = index.beginScan()
         try {
-            scan.pinBlob("a".repeat(64))
+            scan.put("a", TerminalObservedFile("stamp", ChangeSnapshot(SnapshotKind.TEXT, blob = "a".repeat(64))))
             val flushing = executor.submit { scan.flush() }
             assertTrue(entered.await(3, TimeUnit.SECONDS))
             assertTrue(executor.submit<Boolean> { index.containsBlob("a".repeat(64)) }.get(1, TimeUnit.SECONDS))

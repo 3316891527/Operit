@@ -40,13 +40,14 @@ import kotlinx.coroutines.flow.flowOf
 internal data class WaifuMessageLayout(val joinedToPrevious: Boolean)
 internal val LocalWaifuMessageLayout = staticCompositionLocalOf<WaifuMessageLayout?> { null }
 
-/** 两种聊天样式共用头像和角色标题，连续过程与紧接正文只占一列头像。 */
+/** 两种聊天样式共用头像和角色标题，过程只保留缩进，头像跟随首块回复正文。 */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun WaifuReplyAvatarRow(
     enabled: Boolean,
     message: ChatMessage,
     joinedToPrevious: Boolean = false,
+    processOnly: Boolean = false,
     onAvatarLongPress: ((String) -> Unit)?,
     content: @Composable () -> Unit,
 ) {
@@ -55,7 +56,7 @@ internal fun WaifuReplyAvatarRow(
         return
     }
     val slice = LocalChatMessageSlice.current
-    val showHeader = slice?.first != false && !joinedToPrevious
+    val showHeader = !processOnly && (slice?.waifuReplyStart ?: true)
     val theme = LocalThemePreferenceSnapshot.current
     val context = LocalContext.current
     val preferences = remember(context) { UserPreferencesManager.getInstance(context) }

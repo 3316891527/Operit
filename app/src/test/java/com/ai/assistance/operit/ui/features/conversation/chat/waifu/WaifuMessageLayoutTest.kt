@@ -12,11 +12,11 @@ class WaifuMessageLayoutTest {
     )
     private fun node(type: MarkdownProcessorType, content: String = "内容") = MarkdownNodeStable(type, content, emptyList())
 
-    @Test fun processAndFollowingReplyShareTheirHeader() {
+    @Test fun processAndFollowingReplyKeepTheirContinuousLayout() {
         assertTrue(waifuJoinsPrevious(reply("<think>原文</think>"), reply(), true, true))
     }
 
-    @Test fun consecutiveProcessRecordsShareTheirHeader() {
+    @Test fun consecutiveProcessRecordsKeepTheirContinuousLayout() {
         assertTrue(waifuJoinsPrevious(reply("<think>原文</think>"), reply("<tool name=\"read_file\"/>"), true, true))
     }
 
@@ -71,5 +71,21 @@ class WaifuMessageLayoutTest {
         val nodes = listOf(node(MarkdownProcessorType.PLAIN_TEXT, "前文"), node(MarkdownProcessorType.IMAGE, "![emotion](file:///表情.png)"),
             node(MarkdownProcessorType.CODE_BLOCK, "```a2ui\n{}\n```"), node(MarkdownProcessorType.PLAIN_TEXT, "后文"))
         assertEquals(listOf(false, true, true, false), nodes.map { isWaifuStandaloneNode(it) { false } })
+    }
+    @Test fun toolsThoughtsAndProtocolDoNotOwnTheReplyAvatar() {
+        for (tag in listOf("think", "thinking", "tool", "tool_result", "meta", "status")) {
+            assertFalse(isWaifuReplyNode(node(MarkdownProcessorType.XML_BLOCK, "<$tag>内容</$tag>")))
+        }
+        assertFalse(isWaifuReplyNode(node(MarkdownProcessorType.PLAIN_TEXT, "  ")))
+        assertFalse(isWaifuReplyNode(node(MarkdownProcessorType.PLAIN_TEXT, "<tool/>")))
+        assertTrue(isWaifuReplyNode(node(MarkdownProcessorType.PLAIN_TEXT, "做成卡片？")))
+    }
+    @Test fun codeExamplesAndStandaloneReplyContentCanOwnTheAvatar() {
+        for (type in listOf(MarkdownProcessorType.INLINE_CODE, MarkdownProcessorType.CODE_BLOCK,
+            MarkdownProcessorType.IMAGE, MarkdownProcessorType.TABLE)) {
+            assertTrue(isWaifuReplyNode(node(type, "<tool/>")))
+        }
+        assertTrue(isWaifuReplyNode(node(MarkdownProcessorType.PLAIN_TEXT, "<tool/>后面的正文")))
+        assertTrue(isWaifuReplyNode(node(MarkdownProcessorType.XML_BLOCK, "<a2ui/>")))
     }
 }
