@@ -1283,7 +1283,10 @@ private fun formatSize(size: Long): String {
     return when {
         size < 1024 -> "$size B"
         size < 1024 * 1024 -> "%.1f KB".format(size / 1024.0)
-        else -> "%.1f MB".format(size / (1024.0 * 1024.0))
+        // 按 1024 进位并沿用 KB、MB 等标签，大文件继续换算到 GB 和 TB。
+        size < 1024L * 1024 * 1024 -> "%.1f MB".format(size / (1024.0 * 1024.0))
+        size < 1024L * 1024 * 1024 * 1024 -> "%.1f GB".format(size / (1024.0 * 1024.0 * 1024.0))
+        else -> "%.1f TB".format(size / (1024.0 * 1024.0 * 1024.0 * 1024.0))
     }
 }
 
