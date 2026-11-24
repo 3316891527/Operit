@@ -10,18 +10,22 @@ internal data class ChangeLocation(val path: String, val environment: String, va
 }
 
 /** 对照本地终端的存储挂载识别同一文件，保留记录原本的读写路径。 */
-internal fun ChangeLocation.historyLocation(): ChangeLocation {
+internal fun ChangeLocation.historyLocation(): ChangeLocation = historyLocation(PRootMountMapping.currentEmulatedStoragePath())
+
+internal fun ChangeLocation.historyLocation(storage: String): ChangeLocation {
     if (backend != "android" && backend != "linux:local") return this
-    val storage = PRootMountMapping.currentEmulatedStoragePath()
     val aliases = if (backend == "android") listOf("/sdcard", storage, "/storage/self/primary") else listOf("/sdcard", storage)
     val root = aliases.firstOrNull { path == it || path.startsWith("$it/") } ?: return this
     return ChangeLocation("/sdcard" + path.removePrefix(root), "android", "android")
 }
 
 /** 作用域比较也使用挂载身份，工作区与终端可使用不同的共享存储路径。 */
-internal fun relativeChangePath(directory: ChangeLocation, file: ChangeLocation): String? {
-    val root = directory.historyLocation()
-    val target = file.historyLocation()
+internal fun relativeChangePath(directory: ChangeLocation, file: ChangeLocation): String? =
+    relativeChangePath(directory, file, PRootMountMapping.currentEmulatedStoragePath())
+
+internal fun relativeChangePath(directory: ChangeLocation, file: ChangeLocation, storage: String): String? {
+    val root = directory.historyLocation(storage)
+    val target = file.historyLocation(storage)
     if (root.backend == target.backend && changePathContains(root.path, target.path)) {
         return if (root.path == target.path) "" else target.path.removePrefix(root.path.trimEnd('/') + "/")
     }
@@ -70,6 +74,8 @@ internal data class ReviewFile(
     val binary: Boolean = false,
     val records: List<FileChangeRecord> = emptyList(),
     val aggregateRecords: Boolean = false,
+    val historyQuery: WorkspaceHistoryQuery? = null,
+    val historyCount: Int = 0,
     val statisticsAvailable: Boolean = true,
     val initialContent: ReviewContent? = null,
     val gitRoot: String? = null,

@@ -22,7 +22,7 @@ internal fun TerminalObservationReader.snapshot(path: String): ChangeSnapshot = 
     else ChangeSnapshot(SnapshotKind.ABSENT)
 
 /** 只保留固定数量的查询结果。扫描、旧基线和冷启动覆盖路径均保存在磁盘。 */
-internal class TerminalObservationIndex(private val database: TerminalIndexDatabase) : TerminalObservationReader, Closeable {
+internal class TerminalObservationIndex(private val database: TerminalIndexDatabase, private val beforeStageCommit: (Set<String>) -> Unit = {}) : TerminalObservationReader, Closeable {
     companion object {
         const val PAGE_SIZE = 128
         const val CACHE_SIZE = 256
@@ -34,6 +34,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
     }
     private var generation = 0L
     private val scans = mutableSetOf<Long>()
+    private val pendingPins = mutableMapOf<Long, MutableSet<String>>()
 
     init {
         database.transaction {
@@ -75,7 +76,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
 
     /** 通知合并和待处理清单落盘，文件事件风暴也不持有无界路径映射。 */
     @Synchronized
-    fun enqueue(path: String, change: TerminalPendingChange, onlyWhenUnowned: Boolean = false, older: Boolean = false) {
+    fun enqueue(path: String, change: TerminalPendingChange, onlyWhenUnowned: Boolean = false, older: Boolean = false, mergeCreated: Boolean = false) {
         val previous = database.query("SELECT chat,tool,execution,subagent,created FROM events WHERE path=?", listOf(path)).use { if (it.next()) pendingRow(it, 0) else null }
         if (onlyWhenUnowned && previous?.origin != null) return
         val origin = when {
@@ -83,7 +84,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
             change.origin == null -> previous.origin
             else -> previous.origin.merge(change.origin)
         }
-        val merged = TerminalPendingChange(origin, if (older) change.createdInPlace else previous?.createdInPlace ?: change.createdInPlace)
+        val merged = TerminalPendingChange(origin, if (mergeCreated) change.createdInPlace || previous?.createdInPlace == true else if (older) change.createdInPlace else previous?.createdInPlace ?: change.createdInPlace)
         if (previous == merged) return
         database.execute("INSERT OR REPLACE INTO events(path,chat,tool,execution,subagent,created) VALUES(?,?,?,?,?,?)",
             listOf(path, origin?.chatId, origin?.toolName, origin?.executionId, origin?.subagentExecutionId, if (merged.createdInPlace) 1 else 0))
@@ -136,12 +137,15 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
     fun cachedEntries(): Int = cache.size
 
     @Synchronized
-    fun containsBlob(hash: String): Boolean = database.query(
+    fun containsBlob(hash: String): Boolean = pendingPins.values.any { hash in it } || database.query(
         "SELECT 1 FROM files WHERE blob=? UNION ALL SELECT 1 FROM preparing WHERE blob=? LIMIT 1", listOf(hash, hash),
     ).use { it.next() }
 
     @Synchronized
     fun legacyImported(): Boolean = database.query("SELECT 1 FROM metadata WHERE name='legacy-imported'").use { it.next() }
+
+    @Synchronized
+    fun initialized(): Boolean = database.query("SELECT 1 FROM metadata WHERE name='initialized'").use { it.next() }
 
     @Synchronized
     fun markLegacyImported() = database.execute("INSERT OR REPLACE INTO metadata(name,value) VALUES('legacy-imported','1')")
@@ -177,15 +181,23 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
             if (buffer.size >= PAGE_SIZE) flush()
         }
 
-        fun flush() = synchronized(this@TerminalObservationIndex) {
-            if (buffer.isEmpty()) return@synchronized
-            database.transaction {
-                for ((path, file) in buffer) database.execute(
-                    "INSERT OR REPLACE INTO files(generation,path,stamp,kind,size,blob,detail) VALUES(?,?,?,?,?,?,?)",
-                    listOf(id, path, file.stamp, file.snapshot.kind.name, file.snapshot.size, file.snapshot.blob, file.snapshot.detail),
-                )
+        fun flush() {
+            // 内容锁必须在基线锁外取得，清理路径按同一顺序核对引用。
+            val captured = synchronized(this@TerminalObservationIndex) { pendingPins[id]?.toSet().orEmpty() }
+            beforeStageCommit(captured)
+            synchronized(this@TerminalObservationIndex) {
+                val pins = pendingPins[id].orEmpty()
+                if (buffer.isEmpty() && pins.isEmpty()) return
+                database.transaction {
+                    for (hash in pins) database.execute("INSERT OR IGNORE INTO preparing(generation,blob) VALUES(?,?)", listOf(id, hash))
+                    for ((path, file) in buffer) database.execute(
+                        "INSERT OR REPLACE INTO files(generation,path,stamp,kind,size,blob,detail) VALUES(?,?,?,?,?,?,?)",
+                        listOf(id, path, file.stamp, file.snapshot.kind.name, file.snapshot.size, file.snapshot.blob, file.snapshot.detail),
+                    )
+                }
+                buffer.clear()
+                pendingPins.remove(id)
             }
-            buffer.clear()
         }
 
         override fun unreadable(path: String) = synchronized(this@TerminalObservationIndex) {
@@ -202,9 +214,13 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
         }
 
         /** 内容落盘到基线行之前，用磁盘租约保护在途 blob，避免常驻哈希集合。 */
-        fun pinBlob(hash: String) = synchronized(this@TerminalObservationIndex) {
-            check(!ended)
-            database.execute("INSERT OR IGNORE INTO preparing(generation,blob) VALUES(?,?)", listOf(id, hash))
+        fun pinBlob(hash: String) {
+            val full = synchronized(this@TerminalObservationIndex) { (pendingPins[id]?.size ?: 0) >= PAGE_SIZE }
+            if (full) flush()
+            synchronized(this@TerminalObservationIndex) {
+                check(!ended)
+                pendingPins.getOrPut(id) { linkedSetOf() }.add(hash)
+            }
         }
 
         /** 每页最多固定数量的差异；查询游标关闭后再交给日志层保存，避免锁顺序反转。 */
@@ -253,7 +269,10 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
                         }
                     }
                     if (touch) for (path in paths) database.execute("INSERT OR IGNORE INTO touched(path) VALUES(?)", listOf(path))
-                    if (completeInitialization) database.execute("DELETE FROM touched")
+                    if (completeInitialization) {
+                        database.execute("DELETE FROM touched")
+                        database.execute("INSERT OR REPLACE INTO metadata(name,value) VALUES('initialized','1')")
+                    }
                     if (imported) markLegacyImported()
                     removeStage()
                 }
@@ -272,6 +291,7 @@ internal class TerminalObservationIndex(private val database: TerminalIndexDatab
         }
 
         private fun removeStage() {
+            pendingPins.remove(id)
             database.execute("DELETE FROM files WHERE generation=?", listOf(id))
             database.execute("DELETE FROM unreadable WHERE generation=?", listOf(id))
             database.execute("DELETE FROM preparing WHERE generation=?", listOf(id))

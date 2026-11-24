@@ -17,6 +17,7 @@ internal class AndroidTerminalIndexDatabase(file: File, durable: Boolean = false
         try {
             database.enableWriteAheadLogging()
             database.execSQL("PRAGMA cache_size=-2048")
+            database.execSQL("PRAGMA temp_store=FILE")
             database.execSQL(if (durable) "PRAGMA synchronous=FULL" else "PRAGMA synchronous=NORMAL")
             database.rawQuery("PRAGMA wal_autocheckpoint=256", null).use { it.moveToFirst() }
             database.setMaxSqlCacheSize(16)

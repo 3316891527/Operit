@@ -1,0 +1,235 @@
+{
+  "base": "86bcec630d2bec4ddfc8d27d513c3cc6a1888eb7",
+  "regression": {
+    "tests": 157,
+    "failures": 0,
+    "suites": [
+      "TerminalObservedFilesTest",
+      "TerminalObservationIndexTest",
+      "TerminalChangeOriginTest",
+      "LegacyTerminalBaselineTest",
+      "TerminalPendingEventsTest",
+      "SnapshotPackStoreTest",
+      "WorkspaceSnapshotReaderTest",
+      "WorkspaceDiffPolicyTest",
+      "WorkspaceReviewStateTest",
+      "WorkspaceDiffTest",
+      "WorkspaceHistoryIndexTest",
+      "WorkspaceHistoryBatchTest",
+      "WorkspaceHistoryStoreTest",
+      "WorkspaceFileObservationTest",
+      "WorkspaceIndexedScanTest"
+    ],
+    "scope": "真实分卷、SQLite、增量历史、流式迁移、取消和故障恢复、租约、工作区扫描；挂载路径为平台替身，未操作真实历史",
+    "compiler": "Kotlin 2.0.21",
+    "java": "OpenJDK 17 ARM64",
+    "sqlite": "sqlite-jdbc 3.46.1.3",
+    "serialization": "kotlinx.serialization 1.6.2",
+    "sourceHashesMatch": false,
+    "sources": [
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceIndexDatabase.kt",
+        "sha256": "4b5cdf8ab0cc17fb9f8ab1c3981fd99e6b2802438ec5dc07490bd276305ed63e"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalObservedFiles.kt",
+        "sha256": "e0d0bb3fc87bde0a0080ee684028f22e5bde5bca27827feef85ca47678ca87fa"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalObservationIndex.kt",
+        "sha256": "f871e298019f4e021ba500b334adfb0633d7302fe9101f7fd3298b0fbd8c4595"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/LegacyTerminalBaseline.kt",
+        "sha256": "2eb38bb8e9bdbd2de1b806a011b207702be0c5501c25f4397393606d57db7015"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceChangeModels.kt",
+        "sha256": "452d34b9c861ae264854750b17ba521fbeb3060b0aacf090f0ada155aad432a3"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalChangeOrigin.kt",
+        "sha256": "0c816694298813ccc71e4518c32134c698a9c4a99a655d5972c3e6d418c456e4"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/SnapshotPackIndex.kt",
+        "sha256": "54284481a9aa0f41dd5881aacc97134e6856a3239ae34099cdbc18f79ecf8e01"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/SnapshotPackStore.kt",
+        "sha256": "a6486bde50fb5a0a7802517a49257f27074d27501fecce2e8b06b5359ff5b454"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceSnapshotReader.kt",
+        "sha256": "3341f55ca23fe5690913640e0b304fcb2e7db7b9c781dd7e5a53435acf126bad"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceDiffPolicy.kt",
+        "sha256": "5df4317728a2fa36fa65056a7dfc3bce230b3ab88e189ddf7f58048febe140a1"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryIndex.kt",
+        "sha256": "df3b25f59118d8ebedacc71be0b0d36570afcc177a5a09c631b96961b1b58fdd"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceInventoryReader.kt",
+        "sha256": "a1c25eaf80b0089309a50e200223fcfed7a20c1bedd8f8ae82b2ad4c35a6b6f8"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceFileObservation.kt",
+        "sha256": "3fb71112689503fba1e75a54b615c72e9d0cd51a3a7c20376faeb6cc046ec482"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceLocalObservation.kt",
+        "sha256": "49772b666548d163a93cce3b9fd5b2bed72063a85a35412a7e882b6777ff1266"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceChangeStore.kt",
+        "sha256": "d119f35ad9d4606bf059e92e43e46a938fa30c5ea5a5d28db4506f27d4278e1f"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/AndroidTerminalIndexDatabase.kt",
+        "sha256": "4327048145d0bf73f46e5c7ca2cc58893b36ac69bdc9999bb4203a5b0282e224"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceDiff.kt",
+        "sha256": "5d0fa80c8252753091f848031bdcd1426d353e54744c8db2ba616e69584db4fa"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceReviewState.kt",
+        "sha256": "596ac215fc47420f283a45f5b7a9cb21dff42ff43b826813a8bc554e8b4ff23e"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalObservedFilesTest.kt",
+        "sha256": "c57653eab438e7cea1de41cdc4ca9ab736aa82797c073878abbfb522f6037a62"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalObservationIndexTest.kt",
+        "sha256": "d003c354987ca9ae578571d047b3b6db254b633a11a61d3cec0dcd7064c6ee42"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalChangeOriginTest.kt",
+        "sha256": "5573d58ce512151b04e5a72e86997fae3df6754c59af7f8debb81e5f1c258c61"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/LegacyTerminalBaselineTest.kt",
+        "sha256": "ed73341d8f08484e2997990c20806ac5941a9336a6bdc733ccb54e3cac8cdceb"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalPendingEventsTest.kt",
+        "sha256": "087d9036b3beefcda1bf71aa00ea4967dcb151a5c485cfa1ed2f3e4605335cc1"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/SnapshotPackStoreTest.kt",
+        "sha256": "d26700e3e1df34dd8a221c55fd6544f7df53ffa6547bdb0a00acef968177818a"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceSnapshotReaderTest.kt",
+        "sha256": "6f5bb1dd1a3046b0aa8672d261fe8cf8ff42ef078d7f4c2d23328940f7506b11"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceDiffPolicyTest.kt",
+        "sha256": "a9a69b06b39ec667d9ccecd61216bea35d63be5684ef0444bb1fc81cae39335e"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/MemoryTerminalObservation.kt",
+        "sha256": "dcb742127acfa41058c0d65b79b88e80ecb289ae6ba407ee7a95393585daec5e"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceReviewStateTest.kt",
+        "sha256": "2b5f337ece2328a01064cf6dda3565c16fe67646ebf1389203b187f64554d10f"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceDiffTest.kt",
+        "sha256": "86200842210a71b46457ac3a67ee5a313a3681cd00550b398fb364754872683a"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryIndexTest.kt",
+        "sha256": "db25e6976d22197cce184e737ef653ae5a60da56e7e6072abbc540b4218beb26"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryBatchTest.kt",
+        "sha256": "93ecd274d6003e663330510e45308805b504d0b01abc9ebd4a62c5f7ce1f57a6"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryStoreTest.kt",
+        "sha256": "e4546efce592f595b65d75678816b6a8a567a621ff3175fb936aaf0e40574820"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceFileObservationTest.kt",
+        "sha256": "59deadfffee6e04b0ac7a924fe6a64a4cdc1a19e3af8628eb67f42ea93707551"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceIndexedScanTest.kt",
+        "sha256": "71a79ab3d5269c84983ed1862fa14e3746f34b79a5801487e61a8725af1ae237"
+      }
+    ],
+    "validationBridges": [
+      {
+        "name": "SnapshotText.kt",
+        "sha256": "38e33bb8ee52bebbe9395647475e1b9496972932eb5cd48abe2c5e6a74b1a477"
+      },
+      {
+        "name": "MountStub.kt",
+        "sha256": "e0d7c199a825c474f6c47e0f86692de8c539e8c7c5fc2941dad9871692f36f63"
+      },
+      {
+        "name": "IntegrationLogStub.kt",
+        "sha256": "5415d8c6368c022af2229ddc5c1c62734d45bf9374c6b37aeb4f7e9865667987"
+      },
+      {
+        "name": "IntegrationAtomicFileStub.kt",
+        "sha256": "99893f9725b617957ce1c94b54b546721b8e1ee29fd11e0a26f556a283971d25"
+      },
+      {
+        "name": "HostReviewFunctions.kt",
+        "sha256": "9554dc96eaa1e7303dc0c6384e1716f197bb0132a0ea6c445c65f560953b1099"
+      }
+    ],
+    "sourceChangesAfterRun": [
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryIndex.kt",
+        "verifiedSha256": "df3b25f59118d8ebedacc71be0b0d36570afcc177a5a09c631b96961b1b58fdd",
+        "currentSha256": "116311fd0b1924e6aef94ea00e2f6529b684a5176fa489876cf1872984ac5c70"
+      },
+      {
+        "path": "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceChangeStore.kt",
+        "verifiedSha256": "d119f35ad9d4606bf059e92e43e46a938fa30c5ea5a5d28db4506f27d4278e1f",
+        "currentSha256": "e66ad559a2ae56b30c13a8d6fc17a7171999096bce814de2e6c85dec3c243808"
+      },
+      {
+        "path": "app/src/test/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryIndexTest.kt",
+        "verifiedSha256": "db25e6976d22197cce184e737ef653ae5a60da56e7e6072abbc540b4218beb26",
+        "currentSha256": "51970ec0969e5e5439c15dbb5d41c76608a0940b945afea267cca0d1d5e60539"
+      }
+    ],
+    "resultAppliesTo": "最终轻量审阅前的编译输入；源码哈希仍保留，不将收尾后文件标为已执行"
+  },
+  "integration": {
+    "productionFileCount": 22,
+    "passedBeforeFinalEdits": true,
+    "compilerLogLastModified": "2026-11-24T09:16:26.080Z",
+    "modifiedAfterIntegration": [
+      "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/TerminalObservationIndex.kt",
+      "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceChangeModels.kt",
+      "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceHistoryIndex.kt",
+      "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/changes/WorkspaceChangeStore.kt",
+      "app/src/main/java/com/ai/assistance/operit/ui/features/conversation/workspace/git/WorkspaceGitCommand.kt"
+    ],
+    "usesPublicAndroidSystemSdk": true,
+    "scope": "Store、Journal、Monitor、Recorder、GitCommand 与存储 SQL；Android 服务、工具、日志、挂载及部分差异依赖使用类型脚手架",
+    "excludes": [
+      "WorkspaceChangesScreen.kt",
+      "WorkspaceChangeRecordActions.kt",
+      "完整 Android/Compose 构建",
+      "设备运行与视觉验证",
+      "WorkspaceHubScreen.kt"
+    ]
+  },
+  "finalVersionScaleRerun": false,
+  "pendingRemoteValidation": [
+    "新增 latestRecord 的索引查询、Store 转发、首页产出入口及聊天和等时间排序回归",
+    "界面重建时恢复最近文件状态的淘汰顺序",
+    "完整 Android/Compose 编译、全部标准 JVM 单测和仪器测试编译"
+  ]
+}

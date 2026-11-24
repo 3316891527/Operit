@@ -9,6 +9,9 @@ import com.ai.assistance.operit.terminal.utils.SSHFileConnectionManager
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceChangeAccess
 import com.ai.assistance.operit.ui.features.conversation.workspace.changes.SnapshotKind
 import java.util.UUID
+import com.ai.assistance.operit.ui.features.conversation.workspace.changes.WorkspaceInventoryReader
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 internal data class GitCommandOutput(val bytes: ByteArray, val exitCode: Int, val error: String)
 
@@ -39,14 +42,30 @@ internal class WorkspaceGitCommand(
         return framed(command)
     }
 
-    /** NUL 分隔保留空白和换行文件名；失败不返回部分目录清单。 */
-    suspend fun fileInventory(): Map<String, String> {
+    /** 清单在执行端固化，传输每页最多 64 KiB，避免整份字符串、字段数组和 Map 同时常驻。 */
+    suspend fun forEachInventoryFile(onFile: suspend (String, String) -> Unit) {
         val root = quoteGitArgument(directory)
-        val result = framed("""cd -- $root && find . -name .git -prune -o \( -type f -o -type l \) -printf '%P\0%y:%s:%T@\0'""")
-        check(result.exitCode == 0) { result.error }
-        val fields = result.bytes.toString(Charsets.UTF_8).split('\u0000').dropLast(1)
-        require(fields.size % 2 == 0) { "Invalid workspace inventory" }
-        return fields.chunked(2).associate { it[0] to it[1] }
+        val temporary = quoteGitArgument("/tmp/operit-workspace-inventory-" + UUID.randomUUID())
+        val inventory = "$temporary/.git/files"
+        try {
+            val generated = framed("umask 077; mkdir -p -- $temporary/.git && cd -- $root && find . -name .git -prune -o \\( -type f -o -type l \\) -printf '%P\\0%y:%s:%T@\\0' >$inventory")
+            check(generated.exitCode == 0) { generated.error }
+            val reader = WorkspaceInventoryReader()
+            var page = 0L
+            while (true) {
+                val result = framed("dd if=$inventory bs=65536 skip=$page count=1 status=none")
+                check(result.exitCode == 0) { result.error }
+                if (result.bytes.isEmpty()) break
+                reader.accept(result.bytes, onFile)
+                page++
+            }
+            reader.finish()
+        } finally {
+            withContext(NonCancellable) {
+                val removed = framed("rm -rf -- $temporary")
+                check(removed.exitCode == 0) { removed.error }
+            }
+        }
     }
 
     /** 原始字节最多读取上限加一，远端链接也只记录目标文本。 */

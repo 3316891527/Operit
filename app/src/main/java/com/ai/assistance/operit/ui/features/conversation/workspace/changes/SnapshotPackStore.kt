@@ -49,6 +49,8 @@ internal class SnapshotPackStore(
     private var writer: Writer? = null
     private var recovered = false
     private var closed = false
+    private val pending = linkedMapOf<String, SnapshotPackEntry>()
+    private var pendingBytes = 0
 
     private fun index(): SnapshotPackIndex {
         check(!closed) { "Snapshot store is closed" }
@@ -99,7 +101,7 @@ internal class SnapshotPackStore(
     fun contains(hash: String): Boolean {
         require(HASH.matches(hash))
         recover()
-        val entry = index().entry(hash)
+        val entry = pending[hash] ?: index().entry(hash)
         return if (entry != null) entry.live && !Files.notExists(File(objects, entry.volume).toPath())
         else !Files.notExists(File(objects, hash).toPath())
     }
@@ -108,7 +110,7 @@ internal class SnapshotPackStore(
     fun read(hash: String): ByteArray? {
         require(HASH.matches(hash))
         recover()
-        val entry = index().entry(hash)
+        val entry = pending[hash] ?: index().entry(hash)
         if (entry != null) return if (entry.live) readEntry(entry) else null
         // 这是尚未迁移的 v1 对象，已索引、清理或损坏的 v2 内容不再从旧副本读取。
         return readLegacy(hash)
@@ -153,40 +155,88 @@ internal class SnapshotPackStore(
     }
 
     @Synchronized
-    fun put(bytes: ByteArray): String {
+    fun put(bytes: ByteArray, batched: Boolean = false): String {
         require(bytes.size <= MAX_OBJECT_BYTES) { "Snapshot exceeds the object limit" }
         recover()
         val hash = hash(bytes)
-        val existing = index().entry(hash)
-        if (existing?.live == true && !Files.notExists(File(objects, existing.volume).toPath())) return hash
-        append(hash, bytes)
+        val existing = pending[hash] ?: index().entry(hash)
+        if (existing?.live == true && !Files.notExists(File(objects, existing.volume).toPath())) {
+            if (!batched && pending.isNotEmpty()) flush()
+            return hash
+        }
+        append(hash, bytes, batched)
         return hash
     }
 
-    private fun append(hash: String, bytes: ByteArray) {
-        val index = index()
+    private fun append(hash: String, bytes: ByteArray, batched: Boolean = false) {
         try {
-            val writer = writable(RECORD_HEADER + bytes.size)
+            val size = RECORD_HEADER + bytes.size
+            // 批次只持有位置，不保留内容数组；跨卷前先固化旧卷的提交边界。
+            if (pending.isNotEmpty() && (pendingBytes + size > TARGET_BYTES || checkNotNull(writer).committed + size > TARGET_BYTES)) flush()
+            val writer = writable(size)
             val offset = writer.committed
             writer.stream.seek(offset)
             writeRecord(writer.stream, hash, bytes)
-            writer.stream.fd.sync()
-            // 新卷的头部与首条内容一起同步，再持久化目录项并用同一事务发布卷和对象。
-            if (!writer.registered) syncDirectory(objects)
-            // 外部清理可能在打开句柄之后发生；不能把已取消链接的卷发布为可读对象。
-            if (Files.notExists(writer.file.toPath())) throw FileNotFoundException("Snapshot volume was cleared during append")
-            val end = writer.stream.filePointer
-            val sealed = end >= TARGET_BYTES
-            index.commit(SnapshotPackEntry(hash, writer.name, offset, bytes.size, true), end, sealed, createVolume = !writer.registered)
-            writer.registered = true
-            writer.committed = end
+            writer.committed = writer.stream.filePointer
+            pending[hash] = SnapshotPackEntry(hash, writer.name, offset, bytes.size, true)
+            pendingBytes += size
+            if (!batched || pending.size >= 128 || pendingBytes >= TARGET_BYTES) flush()
+        } catch (error: Exception) { abortPending(); throw error }
+    }
+
+    @Synchronized
+    fun flush() { if (pending.isNotEmpty()) commit {} }
+
+    /** 内容与目录先同步，再在同一连接的一笔事务中发布位置和操作记录。 */
+    @Synchronized
+    fun <T> commit(publish: (TerminalIndexDatabase) -> T): T {
+        recover()
+        try {
+            val current = writer
+            if (pending.isNotEmpty()) {
+                checkNotNull(current).stream.fd.sync()
+                if (!current.registered) syncDirectory(objects)
+                if (Files.notExists(current.file.toPath())) throw FileNotFoundException("Snapshot volume was cleared during append")
+            }
+            val sealed = current != null && current.committed >= TARGET_BYTES
+            val result = index().commitBatch(pending.values.toList(), current?.committed ?: 0L, sealed, current?.registered == false) {
+                publish(checkNotNull(database))
+            }
+            if (pending.isNotEmpty()) current?.registered = true
+            pending.clear()
+            pendingBytes = 0
             if (sealed) closeWriter()
-        } catch (error: Exception) {
-            closeWriter()
-            recovered = false
-            // 提交结果不明确时只关闭句柄，由下次恢复依据持久索引决定尾部边界。
-            throw error
+            return result
+        } catch (error: Exception) { abortPending(); throw error }
+    }
+
+    /** 共用连接的所有访问均在分卷锁内，后台迁移不能交错其他线程的事务。 */
+    @Synchronized
+    fun <T> withDatabase(read: (TerminalIndexDatabase) -> T): T {
+        recover()
+        return read(checkNotNull(database))
+    }
+
+    @Synchronized
+    fun refreshAvailability() {
+        recover()
+        var after = ""
+        while (true) {
+            val page = index().volumes(after)
+            if (page.isEmpty()) break
+            for (volume in page) if (Files.notExists(File(objects, volume.name).toPath())) {
+                if (writer?.name == volume.name) { abortPending(); recover(); return }
+                index().missingVolume(volume.name)
+            }
+            after = page.last().name
         }
+    }
+
+    private fun abortPending() {
+        pending.clear()
+        pendingBytes = 0
+        closeWriter()
+        recovered = false
     }
 
     private fun writable(recordSize: Int): Writer {
@@ -241,7 +291,7 @@ internal class SnapshotPackStore(
 
     /** 每次只读一个旧对象；提交和核对完成后才移除原文件，取消不会发布半条记录。 */
     fun migrateLegacy(checkCancelled: () -> Unit = {}, onBatch: () -> Unit = {}) {
-        synchronized(this) { recover() }
+        synchronized(this) { recover(); flush() }
         if (Files.notExists(objects.toPath())) return
         var batch = 0
         Files.newDirectoryStream(objects.toPath()).use { paths ->
@@ -274,7 +324,7 @@ internal class SnapshotPackStore(
     fun remove(hashes: Set<String>) {
         if (hashes.isEmpty()) return
         require(hashes.all(HASH::matches))
-        recover()
+        flush()
         for (hash in hashes) Files.deleteIfExists(File(objects, hash).toPath())
         index().remove(hashes)
         writer?.let { index().seal(it.name); closeWriter() }
@@ -283,7 +333,7 @@ internal class SnapshotPackStore(
     /** 一轮最多处理指定字节数，逐对象复制，内存不随历史对象总数增长。 */
     @Synchronized
     fun compact(byteBudget: Long = 4L * TARGET_BYTES, checkCancelled: () -> Unit = {}): Long {
-        recover()
+        flush()
         val index = index()
         var consumed = 0L
         var after = ""
@@ -348,6 +398,7 @@ internal class SnapshotPackStore(
     @Synchronized
     override fun close() {
         if (closed) return
+        if (pending.isNotEmpty()) flush()
         closeWriter()
         database?.close()
         closed = true

@@ -160,3 +160,4 @@
 - [子代理最终报告补写与产出保留](subagent-final-report-recovery/index.md)
 
 - [终端观察基线内存优化](terminal-baseline-memory/index.md)
+- [大任务操作历史的增量存储与有界提交](workspace-history-memory/index.md)
