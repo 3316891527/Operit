@@ -9588,4 +9588,7 @@
     <string name="voice_message_finishing">正在结束录音…</string>
     <string name="studio_background_blur_hint">只模糊当前背景，文字和控件保持清晰。</string>
     <string name="studio_background_blur_inherit_hint">添加独立背景填充或图层后可调整；跟随其他背景时沿用其模糊设置。</string>
+    <string name="workspace_history_previous_page">上一页</string>
+    <string name="workspace_history_next_page">下一页</string>
+    <string name="workspace_history_page_range">%1$d–%2$d / %3$d</string>
 </resources>

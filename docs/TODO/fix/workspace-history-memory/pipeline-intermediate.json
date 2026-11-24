@@ -1,0 +1,108 @@
+{
+  "base": "86bcec630d2bec4ddfc8d27d513c3cc6a1888eb7",
+  "version": "中间批次实现，早于最终 rowid 正文布局与搜索字段",
+  "environment": {
+    "java": "OpenJDK 17 ARM64",
+    "maxHeapMiB": 64,
+    "initialHeapMiB": 16,
+    "collector": "SerialGC",
+    "activeProcessors": 1,
+    "heapSampleIntervalMs": 10,
+    "sqlite": "sqlite-jdbc 3.46.1.3",
+    "durableSynchronous": "FULL",
+    "objectBytes": 1024
+  },
+  "results": [
+    {
+      "mode": "legacy",
+      "count": 5000,
+      "objectBytes": 1024,
+      "captured": 5000,
+      "reviewed": 5000,
+      "saveMs": 33550.916706,
+      "reviewMs": 6164.412967,
+      "durationMs": 39715.329673,
+      "sampledMaxHeap": 37077848,
+      "openHeapAfterGc": 4096216,
+      "closedHeapAfterGc": 3819560,
+      "heapBefore": 3643280,
+      "threadAllocatedBytes": 1365837336,
+      "gcCount": 213,
+      "gcMs": 1282,
+      "diskBytes": 12963283,
+      "io": {
+        "rchar": 142399238,
+        "wchar": 291187164,
+        "syscr": 294494,
+        "syscw": 146894,
+        "read_bytes": 278528,
+        "write_bytes": 703201280,
+        "cancelled_write_bytes": 516096
+      },
+      "status": "completed"
+    },
+    {
+      "mode": "batched",
+      "count": 5000,
+      "objectBytes": 1024,
+      "captured": 5000,
+      "reviewed": 5000,
+      "saveMs": 23766.495147,
+      "reviewMs": 501.81,
+      "durationMs": 24268.305147,
+      "sampledMaxHeap": 8624560,
+      "openHeapAfterGc": 3954360,
+      "closedHeapAfterGc": 3954424,
+      "heapBefore": 3646984,
+      "threadAllocatedBytes": 320113440,
+      "gcCount": 70,
+      "gcMs": 96,
+      "diskBytes": 18005408,
+      "io": {
+        "rchar": 297777121,
+        "wchar": 224644144,
+        "syscr": 210608,
+        "syscw": 134362,
+        "read_bytes": 253952,
+        "write_bytes": 428515328,
+        "cancelled_write_bytes": 22163456
+      },
+      "status": "completed"
+    },
+    {
+      "mode": "batched",
+      "count": 20000,
+      "objectBytes": 1024,
+      "captured": 20000,
+      "reviewed": 20000,
+      "saveMs": 161217.209001,
+      "reviewMs": 2927.238905,
+      "durationMs": 164144.447906,
+      "sampledMaxHeap": 8631512,
+      "openHeapAfterGc": 3849344,
+      "closedHeapAfterGc": 3850408,
+      "heapBefore": 3645152,
+      "threadAllocatedBytes": 1226041488,
+      "gcCount": 269,
+      "gcMs": 356,
+      "diskBytes": 72205904,
+      "io": {
+        "rchar": 2924549554,
+        "wchar": 1578982248,
+        "syscr": 1264700,
+        "syscw": 825734,
+        "read_bytes": 98213888,
+        "write_bytes": 2918948864,
+        "cancelled_write_bytes": 95424512
+      },
+      "status": "completed"
+    },
+    {
+      "mode": "legacy",
+      "count": 20000,
+      "status": "oom",
+      "error": "OutOfMemoryError: Java heap space；旧版整份操作 JSON 编码期间失败，无完成耗时"
+    }
+  ],
+  "finalVersionMeasured": false
+}

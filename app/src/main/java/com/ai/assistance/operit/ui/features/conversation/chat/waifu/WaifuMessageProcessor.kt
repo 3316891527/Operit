@@ -1,4 +1,4 @@
-package com.ai.assistance.operit.util
+package com.ai.assistance.operit.ui.features.conversation.chat.waifu
 
 import android.content.Context
 import com.ai.assistance.operit.data.preferences.ActivePromptManager
@@ -50,10 +50,8 @@ object WaifuMessageProcessor {
         Regex("""(?<![\\$])\$(?![\s$])[^$\r\n]+?(?<!\s)\$(?![\d$])|\\\([\s\S]*?\\\)""")
     private val ORDERED_LIST_DOT_REGEX =
         Regex("""(?m)(?<![\p{L}\p{N}_])(\d+)\.(?=[ \t]|$)""")
-    private val PROCESS_XML_TAGS = setOf("think", "thinking", "tool", "tool_result")
-    private val XML_TOKEN_REGEX = Regex(
-        """<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?]]>|</?([A-Za-z][A-Za-z0-9_]*)(?=\s|/?>)(?:[^<>"']|"[^"]*"|'[^']*')*>"""
-    )
+    private val PROCESS_XML_TAGS = WaifuProcessContent.tags
+    private val XML_TOKEN_REGEX = WaifuProcessContent.xmlToken
     private val UNTERMINATED_MARKDOWN_LINE_REGEX =
         Regex("""^[ \t]{0,3}(?:\d+\.[ \t]*|[-*+](?:[ \t]+|$)|>[ \t]?|#{1,6}[ \t]+).*$""")
     private val BARE_URL_REGEX = Regex("""https?://$URL_CHARS+""")
@@ -82,13 +80,7 @@ object WaifuMessageProcessor {
         }
 
         fun collectStableSegments(content: String): List<String> {
-            return collectSegments(
-                splitMessageBySentencesInternal(
-                    content = buildRenderableContentForWaifu(content),
-                    removePunctuation = removePunctuation,
-                    includeTrailingIncomplete = false,
-                )
-            )
+            return collectSegments(splitStableMessageSegments(content, removePunctuation))
         }
 
         fun collectFinalSegments(content: String): List<String> {
@@ -311,24 +303,20 @@ object WaifuMessageProcessor {
         splitSnapshot = { content, final ->
             val session = NativeMarkdownSplitter.createBlockSession()
             val renderable = try {
-                buildRenderableSnapshot(content, final, session.push(content))
+                // 每一个位置的过程都即时进入快照，不必等 XML 或整轮工具结束。
+                buildRenderableSnapshot(content, final, session.push(content), includeOpenXmlPreview = true)
             } finally {
                 session.destroy()
             }
-            val segments = if (final) {
-                splitMessageBySentences(renderable)
-            } else {
-                splitStableMessageSegments(renderable)
-            }
-            if (removePunctuation) {
-                segments.map(::removeSentenceEndPunctuation).filter { it.isNotBlank() }
-            } else {
-                segments
-            }
+            splitMessageBySentencesInternal(
+                content = buildRenderableContentForWaifu(renderable),
+                removePunctuation = removePunctuation,
+                includeTrailingIncomplete = final,
+            )
         },
+        isProcessSegment = ::isProcessOnlyMessage,
         typingDelayMs = { length, first -> calculateTypingDelayMs(length, charDelayMs, first) },
         firstSegmentPreview = { content ->
-            // 生成中的过程块可即时预览，闭合后由原有消息存储更新为完整内容。
             val nativeSession = NativeMarkdownSplitter.createBlockSession()
             val renderable = try {
                 buildRenderableSnapshot(content, false, nativeSession.push(content), includeOpenXmlPreview = true)
@@ -469,8 +457,14 @@ object WaifuMessageProcessor {
             content = buildRenderableContentForWaifu(content),
             removePunctuation = removePunctuation,
             includeTrailingIncomplete = false,
-        )
+        ).let { segments ->
+            // 只追加的消费者等正文出现后再定稿过程，避免后续工具增长改变已发送前缀。
+            if (segments.lastOrNull()?.let(::isProcessOnlyMessage) == true) segments.dropLast(1) else segments
+        }
     }
+
+    fun isProcessOnlyMessage(content: String): Boolean =
+        WaifuProcessContent.isProcessOnly(buildRenderableContentForWaifu(content))
 
     private fun splitMessageBySentencesInternal(
         content: String,
@@ -614,7 +608,7 @@ object WaifuMessageProcessor {
             currentSentence
         }
 
-        return finalResult
+        return WaifuProcessContent.mergeConsecutive(finalResult)
     }
 
     private fun splitTrailingProtectedText(value: String): Pair<String, String> {
@@ -1047,26 +1041,8 @@ object WaifuMessageProcessor {
         return builder.toString()
     }
 
-    /** 同名标签按深度配对；属性、注释和 CDATA 中的伪结束标签不参与配对。 */
-    private fun findXmlBlockEnd(content: String, start: Int): Int? {
-        val opening = XML_TOKEN_REGEX.find(content, start)
-            ?.takeIf { it.range.first == start && !it.value.startsWith("</") }
-            ?: return null
-        val rawTagName = opening.groupValues[1]
-        if (rawTagName.isEmpty()) return null
-        if (opening.value.endsWith("/>")) return opening.range.last + 1
-        var depth = 1
-        XML_TOKEN_REGEX.findAll(content, opening.range.last + 1).forEach { match ->
-            if (match.groupValues[1] != rawTagName) return@forEach
-            if (match.value.startsWith("</")) {
-                depth--
-                if (depth == 0) return match.range.last + 1
-            } else if (!match.value.endsWith("/>")) {
-                depth++
-            }
-        }
-        return null
-    }
+    private fun findXmlBlockEnd(content: String, start: Int): Int? =
+        WaifuProcessContent.blockEnd(content, start)
 
     // 只过滤从行首合法开启的代码块，避免讲解反引号时丢失后续正文。
     internal fun removeFencedCodeBlocks(content: String): String =
@@ -1252,7 +1228,17 @@ object WaifuMessageProcessor {
                 } else {
                     restoreMarkdownBlockMarkers(block, blockType)
                 }
-                segments.add(Segment(normalizedBlock, isProtected, blockType))
+                if (blockType == MarkdownProcessorType.PLAIN_TEXT) {
+                    WaifuProcessContent.splitPlainText(normalizedBlock).forEach { part ->
+                        segments.add(Segment(
+                            content = part.content,
+                            isProtected = part.isProcess,
+                            blockType = if (part.isProcess) MarkdownProcessorType.XML_BLOCK else blockType,
+                        ))
+                    }
+                } else {
+                    segments.add(Segment(normalizedBlock, isProtected, blockType))
+                }
             }
             var index = 0
             while (index + 2 < parts.size) {

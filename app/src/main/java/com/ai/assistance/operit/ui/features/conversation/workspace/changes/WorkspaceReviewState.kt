@@ -20,17 +20,20 @@ internal data class ReviewViewChoices(val snapshots: Map<String, ReviewSnapshotC
     fun forSnapshot(key: String): ReviewSnapshotChoices = snapshots[key] ?: ReviewSnapshotChoices()
 
     fun requestLoad(key: String): ReviewViewChoices =
-        copy(snapshots = snapshots + (key to forSnapshot(key).copy(loadRequested = true)))
+        updated(key, forSnapshot(key).copy(loadRequested = true))
 
     fun expand(key: String, start: Int): ReviewViewChoices =
-        copy(snapshots = snapshots + (key to forSnapshot(key).let { it.copy(expanded = it.expanded + start) }))
+        updated(key, forSnapshot(key).let { it.copy(expanded = it.expanded + start) })
+
+    private fun updated(key: String, choices: ReviewSnapshotChoices): ReviewViewChoices =
+        copy(snapshots = ((snapshots - key) + (key to choices)).entries.toList().takeLast(12).associate { it.toPair() })
 
     fun saved(): List<String> = snapshots.toSortedMap().map { (key, choices) ->
         "$key:${choices.loadRequested}:${choices.expanded.sorted().joinToString(",")}"
     }
 
     companion object {
-        fun restore(saved: List<String>): ReviewViewChoices = ReviewViewChoices(saved.associate { entry ->
+        fun restore(saved: List<String>): ReviewViewChoices = ReviewViewChoices(saved.takeLast(12).associate { entry ->
             val parts = entry.split(':', limit = 3)
             val starts = if (parts[2].isEmpty()) emptySet() else parts[2].split(',').map(String::toInt).toSet()
             parts[0] to ReviewSnapshotChoices(parts[1].toBooleanStrict(), starts)

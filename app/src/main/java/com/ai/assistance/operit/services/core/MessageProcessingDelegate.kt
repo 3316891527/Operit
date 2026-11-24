@@ -28,8 +28,8 @@ import com.ai.assistance.operit.util.stream.TextStreamEventCarrier
 import com.ai.assistance.operit.util.stream.TextStreamEventType
 import com.ai.assistance.operit.util.stream.TextStreamRevisionTracker
 import com.ai.assistance.operit.core.speech.text.TtsSegmenter
-import com.ai.assistance.operit.util.WaifuMessageProcessor
-import com.ai.assistance.operit.util.WaifuSegmentMessageStore
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuMessageProcessor
+import com.ai.assistance.operit.ui.features.conversation.chat.waifu.WaifuSegmentMessageStore
 import com.ai.assistance.operit.util.stream.applyRevisionEvents
 import com.ai.assistance.operit.data.preferences.ApiPreferences
 import com.ai.assistance.operit.data.preferences.CharacterCardManager
@@ -1484,6 +1484,9 @@ class MessageProcessingDelegate(
                         steering.canSteer = effectivePersistTurn && !isWaifuModeEnabled && !isGroupOrchestrationTurn
                         toolBoundaryMessageReady.complete(aiMessage.takeIf { effectivePersistTurn && chatId != null && !isWaifuModeEnabled })
                         var lastWaifuPreviewPublishedAt = 0L
+                        var isFirstWaifuAutoReadSegment = true
+                        var waifuSpeechNeedsInterrupt = false
+                        var lastWaifuProcessPublishedAt = 0L
                         val waifuMessageStore = WaifuSegmentMessageStore(
                             messages = waifuEmittedMessages,
                             createMessage = { segment ->
@@ -1498,7 +1501,7 @@ class MessageProcessingDelegate(
                                     sentAt = requestSentAt,
                                 )
                             },
-                            reviseMessage = { message, content -> message.copy(content = content) },
+                            reviseMessage = { message, content -> message.copy(content = content, sections = emptyList()) },
                             publishPreview = { message ->
                                 val now = messageTimingNow()
                                 if (effectivePersistTurn && chatId != null &&
@@ -1509,17 +1512,39 @@ class MessageProcessingDelegate(
                                 }
                                 tryEmitScrollToBottomThrottled(chatId)
                             },
+                            publishRevision = { message ->
+                                val now = messageTimingNow()
+                                if (effectivePersistTurn && chatId != null &&
+                                    now - lastWaifuProcessPublishedAt >= 100L
+                                ) {
+                                    // 内存始终保留最新内容，终态统一落盘；增量限制频率避免工具长输出逐字写库。
+                                    addMessageToChat(chatId, message)
+                                    lastWaifuProcessPublishedAt = now
+                                }
+                                tryEmitScrollToBottomThrottled(chatId)
+                            },
                             appendMessage = { segmentMessage, interrupt ->
                                 if (effectivePersistTurn && chatId != null) {
                                     addMessageToChat(chatId, segmentMessage)
                                 }
-                                if (getIsAutoReadEnabled()) {
-                                    didStreamAutoRead = true
-                                    speakMessageHandler(segmentMessage.content, interrupt)
+                                if (getIsAutoReadEnabled() &&
+                                    !WaifuMessageProcessor.isProcessOnlyMessage(segmentMessage.content)
+                                ) {
+                                    val speechContent = WaifuMessageProcessor.cleanContentForWaifu(segmentMessage.content)
+                                    if (speechContent.isNotBlank()) {
+                                        didStreamAutoRead = true
+                                        speakMessageHandler(speechContent, interrupt || isFirstWaifuAutoReadSegment || waifuSpeechNeedsInterrupt)
+                                        isFirstWaifuAutoReadSegment = false
+                                        waifuSpeechNeedsInterrupt = false
+                                    }
                                 }
                                 tryEmitScrollToBottomThrottled(chatId)
                             },
                             removeMessages = { messages ->
+                                if (messages.any { !WaifuMessageProcessor.isProcessOnlyMessage(it.content) }) {
+                                    waifuSpeechNeedsInterrupt = true
+                                }
+                                lastWaifuProcessPublishedAt = 0L
                                 if (effectivePersistTurn && chatId != null) {
                                     retractStreamingMessages(chatId, messages.map { it.timestamp })
                                 }
