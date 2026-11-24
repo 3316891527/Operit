@@ -31,6 +31,8 @@ internal fun scanLocalWorkspace(
     onFile: (String, ObservedWorkspaceFile) -> Unit,
     snapshotBytes: (ByteArray) -> ChangeSnapshot,
     paths: Set<String>? = null,
+    checkCancelled: () -> Unit = {},
+    onDirectory: (File) -> Unit = {},
 ) {
     val rootPath = root.toPath()
     if (Files.notExists(rootPath, LinkOption.NOFOLLOW_LINKS)) return
@@ -38,10 +40,14 @@ internal fun scanLocalWorkspace(
     fun stamp(attrs: BasicFileAttributes) = "${attrs.lastModifiedTime()}:${attrs.size()}:${attrs.fileKey()}"
     val visitor = object : SimpleFileVisitor<Path>() {
         override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+            checkCancelled()
             val path = rootPath.relativize(dir).toString().replace(File.separatorChar, '/')
-            return if (observedWorkspacePath(path) && !excluded(dir.toFile())) FileVisitResult.CONTINUE else FileVisitResult.SKIP_SUBTREE
+            if (!observedWorkspacePath(path) || excluded(dir.toFile())) return FileVisitResult.SKIP_SUBTREE
+            onDirectory(dir.toFile())
+            return FileVisitResult.CONTINUE
         }
         override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+            checkCancelled()
             val path = rootPath.relativize(file).toString().replace(File.separatorChar, '/')
             if (!observedWorkspacePath(path) || excluded(file.toFile())) return FileVisitResult.CONTINUE
             val prior = before(path)
@@ -55,6 +61,7 @@ internal fun scanLocalWorkspace(
                         val output = ByteArrayOutputStream()
                         val buffer = ByteArray(8192)
                         while (output.size() <= CHANGE_SNAPSHOT_LIMIT) {
+                            checkCancelled()
                             val count = input.read(buffer, 0, minOf(buffer.size, CHANGE_SNAPSHOT_LIMIT + 1 - output.size()))
                             if (count < 0) break
                             output.write(buffer, 0, count)

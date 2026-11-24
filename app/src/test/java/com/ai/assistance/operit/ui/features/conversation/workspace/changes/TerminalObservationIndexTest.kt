@@ -12,35 +12,35 @@ class TerminalObservationIndexTest {
     @get:Rule val temporary = TemporaryFolder()
 
     private fun observed(value: String) = TerminalObservedFile(value, ChangeSnapshot(SnapshotKind.TEXT, value.length.toLong(), value.padEnd(64, '0')))
-    private fun open(file: File) = TerminalObservationIndex(JdbcTerminalIndexDatabase(file))
+    private fun openIndex(file: File) = TerminalObservationIndex(JdbcTerminalIndexDatabase(file))
     private fun seed(index: TerminalObservationIndex, vararg files: Pair<String, String>) = index.beginScan().use { scan ->
         for ((path, value) in files) scan.put(path, observed(value))
         scan.commit(completeInitialization = true)
     }
 
-    @Test fun partialUpdatesPreserveUnrelatedPathsAndSurviveReopen() {
+    @Test fun partialUpdatesPreserveUnrelatedPathsAndSurviveReopenIndex() {
         val file = temporary.newFile()
-        open(file).use { index ->
+        openIndex(file).use { index ->
             seed(index, "a/file" to "a", "a-long/file" to "b", "sibling" to "c")
             index.beginScan(setOf("a")).use { scan -> scan.put("a/new", observed("d")); scan.commit() }
             assertEquals(SnapshotKind.ABSENT, index.snapshot("a/file").kind)
             assertEquals(observed("b"), index.file("a-long/file"))
         }
-        open(file).use { index ->
+        openIndex(file).use { index ->
             assertEquals(3, index.count())
             assertEquals(observed("d"), index.file("a/new"))
             assertEquals(observed("c"), index.file("sibling"))
         }
     }
 
-    @Test fun literalSubtreeNamesCannotActAsSqlPatterns() = open(temporary.newFile()).use { index ->
+    @Test fun literalSubtreeNamesCannotActAsSqlPatterns() = openIndex(temporary.newFile()).use { index ->
         seed(index, "name%_'/文件😀/old" to "a", "nameXX/keep" to "b")
         index.beginScan(setOf("name%_'")).use { it.commit() }
         assertEquals(SnapshotKind.ABSENT, index.snapshot("name%_'/文件😀/old").kind)
         assertEquals(observed("b"), index.file("nameXX/keep"))
     }
 
-    @Test fun startupEventsOverrideStaleFullScanIncludingDeletions() = open(temporary.newFile()).use { index ->
+    @Test fun startupEventsOverrideStaleFullScanIncludingDeletions() = openIndex(temporary.newFile()).use { index ->
         seed(index, "changed" to "a", "deleted/file" to "b", "untouched" to "c")
         index.beginScan().use { full ->
             full.put("changed", observed("a")); full.put("deleted/file", observed("b")); full.put("untouched", observed("d"))
@@ -57,7 +57,7 @@ class TerminalObservationIndexTest {
         assertFalse(index.hasTouchedAncestor("deleted/file"))
     }
 
-    @Test fun failedReadPreservesEntireSubtreeAndUnknownDescendants() = open(temporary.newFile()).use { index ->
+    @Test fun failedReadPreservesEntireSubtreeAndUnknownDescendants() = openIndex(temporary.newFile()).use { index ->
         seed(index, "closed/old" to "a", "other" to "b")
         index.beginScan(setOf("closed")).use { scan ->
             scan.unreadable("closed"); scan.preserveSubtree("closed"); scan.commit()
@@ -69,7 +69,7 @@ class TerminalObservationIndexTest {
         assertEquals(observed("b"), index.file("other"))
     }
 
-    @Test fun abortDiscardsStagedRowsAndBlobLeasesWithoutChangingPublishedBaseline() = open(temporary.newFile()).use { index ->
+    @Test fun abortDiscardsStagedRowsAndBlobLeasesWithoutChangingPublishedBaseline() = openIndex(temporary.newFile()).use { index ->
         seed(index, "file" to "a")
         index.beginScan(setOf("file")).use { scan ->
             scan.put("file", observed("b")); scan.flush(); scan.pinBlob("in-flight")
@@ -82,7 +82,7 @@ class TerminalObservationIndexTest {
         assertEquals(observed("a"), index.file("file"))
     }
 
-    @Test fun interruptedProcessDiscardsUnpublishedGenerationsOnReopen() {
+    @Test fun interruptedProcessDiscardsUnpublishedGenerationsOnReopenIndex() {
         val file = temporary.newFile()
         val database = JdbcTerminalIndexDatabase(file)
         val index = TerminalObservationIndex(database)
@@ -90,14 +90,14 @@ class TerminalObservationIndexTest {
         val abandoned = index.beginScan()
         abandoned.put("stale", observed("b")); abandoned.flush(); abandoned.pinBlob("pending")
         database.close()
-        open(file).use { reopened ->
+        openIndex(file).use { reopened ->
             assertEquals(1, reopened.count())
             assertNull(reopened.file("stale"))
             assertFalse(reopened.containsBlob("pending"))
         }
     }
 
-    @Test fun directoryRenameDiffsUseFixedPagesForRemovedAndAddedFiles() = open(temporary.newFile()).use { index ->
+    @Test fun directoryRenameDiffsUseFixedPagesForRemovedAndAddedFiles() = openIndex(temporary.newFile()).use { index ->
         index.beginScan().use { scan ->
             repeat(600) { scan.put("old/$it", observed("a")) }
             scan.put("unrelated", observed("b")); scan.commit()
@@ -124,7 +124,7 @@ class TerminalObservationIndexTest {
         assertEquals(601, index.count())
     }
 
-    @Test fun unknownAncestorIsRetainedWhenOnlyOneChildIsRefreshed() = open(temporary.newFile()).use { index ->
+    @Test fun unknownAncestorIsRetainedWhenOnlyOneChildIsRefreshed() = openIndex(temporary.newFile()).use { index ->
         index.beginScan().use { it.unreadable("closed"); it.commit() }
         index.beginScan(setOf("closed/child")).use { scan ->
             scan.put("closed/child", observed("a"))
@@ -135,7 +135,7 @@ class TerminalObservationIndexTest {
         assertEquals(SnapshotKind.UNAVAILABLE, index.snapshot("closed/other").kind)
     }
 
-    @Test fun queryCacheHasAFixedLimitIndependentOfFileCount() = open(temporary.newFile()).use { index ->
+    @Test fun queryCacheHasAFixedLimitIndependentOfFileCount() = openIndex(temporary.newFile()).use { index ->
         index.beginScan().use { scan -> repeat(4096) { scan.put("file/$it", observed("a")) }; scan.commit() }
         repeat(8192) { index.file("file/$it") }
         assertEquals(4096, index.count())
@@ -168,11 +168,56 @@ class TerminalObservationIndexTest {
         catch (expected: IllegalStateException) { assertEquals("injected SQL failure", expected.message) }
         database.failOn = null
         index.close()
-        open(file).use { reopened ->
+        openIndex(file).use { reopened ->
             assertEquals(observed("a"), reopened.file("old"))
             assertNull(reopened.file("unpublished"))
         }
     }
+    @Test fun runningFullScanCannotOverwriteLaterWritesOrResurrectDeletedDirectory() = openIndex(temporary.newFile()).use { index ->
+        seed(index, "edited" to "a", "deleted/file" to "b", "untouched" to "c")
+        index.beginScan().use { scan ->
+            scan.put("edited", observed("a")); scan.put("deleted/file", observed("b")); scan.put("untouched", observed("d"))
+            val stalePage = scan.differences()
+            index.acknowledge("edited", observed("e").snapshot, initializing = false)
+            index.acknowledge("deleted", ChangeSnapshot(SnapshotKind.ABSENT), initializing = false)
+            index.acknowledge("created/file", observed("f").snapshot, initializing = false)
+            assertFalse(scan.isCurrent(stalePage.first { it.path == "edited" }.path))
+            assertTrue(scan.differences().none { it.path == "edited" || it.path.startsWith("deleted/") || it.path.startsWith("created/") })
+            scan.commit()
+        }
+        assertEquals(observed("e").snapshot, index.snapshot("edited"))
+        assertEquals(SnapshotKind.ABSENT, index.snapshot("deleted/file").kind)
+        assertEquals(observed("f").snapshot, index.snapshot("created/file"))
+        assertEquals(observed("d"), index.file("untouched"))
+    }
+
+    @Test fun partialScanAndUnreadableRowsCannotReplacePreciseSnapshot() = openIndex(temporary.newFile()).use { index ->
+        seed(index, "dir/file" to "a", "dir/other" to "b")
+        index.beginScan(setOf("dir")).use { scan ->
+            scan.unreadable("dir/file"); scan.put("dir/other", observed("c"))
+            index.acknowledge("dir/file", observed("d").snapshot, initializing = false)
+            scan.commit()
+        }
+        assertEquals(observed("d").snapshot, index.snapshot("dir/file"))
+        assertFalse(index.isUnreadable("dir/file"))
+        assertEquals(observed("c"), index.file("dir/other"))
+    }
+
+    @Test fun invalidationDuringFailedOrCancelledWriteIsLimitedToThatScan() = openIndex(temporary.newFile()).use { index ->
+        seed(index, "dir/file" to "a")
+        index.beginScan(setOf("dir")).use { scan ->
+            scan.put("dir/file", observed("partial"))
+            index.invalidate(listOf("dir"))
+            assertTrue(scan.differences().isEmpty())
+            scan.commit()
+        }
+        assertEquals(observed("a"), index.file("dir/file"))
+        index.beginScan(setOf("dir")).use { scan ->
+            scan.put("dir/file", observed("final")); assertTrue(scan.isCurrent("dir/file")); scan.commit()
+        }
+        assertEquals(observed("final"), index.file("dir/file"))
+    }
+
 }
 
 /** 使用真实 SQLite 驱动执行生产 SQL，故障注入只改变指定语句的执行结果。 */

@@ -17,13 +17,39 @@ import kotlinx.coroutines.CancellationException
 internal const val CHANGE_SNAPSHOT_LIMIT = SnapshotPackStore.MAX_OBJECT_BYTES
 
 /** 直接复用文件后端读取原始字节，不触发工具生命周期或额外权限弹窗。 */
-internal class WorkspaceChangeAccess(private val context: Context) {
-    private val tools = ToolGetter.getFileSystemTools(context)
-    private val store = WorkspaceChangeStore.get(context)
+internal class WorkspaceChangeAccess(
+    private val context: Context,
+    storeProvider: () -> WorkspaceChangeStore = { WorkspaceChangeStore.get(context) },
+    private val snapshotLease: WorkspaceChangeStore.SnapshotLease? = null,
+) {
+    private val store by lazy(storeProvider)
+    private val tools by lazy { ToolGetter.getFileSystemTools(context) }
 
     suspend fun location(path: String, environment: String?): ChangeLocation {
         val env = changeEnvironment(environment)
         return ChangeLocation(changePath(path), env, resolvedBackend(context, env))
+    }
+
+    /** 本机目录链接不能把快照采集带到绑定目录之外。 */
+    fun withinWorkspace(location: ChangeLocation, workspace: ChangeLocation): Boolean {
+        if (relativeChangePath(workspace, location) == null) return false
+        val root = hostFile(workspace) ?: return true
+        val target = hostFile(location) ?: return false
+        return changePathContains(root.canonicalPath, target.canonicalPath)
+    }
+
+    /** 目录内链接及 Android/Linux 映射使用同一物理写入锁。 */
+    fun mutationIdentity(location: ChangeLocation): ChangeLocation = hostFile(location)?.let {
+        ChangeLocation(changePath(it.canonicalPath), "android", "android")
+    } ?: location.historyLocation()
+
+    private fun hostFile(location: ChangeLocation): java.io.File? = when (location.backend) {
+        "android" -> java.io.File(location.path)
+        "linux:local" -> java.io.File(com.ai.assistance.operit.terminal.provider.filesystem.PRootMountMapping.mapLinuxPathToHostPath(
+            location.path, java.io.File(context.filesDir, "usr/var/lib/proot-distro/installed-rootfs/ubuntu"),
+            context.filesDir.path, context.applicationInfo.dataDir, context.packageName,
+            context.getSharedPreferences("terminal_settings", Context.MODE_PRIVATE).getBoolean("chroot_enabled", false)))
+        else -> null
     }
 
     suspend fun snapshot(location: ChangeLocation, byteBudget: Long = CHANGE_SNAPSHOT_LIMIT.toLong()): ChangeSnapshot {
@@ -46,7 +72,7 @@ internal class WorkspaceChangeAccess(private val context: Context) {
                     if (bytes.size > CHANGE_SNAPSHOT_LIMIT) ChangeSnapshot(SnapshotKind.TOO_LARGE, bytes.size.toLong())
                     else if (bytes.size > byteBudget) ChangeSnapshot(SnapshotKind.UNAVAILABLE, bytes.size.toLong(), detail = "Operation snapshot byte limit reached")
                     else ChangeSnapshot(if (decodeChangeText(bytes) == null) SnapshotKind.BINARY else SnapshotKind.TEXT,
-                        bytes.size.toLong(), store.putBlob(bytes))
+                        bytes.size.toLong(), store.putBlob(bytes, lease = snapshotLease))
                 }
             }
         } catch (error: CancellationException) {
