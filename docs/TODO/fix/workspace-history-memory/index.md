@@ -15,7 +15,7 @@ status: 实现完成，待远端验证
 
 生产实现和新增回归已经落盘。最终轻量审阅前，15 个套件共 157 项回归通过，并核对当时全部编译输入哈希一致。之后补上首页最近产出的单条查询、对应回归和可保存状态恢复，尚未执行新增回归；最后修改交由远端 CI。22 个生产文件曾通过联合类型检查，部分文件在检查后有修改；完整 Android/Compose 编译、全部标准 JVM 测试与仪器测试编译交给远端 CI。
 
-本轮贡献分支为 `fix/workspace-history-memory`，PR 目标为 `dev`，依赖 [PR #253](https://github.com/3316891527/Operit/pull/253) 及此前 #249 → #252 → #253 的变更链。构建使用 `assembleDebug`；Android Tests 使用标准 JVM 单测及仪器测试编译入口。仅确认两条工作流启动，不持续查询进度。
+本轮 [PR #254](https://github.com/3316891527/Operit/pull/254) 的贡献分支为 `fix/workspace-history-memory`，PR 目标为 `dev`，依赖 [PR #253](https://github.com/3316891527/Operit/pull/253) 及此前 #249 → #252 → #253 的变更链。构建使用 `assembleDebug`；Android Tests 使用标准 JVM 单测及仪器测试编译入口。仅确认两条工作流启动，不持续查询进度。
 
 ## 实施边界
 
